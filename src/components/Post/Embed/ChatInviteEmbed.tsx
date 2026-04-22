@@ -24,7 +24,7 @@ export function ChatInviteEmbed({
 }) {
   return (
     <ChatInvite.Root code={code} hasFixedHeight>
-    <ChatInviteEmbedBody link={link} onOpen={onOpen} style={style} />
+      <ChatInviteEmbedBody link={link} onOpen={onOpen} style={style} />
     </ChatInvite.Root>
   )
 }
@@ -37,9 +37,9 @@ function ChatInviteEmbedBody({
   onOpen?: () => void
   style?: StyleProp<ViewStyle>
 }) {
-  const {error} = ChatInvite.useChatInvite()
+  const {status} = ChatInvite.useChatInvite()
 
-  if (error) {
+  if (status === 'error') {
     return <ExternalEmbed link={link} onOpen={onOpen} style={style} />
   }
 

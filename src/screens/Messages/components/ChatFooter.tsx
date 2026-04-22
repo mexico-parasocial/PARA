@@ -31,6 +31,7 @@ export function ChatFooter({
           style={[
             a.flex_row,
             a.align_center,
+            a.flex_1,
             {
               minHeight: 32,
             },
