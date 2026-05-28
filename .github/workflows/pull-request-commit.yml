@@ -68,7 +68,7 @@ jobs:
 
       - name: ⬇️ Get base stats from cache
         id: get-base-stats
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: stats-base.json
           key: stats-base-${{ steps.base-commit.outputs.base-commit }}
