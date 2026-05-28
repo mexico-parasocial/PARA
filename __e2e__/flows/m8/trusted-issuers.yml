@@ -1,0 +1,6 @@
+appId: com.para.app
+---
+- runFlow: ../setupApp.yml
+- tapOn: "Trusted Issuers"
+- assertVisible: "Trust Policy"
+- assertVisible: "Instituto Nacional Electoral"

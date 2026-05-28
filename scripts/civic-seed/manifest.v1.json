@@ -1,0 +1,2195 @@
+{
+  "seedId": "civic-demo-v1",
+  "version": "1.0.0",
+  "actors": [
+    {
+      "alias": "para_verifier_mx",
+      "handle": "para-verifier-mx.test",
+      "email": "para-verifier-mx@test.com",
+      "password": "hunter2",
+      "displayName": "PARA Trust MX",
+      "description": "Manual verification desk for seeded public-figure accounts.",
+      "roles": ["verifier"]
+    },
+    {
+      "alias": "mod_jalisco",
+      "handle": "mod-jal.test",
+      "email": "mod-jalisco@test.com",
+      "password": "hunter2",
+      "displayName": "Sofia Martinez",
+      "description": "Lead moderator for Jalisco civic hub.",
+      "roles": ["moderator"]
+    },
+    {
+      "alias": "official_jalisco",
+      "handle": "off-jal.test",
+      "email": "official-jalisco@test.com",
+      "password": "hunter2",
+      "displayName": "Carlos Ramirez",
+      "description": "Official representative for Jalisco policy desk.",
+      "roles": ["official"],
+      "identity": {
+        "createdAt": "2026-03-09T09:00:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-03-12T12:00:00.000Z",
+        "proofBlob": "manual-review://mx/jalisco/carlos-ramirez"
+      }
+    },
+    {
+      "alias": "mod_cdmx",
+      "handle": "mod-cdmx.test",
+      "email": "mod-cdmx@test.com",
+      "password": "hunter2",
+      "displayName": "Alejandra Ruiz",
+      "description": "Lead moderator for CDMX civic hub.",
+      "roles": ["moderator"]
+    },
+    {
+      "alias": "official_cdmx",
+      "handle": "off-cdmx.test",
+      "email": "official-cdmx@test.com",
+      "password": "hunter2",
+      "displayName": "Diego Navarro",
+      "description": "Official representative for mobility and urban policy.",
+      "roles": ["official"],
+      "identity": {
+        "createdAt": "2026-03-09T10:00:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-03-12T12:30:00.000Z",
+        "proofBlob": "manual-review://mx/cdmx/diego-navarro"
+      }
+    },
+    {
+      "alias": "mod_oaxaca",
+      "handle": "mod-oax.test",
+      "email": "mod-oaxaca@test.com",
+      "password": "hunter2",
+      "displayName": "Mariana Lopez",
+      "description": "Lead moderator for Oaxaca civic hub.",
+      "roles": ["moderator"],
+      "identity": {
+        "createdAt": "2026-03-09T11:00:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-03-12T13:00:00.000Z",
+        "proofBlob": "manual-review://mx/oaxaca/mariana-lopez"
+      }
+    },
+    {
+      "alias": "mod_nuevoleon",
+      "handle": "mod-nl.test",
+      "email": "mod-nuevoleon@test.com",
+      "password": "hunter2",
+      "displayName": "Ivan Herrera",
+      "description": "Lead moderator for Nuevo Leon civic hub.",
+      "roles": ["moderator"]
+    },
+    {
+      "alias": "deputy_applicant",
+      "handle": "dep-app.test",
+      "email": "deputy-applicant@test.com",
+      "password": "hunter2",
+      "displayName": "Fernanda Vega",
+      "description": "Deputy applicant active in deliberation threads.",
+      "roles": ["deputy_applicant"],
+      "identity": {
+        "createdAt": "2026-03-09T11:30:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-03-12T14:00:00.000Z",
+        "proofBlob": "manual-review://mx/federal/fernanda-vega"
+      }
+    },
+    {
+      "alias": "active_participant",
+      "handle": "active-a.test",
+      "email": "active-participant@test.com",
+      "password": "hunter2",
+      "displayName": "Luis Ortega",
+      "description": "High-volume civic participant and policy commenter.",
+      "roles": ["active_participant"]
+    },
+    {
+      "alias": "active_participant_2",
+      "handle": "active-b.test",
+      "email": "active-participant-2@test.com",
+      "password": "hunter2",
+      "displayName": "Paola Cardenas",
+      "description": "Community organizer focused on local matters.",
+      "roles": ["active_participant"]
+    },
+    {
+      "alias": "delegate_rep",
+      "handle": "deleg-rep.test",
+      "email": "delegate-rep@test.com",
+      "password": "hunter2",
+      "displayName": "Rafael Ibarra",
+      "description": "Trusted delegate for civic voting power.",
+      "roles": ["delegate"]
+    },
+    {
+      "alias": "reporter_capital",
+      "handle": "reporter-capital.test",
+      "email": "reporter-capital@test.com",
+      "password": "hunter2",
+      "displayName": "Andrea Mena",
+      "description": "Metro reporter focused on transit failures and public data.",
+      "roles": ["journalist"]
+    },
+    {
+      "alias": "vecina_jalisco",
+      "handle": "vecina-jalisco.test",
+      "email": "vecina-jalisco@test.com",
+      "password": "hunter2",
+      "displayName": "Lucia Fonseca",
+      "description": "Neighborhood organizer following water and waste issues in Jalisco.",
+      "roles": ["resident", "organizer"]
+    },
+    {
+      "alias": "agua_watch_jal",
+      "handle": "agua-watch-jal.test",
+      "email": "agua-watch-jal@test.com",
+      "password": "hunter2",
+      "displayName": "Miguel Arroyo",
+      "description": "Volunteer who tracks leaks, reservoir updates, and water rationing.",
+      "roles": ["ngo", "resident"]
+    },
+    {
+      "alias": "estudiante_cdmx",
+      "handle": "estudiante-cdmx.test",
+      "email": "estudiante-cdmx@test.com",
+      "password": "hunter2",
+      "displayName": "Renata Solis",
+      "description": "Student commuter documenting unsafe transfers and long routes.",
+      "roles": ["student", "resident"]
+    },
+    {
+      "alias": "movilidad_colectiva",
+      "handle": "colectivo-anden.test",
+      "email": "movilidad-colectiva@test.com",
+      "password": "hunter2",
+      "displayName": "Colectivo Anden",
+      "description": "Transit collective posting corridor audits and service alerts.",
+      "roles": ["collective"]
+    },
+    {
+      "alias": "abogada_oax",
+      "handle": "abogada-oax.test",
+      "email": "abogada-oax@test.com",
+      "password": "hunter2",
+      "displayName": "Ximena Cruz",
+      "description": "Public-interest lawyer pushing for stronger environmental disclosure.",
+      "roles": ["expert", "resident"]
+    },
+    {
+      "alias": "barrio_vivienda",
+      "handle": "barrio-vivienda.test",
+      "email": "barrio-vivienda@test.com",
+      "password": "hunter2",
+      "displayName": "Comite Barrio Vivienda",
+      "description": "Housing committee collecting rent pressure stories and zoning proposals.",
+      "roles": ["collective", "housing"]
+    },
+    {
+      "alias": "datos_nl",
+      "handle": "datos-nl.test",
+      "email": "datos-nl@test.com",
+      "password": "hunter2",
+      "displayName": "Hector Salgado",
+      "description": "Spreadsheet-heavy policy nerd focused on land use and metro growth.",
+      "roles": ["researcher"]
+    },
+    {
+      "alias": "party_pan_president",
+      "handle": "j-romero-pan.test",
+      "email": "j-romero-pan@test.com",
+      "password": "hunter2",
+      "displayName": "Jorge Romero Herrera",
+      "description": "Presidente nacional del Partido Accion Nacional, seeded from INE party direction data.",
+      "roles": ["party_official", "official"],
+      "identity": {
+        "createdAt": "2026-04-17T10:00:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-04-17T12:00:00.000Z",
+        "proofBlob": "ine-direction://pan/jorge-romero-herrera"
+      }
+    },
+    {
+      "alias": "party_pan_secretary",
+      "handle": "k-gonz-pan.test",
+      "email": "k-gonz-pan@test.com",
+      "password": "hunter2",
+      "displayName": "Karen Michel Gonzalez Marquez",
+      "description": "Secretaria nacional del Partido Accion Nacional, seeded from INE party direction data.",
+      "roles": ["party_official", "official"],
+      "identity": {
+        "createdAt": "2026-04-17T10:05:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-04-17T12:05:00.000Z",
+        "proofBlob": "ine-direction://pan/karen-michel-gonzalez-marquez"
+      }
+    },
+    {
+      "alias": "party_pri_president",
+      "handle": "alito-pri.test",
+      "email": "alito-pri@test.com",
+      "password": "hunter2",
+      "displayName": "Rafael Alejandro Moreno Cardenas",
+      "description": "Presidente nacional del Partido Revolucionario Institucional, seeded from INE party direction data.",
+      "roles": ["party_official", "official"],
+      "identity": {
+        "createdAt": "2026-04-17T10:10:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-04-17T12:10:00.000Z",
+        "proofBlob": "ine-direction://pri/rafael-alejandro-moreno-cardenas"
+      }
+    },
+    {
+      "alias": "party_pri_secretary",
+      "handle": "c-viggiano-pri.test",
+      "email": "c-viggiano-pri@test.com",
+      "password": "hunter2",
+      "displayName": "Alma Carolina Viggiano Austria",
+      "description": "Secretaria general del Partido Revolucionario Institucional, seeded from INE party direction data.",
+      "roles": ["party_official", "official"],
+      "identity": {
+        "createdAt": "2026-04-17T10:15:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-04-17T12:15:00.000Z",
+        "proofBlob": "ine-direction://pri/alma-carolina-viggiano-austria"
+      }
+    },
+    {
+      "alias": "party_pvem_executive_secretary",
+      "handle": "p-guerrero-pvem.test",
+      "email": "p-guerrero-pvem@test.com",
+      "password": "hunter2",
+      "displayName": "Pilar Guerrero Rubio",
+      "description": "Secretaria ejecutiva del Partido Verde Ecologista de Mexico, seeded from INE party direction data.",
+      "roles": ["party_official", "official"],
+      "identity": {
+        "createdAt": "2026-04-17T10:20:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-04-17T12:20:00.000Z",
+        "proofBlob": "ine-direction://pvem/pilar-guerrero-rubio"
+      }
+    },
+    {
+      "alias": "party_pvem_technical_secretary",
+      "handle": "g-aguilar-pvem.test",
+      "email": "g-aguilar-pvem@test.com",
+      "password": "hunter2",
+      "displayName": "Gabriela Aguilar Garcia",
+      "description": "Secretaria tecnica del Partido Verde Ecologista de Mexico, seeded from INE party direction data.",
+      "roles": ["party_official", "official"],
+      "identity": {
+        "createdAt": "2026-04-17T10:25:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-04-17T12:25:00.000Z",
+        "proofBlob": "ine-direction://pvem/gabriela-aguilar-garcia"
+      }
+    },
+    {
+      "alias": "party_pt_coordinator",
+      "handle": "a-anaya-pt.test",
+      "email": "a-anaya-pt@test.com",
+      "password": "hunter2",
+      "displayName": "Alberto Anaya Gutierrez",
+      "description": "Integrante de la Comision Coordinadora Nacional del Partido del Trabajo, seeded from INE party direction data.",
+      "roles": ["party_official", "official"],
+      "identity": {
+        "createdAt": "2026-04-17T10:30:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-04-17T12:30:00.000Z",
+        "proofBlob": "ine-direction://pt/alberto-anaya-gutierrez"
+      }
+    },
+    {
+      "alias": "party_pt_technical_secretary",
+      "handle": "s-garay-pt.test",
+      "email": "s-garay-pt@test.com",
+      "password": "hunter2",
+      "displayName": "Silvano Garay Ulloa",
+      "description": "Secretario tecnico del Partido del Trabajo, seeded from INE party direction data.",
+      "roles": ["party_official", "official"],
+      "identity": {
+        "createdAt": "2026-04-17T10:35:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-04-17T12:35:00.000Z",
+        "proofBlob": "ine-direction://pt/silvano-garay-ulloa"
+      }
+    },
+    {
+      "alias": "party_mc_coordinator",
+      "handle": "j-alvarez-mc.test",
+      "email": "j-alvarez-mc@test.com",
+      "password": "hunter2",
+      "displayName": "Jorge Alvarez Maynez",
+      "description": "Coordinador nacional de Movimiento Ciudadano, seeded from INE party direction data.",
+      "roles": ["party_official", "official"],
+      "identity": {
+        "createdAt": "2026-04-17T10:40:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-04-17T12:40:00.000Z",
+        "proofBlob": "ine-direction://mc/jorge-alvarez-maynez"
+      }
+    },
+    {
+      "alias": "party_morena_president",
+      "handle": "l-alcalde-morena.test",
+      "email": "l-alcalde-morena@test.com",
+      "password": "hunter2",
+      "displayName": "Luisa Maria Alcalde Lujan",
+      "description": "Presidenta nacional de Morena registrada por el INE, seeded from INE party direction data.",
+      "roles": ["party_official", "official"],
+      "identity": {
+        "createdAt": "2026-04-17T10:45:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-04-17T12:45:00.000Z",
+        "proofBlob": "ine-direction://morena/luisa-maria-alcalde-lujan"
+      }
+    },
+    {
+      "alias": "party_morena_secretary",
+      "handle": "c-rangel-morena.test",
+      "email": "c-rangel-morena@test.com",
+      "password": "hunter2",
+      "displayName": "Carolina Rangel Gracida",
+      "description": "Secretaria general de Morena registrada por el INE, seeded from INE party direction data.",
+      "roles": ["party_official", "official"],
+      "identity": {
+        "createdAt": "2026-04-17T10:50:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-04-17T12:50:00.000Z",
+        "proofBlob": "ine-direction://morena/carolina-rangel-gracida"
+      }
+    }
+  ],
+  "follows": [
+    {
+      "actor": "active_participant",
+      "subject": "active_participant_2",
+      "rkey": "seed-follow-active-a-active-b",
+      "createdAt": "2026-03-11T08:00:00.000Z"
+    },
+    {
+      "actor": "active_participant",
+      "subject": "official_jalisco",
+      "rkey": "seed-follow-active-a-off-jal",
+      "createdAt": "2026-03-11T08:01:00.000Z"
+    },
+    {
+      "actor": "active_participant",
+      "subject": "official_cdmx",
+      "rkey": "seed-follow-active-a-off-cdmx",
+      "createdAt": "2026-03-11T08:02:00.000Z"
+    },
+    {
+      "actor": "active_participant",
+      "subject": "mod_jalisco",
+      "rkey": "seed-follow-active-a-mod-jal",
+      "createdAt": "2026-03-11T08:03:00.000Z"
+    },
+    {
+      "actor": "active_participant",
+      "subject": "mod_cdmx",
+      "rkey": "seed-follow-active-a-mod-cdmx",
+      "createdAt": "2026-03-11T08:04:00.000Z"
+    },
+    {
+      "actor": "active_participant",
+      "subject": "mod_oaxaca",
+      "rkey": "seed-follow-active-a-mod-oax",
+      "createdAt": "2026-03-11T08:05:00.000Z"
+    },
+    {
+      "actor": "active_participant",
+      "subject": "mod_nuevoleon",
+      "rkey": "seed-follow-active-a-mod-nl",
+      "createdAt": "2026-03-11T08:06:00.000Z"
+    },
+    {
+      "actor": "active_participant",
+      "subject": "deputy_applicant",
+      "rkey": "seed-follow-active-a-deputy",
+      "createdAt": "2026-03-11T08:07:00.000Z"
+    },
+    {
+      "actor": "active_participant",
+      "subject": "delegate_rep",
+      "rkey": "seed-follow-active-a-delegate",
+      "createdAt": "2026-03-11T08:08:00.000Z"
+    },
+    {
+      "actor": "active_participant_2",
+      "subject": "active_participant",
+      "rkey": "seed-follow-active-b-active-a",
+      "createdAt": "2026-03-11T08:09:00.000Z"
+    },
+    {
+      "actor": "active_participant_2",
+      "subject": "official_jalisco",
+      "rkey": "seed-follow-active-b-off-jal",
+      "createdAt": "2026-03-11T08:10:00.000Z"
+    },
+    {
+      "actor": "active_participant_2",
+      "subject": "official_cdmx",
+      "rkey": "seed-follow-active-b-off-cdmx",
+      "createdAt": "2026-03-11T08:11:00.000Z"
+    },
+    {
+      "actor": "active_participant_2",
+      "subject": "mod_jalisco",
+      "rkey": "seed-follow-active-b-mod-jal",
+      "createdAt": "2026-03-11T08:12:00.000Z"
+    },
+    {
+      "actor": "active_participant_2",
+      "subject": "mod_nuevoleon",
+      "rkey": "seed-follow-active-b-mod-nl",
+      "createdAt": "2026-03-11T08:13:00.000Z"
+    },
+    {
+      "actor": "active_participant_2",
+      "subject": "deputy_applicant",
+      "rkey": "seed-follow-active-b-deputy",
+      "createdAt": "2026-03-11T08:14:00.000Z"
+    },
+    {
+      "actor": "deputy_applicant",
+      "subject": "active_participant",
+      "rkey": "seed-follow-deputy-active-a",
+      "createdAt": "2026-03-11T08:15:00.000Z"
+    },
+    {
+      "actor": "deputy_applicant",
+      "subject": "active_participant_2",
+      "rkey": "seed-follow-deputy-active-b",
+      "createdAt": "2026-03-11T08:16:00.000Z"
+    },
+    {
+      "actor": "deputy_applicant",
+      "subject": "delegate_rep",
+      "rkey": "seed-follow-deputy-delegate",
+      "createdAt": "2026-03-11T08:17:00.000Z"
+    },
+    {
+      "actor": "deputy_applicant",
+      "subject": "official_cdmx",
+      "rkey": "seed-follow-deputy-off-cdmx",
+      "createdAt": "2026-03-11T08:18:00.000Z"
+    },
+    {
+      "actor": "delegate_rep",
+      "subject": "active_participant",
+      "rkey": "seed-follow-delegate-active-a",
+      "createdAt": "2026-03-11T08:19:00.000Z"
+    },
+    {
+      "actor": "delegate_rep",
+      "subject": "active_participant_2",
+      "rkey": "seed-follow-delegate-active-b",
+      "createdAt": "2026-03-11T08:20:00.000Z"
+    },
+    {
+      "actor": "delegate_rep",
+      "subject": "official_jalisco",
+      "rkey": "seed-follow-delegate-off-jal",
+      "createdAt": "2026-03-11T08:21:00.000Z"
+    },
+    {
+      "actor": "delegate_rep",
+      "subject": "deputy_applicant",
+      "rkey": "seed-follow-delegate-deputy",
+      "createdAt": "2026-03-11T08:22:00.000Z"
+    }
+  ],
+  "verificationRecords": [
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "official_jalisco",
+      "rkey": "seed-verify-official-jalisco",
+      "createdAt": "2026-03-12T12:00:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "official_cdmx",
+      "rkey": "seed-verify-official-cdmx",
+      "createdAt": "2026-03-12T12:30:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "mod_oaxaca",
+      "rkey": "seed-verify-mod-oaxaca",
+      "createdAt": "2026-03-12T13:00:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "deputy_applicant",
+      "rkey": "seed-verify-deputy-applicant",
+      "createdAt": "2026-03-12T14:00:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "party_pan_president",
+      "rkey": "seed-verify-party-pan-president",
+      "createdAt": "2026-04-17T12:00:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "party_pan_secretary",
+      "rkey": "seed-verify-party-pan-secretary",
+      "createdAt": "2026-04-17T12:05:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "party_pri_president",
+      "rkey": "seed-verify-party-pri-president",
+      "createdAt": "2026-04-17T12:10:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "party_pri_secretary",
+      "rkey": "seed-verify-party-pri-secretary",
+      "createdAt": "2026-04-17T12:15:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "party_pvem_executive_secretary",
+      "rkey": "seed-verify-party-pvem-executive-secretary",
+      "createdAt": "2026-04-17T12:20:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "party_pvem_technical_secretary",
+      "rkey": "seed-verify-party-pvem-technical-secretary",
+      "createdAt": "2026-04-17T12:25:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "party_pt_coordinator",
+      "rkey": "seed-verify-party-pt-coordinator",
+      "createdAt": "2026-04-17T12:30:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "party_pt_technical_secretary",
+      "rkey": "seed-verify-party-pt-technical-secretary",
+      "createdAt": "2026-04-17T12:35:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "party_mc_coordinator",
+      "rkey": "seed-verify-party-mc-coordinator",
+      "createdAt": "2026-04-17T12:40:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "party_morena_president",
+      "rkey": "seed-verify-party-morena-president",
+      "createdAt": "2026-04-17T12:45:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "party_morena_secretary",
+      "rkey": "seed-verify-party-morena-secretary",
+      "createdAt": "2026-04-17T12:50:00.000Z"
+    }
+  ],
+  "communities": [
+    {"id": "mx-jalisco", "name": "p/Jalisco", "slug": "jalisco"},
+    {"id": "mx-cdmx", "name": "p/CDMX", "slug": "cdmx"},
+    {"id": "mx-oaxaca", "name": "p/Oaxaca", "slug": "oaxaca"},
+    {"id": "mx-nuevoleon", "name": "p/NuevoLeon", "slug": "nuevoleon"},
+    {"id": "party-pan", "name": "p/PAN", "slug": "pan"},
+    {"id": "party-pri", "name": "p/PRI", "slug": "pri"},
+    {"id": "party-pvem", "name": "p/PVEM", "slug": "pvem"},
+    {"id": "party-pt", "name": "p/PT", "slug": "pt"},
+    {"id": "party-mc", "name": "p/MC", "slug": "mc"},
+    {"id": "party-morena", "name": "p/Morena", "slug": "morena"}
+  ],
+  "governanceRecords": [
+    {
+      "actor": "party_pan_president",
+      "rkey": "pan",
+      "community": "p/PAN",
+      "communityId": "party-pan",
+      "slug": "pan",
+      "createdAt": "2026-04-17T10:00:00.000Z",
+      "updatedAt": "2026-04-17T12:00:00.000Z",
+      "moderators": [
+        {
+          "actor": "party_pan_president",
+          "role": "Party governance publisher",
+          "badge": "INE Direction",
+          "capabilities": [
+            "publish_governance_updates",
+            "set_official_representatives"
+          ]
+        }
+      ],
+      "officials": [
+        {
+          "actor": "party_pan_president",
+          "office": "Presidente nacional",
+          "mandate": "Registered national president of Partido Accion Nacional according to INE party data."
+        },
+        {
+          "actor": "party_pan_secretary",
+          "office": "Secretaria nacional",
+          "mandate": "Registered national secretary of Partido Accion Nacional according to INE party data."
+        }
+      ],
+      "metadata": {
+        "termLengthDays": 365,
+        "reviewCadence": "Refresh from INE direction organs after official updates",
+        "escalationPath": "INE direction record > PARA trust desk > party governance update",
+        "publicContact": "www.pan.org.mx",
+        "lastPublishedAt": "2026-04-17T12:00:00.000Z",
+        "state": "National"
+      },
+      "editHistory": [
+        {
+          "id": "seed-party-pan-ine-2026",
+          "action": "set_official_representatives",
+          "actor": "party_pan_president",
+          "createdAt": "2026-04-17T12:00:00.000Z",
+          "summary": "Seeded national party representatives from INE party direction data."
+        }
+      ]
+    },
+    {
+      "actor": "party_pri_president",
+      "rkey": "pri",
+      "community": "p/PRI",
+      "communityId": "party-pri",
+      "slug": "pri",
+      "createdAt": "2026-04-17T10:10:00.000Z",
+      "updatedAt": "2026-04-17T12:10:00.000Z",
+      "moderators": [
+        {
+          "actor": "party_pri_president",
+          "role": "Party governance publisher",
+          "badge": "INE Direction",
+          "capabilities": [
+            "publish_governance_updates",
+            "set_official_representatives"
+          ]
+        }
+      ],
+      "officials": [
+        {
+          "actor": "party_pri_president",
+          "office": "Presidente nacional",
+          "mandate": "Registered national president of Partido Revolucionario Institucional according to INE party data."
+        },
+        {
+          "actor": "party_pri_secretary",
+          "office": "Secretaria general",
+          "mandate": "Registered secretary general of Partido Revolucionario Institucional according to INE party data."
+        }
+      ],
+      "metadata": {
+        "termLengthDays": 365,
+        "reviewCadence": "Refresh from INE direction organs after official updates",
+        "escalationPath": "INE direction record > PARA trust desk > party governance update",
+        "publicContact": "www.pri.org.mx",
+        "lastPublishedAt": "2026-04-17T12:10:00.000Z",
+        "state": "National"
+      },
+      "editHistory": [
+        {
+          "id": "seed-party-pri-ine-2026",
+          "action": "set_official_representatives",
+          "actor": "party_pri_president",
+          "createdAt": "2026-04-17T12:10:00.000Z",
+          "summary": "Seeded national party representatives from INE party direction data."
+        }
+      ]
+    },
+    {
+      "actor": "party_pvem_executive_secretary",
+      "rkey": "pvem",
+      "community": "p/PVEM",
+      "communityId": "party-pvem",
+      "slug": "pvem",
+      "createdAt": "2026-04-17T10:20:00.000Z",
+      "updatedAt": "2026-04-17T12:20:00.000Z",
+      "moderators": [
+        {
+          "actor": "party_pvem_executive_secretary",
+          "role": "Party governance publisher",
+          "badge": "INE Direction",
+          "capabilities": [
+            "publish_governance_updates",
+            "set_official_representatives"
+          ]
+        }
+      ],
+      "officials": [
+        {
+          "actor": "party_pvem_executive_secretary",
+          "office": "Secretaria ejecutiva",
+          "mandate": "Registered executive secretary of Partido Verde Ecologista de Mexico according to INE party data."
+        },
+        {
+          "actor": "party_pvem_technical_secretary",
+          "office": "Secretaria tecnica",
+          "mandate": "Registered technical secretary of Partido Verde Ecologista de Mexico according to INE party data."
+        }
+      ],
+      "metadata": {
+        "termLengthDays": 365,
+        "reviewCadence": "Refresh from INE direction organs after official updates",
+        "escalationPath": "INE direction record > PARA trust desk > party governance update",
+        "publicContact": "www.partidoverde.org.mx",
+        "lastPublishedAt": "2026-04-17T12:20:00.000Z",
+        "state": "National"
+      },
+      "editHistory": [
+        {
+          "id": "seed-party-pvem-ine-2026",
+          "action": "set_official_representatives",
+          "actor": "party_pvem_executive_secretary",
+          "createdAt": "2026-04-17T12:20:00.000Z",
+          "summary": "Seeded national party representatives from INE party direction data."
+        }
+      ]
+    },
+    {
+      "actor": "party_pt_coordinator",
+      "rkey": "pt",
+      "community": "p/PT",
+      "communityId": "party-pt",
+      "slug": "pt",
+      "createdAt": "2026-04-17T10:30:00.000Z",
+      "updatedAt": "2026-04-17T12:30:00.000Z",
+      "moderators": [
+        {
+          "actor": "party_pt_coordinator",
+          "role": "Party governance publisher",
+          "badge": "INE Direction",
+          "capabilities": [
+            "publish_governance_updates",
+            "set_official_representatives"
+          ]
+        }
+      ],
+      "officials": [
+        {
+          "actor": "party_pt_coordinator",
+          "office": "Comision Coordinadora Nacional",
+          "mandate": "Registered member of the national coordinating commission of Partido del Trabajo according to INE party data."
+        },
+        {
+          "actor": "party_pt_technical_secretary",
+          "office": "Secretario tecnico",
+          "mandate": "Registered technical secretary of Partido del Trabajo according to INE party data."
+        }
+      ],
+      "metadata": {
+        "termLengthDays": 365,
+        "reviewCadence": "Refresh from INE direction organs after official updates",
+        "escalationPath": "INE direction record > PARA trust desk > party governance update",
+        "publicContact": "partidodeltrabajo.com.mx",
+        "lastPublishedAt": "2026-04-17T12:30:00.000Z",
+        "state": "National"
+      },
+      "editHistory": [
+        {
+          "id": "seed-party-pt-ine-2026",
+          "action": "set_official_representatives",
+          "actor": "party_pt_coordinator",
+          "createdAt": "2026-04-17T12:30:00.000Z",
+          "summary": "Seeded national party representatives from INE party direction data."
+        }
+      ]
+    },
+    {
+      "actor": "party_mc_coordinator",
+      "rkey": "mc",
+      "community": "p/MC",
+      "communityId": "party-mc",
+      "slug": "mc",
+      "createdAt": "2026-04-17T10:40:00.000Z",
+      "updatedAt": "2026-04-17T12:40:00.000Z",
+      "moderators": [
+        {
+          "actor": "party_mc_coordinator",
+          "role": "Party governance publisher",
+          "badge": "INE Direction",
+          "capabilities": [
+            "publish_governance_updates",
+            "set_official_representatives"
+          ]
+        }
+      ],
+      "officials": [
+        {
+          "actor": "party_mc_coordinator",
+          "office": "Coordinador nacional",
+          "mandate": "Registered national coordinator of Movimiento Ciudadano according to INE party data."
+        }
+      ],
+      "metadata": {
+        "termLengthDays": 365,
+        "reviewCadence": "Refresh from INE direction organs after official updates",
+        "escalationPath": "INE direction record > PARA trust desk > party governance update",
+        "publicContact": "www.movimientociudadano.mx",
+        "lastPublishedAt": "2026-04-17T12:40:00.000Z",
+        "state": "National"
+      },
+      "editHistory": [
+        {
+          "id": "seed-party-mc-ine-2026",
+          "action": "set_official_representatives",
+          "actor": "party_mc_coordinator",
+          "createdAt": "2026-04-17T12:40:00.000Z",
+          "summary": "Seeded national party representatives from INE party direction data."
+        }
+      ]
+    },
+    {
+      "actor": "party_morena_president",
+      "rkey": "morena",
+      "community": "p/Morena",
+      "communityId": "party-morena",
+      "slug": "morena",
+      "createdAt": "2026-04-17T10:45:00.000Z",
+      "updatedAt": "2026-04-17T12:45:00.000Z",
+      "moderators": [
+        {
+          "actor": "party_morena_president",
+          "role": "Party governance publisher",
+          "badge": "INE Direction",
+          "capabilities": [
+            "publish_governance_updates",
+            "set_official_representatives"
+          ]
+        }
+      ],
+      "officials": [
+        {
+          "actor": "party_morena_president",
+          "office": "Presidenta nacional",
+          "mandate": "Registered national president of Morena according to INE party data. Watch for post-April 2026 leadership updates."
+        },
+        {
+          "actor": "party_morena_secretary",
+          "office": "Secretaria general",
+          "mandate": "Registered secretary general of Morena according to INE party data. Watch for post-April 2026 leadership updates."
+        }
+      ],
+      "metadata": {
+        "termLengthDays": 365,
+        "reviewCadence": "Refresh from INE direction organs after official updates",
+        "escalationPath": "INE direction record > PARA trust desk > party governance update",
+        "publicContact": "www.morena.org",
+        "lastPublishedAt": "2026-04-17T12:45:00.000Z",
+        "state": "National"
+      },
+      "editHistory": [
+        {
+          "id": "seed-party-morena-ine-2026",
+          "action": "set_official_representatives",
+          "actor": "party_morena_president",
+          "createdAt": "2026-04-17T12:45:00.000Z",
+          "summary": "Seeded national party representatives from INE party direction data."
+        }
+      ]
+    },
+    {
+      "actor": "mod_jalisco",
+      "rkey": "seed-governance-jalisco",
+      "community": "p/Jalisco",
+      "communityId": "mx-jalisco",
+      "slug": "jalisco",
+      "createdAt": "2026-03-10T10:00:00.000Z",
+      "updatedAt": "2026-03-15T10:00:00.000Z",
+      "moderators": [
+        {
+          "actor": "mod_jalisco",
+          "role": "Lead moderator",
+          "badge": "Moderation Lead",
+          "capabilities": [
+            "appoint_deputies",
+            "edit_role_descriptions",
+            "review_applicants",
+            "publish_governance_updates",
+            "set_official_representatives"
+          ]
+        }
+      ],
+      "officials": [
+        {
+          "actor": "official_jalisco",
+          "office": "Official representative",
+          "mandate": "Coordinates public policy statements and civic updates."
+        }
+      ],
+      "deputies": [
+        {
+          "key": "chief-digital-deputy",
+          "tier": "Tier I",
+          "role": "Chief Digital Deputy",
+          "description": "Coordinates digital caucus and triages urgent governance requests.",
+          "capabilities": [
+            "Assign deputy queues",
+            "Escalate high-impact matters",
+            "Publish weekly summaries"
+          ],
+          "activeHolder": "delegate_rep",
+          "activeSince": "2026-03-11T08:00:00.000Z",
+          "votes": 432,
+          "applicants": [
+            {
+              "actor": "deputy_applicant",
+              "status": "applied",
+              "appliedAt": "2026-03-09T12:00:00.000Z"
+            }
+          ]
+        }
+      ],
+      "metadata": {
+        "termLengthDays": 90,
+        "reviewCadence": "Monthly governance review",
+        "escalationPath": "Lead moderator > review desk > public governance update",
+        "publicContact": "governance-jalisco@para.local",
+        "lastPublishedAt": "2026-03-15T10:00:00.000Z",
+        "state": "Jalisco",
+        "matterFlairIds": ["matter_industria_hidrica"],
+        "policyFlairIds": ["policy_empresa_publica_agua"]
+      },
+      "editHistory": [
+        {
+          "id": "seed-jalisco-1",
+          "action": "publish_governance_updates",
+          "actor": "mod_jalisco",
+          "createdAt": "2026-03-15T10:00:00.000Z",
+          "summary": "Initial governance charter published."
+        }
+      ]
+    },
+    {
+      "actor": "mod_cdmx",
+      "rkey": "seed-governance-cdmx",
+      "community": "p/CDMX",
+      "communityId": "mx-cdmx",
+      "slug": "cdmx",
+      "createdAt": "2026-03-10T10:00:00.000Z",
+      "updatedAt": "2026-03-15T10:00:00.000Z",
+      "moderators": [
+        {
+          "actor": "mod_cdmx",
+          "role": "Lead moderator",
+          "badge": "Mobility Steward",
+          "capabilities": [
+            "appoint_deputies",
+            "edit_role_descriptions",
+            "review_applicants",
+            "publish_governance_updates",
+            "set_official_representatives"
+          ]
+        }
+      ],
+      "officials": [
+        {
+          "actor": "official_cdmx",
+          "office": "Mobility official",
+          "mandate": "Leads transport-related deliberation and implementation updates."
+        }
+      ],
+      "deputies": [
+        {
+          "key": "policy-deputy",
+          "tier": "Tier II",
+          "role": "Policy Deputy",
+          "description": "Owns policy intake and proposal tracking for CDMX.",
+          "capabilities": [
+            "Triage policy proposals",
+            "Maintain policy descriptions",
+            "Coordinate weekly policy digest"
+          ],
+          "activeHolder": "active_participant_2",
+          "activeSince": "2026-03-11T09:00:00.000Z",
+          "votes": 388,
+          "applicants": [
+            {
+              "actor": "deputy_applicant",
+              "status": "approved",
+              "appliedAt": "2026-03-08T10:00:00.000Z"
+            }
+          ]
+        }
+      ],
+      "metadata": {
+        "termLengthDays": 120,
+        "reviewCadence": "Bi-weekly governance check-in",
+        "escalationPath": "Moderator panel > public channel > emergency review",
+        "publicContact": "governance-cdmx@para.local",
+        "lastPublishedAt": "2026-03-15T10:00:00.000Z",
+        "state": "CDMX",
+        "matterFlairIds": ["matter_transporte_publico_matter"],
+        "policyFlairIds": ["policy_transporte_publico_pol"]
+      },
+      "editHistory": [
+        {
+          "id": "seed-cdmx-1",
+          "action": "set_official_representatives",
+          "actor": "mod_cdmx",
+          "createdAt": "2026-03-14T09:30:00.000Z",
+          "summary": "Updated representative roster for mobility agenda."
+        }
+      ]
+    },
+    {
+      "actor": "mod_oaxaca",
+      "rkey": "seed-governance-oaxaca",
+      "community": "p/Oaxaca",
+      "communityId": "mx-oaxaca",
+      "slug": "oaxaca",
+      "createdAt": "2026-03-10T10:00:00.000Z",
+      "updatedAt": "2026-03-15T10:00:00.000Z",
+      "moderators": [
+        {
+          "actor": "mod_oaxaca",
+          "role": "Lead moderator",
+          "badge": "Territorial Steward",
+          "capabilities": [
+            "appoint_deputies",
+            "edit_role_descriptions",
+            "review_applicants",
+            "publish_governance_updates",
+            "set_official_representatives"
+          ]
+        }
+      ],
+      "officials": [
+        {
+          "actor": "official_jalisco",
+          "office": "Interstate liaison",
+          "mandate": "Coordinates cross-state policy communication."
+        }
+      ],
+      "deputies": [
+        {
+          "key": "matter-deputy",
+          "tier": "Tier II",
+          "role": "Matter Deputy",
+          "description": "Coordinates incident follow-up and evidence intake.",
+          "capabilities": [
+            "Curate matter evidence",
+            "Coordinate local hearings",
+            "Escalate urgent incidents"
+          ],
+          "activeHolder": "active_participant",
+          "activeSince": "2026-03-12T08:30:00.000Z",
+          "votes": 271,
+          "applicants": [
+            {
+              "actor": "deputy_applicant",
+              "status": "applied",
+              "appliedAt": "2026-03-09T14:15:00.000Z"
+            }
+          ]
+        }
+      ],
+      "metadata": {
+        "termLengthDays": 90,
+        "reviewCadence": "Monthly open governance assembly",
+        "escalationPath": "Matter deputy > moderator > public record",
+        "publicContact": "governance-oaxaca@para.local",
+        "lastPublishedAt": "2026-03-15T10:00:00.000Z",
+        "state": "Oaxaca",
+        "policyFlairIds": ["policy_controles_contaminacion"]
+      },
+      "editHistory": [
+        {
+          "id": "seed-oaxaca-1",
+          "action": "review_applicants",
+          "actor": "mod_oaxaca",
+          "createdAt": "2026-03-13T11:00:00.000Z",
+          "summary": "Reviewed current applicant queue for deputy roles."
+        }
+      ]
+    },
+    {
+      "actor": "mod_nuevoleon",
+      "rkey": "seed-governance-nuevoleon",
+      "community": "p/NuevoLeon",
+      "communityId": "mx-nuevoleon",
+      "slug": "nuevoleon",
+      "createdAt": "2026-03-10T10:00:00.000Z",
+      "updatedAt": "2026-03-15T10:00:00.000Z",
+      "moderators": [
+        {
+          "actor": "mod_nuevoleon",
+          "role": "Lead moderator",
+          "badge": "Growth Steward",
+          "capabilities": [
+            "appoint_deputies",
+            "edit_role_descriptions",
+            "review_applicants",
+            "publish_governance_updates",
+            "set_official_representatives"
+          ]
+        }
+      ],
+      "officials": [
+        {
+          "actor": "official_cdmx",
+          "office": "Regional coordinator",
+          "mandate": "Coordinates metro-area policy alignment and updates."
+        }
+      ],
+      "deputies": [
+        {
+          "key": "mobilization-deputy",
+          "tier": "Tier III",
+          "role": "Mobilization Deputy",
+          "description": "Coordinates turnout and volunteer actions during active votes.",
+          "capabilities": [
+            "Schedule action pushes",
+            "Coordinate volunteer roster",
+            "Publish turnout briefs"
+          ],
+          "activeHolder": "delegate_rep",
+          "activeSince": "2026-03-12T12:00:00.000Z",
+          "votes": 517,
+          "applicants": [
+            {
+              "actor": "active_participant_2",
+              "status": "applied",
+              "appliedAt": "2026-03-10T16:30:00.000Z"
+            }
+          ]
+        }
+      ],
+      "metadata": {
+        "termLengthDays": 60,
+        "reviewCadence": "Weekly sprint retrospective",
+        "escalationPath": "Mobilization deputy > moderators > emergency council",
+        "publicContact": "governance-nuevoleon@para.local",
+        "lastPublishedAt": "2026-03-15T10:00:00.000Z",
+        "state": "Nuevo León",
+        "matterFlairIds": ["matter_vivienda_privada"],
+        "policyFlairIds": ["policy_vivienda_publica"]
+      },
+      "editHistory": [
+        {
+          "id": "seed-nuevoleon-1",
+          "action": "appoint_deputies",
+          "actor": "mod_nuevoleon",
+          "createdAt": "2026-03-14T15:45:00.000Z",
+          "summary": "Appointed mobilization deputy for ongoing housing threads."
+        }
+      ]
+    }
+  ],
+  "cabildeos": [
+    {
+      "alias": "jalisco-cdmx-logistics-voting",
+      "actor": "official_jalisco",
+      "rkey": "seed-cabildeo-jalisco-cdmx-logistics-voting",
+      "title": "Corredor logistico Jalisco-CDMX: carga ferroviaria o autopista inteligente",
+      "description": "Debate interestatal sobre tiempos de traslado, seguridad vial y costo por tonelada en la ruta occidente-centro.",
+      "community": "p/Jalisco",
+      "communities": ["p/CDMX"],
+      "flairs": ["||#Policy", "|#Matter"],
+      "region": "Jalisco",
+      "geoRestricted": false,
+      "minQuorum": 35,
+      "phase": "voting",
+      "phaseDeadline": "2026-03-25T00:00:00.000Z",
+      "createdAt": "2026-03-18T09:00:00.000Z",
+      "options": [
+        {
+          "label": "Carga ferroviaria dedicada",
+          "description": "Priorizar nodos de carga y ampliacion ferroviaria."
+        },
+        {
+          "label": "Autopista inteligente",
+          "description": "Carriles gestionados con sensores y peaje variable."
+        },
+        {
+          "label": "Modelo dual",
+          "description": "Ferrocarril para carga pesada y autopista para ultima milla."
+        }
+      ]
+    },
+    {
+      "alias": "cdmx-jalisco-housing-open",
+      "actor": "official_cdmx",
+      "rkey": "seed-cabildeo-cdmx-jalisco-housing-open",
+      "title": "CDMX vivienda cerca del transporte: renta protegida o incentivos a densificacion",
+      "description": "Comparativa metropolitana sobre vivienda asequible, captura de plusvalia y acceso al transporte masivo.",
+      "community": "p/CDMX",
+      "communities": ["p/Jalisco"],
+      "flairs": ["||#Policy", "|#Matter"],
+      "region": "CDMX",
+      "geoRestricted": false,
+      "minQuorum": 45,
+      "phase": "open",
+      "phaseDeadline": "2026-03-29T00:00:00.000Z",
+      "createdAt": "2026-03-17T11:30:00.000Z",
+      "options": [
+        {
+          "label": "Renta protegida por corredor",
+          "description": "Topes graduales de renta cerca del transporte masivo."
+        },
+        {
+          "label": "Incentivos a densificacion",
+          "description": "Mayor altura y mezcla de usos con cuotas de vivienda asequible."
+        },
+        {
+          "label": "Banco publico de suelo",
+          "description": "Adquisicion publica de suelo para desarrollo orientado al transporte."
+        }
+      ]
+    },
+    {
+      "alias": "jalisco-cdmx-water-governance-deliberating",
+      "actor": "mod_jalisco",
+      "rkey": "seed-cabildeo-jalisco-cdmx-water-governance-deliberating",
+      "title": "Gobernanza del agua Jalisco-CDMX: organismo mixto o coordinacion por cuenca",
+      "description": "Debate compartido sobre trazabilidad de inversiones, coordinacion hidrica y reglas de emergencia interestatal.",
+      "community": "p/Jalisco",
+      "communities": ["p/CDMX"],
+      "flairs": ["||#Policy", "|#Matter"],
+      "region": "Jalisco",
+      "geoRestricted": false,
+      "minQuorum": 40,
+      "phase": "deliberating",
+      "phaseDeadline": "2026-03-27T00:00:00.000Z",
+      "createdAt": "2026-03-19T09:30:00.000Z",
+      "options": [
+        {
+          "label": "Organismo mixto interestatal",
+          "description": "Mesa ejecutiva con presupuesto compartido y reportes mensuales."
+        },
+        {
+          "label": "Coordinacion por cuenca",
+          "description": "Acuerdos tecnicos por cuenca con metas de extraccion y recarga."
+        },
+        {
+          "label": "Esquema escalonado",
+          "description": "Coordinacion por cuenca con facultades extraordinarias en sequia severa."
+        }
+      ]
+    },
+    {
+      "alias": "cdmx-jalisco-air-mobility-voting",
+      "actor": "mod_cdmx",
+      "rkey": "seed-cabildeo-cdmx-jalisco-air-mobility-voting",
+      "title": "Corredores limpios CDMX-Jalisco: electrificacion del transporte pesado o regulacion por emisiones",
+      "description": "Comparativa sobre impacto logistico, costo fiscal y velocidad de reduccion de contaminantes en rutas de alta carga.",
+      "community": "p/CDMX",
+      "communities": ["p/Jalisco"],
+      "flairs": ["||#Policy", "|#Matter"],
+      "region": "CDMX",
+      "geoRestricted": false,
+      "minQuorum": 45,
+      "phase": "voting",
+      "phaseDeadline": "2026-03-30T00:00:00.000Z",
+      "createdAt": "2026-03-20T10:15:00.000Z",
+      "options": [
+        {
+          "label": "Electrificacion del transporte pesado",
+          "description": "Subsidios y despliegue de infraestructura de carga."
+        },
+        {
+          "label": "Regulacion por emisiones",
+          "description": "Limites obligatorios con verificacion trimestral."
+        },
+        {
+          "label": "Modelo combinado",
+          "description": "Electrificacion prioritaria con piso regulatorio nacional."
+        }
+      ]
+    },
+    {
+      "alias": "jalisco-water-voting",
+      "actor": "mod_jalisco",
+      "rkey": "seed-cabildeo-jalisco-water-voting",
+      "title": "Jalisco agua: desalinizacion vs conservacion integral",
+      "description": "Chapala reporta presion hidrica sostenida. Se comparan tres rutas de implementacion con metas medibles por trimestre.",
+      "community": "p/Jalisco",
+      "communities": ["p/CDMX", "p/NuevoLeon"],
+      "flairs": ["|#Policy", "|#Matter"],
+      "region": "Jalisco",
+      "geoRestricted": false,
+      "minQuorum": 50,
+      "phase": "voting",
+      "phaseDeadline": "2026-03-20T00:00:00.000Z",
+      "createdAt": "2026-03-15T14:00:00.000Z",
+      "options": [
+        {
+          "label": "Desalinizacion regional",
+          "description": "Construir plantas costeras y red de bombeo."
+        },
+        {
+          "label": "Conservacion acuifera",
+          "description": "Moratoria de nuevos pozos y restauracion de humedales."
+        },
+        {
+          "label": "Modelo hibrido",
+          "description": "Piloto de desalinizacion + plan estricto de conservacion."
+        }
+      ]
+    },
+    {
+      "alias": "jalisco-budget-open",
+      "actor": "official_jalisco",
+      "rkey": "seed-cabildeo-jalisco-budget-open",
+      "title": "Presupuesto participativo 2027 para infraestructura barrial",
+      "description": "Definir distribucion de fondos para mantenimiento vial, alumbrado y drenaje municipal.",
+      "community": "p/Jalisco",
+      "flairs": ["||#Policy"],
+      "region": "Jalisco",
+      "geoRestricted": true,
+      "minQuorum": 30,
+      "phase": "open",
+      "phaseDeadline": "2026-03-28T00:00:00.000Z",
+      "createdAt": "2026-03-13T09:00:00.000Z",
+      "options": [
+        {
+          "label": "Priorizar drenaje",
+          "description": "65% a drenaje, 35% a vialidades."
+        },
+        {
+          "label": "Balance 50/50",
+          "description": "Distribucion equilibrada por colonia."
+        }
+      ]
+    },
+    {
+      "alias": "cdmx-transit-deliberating",
+      "actor": "mod_cdmx",
+      "rkey": "seed-cabildeo-cdmx-transit-deliberating",
+      "title": "CDMX movilidad: BRT metropolitano o ampliacion de metro",
+      "description": "Comparativa de costo, tiempo de entrega y cobertura para reducir traslados de 2h+.",
+      "community": "p/CDMX",
+      "flairs": ["||#Policy", "|#Matter"],
+      "region": "CDMX",
+      "geoRestricted": true,
+      "minQuorum": 40,
+      "phase": "deliberating",
+      "phaseDeadline": "2026-03-21T00:00:00.000Z",
+      "createdAt": "2026-03-10T10:00:00.000Z",
+      "options": [
+        {
+          "label": "Expandir BRT",
+          "description": "Nuevas lineas troncales y alimentadoras electricas."
+        },
+        {
+          "label": "Expandir Metro",
+          "description": "Extensiones subterraneas con enfoque en periferia."
+        },
+        {
+          "label": "Esquema mixto",
+          "description": "BRT de corto plazo + ampliacion selectiva de metro."
+        }
+      ]
+    },
+    {
+      "alias": "cdmx-air-quality-draft",
+      "actor": "official_cdmx",
+      "rkey": "seed-cabildeo-cdmx-air-quality-draft",
+      "title": "Plan integral de aire limpio para corredor oriente metropolitano 2026-2032",
+      "description": "Documento borrador con markdown: 1) medicion continua, 2) reconversion industrial, 3) transporte limpio. Incluye caso extremo unicode: vivienda digna para niñez y adultos mayores, criterio de vulnerabilidad social, y validacion de etiquetas como cafe, pinata, nino, senorita.",
+      "community": "p/CDMX",
+      "communities": ["p/Jalisco"],
+      "flairs": ["|#Policy"],
+      "phase": "draft",
+      "createdAt": "2026-03-12T08:00:00.000Z",
+      "options": [
+        {
+          "label": "Intervencion regulatoria fuerte",
+          "description": "Topes de emisiones y sanciones progresivas."
+        },
+        {
+          "label": "Incentivos y reconversion",
+          "description": "Subsidios para transicion tecnologica y fiscalizacion anual."
+        }
+      ]
+    },
+    {
+      "alias": "oaxaca-mining-resolved-tie",
+      "actor": "mod_oaxaca",
+      "rkey": "seed-cabildeo-oaxaca-mining-resolved-tie",
+      "title": "Oaxaca mineria en territorios indigenas: consulta vinculante",
+      "description": "Resultado cerrado con empate tecnico historico; se requiere desempate procedimental en siguiente ciclo.",
+      "community": "p/Oaxaca",
+      "communities": ["p/Chiapas", "p/Guerrero"],
+      "flairs": ["|#Matter", "|#Policy"],
+      "region": "Oaxaca",
+      "phase": "resolved",
+      "phaseDeadline": "2026-03-08T00:00:00.000Z",
+      "createdAt": "2026-02-28T08:00:00.000Z",
+      "options": [
+        {
+          "label": "Prohibicion total",
+          "description": "Cero mineria en territorios reconocidos."
+        },
+        {
+          "label": "Consulta vinculante",
+          "description": "Operacion solo con consentimiento comunitario auditado."
+        }
+      ]
+    },
+    {
+      "alias": "oaxaca-flood-response-voting",
+      "actor": "active_participant_2",
+      "rkey": "seed-cabildeo-oaxaca-flood-response-voting",
+      "title": "Respuesta a inundaciones 2026: brigadas locales o mando central",
+      "description": "Comparar tiempos de respuesta, gasto logistico y cobertura rural ante lluvias intensas.",
+      "community": "p/Oaxaca",
+      "flairs": ["|#Matter"],
+      "region": "Oaxaca",
+      "phase": "voting",
+      "phaseDeadline": "2026-03-24T00:00:00.000Z",
+      "createdAt": "2026-03-14T12:00:00.000Z",
+      "options": [
+        {
+          "label": "Brigadas comunitarias",
+          "description": "Equipar comites de respuesta en cada municipio."
+        },
+        {
+          "label": "Mando central",
+          "description": "Centro de coordinacion unico con despliegue estatal."
+        }
+      ]
+    },
+    {
+      "alias": "nl-housing-mega",
+      "actor": "mod_nuevoleon",
+      "rkey": "seed-cabildeo-nuevoleon-housing-mega",
+      "title": "Nuevo Leon vivienda y densificacion metropolitana 2030",
+      "description": "Cabildeo de alta actividad para pruebas de paginacion y agregados. Incluye nombre largo y unicode controlado: estrategia metropolitana de regeneracion urbana, conectividad y vivienda asequible para zonas de alto crecimiento.",
+      "community": "p/NuevoLeon",
+      "communities": ["p/CDMX", "p/Jalisco"],
+      "flairs": ["||#Policy", "|#Matter"],
+      "region": "Nuevo Leon",
+      "phase": "open",
+      "phaseDeadline": "2026-04-01T00:00:00.000Z",
+      "createdAt": "2026-03-12T09:00:00.000Z",
+      "options": [
+        {
+          "label": "Densificacion orientada a transporte",
+          "description": "Corredores con vivienda mixta y renta accesible."
+        },
+        {
+          "label": "Expansion periferial controlada",
+          "description": "Nuevos polos urbanos con infraestructura desde origen."
+        },
+        {
+          "label": "Modelo hibrido por distritos",
+          "description": "Combinacion de densificacion y expansion con metas por distrito."
+        }
+      ]
+    },
+    {
+      "alias": "nl-culture-fund-no-votes",
+      "actor": "official_cdmx",
+      "rkey": "seed-cabildeo-nuevoleon-culture-fund-no-votes",
+      "title": "Fondo cultural metropolitano 2026",
+      "description": "Caso de prueba resuelto sin votos para validar estados vacios y resumenes sin participacion.",
+      "community": "p/NuevoLeon",
+      "flairs": ["|#Policy"],
+      "phase": "resolved",
+      "phaseDeadline": "2026-03-05T00:00:00.000Z",
+      "createdAt": "2026-02-20T09:00:00.000Z",
+      "options": [
+        {
+          "label": "Fondo competitivo",
+          "description": "Concursos por convocatoria trimestral."
+        },
+        {
+          "label": "Asignacion territorial",
+          "description": "Distribucion fija por municipio."
+        }
+      ]
+    }
+  ],
+  "positions": [
+    {
+      "actor": "active_participant",
+      "rkey": "seed-position-jalisco-cdmx-logistics-001",
+      "cabildeoAlias": "jalisco-cdmx-logistics-voting",
+      "stance": "for",
+      "optionIndex": 2,
+      "text": "El modelo dual reduce cuellos de botella y reparte mejor la inversion entre carga pesada y distribucion urbana.",
+      "compassQuadrant": "center-right",
+      "createdAt": "2026-03-18T10:00:00.000Z"
+    },
+    {
+      "actor": "active_participant_2",
+      "rkey": "seed-position-jalisco-cdmx-logistics-002",
+      "cabildeoAlias": "jalisco-cdmx-logistics-voting",
+      "stance": "amendment",
+      "optionIndex": 2,
+      "text": "El modelo dual debe incluir metas de seguridad vial y tablero publico de siniestralidad por tramo.",
+      "compassQuadrant": "center-left",
+      "createdAt": "2026-03-18T10:30:00.000Z"
+    },
+    {
+      "actor": "delegate_rep",
+      "rkey": "seed-position-jalisco-cdmx-logistics-003",
+      "cabildeoAlias": "jalisco-cdmx-logistics-voting",
+      "stance": "against",
+      "optionIndex": 1,
+      "text": "Una autopista inteligente sola concentra riesgo financiero y puede agravar emisiones si no cambia la logistica de fondo.",
+      "compassQuadrant": "lib-center",
+      "createdAt": "2026-03-18T11:00:00.000Z"
+    },
+    {
+      "actor": "active_participant",
+      "rkey": "seed-position-cdmx-jalisco-housing-001",
+      "cabildeoAlias": "cdmx-jalisco-housing-open",
+      "stance": "for",
+      "optionIndex": 1,
+      "text": "La densificacion con cuotas claras de vivienda asequible acelera oferta en corredores con transporte existente.",
+      "compassQuadrant": "center-left",
+      "createdAt": "2026-03-17T12:15:00.000Z"
+    },
+    {
+      "actor": "deputy_applicant",
+      "rkey": "seed-position-cdmx-jalisco-housing-002",
+      "cabildeoAlias": "cdmx-jalisco-housing-open",
+      "stance": "amendment",
+      "optionIndex": 2,
+      "text": "El banco publico de suelo debe priorizar suelo infrautilizado y publicar criterios de adquisicion por colonia.",
+      "compassQuadrant": "lib-left",
+      "createdAt": "2026-03-17T13:05:00.000Z"
+    },
+    {
+      "actor": "active_participant",
+      "rkey": "seed-position-jalisco-cdmx-water-governance-001",
+      "cabildeoAlias": "jalisco-cdmx-water-governance-deliberating",
+      "stance": "for",
+      "optionIndex": 1,
+      "text": "La coordinacion por cuenca genera metas tecnicas comparables y reduce opacidad en extracciones extraordinarias.",
+      "compassQuadrant": "center-left",
+      "createdAt": "2026-03-19T11:00:00.000Z"
+    },
+    {
+      "actor": "active_participant_2",
+      "rkey": "seed-position-jalisco-cdmx-water-governance-002",
+      "cabildeoAlias": "jalisco-cdmx-water-governance-deliberating",
+      "stance": "amendment",
+      "optionIndex": 2,
+      "text": "El esquema escalonado debe publicar reglas automáticas de emergencia y auditoria de pipas por territorio.",
+      "compassQuadrant": "lib-center",
+      "createdAt": "2026-03-19T11:20:00.000Z"
+    },
+    {
+      "actor": "delegate_rep",
+      "rkey": "seed-position-jalisco-cdmx-water-governance-003",
+      "cabildeoAlias": "jalisco-cdmx-water-governance-deliberating",
+      "stance": "against",
+      "optionIndex": 0,
+      "text": "Un organismo mixto sin reglas de transparencia duras puede duplicar burocracia y diluir responsabilidad política.",
+      "compassQuadrant": "center-right",
+      "createdAt": "2026-03-19T11:40:00.000Z"
+    },
+    {
+      "actor": "active_participant",
+      "rkey": "seed-position-cdmx-jalisco-air-mobility-001",
+      "cabildeoAlias": "cdmx-jalisco-air-mobility-voting",
+      "stance": "for",
+      "optionIndex": 2,
+      "text": "El modelo combinado acelera resultados sin esperar reemplazo completo de flota pesada.",
+      "compassQuadrant": "center-left",
+      "createdAt": "2026-03-20T12:00:00.000Z"
+    },
+    {
+      "actor": "deputy_applicant",
+      "rkey": "seed-position-cdmx-jalisco-air-mobility-002",
+      "cabildeoAlias": "cdmx-jalisco-air-mobility-voting",
+      "stance": "for",
+      "optionIndex": 1,
+      "text": "La regulacion por emisiones obliga a todos los actores y evita subsidios mal focalizados.",
+      "compassQuadrant": "lib-left",
+      "createdAt": "2026-03-20T12:10:00.000Z"
+    },
+    {
+      "actor": "delegate_rep",
+      "rkey": "seed-position-cdmx-jalisco-air-mobility-003",
+      "cabildeoAlias": "cdmx-jalisco-air-mobility-voting",
+      "stance": "amendment",
+      "optionIndex": 2,
+      "text": "El modelo combinado debe fijar corredores piloto, medicion abierta y penalizaciones por incumplimiento.",
+      "compassQuadrant": "center-right",
+      "createdAt": "2026-03-20T12:25:00.000Z"
+    },
+    {
+      "actor": "active_participant",
+      "rkey": "seed-position-jalisco-water-001",
+      "cabildeoAlias": "jalisco-water-voting",
+      "stance": "for",
+      "optionIndex": 0,
+      "text": "La desalinizacion reduce vulnerabilidad ante sequias prolongadas si se combina con auditoria energetica.",
+      "compassQuadrant": "lib-center",
+      "createdAt": "2026-03-16T09:30:00.000Z"
+    },
+    {
+      "actor": "active_participant_2",
+      "rkey": "seed-position-jalisco-water-002",
+      "cabildeoAlias": "jalisco-water-voting",
+      "stance": "against",
+      "optionIndex": 0,
+      "text": "El costo energetico de desalinizar puede desplazar presupuesto social; prioridad a conservacion.",
+      "compassQuadrant": "auth-left",
+      "createdAt": "2026-03-16T10:15:00.000Z"
+    },
+    {
+      "actor": "deputy_applicant",
+      "rkey": "seed-position-jalisco-water-003",
+      "cabildeoAlias": "jalisco-water-voting",
+      "stance": "amendment",
+      "optionIndex": 2,
+      "text": "El modelo hibrido debe incluir una regla de transparencia mensual y tablero publico de indicadores.",
+      "compassQuadrant": "center-left",
+      "createdAt": "2026-03-16T11:00:00.000Z"
+    },
+    {
+      "actor": "active_participant",
+      "rkey": "seed-position-oaxaca-tie-001",
+      "cabildeoAlias": "oaxaca-mining-resolved-tie",
+      "stance": "for",
+      "optionIndex": 0,
+      "text": "Prohibicion total protege territorio y reduce conflictos locales en el corto plazo.",
+      "compassQuadrant": "lib-left",
+      "createdAt": "2026-03-02T14:10:00.000Z"
+    },
+    {
+      "actor": "active_participant_2",
+      "rkey": "seed-position-oaxaca-tie-002",
+      "cabildeoAlias": "oaxaca-mining-resolved-tie",
+      "stance": "for",
+      "optionIndex": 1,
+      "text": "Consulta vinculante permite control comunitario sin cerrar por completo actividad economica.",
+      "compassQuadrant": "center",
+      "createdAt": "2026-03-02T14:25:00.000Z"
+    },
+    {
+      "actor": "delegate_rep",
+      "rkey": "seed-position-cdmx-transit-001",
+      "cabildeoAlias": "cdmx-transit-deliberating",
+      "stance": "amendment",
+      "optionIndex": 2,
+      "text": "Modelo mixto debe fijar metas de tiempo de traslado por alcaldia y presupuesto trimestral auditado.",
+      "compassQuadrant": "center-right",
+      "createdAt": "2026-03-15T09:05:00.000Z"
+    }
+  ],
+  "votes": [
+    {
+      "actor": "active_participant",
+      "rkey": "seed-vote-jalisco-cdmx-logistics-001",
+      "cabildeoAlias": "jalisco-cdmx-logistics-voting",
+      "selectedOption": 2,
+      "isDirect": true,
+      "createdAt": "2026-03-18T12:00:00.000Z"
+    },
+    {
+      "actor": "active_participant_2",
+      "rkey": "seed-vote-jalisco-cdmx-logistics-002",
+      "cabildeoAlias": "jalisco-cdmx-logistics-voting",
+      "selectedOption": 2,
+      "isDirect": true,
+      "createdAt": "2026-03-18T12:04:00.000Z"
+    },
+    {
+      "actor": "delegate_rep",
+      "rkey": "seed-vote-jalisco-cdmx-logistics-003",
+      "cabildeoAlias": "jalisco-cdmx-logistics-voting",
+      "selectedOption": 1,
+      "isDirect": true,
+      "createdAt": "2026-03-18T12:08:00.000Z"
+    },
+    {
+      "actor": "active_participant",
+      "rkey": "seed-vote-cdmx-jalisco-housing-001",
+      "cabildeoAlias": "cdmx-jalisco-housing-open",
+      "selectedOption": 1,
+      "isDirect": true,
+      "createdAt": "2026-03-17T14:00:00.000Z"
+    },
+    {
+      "actor": "deputy_applicant",
+      "rkey": "seed-vote-cdmx-jalisco-housing-002",
+      "cabildeoAlias": "cdmx-jalisco-housing-open",
+      "selectedOption": 2,
+      "isDirect": true,
+      "createdAt": "2026-03-17T14:05:00.000Z"
+    },
+    {
+      "actor": "active_participant",
+      "rkey": "seed-vote-jalisco-cdmx-water-governance-001",
+      "cabildeoAlias": "jalisco-cdmx-water-governance-deliberating",
+      "selectedOption": 1,
+      "isDirect": true,
+      "createdAt": "2026-03-19T13:00:00.000Z"
+    },
+    {
+      "actor": "active_participant_2",
+      "rkey": "seed-vote-jalisco-cdmx-water-governance-002",
+      "cabildeoAlias": "jalisco-cdmx-water-governance-deliberating",
+      "selectedOption": 2,
+      "isDirect": true,
+      "createdAt": "2026-03-19T13:05:00.000Z"
+    },
+    {
+      "actor": "delegate_rep",
+      "rkey": "seed-vote-jalisco-cdmx-water-governance-003",
+      "cabildeoAlias": "jalisco-cdmx-water-governance-deliberating",
+      "selectedOption": 2,
+      "isDirect": true,
+      "createdAt": "2026-03-19T13:10:00.000Z"
+    },
+    {
+      "actor": "active_participant",
+      "rkey": "seed-vote-cdmx-jalisco-air-mobility-001",
+      "cabildeoAlias": "cdmx-jalisco-air-mobility-voting",
+      "selectedOption": 2,
+      "isDirect": true,
+      "createdAt": "2026-03-20T13:00:00.000Z"
+    },
+    {
+      "actor": "deputy_applicant",
+      "rkey": "seed-vote-cdmx-jalisco-air-mobility-002",
+      "cabildeoAlias": "cdmx-jalisco-air-mobility-voting",
+      "selectedOption": 1,
+      "isDirect": true,
+      "createdAt": "2026-03-20T13:04:00.000Z"
+    },
+    {
+      "actor": "delegate_rep",
+      "rkey": "seed-vote-cdmx-jalisco-air-mobility-003",
+      "cabildeoAlias": "cdmx-jalisco-air-mobility-voting",
+      "selectedOption": 2,
+      "isDirect": true,
+      "createdAt": "2026-03-20T13:08:00.000Z"
+    },
+    {
+      "actor": "active_participant",
+      "rkey": "seed-vote-jalisco-water-001",
+      "cabildeoAlias": "jalisco-water-voting",
+      "selectedOption": 2,
+      "isDirect": true,
+      "createdAt": "2026-03-16T12:00:00.000Z"
+    },
+    {
+      "actor": "active_participant_2",
+      "rkey": "seed-vote-jalisco-water-002",
+      "cabildeoAlias": "jalisco-water-voting",
+      "selectedOption": 1,
+      "isDirect": true,
+      "createdAt": "2026-03-16T12:05:00.000Z"
+    },
+    {
+      "actor": "delegate_rep",
+      "rkey": "seed-vote-jalisco-water-003",
+      "cabildeoAlias": "jalisco-water-voting",
+      "selectedOption": 2,
+      "isDirect": false,
+      "delegatedFrom": ["deputy_applicant"],
+      "createdAt": "2026-03-16T12:10:00.000Z"
+    },
+    {
+      "actor": "active_participant",
+      "rkey": "seed-vote-oaxaca-tie-001",
+      "cabildeoAlias": "oaxaca-mining-resolved-tie",
+      "selectedOption": 0,
+      "isDirect": true,
+      "createdAt": "2026-03-03T15:00:00.000Z"
+    },
+    {
+      "actor": "active_participant_2",
+      "rkey": "seed-vote-oaxaca-tie-002",
+      "cabildeoAlias": "oaxaca-mining-resolved-tie",
+      "selectedOption": 1,
+      "isDirect": true,
+      "createdAt": "2026-03-03T15:01:00.000Z"
+    },
+    {
+      "actor": "delegate_rep",
+      "rkey": "seed-vote-oaxaca-tie-003",
+      "cabildeoAlias": "oaxaca-mining-resolved-tie",
+      "selectedOption": 0,
+      "isDirect": true,
+      "createdAt": "2026-03-03T15:02:00.000Z"
+    },
+    {
+      "actor": "deputy_applicant",
+      "rkey": "seed-vote-oaxaca-tie-004",
+      "cabildeoAlias": "oaxaca-mining-resolved-tie",
+      "selectedOption": 1,
+      "isDirect": true,
+      "createdAt": "2026-03-03T15:03:00.000Z"
+    }
+  ],
+  "delegations": [
+    {
+      "actor": "deputy_applicant",
+      "rkey": "seed-delegation-jalisco-001",
+      "delegateTo": "delegate_rep",
+      "cabildeoAlias": "jalisco-water-voting",
+      "reason": "Delego por experiencia tecnica en gestion hidrica.",
+      "scopeFlairs": ["|#Policy"],
+      "createdAt": "2026-03-16T11:45:00.000Z"
+    },
+    {
+      "actor": "active_participant_2",
+      "rkey": "seed-delegation-cdmx-001",
+      "delegateTo": "delegate_rep",
+      "reason": "Delegacion temporal para temas de movilidad y vivienda.",
+      "scopeFlairs": ["|#Matter"],
+      "createdAt": "2026-03-14T09:15:00.000Z"
+    }
+  ],
+  "openQuestionPosts": [
+    {
+      "actor": "active_participant",
+      "rkey": "seed-open-question-001",
+      "text": "En p/Jalisco, cual deberia ser la metrica publica de exito para agua potable en colonias perifericas? |#?OpenQuestion",
+      "tags": ["|#?OpenQuestion"],
+      "createdAt": "2026-03-16T08:00:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "active_participant_2",
+      "rkey": "seed-open-question-002",
+      "text": "Para p/CDMX, se debe priorizar tiempo de traslado o cobertura total para decisiones de movilidad? |#?OpenQuestion",
+      "tags": ["|#?OpenQuestion"],
+      "createdAt": "2026-03-16T08:05:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "deputy_applicant",
+      "rkey": "seed-open-question-003",
+      "text": "En p/Oaxaca, que evidencia minima deberia exigirse para declarar emergencia por inundaciones? |#?OpenQuestion",
+      "tags": ["|#?OpenQuestion"],
+      "createdAt": "2026-03-16T08:10:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "delegate_rep",
+      "rkey": "seed-open-question-004",
+      "text": "Para p/NuevoLeon, como medimos justicia territorial en vivienda asequible? |#?OpenQuestion",
+      "tags": ["|#?OpenQuestion"],
+      "createdAt": "2026-03-16T08:15:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "active_participant",
+      "rkey": "seed-open-question-pan-001",
+      "text": "En p/PAN, se debe priorizar transparencia presupuestal o simplificacion regulatoria como bandera de corto plazo? |#?OpenQuestion",
+      "tags": ["|#?OpenQuestion"],
+      "createdAt": "2026-03-16T08:20:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "active_participant_2",
+      "rkey": "seed-open-question-morena-001",
+      "text": "Para p/Morena, como se mide mejor el impacto territorial de programas sociales sin perder control ciudadano? |#?OpenQuestion",
+      "tags": ["|#?OpenQuestion"],
+      "createdAt": "2026-03-16T08:25:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "deputy_applicant",
+      "rkey": "seed-open-question-mc-001",
+      "text": "En p/MC, que pesa mas para movilidad urbana: rapidez de obra o cobertura metropolitana? |#?OpenQuestion",
+      "tags": ["|#?OpenQuestion"],
+      "createdAt": "2026-03-16T08:30:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "delegate_rep",
+      "rkey": "seed-open-question-pri-001",
+      "text": "Para p/PRI, conviene reconstruir estructura territorial o concentrarse en gestion legislativa visible? |#?OpenQuestion",
+      "tags": ["|#?OpenQuestion"],
+      "createdAt": "2026-03-16T08:35:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "active_participant",
+      "rkey": "seed-open-question-pvem-001",
+      "text": "En p/PVEM, que agenda moviliza mas apoyo real: calidad del aire o gestion integral del agua? |#?OpenQuestion",
+      "tags": ["|#?OpenQuestion"],
+      "createdAt": "2026-03-16T08:40:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "active_participant_2",
+      "rkey": "seed-open-question-libertarios-001",
+      "text": "Para p/Libertarios MX, donde deberia empezar una reforma visible: desregulacion urbana o competencia en servicios? |#?OpenQuestion",
+      "tags": ["|#?OpenQuestion"],
+      "createdAt": "2026-03-16T08:45:00.000Z",
+      "langs": ["es"]
+    }
+  ],
+  "badgePosts": [
+    {
+      "actor": "official_jalisco",
+      "rkey": "seed-badge-policy-jalisco-001",
+      "text": "Actualizacion oficial de p/Jalisco sobre cronograma hidrico trimestral.",
+      "tags": ["||#Policy"],
+      "createdAt": "2026-03-15T18:00:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "active_participant",
+      "rkey": "seed-badge-policy-jalisco-002",
+      "text": "Propuesta comunitaria de p/Jalisco para auditoria de consumo industrial.",
+      "tags": ["|#Policy"],
+      "createdAt": "2026-03-15T18:02:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "active_participant_2",
+      "rkey": "seed-badge-matter-cdmx-001",
+      "text": "Reporte comunitario en p/CDMX: congestion severa en corredor oriente.",
+      "tags": ["|#Matter"],
+      "createdAt": "2026-03-15T18:05:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "official_cdmx",
+      "rkey": "seed-badge-policy-cdmx-001",
+      "text": "Posicion oficial de p/CDMX sobre red de transporte limpio.",
+      "tags": ["||#Policy"],
+      "createdAt": "2026-03-15T18:08:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "mod_oaxaca",
+      "rkey": "seed-badge-matter-oaxaca-001",
+      "text": "Bitacora oficial de incidentes en p/Oaxaca para temporada de lluvias.",
+      "tags": ["||#Matter"],
+      "createdAt": "2026-03-15T18:12:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "deputy_applicant",
+      "rkey": "seed-badge-raq-001",
+      "text": "Marco de preguntas para actualizar el eje de deliberacion ambiental en p/NuevoLeon. |#!RAQ",
+      "tags": ["|#!RAQ"],
+      "createdAt": "2026-03-15T18:20:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "delegate_rep",
+      "rkey": "seed-badge-long-unicode-001",
+      "text": "Analisis extendido para p/NuevoLeon: vivienda, movilidad y empleo en un mismo tablero operativo. Caso de texto largo para stress visual y lectura continua con terminos tecnicos y simbolos de consistencia operacional.",
+      "tags": ["|#Policy", "|#Matter"],
+      "createdAt": "2026-03-15T18:24:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "official_jalisco",
+      "rkey": "seed-badge-policy-pan-001",
+      "text": "Documento de trabajo en p/PAN sobre simplificacion administrativa, compras publicas abiertas y vigilancia legislativa.",
+      "tags": ["||#Policy"],
+      "createdAt": "2026-03-15T18:30:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "active_participant",
+      "rkey": "seed-badge-matter-pan-001",
+      "text": "Reporte ciudadano en p/PAN: municipios piden reglas mas claras para seguridad local y coordinacion metropolitana.",
+      "tags": ["|#Matter"],
+      "createdAt": "2026-03-15T18:32:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "official_cdmx",
+      "rkey": "seed-badge-policy-morena-001",
+      "text": "Actualizacion en p/Morena sobre cobertura territorial de bienestar, padrones auditables y seguimiento comunitario.",
+      "tags": ["||#Policy"],
+      "createdAt": "2026-03-15T18:34:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "active_participant_2",
+      "rkey": "seed-badge-matter-morena-001",
+      "text": "Bitacora en p/Morena: vecinos discuten tiempos de entrega, padrones y transparencia en ventanillas locales.",
+      "tags": ["|#Matter"],
+      "createdAt": "2026-03-15T18:36:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "mod_cdmx",
+      "rkey": "seed-badge-policy-mc-001",
+      "text": "Posicion de p/MC sobre ciudad de 15 minutos, transporte limpio y coordinacion entre alcaldias metropolitanas.",
+      "tags": ["||#Policy"],
+      "createdAt": "2026-03-15T18:38:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "deputy_applicant",
+      "rkey": "seed-badge-matter-mc-001",
+      "text": "Conversacion abierta en p/MC: vivienda joven, renta accesible y servicios de proximidad en zonas de crecimiento.",
+      "tags": ["|#Matter"],
+      "createdAt": "2026-03-15T18:40:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "mod_jalisco",
+      "rkey": "seed-badge-policy-pri-001",
+      "text": "Nota programatica en p/PRI sobre estructura territorial, operacion municipal y reconstruccion de capacidad institucional.",
+      "tags": ["||#Policy"],
+      "createdAt": "2026-03-15T18:42:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "delegate_rep",
+      "rkey": "seed-badge-matter-pri-001",
+      "text": "Seguimiento en p/PRI: cuadros locales debaten gestion de agua, obra publica y prioridades de proximidad.",
+      "tags": ["|#Matter"],
+      "createdAt": "2026-03-15T18:44:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "mod_oaxaca",
+      "rkey": "seed-badge-policy-pvem-001",
+      "text": "Agenda de p/PVEM enfocada en calidad del aire, residuos y fiscalizacion ambiental con metas municipales.",
+      "tags": ["||#Policy"],
+      "createdAt": "2026-03-15T18:46:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "active_participant",
+      "rkey": "seed-badge-matter-pvem-001",
+      "text": "Comunidad de p/PVEM reporta presion vecinal por arbolado, agua urbana y zonas escolares con aire limpio.",
+      "tags": ["|#Matter"],
+      "createdAt": "2026-03-15T18:48:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "delegate_rep",
+      "rkey": "seed-badge-policy-libertarios-001",
+      "text": "Hoja de ruta en p/Libertarios MX para competencia regulatoria, simplificacion de permisos y libertad economica local.",
+      "tags": ["||#Policy"],
+      "createdAt": "2026-03-15T18:50:00.000Z",
+      "langs": ["es"]
+    },
+    {
+      "actor": "active_participant_2",
+      "rkey": "seed-badge-matter-libertarios-001",
+      "text": "Debate en p/Libertarios MX sobre exceso de tramites, costo de abrir negocio y tiempos reales de autorizacion municipal.",
+      "tags": ["|#Matter"],
+      "createdAt": "2026-03-15T18:52:00.000Z",
+      "langs": ["es"]
+    }
+  ],
+  "bulkScenarios": [
+    {
+      "type": "high_activity_cabildeo",
+      "cabildeoAlias": "nl-housing-mega",
+      "startAt": "2026-03-12T10:00:00.000Z",
+      "positionCount": 160,
+      "voteCount": 240,
+      "positionActors": [
+        "active_participant",
+        "active_participant_2",
+        "deputy_applicant",
+        "delegate_rep",
+        "official_cdmx"
+      ],
+      "voteActors": [
+        "active_participant",
+        "active_participant_2",
+        "deputy_applicant",
+        "delegate_rep",
+        "official_cdmx",
+        "official_jalisco",
+        "mod_nuevoleon"
+      ],
+      "stanceCycle": ["for", "against", "amendment"],
+      "optionCycle": [0, 1, 2],
+      "textPrefix": "Escenario mega de vivienda para validar paginacion, agregados y orden de timeline."
+    },
+    {
+      "type": "demo_social_graph",
+      "alias": "mx-civic-buzz",
+      "startAt": "2026-03-25T14:00:00.000Z",
+      "anchorActor": "active_participant",
+      "bridgeActors": [
+        "active_participant_2",
+        "delegate_rep",
+        "reporter_capital",
+        "mod_jalisco",
+        "official_jalisco",
+        "mod_cdmx",
+        "official_cdmx",
+        "mod_oaxaca",
+        "mod_nuevoleon"
+      ],
+      "actors": [
+        "active_participant",
+        "active_participant_2",
+        "delegate_rep",
+        "deputy_applicant",
+        "official_jalisco",
+        "official_cdmx",
+        "mod_jalisco",
+        "mod_cdmx",
+        "mod_oaxaca",
+        "mod_nuevoleon",
+        "reporter_capital",
+        "vecina_jalisco",
+        "agua_watch_jal",
+        "estudiante_cdmx",
+        "movilidad_colectiva",
+        "abogada_oax",
+        "barrio_vivienda",
+        "datos_nl"
+      ],
+      "followsPerActor": 6,
+      "postsPerActor": 4,
+      "replyCount": 54,
+      "likesPerPost": 3,
+      "repostEvery": 5,
+      "topics": [
+        {
+          "community": "p/Jalisco Agua",
+          "tag": "|#Matter",
+          "focus": "cortes de agua, fugas y tiempos reales de reparacion",
+          "proposal": "un tablero vecinal con cuadrillas, colonias afectadas y SLA publico"
+        },
+        {
+          "community": "p/CDMX Movilidad",
+          "tag": "|#Policy",
+          "focus": "transbordos inseguros, tiempos muertos y saturacion en horas pico",
+          "proposal": "priorizar rutas alimentadoras y publicar datos de intervalo por estacion"
+        },
+        {
+          "community": "p/Oaxaca Territorio",
+          "tag": "|#Matter",
+          "focus": "consulta ambiental, concesiones y seguimiento juridico local",
+          "proposal": "una mesa abierta con expedientes, mapas y compromisos por comunidad"
+        },
+        {
+          "community": "p/Nuevo Leon Vivienda",
+          "tag": "|#Policy",
+          "focus": "renta, suelo urbano y crecimiento cerca del metro",
+          "proposal": "zonificacion con vivienda asequible y metas trimestrales verificables"
+        },
+        {
+          "community": "r/Mexico",
+          "tag": "|#Matter",
+          "focus": "colas eternas para tramites vecinales",
+          "proposal": "ventanilla unica con seguimiento publico"
+        },
+        {
+          "community": "p/Participacion Ciudadana",
+          "tag": "|#Policy",
+          "focus": "delegaciones sin trazabilidad",
+          "proposal": "historial abierto de delegaciones y votos"
+        }
+      ]
+    }
+  ]
+}

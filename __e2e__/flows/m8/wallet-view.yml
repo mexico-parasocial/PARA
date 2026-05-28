@@ -1,0 +1,8 @@
+appId: com.para.app
+---
+- runFlow: ../setupApp.yml
+- tapOn: "My Wallet"
+- assertVisible: "Wallet Locked"
+- tapOn: "Unlock with Biometrics"
+- assertVisible: "My Wallet"
+- assertVisible: "credentials"

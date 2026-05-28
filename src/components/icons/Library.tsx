@@ -1,0 +1,9 @@
+import {createSinglePathSVG} from './TEMPLATE'
+
+export const Library_Stroke2_Corner0_Rounded = createSinglePathSVG({
+  path: 'M3 21H21V19H3V21ZM6 17H9V8H6V17ZM10.5 17H13.5V8H10.5V17ZM15 17H18V8H15V17ZM12 2L2 7V9H22V7L12 2Z',
+})
+
+export const Library_Filled_Corner0_Rounded = createSinglePathSVG({
+  path: 'M3 21H21V19H3V21ZM6 17H9V8H6V17ZM10.5 17H13.5V8H10.5V17ZM15 17H18V8H15V17ZM12 2L2 7V9H22V7L12 2Z',
+})

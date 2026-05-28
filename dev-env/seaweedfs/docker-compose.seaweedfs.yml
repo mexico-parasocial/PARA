@@ -1,0 +1,195 @@
+# SeaweedFS 4-Service Dev Cluster for PARA
+# Replaces local disk blobstore with S3-compatible SeaweedFS gateway.
+#
+# Services:
+#   master  – directory server (tracks volumes, file IDs)
+#   volume  – storage server (actual blob bytes)
+#   filer   – metadata / POSIX-like file system + Web UI
+#   s3      – S3-compatible API gateway (what PDS talks to)
+#
+# Usage:
+#   docker compose -f docker-compose.seaweedfs.yml up --wait
+#   ./init-bucket.sh
+#   ./diagnose.sh
+#
+# Debugging / Observability:
+#   – Every service exposes /metrics for Prometheus scraping
+#   – Docker logs are JSON-limited to prevent disk fill
+#   – Healthchecks on all services
+#   – Filer Web UI: http://localhost:8888
+#   – S3 Gateway:   http://localhost:8333
+#   – Master UI:    http://localhost:9333
+#
+# Operational muscle: this is intentionally a multi-service compose
+# so you learn volume failover, filer recovery, and S3 gateway
+# restarts before you hit production.
+
+services:
+  # ------------------------------------------------------------
+  # 1. MASTER – The "brain". Tracks which volume server owns what.
+  # ------------------------------------------------------------
+  master:
+    image: chrislusf/seaweedfs:latest
+    container_name: para-seaweed-master
+    command: >
+      master
+      -ip=master
+      -port=9333
+      -mdir=/data
+      -defaultReplication=001
+      -metricsPort=9324
+    ports:
+      - "9333:9333"
+      - "9324:9324"
+    volumes:
+      - seaweed_master:/data
+    networks:
+      - seaweed-net
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:9333/cluster/status"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # ------------------------------------------------------------
+  # 2. VOLUME – The "muscle". Stores actual erasure-coded blocks.
+  # ------------------------------------------------------------
+  volume:
+    image: chrislusf/seaweedfs:latest
+    container_name: para-seaweed-volume
+    command: >
+      volume
+      -mserver=master:9333
+      -ip=volume
+      -port=8080
+      -dir=/data
+      -max=100
+      -metricsPort=9325
+    ports:
+      - "8080:8080"
+      - "9325:9325"
+    volumes:
+      - seaweed_volume:/data
+    networks:
+      - seaweed-net
+    depends_on:
+      master:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/status"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # ------------------------------------------------------------
+  # 3. FILER – Metadata layer. Web UI on :8888.
+  # ------------------------------------------------------------
+  filer:
+    image: chrislusf/seaweedfs:latest
+    container_name: para-seaweed-filer
+    command: >
+      filer
+      -master=master:9333
+      -ip=filer
+      -port=8888
+      -metricsPort=9326
+    ports:
+      - "8888:8888"
+      - "9326:9326"
+      - "18888:18888"
+    volumes:
+      - seaweed_filer:/data
+    networks:
+      - seaweed-net
+    depends_on:
+      master:
+        condition: service_healthy
+      volume:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8888/?limit=1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # ------------------------------------------------------------
+  # 4. S3 GATEWAY – What the PDS sees. Exposes AWS S3 API on :8333.
+  # ------------------------------------------------------------
+  s3:
+    image: chrislusf/seaweedfs:latest
+    container_name: para-seaweed-s3
+    command: >
+      s3
+      -filer=filer:8888
+      -ip=s3
+      -port=8333
+      -metricsPort=9327
+      -config=/etc/seaweedfs/s3-config.json
+    ports:
+      - "8333:8333"
+      - "9327:9327"
+    volumes:
+      - ./s3-config.json:/etc/seaweedfs/s3-config.json:ro
+    networks:
+      - seaweed-net
+    depends_on:
+      filer:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8333/"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 5s
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  # ------------------------------------------------------------
+  # 5. (Optional) PROMETHEUS – Scrapes all SeaweedFS metrics.
+  # Uncomment when you want to graph volume growth, filer latency,
+  # or S3 gateway error rates.
+  # ------------------------------------------------------------
+  # prometheus:
+  #   image: prom/prometheus:latest
+  #   container_name: para-seaweed-prometheus
+  #   ports:
+  #     - "9090:9090"
+  #   volumes:
+  #     - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+  #     - seaweed_prometheus:/prometheus
+  #   networks:
+  #     - seaweed-net
+  #   command:
+  #     - '--config.file=/etc/prometheus/prometheus.yml'
+  #     - '--storage.tsdb.path=/prometheus'
+
+networks:
+  seaweed-net:
+    driver: bridge
+
+volumes:
+  seaweed_master:
+  seaweed_volume:
+  seaweed_filer:
+  # seaweed_prometheus:

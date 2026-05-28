@@ -1,0 +1,10 @@
+appId: com.para.app
+---
+- runFlow: ../setupApp.yml
+- tapOn: "Consent Audit"
+- assertVisible: "Consent Audit"
+- assertVisible: "Active Grants"
+- assertVisible: "Audit Timeline"
+- tapOn: "Revoke"
+- tapOn: "Revoke"
+- assertVisible: "Consent Audit"

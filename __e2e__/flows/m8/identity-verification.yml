@@ -1,0 +1,8 @@
+appId: com.para.app
+---
+- runFlow: ../setupApp.yml
+- tapOn: "Settings"
+- tapOn: "Account"
+- tapOn: "Verify Identity \(INE\)"
+- tapOn: "Request m8 Verification"
+- assertVisible: "Verification request created"

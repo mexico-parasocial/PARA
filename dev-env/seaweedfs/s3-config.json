@@ -1,0 +1,28 @@
+{
+  "identities": [
+    {
+      "name": "dev",
+      "credentials": [
+        {
+          "accessKey": "weed",
+          "secretKey": "weed_secret"
+        }
+      ],
+      "actions": [
+        "Read",
+        "Write",
+        "List",
+        "Tagging",
+        "Admin"
+      ]
+    }
+  ],
+  "buckets": [
+    {
+      "name": "blobs",
+      "identity": "dev",
+      "read": true,
+      "write": true
+    }
+  ]
+}

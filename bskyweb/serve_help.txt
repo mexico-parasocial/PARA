@@ -1,0 +1,34 @@
+NAME:
+   bskyweb serve - run the server
+
+USAGE:
+   bskyweb serve [command options] [arguments...]
+
+OPTIONS:
+   --appview-host value                                           scheme, hostname, and port of PDS instance (default: "http://localhost:2584") [$ATP_APPVIEW_HOST, $ATP_PDS_HOST]
+   --ogcard-host value                                            scheme, hostname, and port of ogcard service [$OGCARD_HOST]
+   --http-address value                                           Specify the local IP/port to bind to (default: ":8100") [$HTTP_ADDRESS]
+   --link-host value                                              scheme, hostname, and port of link service [$LINK_HOST]
+   --ipcc-host value                                              scheme, hostname, and port of ipcc service (default: "https://localhost:8730") [$IPCC_HOST]
+   --debug                                                        Enable debug mode (default: false) [$DEBUG]
+   --basic-auth-password value                                    optional password to restrict access to web interface [$BASIC_AUTH_PASSWORD]
+   --cors-allowed-origins value [ --cors-allowed-origins value ]  list of allowed origins for CORS requests (default: "https://bsky.app", "https://main.bsky.dev", "https://app.staging.bsky.dev") [$CORS_ALLOWED_ORIGINS]
+   --static-cdn-host value                                        scheme, hostname, and port of static content CDN, don't end with a slash [$STATIC_CDN_HOST]
+   --bsky-canonical-instance                                      Enable if this is the canonical deployment (bsky.app) (default: false) [$BSKY_CANONICAL_INSTANCE]
+   --robots-disallow-all                                          Crawling is allowed by default. Enable this flag to Disallow all (default: false) [$ROBOTS_DISALLOW_ALL]
+   --oauth-enabled                                                Enable OAuth confidential client functionality (default: false) [$OAUTH_ENABLED]
+   --oauth-client-id value                                        OAuth client ID (typically the metadata URL) [$OAUTH_CLIENT_ID]
+   --oauth-client-name value                                      OAuth client display name (default: "Para Social") [$OAUTH_CLIENT_NAME]
+   --oauth-base-url value                                         Base URL of this server (e.g., https://para.social) [$OAUTH_BASE_URL]
+   --oauth-redirect-uris value [ --oauth-redirect-uris value ]    Allowed OAuth redirect URIs [$OAUTH_REDIRECT_URIS]
+   --oauth-scopes value                                           OAuth scopes to request (default: "atproto") [$OAUTH_SCOPES]
+   --oauth-private-key-path value                                 Path to ES256 private key PEM file [$OAUTH_PRIVATE_KEY_PATH]
+   --oauth-private-key-pem value                                  ES256 private key PEM contents (for Docker secrets) [$OAUTH_PRIVATE_KEY_PEM]
+   --oauth-cookie-domain value                                    Domain for OAuth session cookies [$OAUTH_COOKIE_DOMAIN]
+   --oauth-cookie-secure                                          Use secure cookies (set to true in production) (default: true) [$OAUTH_COOKIE_SECURE]
+   --oauth-db-driver value                                        Database driver for OAuth sessions (sqlite or postgres) (default: "sqlite") [$OAUTH_DB_DRIVER]
+   --oauth-db-dsn value                                           Database DSN for OAuth sessions (default: "oauth_sessions.db") [$OAUTH_DB_DSN]
+   --oauth-encryption-key value                                   32-byte base64 key for encrypting tokens at rest [$OAUTH_ENCRYPTION_KEY]
+   --oauth-plc-url value                                          PLC directory URL for local dev (e.g., http://localhost:2582) [$OAUTH_PLC_URL]
+   --oauth-pds-url value                                          PDS URL for local dev handle resolution (e.g., http://localhost:2583) [$OAUTH_PDS_URL]
+   --help, -h                                                     show help

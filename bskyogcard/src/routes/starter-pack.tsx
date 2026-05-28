@@ -1,0 +1,121 @@
+import assert from 'node:assert'
+
+import React from 'react'
+import {type AppBskyGraphDefs, AtUri} from '@atproto/api'
+import resvg from '@resvg/resvg-js'
+import {type Express} from 'express'
+import satori from 'satori'
+
+import {
+  StarterPack,
+  STARTERPACK_HEIGHT,
+  STARTERPACK_WIDTH,
+} from '../components/StarterPack.js'
+import {type AppContext} from '../context.js'
+import {httpLogger} from '../logger.js'
+import {loadEmojiAsSvg} from '../util.js'
+import {handler, originVerifyMiddleware} from './util.js'
+
+export default function (ctx: AppContext, app: Express) {
+  return app.get(
+    '/start/:actor/:rkey',
+    originVerifyMiddleware(ctx),
+    handler(async (req, res) => {
+      const {actor, rkey} = req.params
+      const uri = AtUri.make(actor, 'app.bsky.graph.starterpack', rkey)
+      let starterPack: AppBskyGraphDefs.StarterPackView
+      try {
+        const result = await ctx.appviewAgent.api.app.bsky.graph.getStarterPack(
+          {starterPack: uri.toString()},
+        )
+        starterPack = result.data.starterPack
+      } catch (err) {
+        httpLogger.warn(
+          {err, uri: uri.toString()},
+          'could not fetch starter pack',
+        )
+        return res.status(404).end('not found')
+      }
+      const imageEntries = await Promise.all(
+        [starterPack.creator]
+          .concat((starterPack.listItemsSample ?? []).map(li => li.subject))
+          // has avatar
+          .filter(p => p.avatar)
+          // no sensitive labels
+          .filter(p => !p.labels?.some(l => hideAvatarLabels.has(l.val)))
+          .map(async p => {
+            try {
+              assert(p.avatar)
+              const image = await getImage(p.avatar)
+              return [p.did, image] as const
+            } catch (err) {
+              httpLogger.warn(
+                {err, uri: uri.toString(), did: p.did},
+                'could not fetch image',
+              )
+              return [p.did, null] as const
+            }
+          }),
+      )
+      const images = new Map(
+        imageEntries
+          .filter(
+            (entry): entry is readonly [string, Buffer<ArrayBuffer>] =>
+              entry[1] !== null,
+          )
+          .slice(0, 7),
+      )
+      const svg = await satori(
+        <StarterPack starterPack={starterPack} images={images} />,
+        {
+          fonts: ctx.fonts,
+          height: STARTERPACK_HEIGHT,
+          width: STARTERPACK_WIDTH,
+          loadAdditionalAsset: async (code, text) => {
+            if (code === 'emoji') {
+              return (await loadEmojiAsSvg(text)) ?? ''
+            }
+            return ''
+          },
+        },
+      )
+      const output = await resvg.renderAsync(svg)
+      res.statusCode = 200
+      res.setHeader('content-type', 'image/png')
+      res.setHeader('cdn-tag', [...images.keys()].join(','))
+      return res.end(output.asPng())
+    }),
+  )
+}
+
+async function getImage(url: string) {
+  const response = await fetch(ensureJpeg(url))
+  const arrayBuf = await response.arrayBuffer() // must drain body even if it will be discarded
+  if (response.status !== 200) return null
+  return Buffer.from(arrayBuf)
+}
+
+// CDN URLs end with @jpeg, @webp, or no extension (which may default to webp).
+// We want to ensure the image URLs we use are for jpegs, required for compat with satori.
+function ensureJpeg(url: string) {
+  return url.replace(/(@[a-z]{3,5})?$/, '@jpeg')
+}
+
+const hideAvatarLabels = new Set([
+  '!hide',
+  '!warn',
+  'porn',
+  'sexual',
+  'nudity',
+  'sexual-figurative',
+  'graphic-media',
+  'gore',
+  'self-harm',
+  'sensitive',
+  'security',
+  'impersonation',
+  'scam',
+  'spam',
+  'misleading',
+  'inauthentic',
+])

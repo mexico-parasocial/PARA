@@ -1,0 +1,31 @@
+{% extends "base.html" %} {% block html_head_extra -%}
+<meta name="apple-itunes-app" content="app-id=com.parasocial.app" />
+{%- if requestURI %}
+<meta property="og:url" content="{{ requestURI }}" />
+{% endif -%} {%- if imgThumbUrl %}
+<meta property="og:image" content="{{ imgThumbUrl }}" />
+<meta property="twitter:image" content="{{ imgThumbUrl }}" />
+{%- else -%}
+<meta property="og:image" content="https://paramx.social/static/logo.png" />
+<meta
+  property="twitter:image"
+  content="https://paramx.social/static/logo.png" />
+{% endif -%}
+<meta name="twitter:card" content="summary_large_image" />
+{%- if title %}
+<meta property="og:title" content="{{ title }}" />
+<meta name="twitter:title" content="{{ title }}" />
+{%- else -%}
+<meta property="og:title" content="PARA" />
+<meta name="twitter:title" content="PARA" />
+{% endif -%}
+<meta
+  name="description"
+  content="Join PARA communities and civic conversations." />
+<meta
+  name="og:description"
+  content="Join PARA communities and civic conversations." />
+<meta
+  name="twitter:description"
+  content="Join PARA communities and civic conversations." />
+{%- endblock %}

@@ -1,0 +1,8 @@
+{
+  "platforms": ["android"],
+  "android": {
+    "modules": [
+      "xyz.blueskyweb.app.exporeceiveandroidintents.ExpoReceiveAndroidIntentsModule"
+    ]
+  }
+}

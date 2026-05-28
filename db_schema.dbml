@@ -1,0 +1,76 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+
+Table users {
+  id integer [primary key, increment]
+  did varchar [unique, note: 'Decentralized Identifier from AT Proto']
+  username varchar
+  handle varchar
+  role varchar
+  created_at timestamp
+  
+  // Custom Stats
+  influence integer [default: 0]
+  votes integer [default: 0]
+  overview jsonb [note: 'Structured overview data: avgs, contributions, etc.']
+}
+
+Table posts {
+  id integer [primary key, increment]
+  uri varchar [unique, note: 'AT URI at://did/collection/rkey']
+  cid varchar [note: 'Content Identifier']
+  user_id integer [not null, ref: > users.id]
+  text text [note: 'Content of the post, max 3000 chars']
+  created_at timestamp
+  
+  // Custom Fields from mx.para.post
+  post_type varchar [note: 'Type of post: question, poll, etc.']
+  
+  // JSONB columns for flexible data
+  langs jsonb [note: 'Array of language codes']
+  tags jsonb [note: 'Array of hashtags']
+  flairs jsonb [note: 'Array of custom flairs']
+  embed jsonb [note: 'Structured embed data (images, ext, record)']
+  
+  reply_root_uri varchar
+  reply_parent_uri varchar
+}
+
+Table follows {
+  following_user_id integer [ref: > users.id]
+  followed_user_id integer [ref: > users.id]
+  created_at timestamp
+  
+  indexes {
+    (following_user_id, followed_user_id) [unique]
+  }
+}
+
+Table flairs {
+  id integer [primary key, increment]
+  tag varchar [unique]
+  description text
+}
+
+// Optional: specific table for post-flair relationship if not using JSONB
+Table post_flairs {
+  post_id integer [ref: > posts.id]
+  flair_id integer [ref: > flairs.id]
+}
+
+Table electoral_districts {
+  id integer [primary key, note: 'Sequential ID 1-300']
+  district_number integer [not null, note: 'District number within state']
+  state_name varchar [not null]
+  display_name varchar [not null, note: 'e.g. Distrito 3, Jalisco']
+  registered_voters integer [default: 0]
+  turnout_pct decimal [default: 0, note: 'Last election turnout %']
+  dominant_party varchar
+  current_deputy varchar
+  deputy_party varchar
+  accent_color varchar [note: 'Hex color derived from dominant party']
+
+  indexes {
+    (state_name, district_number) [unique]
+  }
+}

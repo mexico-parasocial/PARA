@@ -1,0 +1,11 @@
+{% extends "base.html" %} {% block head_title %}Error {{ statusCode }} - PARA{%
+endblock %} {% block noscript_extra %} {%- if statusCode == 404 %}
+<h1>404: Not Found</h1>
+{% endif %} {% endblock %} {# don't include the bundle on non-404 error pages #}
+{% block head_bundle %} {% if statusCode == 404 %} {{ block.Super }} {% else %}
+{% endif %} {% endblock %} {%- block body_all %} {% if statusCode == 404 %} {{
+block.Super }} {% else %}
+<h1>{{ statusCode }}: Server Error</h1>
+<p>
+  Sorry about that! Please try again in a moment. {% endif %} {% endblock -%}
+</p>

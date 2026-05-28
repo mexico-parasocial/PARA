@@ -1,0 +1,27 @@
+{
+  "colors": {
+    "light": "#474652",
+    "dark": "#101924"
+  },
+  "native": {
+    "ios": {
+      "lightImage": "./assets/splash/native-splash-logo.png",
+      "darkImage": "./assets/splash/native-splash-logo.png",
+      "resizeMode": "contain",
+      "enableFullScreenImageLegacy": false
+    },
+    "android": {
+      "lightImage": "./assets/splash/native-splash-logo.png",
+      "darkImage": "./assets/splash/native-splash-logo.png",
+      "imageWidth": 120
+    }
+  },
+  "app": {
+    "lightImage": "./assets/splash/native-splash-logo.png",
+    "darkImage": "./assets/splash/native-splash-logo.png"
+  },
+  "auth": {
+    "lightImage": "./assets/splash/native-splash-logo.png",
+    "darkImage": "./assets/splash/native-splash-logo.png"
+  }
+}
