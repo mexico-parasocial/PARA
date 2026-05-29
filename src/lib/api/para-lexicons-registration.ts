@@ -536,6 +536,722 @@ const deleteCollection = {
   },
 }
 
+// ─── Community Civic Tree ───────────────────────────────────────────────────
+
+const communityCivicTreeDefs = {
+  lexicon: 1,
+  id: 'com.para.community.civicTree.defs',
+  defs: {
+    cardView: {
+      type: 'object' as const,
+      required: ['id', 'community_uri', 'author_did', 'title', 'card_type'],
+      properties: {
+        id: {type: 'string' as const},
+        uri: {type: 'string' as const, format: 'at-uri'},
+        cid: {type: 'string' as const, format: 'cid'},
+        community_uri: {type: 'string' as const, format: 'at-uri'},
+        author_did: {type: 'string' as const, format: 'did'},
+        title: {type: 'string' as const, maxLength: 500},
+        content: {type: 'string' as const, maxLength: 10000},
+        card_type: {type: 'string' as const, maxLength: 64},
+        source_uri: {type: 'string' as const, format: 'at-uri'},
+        source_url: {type: 'string' as const, format: 'uri'},
+        metadata: {type: 'string' as const, maxLength: 20000},
+        influence: {type: 'integer' as const},
+        vote_count: {type: 'integer' as const, minimum: 0},
+        stance: {
+          type: 'string' as const,
+          knownValues: ['pro', 'con', 'neutral'],
+        },
+        compass_quadrant: {type: 'string' as const, maxLength: 64},
+        created_at: {type: 'string' as const, format: 'datetime'},
+        updated_at: {type: 'string' as const, format: 'datetime'},
+      },
+    },
+    relationshipView: {
+      type: 'object' as const,
+      required: [
+        'id',
+        'source_card_id',
+        'target_card_id',
+        'relationship_type',
+        'author_did',
+        'created_at',
+      ],
+      properties: {
+        id: {type: 'string' as const},
+        uri: {type: 'string' as const, format: 'at-uri'},
+        cid: {type: 'string' as const, format: 'cid'},
+        community_uri: {type: 'string' as const, format: 'at-uri'},
+        source_card_id: {type: 'string' as const},
+        target_card_id: {type: 'string' as const},
+        relationship_type: {type: 'string' as const, maxLength: 64},
+        author_did: {type: 'string' as const, format: 'did'},
+        created_at: {type: 'string' as const, format: 'datetime'},
+      },
+    },
+    contributionView: {
+      type: 'object' as const,
+      required: [
+        'id',
+        'community_uri',
+        'author_did',
+        'title',
+        'source_type',
+        'status',
+        'created_at',
+        'approve_count',
+        'reject_count',
+      ],
+      properties: {
+        id: {type: 'string' as const},
+        uri: {type: 'string' as const, format: 'at-uri'},
+        cid: {type: 'string' as const, format: 'cid'},
+        community_uri: {type: 'string' as const, format: 'at-uri'},
+        author_did: {type: 'string' as const, format: 'did'},
+        title: {type: 'string' as const, maxLength: 500},
+        content: {type: 'string' as const, maxLength: 10000},
+        source_uri: {type: 'string' as const, format: 'at-uri'},
+        source_url: {type: 'string' as const, format: 'uri'},
+        source_type: {type: 'string' as const, maxLength: 64},
+        metadata: {type: 'string' as const, maxLength: 20000},
+        status: {
+          type: 'string' as const,
+          knownValues: ['pending', 'approved', 'rejected'],
+        },
+        approved_card_id: {type: 'string' as const},
+        created_at: {type: 'string' as const, format: 'datetime'},
+        decided_at: {type: 'string' as const, format: 'datetime'},
+        approve_count: {type: 'integer' as const, minimum: 0},
+        reject_count: {type: 'integer' as const, minimum: 0},
+        viewer_vote: {
+          type: 'string' as const,
+          knownValues: ['approve', 'reject'],
+        },
+      },
+    },
+    graphView: {
+      type: 'object' as const,
+      required: ['nodes', 'edges'],
+      properties: {
+        nodes: {
+          type: 'array' as const,
+          items: {
+            type: 'ref' as const,
+            ref: 'lex:com.para.community.civicTree.defs#cardView',
+          },
+        },
+        edges: {
+          type: 'array' as const,
+          items: {
+            type: 'ref' as const,
+            ref: 'lex:com.para.community.civicTree.defs#relationshipView',
+          },
+        },
+      },
+    },
+    configView: {
+      type: 'object' as const,
+      required: [
+        'community_uri',
+        'governance_mode',
+        'approvals_required',
+        'approval_margin_required',
+      ],
+      properties: {
+        community_uri: {type: 'string' as const, format: 'at-uri'},
+        governance_mode: {
+          type: 'string' as const,
+          knownValues: ['votes_sortition', 'moderator_gate'],
+        },
+        approvals_required: {type: 'integer' as const, minimum: 1},
+        approval_margin_required: {type: 'integer' as const, minimum: 0},
+        moderator_gate_enabled: {type: 'boolean' as const},
+        sortition_enabled: {type: 'boolean' as const},
+        updated_at: {type: 'string' as const, format: 'datetime'},
+      },
+    },
+  },
+}
+
+const communityCivicTreeCard = {
+  lexicon: 1,
+  id: 'com.para.community.civicTree.card',
+  defs: {
+    main: {
+      type: 'record' as const,
+      key: 'tid',
+      record: {
+        type: 'object' as const,
+        required: ['communityUri', 'authorDid', 'title', 'cardType', 'createdAt'],
+        properties: {
+          communityUri: {type: 'string' as const, format: 'at-uri'},
+          authorDid: {type: 'string' as const, format: 'did'},
+          title: {type: 'string' as const, maxLength: 500},
+          content: {type: 'string' as const, maxLength: 10000},
+          cardType: {type: 'string' as const, maxLength: 64},
+          stance: {type: 'string' as const, knownValues: ['pro', 'con', 'neutral']},
+          compassQuadrant: {type: 'string' as const, maxLength: 64},
+          sourceUri: {type: 'string' as const, format: 'at-uri'},
+          sourceUrl: {type: 'string' as const, format: 'uri'},
+          metadata: {type: 'string' as const, maxLength: 20000},
+          createdAt: {type: 'string' as const, format: 'datetime'},
+          updatedAt: {type: 'string' as const, format: 'datetime'},
+        },
+      },
+    },
+  },
+}
+
+const communityCivicTreeRelationship = {
+  lexicon: 1,
+  id: 'com.para.community.civicTree.relationship',
+  defs: {
+    main: {
+      type: 'record' as const,
+      key: 'tid',
+      record: {
+        type: 'object' as const,
+        required: [
+          'communityUri',
+          'sourceCard',
+          'targetCard',
+          'relationshipType',
+          'authorDid',
+          'createdAt',
+        ],
+        properties: {
+          communityUri: {type: 'string' as const, format: 'at-uri'},
+          sourceCard: {type: 'string' as const, format: 'at-uri'},
+          targetCard: {type: 'string' as const, format: 'at-uri'},
+          relationshipType: {type: 'string' as const, maxLength: 64},
+          authorDid: {type: 'string' as const, format: 'did'},
+          createdAt: {type: 'string' as const, format: 'datetime'},
+        },
+      },
+    },
+  },
+}
+
+const communityCivicTreeContribution = {
+  lexicon: 1,
+  id: 'com.para.community.civicTree.contribution',
+  defs: {
+    main: {
+      type: 'record' as const,
+      key: 'tid',
+      record: {
+        type: 'object' as const,
+        required: [
+          'communityUri',
+          'authorDid',
+          'title',
+          'sourceType',
+          'status',
+          'createdAt',
+        ],
+        properties: {
+          communityUri: {type: 'string' as const, format: 'at-uri'},
+          authorDid: {type: 'string' as const, format: 'did'},
+          title: {type: 'string' as const, maxLength: 500},
+          content: {type: 'string' as const, maxLength: 10000},
+          sourceUri: {type: 'string' as const, format: 'at-uri'},
+          sourceUrl: {type: 'string' as const, format: 'uri'},
+          sourceType: {type: 'string' as const, maxLength: 64},
+          metadata: {type: 'string' as const, maxLength: 20000},
+          status: {
+            type: 'string' as const,
+            knownValues: ['pending', 'approved', 'rejected'],
+          },
+          approvedCard: {type: 'string' as const, format: 'at-uri'},
+          createdAt: {type: 'string' as const, format: 'datetime'},
+          decidedAt: {type: 'string' as const, format: 'datetime'},
+        },
+      },
+    },
+  },
+}
+
+const communityCivicTreeContributionVote = {
+  lexicon: 1,
+  id: 'com.para.community.civicTree.contributionVote',
+  defs: {
+    main: {
+      type: 'record' as const,
+      key: 'tid',
+      record: {
+        type: 'object' as const,
+        required: ['contribution', 'voterDid', 'vote', 'createdAt'],
+        properties: {
+          contribution: {type: 'string' as const, format: 'at-uri'},
+          voterDid: {type: 'string' as const, format: 'did'},
+          vote: {type: 'string' as const, knownValues: ['approve', 'reject']},
+          createdAt: {type: 'string' as const, format: 'datetime'},
+        },
+      },
+    },
+  },
+}
+
+const communityCivicTreeCardVote = {
+  lexicon: 1,
+  id: 'com.para.community.civicTree.cardVote',
+  defs: {
+    main: {
+      type: 'record' as const,
+      key: 'tid',
+      record: {
+        type: 'object' as const,
+        required: ['card', 'voterDid', 'influence', 'createdAt'],
+        properties: {
+          card: {type: 'string' as const, format: 'at-uri'},
+          voterDid: {type: 'string' as const, format: 'did'},
+          influence: {type: 'integer' as const, minimum: -3, maximum: 3},
+          createdAt: {type: 'string' as const, format: 'datetime'},
+        },
+      },
+    },
+  },
+}
+
+const communityCivicTreeConfig = {
+  lexicon: 1,
+  id: 'com.para.community.civicTree.config',
+  defs: {
+    main: {
+      type: 'record' as const,
+      key: 'literal:self',
+      record: {
+        type: 'object' as const,
+        required: [
+          'communityUri',
+          'governanceMode',
+          'approvalsRequired',
+          'approvalMarginRequired',
+          'updatedAt',
+        ],
+        properties: {
+          communityUri: {type: 'string' as const, format: 'at-uri'},
+          governanceMode: {
+            type: 'string' as const,
+            knownValues: ['votes_sortition', 'moderator_gate'],
+          },
+          approvalsRequired: {type: 'integer' as const, minimum: 1},
+          approvalMarginRequired: {type: 'integer' as const, minimum: 0},
+          moderatorGateEnabled: {type: 'boolean' as const},
+          sortitionEnabled: {type: 'boolean' as const},
+          updatedAt: {type: 'string' as const, format: 'datetime'},
+        },
+      },
+    },
+  },
+}
+
+const getCommunityCivicTreeGraph = {
+  lexicon: 1,
+  id: 'com.para.community.civicTree.getGraph',
+  defs: {
+    main: {
+      type: 'query' as const,
+      parameters: {
+        type: 'params' as const,
+        required: ['community'],
+        properties: {
+          community: {type: 'string' as const, format: 'at-uri'},
+        },
+      },
+      output: {
+        encoding: 'application/json' as const,
+        schema: {
+          type: 'ref' as const,
+          ref: 'lex:com.para.community.civicTree.defs#graphView',
+        },
+      },
+    },
+  },
+}
+
+const listCommunityCivicTreeContributions = {
+  lexicon: 1,
+  id: 'com.para.community.civicTree.listContributions',
+  defs: {
+    main: {
+      type: 'query' as const,
+      parameters: {
+        type: 'params' as const,
+        required: ['community'],
+        properties: {
+          community: {type: 'string' as const, format: 'at-uri'},
+          status: {
+            type: 'string' as const,
+            knownValues: ['pending', 'approved', 'rejected'],
+          },
+          viewer: {type: 'string' as const, format: 'did'},
+          limit: {type: 'integer' as const, minimum: 1, maximum: 100},
+          cursor: {type: 'string' as const},
+        },
+      },
+      output: {
+        encoding: 'application/json' as const,
+        schema: {
+          type: 'object' as const,
+          required: ['contributions'],
+          properties: {
+            cursor: {type: 'string' as const},
+            contributions: {
+              type: 'array' as const,
+              items: {
+                type: 'ref' as const,
+                ref: 'lex:com.para.community.civicTree.defs#contributionView',
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+}
+
+const submitCommunityCivicTreeContribution = {
+  lexicon: 1,
+  id: 'com.para.community.civicTree.submitContribution',
+  defs: {
+    main: {
+      type: 'procedure' as const,
+      input: {
+        encoding: 'application/json' as const,
+        schema: {
+          type: 'object' as const,
+          required: ['communityUri', 'authorDid', 'title', 'sourceType'],
+          properties: {
+            communityUri: {type: 'string' as const, format: 'at-uri'},
+            authorDid: {type: 'string' as const, format: 'did'},
+            title: {type: 'string' as const, maxLength: 500},
+            content: {type: 'string' as const, maxLength: 10000},
+            sourceUri: {type: 'string' as const, format: 'at-uri'},
+            sourceUrl: {type: 'string' as const, format: 'uri'},
+            sourceType: {type: 'string' as const, maxLength: 64},
+            metadata: {type: 'string' as const, maxLength: 20000},
+          },
+        },
+      },
+      output: {
+        encoding: 'application/json' as const,
+        schema: {
+          type: 'object' as const,
+          required: ['contribution'],
+          properties: {
+            contribution: {
+              type: 'ref' as const,
+              ref: 'lex:com.para.community.civicTree.defs#contributionView',
+            },
+          },
+        },
+      },
+    },
+  },
+}
+
+const voteCommunityCivicTreeContribution = {
+  lexicon: 1,
+  id: 'com.para.community.civicTree.voteContribution',
+  defs: {
+    main: {
+      type: 'procedure' as const,
+      input: {
+        encoding: 'application/json' as const,
+        schema: {
+          type: 'object' as const,
+          required: ['contribution', 'voterDid', 'vote'],
+          properties: {
+            contribution: {type: 'string' as const},
+            voterDid: {type: 'string' as const, format: 'did'},
+            vote: {type: 'string' as const, knownValues: ['approve', 'reject']},
+          },
+        },
+      },
+      output: {
+        encoding: 'application/json' as const,
+        schema: {
+          type: 'object' as const,
+          required: ['contribution'],
+          properties: {
+            contribution: {
+              type: 'ref' as const,
+              ref: 'lex:com.para.community.civicTree.defs#contributionView',
+            },
+          },
+        },
+      },
+    },
+  },
+}
+
+const moderateCommunityCivicTreeContribution = {
+  lexicon: 1,
+  id: 'com.para.community.civicTree.moderateContribution',
+  defs: {
+    main: {
+      type: 'procedure' as const,
+      input: {
+        encoding: 'application/json' as const,
+        schema: {
+          type: 'object' as const,
+          required: ['contribution', 'moderatorDid', 'decision'],
+          properties: {
+            contribution: {type: 'string' as const},
+            moderatorDid: {type: 'string' as const, format: 'did'},
+            decision: {
+              type: 'string' as const,
+              knownValues: ['approve', 'reject'],
+            },
+            reason: {type: 'string' as const, maxLength: 1000},
+          },
+        },
+      },
+      output: {
+        encoding: 'application/json' as const,
+        schema: {
+          type: 'object' as const,
+          required: ['contribution'],
+          properties: {
+            contribution: {
+              type: 'ref' as const,
+              ref: 'lex:com.para.community.civicTree.defs#contributionView',
+            },
+          },
+        },
+      },
+    },
+  },
+}
+
+const createCommunityCivicTreeRelationship = {
+  lexicon: 1,
+  id: 'com.para.community.civicTree.createRelationship',
+  defs: {
+    main: {
+      type: 'procedure' as const,
+      input: {
+        encoding: 'application/json' as const,
+        schema: {
+          type: 'object' as const,
+          required: [
+            'communityUri',
+            'sourceCardId',
+            'targetCardId',
+            'relationshipType',
+            'authorDid',
+          ],
+          properties: {
+            communityUri: {type: 'string' as const, format: 'at-uri'},
+            sourceCardId: {type: 'string' as const},
+            targetCardId: {type: 'string' as const},
+            relationshipType: {type: 'string' as const, maxLength: 64},
+            authorDid: {type: 'string' as const, format: 'did'},
+          },
+        },
+      },
+      output: {
+        encoding: 'application/json' as const,
+        schema: {
+          type: 'object' as const,
+          required: ['relationship'],
+          properties: {
+            relationship: {
+              type: 'ref' as const,
+              ref: 'lex:com.para.community.civicTree.defs#relationshipView',
+            },
+          },
+        },
+      },
+    },
+  },
+}
+
+const getCommunityCivicTreeCardVote = {
+  lexicon: 1,
+  id: 'com.para.community.civicTree.getCardVote',
+  defs: {
+    main: {
+      type: 'query' as const,
+      parameters: {
+        type: 'params' as const,
+        required: ['card', 'voter'],
+        properties: {
+          card: {type: 'string' as const},
+          voter: {type: 'string' as const, format: 'did'},
+        },
+      },
+      output: {
+        encoding: 'application/json' as const,
+        schema: {
+          type: 'object' as const,
+          properties: {
+            vote: {
+              type: 'object' as const,
+              properties: {
+                influence: {type: 'integer' as const, minimum: -3, maximum: 3},
+              },
+            },
+          },
+        },
+      },
+    },
+  },
+}
+
+const castCommunityCivicTreeCardVote = {
+  lexicon: 1,
+  id: 'com.para.community.civicTree.castCardVote',
+  defs: {
+    main: {
+      type: 'procedure' as const,
+      input: {
+        encoding: 'application/json' as const,
+        schema: {
+          type: 'object' as const,
+          required: ['card', 'voterDid', 'influence'],
+          properties: {
+            card: {type: 'string' as const},
+            voterDid: {type: 'string' as const, format: 'did'},
+            influence: {type: 'integer' as const, minimum: -3, maximum: 3},
+          },
+        },
+      },
+      output: {
+        encoding: 'application/json' as const,
+        schema: {
+          type: 'object' as const,
+          required: ['success'],
+          properties: {
+            success: {type: 'boolean' as const},
+            totalInfluence: {type: 'integer' as const},
+            voteCount: {type: 'integer' as const, minimum: 0},
+          },
+        },
+      },
+    },
+  },
+}
+
+const getCommunityCivicTreeSummary = {
+  lexicon: 1,
+  id: 'com.para.community.civicTree.getSummary',
+  defs: {
+    main: {
+      type: 'query' as const,
+      parameters: {
+        type: 'params' as const,
+        required: ['community'],
+        properties: {
+          community: {type: 'string' as const, format: 'at-uri'},
+        },
+      },
+      output: {
+        encoding: 'application/json' as const,
+        schema: {type: 'unknown' as const},
+      },
+    },
+  },
+}
+
+const getCommunityCivicTreePulse = {
+  lexicon: 1,
+  id: 'com.para.community.civicTree.getPulse',
+  defs: {
+    main: {
+      type: 'query' as const,
+      parameters: {
+        type: 'params' as const,
+        required: ['community'],
+        properties: {
+          community: {type: 'string' as const, format: 'at-uri'},
+          voter: {type: 'string' as const, format: 'did'},
+        },
+      },
+      output: {
+        encoding: 'application/json' as const,
+        schema: {type: 'unknown' as const},
+      },
+    },
+  },
+}
+
+const listCommunityCivicTreeSuggestions = {
+  lexicon: 1,
+  id: 'com.para.community.civicTree.listSuggestions',
+  defs: {
+    main: {
+      type: 'query' as const,
+      parameters: {
+        type: 'params' as const,
+        required: ['community'],
+        properties: {
+          community: {type: 'string' as const, format: 'at-uri'},
+          status: {type: 'string' as const},
+        },
+      },
+      output: {
+        encoding: 'application/json' as const,
+        schema: {
+          type: 'object' as const,
+          required: ['suggestions'],
+          properties: {
+            suggestions: {
+              type: 'array' as const,
+              items: {type: 'unknown' as const},
+            },
+          },
+        },
+      },
+    },
+  },
+}
+
+const acceptCommunityCivicTreeSuggestion = {
+  lexicon: 1,
+  id: 'com.para.community.civicTree.acceptSuggestion',
+  defs: {
+    main: {
+      type: 'procedure' as const,
+      input: {
+        encoding: 'application/json' as const,
+        schema: {
+          type: 'object' as const,
+          required: ['id', 'authorDid'],
+          properties: {
+            id: {type: 'string' as const},
+            communityUri: {type: 'string' as const, format: 'at-uri'},
+            authorDid: {type: 'string' as const, format: 'did'},
+          },
+        },
+      },
+    },
+  },
+}
+
+const rejectCommunityCivicTreeSuggestion = {
+  lexicon: 1,
+  id: 'com.para.community.civicTree.rejectSuggestion',
+  defs: {
+    main: {
+      type: 'procedure' as const,
+      input: {
+        encoding: 'application/json' as const,
+        schema: {
+          type: 'object' as const,
+          required: ['id'],
+          properties: {
+            id: {type: 'string' as const},
+            communityUri: {type: 'string' as const, format: 'at-uri'},
+          },
+        },
+      },
+    },
+  },
+}
+
 // ─── Community ─────────────────────────────────────────────────────────────────
 
 const listBoards = {
@@ -1597,6 +2313,27 @@ const ALL_PARA_LEXICONS = [
   createCollection,
   updateCollection,
   deleteCollection,
+  // Community Civic Tree
+  communityCivicTreeDefs,
+  communityCivicTreeCard,
+  communityCivicTreeRelationship,
+  communityCivicTreeContribution,
+  communityCivicTreeContributionVote,
+  communityCivicTreeCardVote,
+  communityCivicTreeConfig,
+  getCommunityCivicTreeGraph,
+  listCommunityCivicTreeContributions,
+  submitCommunityCivicTreeContribution,
+  voteCommunityCivicTreeContribution,
+  moderateCommunityCivicTreeContribution,
+  createCommunityCivicTreeRelationship,
+  getCommunityCivicTreeCardVote,
+  castCommunityCivicTreeCardVote,
+  getCommunityCivicTreeSummary,
+  getCommunityCivicTreePulse,
+  listCommunityCivicTreeSuggestions,
+  acceptCommunityCivicTreeSuggestion,
+  rejectCommunityCivicTreeSuggestion,
   // Community
   listBoards,
   listMembers,

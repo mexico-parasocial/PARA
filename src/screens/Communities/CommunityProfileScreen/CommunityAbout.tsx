@@ -738,7 +738,7 @@ export function CommunityAbout({
         accessibilityLabel="Open Community Civic Tree"
         accessibilityHint="Opens the public tree of arguments, evidence, proposals, votes, and references for this community"
         onPress={() => {
-          navigation.navigate('DeliberationGraph', {
+          navigation.navigate('CommunityCivicTree', {
             communityUri: board?.uri || undefined,
             communityName: board?.name || resolvedCommunityName,
           })

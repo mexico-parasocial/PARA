@@ -23,6 +23,18 @@ export const PARA_OPEN_QUESTION_VOTE_COLLECTION =
   'com.para.civic.openQuestionVote'
 export const PARA_COMMUNITY_GOVERNANCE_COLLECTION =
   'com.para.community.governance'
+export const PARA_COMMUNITY_CIVIC_TREE_CARD_COLLECTION =
+  'com.para.community.civicTree.card'
+export const PARA_COMMUNITY_CIVIC_TREE_RELATIONSHIP_COLLECTION =
+  'com.para.community.civicTree.relationship'
+export const PARA_COMMUNITY_CIVIC_TREE_CONTRIBUTION_COLLECTION =
+  'com.para.community.civicTree.contribution'
+export const PARA_COMMUNITY_CIVIC_TREE_CONTRIBUTION_VOTE_COLLECTION =
+  'com.para.community.civicTree.contributionVote'
+export const PARA_COMMUNITY_CIVIC_TREE_CARD_VOTE_COLLECTION =
+  'com.para.community.civicTree.cardVote'
+export const PARA_COMMUNITY_CIVIC_TREE_CONFIG_COLLECTION =
+  'com.para.community.civicTree.config'
 export const PARA_HIGHLIGHT_COLLECTION = 'com.para.highlight.annotation'
 export const PARA_OFFICIAL_CIVIC_ENTITY_COLLECTION = 'com.para.official.entity'
 export const PARA_OFFICIAL_CIVIC_CONTROLLER_COLLECTION =
@@ -297,6 +309,86 @@ export interface CommunityGovernanceRecord {
   deputies: CommunityGovernanceDeputyRole[]
   metadata?: CommunityGovernanceMetadata
   editHistory?: CommunityGovernanceHistoryEntry[]
+}
+
+export type CommunityCivicTreeCardType = string
+
+export type CommunityCivicTreeStance = 'pro' | 'con' | 'neutral'
+
+export type CommunityCivicTreeRelationshipType = string
+
+export type CommunityCivicTreeContributionStatus =
+  | 'pending'
+  | 'approved'
+  | 'rejected'
+
+export type CommunityCivicTreeContributionVoteValue = 'approve' | 'reject'
+
+export type CommunityCivicTreeGovernanceMode =
+  | 'votes_sortition'
+  | 'moderator_gate'
+
+export interface CommunityCivicTreeCardRecord {
+  communityUri: string
+  authorDid: string
+  title: string
+  content?: string
+  cardType: CommunityCivicTreeCardType
+  stance?: CommunityCivicTreeStance
+  compassQuadrant?: string
+  sourceUri?: string
+  sourceUrl?: string
+  metadata?: string
+  createdAt: string
+  updatedAt?: string
+}
+
+export interface CommunityCivicTreeRelationshipRecord {
+  communityUri: string
+  sourceCard: string
+  targetCard: string
+  relationshipType: CommunityCivicTreeRelationshipType
+  authorDid: string
+  createdAt: string
+}
+
+export interface CommunityCivicTreeContributionRecord {
+  communityUri: string
+  authorDid: string
+  title: string
+  content?: string
+  sourceUri?: string
+  sourceUrl?: string
+  sourceType: string
+  metadata?: string
+  status: CommunityCivicTreeContributionStatus
+  approvedCard?: string
+  createdAt: string
+  decidedAt?: string
+}
+
+export interface CommunityCivicTreeContributionVoteRecord {
+  contribution: string
+  voterDid: string
+  vote: CommunityCivicTreeContributionVoteValue
+  createdAt: string
+}
+
+export interface CommunityCivicTreeCardVoteRecord {
+  card: string
+  voterDid: string
+  influence: number
+  createdAt: string
+}
+
+export interface CommunityCivicTreeConfigRecord {
+  communityUri: string
+  governanceMode: CommunityCivicTreeGovernanceMode
+  approvalsRequired: number
+  approvalMarginRequired: number
+  moderatorGateEnabled?: boolean
+  sortitionEnabled?: boolean
+  updatedAt: string
 }
 
 // Helper types matching ATProto common patterns

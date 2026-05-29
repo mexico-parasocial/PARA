@@ -1,5 +1,5 @@
-import {BaseFilterProvider} from './base-filter'
 import {Provider as ColorModeProvider} from './color-mode'
+import {CompassFilterProvider} from './compass-filter'
 import {Provider as DrawerOpenProvider} from './drawer-open'
 import {Provider as DrawerSwipableProvider} from './drawer-swipe-disabled'
 import {Provider as MinimalModeProvider} from './minimal-mode'
@@ -24,7 +24,7 @@ export {useTickEveryMinute} from './tick-every-minute'
 
 export function Provider({children}: React.PropsWithChildren<{}>) {
   return (
-    <BaseFilterProvider>
+    <CompassFilterProvider>
       <ShellLayoutProvder>
         <DrawerOpenProvider>
           <DrawerSwipableProvider>
@@ -38,6 +38,6 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
           </DrawerSwipableProvider>
         </DrawerOpenProvider>
       </ShellLayoutProvder>
-    </BaseFilterProvider>
+    </CompassFilterProvider>
   )
 }

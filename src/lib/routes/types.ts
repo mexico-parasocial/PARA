@@ -25,6 +25,16 @@ export type HighlightsRouteParams =
     }
   | undefined
 
+export type CommunityCivicTreeRouteParams =
+  | {
+      communityUri?: string
+      communityName?: string
+      pendingContributionId?: string
+      highlightCardId?: string
+      entryPoint?: 'contribution_submitted' | 'contribution_approved'
+    }
+  | undefined
+
 export type CommonNavigatorParams = {
   NotFound: undefined
   Lists: undefined
@@ -174,15 +184,7 @@ export type CommonNavigatorParams = {
   CreateCabildeo: undefined
   CreatePosition: {cabildeoUri: string; optionIndex?: number}
   DistrictProfile: {districtId: number; initialTab?: 'overview' | 'activity'}
-  DeliberationGraph:
-    | {
-        communityUri?: string
-        communityName?: string
-        pendingContributionId?: string
-        highlightCardId?: string
-        entryPoint?: 'contribution_submitted' | 'contribution_approved'
-      }
-    | undefined
+  CommunityCivicTree: CommunityCivicTreeRouteParams
   CivicTree: undefined
   CollectionDetail: {collectionId: string}
 }

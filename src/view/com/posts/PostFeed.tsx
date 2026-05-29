@@ -186,7 +186,7 @@ let PostFeed = ({
   feed,
   feedParams,
   ignoreFilterFor,
-  applyBaseCommunityFilters = false,
+  applyCompassCommunityFilters = false,
   style,
   enabled,
   pollInterval,
@@ -211,7 +211,7 @@ let PostFeed = ({
   feed: FeedDescriptor
   feedParams?: FeedParams
   ignoreFilterFor?: string
-  applyBaseCommunityFilters?: boolean
+  applyCompassCommunityFilters?: boolean
   style?: StyleProp<ViewStyle>
   enabled?: boolean
   pollInterval?: number
@@ -264,8 +264,8 @@ let PostFeed = ({
 
   const feedCacheKey = feedParams?.feedCacheKey
   const opts = useMemo(
-    () => ({enabled, ignoreFilterFor, applyBaseCommunityFilters}),
-    [enabled, ignoreFilterFor, applyBaseCommunityFilters],
+    () => ({enabled, ignoreFilterFor, applyCompassCommunityFilters}),
+    [enabled, ignoreFilterFor, applyCompassCommunityFilters],
   )
   const {
     data,

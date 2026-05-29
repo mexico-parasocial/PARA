@@ -24,53 +24,55 @@ const NINTH_FILTERS = new Set([
 ])
 
 const STATE_FILTERS = new Set(
-  MEXICAN_STATES.map(state => normalizeBaseFilterValue(state)),
+  MEXICAN_STATES.map(state => normalizeCompassFilterValue(state)),
 )
 
-export type BaseFeedFilters = {
+export type CompassFeedFilters = {
   party?: string
   community?: string
 }
 
-export function classifyBaseFeedFilters(filters: string[]): BaseFeedFilters {
-  const result: BaseFeedFilters = {}
+export function classifyCompassFeedFilters(
+  filters: string[],
+): CompassFeedFilters {
+  const result: CompassFeedFilters = {}
 
   for (const filter of filters) {
-    const normalized = normalizeBaseFilterValue(filter)
+    const normalized = normalizeCompassFilterValue(filter)
     if (!normalized || STATE_FILTERS.has(normalized)) {
       continue
     }
 
     if (!result.party && PARTY_FILTERS.has(normalized)) {
-      result.party = canonicalizeBasePartyFilter(filter)
+      result.party = canonicalizeCompassPartyFilter(filter)
       continue
     }
 
     if (!result.community && NINTH_FILTERS.has(normalized)) {
-      result.community = stripBaseFilterPrefix(filter)
+      result.community = stripCompassFilterPrefix(filter)
     }
   }
 
   return result
 }
 
-export function normalizeBaseFilterValue(value: string) {
+export function normalizeCompassFilterValue(value: string) {
   return value.trim().replace(/^p\//i, '').toLowerCase()
 }
 
-export function canonicalizeBasePartyFilter(value: string) {
-  const normalized = normalizeBaseFilterValue(value)
+export function canonicalizeCompassPartyFilter(value: string) {
+  const normalized = normalizeCompassFilterValue(value)
   const party = PARTY_FILTERS.get(normalized)
-  return party ? `p/${party}` : stripBaseFilterPrefix(value)
+  return party ? `p/${party}` : stripCompassFilterPrefix(value)
 }
 
-export function canonicalizeBaseCommunityFilter(value: string) {
-  const normalized = normalizeBaseFilterValue(value)
+export function canonicalizeCompassCommunityFilter(value: string) {
+  const normalized = normalizeCompassFilterValue(value)
   return PARTY_FILTERS.has(normalized)
-    ? canonicalizeBasePartyFilter(value)
-    : stripBaseFilterPrefix(value)
+    ? canonicalizeCompassPartyFilter(value)
+    : stripCompassFilterPrefix(value)
 }
 
-function stripBaseFilterPrefix(value: string) {
+function stripCompassFilterPrefix(value: string) {
   return value.trim().replace(/^p\//i, '')
 }

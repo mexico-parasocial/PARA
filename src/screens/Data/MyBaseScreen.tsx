@@ -85,7 +85,7 @@ export function MyBaseScreen() {
         onPressAffiliations={() => navigation.navigate('MyAffiliations')}
         onPressCivicTree={() => navigation.navigate('CivicTree')}
         onPressSpatialDeliberation={() =>
-          navigation.navigate('DeliberationGraph')
+          navigation.navigate('CommunityCivicTree')
         }
         onPressViewProfile={() =>
           navigation.navigate('Profile', {

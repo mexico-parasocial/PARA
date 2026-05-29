@@ -7,10 +7,10 @@ import {Trans} from '@lingui/react/macro'
 
 import {DOCUMENTS as MOCK_DOCS} from '#/lib/mock-data'
 import {type Document as DocItem} from '#/lib/mock-data/types'
-import {useBaseFilter} from '#/state/shell/base-filter'
+import {useCompassFilter} from '#/state/shell/compass-filter'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
-import {ActiveFiltersStackButton} from '#/components/BaseFilterControls'
+import {ActiveFiltersStackButton} from '#/components/CompassFilterControls'
 import {SearchInput} from '#/components/forms/SearchInput'
 import {CalendarDays_Stroke2_Corner0_Rounded as CalendarIcon} from '#/components/icons/CalendarDays'
 import {MagnifyingGlass_Stroke2_Corner0_Rounded as SearchIcon} from '#/components/icons/MagnifyingGlass'
@@ -75,7 +75,7 @@ export function DocumentsScreen({
 }) {
   const t = useTheme()
   const {_} = useLingui()
-  const {activeFilters} = useBaseFilter()
+  const {activeFilters} = useCompassFilter()
 
   const [activeCategory, setActiveCategory] = useState<Category>(() => {
     const initial = route.params?.category

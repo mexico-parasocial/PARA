@@ -1,7 +1,7 @@
 import {Modal, ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native'
 import {Trans} from '@lingui/react/macro'
 
-import {type DeliberationSummary} from '#/state/queries/deliberation'
+import {type DeliberationSummary} from '#/state/queries/community-civic-tree'
 import {useTheme} from '#/alf'
 import {Text} from '#/components/Typography'
 

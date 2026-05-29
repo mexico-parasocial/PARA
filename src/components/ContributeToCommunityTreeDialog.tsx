@@ -11,7 +11,7 @@ import {
 } from '#/lib/civic-tree-source-types'
 import {type NavigationProp} from '#/lib/routes/types'
 import {useCommunityBoardsQuery} from '#/state/queries/community-boards'
-import {useCreateCommunityTreeContributionMutation} from '#/state/queries/deliberation'
+import {useCreateCommunityTreeContributionMutation} from '#/state/queries/community-civic-tree'
 import {useSession} from '#/state/session'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
@@ -106,7 +106,7 @@ function ContributeToCommunityTreeDialogInner({
           control.close()
           setNote('')
           setSelectedCommunityUri(undefined)
-          navigation.navigate('DeliberationGraph', {
+          navigation.navigate('CommunityCivicTree', {
             communityUri: selectedBoard.uri,
             communityName: selectedBoard.name,
             pendingContributionId: data.contribution.id,

@@ -4,17 +4,17 @@ import {FeedTuner, FeedViewPostsSlice} from '#/lib/api/feed-manip'
 import {type FeedDescriptor} from '../queries/post-feed'
 import {usePreferencesQuery} from '../queries/preferences'
 import {useSession} from '../session'
-import {useBaseFilter} from '../shell/base-filter'
+import {useCompassFilter} from '../shell/compass-filter'
 import {useLanguagePrefs} from './languages'
 
 export function useFeedTuners(
   feedDesc: FeedDescriptor,
-  opts?: {applyBaseCommunityFilters?: boolean},
+  opts?: {applyCompassCommunityFilters?: boolean},
 ) {
   const langPrefs = useLanguagePrefs()
   const {data: preferences} = usePreferencesQuery()
   const {currentAccount} = useSession()
-  const {activeFilters} = useBaseFilter() // Use activeFilters from card selections
+  const {activeFilters} = useCompassFilter()
 
   return useMemo(() => {
     if (feedDesc.startsWith('author')) {
@@ -50,9 +50,9 @@ export function useFeedTuners(
       feedTuners.push(FeedTuner.dedupThreads)
       feedTuners.push(FeedTuner.removeMutedThreads)
 
-      // Base community filters should only affect the Base feed.
+      // Compass community filters should only affect the compass-aware feed.
       // When no filters are selected, show ALL posts (no filtering).
-      const allFilters = opts?.applyBaseCommunityFilters ? activeFilters : []
+      const allFilters = opts?.applyCompassCommunityFilters ? activeFilters : []
 
       if (allFilters.length > 0) {
         feedTuners.push((tuner, slices) => {
@@ -103,7 +103,7 @@ export function useFeedTuners(
     preferences,
     langPrefs,
     activeFilters,
-    opts?.applyBaseCommunityFilters,
+    opts?.applyCompassCommunityFilters,
   ])
 }
 

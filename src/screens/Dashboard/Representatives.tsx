@@ -3,7 +3,6 @@ import {
   ActivityIndicator,
   ScrollView,
   StyleSheet,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native'
@@ -13,8 +12,6 @@ import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 import {type NativeStackScreenProps} from '@react-navigation/native-stack'
 
-import {OFFICIAL_CIVIC_SCOPES} from '#/lib/official-civic-accounts'
-import {type RepresentativeNomination} from '#/lib/representatives/participation'
 import {
   type CommonNavigatorParams,
   type NavigationProp,
@@ -23,16 +20,10 @@ import {
   type RepresentativeItem,
   useRepresentativesQuery,
 } from '#/state/queries/data-tab'
-import {useOfficialCivicAccountQuery} from '#/state/queries/official-civic-accounts'
-import {
-  useCreateRepresentativeNominationMutation,
-  useRepresentativeParticipationIndexQuery,
-} from '#/state/queries/representative-participation'
-import {useSession} from '#/state/session'
-import {useBaseFilter} from '#/state/shell/base-filter'
+import {useCompassFilter} from '#/state/shell/compass-filter'
 import {useTheme} from '#/alf'
-import {ActiveFiltersStackButton} from '#/components/BaseFilterControls'
 import {Button, ButtonText} from '#/components/Button'
+import {ActiveFiltersStackButton} from '#/components/CompassFilterControls'
 import {EmptyStateError, EmptyStateNoData} from '#/components/EmptyStates'
 import {SearchInput} from '#/components/forms/SearchInput'
 import {ArrowsDiagonalIn_Stroke2_Corner0_Rounded as SortIcon} from '#/components/icons/ArrowsDiagonal'
@@ -64,7 +55,6 @@ export function RepresentativesScreen({route}: Props) {
   const {_} = useLingui()
   const t = useTheme()
   const navigation = useNavigation<NavigationProp>()
-  const {currentAccount} = useSession()
 
   const [selectedCategory, setSelectedCategory] = useState(
     route.params?.category || 'All',
@@ -72,16 +62,7 @@ export function RepresentativesScreen({route}: Props) {
   const [searchQuery, setSearchQuery] = useState(route.params?.q || '')
   const [sortMode, setSortMode] = useState<SortMode>('impact')
   const [viewMode, setViewMode] = useState<ViewMode>('all')
-  const [selectedRep, setSelectedRep] = useState<RepresentativeItem | null>(
-    null,
-  )
-  const [nominationMode, setNominationMode] = useState<'public' | 'private'>(
-    'public',
-  )
-  const [nominationReason, setNominationReason] = useState('')
-  const {activeFilters} = useBaseFilter()
-  const {data: participationIndex} = useRepresentativeParticipationIndexQuery()
-  const createNomination = useCreateRepresentativeNominationMutation()
+  const {activeFilters} = useCompassFilter()
 
   const {
     data,
@@ -121,35 +102,9 @@ export function RepresentativesScreen({route}: Props) {
   }, [activeFilters, reps, sortMode, viewMode])
 
   const featuredReps = filteredReps.slice(0, 3)
-  const officialCount = filteredReps.filter(rep => rep.type === 'Party').length
-  const communityCount = filteredReps.filter(
-    rep => rep.type === 'Community',
-  ).length
-  const totalReach = filteredReps.reduce(
-    (sum, rep) => sum + (rep.followersCount ?? 0),
-    0,
-  )
-  const coveredStates = new Set(filteredReps.map(rep => rep.state)).size
 
   const onPressRep = (rep: RepresentativeItem) => {
-    setSelectedRep(rep)
-  }
-
-  const submitNomination = () => {
-    if (!selectedRep || !currentAccount?.did || !nominationReason.trim()) return
-    createNomination.mutate(
-      {
-        representativeId: selectedRep.id,
-        mode: nominationMode,
-        nominatorDid: currentAccount.did,
-        nomineeHandle: selectedRep.handle,
-        communityUri: selectedRep.areaScope?.communityUri,
-        reason: nominationReason.trim(),
-      },
-      {
-        onSuccess: () => setNominationReason(''),
-      },
-    )
+    navigation.navigate('Profile', {name: rep.handle})
   }
 
   const formatCount = (n: number) => {
@@ -166,9 +121,6 @@ export function RepresentativesScreen({route}: Props) {
           <Layout.Header.TitleText>
             <Trans>Representatives</Trans>
           </Layout.Header.TitleText>
-          <Layout.Header.SubtitleText>
-            <Trans>Mandatos, alcance y confianza</Trans>
-          </Layout.Header.SubtitleText>
         </Layout.Header.Content>
         <Layout.Header.Slot>
           <ActiveFiltersStackButton />
@@ -179,33 +131,6 @@ export function RepresentativesScreen({route}: Props) {
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.contentContainer}>
-          <View
-            style={[
-              styles.overview,
-              {
-                backgroundColor: t.palette.primary_500,
-              },
-            ]}>
-            <Text style={styles.overviewEyebrow}>
-              <Trans>Mapa de representación</Trans>
-            </Text>
-            <Text style={styles.overviewTitle}>
-              <Trans>Quién puede hablar por quién, y con qué mandato.</Trans>
-            </Text>
-            <Text style={styles.overviewBody}>
-              <Trans>
-                Encuentra representantes oficiales, roles comunitarios y voces
-                delegables antes de ceder voto o revisar una decisión pública.
-              </Trans>
-            </Text>
-            <View style={styles.overviewStats}>
-              <Metric label={_(msg`Alcance`)} value={formatCount(totalReach)} />
-              <Metric label={_(msg`Oficiales`)} value={`${officialCount}`} />
-              <Metric label={_(msg`Comunidad`)} value={`${communityCount}`} />
-              <Metric label={_(msg`Estados`)} value={`${coveredStates}`} />
-            </View>
-          </View>
-
           <View style={styles.searchPanel}>
             <SearchInput
               value={searchQuery}
@@ -239,44 +164,12 @@ export function RepresentativesScreen({route}: Props) {
             ))}
           </ScrollView>
 
-          {selectedRep && (
-            <RepresentativeNominationPanel
-              representative={selectedRep}
-              mode={nominationMode}
-              setMode={setNominationMode}
-              reason={nominationReason}
-              setReason={setNominationReason}
-              onClose={() => setSelectedRep(null)}
-              onSubmit={submitNomination}
-              isSubmitting={createNomination.isPending}
-              canSubmit={Boolean(currentAccount?.did)}
-              viewerDid={currentAccount?.did}
-              onOpenProfile={() =>
-                navigation.navigate('Profile', {name: selectedRep.handle})
-              }
-              nominations={
-                participationIndex?.nominationsByRepresentative[
-                  selectedRep.id
-                ] ?? []
-              }
-            />
-          )}
-
           {!isLoading && !error && featuredReps.length > 0 && (
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <View>
-                  <Text style={[styles.sectionTitle, t.atoms.text]}>
-                    <Trans>Representantes clave</Trans>
-                  </Text>
-                  <Text
-                    style={[
-                      styles.sectionSubtitle,
-                      t.atoms.text_contrast_medium,
-                    ]}>
-                    <Trans>Ordenados por señal de mandato y alcance.</Trans>
-                  </Text>
-                </View>
+                <Text style={[styles.sectionTitle, t.atoms.text]}>
+                  <Trans>Representantes clave</Trans>
+                </Text>
                 <SortToggle value={sortMode} onChange={setSortMode} />
               </View>
               <ScrollView
@@ -289,14 +182,6 @@ export function RepresentativesScreen({route}: Props) {
                     rep={rep}
                     onPress={() => onPressRep(rep)}
                     formatCount={formatCount}
-                    nominations={
-                      participationIndex?.nominationsByRepresentative[rep.id]
-                        ?.length ?? 0
-                    }
-                    pajareoCount={
-                      participationIndex?.pajareoByRepresentative[rep.id]
-                        ?.length ?? 0
-                    }
                   />
                 ))}
               </ScrollView>
@@ -322,7 +207,8 @@ export function RepresentativesScreen({route}: Props) {
                 <Text style={[styles.sectionTitle, t.atoms.text]}>
                   <Trans>Directorio verificable</Trans>
                 </Text>
-                <Text style={[styles.resultCount, t.atoms.text_contrast_medium]}>
+                <Text
+                  style={[styles.resultCount, t.atoms.text_contrast_medium]}>
                   {filteredReps.length} <Trans>resultados</Trans>
                 </Text>
               </View>
@@ -332,14 +218,6 @@ export function RepresentativesScreen({route}: Props) {
                   rep={rep}
                   onPress={() => onPressRep(rep)}
                   formatCount={formatCount}
-                  nominations={
-                    participationIndex?.nominationsByRepresentative[rep.id]
-                      ?.length ?? 0
-                  }
-                  pajareoCount={
-                    participationIndex?.pajareoByRepresentative[rep.id]
-                      ?.length ?? 0
-                  }
                 />
               ))}
               {hasNextPage && (
@@ -384,15 +262,6 @@ function representativeScore(rep: RepresentativeItem) {
     Math.log10((rep.postsCount ?? 0) + 1) * 3 +
     Math.log10((rep.followingCount ?? 0) + 1)
   return reach + hasMandate + typeWeight + activity
-}
-
-function Metric({label, value}: {label: string; value: string}) {
-  return (
-    <View style={styles.metric}>
-      <Text style={styles.metricValue}>{value}</Text>
-      <Text style={styles.metricLabel}>{label}</Text>
-    </View>
-  )
 }
 
 function SegmentedControl({
@@ -511,272 +380,14 @@ function SortToggle({
   )
 }
 
-function RepresentativeNominationPanel({
-  representative,
-  mode,
-  setMode,
-  reason,
-  setReason,
-  onClose,
-  onSubmit,
-  isSubmitting,
-  canSubmit,
-  viewerDid,
-  onOpenProfile,
-  nominations,
-}: {
-  representative: RepresentativeItem
-  mode: 'public' | 'private'
-  setMode: (mode: 'public' | 'private') => void
-  reason: string
-  setReason: (reason: string) => void
-  onClose: () => void
-  onSubmit: () => void
-  isSubmitting: boolean
-  canSubmit: boolean
-  viewerDid?: string
-  onOpenProfile: () => void
-  nominations: RepresentativeNomination[]
-}) {
-  const {_} = useLingui()
-  const t = useTheme()
-  const {data: officialAccount} = useOfficialCivicAccountQuery(
-    representative,
-    viewerDid,
-  )
-  const activeControllers =
-    officialAccount?.controllers.filter(item => item.status === 'active') ?? []
-  const viewerController = officialAccount?.viewerController
-  const isVerifiedOfficial = officialAccount?.account.status === 'verified'
-  const isRetired = officialAccount?.account.status === 'retired'
-  const panelMode = isVerifiedOfficial
-    ? 'verified'
-    : isRetired
-      ? 'retired'
-      : 'unclaimed'
-  return (
-    <View
-      style={[
-        styles.nominationPanel,
-        t.atoms.bg_contrast_25,
-        t.atoms.border_contrast_low,
-      ]}>
-      <View style={styles.panelHeader}>
-        <View style={styles.panelTitleWrap}>
-          <Text style={[styles.panelEyebrow, {color: t.palette.primary_500}]}>
-            {panelMode === 'verified' ? (
-              <Trans>Cuenta cívica oficial</Trans>
-            ) : panelMode === 'retired' ? (
-              <Trans>Perfil histórico</Trans>
-            ) : (
-              <Trans>Perfil reservado</Trans>
-            )}
-          </Text>
-          <Text style={[styles.panelTitle, t.atoms.text]}>
-            {representative.name}
-          </Text>
-          <Text style={[styles.panelSub, t.atoms.text_contrast_medium]}>
-            {representative.office || representative.category} ·{' '}
-            {representative.jurisdiction || representative.state}
-          </Text>
-        </View>
-        <TouchableOpacity accessibilityRole="button" onPress={onClose}>
-          <Text style={{color: t.palette.primary_500, fontWeight: '800'}}>
-            <Trans>Cerrar</Trans>
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <Text style={[styles.panelBody, t.atoms.text_contrast_medium]}>
-        {panelMode === 'verified' ? (
-          <Trans>
-            Esta cuenta representa a la entidad oficial. Las acciones públicas
-            salen a nombre de la entidad; el controlador humano queda privado y
-            auditable.
-          </Trans>
-        ) : panelMode === 'retired' ? (
-          <Trans>
-            Este perfil queda como archivo histórico. No puede publicar,
-            responder Pajareo ni firmar cabildeos.
-          </Trans>
-        ) : (
-          <Trans>
-            Este perfil está reservado y visible, pero todavía no puede actuar.
-            Puedes iniciar una nominación pública o privada para activarlo.
-          </Trans>
-        )}
-      </Text>
-
-      <View style={styles.officialFacts}>
-        <View style={[styles.officialFact, t.atoms.bg_contrast_50]}>
-          <Text style={[styles.officialFactLabel, t.atoms.text_contrast_medium]}>
-            <Trans>Estado</Trans>
-          </Text>
-          <Text style={[styles.officialFactValue, t.atoms.text]}>
-            {panelMode === 'verified'
-              ? 'verified'
-              : panelMode === 'retired'
-                ? 'retired'
-                : 'unclaimed'}
-          </Text>
-        </View>
-        <View style={[styles.officialFact, t.atoms.bg_contrast_50]}>
-          <Text style={[styles.officialFactLabel, t.atoms.text_contrast_medium]}>
-            <Trans>Controladores</Trans>
-          </Text>
-          <Text style={[styles.officialFactValue, t.atoms.text]}>
-            {activeControllers.length}
-          </Text>
-        </View>
-      </View>
-
-      {isVerifiedOfficial && (
-        <View style={styles.officialScopeWrap}>
-          <Text style={[styles.panelHint, t.atoms.text_contrast_medium]}>
-            {viewerController ? (
-              <Trans>Tu cockpit oficial activo</Trans>
-            ) : (
-              <Trans>Scopes disponibles para controladores aprobados</Trans>
-            )}
-          </Text>
-          <View style={styles.signalRow}>
-            {(
-              viewerController?.scopes ??
-              OFFICIAL_CIVIC_SCOPES.map(scope => scope.value)
-            ).map(scope => (
-              <SignalPill
-                key={scope}
-                label={scope.replace('official.', '')}
-                icon="Community"
-              />
-            ))}
-          </View>
-          <Button
-            label={_(msg`Open representative profile`)}
-            variant="outline"
-            color="secondary"
-            size="small"
-            onPress={onOpenProfile}>
-            <ButtonText>
-              <Trans>Abrir perfil</Trans>
-            </ButtonText>
-          </Button>
-        </View>
-      )}
-
-      {!isVerifiedOfficial && !isRetired && (
-        <>
-          <View style={styles.nominationModeRow}>
-            {(['public', 'private'] as const).map(option => {
-              const selected = mode === option
-              return (
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  key={option}
-                  onPress={() => setMode(option)}
-                  style={[
-                    styles.nominationMode,
-                    selected
-                      ? {backgroundColor: t.palette.primary_500}
-                      : t.atoms.bg_contrast_50,
-                  ]}>
-                  <Text
-                    style={[
-                      styles.nominationModeText,
-                      selected ? {color: 'white'} : t.atoms.text,
-                    ]}>
-                    {option === 'public' ? (
-                      <Trans>Pública</Trans>
-                    ) : (
-                      <Trans>Privada</Trans>
-                    )}
-                  </Text>
-                </TouchableOpacity>
-              )
-            })}
-          </View>
-
-          <TextInput
-            accessibilityLabel={_(msg`Nomination reason input`)}
-            accessibilityHint={_(
-              msg`Write why this representative profile should be activated.`,
-            )}
-            value={reason}
-            onChangeText={setReason}
-            placeholder={_(
-              msg`Explica brevemente por qué debe activarse este perfil...`,
-            )}
-            placeholderTextColor={t.palette.contrast_400}
-            multiline
-            style={[
-              styles.nominationInput,
-              t.atoms.text,
-              {
-                borderColor: t.palette.contrast_200,
-                backgroundColor: t.palette.contrast_0,
-              },
-            ]}
-          />
-
-          {!canSubmit && (
-            <Text style={[styles.panelHint, t.atoms.text_contrast_medium]}>
-              <Trans>Inicia sesión para crear nominaciones.</Trans>
-            </Text>
-          )}
-
-          <Button
-            label={_(msg`Create nomination`)}
-            variant="solid"
-            color="primary"
-            size="small"
-            disabled={!canSubmit || !reason.trim() || isSubmitting}
-            onPress={onSubmit}>
-            <ButtonText>
-              {isSubmitting ? (
-                <Trans>Enviando...</Trans>
-              ) : mode === 'public' ? (
-                <Trans>Reclamar perfil oficial</Trans>
-              ) : (
-                <Trans>Nominar en privado</Trans>
-              )}
-            </ButtonText>
-          </Button>
-        </>
-      )}
-
-      {nominations.length > 0 && (
-        <View style={styles.nominationList}>
-          {nominations.slice(0, 2).map(nomination => (
-            <View
-              key={nomination.id}
-              style={[styles.nominationItem, t.atoms.bg_contrast_50]}>
-              <Text style={[styles.nominationReason, t.atoms.text]}>
-                {nomination.reason}
-              </Text>
-              <Text style={[styles.panelHint, t.atoms.text_contrast_medium]}>
-                {nomination.supportCount} <Trans>apoyos</Trans> ·{' '}
-                {nomination.status}
-              </Text>
-            </View>
-          ))}
-        </View>
-      )}
-    </View>
-  )
-}
-
 function FeaturedRepCard({
   rep,
   onPress,
   formatCount,
-  nominations,
-  pajareoCount,
 }: {
   rep: RepresentativeItem
   onPress: () => void
   formatCount: (n: number) => string
-  nominations: number
-  pajareoCount: number
 }) {
   const t = useTheme()
   return (
@@ -809,15 +420,8 @@ function FeaturedRepCard({
         <Text style={[styles.reachText, {color: t.palette.primary_500}]}>
           {formatCount(rep.followersCount ?? 0)} <Trans>alcance</Trans>
         </Text>
-        <Text style={[styles.openText, t.atoms.text_contrast_medium]}>
-          {nominations + pajareoCount} <Trans>señales</Trans>
-        </Text>
         <Text style={[styles.openText, t.atoms.text]}>
-          {rep.status === 'verified' ? (
-            <Trans>Ver</Trans>
-          ) : (
-            <Trans>Nominar</Trans>
-          )}
+          <Trans>Ver perfil</Trans>
         </Text>
       </View>
     </TouchableOpacity>
@@ -828,14 +432,10 @@ function RepCard({
   rep,
   onPress,
   formatCount,
-  nominations,
-  pajareoCount,
 }: {
   rep: RepresentativeItem
   onPress: () => void
   formatCount: (n: number) => string
-  nominations: number
-  pajareoCount: number
 }) {
   const t = useTheme()
   return (
@@ -876,21 +476,12 @@ function RepCard({
             label={`${formatCount(rep.followersCount ?? 0)} alcance`}
             icon="reach"
           />
-          <SignalPill
-            label="cuenta oficial"
-            icon={rep.type}
-          />
-          <SignalPill label={`${nominations} nominaciones`} icon="reach" />
-          <SignalPill label={`${pajareoCount} pajareos`} icon="Community" />
+          <SignalPill label="cuenta oficial" icon={rep.type} />
         </View>
       </View>
       <View style={styles.viewButton}>
         <Text style={{color: t.palette.primary_500, fontWeight: '800'}}>
-          {rep.status === 'verified' ? (
-            <Trans>Gestionar</Trans>
-          ) : (
-            <Trans>Nominar</Trans>
-          )}
+          <Trans>Ver perfil</Trans>
         </Text>
       </View>
     </TouchableOpacity>
@@ -927,7 +518,8 @@ function OfficialCivicBadge({compact = false}: {compact?: boolean}) {
       ]}>
       <CommunityIcon size="xs" style={{color: t.palette.primary_500}} />
       {!compact && (
-        <Text style={[styles.officialBadgeText, {color: t.palette.primary_500}]}>
+        <Text
+          style={[styles.officialBadgeText, {color: t.palette.primary_500}]}>
           <Trans>Cuenta oficial</Trans>
         </Text>
       )}
@@ -950,12 +542,11 @@ function TrustBadge({
         styles.trustBadge,
         compact && styles.trustBadgeCompact,
         {
-          backgroundColor:
-            isVerified
-              ? t.palette.positive_500 + '18'
-              : rep.status === 'retired'
-                ? t.palette.contrast_100
-                : t.palette.primary_500 + '14',
+          backgroundColor: isVerified
+            ? t.palette.positive_500 + '18'
+            : rep.status === 'retired'
+              ? t.palette.contrast_100
+              : t.palette.primary_500 + '14',
         },
       ]}>
       {isVerified ? (
@@ -976,12 +567,11 @@ function TrustBadge({
           style={[
             styles.trustText,
             {
-              color:
-                isVerified
-                  ? t.palette.positive_500
-                  : rep.status === 'retired'
-                    ? t.palette.contrast_500
-                    : t.palette.primary_500,
+              color: isVerified
+                ? t.palette.positive_500
+                : rep.status === 'retired'
+                  ? t.palette.contrast_500
+                  : t.palette.primary_500,
             },
           ]}>
           {isVerified ? (
@@ -1027,53 +617,6 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 100,
   },
-  overview: {
-    borderRadius: 8,
-    padding: 18,
-    marginBottom: 14,
-  },
-  overviewEyebrow: {
-    color: 'rgba(255,255,255,0.78)',
-    fontSize: 12,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-  },
-  overviewTitle: {
-    color: 'white',
-    fontSize: 24,
-    lineHeight: 30,
-    fontWeight: '900',
-    marginTop: 8,
-  },
-  overviewBody: {
-    color: 'rgba(255,255,255,0.86)',
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 8,
-  },
-  overviewStats: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 16,
-  },
-  metric: {
-    flex: 1,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255,255,255,0.14)',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-  },
-  metricValue: {
-    color: 'white',
-    fontSize: 17,
-    fontWeight: '900',
-  },
-  metricLabel: {
-    color: 'rgba(255,255,255,0.76)',
-    fontSize: 10,
-    fontWeight: '700',
-    marginTop: 2,
-  },
   searchPanel: {
     gap: 10,
     marginBottom: 12,
@@ -1114,7 +657,9 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   sectionHeader: {
-    gap: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 12,
   },
   sectionHeaderCompact: {
@@ -1126,10 +671,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 19,
     fontWeight: '900',
-  },
-  sectionSubtitle: {
-    fontSize: 13,
-    marginTop: 2,
   },
   resultCount: {
     fontSize: 12,
@@ -1150,106 +691,6 @@ const styles = StyleSheet.create({
   sortText: {
     fontSize: 12,
     fontWeight: '800',
-  },
-  nominationPanel: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 18,
-  },
-  panelHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  panelTitleWrap: {
-    flex: 1,
-  },
-  panelEyebrow: {
-    fontSize: 11,
-    fontWeight: '900',
-    textTransform: 'uppercase',
-  },
-  panelTitle: {
-    fontSize: 18,
-    fontWeight: '900',
-    marginTop: 3,
-  },
-  panelSub: {
-    fontSize: 13,
-    fontWeight: '700',
-    marginTop: 2,
-  },
-  panelBody: {
-    fontSize: 13,
-    lineHeight: 19,
-    marginTop: 12,
-  },
-  nominationModeRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 12,
-  },
-  nominationMode: {
-    flex: 1,
-    alignItems: 'center',
-    borderRadius: 8,
-    paddingVertical: 9,
-  },
-  nominationModeText: {
-    fontSize: 13,
-    fontWeight: '900',
-  },
-  nominationInput: {
-    borderWidth: 1,
-    borderRadius: 8,
-    minHeight: 78,
-    padding: 12,
-    fontSize: 14,
-    marginTop: 10,
-    marginBottom: 10,
-    textAlignVertical: 'top',
-  },
-  panelHint: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  officialFacts: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 12,
-  },
-  officialFact: {
-    flex: 1,
-    borderRadius: 8,
-    padding: 10,
-  },
-  officialFactLabel: {
-    fontSize: 10,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-  },
-  officialFactValue: {
-    fontSize: 14,
-    fontWeight: '900',
-    marginTop: 3,
-  },
-  officialScopeWrap: {
-    gap: 10,
-    marginTop: 12,
-  },
-  nominationList: {
-    gap: 8,
-    marginTop: 12,
-  },
-  nominationItem: {
-    borderRadius: 8,
-    padding: 10,
-  },
-  nominationReason: {
-    fontSize: 13,
-    lineHeight: 18,
-    fontWeight: '700',
   },
   featuredList: {
     gap: 10,

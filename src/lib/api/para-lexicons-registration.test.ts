@@ -154,6 +154,49 @@ describe('registerParaLexicons', () => {
     })
   })
 
+  it('registers Community Civic Tree v2 records and XRPC methods', () => {
+    const agent = new BskyAgent({service: 'https://example.com'})
+
+    registerParaLexicons(agent)
+
+    expect(
+      agent.lex.getDef('com.para.community.civicTree.card#main'),
+    ).toMatchObject({
+      type: 'record',
+      record: {
+        required: ['communityUri', 'authorDid', 'title', 'cardType', 'createdAt'],
+      },
+    })
+    expect(
+      agent.lex.getDef('com.para.community.civicTree.contribution#main'),
+    ).toMatchObject({
+      type: 'record',
+      record: {
+        properties: {
+          status: {knownValues: ['pending', 'approved', 'rejected']},
+        },
+      },
+    })
+    expect(
+      agent.lex.getDef('com.para.community.civicTree.getGraph#main'),
+    ).toMatchObject({
+      type: 'query',
+      parameters: {
+        required: ['community'],
+      },
+    })
+    expect(
+      agent.lex.getDef('com.para.community.civicTree.voteContribution#main'),
+    ).toMatchObject({
+      type: 'procedure',
+      input: {
+        schema: {
+          required: ['contribution', 'voterDid', 'vote'],
+        },
+      },
+    })
+  })
+
   it('registers highlight queries with backend parameter names', () => {
     const agent = new BskyAgent({service: 'https://example.com'})
 

@@ -8,7 +8,7 @@ import {tokens, useTheme} from '#/alf'
 export type Props = {
   fill?: PathProps['fill']
   style?: TextProps['style']
-  size?: keyof typeof sizes
+  size?: keyof typeof sizes | number
   gradient?: keyof typeof tokens.gradients
 } & Omit<SvgProps, 'style' | 'size'>
 
@@ -28,7 +28,10 @@ export function useCommonSVGProps(props: Props) {
   const t = useTheme()
   const {fill, size, gradient, ...rest} = props
   const style = StyleSheet.flatten(rest.style)
-  const _size = Number(size ? sizes[size] : rest.width || sizes.md)
+  const _size =
+    typeof size === 'number'
+      ? size
+      : Number(size ? sizes[size] : rest.width || sizes.md)
   let _fill = fill || style?.color || t.palette.primary_500
   let gradientDef = null
 

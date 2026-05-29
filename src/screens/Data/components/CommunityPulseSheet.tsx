@@ -1,7 +1,7 @@
 import {Modal, ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native'
 import {Trans} from '@lingui/react/macro'
 
-import {type CommunityPulse} from '#/state/queries/deliberation'
+import {type CommunityPulse} from '#/state/queries/community-civic-tree'
 import {useTheme} from '#/alf'
 import {Text} from '#/components/Typography'
 import {CARD_TYPE_COLORS, STANCE_COLORS} from '../deliberation-colors'

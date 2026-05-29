@@ -94,7 +94,7 @@ export function CommunityDirectoryScreen() {
   }, [boardsData])
 
   const handlePressCommunity = (board: CommunityBoardView) => {
-    navigation.navigate('DeliberationGraph', {
+    navigation.navigate('CommunityCivicTree', {
       communityUri: board.uri,
       communityName: board.name,
     })

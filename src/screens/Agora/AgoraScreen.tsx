@@ -39,6 +39,7 @@ import * as Dialog from '#/components/Dialog'
 import {EmptyStateError} from '#/components/EmptyStates'
 import {CommunityIcon_Stroke as Community} from '#/components/icons/Community'
 import {Globe_Stroke2_Corner0_Rounded as GlobeIcon} from '#/components/icons/Globe'
+import {CircleInfo_Stroke2_Corner0_Rounded as InfoIcon} from '#/components/icons/CircleInfo'
 import {Megaphone_Stroke2_Corner0_Rounded as MegaphoneIcon} from '#/components/icons/Megaphone'
 import {Tree_Stroke2_Corner0_Rounded as TreeIcon} from '#/components/icons/Tree'
 import * as Layout from '#/components/Layout'
@@ -699,10 +700,13 @@ function RegionalMapCard({onPress}: {onPress: () => void}) {
 function LobbyingSection({
   onPressItem,
   onPressSeeAll,
+  onPressRegionalSeeAll,
 }: {
   onPressItem: (uri: string) => void
   onPressSeeAll: () => void
+  onPressRegionalSeeAll: (region?: string) => void
 }) {
+  const infoDialogControl = Dialog.useDialogControl()
   const t = useTheme()
   const {_} = useLingui()
   const [selectedRegion, setSelectedRegion] =
@@ -831,14 +835,19 @@ function LobbyingSection({
             style={[
               t.atoms.text,
               {
-                fontSize: 14,
+                fontSize: 16,
                 fontWeight: '900',
-                textTransform: 'uppercase',
-                letterSpacing: 1,
               },
             ]}>
             <Trans>Lobbying</Trans>
           </Text>
+          <PressableScale
+            accessibilityRole="button"
+            onPress={infoDialogControl.open}
+            hitSlop={10}
+            style={{marginLeft: 6}}>
+            <InfoIcon size="sm" style={{color: t.palette.primary_500}} />
+          </PressableScale>
         </View>
         <View style={styles.lobbyingStatsRow}>
           <Text style={[styles.lobbyingStatPill, t.atoms.text_contrast_medium]}>
@@ -856,12 +865,25 @@ function LobbyingSection({
         </View>
       </View>
 
-      <Text style={[styles.lobbyingIntro, t.atoms.text_contrast_medium]}>
-        <Trans>
-          Cabildeos are the working items inside Civic Trees: proposals,
-          evidence, arguments, vote windows, and delegated power in one place.
-        </Trans>
-      </Text>
+      <Dialog.Outer control={infoDialogControl}>
+        <Dialog.Handle />
+        <Dialog.ScrollableInner
+          accessibilityDescribedBy="lobbying-info"
+          accessibilityLabel={_(msg`Lobbying Information`)}>
+          <View style={a.gap_md}>
+            <Text style={[a.text_2xl, a.font_bold, t.atoms.text]}>
+              <Trans>Lobbying</Trans>
+            </Text>
+            <Text style={[a.text_md, t.atoms.text_contrast_high]}>
+              <Trans>
+                Cabildeos are the working items inside Civic Trees: proposals,
+                evidence, arguments, vote windows, and delegated power in one place.
+              </Trans>
+            </Text>
+            <Dialog.Close />
+          </View>
+        </Dialog.ScrollableInner>
+      </Dialog.Outer>
 
       <View style={styles.filterGroup}>
         <Text style={[styles.filterGroupLabel, t.atoms.text_contrast_medium]}>
@@ -970,7 +992,7 @@ function LobbyingSection({
             msg`Region-scoped proposals where place, residency, and local evidence matter.`,
           )}
           actionLabel={_(msg`Open Lobbying`)}
-          onAction={onPressSeeAll}
+          onAction={() => onPressRegionalSeeAll(regionalFocus)}
         />
         <View style={styles.cardList}>
           {regionalItems.length === 0 ? (
@@ -1109,8 +1131,15 @@ export function AgoraScreen() {
     navigation.navigate('CabildeoList')
   }, [navigation])
 
+  const handlePressRegionalLobbying = useCallback(
+    (region?: string) => {
+      navigation.navigate('Map', {layer: 'civic', state: region})
+    },
+    [navigation],
+  )
+
   const handlePressCommunities = useCallback(() => {
-    navigation.navigate('Communities')
+    navigation.navigate('MyCommunities')
   }, [navigation])
 
   const handlePressCommunityDirectory = useCallback(() => {
@@ -1118,7 +1147,7 @@ export function AgoraScreen() {
   }, [navigation])
 
   const handlePressYourCommunityCivicTree = useCallback(() => {
-    navigation.navigate('DeliberationGraph')
+    navigation.navigate('CommunityCivicTree')
   }, [navigation])
 
   const handlePressMap = useCallback(() => {
@@ -1159,7 +1188,6 @@ export function AgoraScreen() {
           }>
           {/* ─── Explore (Discovery) — TOP OF PAGE ─────────────────────── */}
           <View style={styles.sectionWrap}>
-            <SectionHeader title={_(msg`Explore`)} />
             <View style={styles.featureGrid}>
               <YourCommunitiesCard onPress={handlePressCommunities} />
               <CommunityDirectoryCard onPress={handlePressCommunityDirectory} />
@@ -1174,6 +1202,7 @@ export function AgoraScreen() {
           <LobbyingSection
             onPressItem={handlePressLobbyingItem}
             onPressSeeAll={handlePressLobbyingList}
+            onPressRegionalSeeAll={handlePressRegionalLobbying}
           />
 
           {hasError && (

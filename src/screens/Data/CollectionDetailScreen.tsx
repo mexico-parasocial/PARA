@@ -31,7 +31,8 @@ import {AddTreeItemDialog} from '#/components/AddTreeItemDialog'
 import * as Dialog from '#/components/Dialog'
 import {
   ChevronBottom_Stroke2_Corner0_Rounded as DownIcon,
-  ChevronTop_Stroke2_Corner0_Rounded as UpIcon} from '#/components/icons/Chevron'
+  ChevronTop_Stroke2_Corner0_Rounded as UpIcon,
+} from '#/components/icons/Chevron'
 import {Pencil_Stroke2_Corner0_Rounded as PencilIcon} from '#/components/icons/Pencil'
 import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/Plus'
 import {SquareArrowTopRight_Stroke2_Corner0_Rounded as ExportIcon} from '#/components/icons/SquareArrowTopRight'
@@ -104,10 +105,13 @@ export function CollectionDetailScreen() {
     )
   }, [collection, collectionId, editName, editDescription, updateMutation, _])
 
-  const requestDelete = useCallback((itemKey: string) => {
-    setItemToDelete(itemKey)
-    deletePrompt.open()
-  }, [deletePrompt])
+  const requestDelete = useCallback(
+    (itemKey: string) => {
+      setItemToDelete(itemKey)
+      deletePrompt.open()
+    },
+    [deletePrompt],
+  )
 
   const onRemove = useCallback(() => {
     if (!itemToDelete) return
@@ -158,7 +162,9 @@ export function CollectionDetailScreen() {
           navigation.navigate('CollectionDetail', {collectionId: data.id})
         },
         onError: (err: Error) => {
-          Toast.show(err.message || _(msg`Failed to duplicate`), {type: 'error'})
+          Toast.show(err.message || _(msg`Failed to duplicate`), {
+            type: 'error',
+          })
         },
       },
     )
@@ -178,13 +184,17 @@ export function CollectionDetailScreen() {
           // Open the collection on Semble.so
           const rkey = data.collectionUri.split('/').pop()
           if (rkey) {
-            Linking.openURL(`https://semble.so/profile/${currentAccount?.handle}/collections/${rkey}`).catch(() => {
+            Linking.openURL(
+              `https://semble.so/profile/${currentAccount?.handle}/collections/${rkey}`,
+            ).catch(() => {
               // silently fail
             })
           }
         },
         onError: (err: Error) => {
-          Toast.show(err.message || _(msg`Failed to export to Semble.so`), {type: 'error'})
+          Toast.show(err.message || _(msg`Failed to export to Semble.so`), {
+            type: 'error',
+          })
         },
       },
     )
@@ -227,7 +237,9 @@ export function CollectionDetailScreen() {
             <TouchableOpacity
               accessibilityRole="button"
               accessibilityLabel={_(msg`Cancel editing`)}
-              accessibilityHint={_(msg`Closes collection editing without saving`)}
+              accessibilityHint={_(
+                msg`Closes collection editing without saving`,
+              )}
               onPress={cancelEditing}>
               <Text style={t.atoms.text_contrast_medium}>
                 <Trans>Cancel</Trans>
@@ -266,36 +278,39 @@ export function CollectionDetailScreen() {
       </Layout.Header.Outer>
 
       {isEditing && (
-        <View style={[styles.editPanel, t.atoms.bg_contrast_25]}>
-          <TextInput
-            accessibilityLabel={_(msg`Collection description`)}
-            accessibilityHint={_(msg`Edit the collection description`)}
-            value={editDescription}
-            onChangeText={setEditDescription}
-            placeholder={_(msg`Description (optional)`)}
-            placeholderTextColor={t.palette.contrast_400}
-            style={[styles.editDescInput, t.atoms.text]}
-            multiline
-            numberOfLines={2}
-          />
-        </View>
+        <Layout.Center>
+          <View style={[styles.editPanel, t.atoms.bg_contrast_25]}>
+            <TextInput
+              accessibilityLabel={_(msg`Collection description`)}
+              accessibilityHint={_(msg`Edit the collection description`)}
+              value={editDescription}
+              onChangeText={setEditDescription}
+              placeholder={_(msg`Description (optional)`)}
+              placeholderTextColor={t.palette.contrast_400}
+              style={[styles.editDescInput, t.atoms.text]}
+              multiline
+              numberOfLines={2}
+            />
+          </View>
+        </Layout.Center>
       )}
 
-      <Layout.Content>
+      <Layout.Center style={styles.contentCenter}>
         {isLoading ? (
-          <Layout.Center>
+          <View style={styles.centeredState}>
             <Text style={t.atoms.text_contrast_medium}>
               <Trans>Loading...</Trans>
             </Text>
-          </Layout.Center>
+          </View>
         ) : !collection ? (
-          <Layout.Center>
+          <View style={styles.centeredState}>
             <Text style={t.atoms.text_contrast_medium}>
               <Trans>Collection not found</Trans>
             </Text>
-          </Layout.Center>
+          </View>
         ) : (
           <FlatList
+            style={styles.list}
             data={collection.items}
             keyExtractor={getCivicTreeItemKey}
             contentContainerStyle={styles.listContent}
@@ -305,7 +320,11 @@ export function CollectionDetailScreen() {
                   {collection.name}
                 </Text>
                 {collection.description ? (
-                  <Text style={[styles.detailDescription, t.atoms.text_contrast_medium]}>
+                  <Text
+                    style={[
+                      styles.detailDescription,
+                      t.atoms.text_contrast_medium,
+                    ]}>
                     {collection.description}
                   </Text>
                 ) : null}
@@ -313,9 +332,14 @@ export function CollectionDetailScreen() {
                   <TouchableOpacity
                     accessibilityRole="button"
                     accessibilityLabel={_(msg`Add item`)}
-                    accessibilityHint={_(msg`Opens the form to add an item to this collection`)}
+                    accessibilityHint={_(
+                      msg`Opens the form to add an item to this collection`,
+                    )}
                     onPress={addItemControl.open}
-                    style={[styles.primaryBtn, {backgroundColor: t.palette.primary_500}]}>
+                    style={[
+                      styles.primaryBtn,
+                      {backgroundColor: t.palette.primary_500},
+                    ]}>
                     <PlusIcon size="sm" style={{color: 'white'}} />
                     <Text style={styles.primaryBtnText}>
                       <Trans>Add item</Trans>
@@ -324,9 +348,14 @@ export function CollectionDetailScreen() {
                   <TouchableOpacity
                     accessibilityRole="button"
                     accessibilityLabel={_(msg`Browse policies`)}
-                    accessibilityHint={_(msg`Opens Agora to find policies to save`)}
+                    accessibilityHint={_(
+                      msg`Opens Agora to find policies to save`,
+                    )}
                     onPress={onBrowsePolicies}
-                    style={[styles.secondaryBtn, {borderColor: t.palette.contrast_100}]}>
+                    style={[
+                      styles.secondaryBtn,
+                      {borderColor: t.palette.contrast_100},
+                    ]}>
                     <Text style={[styles.secondaryBtnText, t.atoms.text]}>
                       <Trans>Browse policies</Trans>
                     </Text>
@@ -334,10 +363,15 @@ export function CollectionDetailScreen() {
                   <TouchableOpacity
                     accessibilityRole="button"
                     accessibilityLabel={_(msg`Duplicate collection`)}
-                    accessibilityHint={_(msg`Creates a copy of this collection`)}
+                    accessibilityHint={_(
+                      msg`Creates a copy of this collection`,
+                    )}
                     onPress={onDuplicate}
                     disabled={duplicateMutation.isPending}
-                    style={[styles.secondaryBtn, {borderColor: t.palette.contrast_100}]}>
+                    style={[
+                      styles.secondaryBtn,
+                      {borderColor: t.palette.contrast_100},
+                    ]}>
                     <Text style={[styles.secondaryBtnText, t.atoms.text]}>
                       <Trans>Duplicate</Trans>
                     </Text>
@@ -345,11 +379,21 @@ export function CollectionDetailScreen() {
                   <TouchableOpacity
                     accessibilityRole="button"
                     accessibilityLabel={_(msg`Export to Semble.so`)}
-                    accessibilityHint={_(msg`Exports this collection to Semble.so as a research trail`)}
+                    accessibilityHint={_(
+                      msg`Exports this collection to Semble.so as a research trail`,
+                    )}
                     onPress={() => exportPrompt.open()}
-                    disabled={exportMutation.isPending || collection.items.length === 0}
-                    style={[styles.secondaryBtn, {borderColor: t.palette.contrast_100}]}>
-                    <ExportIcon size="sm" style={{color: t.palette.contrast_400}} />
+                    disabled={
+                      exportMutation.isPending || collection.items.length === 0
+                    }
+                    style={[
+                      styles.secondaryBtn,
+                      {borderColor: t.palette.contrast_100},
+                    ]}>
+                    <ExportIcon
+                      size="sm"
+                      style={{color: t.palette.contrast_400}}
+                    />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -359,8 +403,12 @@ export function CollectionDetailScreen() {
                 <Text style={[styles.emptyTitle, t.atoms.text]}>
                   <Trans>No items yet</Trans>
                 </Text>
-                <Text style={[styles.emptySubtitle, t.atoms.text_contrast_medium]}>
-                  <Trans>Add evidence, links, notes, or policies to this collection in your personal civic tree.</Trans>
+                <Text
+                  style={[styles.emptySubtitle, t.atoms.text_contrast_medium]}>
+                  <Trans>
+                    Add evidence, links, notes, or policies to this collection
+                    in your personal civic tree.
+                  </Trans>
                 </Text>
               </View>
             }
@@ -373,7 +421,9 @@ export function CollectionDetailScreen() {
                 onRequestDelete={requestDelete}
                 onPressItem={() => {
                   if (item.policyUri) {
-                    navigation.navigate('PolicyDetails', {cabildeoUri: item.policyUri})
+                    navigation.navigate('PolicyDetails', {
+                      cabildeoUri: item.policyUri,
+                    })
                   } else if (item.url) {
                     Linking.openURL(item.url).catch(() => {
                       Toast.show(_(msg`Could not open link`), {type: 'error'})
@@ -384,12 +434,14 @@ export function CollectionDetailScreen() {
             )}
           />
         )}
-      </Layout.Content>
+      </Layout.Center>
 
       <Prompt.Basic
         control={exportPrompt}
         title={_(msg`Export to Semble.so?`)}
-        description={_(msg`This will create a public research collection on Semble.so with your cards and connections.`)}
+        description={_(
+          msg`This will create a public research collection on Semble.so with your cards and connections.`,
+        )}
         onConfirm={onExportToSemble}
         confirmButtonCta={_(msg`Export`)}
         isPending={exportMutation.isPending}
@@ -436,8 +488,11 @@ function CivicTreeItemRow({
         t.atoms.bg_contrast_25,
         {borderWidth: 1, borderColor: t.palette.contrast_100},
       ]}>
-      <View style={[styles.colorStripe, {backgroundColor: t.palette.contrast_200}]} />
-      <TouchableOpacity accessibilityRole="button"
+      <View
+        style={[styles.colorStripe, {backgroundColor: t.palette.contrast_200}]}
+      />
+      <TouchableOpacity
+        accessibilityRole="button"
         style={styles.itemInfo}
         onPress={onPressItem}
         disabled={!hasTarget}
@@ -451,7 +506,9 @@ function CivicTreeItemRow({
           {item.sourceLabel ? ` - ${item.sourceLabel}` : ''}
         </Text>
         {item.description ? (
-          <Text style={[styles.itemDescription, t.atoms.text_contrast_medium]} numberOfLines={3}>
+          <Text
+            style={[styles.itemDescription, t.atoms.text_contrast_medium]}
+            numberOfLines={3}>
             {item.description}
           </Text>
         ) : null}
@@ -461,19 +518,23 @@ function CivicTreeItemRow({
           </Text>
         ) : null}
         {item.note ? (
-          <Text style={[styles.itemNote, t.atoms.text_contrast_medium]} numberOfLines={3}>
+          <Text
+            style={[styles.itemNote, t.atoms.text_contrast_medium]}
+            numberOfLines={3}>
             {item.note}
           </Text>
         ) : null}
       </TouchableOpacity>
       <View style={styles.actions}>
-        <TouchableOpacity accessibilityRole="button"
+        <TouchableOpacity
+          accessibilityRole="button"
           onPress={() => onMove(index, -1)}
           disabled={index === 0}
           style={[styles.actionBtn, index === 0 && styles.actionBtnDisabled]}>
           <UpIcon size="xs" style={{color: t.palette.contrast_400}} />
         </TouchableOpacity>
-        <TouchableOpacity accessibilityRole="button"
+        <TouchableOpacity
+          accessibilityRole="button"
           onPress={() => onMove(index, 1)}
           disabled={index === total - 1}
           style={[
@@ -482,7 +543,8 @@ function CivicTreeItemRow({
           ]}>
           <DownIcon size="xs" style={{color: t.palette.contrast_400}} />
         </TouchableOpacity>
-        <TouchableOpacity accessibilityRole="button"
+        <TouchableOpacity
+          accessibilityRole="button"
           onPress={() => onRequestDelete(itemKey)}
           style={styles.actionBtn}>
           <TrashIcon size="xs" style={{color: t.palette.contrast_400}} />
@@ -512,6 +574,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   editPanel: {
+    width: '100%',
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderBottomWidth: 1,
@@ -522,6 +585,19 @@ const styles = StyleSheet.create({
     fontSize: 14,
     padding: 0,
     minHeight: 40,
+  },
+  contentCenter: {
+    flex: 1,
+  },
+  centeredState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  list: {
+    flex: 1,
+    width: '100%',
   },
   listContent: {
     padding: 16,

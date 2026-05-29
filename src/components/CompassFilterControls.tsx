@@ -2,9 +2,11 @@ import {useRef, useState} from 'react'
 import {
   Modal,
   ScrollView,
+  type StyleProp,
   StyleSheet,
   TouchableOpacity,
   View,
+  type ViewStyle,
 } from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -13,7 +15,7 @@ import {useNavigation} from '@react-navigation/native'
 
 import {MEXICAN_STATES} from '#/lib/constants/mexico'
 import {type NavigationProp} from '#/lib/routes/types'
-import {useBaseFilter} from '#/state/shell/base-filter'
+import {useCompassFilter} from '#/state/shell/compass-filter'
 import {Text} from '#/view/com/util/text/Text'
 import {BlockDrawerGesture} from '#/view/shell/BlockDrawerGesture'
 import {atoms as a, useTheme} from '#/alf'
@@ -71,7 +73,7 @@ export function ActiveFiltersStackButton() {
   const {_} = useLingui()
   const t = useTheme()
   const navigation = useNavigation<NavigationProp>()
-  const {activeFilters, removeActiveFilter} = useBaseFilter()
+  const {activeFilters, removeActiveFilter} = useCompassFilter()
   const [showFilters, setShowFilters] = useState(false)
   const visibleFilters = activeFilters.slice(0, FILTER_STACK_MAX)
   const remainingFilters = Math.max(
@@ -255,7 +257,7 @@ export function CompassSettingsButton() {
     toggleFilter,
     showCommunities,
     setShowCommunities,
-  } = useBaseFilter()
+  } = useCompassFilter()
   const [showSettings, setShowSettings] = useState(false)
 
   const mexicanStates = ['None', ...MEXICAN_STATES]
@@ -479,7 +481,7 @@ export function CommunityFilterList({
   const t = useTheme()
   const navigation = useNavigation<NavigationProp>()
   const {viewMode, selectedFilters, toggleFilter, showCommunities} =
-    useBaseFilter()
+    useCompassFilter()
   const scrollViewRef = useRef<ScrollView>(null)
   const {_} = useLingui()
 

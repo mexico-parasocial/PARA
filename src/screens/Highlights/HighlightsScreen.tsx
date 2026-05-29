@@ -20,11 +20,11 @@ import {
 import {type HighlightColor} from '#/state/highlights/highlightTypes'
 import {useHighlightsQuery} from '#/state/queries/highlights'
 import {useSession} from '#/state/session'
-import {useBaseFilter} from '#/state/shell/base-filter'
+import {useCompassFilter} from '#/state/shell/compass-filter'
 import {List} from '#/view/com/util/List'
 import {Text} from '#/view/com/util/text/Text'
 import {atoms as a, useTheme} from '#/alf'
-import {ActiveFiltersStackButton} from '#/components/BaseFilterControls'
+import {ActiveFiltersStackButton} from '#/components/CompassFilterControls'
 import {EmptyStateNoData} from '#/components/EmptyStates'
 import {SearchInput} from '#/components/forms/SearchInput'
 import {ArrowShareRight_Stroke2_Corner2_Rounded as ShareIcon} from '#/components/icons/ArrowShareRight'
@@ -90,7 +90,7 @@ export function HighlightsScreen({route, navigation}: Props) {
   const t = useTheme()
   const {_} = useLingui()
   const {currentAccount} = useSession()
-  const {activeFilters} = useBaseFilter()
+  const {activeFilters} = useCompassFilter()
   const routeParams = route.params
 
   const [scope, setScope] = useState<HighlightScope>(
@@ -99,7 +99,9 @@ export function HighlightsScreen({route, navigation}: Props) {
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState<HighlightSort>('recent')
   const [verifiedOnly, setVerifiedOnly] = useState(false)
-  const [localHighlights, setLocalHighlights] = useState(() => getAllHighlights())
+  const [localHighlights, setLocalHighlights] = useState(() =>
+    getAllHighlights(),
+  )
 
   const {
     data: publicHighlights = [],
@@ -162,49 +164,54 @@ export function HighlightsScreen({route, navigation}: Props) {
     await refetch()
   }, [refetch])
 
-  const toggleSave = useCallback((highlight: HighlightCardView) => {
-    const id = originalHighlightId(highlight.id)
-    const subjectUri = highlight.sourcePostUri || highlight.id
-    const savedId = savedHighlightId(id)
+  const toggleSave = useCallback(
+    (highlight: HighlightCardView) => {
+      const id = originalHighlightId(highlight.id)
+      const subjectUri = highlight.sourcePostUri || highlight.id
+      const savedId = savedHighlightId(id)
 
-    if (savedIds.has(id)) {
-      deleteHighlight(subjectUri, savedId)
-    } else {
-      const text = highlight.postPreview || highlight.text
-      const start =
-        typeof highlight.start === 'number'
-          ? highlight.start
-          : Math.max(0, text.indexOf(highlight.text))
-      const end =
-        typeof highlight.end === 'number' ? highlight.end : start + highlight.text.length
+      if (savedIds.has(id)) {
+        deleteHighlight(subjectUri, savedId)
+      } else {
+        const text = highlight.postPreview || highlight.text
+        const start =
+          typeof highlight.start === 'number'
+            ? highlight.start
+            : Math.max(0, text.indexOf(highlight.text))
+        const end =
+          typeof highlight.end === 'number'
+            ? highlight.end
+            : start + highlight.text.length
 
-      saveHighlight(subjectUri, {
-        id: savedId,
-        start,
-        end,
-        color: (highlight.color || '#FEF08A') as HighlightColor,
-        text: highlight.text,
-        isPublic: false,
-        tag: highlight.community,
-      })
-    }
+        saveHighlight(subjectUri, {
+          id: savedId,
+          start,
+          end,
+          color: (highlight.color || '#FEF08A') as HighlightColor,
+          text: highlight.text,
+          isPublic: false,
+          tag: highlight.community,
+        })
+      }
 
-    setLocalHighlights(getAllHighlights())
-  }, [savedIds])
+      setLocalHighlights(getAllHighlights())
+    },
+    [savedIds],
+  )
 
   const renderItem = useCallback(
     ({item}: {item: unknown}) => {
       const highlight = item as HighlightCardView
       return (
-      <HighlightCard
-        highlight={highlight}
-        onOpen={() =>
-          navigation.navigate('SeeHighlightDetails', {
-            highlightId: originalHighlightId(highlight.id),
-          })
-        }
-        onSave={() => toggleSave(highlight)}
-      />
+        <HighlightCard
+          highlight={highlight}
+          onOpen={() =>
+            navigation.navigate('SeeHighlightDetails', {
+              highlightId: originalHighlightId(highlight.id),
+            })
+          }
+          onSave={() => toggleSave(highlight)}
+        />
       )
     },
     [navigation, toggleSave],
@@ -213,8 +220,16 @@ export function HighlightsScreen({route, navigation}: Props) {
   const header = (
     <View style={styles.header}>
       <View style={styles.kickerRow}>
-        <View style={[styles.kickerIcon, {backgroundColor: t.palette.primary_500 + '18'}]}>
-          <FlameIcon width={18} height={18} style={{color: t.palette.primary_500}} />
+        <View
+          style={[
+            styles.kickerIcon,
+            {backgroundColor: t.palette.primary_500 + '18'},
+          ]}>
+          <FlameIcon
+            width={18}
+            height={18}
+            style={{color: t.palette.primary_500}}
+          />
         </View>
         <View style={a.flex_1}>
           <Text style={[styles.kicker, t.atoms.text_contrast_medium]}>
@@ -250,7 +265,8 @@ export function HighlightsScreen({route, navigation}: Props) {
                   ]}>
                   {item.label}
                 </Text>
-                <Text style={[styles.scopeDescription, t.atoms.text_contrast_low]}>
+                <Text
+                  style={[styles.scopeDescription, t.atoms.text_contrast_low]}>
                   {item.description}
                 </Text>
               </View>
@@ -273,17 +289,25 @@ export function HighlightsScreen({route, navigation}: Props) {
           onPress={() => setVerifiedOnly(value => !value)}
           style={[
             styles.iconToggle,
-            verifiedOnly ? {backgroundColor: t.palette.primary_500 + '20'} : t.atoms.bg_contrast_25,
+            verifiedOnly
+              ? {backgroundColor: t.palette.primary_500 + '20'}
+              : t.atoms.bg_contrast_25,
           ]}>
           <VerifiedIcon
             width={17}
             height={17}
-            style={verifiedOnly ? {color: t.palette.primary_500} : t.atoms.text_contrast_medium}
+            style={
+              verifiedOnly
+                ? {color: t.palette.primary_500}
+                : t.atoms.text_contrast_medium
+            }
           />
           <Text
             style={[
               styles.controlText,
-              verifiedOnly ? {color: t.palette.primary_500} : t.atoms.text_contrast_medium,
+              verifiedOnly
+                ? {color: t.palette.primary_500}
+                : t.atoms.text_contrast_medium,
             ]}>
             Verified
           </Text>
@@ -298,12 +322,16 @@ export function HighlightsScreen({route, navigation}: Props) {
               onPress={() => setSort(item.key)}
               style={[
                 styles.sortButton,
-                selected ? {backgroundColor: t.palette.primary_500 + '20'} : t.atoms.bg_contrast_25,
+                selected
+                  ? {backgroundColor: t.palette.primary_500 + '20'}
+                  : t.atoms.bg_contrast_25,
               ]}>
               <Text
                 style={[
                   styles.controlText,
-                  selected ? {color: t.palette.primary_500} : t.atoms.text_contrast_medium,
+                  selected
+                    ? {color: t.palette.primary_500}
+                    : t.atoms.text_contrast_medium,
                 ]}>
                 {item.label}
               </Text>
@@ -320,15 +348,22 @@ export function HighlightsScreen({route, navigation}: Props) {
               key={summary.key}
               onPress={() =>
                 summary.kind === 'state'
-                  ? navigation.navigate('Map', {state: summary.label, layer: 'states'})
+                  ? navigation.navigate('Map', {
+                      state: summary.label,
+                      layer: 'states',
+                    })
                   : navigation.navigate('Highlights', {
                       scope: 'signals',
                       community: summary.label,
                     })
               }
               style={[styles.summaryCard, t.atoms.bg_contrast_25]}>
-              <View style={[styles.summaryDot, {backgroundColor: summary.color}]} />
-              <Text style={[styles.summaryLabel, t.atoms.text]} numberOfLines={1}>
+              <View
+                style={[styles.summaryDot, {backgroundColor: summary.color}]}
+              />
+              <Text
+                style={[styles.summaryLabel, t.atoms.text]}
+                numberOfLines={1}>
                 {summary.label}
               </Text>
               <Text style={[styles.summaryCount, t.atoms.text_contrast_medium]}>
@@ -346,7 +381,9 @@ export function HighlightsScreen({route, navigation}: Props) {
       <Layout.Header.Outer noBottomBorder>
         <Layout.Header.BackButton />
         <Layout.Header.Content>
-          <Layout.Header.TitleText>{_(msg`Highlights`)}</Layout.Header.TitleText>
+          <Layout.Header.TitleText>
+            {_(msg`Highlights`)}
+          </Layout.Header.TitleText>
         </Layout.Header.Content>
         <Layout.Header.Slot />
       </Layout.Header.Outer>
@@ -529,7 +566,10 @@ function HighlightEmptyState({
         <TouchableOpacity
           accessibilityRole="button"
           onPress={onRetry}
-          style={[styles.retryButton, {backgroundColor: t.palette.primary_500}]}>
+          style={[
+            styles.retryButton,
+            {backgroundColor: t.palette.primary_500},
+          ]}>
           <Text style={styles.retryText}>Retry</Text>
         </TouchableOpacity>
       </View>
@@ -540,7 +580,9 @@ function HighlightEmptyState({
     <EmptyStateNoData
       icon={scope === 'saved' ? '🔖' : '◌'}
       title={_(msg`No highlights yet`)}
-      message={_(msg`New civic annotations will appear here as people publish them.`)}
+      message={_(
+        msg`New civic annotations will appear here as people publish them.`,
+      )}
     />
   )
 }
@@ -553,7 +595,9 @@ function ScopeIcon({
   selected: boolean
 }) {
   const t = useTheme()
-  const color = selected ? t.palette.primary_500 : t.atoms.text_contrast_medium.color
+  const color = selected
+    ? t.palette.primary_500
+    : t.atoms.text_contrast_medium.color
   const props = {width: 18, height: 18, style: {color}}
 
   switch (scope) {
@@ -573,11 +617,19 @@ function MetaChip({label, color}: {label: string; color?: string}) {
   const t = useTheme()
   return (
     <View style={[styles.metaChip, t.atoms.bg_contrast_50]}>
-      {color ? <View style={[styles.metaDot, {backgroundColor: color}]} /> : null}
-      {!color ? (
-        <CommunityIcon width={12} height={12} style={t.atoms.text_contrast_medium} />
+      {color ? (
+        <View style={[styles.metaDot, {backgroundColor: color}]} />
       ) : null}
-      <Text style={[styles.metaChipText, t.atoms.text_contrast_medium]} numberOfLines={1}>
+      {!color ? (
+        <CommunityIcon
+          width={12}
+          height={12}
+          style={t.atoms.text_contrast_medium}
+        />
+      ) : null}
+      <Text
+        style={[styles.metaChipText, t.atoms.text_contrast_medium]}
+        numberOfLines={1}>
         {label}
       </Text>
     </View>

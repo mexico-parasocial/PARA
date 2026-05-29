@@ -1,10 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react'
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {
   Platform,
   StyleSheet,
@@ -14,15 +8,22 @@ import {
 } from 'react-native'
 import Svg, {Circle, G, Line, Rect, Text as SvgText} from 'react-native-svg'
 
-import {COMPASS_COLORS, type CompassPositionId} from '#/lib/compass/compassColors'
+import {
+  COMPASS_COLORS,
+  type CompassPositionId,
+} from '#/lib/compass/compassColors'
 import {useTheme} from '#/alf'
 import {useNativeGraphGestures} from '#/components/graph/useNativeGraphGestures'
 import {Text} from '#/components/Typography'
-import {CARD_TYPE_COLORS, RELATIONSHIP_COLORS, STANCE_COLORS} from '../deliberation-colors'
+import {
+  CARD_TYPE_COLORS,
+  RELATIONSHIP_COLORS,
+  STANCE_COLORS,
+} from '../deliberation-colors'
 import {type GraphData} from '../deliberation-types'
 import {useForceSimulation} from './useForceSimulation'
 
-interface DeliberationGraphProps {
+interface CommunityCivicTreeGraphProps {
   data: GraphData
   searchQuery: string
   activeCardTypes: Set<string>
@@ -35,12 +36,15 @@ interface DeliberationGraphProps {
   isRefreshing?: boolean
 }
 
-function getNodeRadius(influence: number | undefined, isSelected: boolean): number {
+function getNodeRadius(
+  influence: number | undefined,
+  isSelected: boolean,
+): number {
   const base = 8 + Math.min(Math.abs(influence ?? 0) * 1.5, 10)
   return isSelected ? base + 3 : base
 }
 
-export function DeliberationGraph({
+export function CommunityCivicTreeGraph({
   data,
   searchQuery,
   activeCardTypes,
@@ -51,9 +55,11 @@ export function DeliberationGraph({
   selectedNodeId,
   onRefresh,
   isRefreshing,
-}: DeliberationGraphProps) {
+}: CommunityCivicTreeGraphProps) {
   const t = useTheme()
-  const {width, height} = useWindowDimensions()
+  const {width: windowWidth, height} = useWindowDimensions()
+  const [layoutWidth, setLayoutWidth] = useState(0)
+  const width = layoutWidth || Math.min(windowWidth, 600)
   const graphHeight = Math.min(height * 0.75, 600)
 
   const [pan, setPan] = useState({x: 0, y: 0})
@@ -62,7 +68,7 @@ export function DeliberationGraph({
   const onRefreshRef = useRef(onRefresh)
   onRefreshRef.current = onRefresh
 
-  const {panResponder, panOffsetRef} = useNativeGraphGestures({
+  const {panResponder, resetPanOffset} = useNativeGraphGestures({
     panX: pan.x,
     panY: pan.y,
     scale,
@@ -174,12 +180,12 @@ export function DeliberationGraph({
       } else if (e.key === '0') {
         setScale(1)
         setPan({x: 0, y: 0})
-        panOffsetRef.current = {x: 0, y: 0}
+        resetPanOffset()
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [])
+  }, [resetPanOffset])
 
   // Mouse wheel zoom (web only)
   useEffect(() => {
@@ -191,7 +197,7 @@ export function DeliberationGraph({
       const delta = wheelEvent.deltaY > 0 ? -0.15 : 0.15
       setScale(prev => Math.min(Math.max(prev + delta, 0.5), 3))
     }
-    const el = document.querySelector('[data-deliberation-graph]')
+    const el = document.querySelector('[data-community-civic-tree-graph]')
     if (el) {
       el.addEventListener('wheel', handler, {passive: false})
       return () => el.removeEventListener('wheel', handler)
@@ -214,7 +220,11 @@ export function DeliberationGraph({
   const matchCount = data.nodes.filter(n => isNodeVisible(n)).length
 
   return (
-    <View style={styles.container} {...panResponder.panHandlers} data-deliberation-graph>
+    <View
+      style={styles.container}
+      onLayout={e => setLayoutWidth(e.nativeEvent.layout.width)}
+      {...panResponder.panHandlers}
+      data-community-civic-tree-graph>
       {hasFilters && (
         <View style={styles.matchBadge}>
           <Text style={styles.matchBadgeText}>
@@ -261,7 +271,7 @@ export function DeliberationGraph({
           onPress={() => {
             setScale(1)
             setPan({x: 0, y: 0})
-            panOffsetRef.current = {x: 0, y: 0}
+            resetPanOffset()
           }}
           style={[styles.zoomBtn, {backgroundColor: t.palette.contrast_100}]}>
           <Text style={{color: t.palette.contrast_900, fontSize: 12}}>⟲</Text>
@@ -271,17 +281,16 @@ export function DeliberationGraph({
           accessibilityLabel="Re-stabilize graph"
           accessibilityHint="Re-runs the force simulation without randomizing positions"
           onPress={restartSimulation}
-          style={[styles.zoomBtn, {backgroundColor: t.palette.primary_500 + '20'}]}>
+          style={[
+            styles.zoomBtn,
+            {backgroundColor: t.palette.primary_500 + '20'},
+          ]}>
           <Text style={{color: t.palette.primary_500, fontSize: 12}}>⚡</Text>
         </TouchableOpacity>
       </View>
 
-      <Svg
-        width={width}
-        height={graphHeight}
-        onPress={handleBackgroundPress}>
-        <G
-          transform={`translate(${pan.x}, ${pan.y}) scale(${scale})`}>
+      <Svg width={width} height={graphHeight} onPress={handleBackgroundPress}>
+        <G transform={`translate(${pan.x}, ${pan.y}) scale(${scale})`}>
           {/* Edges */}
           {data.edges.map(edge => {
             const sp = nodePositions.get(edge.source)
@@ -312,10 +321,14 @@ export function DeliberationGraph({
             const isSelected = node.id === selectedNodeId
             const stance = node.stance || 'neutral'
             let fillColor = STANCE_COLORS[stance] || STANCE_COLORS.neutral
-            
+
             if (showIdeologicalOverlay) {
-              if (node.compass_quadrant && COMPASS_COLORS[node.compass_quadrant as CompassPositionId]) {
-                fillColor = COMPASS_COLORS[node.compass_quadrant as CompassPositionId]
+              if (
+                node.compass_quadrant &&
+                COMPASS_COLORS[node.compass_quadrant as CompassPositionId]
+              ) {
+                fillColor =
+                  COMPASS_COLORS[node.compass_quadrant as CompassPositionId]
               } else {
                 fillColor = '#cbd5e1' // slate-300 for unknown ideology
               }

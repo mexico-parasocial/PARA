@@ -77,16 +77,16 @@ import {BottomBar} from '#/view/shell/bottom-bar/BottomBar'
 import {createNativeStackNavigatorWithAuth} from '#/view/shell/createNativeStackNavigatorWithAuth'
 import {AgoraScreen} from '#/screens/Agora/AgoraScreen'
 import {ProposalDetailScreen} from '#/screens/Agora/ProposalDetailScreen'
-import {CivicTreeScreen} from '#/screens/Base/CivicTreeScreen'
-import {CollectionDetailScreen} from '#/screens/Base/CollectionDetailScreen'
-import {CommunityDirectoryScreen} from '#/screens/Base/CommunityDirectoryScreen'
-import {CompassScreen} from '#/screens/Base/CompassScreen'
-import {CreatePostScreen} from '#/screens/Base/CreatePostScreen'
-import {DataScreen} from '#/screens/Base/DataScreen'
-import {MyAffiliationsScreen} from '#/screens/Base/MyAffiliationsScreen'
+import {CivicTreeScreen} from '#/screens/Data/CivicTreeScreen'
+import {CollectionDetailScreen} from '#/screens/Data/CollectionDetailScreen'
+import {CommunityCivicTreeScreen} from '#/screens/Data/CommunityCivicTreeScreen'
+import {CommunityDirectoryScreen} from '#/screens/Data/CommunityDirectoryScreen'
+import {CompassScreen} from '#/screens/Data/CompassScreen'
+import {CreatePostScreen} from '#/screens/Data/CreatePostScreen'
+import {DataScreen} from '#/screens/Data/DataScreen'
+import {MyAffiliationsScreen} from '#/screens/Data/MyAffiliationsScreen'
 // Lazy loaded below
-import {MyBaseScreen} from '#/screens/Base/MyBaseScreen'
-import {SpatialDeliberationScreen} from '#/screens/Base/SpatialDeliberationScreen'
+import {MyBaseScreen} from '#/screens/Data/MyBaseScreen'
 import {BookmarksScreen} from '#/screens/Bookmarks'
 import {CabildeoDetailScreen} from '#/screens/Communities/CabildeoDetailScreen'
 import {CabildeoListScreen} from '#/screens/Communities/CabildeoListScreen'
@@ -496,7 +496,7 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
       <Stack.Screen
         name="SeeVotes"
         getComponent={() =>
-          require('#/screens/Base/SeeVotesScreen').SeeVotesScreen
+          require('#/screens/Data/SeeVotesScreen').SeeVotesScreen
         }
         options={{
           title: title(msg`Votes History`),
@@ -506,7 +506,7 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
       <Stack.Screen
         name="SeeInfluence"
         getComponent={() =>
-          require('#/screens/Base/SeeInfluenceScreen').SeeInfluenceScreen
+          require('#/screens/Data/SeeInfluenceScreen').SeeInfluenceScreen
         }
         options={{
           title: title(msg`Influence Score`),
@@ -516,7 +516,7 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
       <Stack.Screen
         name="SeePosts"
         getComponent={() =>
-          require('#/screens/Base/SeePostsScreen').SeePostsScreen
+          require('#/screens/Data/SeePostsScreen').SeePostsScreen
         }
         options={{
           title: title(msg`Posts`),
@@ -876,8 +876,8 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
         options={{title: title(msg`Political Compass`)}}
       />
       <Stack.Screen
-        name="DeliberationGraph"
-        getComponent={() => SpatialDeliberationScreen}
+        name="CommunityCivicTree"
+        getComponent={() => CommunityCivicTreeScreen}
         options={{title: title(msg`Community Civic Tree`), requireAuth: true}}
       />
       <Stack.Screen

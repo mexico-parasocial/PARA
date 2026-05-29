@@ -55,6 +55,10 @@ export function useNativeGraphGestures({
     return Math.sqrt(dx * dx + dy * dy)
   }, [])
 
+  const resetPanOffset = useCallback((x = 0, y = 0) => {
+    panOffsetRef.current = {x, y}
+  }, [])
+
   const panResponder = useMemo(
     () =>
       PanResponder.create({
@@ -140,5 +144,5 @@ export function useNativeGraphGestures({
     [onRefresh, onPanChange, onScaleChange, getTouchDistance],
   )
 
-  return {panResponder, panOffsetRef}
+  return {panResponder, panOffsetRef, resetPanOffset}
 }

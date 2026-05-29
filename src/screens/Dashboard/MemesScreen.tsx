@@ -15,10 +15,10 @@ import {useNavigation} from '@react-navigation/native'
 import {useWebMediaQueries} from '#/lib/hooks/useWebMediaQueries'
 import {MEMES as MOCK_MEMES} from '#/lib/mock-data'
 import {type NavigationProp} from '#/lib/routes/types'
-import {useBaseFilter} from '#/state/shell/base-filter'
+import {useCompassFilter} from '#/state/shell/compass-filter'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
-import {ActiveFiltersStackButton} from '#/components/BaseFilterControls'
+import {ActiveFiltersStackButton} from '#/components/CompassFilterControls'
 import {SearchInput} from '#/components/forms/SearchInput'
 import {MagnifyingGlass_Stroke2_Corner0_Rounded as SearchIcon} from '#/components/icons/MagnifyingGlass'
 import {SquareBehindSquare4_Stroke2_Corner0_Rounded as DeckIcon} from '#/components/icons/SquareBehindSquare4'
@@ -52,7 +52,7 @@ export function MemesScreen({
   const {_} = useLingui()
   const navigation = useNavigation<NavigationProp>()
   const {width} = useWindowDimensions()
-  const {activeFilters} = useBaseFilter()
+  const {activeFilters} = useCompassFilter()
   const {isDesktop, isTablet} = useWebMediaQueries()
 
   const activeMode: Mode = 'Memes'
@@ -265,7 +265,9 @@ function DeckChain({
 
   const isLargeScreen = isDesktop || isTablet
   const deckMaxWidth = isDesktop ? 520 : isTablet ? 480 : undefined
-  const deckHorizontalMargin = isLargeScreen ? Math.max(0, (width - (deckMaxWidth ?? 0)) / 2) : 0
+  const deckHorizontalMargin = isLargeScreen
+    ? Math.max(0, (width - (deckMaxWidth ?? 0)) / 2)
+    : 0
 
   useEffect(() => {
     const id = animation.addListener(({value}) => {
@@ -711,7 +713,14 @@ function DeckChain({
       ) : null}
 
       {!next ? (
-        <View style={[styles.deckEndCard, isLargeScreen && {left: 34 + deckHorizontalMargin * 0.1, right: 34 + deckHorizontalMargin * 0.1}]}>
+        <View
+          style={[
+            styles.deckEndCard,
+            isLargeScreen && {
+              left: 34 + deckHorizontalMargin * 0.1,
+              right: 34 + deckHorizontalMargin * 0.1,
+            },
+          ]}>
           <Text style={styles.deckEndTitle}>That is everything for now</Text>
           <Text style={styles.deckEndBody}>
             Swipe down to revisit earlier cards.

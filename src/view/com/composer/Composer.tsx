@@ -71,10 +71,10 @@ import {useAppState} from '#/lib/appState'
 import {retry} from '#/lib/async/retry'
 import {until} from '#/lib/async/until'
 import {
-  canonicalizeBaseCommunityFilter,
-  canonicalizeBasePartyFilter,
-  classifyBaseFeedFilters,
-} from '#/lib/base-filters'
+  canonicalizeCompassCommunityFilter,
+  canonicalizeCompassPartyFilter,
+  classifyCompassFeedFilters,
+} from '#/lib/compass-filters'
 import {
   MAX_GRAPHEME_LENGTH,
   SUPPORTED_MIME_TYPES,
@@ -117,7 +117,7 @@ import {usePreferencesQuery} from '#/state/queries/preferences'
 import {useProfileQuery} from '#/state/queries/profile'
 import {type Gif} from '#/state/queries/tenor'
 import {useAgent, useSession} from '#/state/session'
-import {useBaseFilter} from '#/state/shell/base-filter'
+import {useCompassFilter} from '#/state/shell/compass-filter'
 import {useComposerControls} from '#/state/shell/composer'
 import {type ComposerOpts, type OnPostSuccessData} from '#/state/shell/composer'
 import {usePoliticalAffiliation} from '#/state/shell/political-affiliation'
@@ -247,7 +247,7 @@ export const ComposePost = ({
   const {closeAllModals} = useModalControls()
   const {data: preferences} = usePreferencesQuery()
   const navigation = useNavigation<NavigationProp>()
-  const {activeFilters} = useBaseFilter()
+  const {activeFilters} = useCompassFilter()
   const {affiliation} = usePoliticalAffiliation()
 
   const [isKeyboardVisible] = useIsKeyboardVisible({iosUseWillEvents: true})
@@ -883,16 +883,18 @@ export const ComposePost = ({
 
       // Derive party/community BEFORE post creation so they get stored
       // directly on the com.para.post record for backend indexing.
-      const baseFeedFilters = classifyBaseFeedFilters(activeFilters)
+      const compassFeedFilters = classifyCompassFeedFilters(activeFilters)
       const derivedParty = affiliation
-        ? canonicalizeBasePartyFilter(affiliation)
-        : baseFeedFilters.party
+        ? canonicalizeCompassPartyFilter(affiliation)
+        : compassFeedFilters.party
       const derivedCommunity =
-        baseFeedFilters.community ||
+        compassFeedFilters.community ||
         (activeFilters[0]
-          ? canonicalizeBaseCommunityFilter(activeFilters[0])
+          ? canonicalizeCompassCommunityFilter(activeFilters[0])
           : undefined) ||
-        (affiliation ? canonicalizeBaseCommunityFilter(affiliation) : undefined)
+        (affiliation
+          ? canonicalizeCompassCommunityFilter(affiliation)
+          : undefined)
 
       postUri = (
         await apilib.post(

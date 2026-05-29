@@ -1,5 +1,11 @@
 import {useCallback, useMemo, useState} from 'react'
-import {Platform, ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native'
+import {
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -11,18 +17,18 @@ import {type NavigationProp} from '#/lib/routes/types'
 import {s} from '#/lib/styles'
 import {useProfileQuery} from '#/state/queries/profile'
 import {useSession} from '#/state/session'
-import {useBaseFilter} from '#/state/shell/base-filter'
+import {useCompassFilter} from '#/state/shell/compass-filter'
 import {FAB} from '#/view/com/util/fab/FAB'
 import {Text} from '#/view/com/util/text/Text'
 import {UserAvatar} from '#/view/com/util/UserAvatar'
 import {Logomark} from '#/view/icons/Logomark'
 import {Logotype} from '#/view/icons/Logotype'
 import {atoms as a, useBreakpoints, useGutters, useTheme} from '#/alf'
+import {Button, ButtonIcon} from '#/components/Button'
 import {
   CommunityFilterList,
-  CompassSettingsButton as BaseFilterSettingsButton,
-} from '#/components/BaseFilterControls'
-import {Button, ButtonIcon} from '#/components/Button'
+  CompassSettingsButton as CompassFilterSettingsButton,
+} from '#/components/CompassFilterControls'
 import {CircleQuestion_Stroke2_Corner2_Rounded as QuestionIcon} from '#/components/icons/CircleQuestion'
 import {CommunityIcon_Stroke as CommunityIcon} from '#/components/icons/Community'
 import {Compass_Stroke2_Corner0_Rounded as CompassIcon} from '#/components/icons/Compass'
@@ -103,7 +109,7 @@ export function DataScreen() {
     selectedState,
     activeState,
     applyFilters,
-  } = useBaseFilter()
+  } = useCompassFilter()
   const handleApplyFilters = useCallback(() => {
     applyFilters()
   }, [applyFilters])
@@ -263,335 +269,333 @@ export function DataScreen() {
             />
           </TouchableOpacity>
           <View style={a.flex_1} />
-          <BaseFilterSettingsButton />
+          <CompassFilterSettingsButton />
         </View>
 
         {/* Data grid */}
-          <View style={[styles.flex1, t.atoms.bg]}>
-            <CommunityFilterList
-              hasPendingChanges={hasPendingChanges}
-              applyFilters={handleApplyFilters}
-              filterCount={selectedFilters.length}
-            />
-            <ScrollView
-              style={styles.dataScreen}
-              contentContainerStyle={[
-                styles.dataScreenContent,
-                {paddingBottom: bottomBarOffset},
-              ]}>
-              {/* Section 1: Civic Elements */}
-              <View style={styles.firstDataSection}>
-                <View
+        <View style={[styles.flex1, t.atoms.bg]}>
+          <CommunityFilterList
+            hasPendingChanges={hasPendingChanges}
+            applyFilters={handleApplyFilters}
+            filterCount={selectedFilters.length}
+          />
+          <ScrollView
+            style={styles.dataScreen}
+            contentContainerStyle={[
+              styles.dataScreenContent,
+              {paddingBottom: bottomBarOffset},
+            ]}>
+            {/* Section 1: Civic Elements */}
+            <View style={styles.firstDataSection}>
+              <View
+                style={[
+                  a.flex_row,
+                  a.align_center,
+                  a.justify_between,
+                  a.mb_md,
+                ]}>
+                <Text style={[styles.sectionTitle, t.atoms.text, a.mb_0]}>
+                  <Trans>Civic Elements</Trans>
+                </Text>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={() => setIsOfficial(!isOfficial)}
+                  hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
                   style={[
                     a.flex_row,
                     a.align_center,
-                    a.justify_between,
-                    a.mb_md,
+                    a.gap_xs,
+                    a.px_sm,
+                    a.py_xs,
+                    {
+                      borderRadius: 100,
+                      backgroundColor: isOfficial
+                        ? t.palette.primary_50
+                        : t.palette.contrast_25,
+                      borderWidth: 1,
+                      borderColor: isOfficial
+                        ? t.palette.primary_100
+                        : t.palette.contrast_100,
+                    },
                   ]}>
-                  <Text style={[styles.sectionTitle, t.atoms.text, a.mb_0]}>
-                    <Trans>Civic Elements</Trans>
-                  </Text>
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    onPress={() => setIsOfficial(!isOfficial)}
-                    hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                  <Text
                     style={[
-                      a.flex_row,
-                      a.align_center,
-                      a.gap_xs,
-                      a.px_sm,
-                      a.py_xs,
-                      {
-                        borderRadius: 100,
-                        backgroundColor: isOfficial
-                          ? t.palette.primary_50
-                          : t.palette.contrast_25,
-                        borderWidth: 1,
-                        borderColor: isOfficial
-                          ? t.palette.primary_100
-                          : t.palette.contrast_100,
-                      },
+                      a.font_bold,
+                      a.text_sm,
+                      isOfficial
+                        ? {color: t.palette.primary_500}
+                        : t.atoms.text,
                     ]}>
+                    {isOfficial ? 'Official' : 'Community'}
+                  </Text>
+                  <VerifiedIcon
+                    size="md"
+                    style={
+                      isOfficial ? {color: t.palette.primary_500} : t.atoms.text
+                    }
+                  />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.cardsGrid}>
+                {/* Policies Card */}
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  style={[styles.dataCard, cardBgColor]}
+                  activeOpacity={0.9}
+                  onPress={() =>
+                    navigation.navigate('PoliciesDashboard', {
+                      filter: isOfficial ? 'Parties' : 'Communities',
+                      mode: 'Policies',
+                    })
+                  }>
+                  <View style={[a.w_full, a.align_start]}>
+                    <View style={[a.flex_row, a.align_center, a.gap_xs]}>
+                      <Text
+                        style={[
+                          styles.dataCardTitle,
+                          t.atoms.text,
+                          {textAlign: 'left'},
+                        ]}>
+                        Policies
+                      </Text>
+                      {isOfficial && (
+                        <VerifiedIcon
+                          size="md"
+                          fill={t.palette.primary_500}
+                          style={{color: t.palette.primary_500}}
+                        />
+                      )}
+                    </View>
+                    <Text
+                      style={[
+                        t.atoms.text_contrast_medium,
+                        a.text_xs,
+                        a.mt_xs,
+                      ]}>
+                      {isOfficial ? 'Official' : 'Community'}
+                    </Text>
+                  </View>
+                  <View style={styles.dataCardIconWrap}>
                     <Text
                       style={[
                         a.font_bold,
-                        a.text_sm,
+                        styles.flairSymbol,
                         isOfficial
                           ? {color: t.palette.primary_500}
                           : t.atoms.text,
                       ]}>
+                      ||#
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+
+                {/* Matters Card */}
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  style={[styles.dataCard, cardBgColor]}
+                  activeOpacity={0.9}
+                  onPress={() =>
+                    navigation.navigate('PoliciesDashboard', {
+                      filter: isOfficial ? 'Parties' : 'Communities',
+                      mode: 'Matters',
+                    })
+                  }>
+                  <View style={[a.w_full, a.align_start]}>
+                    <View style={[a.flex_row, a.align_center, a.gap_xs]}>
+                      <Text
+                        style={[
+                          styles.dataCardTitle,
+                          t.atoms.text,
+                          {textAlign: 'left'},
+                        ]}>
+                        Matters
+                      </Text>
+                      {isOfficial && (
+                        <VerifiedIcon
+                          size="md"
+                          fill={t.palette.primary_500}
+                          style={{color: t.palette.primary_500}}
+                        />
+                      )}
+                    </View>
+                    <Text
+                      style={[
+                        t.atoms.text_contrast_medium,
+                        a.text_xs,
+                        a.mt_xs,
+                      ]}>
                       {isOfficial ? 'Official' : 'Community'}
                     </Text>
-                    <VerifiedIcon
-                      size="md"
-                      style={
+                  </View>
+                  <View style={styles.dataCardIconWrap}>
+                    <Text
+                      style={[
+                        a.font_bold,
+                        styles.flairSymbol,
                         isOfficial
                           ? {color: t.palette.primary_500}
-                          : t.atoms.text
-                      }
+                          : t.atoms.text,
+                      ]}>
+                      |#
+                    </Text>
+                  </View>
+                </TouchableOpacity>
+
+                {/* Simple cards — DataCard component */}
+                <DataCard
+                  title="Representatives"
+                  onPress={() => navigation.navigate('Representatives', {})}
+                  icon={
+                    <PersonIcon
+                      width={48}
+                      style={{color: t.palette.primary_500}}
                     />
-                  </TouchableOpacity>
-                </View>
-
-                <View style={styles.cardsGrid}>
-                  {/* Policies Card */}
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    style={[styles.dataCard, cardBgColor]}
-                    activeOpacity={0.9}
-                    onPress={() =>
-                      navigation.navigate('PoliciesDashboard', {
-                        filter: isOfficial ? 'Parties' : 'Communities',
-                        mode: 'Policies',
-                      })
-                    }>
-                    <View style={[a.w_full, a.align_start]}>
-                      <View style={[a.flex_row, a.align_center, a.gap_xs]}>
-                        <Text
-                          style={[
-                            styles.dataCardTitle,
-                            t.atoms.text,
-                            {textAlign: 'left'},
-                          ]}>
-                          Policies
-                        </Text>
-                        {isOfficial && (
-                          <VerifiedIcon
-                            size="md"
-                            fill={t.palette.primary_500}
-                            style={{color: t.palette.primary_500}}
-                          />
-                        )}
-                      </View>
-                      <Text
-                        style={[
-                          t.atoms.text_contrast_medium,
-                          a.text_xs,
-                          a.mt_xs,
-                        ]}>
-                        {isOfficial ? 'Official' : 'Community'}
-                      </Text>
-                    </View>
-                    <View style={styles.dataCardIconWrap}>
-                      <Text
-                        style={[
-                          a.font_bold,
-                          styles.flairSymbol,
-                          isOfficial
-                            ? {color: t.palette.primary_500}
-                            : t.atoms.text,
-                        ]}>
-                        ||#
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  {/* Matters Card */}
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    style={[styles.dataCard, cardBgColor]}
-                    activeOpacity={0.9}
-                    onPress={() =>
-                      navigation.navigate('PoliciesDashboard', {
-                        filter: isOfficial ? 'Parties' : 'Communities',
-                        mode: 'Matters',
-                      })
-                    }>
-                    <View style={[a.w_full, a.align_start]}>
-                      <View style={[a.flex_row, a.align_center, a.gap_xs]}>
-                        <Text
-                          style={[
-                            styles.dataCardTitle,
-                            t.atoms.text,
-                            {textAlign: 'left'},
-                          ]}>
-                          Matters
-                        </Text>
-                        {isOfficial && (
-                          <VerifiedIcon
-                            size="md"
-                            fill={t.palette.primary_500}
-                            style={{color: t.palette.primary_500}}
-                          />
-                        )}
-                      </View>
-                      <Text
-                        style={[
-                          t.atoms.text_contrast_medium,
-                          a.text_xs,
-                          a.mt_xs,
-                        ]}>
-                        {isOfficial ? 'Official' : 'Community'}
-                      </Text>
-                    </View>
-                    <View style={styles.dataCardIconWrap}>
-                      <Text
-                        style={[
-                          a.font_bold,
-                          styles.flairSymbol,
-                          isOfficial
-                            ? {color: t.palette.primary_500}
-                            : t.atoms.text,
-                        ]}>
-                        |#
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-
-                  {/* Simple cards — DataCard component */}
-                  <DataCard
-                    title="Representatives"
-                    onPress={() => navigation.navigate('Representatives', {})}
-                    icon={
-                      <PersonIcon
-                        width={48}
-                        style={{color: t.palette.primary_500}}
-                      />
-                    }
-                    cardBgColor={cardBgColor}
-                  />
-                  <DataCard
-                    title="RAQs and Open Questions"
-                    onPress={() => navigation.navigate('RAQ')}
-                    icon={
-                      <View style={styles.raqIconWrap}>
-                        <CompassIcon
-                          width={54}
-                          style={[
-                            styles.raqIconBackMark,
-                            {color: t.palette.primary_500},
-                          ]}
-                        />
-                        <QuestionIcon
-                          width={38}
-                          style={{color: t.palette.primary_500}}
-                        />
-                      </View>
-                    }
-                    cardBgColor={cardBgColor}
-                  />
-                  <DataCard
-                    title="Memes"
-                    onPress={() => navigation.navigate('Memes', {})}
-                    icon={
-                      <ImageIcon
-                        width={48}
-                        style={{color: t.palette.primary_500}}
-                      />
-                    }
-                    cardBgColor={cardBgColor}
-                  />
-                  <DataCard
-                    title="Docs"
-                    onPress={() => navigation.navigate('Documents', {})}
-                    icon={
-                      <PageTextIcon
-                        width={48}
-                        style={{color: t.palette.primary_500}}
-                      />
-                    }
-                    cardBgColor={cardBgColor}
-                  />
-                  <DataCard
-                    title="Highlights"
-                    onPress={() => navigation.navigate('Highlights')}
-                    icon={
-                      <PencilIcon
-                        width={48}
-                        style={{color: t.palette.primary_500}}
-                      />
-                    }
-                    cardBgColor={cardBgColor}
-                  />
-                  <DataCard
-                    title="Lobbying"
-                    onPress={() => navigation.navigate('CabildeoList')}
-                    icon={
-                      <RaisingHandIcon
-                        width={48}
-                        style={{color: t.palette.primary_500}}
-                      />
-                    }
-                    cardBgColor={cardBgColor}
-                  />
-                </View>
-              </View>
-
-              {/* Section 2: Visualizations */}
-              <View style={styles.dataSection}>
-                <Text style={[styles.sectionTitle, t.atoms.text]}>
-                  <Trans>Visualizations</Trans>
-                </Text>
-                <View style={styles.cardsGrid}>
-                  <DataCard
-                    title="VS"
-                    onPress={() =>
-                      navigation.navigate('VSScreenV2', {
-                        entities: ['p/Jalisco', 'p/CDMX'],
-                      })
-                    }
-                    icon={
-                      <View style={styles.iconRow}>
-                        <PersonIcon
-                          width={56}
-                          style={{color: t.palette.primary_500}}
-                        />
-                        <Text
-                          style={[
-                            a.font_bold,
-                            a.text_md,
-                            {
-                              marginHorizontal: 8,
-                              color: t.palette.primary_500,
-                            },
-                          ]}>
-                          vs
-                        </Text>
-                        <CommunityIcon
-                          width={56}
-                          style={{color: t.palette.primary_500}}
-                        />
-                      </View>
-                    }
-                    cardBgColor={cardBgColor}
-                  />
-                  <DataCard
-                    title="Discourse Analysis"
-                    onPress={() => navigation.navigate('DiscourseAnalysis')}
-                    icon={
-                      <MessageIcon
-                        width={48}
-                        style={{color: t.palette.primary_500}}
-                      />
-                    }
-                    cardBgColor={cardBgColor}
-                  />
-                  <DataCard
-                    title="Map"
-                    onPress={() => navigation.navigate('Map')}
-                    icon={
-                      <GlobeIcon
-                        width={48}
-                        style={{color: t.palette.primary_500}}
-                      />
-                    }
-                    cardBgColor={cardBgColor}
-                  />
-                  <DataCard
-                    title="Compass"
-                    onPress={() => navigation.navigate('Compass')}
-                    icon={
+                  }
+                  cardBgColor={cardBgColor}
+                />
+                <DataCard
+                  title="RAQs and Open Questions"
+                  onPress={() => navigation.navigate('RAQ')}
+                  icon={
+                    <View style={styles.raqIconWrap}>
                       <CompassIcon
-                        width={48}
+                        width={54}
+                        style={[
+                          styles.raqIconBackMark,
+                          {color: t.palette.primary_500},
+                        ]}
+                      />
+                      <QuestionIcon
+                        width={38}
                         style={{color: t.palette.primary_500}}
                       />
-                    }
-                    cardBgColor={cardBgColor}
-                  />
-                </View>
+                    </View>
+                  }
+                  cardBgColor={cardBgColor}
+                />
+                <DataCard
+                  title="Memes"
+                  onPress={() => navigation.navigate('Memes', {})}
+                  icon={
+                    <ImageIcon
+                      width={48}
+                      style={{color: t.palette.primary_500}}
+                    />
+                  }
+                  cardBgColor={cardBgColor}
+                />
+                <DataCard
+                  title="Docs"
+                  onPress={() => navigation.navigate('Documents', {})}
+                  icon={
+                    <PageTextIcon
+                      width={48}
+                      style={{color: t.palette.primary_500}}
+                    />
+                  }
+                  cardBgColor={cardBgColor}
+                />
+                <DataCard
+                  title="Highlights"
+                  onPress={() => navigation.navigate('Highlights')}
+                  icon={
+                    <PencilIcon
+                      width={48}
+                      style={{color: t.palette.primary_500}}
+                    />
+                  }
+                  cardBgColor={cardBgColor}
+                />
+                <DataCard
+                  title="Lobbying"
+                  onPress={() => navigation.navigate('CabildeoList')}
+                  icon={
+                    <RaisingHandIcon
+                      width={48}
+                      style={{color: t.palette.primary_500}}
+                    />
+                  }
+                  cardBgColor={cardBgColor}
+                />
               </View>
-            </ScrollView>
-          </View>
+            </View>
+
+            {/* Section 2: Visualizations */}
+            <View style={styles.dataSection}>
+              <Text style={[styles.sectionTitle, t.atoms.text]}>
+                <Trans>Visualizations</Trans>
+              </Text>
+              <View style={styles.cardsGrid}>
+                <DataCard
+                  title="VS"
+                  onPress={() =>
+                    navigation.navigate('VSScreenV2', {
+                      entities: ['p/Jalisco', 'p/CDMX'],
+                    })
+                  }
+                  icon={
+                    <View style={styles.iconRow}>
+                      <PersonIcon
+                        width={56}
+                        style={{color: t.palette.primary_500}}
+                      />
+                      <Text
+                        style={[
+                          a.font_bold,
+                          a.text_md,
+                          {
+                            marginHorizontal: 8,
+                            color: t.palette.primary_500,
+                          },
+                        ]}>
+                        vs
+                      </Text>
+                      <CommunityIcon
+                        width={56}
+                        style={{color: t.palette.primary_500}}
+                      />
+                    </View>
+                  }
+                  cardBgColor={cardBgColor}
+                />
+                <DataCard
+                  title="Discourse Analysis"
+                  onPress={() => navigation.navigate('DiscourseAnalysis')}
+                  icon={
+                    <MessageIcon
+                      width={48}
+                      style={{color: t.palette.primary_500}}
+                    />
+                  }
+                  cardBgColor={cardBgColor}
+                />
+                <DataCard
+                  title="Map"
+                  onPress={() => navigation.navigate('Map')}
+                  icon={
+                    <GlobeIcon
+                      width={48}
+                      style={{color: t.palette.primary_500}}
+                    />
+                  }
+                  cardBgColor={cardBgColor}
+                />
+                <DataCard
+                  title="Compass"
+                  onPress={() => navigation.navigate('Compass')}
+                  icon={
+                    <CompassIcon
+                      width={48}
+                      style={{color: t.palette.primary_500}}
+                    />
+                  }
+                  cardBgColor={cardBgColor}
+                />
+              </View>
+            </View>
+          </ScrollView>
+        </View>
       </Layout.Center>
 
       {/* Floating Apply Button — Mobile Only */}

@@ -542,6 +542,7 @@ export function MapScreenImpl({
   const {refetch: refetchCoarseLocation} = useCoarseLocation()
   const {setDeviceGeolocation} = useDeviceGeolocationApi()
   const {data: cabildeos} = useCabildeosQuery()
+  const lastTapRef = useRef<number>(0)
 
   const [selectedState, setSelectedState] = useState<{name: string} | null>(
     null,
@@ -1064,7 +1065,10 @@ export function MapScreenImpl({
         strokeColor,
         strokeWidth,
         zIndex: isSelected ? 12 : 1,
-        onPress: () => focusState(feature.name, {openLayer: activeLayer}),
+        onPress: () => {
+          lastTapRef.current = Date.now()
+          focusState(feature.name, {openLayer: activeLayer})
+        },
       }))
     })
   }, [
@@ -1089,6 +1093,7 @@ export function MapScreenImpl({
         strokeColor={polygon.strokeColor}
         strokeWidth={polygon.strokeWidth}
         zIndex={polygon.zIndex}
+        tappable={!!polygon.onPress}
         onPress={polygon.onPress}
       />
     ))
@@ -1121,7 +1126,9 @@ export function MapScreenImpl({
             strokeColor={d.accent}
             strokeWidth={isSelected ? 1.5 : 0.8}
             zIndex={isSelected ? 11 : 2}
+            tappable={true}
             onPress={() => {
+              lastTapRef.current = Date.now()
               setSelectedDistrictId(d.id)
               if (!showDistricts) {
                 setShowDistricts(true)
@@ -1163,6 +1170,7 @@ export function MapScreenImpl({
           tracksViewChanges={false}
           zIndex={isSelected ? 20 : 14}
           onPress={() => {
+            lastTapRef.current = Date.now()
             setSelectedCityName(city.name)
             focusCity(city.stateName, city.name)
           }}>
@@ -1234,7 +1242,10 @@ export function MapScreenImpl({
           tappable
           tracksViewChanges={false}
           zIndex={isSelected ? 13 : 2}
-          onPress={() => focusState(feature.name, {openLayer: activeLayer})}>
+          onPress={() => {
+            lastTapRef.current = Date.now()
+            focusState(feature.name, {openLayer: activeLayer})
+          }}>
           <View
             style={[
               styles.stateCentroidMarker,
@@ -1277,6 +1288,7 @@ export function MapScreenImpl({
             tracksViewChanges={false}
             zIndex={isSelected ? 14 : 3}
             onPress={() => {
+              lastTapRef.current = Date.now()
               setSelectedDistrictId(d.id)
               setMapRouteParams({
                 state: selectedState.name,
@@ -1339,6 +1351,7 @@ export function MapScreenImpl({
           tracksViewChanges={false}
           zIndex={15}
           onPress={() => {
+            lastTapRef.current = Date.now()
             navigation.navigate('CabildeoDetail', {
               cabildeoUri: cabildeo.uri!,
             })
@@ -1478,12 +1491,10 @@ export function MapScreenImpl({
           }
         }}
         onPress={() => {
-          // Only clear if no state is selected — otherwise tapping a state
-          // polygon fires both polygon.onPress AND map onPress, which
-          // immediately deselects the newly selected state.
-          if (!selectedState) {
-            clearMapSelection()
+          if (Date.now() - lastTapRef.current < 200) {
+            return
           }
+          clearMapSelection()
         }}
         onCivicPointPress={(uri: string) => {
           navigation.navigate('CabildeoDetail', {

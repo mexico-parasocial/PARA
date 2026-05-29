@@ -250,15 +250,15 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
         </Layout.Header.Slot>
       </Layout.Header.Outer>
 
-      <Layout.Content>
+      <Layout.Center style={styles.contentCenter}>
         {isLoading ? (
-          <Layout.Center>
+          <View style={styles.centeredState}>
             <Text style={t.atoms.text_contrast_medium}>
               <Trans>Loading your civic tree...</Trans>
             </Text>
-          </Layout.Center>
+          </View>
         ) : viewMode === 'graph' ? (
-          <>
+          <View style={styles.graphPane}>
             <View style={styles.searchBar}>
               <TextInput
                 accessibilityLabel={_(msg`Search collections`)}
@@ -304,171 +304,171 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
                 simulationConfig={{groupGravity: 300, springLength: 150}}
               />
             )}
-          </>
+          </View>
         ) : (
-          <>
-            <FlatList
-              data={collections}
-              keyExtractor={item => item.id}
-              contentContainerStyle={styles.listContent}
-              ListEmptyComponent={
-                <View style={styles.emptyState}>
-                  <Text style={[styles.emptyTitle, t.atoms.text]}>
-                    <Trans>Your personal civic tree is empty</Trans>
-                  </Text>
-                  <Text style={[styles.emptySubtitle, t.atoms.text_contrast_medium]}>
-                    <Trans>Create collections to organize policies, topics, evidence, links, and notes under your own control.</Trans>
-                  </Text>
-                </View>
-              }
-              ListFooterComponent={
-                <View style={{paddingTop: 16}}>
-                  {showCreate ? (
-                    <View
-                      style={[
-                        styles.createCard,
-                        t.atoms.bg_contrast_25,
-                        {borderWidth: 1, borderColor: t.palette.contrast_100},
-                      ]}>
-                      <TextInput
-                        value={newName}
-                        onChangeText={setNewName}
-                        accessibilityLabel={_(msg`Collection name`)}
-                        accessibilityHint={_(msg`Write the name of the new collection`)}
-                        placeholder={_(msg`Collection name`)}
-                        placeholderTextColor={t.palette.contrast_400}
-                        style={[
-                          styles.nameInput,
-                          t.atoms.text,
-                          {borderWidth: 1, borderColor: t.palette.contrast_100},
-                        ]}
-                      />
-                      <TextInput
-                        value={newDescription}
-                        onChangeText={setNewDescription}
-                        accessibilityLabel={_(msg`Collection description`)}
-                        accessibilityHint={_(msg`Describe what this collection is for`)}
-                        placeholder={_(msg`Description (optional)`)}
-                        placeholderTextColor={t.palette.contrast_400}
-                        style={[
-                          styles.descriptionInput,
-                          t.atoms.text,
-                          {borderWidth: 1, borderColor: t.palette.contrast_100},
-                        ]}
-                        multiline
-                        numberOfLines={2}
-                      />
-                      <View style={styles.createActions}>
-                        <TouchableOpacity
-                          accessibilityRole="button"
-                          accessibilityLabel={_(msg`Cancel collection creation`)}
-                          accessibilityHint={_(msg`Closes the new collection form`)}
-                          onPress={() => {
-                            setShowCreate(false)
-                            setNewName('')
-                            setNewDescription('')
-                          }}
-                          style={styles.cancelBtn}>
-                          <Text style={t.atoms.text_contrast_medium}>
-                            <Trans>Cancel</Trans>
-                          </Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          accessibilityRole="button"
-                          accessibilityLabel={_(msg`Create collection`)}
-                          accessibilityHint={_(msg`Creates a new collection in your personal civic tree`)}
-                          onPress={onCreate}
-                          disabled={!newName.trim() || createMutation.isPending}
-                          style={[
-                            styles.createBtn,
-                            {backgroundColor: t.palette.primary_500},
-                            (!newName.trim() || createMutation.isPending) && {
-                              opacity: 0.5,
-                            },
-                          ]}>
-                          <Text style={{color: 'white', fontWeight: '700'}}>
-                            <Trans>Create</Trans>
-                          </Text>
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  ) : (
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      accessibilityLabel={_(msg`New collection`)}
-                      accessibilityHint={_(msg`Opens the form to create a collection`)}
-                      onPress={() => setShowCreate(true)}
-                      style={[
-                        styles.addBtn,
-                        t.atoms.bg_contrast_25,
-                        {borderWidth: 1, borderColor: t.palette.contrast_100},
-                      ]}>
-                      <PlusIcon size="md" style={{color: t.palette.primary_500}} />
-                      <Text style={[styles.addBtnText, {color: t.palette.primary_500}]}>
-                        <Trans>New collection</Trans>
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              }
-              renderItem={({item}) => (
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel={_(msg`Open collection ${item.name}`)}
-                  accessibilityHint={_(msg`Opens this collection from your personal civic tree`)}
-                  onPress={() =>
-                    navigation.navigate('CollectionDetail', {collectionId: item.id})
-                  }
-                  activeOpacity={0.7}
-                  style={[
-                    styles.collectionCard,
-                    t.atoms.bg_contrast_25,
-                    {borderWidth: 1, borderColor: t.palette.contrast_100},
-                  ]}>
+          <FlatList
+            style={styles.list}
+            data={collections}
+            keyExtractor={item => item.id}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <Text style={[styles.emptyTitle, t.atoms.text]}>
+                  <Trans>Your personal civic tree is empty</Trans>
+                </Text>
+                <Text
+                  style={[styles.emptySubtitle, t.atoms.text_contrast_medium]}>
+                  <Trans>Create collections to organize policies, topics, evidence, links, and notes under your own control.</Trans>
+                </Text>
+              </View>
+            }
+            ListFooterComponent={
+              <View style={{paddingTop: 16}}>
+                {showCreate ? (
                   <View
                     style={[
-                      styles.collectionIcon,
-                      {backgroundColor: t.palette.contrast_50},
+                      styles.createCard,
+                      t.atoms.bg_contrast_25,
+                      {borderWidth: 1, borderColor: t.palette.contrast_100},
                     ]}>
-                    <BookmarkIcon
-                      size="md"
-                      style={{color: t.palette.primary_500}}
+                    <TextInput
+                      value={newName}
+                      onChangeText={setNewName}
+                      accessibilityLabel={_(msg`Collection name`)}
+                      accessibilityHint={_(msg`Write the name of the new collection`)}
+                      placeholder={_(msg`Collection name`)}
+                      placeholderTextColor={t.palette.contrast_400}
+                      style={[
+                        styles.nameInput,
+                        t.atoms.text,
+                        {borderWidth: 1, borderColor: t.palette.contrast_100},
+                      ]}
                     />
-                  </View>
-                  <View style={styles.collectionInfo}>
-                    <Text style={[styles.collectionName, t.atoms.text]}>
-                      {item.name}
-                    </Text>
-                    {item.description ? (
-                      <Text
+                    <TextInput
+                      value={newDescription}
+                      onChangeText={setNewDescription}
+                      accessibilityLabel={_(msg`Collection description`)}
+                      accessibilityHint={_(msg`Describe what this collection is for`)}
+                      placeholder={_(msg`Description (optional)`)}
+                      placeholderTextColor={t.palette.contrast_400}
+                      style={[
+                        styles.descriptionInput,
+                        t.atoms.text,
+                        {borderWidth: 1, borderColor: t.palette.contrast_100},
+                      ]}
+                      multiline
+                      numberOfLines={2}
+                    />
+                    <View style={styles.createActions}>
+                      <TouchableOpacity
+                        accessibilityRole="button"
+                        accessibilityLabel={_(msg`Cancel collection creation`)}
+                        accessibilityHint={_(msg`Closes the new collection form`)}
+                        onPress={() => {
+                          setShowCreate(false)
+                          setNewName('')
+                          setNewDescription('')
+                        }}
+                        style={styles.cancelBtn}>
+                        <Text style={t.atoms.text_contrast_medium}>
+                          <Trans>Cancel</Trans>
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        accessibilityRole="button"
+                        accessibilityLabel={_(msg`Create collection`)}
+                        accessibilityHint={_(msg`Creates a new collection in your personal civic tree`)}
+                        onPress={onCreate}
+                        disabled={!newName.trim() || createMutation.isPending}
                         style={[
-                          styles.collectionDesc,
-                          t.atoms.text_contrast_medium,
-                        ]}
-                        numberOfLines={1}>
-                        {item.description}
-                      </Text>
-                    ) : null}
-                    <Text style={[styles.collectionCount, t.atoms.text_contrast_low]}>
-                      {item.items.length}{' '}
-                      {item.items.length === 1 ? 'item' : 'items'}
-                    </Text>
+                          styles.createBtn,
+                          {backgroundColor: t.palette.primary_500},
+                          (!newName.trim() || createMutation.isPending) && {
+                            opacity: 0.5,
+                          },
+                        ]}>
+                        <Text style={{color: 'white', fontWeight: '700'}}>
+                          <Trans>Create</Trans>
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
+                ) : (
                   <TouchableOpacity
                     accessibilityRole="button"
-                    accessibilityLabel={_(msg`Delete collection ${item.name}`)}
-                    accessibilityHint={_(msg`Opens the confirmation to delete this collection`)}
-                    onPress={() => onRequestDelete(item.id)}
-                    hitSlop={12}
-                    style={styles.deleteBtn}>
-                    <TrashIcon size="sm" style={{color: t.palette.contrast_400}} />
+                    accessibilityLabel={_(msg`New collection`)}
+                    accessibilityHint={_(msg`Opens the form to create a collection`)}
+                    onPress={() => setShowCreate(true)}
+                    style={[
+                      styles.addBtn,
+                      t.atoms.bg_contrast_25,
+                      {borderWidth: 1, borderColor: t.palette.contrast_100},
+                    ]}>
+                    <PlusIcon size="md" style={{color: t.palette.primary_500}} />
+                    <Text style={[styles.addBtnText, {color: t.palette.primary_500}]}>
+                      <Trans>New collection</Trans>
+                    </Text>
                   </TouchableOpacity>
+                )}
+              </View>
+            }
+            renderItem={({item}) => (
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={_(msg`Open collection ${item.name}`)}
+                accessibilityHint={_(msg`Opens this collection from your personal civic tree`)}
+                onPress={() =>
+                  navigation.navigate('CollectionDetail', {collectionId: item.id})
+                }
+                activeOpacity={0.7}
+                style={[
+                  styles.collectionCard,
+                  t.atoms.bg_contrast_25,
+                  {borderWidth: 1, borderColor: t.palette.contrast_100},
+                ]}>
+                <View
+                  style={[
+                    styles.collectionIcon,
+                    {backgroundColor: t.palette.contrast_50},
+                  ]}>
+                  <BookmarkIcon
+                    size="md"
+                    style={{color: t.palette.primary_500}}
+                  />
+                </View>
+                <View style={styles.collectionInfo}>
+                  <Text style={[styles.collectionName, t.atoms.text]}>
+                    {item.name}
+                  </Text>
+                  {item.description ? (
+                    <Text
+                      style={[
+                        styles.collectionDesc,
+                        t.atoms.text_contrast_medium,
+                      ]}
+                      numberOfLines={1}>
+                      {item.description}
+                    </Text>
+                  ) : null}
+                  <Text style={[styles.collectionCount, t.atoms.text_contrast_low]}>
+                    {item.items.length}{' '}
+                    {item.items.length === 1 ? 'item' : 'items'}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={_(msg`Delete collection ${item.name}`)}
+                  accessibilityHint={_(msg`Opens the confirmation to delete this collection`)}
+                  onPress={() => onRequestDelete(item.id)}
+                  hitSlop={12}
+                  style={styles.deleteBtn}>
+                  <TrashIcon size="sm" style={{color: t.palette.contrast_400}} />
                 </TouchableOpacity>
-              )}
-            />
-          </>
+              </TouchableOpacity>
+            )}
+          />
         )}
-      </Layout.Content>
+      </Layout.Center>
       <AddTreeItemDialog control={addItemControl} collection={selectedCollection} />
     </Layout.Screen>
   )
@@ -540,8 +540,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  contentCenter: {
+    flex: 1,
+  },
+  centeredState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+  },
+  graphPane: {
+    flex: 1,
+    width: '100%',
+  },
+  list: {
+    flex: 1,
+    width: '100%',
+  },
   listContent: {
     padding: 16,
+    paddingBottom: 100,
     gap: 10,
   },
   emptyState: {

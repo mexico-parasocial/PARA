@@ -1,9 +1,4 @@
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useState,
-} from 'react'
+import {useCallback, useEffect, useMemo, useState} from 'react'
 import {
   ActivityIndicator,
   Linking,
@@ -14,48 +9,50 @@ import {
   View,
 } from 'react-native'
 import {Trans} from '@lingui/react/macro'
-import {useNavigation, useRoute} from '@react-navigation/native'
+import {useRoute} from '@react-navigation/native'
 
 import {useAnonymousMode} from '#/lib/m8/hooks/useAnonymousMode'
-import {type NavigationProp} from '#/lib/routes/types'
 import {useCommunityBoardsQuery} from '#/state/queries/community-boards'
 import {
-  CARD_TYPES,
-  RELATIONSHIP_TYPES,
-  STANCE_FILTERS,
-  useAcceptSuggestionMutation,
-  useCardVoteQuery,
-  useCastVoteMutation,
-  useCommunityPulseQuery,
+  COMMUNITY_CIVIC_TREE_CARD_TYPES,
+  COMMUNITY_CIVIC_TREE_RELATIONSHIP_TYPES,
+  COMMUNITY_CIVIC_TREE_STANCE_FILTERS,
+  didContributionBecomeApproved,
+  normalizeCommunityCivicTreeGraph,
+  useAcceptCommunityCivicTreeSuggestionMutation,
+  useCastCommunityCivicTreeVoteMutation,
+  useCommunityCivicTreeCardVoteQuery,
+  useCommunityCivicTreeGraphQuery,
+  useCommunityCivicTreePulseQuery,
+  useCommunityCivicTreeSuggestionsQuery,
+  useCommunityCivicTreeSummaryQuery,
   useCommunityTreeContributionsQuery,
-  useCreateRelationshipMutation,
-  useDeliberationGraphQuery,
-  useDeliberationSummaryQuery,
-  useRejectSuggestionMutation,
-  useSuggestionsQuery,
+  useCreateCommunityCivicTreeRelationshipMutation,
+  useRejectCommunityCivicTreeSuggestionMutation,
   useVoteCommunityTreeContributionMutation,
-} from '#/state/queries/deliberation'
+} from '#/state/queries/community-civic-tree'
 import {useSession} from '#/state/session'
-import {atoms as a, useBreakpoints, useTheme} from '#/alf'
+import {useBreakpoints, useTheme} from '#/alf'
 import {useDialogControl} from '#/components/Dialog'
 import {SortitionConfigDialog} from '#/components/dialogs/SortitionConfigDialog'
 import {SearchInput} from '#/components/forms/SearchInput'
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'
+import {CommunityCivicTreeGraph} from './components/CommunityCivicTreeGraph'
 import {CommunityPulseSheet} from './components/CommunityPulseSheet'
 import {ContributionReviewDetail} from './components/ContributionReviewDetail'
-import {DeliberationGraph} from './components/DeliberationGraph'
 import {NodeDetailSheet} from './components/NodeDetailSheet'
-import {type SortitionStatus,SortitionStatusCard} from './components/SortitionStatusCard'
+import {
+  type SortitionStatus,
+  SortitionStatusCard,
+} from './components/SortitionStatusCard'
 import {SummaryModal} from './components/SummaryModal'
 import {type GraphData} from './deliberation-types'
 
-
-
-export function SpatialDeliberationScreen() {
+export function CommunityCivicTreeScreen() {
   const route = useRoute<{
     key: string
-    name: 'DeliberationGraph'
+    name: 'CommunityCivicTree'
     params:
       | {
           communityUri?: string
@@ -66,7 +63,6 @@ export function SpatialDeliberationScreen() {
         }
       | undefined
   }>()
-  const navigation = useNavigation<NavigationProp>()
   const t = useTheme()
   const {gtMobile} = useBreakpoints()
   const {currentAccount} = useSession()
@@ -99,7 +95,8 @@ export function SpatialDeliberationScreen() {
   const [showContributionNotice, setShowContributionNotice] = useState(
     entryPoint === 'contribution_submitted',
   )
-  const [sortitionStatus, setSortitionStatus] = useState<SortitionStatus>('none')
+  const [sortitionStatus, setSortitionStatus] =
+    useState<SortitionStatus>('none')
   const sortitionControl = useDialogControl()
   const [showReviewPanel, setShowReviewPanel] = useState(
     entryPoint === 'contribution_submitted',
@@ -113,9 +110,7 @@ export function SpatialDeliberationScreen() {
   >(initialHighlightCardId)
 
   const [searchQuery, setSearchQuery] = useState('')
-  const [activeCardTypes, setActiveCardTypes] = useState<Set<string>>(
-    new Set(),
-  )
+  const [activeCardTypes, setActiveCardTypes] = useState<Set<string>>(new Set())
   const [activeRelTypes, setActiveRelTypes] = useState<Set<string>>(new Set())
   const [activeStances, setActiveStances] = useState<Set<string>>(new Set())
   const [showIdeologicalOverlay, setShowIdeologicalOverlay] = useState(false)
@@ -153,9 +148,7 @@ export function SpatialDeliberationScreen() {
   // If community not found in user's boards, try searching all public boards
   // by name/slug (allows viewing public communities without membership)
   const needsFallbackLookup = Boolean(
-    initialName &&
-      !boardsLoading &&
-      !selectedCommunityFromBoards,
+    initialName && !boardsLoading && !selectedCommunityFromBoards,
   )
   const {data: fallbackBoardsData, isLoading: fallbackLoading} =
     useCommunityBoardsQuery(
@@ -176,18 +169,19 @@ export function SpatialDeliberationScreen() {
     isError: isGraphError,
     refetch: refetchGraph,
     isFetching: isGraphFetching,
-  } = useDeliberationGraphQuery(communityUri)
+  } = useCommunityCivicTreeGraphQuery(communityUri)
 
-  const {data: suggestions = []} = useSuggestionsQuery(communityUri)
-  const acceptSuggestion = useAcceptSuggestionMutation()
-  const rejectSuggestion = useRejectSuggestionMutation()
+  const {data: suggestions = []} =
+    useCommunityCivicTreeSuggestionsQuery(communityUri)
+  const acceptSuggestion = useAcceptCommunityCivicTreeSuggestionMutation()
+  const rejectSuggestion = useRejectCommunityCivicTreeSuggestionMutation()
   const voteContribution = useVoteCommunityTreeContributionMutation()
   const {data: pendingContributions = []} = useCommunityTreeContributionsQuery(
     communityUri,
     myDid,
   )
-  const {data: summary} = useDeliberationSummaryQuery(communityUri)
-  const {data: pulse} = useCommunityPulseQuery(communityUri, myDid)
+  const {data: summary} = useCommunityCivicTreeSummaryQuery(communityUri)
+  const {data: pulse} = useCommunityCivicTreePulseQuery(communityUri, myDid)
 
   const selectedContribution = useMemo(() => {
     if (selectedContributionId) {
@@ -205,28 +199,7 @@ export function SpatialDeliberationScreen() {
 
   const graphDataForRender: GraphData | null = useMemo(() => {
     if (!graphData) return null
-    return {
-      nodes: graphData.nodes.map(n => ({
-        id: n.id,
-        title: n.title,
-        card_type: n.card_type,
-        author_did: n.author_did,
-        community_uri: n.community_uri,
-        influence: n.influence ?? 0,
-        vote_count: n.vote_count ?? 0,
-        stance: n.stance,
-        compass_quadrant: n.compass_quadrant,
-        content: n.content,
-        source_url: n.source_url,
-        metadata: n.metadata,
-      })),
-      edges: graphData.edges.map(e => ({
-        id: e.id,
-        source: e.source_card_id,
-        target: e.target_card_id,
-        relationship_type: e.relationship_type,
-      })),
-    }
+    return normalizeCommunityCivicTreeGraph(graphData)
   }, [graphData])
 
   const selectedNode = useMemo(() => {
@@ -244,9 +217,12 @@ export function SpatialDeliberationScreen() {
     }
   }, [selectedNodeId, graphData])
 
-  const castVote = useCastVoteMutation()
-  const createRelationship = useCreateRelationshipMutation()
-  const {data: myVoteData} = useCardVoteQuery(selectedNodeId, myDid)
+  const castVote = useCastCommunityCivicTreeVoteMutation()
+  const createRelationship = useCreateCommunityCivicTreeRelationshipMutation()
+  const {data: myVoteData} = useCommunityCivicTreeCardVoteQuery(
+    selectedNodeId,
+    myDid,
+  )
   const myVote = myVoteData?.vote?.influence ?? 0
 
   useEffect(() => {
@@ -311,10 +287,6 @@ export function SpatialDeliberationScreen() {
 
   const isLoading = boardsLoading || fallbackLoading || graphLoading
 
-  const handleBackToMyBase = useCallback(() => {
-    navigation.navigate('MyBase')
-  }, [navigation])
-
   const onVoteContribution = useCallback(
     (
       contribution: (typeof pendingContributions)[number],
@@ -330,11 +302,8 @@ export function SpatialDeliberationScreen() {
         },
         {
           onSuccess: data => {
-            if (
-              data.contribution.status === 'approved' &&
-              data.contribution.approved_card_id
-            ) {
-              setPendingHighlightCardId(data.contribution.approved_card_id)
+            if (didContributionBecomeApproved(data.contribution)) {
+              setPendingHighlightCardId(data.contribution.approved_card_id!)
               setShowContributionDetail(false)
             }
           },
@@ -347,495 +316,544 @@ export function SpatialDeliberationScreen() {
   return (
     <Layout.Screen>
       <Layout.Header.Outer>
-        <Layout.Header.BackButton onPress={handleBackToMyBase} />
+        <Layout.Header.BackButton fallback="MyBase" />
         <Layout.Header.Content>
           <Layout.Header.TitleText>
             <Trans>Community Civic Tree</Trans>
           </Layout.Header.TitleText>
         </Layout.Header.Content>
-        {communityUri && (
-          <Layout.Header.Slot>
-            <View style={{flexDirection: 'row', alignItems: 'center', gap: 6}}>
-              <TouchableOpacity
-                accessibilityRole="button"
-                accessibilityLabel="Community pulse"
-                accessibilityHint="Opens community discourse analysis"
-                onPress={() => setShowPulse(true)}
-                style={[styles.pulseBtn, {backgroundColor: t.palette.primary_500 + '15'}]}>
-                <Text style={{color: t.palette.primary_500, fontSize: 12, fontWeight: '700'}}>
-                  <Trans>Pulse</Trans>
-                </Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                accessibilityRole="button"
-                accessibilityLabel="Summarize community civic tree"
-                accessibilityHint="Opens AI-generated community civic tree summary"
-                onPress={() => setShowSummary(true)}
-                style={[styles.summarizeBtn, {backgroundColor: t.palette.primary_500 + '15'}]}>
-                <Text style={{color: t.palette.primary_500, fontSize: 12, fontWeight: '700'}}>
-                  <Trans>Summary</Trans>
-                </Text>
-              </TouchableOpacity>
-              {suggestions.length > 0 && (
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel={`${suggestions.length} relationship suggestions`}
-                  accessibilityHint="Opens suggested relationships panel"
-                  onPress={() => setShowSuggestions(true)}
-                  style={styles.suggestionBadge}>
-                  <Text style={styles.suggestionBadgeText}>
-                    {suggestions.length}
-                  </Text>
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity
-                accessibilityRole="button"
-                accessibilityLabel="Select community"
-                accessibilityHint="Opens community picker"
-                onPress={() => setShowPicker(true)}
-                style={styles.communityButton}>
-                <Text
-                  style={[
-                    styles.communityButtonText,
-                    {color: t.palette.primary_500},
-                  ]}>
-                  {selectedCommunity?.name ?? 'Select Community'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </Layout.Header.Slot>
-        )}
+        <Layout.Header.Slot />
       </Layout.Header.Outer>
 
-      {showContributionNotice && (
-        <View
-          style={[
-            styles.notice,
-            {
-              backgroundColor: t.palette.primary_500 + '12',
-              borderColor: t.palette.primary_500 + '33',
-            },
-          ]}>
-          <View style={styles.noticeTextWrap}>
-            <Text style={[styles.noticeTitle, {color: t.palette.primary_500}]}>
-              <Trans>Your contribution is under community review.</Trans>
-            </Text>
-          </View>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="View pending contributions"
-            accessibilityHint="Shows the list of contributions under review"
-            onPress={() => setShowReviewPanel(true)}
-            style={styles.noticeAction}>
-            <Text style={[styles.noticeActionText, {color: t.palette.primary_500}]}>
-              <Trans>View pending contributions</Trans>
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Close notice"
-            accessibilityHint="Hides this notice"
-            onPress={() => setShowContributionNotice(false)}
-            style={styles.noticeClose}>
-            <Text style={{color: t.palette.primary_500}}>×</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      {showReviewPanel && communityUri && (
-        <View style={[styles.reviewPanel, {borderColor: t.palette.contrast_100}]}>
-          <View style={styles.reviewHeader}>
-            <View>
-              <Text style={[styles.reviewTitle, t.atoms.text]}>
-                <Trans>Contributions under review</Trans>
-              </Text>
-              <Text style={[styles.reviewSubtitle, t.atoms.text_contrast_medium]}>
-                <Trans>The community decides what goes on the map.</Trans>
-              </Text>
+      <Layout.Center style={styles.centerColumn}>
+        <View style={styles.columnContent}>
+          {communityUri && (
+            <View style={styles.topControls}>
+              <SortitionStatusCard
+                status={sortitionStatus}
+                onConfigure={() => sortitionControl.open()}
+                canConfigure={true}
+              />
+              <View style={styles.communityActions}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Community pulse"
+                  accessibilityHint="Opens community discourse analysis"
+                  onPress={() => setShowPulse(true)}
+                  style={[
+                    styles.pulseBtn,
+                    {backgroundColor: t.palette.primary_500 + '15'},
+                  ]}>
+                  <Text
+                    style={[
+                      styles.topActionText,
+                      {color: t.palette.primary_500},
+                    ]}>
+                    <Trans>Pulse</Trans>
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Summarize community civic tree"
+                  accessibilityHint="Opens AI-generated community civic tree summary"
+                  onPress={() => setShowSummary(true)}
+                  style={[
+                    styles.summarizeBtn,
+                    {backgroundColor: t.palette.primary_500 + '15'},
+                  ]}>
+                  <Text
+                    style={[
+                      styles.topActionText,
+                      {color: t.palette.primary_500},
+                    ]}>
+                    <Trans>Summary</Trans>
+                  </Text>
+                </TouchableOpacity>
+                {suggestions.length > 0 && (
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel={`${suggestions.length} relationship suggestions`}
+                    accessibilityHint="Opens suggested relationships panel"
+                    onPress={() => setShowSuggestions(true)}
+                    style={styles.suggestionBadge}>
+                    <Text style={styles.suggestionBadgeText}>
+                      {suggestions.length}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Select community"
+                  accessibilityHint="Opens community picker"
+                  onPress={() => setShowPicker(true)}
+                  style={[
+                    styles.communityButton,
+                    {borderColor: t.palette.contrast_100},
+                  ]}>
+                  <Text
+                    style={[
+                      styles.communityButtonText,
+                      {color: t.palette.primary_500},
+                    ]}>
+                    {selectedCommunity?.name ?? 'Select Community'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Close contributions under review"
-              accessibilityHint="Hides the list of pending contributions"
-              onPress={() => setShowReviewPanel(false)}
-              style={styles.reviewClose}>
-              <Text style={t.atoms.text_contrast_medium}>×</Text>
-            </TouchableOpacity>
-          </View>
+          )}
 
-          {pendingContributions.length === 0 ? (
-            <Text style={[styles.reviewEmpty, t.atoms.text_contrast_medium]}>
-              <Trans>No pending contributions right now.</Trans>
-            </Text>
-          ) : (
-            <View style={[gtMobile && styles.reviewSplit]}>
+          {showContributionNotice && (
+            <View
+              style={[
+                styles.notice,
+                {
+                  backgroundColor: t.palette.primary_500 + '12',
+                  borderColor: t.palette.primary_500 + '33',
+                },
+              ]}>
+              <View style={styles.noticeTextWrap}>
+                <Text
+                  style={[styles.noticeTitle, {color: t.palette.primary_500}]}>
+                  <Trans>Your contribution is under community review.</Trans>
+                </Text>
+              </View>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="View pending contributions"
+                accessibilityHint="Shows the list of contributions under review"
+                onPress={() => setShowReviewPanel(true)}
+                style={styles.noticeAction}>
+                <Text
+                  style={[
+                    styles.noticeActionText,
+                    {color: t.palette.primary_500},
+                  ]}>
+                  <Trans>View pending contributions</Trans>
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel="Close notice"
+                accessibilityHint="Hides this notice"
+                onPress={() => setShowContributionNotice(false)}
+                style={styles.noticeClose}>
+                <Text style={{color: t.palette.primary_500}}>×</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {showReviewPanel && communityUri && (
+            <View
+              style={[
+                styles.reviewPanel,
+                {borderColor: t.palette.contrast_100},
+              ]}>
+              <View style={styles.reviewHeader}>
+                <View>
+                  <Text style={[styles.reviewTitle, t.atoms.text]}>
+                    <Trans>Contributions under review</Trans>
+                  </Text>
+                  <Text
+                    style={[
+                      styles.reviewSubtitle,
+                      t.atoms.text_contrast_medium,
+                    ]}>
+                    <Trans>The community decides what goes on the map.</Trans>
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Close contributions under review"
+                  accessibilityHint="Hides the list of pending contributions"
+                  onPress={() => setShowReviewPanel(false)}
+                  style={styles.reviewClose}>
+                  <Text style={t.atoms.text_contrast_medium}>×</Text>
+                </TouchableOpacity>
+              </View>
+
+              {pendingContributions.length === 0 ? (
+                <Text
+                  style={[styles.reviewEmpty, t.atoms.text_contrast_medium]}>
+                  <Trans>No pending contributions right now.</Trans>
+                </Text>
+              ) : (
+                <View style={[gtMobile && styles.reviewSplit]}>
+                  <ScrollView
+                    horizontal={!gtMobile}
+                    showsHorizontalScrollIndicator={false}
+                    showsVerticalScrollIndicator={false}
+                    style={gtMobile && styles.reviewListColumn}
+                    contentContainerStyle={[
+                      styles.reviewList,
+                      gtMobile && styles.reviewListVertical,
+                    ]}>
+                    {pendingContributions.map(contribution => {
+                      const highlighted =
+                        contribution.id === pendingContributionId ||
+                        contribution.id === selectedContribution?.id
+                      return (
+                        <TouchableOpacity
+                          key={contribution.id}
+                          accessibilityRole="button"
+                          accessibilityLabel={`Revisar aporte: ${contribution.title}`}
+                          accessibilityHint="Opens the contribution detail before voting"
+                          accessibilityState={{
+                            selected:
+                              contribution.id === selectedContribution?.id,
+                          }}
+                          onPress={() => {
+                            setSelectedContributionId(contribution.id)
+                            if (!gtMobile) setShowContributionDetail(true)
+                          }}
+                          style={[
+                            styles.reviewCard,
+                            gtMobile && styles.reviewCardWeb,
+                            t.atoms.bg_contrast_25,
+                            {
+                              borderColor: highlighted
+                                ? t.palette.primary_500
+                                : t.palette.contrast_100,
+                            },
+                          ]}>
+                          <Text
+                            style={[styles.reviewCardTitle, t.atoms.text]}
+                            numberOfLines={2}>
+                            {contribution.title}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.reviewCardMeta,
+                              t.atoms.text_contrast_medium,
+                            ]}
+                            numberOfLines={1}>
+                            {contribution.source_type} ·{' '}
+                            {contribution.author_did === myDid &&
+                            isAnonymous &&
+                            anonProfile
+                              ? `${anonProfile.displayName} · Anonymous`
+                              : `${contribution.author_did.slice(0, 24)}...`}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.reviewCounts,
+                              t.atoms.text_contrast_medium,
+                            ]}>
+                            <Trans>
+                              In favor {contribution.approve_count} / Against{' '}
+                              {contribution.reject_count}
+                            </Trans>
+                          </Text>
+                          <Text
+                            style={[
+                              styles.reviewOpen,
+                              {color: t.palette.primary_500},
+                            ]}>
+                            <Trans>Review and vote</Trans>
+                          </Text>
+                        </TouchableOpacity>
+                      )
+                    })}
+                  </ScrollView>
+
+                  {gtMobile && selectedContribution ? (
+                    <View style={styles.reviewDetailPane}>
+                      <ContributionReviewDetail
+                        contribution={selectedContribution}
+                        onVote={onVoteContribution}
+                        isVoting={voteContribution.isPending}
+                        onOpenSource={url => {
+                          void Linking.openURL(url)
+                        }}
+                        onClose={() => setSelectedContributionId(undefined)}
+                        showClose={false}
+                      />
+                    </View>
+                  ) : null}
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* Search & Filters */}
+          {graphData && graphData.nodes.length > 0 && (
+            <View style={styles.filterBar}>
+              <View style={styles.searchRow}>
+                <View style={styles.searchInputWrap}>
+                  <SearchInput
+                    value={searchQuery}
+                    onChangeText={setSearchQuery}
+                    onClearText={() => setSearchQuery('')}
+                    label="Search contributions"
+                  />
+                </View>
+                {hasActiveFilters && (
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel="Clear all filters"
+                    accessibilityHint="Removes search and all active filters"
+                    onPress={clearAllFilters}
+                    style={styles.clearButton}>
+                    <Text style={{color: t.palette.primary_500, fontSize: 13}}>
+                      <Trans>Clear</Trans>
+                    </Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Toggle Ideological Overlay"
+                  accessibilityHint="Colors the map based on the political compass"
+                  accessibilityState={{selected: showIdeologicalOverlay}}
+                  onPress={() => setShowIdeologicalOverlay(prev => !prev)}
+                  style={[
+                    styles.overlayToggle,
+                    {
+                      backgroundColor: showIdeologicalOverlay
+                        ? t.palette.primary_500 + '20'
+                        : t.palette.contrast_100,
+                      borderColor: showIdeologicalOverlay
+                        ? t.palette.primary_500
+                        : 'transparent',
+                    },
+                  ]}>
+                  <Text
+                    style={{
+                      color: showIdeologicalOverlay
+                        ? t.palette.primary_500
+                        : t.palette.contrast_700,
+                      fontSize: 13,
+                      fontWeight: '600',
+                    }}>
+                    <Trans>Compass Overlay</Trans>
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
               <ScrollView
-                horizontal={!gtMobile}
+                horizontal
                 showsHorizontalScrollIndicator={false}
-                showsVerticalScrollIndicator={false}
-                style={gtMobile && styles.reviewListColumn}
-                contentContainerStyle={[
-                  styles.reviewList,
-                  gtMobile && styles.reviewListVertical,
-                ]}>
-                {pendingContributions.map(contribution => {
-                  const highlighted =
-                    contribution.id === pendingContributionId ||
-                    contribution.id === selectedContribution?.id
+                style={styles.chipsScroll}
+                contentContainerStyle={styles.chipsContent}>
+                {/* Relationship type chips */}
+                {COMMUNITY_CIVIC_TREE_RELATIONSHIP_TYPES.map(rt => {
+                  const active = activeRelTypes.has(rt.value)
                   return (
                     <TouchableOpacity
-                      key={contribution.id}
+                      key={rt.value}
                       accessibilityRole="button"
-                      accessibilityLabel={`Revisar aporte: ${contribution.title}`}
-                      accessibilityHint="Opens the contribution detail before voting"
-                      accessibilityState={{
-                        selected: contribution.id === selectedContribution?.id,
-                      }}
-                      onPress={() => {
-                        setSelectedContributionId(contribution.id)
-                        if (!gtMobile) setShowContributionDetail(true)
-                      }}
+                      accessibilityLabel={rt.label}
+                      accessibilityHint={`Toggle ${rt.label} filter`}
+                      accessibilityState={{selected: active}}
+                      onPress={() => toggleRelType(rt.value)}
                       style={[
-                        styles.reviewCard,
-                        gtMobile && styles.reviewCardWeb,
-                        t.atoms.bg_contrast_25,
+                        styles.chip,
                         {
-                          borderColor: highlighted
-                            ? t.palette.primary_500
+                          backgroundColor: active
+                            ? rt.color + '30'
                             : t.palette.contrast_100,
+                          borderColor: active ? rt.color : 'transparent',
                         },
                       ]}>
-                      <Text
-                        style={[styles.reviewCardTitle, t.atoms.text]}
-                        numberOfLines={2}>
-                        {contribution.title}
-                      </Text>
+                      <View
+                        style={[styles.chipDot, {backgroundColor: rt.color}]}
+                      />
                       <Text
                         style={[
-                          styles.reviewCardMeta,
-                          t.atoms.text_contrast_medium,
-                        ]}
-                        numberOfLines={1}>
-                        {contribution.source_type} ·{' '}
-                        {contribution.author_did === myDid && isAnonymous && anonProfile
-                          ? `${anonProfile.displayName} · Anonymous`
-                          : `${contribution.author_did.slice(0, 24)}...`}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.reviewCounts,
-                          t.atoms.text_contrast_medium,
+                          styles.chipText,
+                          {
+                            color: active ? rt.color : t.palette.contrast_700,
+                          },
                         ]}>
-                        <Trans>
-                          In favor {contribution.approve_count} / Against{' '}
-                          {contribution.reject_count}
-                        </Trans>
+                        {rt.label}
                       </Text>
+                    </TouchableOpacity>
+                  )
+                })}
+
+                {/* Card type chips */}
+                {COMMUNITY_CIVIC_TREE_CARD_TYPES.map(ct => {
+                  const active = activeCardTypes.has(ct.value)
+                  return (
+                    <TouchableOpacity
+                      key={ct.value}
+                      accessibilityRole="button"
+                      accessibilityLabel={ct.label}
+                      accessibilityHint={`Toggle ${ct.label} filter`}
+                      accessibilityState={{selected: active}}
+                      onPress={() => toggleCardType(ct.value)}
+                      style={[
+                        styles.chip,
+                        {
+                          backgroundColor: active
+                            ? t.palette.primary_500 + '15'
+                            : t.palette.contrast_100,
+                          borderColor: active
+                            ? t.palette.primary_500
+                            : 'transparent',
+                        },
+                      ]}>
+                      <Text style={styles.chipIcon}>{ct.icon}</Text>
                       <Text
                         style={[
-                          styles.reviewOpen,
-                          {color: t.palette.primary_500},
+                          styles.chipText,
+                          {
+                            color: active
+                              ? t.palette.primary_500
+                              : t.palette.contrast_700,
+                          },
                         ]}>
-                        <Trans>Review and vote</Trans>
+                        {ct.label}
+                      </Text>
+                    </TouchableOpacity>
+                  )
+                })}
+
+                {/* Stance chips */}
+                {COMMUNITY_CIVIC_TREE_STANCE_FILTERS.map(sf => {
+                  const active = activeStances.has(sf.value)
+                  return (
+                    <TouchableOpacity
+                      key={sf.value}
+                      accessibilityRole="button"
+                      accessibilityLabel={sf.label}
+                      accessibilityHint={`Toggle ${sf.label} filter`}
+                      accessibilityState={{selected: active}}
+                      onPress={() => toggleStance(sf.value)}
+                      style={[
+                        styles.chip,
+                        {
+                          backgroundColor: active
+                            ? sf.color + '20'
+                            : t.palette.contrast_100,
+                          borderColor: active ? sf.color : 'transparent',
+                        },
+                      ]}>
+                      <View
+                        style={[styles.chipDot, {backgroundColor: sf.color}]}
+                      />
+                      <Text
+                        style={[
+                          styles.chipText,
+                          {
+                            color: active ? sf.color : t.palette.contrast_700,
+                          },
+                        ]}>
+                        {sf.label}
                       </Text>
                     </TouchableOpacity>
                   )
                 })}
               </ScrollView>
-
-              {gtMobile && selectedContribution ? (
-                <View style={styles.reviewDetailPane}>
-                  <ContributionReviewDetail
-                    contribution={selectedContribution}
-                    onVote={onVoteContribution}
-                    isVoting={voteContribution.isPending}
-                    onOpenSource={url => {
-                      void Linking.openURL(url)
-                    }}
-                    onClose={() => setSelectedContributionId(undefined)}
-                    showClose={false}
-                  />
-                </View>
-              ) : null}
             </View>
           )}
-        </View>
-      )}
 
-      {/* Search & Filters */}
-      <View style={[a.px_md, a.pt_md, a.gap_md]}>
-        {selectedCommunityUri && (
-          <SortitionStatusCard
-            status={sortitionStatus}
-            onConfigure={() => sortitionControl.open()}
-            canConfigure={true} // In production, check if user is a delegate
-          />
-        )}
-      </View>
-
-      {/* Search & Filters */}
-      {graphData && graphData.nodes.length > 0 && (
-        <View style={styles.filterBar}>
-          <View style={styles.searchRow}>
-            <View style={styles.searchInputWrap}>
-              <SearchInput
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                onClearText={() => setSearchQuery('')}
-                label="Search contributions"
-              />
+          {isLoading && !graphData ? (
+            <View style={styles.centered}>
+              <ActivityIndicator size="large" color={t.palette.primary_500} />
+              <Text
+                style={[styles.loadingText, {color: t.palette.contrast_500}]}>
+                <Trans>Loading community tree...</Trans>
+              </Text>
             </View>
-            {hasActiveFilters && (
+          ) : isGraphError ? (
+            <View style={styles.centered}>
+              <Text
+                style={[styles.emptyTitle, {color: t.palette.negative_500}]}>
+                <Trans>Error loading map</Trans>
+              </Text>
+              <Text
+                style={[
+                  styles.emptySubtitle,
+                  {color: t.palette.contrast_500, marginBottom: 16},
+                ]}>
+                <Trans>Could not connect to server.</Trans>
+              </Text>
               <TouchableOpacity
                 accessibilityRole="button"
-                accessibilityLabel="Clear all filters"
-                accessibilityHint="Removes search and all active filters"
-                onPress={clearAllFilters}
-                style={styles.clearButton}>
-                <Text style={{color: t.palette.primary_500, fontSize: 13}}>
-                  <Trans>Clear</Trans>
+                onPress={() => void refetchGraph()}
+                style={[
+                  styles.noticeAction,
+                  {
+                    backgroundColor: t.palette.primary_500,
+                    borderRadius: 8,
+                    paddingHorizontal: 16,
+                    paddingVertical: 10,
+                  },
+                ]}>
+                <Text style={[styles.noticeActionText, {color: 'white'}]}>
+                  <Trans>Retry</Trans>
                 </Text>
               </TouchableOpacity>
-            )}
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Toggle Ideological Overlay"
-              accessibilityHint="Colors the map based on the political compass"
-              accessibilityState={{selected: showIdeologicalOverlay}}
-              onPress={() => setShowIdeologicalOverlay(prev => !prev)}
-              style={[
-                styles.overlayToggle,
-                {
-                  backgroundColor: showIdeologicalOverlay
-                    ? t.palette.primary_500 + '20'
-                    : t.palette.contrast_100,
-                  borderColor: showIdeologicalOverlay
-                    ? t.palette.primary_500
-                    : 'transparent',
-                },
-              ]}>
+            </View>
+          ) : !communityUri ? (
+            <View style={styles.centered}>
               <Text
-                style={{
-                  color: showIdeologicalOverlay
-                    ? t.palette.primary_500
-                    : t.palette.contrast_700,
-                  fontSize: 13,
-                  fontWeight: '600',
-                }}>
-                <Trans>Compass Overlay</Trans>
+                style={[styles.emptyTitle, {color: t.palette.contrast_900}]}>
+                <Trans>
+                  {initialName
+                    ? `Community "${initialName}" not found`
+                    : 'Select a community'}
+                </Trans>
               </Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.chipsScroll}
-            contentContainerStyle={styles.chipsContent}>
-            {/* Relationship type chips */}
-            {RELATIONSHIP_TYPES.map(rt => {
-              const active = activeRelTypes.has(rt.value)
-              return (
-                <TouchableOpacity
-                  key={rt.value}
-                  accessibilityRole="button"
-                  accessibilityLabel={rt.label}
-                  accessibilityHint={`Toggle ${rt.label} filter`}
-                  accessibilityState={{selected: active}}
-                  onPress={() => toggleRelType(rt.value)}
-                  style={[
-                    styles.chip,
-                    {
-                      backgroundColor: active
-                        ? rt.color + '30'
-                        : t.palette.contrast_100,
-                      borderColor: active ? rt.color : 'transparent',
-                    },
-                  ]}>
-                  <View
-                    style={[
-                      styles.chipDot,
-                      {backgroundColor: rt.color},
-                    ]}
-                  />
-                  <Text
-                    style={[
-                      styles.chipText,
-                      {
-                        color: active
-                          ? rt.color
-                          : t.palette.contrast_700,
-                      },
-                    ]}>
-                    {rt.label}
-                  </Text>
-                </TouchableOpacity>
-              )
-            })}
-
-            {/* Card type chips */}
-            {CARD_TYPES.map(ct => {
-              const active = activeCardTypes.has(ct.value)
-              return (
-                <TouchableOpacity
-                  key={ct.value}
-                  accessibilityRole="button"
-                  accessibilityLabel={ct.label}
-                  accessibilityHint={`Toggle ${ct.label} filter`}
-                  accessibilityState={{selected: active}}
-                  onPress={() => toggleCardType(ct.value)}
-                  style={[
-                    styles.chip,
-                    {
-                      backgroundColor: active
-                        ? t.palette.primary_500 + '15'
-                        : t.palette.contrast_100,
-                      borderColor: active
-                        ? t.palette.primary_500
-                        : 'transparent',
-                    },
-                  ]}>
-                  <Text style={styles.chipIcon}>{ct.icon}</Text>
-                  <Text
-                    style={[
-                      styles.chipText,
-                      {
-                        color: active
-                          ? t.palette.primary_500
-                          : t.palette.contrast_700,
-                      },
-                    ]}>
-                    {ct.label}
-                  </Text>
-                </TouchableOpacity>
-              )
-            })}
-
-            {/* Stance chips */}
-            {STANCE_FILTERS.map(sf => {
-              const active = activeStances.has(sf.value)
-              return (
-                <TouchableOpacity
-                  key={sf.value}
-                  accessibilityRole="button"
-                  accessibilityLabel={sf.label}
-                  accessibilityHint={`Toggle ${sf.label} filter`}
-                  accessibilityState={{selected: active}}
-                  onPress={() => toggleStance(sf.value)}
-                  style={[
-                    styles.chip,
-                    {
-                      backgroundColor: active
-                        ? sf.color + '20'
-                        : t.palette.contrast_100,
-                      borderColor: active ? sf.color : 'transparent',
-                    },
-                  ]}>
-                  <View
-                    style={[
-                      styles.chipDot,
-                      {backgroundColor: sf.color},
-                    ]}
-                  />
-                  <Text
-                    style={[
-                      styles.chipText,
-                      {
-                        color: active
-                          ? sf.color
-                          : t.palette.contrast_700,
-                      },
-                    ]}>
-                    {sf.label}
-                  </Text>
-                </TouchableOpacity>
-              )
-            })}
-          </ScrollView>
-        </View>
-      )}
-
-      {isLoading && !graphData ? (
-        <View style={styles.centered}>
-          <ActivityIndicator size="large" color={t.palette.primary_500} />
-          <Text style={[styles.loadingText, {color: t.palette.contrast_500}]}>
-            <Trans>Loading community tree...</Trans>
-          </Text>
-        </View>
-      ) : isGraphError ? (
-        <View style={styles.centered}>
-          <Text style={[styles.emptyTitle, {color: t.palette.negative_500}]}>
-            <Trans>Error loading map</Trans>
-          </Text>
-          <Text
-            style={[styles.emptySubtitle, {color: t.palette.contrast_500, marginBottom: 16}]}>
-            <Trans>Could not connect to server.</Trans>
-          </Text>
-          <TouchableOpacity
-            accessibilityRole="button"
-            onPress={() => void refetchGraph()}
-            style={[styles.noticeAction, {backgroundColor: t.palette.primary_500, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10}]}>
-            <Text style={[styles.noticeActionText, {color: 'white'}]}>
-              <Trans>Retry</Trans>
-            </Text>
-          </TouchableOpacity>
-        </View>
-      ) : !communityUri ? (
-        <View style={styles.centered}>
-          <Text style={[styles.emptyTitle, {color: t.palette.contrast_900}]}>
-            <Trans>
-              {initialName
-                ? `Community "${initialName}" not found`
-                : 'Select a community'}
-            </Trans>
-          </Text>
-          <Text
-            style={[styles.emptySubtitle, {color: t.palette.contrast_500}]}>
-            <Trans>
-              {initialName
-                ? 'Verify the name is correct or that you are a community member.'
-                : 'Join a community to see its civic tree.'}
-            </Trans>
-          </Text>
-          {myBoards.length > 0 && (
-            <TouchableOpacity
-              accessibilityRole="button"
-              onPress={() => setShowPicker(true)}
-              style={[styles.noticeAction, {backgroundColor: t.palette.primary_500, borderRadius: 8, paddingHorizontal: 16, paddingVertical: 10, marginTop: 12}]}>
-              <Text style={[styles.noticeActionText, {color: 'white'}]}>
-                <Trans>Select community</Trans>
+              <Text
+                style={[styles.emptySubtitle, {color: t.palette.contrast_500}]}>
+                <Trans>
+                  {initialName
+                    ? 'Verify the name is correct or that you are a community member.'
+                    : 'Join a community to see its civic tree.'}
+                </Trans>
               </Text>
-            </TouchableOpacity>
-          )}
+              {myBoards.length > 0 && (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={() => setShowPicker(true)}
+                  style={[
+                    styles.noticeAction,
+                    {
+                      backgroundColor: t.palette.primary_500,
+                      borderRadius: 8,
+                      paddingHorizontal: 16,
+                      paddingVertical: 10,
+                      marginTop: 12,
+                    },
+                  ]}>
+                  <Text style={[styles.noticeActionText, {color: 'white'}]}>
+                    <Trans>Select community</Trans>
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          ) : graphData && graphData.nodes.length === 0 ? (
+            <View style={styles.centered}>
+              <Text
+                style={[styles.emptyTitle, {color: t.palette.contrast_900}]}>
+                <Trans>No community tree yet</Trans>
+              </Text>
+              <Text
+                style={[styles.emptySubtitle, {color: t.palette.contrast_500}]}>
+                <Trans>
+                  Community-approved contributions will appear here as
+                  connectable nodes.
+                </Trans>
+              </Text>
+            </View>
+          ) : graphDataForRender ? (
+            <CommunityCivicTreeGraph
+              data={graphDataForRender}
+              searchQuery={searchQuery}
+              activeCardTypes={activeCardTypes}
+              activeRelTypes={activeRelTypes}
+              activeStances={activeStances}
+              showIdeologicalOverlay={showIdeologicalOverlay}
+              onNodePress={setSelectedNodeId}
+              selectedNodeId={selectedNodeId}
+              onRefresh={() => {
+                void refetchGraph()
+              }}
+              isRefreshing={isGraphFetching}
+            />
+          ) : null}
         </View>
-      ) : graphData && graphData.nodes.length === 0 ? (
-        <View style={styles.centered}>
-          <Text style={[styles.emptyTitle, {color: t.palette.contrast_900}]}>
-            <Trans>No community tree yet</Trans>
-          </Text>
-          <Text
-            style={[styles.emptySubtitle, {color: t.palette.contrast_500}]}>
-            <Trans>
-              Community-approved contributions will appear here as connectable nodes.
-            </Trans>
-          </Text>
-        </View>
-      ) : graphDataForRender ? (
-        <DeliberationGraph
-          data={graphDataForRender}
-          searchQuery={searchQuery}
-          activeCardTypes={activeCardTypes}
-          activeRelTypes={activeRelTypes}
-          activeStances={activeStances}
-          showIdeologicalOverlay={showIdeologicalOverlay}
-          onNodePress={setSelectedNodeId}
-          selectedNodeId={selectedNodeId}
-          onRefresh={() => {
-            void refetchGraph()
-          }}
-          isRefreshing={isGraphFetching}
-        />
-      ) : null}
+      </Layout.Center>
 
       <NodeDetailSheet
         node={selectedNode}
@@ -847,12 +865,18 @@ export function SpatialDeliberationScreen() {
         userVote={myVote}
         onVote={(cardId, influence) => {
           if (myDid) {
-            castVote.mutate({cardId, voterDid: myDid, influence})
+            castVote.mutate({cardId, voterDid: myDid, influence, communityUri})
           }
         }}
-        onCreateRelationship={(sourceCardId, targetCardId, relationshipType) => {
+        onCreateRelationship={(
+          sourceCardId,
+          targetCardId,
+          relationshipType,
+        ) => {
           if (!myDid) return
+          if (!communityUri) return
           createRelationship.mutate({
+            communityUri,
             sourceCardId,
             targetCardId,
             relationshipType,
@@ -932,10 +956,7 @@ export function SpatialDeliberationScreen() {
                     setShowPicker(false)
                   }}>
                   <Text
-                    style={[
-                      styles.boardName,
-                      {color: t.palette.contrast_900},
-                    ]}>
+                    style={[styles.boardName, {color: t.palette.contrast_900}]}>
                     {board.name}
                   </Text>
                   {board.uri === communityUri && (
@@ -976,12 +997,15 @@ export function SpatialDeliberationScreen() {
             <Text style={[styles.modalTitle, {color: t.palette.contrast_900}]}>
               <Trans>Suggested Relationships</Trans>
             </Text>
-            <Text style={[{color: t.palette.contrast_500, marginBottom: 12, fontSize: 13}]}>
+            <Text
+              style={[
+                {color: t.palette.contrast_500, marginBottom: 12, fontSize: 13},
+              ]}>
               <Trans>Based on shared entities detected by NER</Trans>
             </Text>
             <ScrollView>
               {suggestions.map(sugg => {
-                const relColor = RELATIONSHIP_TYPES.find(
+                const relColor = COMMUNITY_CIVIC_TREE_RELATIONSHIP_TYPES.find(
                   r => r.value === sugg.relationship_type,
                 )?.color
                 return (
@@ -993,7 +1017,10 @@ export function SpatialDeliberationScreen() {
                     ]}>
                     <View style={styles.suggestionContent}>
                       <Text
-                        style={[styles.suggestionTitle, {color: t.palette.contrast_900}]}
+                        style={[
+                          styles.suggestionTitle,
+                          {color: t.palette.contrast_900},
+                        ]}
                         numberOfLines={1}>
                         {sugg.source_title}
                       </Text>
@@ -1003,7 +1030,7 @@ export function SpatialDeliberationScreen() {
                             styles.suggestionRel,
                             {color: relColor || t.palette.primary_500},
                           ]}>
-                          {RELATIONSHIP_TYPES.find(
+                          {COMMUNITY_CIVIC_TREE_RELATIONSHIP_TYPES.find(
                             r => r.value === sugg.relationship_type,
                           )?.label ?? sugg.relationship_type}{' '}
                           · {Math.round(sugg.confidence * 100)}%
@@ -1015,11 +1042,18 @@ export function SpatialDeliberationScreen() {
                         )}
                       </View>
                       <Text
-                        style={[styles.suggestionTitle, {color: t.palette.contrast_700}]}
+                        style={[
+                          styles.suggestionTitle,
+                          {color: t.palette.contrast_700},
+                        ]}
                         numberOfLines={1}>
                         {sugg.target_title}
                       </Text>
-                      <Text style={[styles.suggestionReason, {color: t.palette.contrast_500}]}>
+                      <Text
+                        style={[
+                          styles.suggestionReason,
+                          {color: t.palette.contrast_500},
+                        ]}>
                         {sugg.reason}
                       </Text>
                     </View>
@@ -1031,7 +1065,7 @@ export function SpatialDeliberationScreen() {
                         onPress={() => {
                           if (myDid) {
                             acceptSuggestion.mutate(
-                              {id: sugg.id, authorDid: myDid},
+                              {id: sugg.id, communityUri, authorDid: myDid},
                               {
                                 onSuccess: () => setShowSuggestions(false),
                               },
@@ -1042,7 +1076,12 @@ export function SpatialDeliberationScreen() {
                           styles.suggestionBtn,
                           {backgroundColor: t.palette.positive_500 + '20'},
                         ]}>
-                        <Text style={{color: t.palette.positive_500, fontSize: 13, fontWeight: '700'}}>
+                        <Text
+                          style={{
+                            color: t.palette.positive_500,
+                            fontSize: 13,
+                            fontWeight: '700',
+                          }}>
                           ✓
                         </Text>
                       </TouchableOpacity>
@@ -1051,13 +1090,18 @@ export function SpatialDeliberationScreen() {
                         accessibilityLabel="Reject suggestion"
                         accessibilityHint="Removes this suggestion permanently"
                         onPress={() => {
-                          rejectSuggestion.mutate({id: sugg.id})
+                          rejectSuggestion.mutate({id: sugg.id, communityUri})
                         }}
                         style={[
                           styles.suggestionBtn,
                           {backgroundColor: t.palette.negative_500 + '20'},
                         ]}>
-                        <Text style={{color: t.palette.negative_500, fontSize: 13, fontWeight: '700'}}>
+                        <Text
+                          style={{
+                            color: t.palette.negative_500,
+                            fontSize: 13,
+                            fontWeight: '700',
+                          }}>
                           ✕
                         </Text>
                       </TouchableOpacity>
@@ -1101,6 +1145,30 @@ export function SpatialDeliberationScreen() {
 }
 
 const styles = StyleSheet.create({
+  centerColumn: {
+    flex: 1,
+  },
+  columnContent: {
+    flex: 1,
+    width: '100%',
+    minHeight: 0,
+  },
+  topControls: {
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    gap: 8,
+  },
+  communityActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  topActionText: {
+    fontSize: 12,
+    fontWeight: '700',
+  },
   loadingText: {
     marginTop: 12,
     fontSize: 14,
@@ -1301,8 +1369,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   communityButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   communityButtonText: {
     fontSize: 13,

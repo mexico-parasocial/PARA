@@ -3,7 +3,7 @@ import {ActivityIndicator, StyleSheet} from 'react-native'
 import {withSpring} from 'react-native-reanimated'
 import {useFocusEffect} from '@react-navigation/native'
 
-import {classifyBaseFeedFilters} from '#/lib/base-filters'
+import {classifyCompassFeedFilters} from '#/lib/compass-filters'
 import {DEFAULT_DISCOVER_FEED_DESCRIPTOR} from '#/lib/constants'
 import {useNonReactiveCallback} from '#/lib/hooks/useNonReactiveCallback'
 import {useOTAUpdates} from '#/lib/hooks/useOTAUpdates'
@@ -24,7 +24,7 @@ import {usePreferencesQuery} from '#/state/queries/preferences'
 import {type UsePreferencesQueryResponse} from '#/state/queries/preferences/types'
 import {useSession} from '#/state/session'
 import {useMinimalShellMode} from '#/state/shell'
-import {useBaseFilter} from '#/state/shell/base-filter'
+import {useCompassFilter} from '#/state/shell/compass-filter'
 import {useLoggedOutViewControls} from '#/state/shell/logged-out'
 import {useSelectedFeed, useSetSelectedFeed} from '#/state/shell/selected-feed'
 import {FeedPage} from '#/view/com/feeds/FeedPage'
@@ -274,10 +274,10 @@ function HomeScreenReady({
     }
   }, [preferences])
 
-  const {activeFilters} = useBaseFilter()
+  const {activeFilters} = useCompassFilter()
   const partiesFeedParams = useMemo<FeedParams>(
     () => ({
-      paraTimelineFilters: classifyBaseFeedFilters(activeFilters),
+      paraTimelineFilters: classifyCompassFeedFilters(activeFilters),
     }),
     [activeFilters],
   )

@@ -1,7 +1,7 @@
 import {ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native'
 import {Trans} from '@lingui/react/macro'
 
-import {type CommunityTreeContribution} from '#/state/queries/deliberation'
+import {type CommunityTreeContribution} from '#/state/queries/community-civic-tree'
 import {useTheme} from '#/alf'
 import {Text} from '#/components/Typography'
 

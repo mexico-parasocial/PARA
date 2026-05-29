@@ -19,10 +19,10 @@ import {
 } from '#/lib/constants/mockData'
 import {type NavigationProp} from '#/lib/routes/types'
 import {useAgent} from '#/state/session'
-import {useBaseFilter} from '#/state/shell/base-filter'
+import {useCompassFilter} from '#/state/shell/compass-filter'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
-import {ActiveFiltersStackButton} from '#/components/BaseFilterControls'
+import {ActiveFiltersStackButton} from '#/components/CompassFilterControls'
 import {Atom_Stroke2_Corner0_Rounded as AtomIcon} from '#/components/icons/Atom'
 import {ChainLink_Stroke2_Corner0_Rounded as ChainLinkIcon} from '#/components/icons/ChainLink'
 import {Sparkle_Stroke2_Corner0_Rounded as SparkleIcon} from '#/components/icons/Sparkle'
@@ -103,10 +103,7 @@ const ActiveCabildeosSection = () => {
 
   return (
     <View style={[styles.card, t.atoms.bg_contrast_25]}>
-      <SectionHeader
-        title="Propuestas en Discusión"
-        icon={AtomIcon}
-      />
+      <SectionHeader title="Propuestas en Discusión" icon={AtomIcon} />
       <Text style={[styles.cardDesc, t.atoms.text_contrast_medium]}>
         Temas cívicos que están generando más actividad en este momento.
       </Text>
@@ -123,7 +120,10 @@ const ActiveCabildeosSection = () => {
               onPress={() =>
                 navigation.navigate('CabildeoDetail', {cabildeoUri})
               }
-              style={[styles.cabCard, {backgroundColor: t.palette.contrast_50}]}>
+              style={[
+                styles.cabCard,
+                {backgroundColor: t.palette.contrast_50},
+              ]}>
               <Text style={[styles.cabPhase, {color: t.palette.primary_500}]}>
                 {isDeliberating ? '🗣️ Deliberación' : '🗳️ Votación'}
               </Text>
@@ -144,7 +144,7 @@ export function DiscourseAnalysisScreen() {
   useLingui()
   const t = useTheme()
   const agent = useAgent()
-  const {activeFilters} = useBaseFilter()
+  const {activeFilters} = useCompassFilter()
   const [timeframe, setTimeframe] = useState<'24h' | '7d' | '30d'>('7d')
 
   const discourseApi = useMemo(() => new DiscourseAPI(agent), [agent])
@@ -272,10 +272,7 @@ export function DiscourseAnalysisScreen() {
               {borderLeftColor: overallStatus.color},
             ]}>
             <View style={styles.heroHeader}>
-              <TrendingIcon
-                size="lg"
-                style={{color: overallStatus.color}}
-              />
+              <TrendingIcon size="lg" style={{color: overallStatus.color}} />
               <View style={styles.heroBadge}>
                 <Text style={[styles.heroStatus, {color: overallStatus.color}]}>
                   {overallStatus.label}
@@ -419,9 +416,7 @@ export function DiscourseAnalysisScreen() {
                 try {
                   parsedKeywords = JSON.parse(topic.keywords)
                 } catch (e) {
-                  parsedKeywords = topic.keywords
-                    .split(',')
-                    .map(k => k.trim())
+                  parsedKeywords = topic.keywords.split(',').map(k => k.trim())
                 }
                 const dominantPosition = topPositions[i % topPositions.length]
                 return (
@@ -475,7 +470,10 @@ export function DiscourseAnalysisScreen() {
 
           {/* Oportunidades de Puente */}
           <View style={[styles.card, t.atoms.bg_contrast_25]}>
-            <SectionHeader title="Oportunidades de Puente" icon={ChainLinkIcon} />
+            <SectionHeader
+              title="Oportunidades de Puente"
+              icon={ChainLinkIcon}
+            />
             <Text style={[styles.cardDesc, t.atoms.text_contrast_medium]}>
               Puntos donde diferentes posiciones ideológicas podrían encontrar
               terreno común, basado en solapamiento de temas y ausencia de

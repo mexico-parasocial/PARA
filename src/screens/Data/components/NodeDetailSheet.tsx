@@ -2,7 +2,7 @@ import {useMemo, useState} from 'react'
 import {Modal, ScrollView, StyleSheet, TextInput, TouchableOpacity, View} from 'react-native'
 import {Trans} from '@lingui/react/macro'
 
-import {RELATIONSHIP_TYPES} from '#/state/queries/deliberation'
+import {COMMUNITY_CIVIC_TREE_RELATIONSHIP_TYPES} from '#/state/queries/community-civic-tree'
 import {useTheme} from '#/alf'
 import {Text} from '#/components/Typography'
 import {VotingButtonHorizontal} from '#/components/VotingButtonHorizontal'
@@ -65,7 +65,7 @@ export function NodeDetailSheet({
   const [targetQuery, setTargetQuery] = useState('')
   const [selectedTargetId, setSelectedTargetId] = useState<string>()
   const [relationshipType, setRelationshipType] = useState<string>(
-    RELATIONSHIP_TYPES[0]?.value ?? 'supports',
+    COMMUNITY_CIVIC_TREE_RELATIONSHIP_TYPES[0]?.value ?? 'supports',
   )
 
   // ── Civic-aware suggestions ──────────────────────────────────────
@@ -397,7 +397,7 @@ export function NodeDetailSheet({
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.relationshipTypes}>
-                    {RELATIONSHIP_TYPES.map(type => {
+                    {COMMUNITY_CIVIC_TREE_RELATIONSHIP_TYPES.map(type => {
                       const active = relationshipType === type.value
                       return (
                         <TouchableOpacity

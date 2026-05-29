@@ -6,7 +6,7 @@ import {
   type GraphEdge,
   type GraphNode,
   type Stance,
-} from '#/screens/Base/deliberation-types'
+} from '#/screens/Data/deliberation-types'
 
 const BRIDGE_API_URL =
   process.env.EXPO_PUBLIC_MATRIX_BRIDGE_URL || 'https://bridge.para.social'
@@ -70,7 +70,7 @@ export function useDeliberationCardsQuery(communityUri: string | undefined) {
 
 export function useDeliberationGraphQuery(communityUri: string | undefined) {
   return useQuery<DeliberationGraph>({
-    queryKey: ['deliberation-graph', communityUri],
+    queryKey: ['community-civic-tree-graph', communityUri],
     queryFn: async () => {
       if (!communityUri) throw new Error('No community URI')
       const res = await fetch(
@@ -147,7 +147,7 @@ export function useCreateCardMutation() {
     },
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({
-        queryKey: ['deliberation-graph', variables.communityUri],
+        queryKey: ['community-civic-tree-graph', variables.communityUri],
       })
       void queryClient.invalidateQueries({
         queryKey: ['deliberation-cards', variables.communityUri],
@@ -249,7 +249,7 @@ export function useVoteCommunityTreeContributionMutation() {
       })
       if (data.contribution.status === 'approved') {
         void queryClient.invalidateQueries({
-          queryKey: ['deliberation-graph', variables.communityUri],
+          queryKey: ['community-civic-tree-graph', variables.communityUri],
         })
         void queryClient.invalidateQueries({
           queryKey: ['deliberation-cards', variables.communityUri],
@@ -288,7 +288,7 @@ export function useCreateRelationshipMutation() {
       return res.json() as Promise<{id: string}>
     },
     onSuccess: () => {
-      void queryClient.invalidateQueries({queryKey: ['deliberation-graph']})
+      void queryClient.invalidateQueries({queryKey: ['community-civic-tree-graph']})
       void queryClient.invalidateQueries({queryKey: ['deliberation-summary']})
     },
   })
@@ -344,7 +344,7 @@ export function useAcceptSuggestionMutation() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({queryKey: ['deliberation-suggestions']})
-      void queryClient.invalidateQueries({queryKey: ['deliberation-graph']})
+      void queryClient.invalidateQueries({queryKey: ['community-civic-tree-graph']})
     },
   })
 }
@@ -438,7 +438,7 @@ export function useCastVoteMutation() {
     },
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({queryKey: ['card-vote', variables.cardId, variables.voterDid]})
-      void queryClient.invalidateQueries({queryKey: ['deliberation-graph']})
+      void queryClient.invalidateQueries({queryKey: ['community-civic-tree-graph']})
       void queryClient.invalidateQueries({queryKey: ['deliberation-cards']})
       void queryClient.invalidateQueries({queryKey: ['community-pulse']})
       void queryClient.invalidateQueries({queryKey: ['deliberation-summary']})

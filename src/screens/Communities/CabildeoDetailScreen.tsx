@@ -1,10 +1,11 @@
-import {useEffect, useMemo, useState} from 'react'
+import {useEffect, useMemo, useRef, useState} from 'react'
 import {
   RefreshControl,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
+  TextInput,
 } from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -44,13 +45,17 @@ import {
   useSignOfficialCabildeoMutation,
   useViewerOfficialAccountsQuery,
 } from '#/state/queries/official-civic-accounts'
+import {
+  useCreateRepresentativeNominationMutation,
+  useRepresentativeNominationsQuery,
+} from '#/state/queries/representative-participation'
 import {useSession} from '#/state/session'
-import {SortitionAssemblyView} from '#/screens/Base/components/SortitionAssemblyView'
-import {SortitionProofList} from '#/screens/Base/components/SortitionProofList'
+import {SortitionAssemblyView} from '#/screens/Data/components/SortitionAssemblyView'
+import {SortitionProofList} from '#/screens/Data/components/SortitionProofList'
 import {
   type SortitionStatus,
   SortitionStatusCard,
-} from '#/screens/Base/components/SortitionStatusCard'
+} from '#/screens/Data/components/SortitionStatusCard'
 import {useTheme} from '#/alf'
 import {useDialogControl} from '#/components/Dialog'
 import {SortitionConfigDialog} from '#/components/dialogs/SortitionConfigDialog'
@@ -58,6 +63,7 @@ import * as Layout from '#/components/Layout'
 import {ListMaybePlaceholder} from '#/components/Lists'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
+import {WebScrollControls} from '#/components/WebScrollControls'
 
 type Props = NativeStackScreenProps<CommonNavigatorParams, 'CabildeoDetail'>
 
@@ -1500,6 +1506,10 @@ export function CabildeoDetailScreen({route}: Props) {
             </View>
           )}
 
+          {cabildeo.phase === 'resolved' && (
+            <CabildeoNominationSection cabildeoUri={cabildeo.uri} />
+          )}
+
           {/* ─── Positions / Deliberation ─── */}
           <View
             style={[styles.posHeaderRow, {marginTop: 24, marginBottom: 14}]}>
@@ -1715,6 +1725,165 @@ export function CabildeoDetailScreen({route}: Props) {
         isSubmitting={createSortitionRun.isPending}
       />
     </Layout.Screen>
+  )
+}
+
+function CabildeoNominationSection({cabildeoUri}: {cabildeoUri: string}) {
+  const t = useTheme()
+  const {_} = useLingui()
+  const {currentAccount} = useSession()
+  const {data: nominations = []} = useRepresentativeNominationsQuery(
+    cabildeoUri,
+    currentAccount?.did,
+  )
+  const createNomination = useCreateRepresentativeNominationMutation()
+  const scrollViewRef = useRef<ScrollView>(null)
+
+  const [handle, setHandle] = useState('')
+  const [role, setRole] = useState<'organize' | 'finance' | 'execute' | null>(
+    null,
+  )
+
+  const handleNominate = () => {
+    if (!handle.trim() || !role || !currentAccount?.did) return
+    createNomination.mutate(
+      {
+        representativeId: cabildeoUri,
+        mode: 'public',
+        nominatorDid: currentAccount.did,
+        nomineeHandle: handle.trim(),
+        reason:
+          role === 'organize'
+            ? 'Organizar'
+            : role === 'finance'
+              ? 'Financiar'
+              : 'Ejecutar',
+      },
+      {
+        onSuccess: () => {
+          setHandle('')
+          setRole(null)
+          Toast.show(_(msg`Nominación enviada`))
+        },
+      },
+    )
+  }
+
+  return (
+    <View style={[styles.nominationSection, t.atoms.bg_contrast_25]}>
+      <Text style={[styles.sectionTitle, t.atoms.text, {marginBottom: 6}]}>
+        <Trans>Nominaciones para ejecución</Trans>
+      </Text>
+      <Text style={[styles.nominationDesc, t.atoms.text_contrast_medium]}>
+        <Trans>
+          El cabildeo ha sido resuelto. Propón a personas u organizaciones para
+          llevar a cabo la solución.
+        </Trans>
+      </Text>
+
+      <View style={styles.nominateForm}>
+        <TextInput
+          style={[
+            styles.nominateInput,
+            t.atoms.bg_contrast_50,
+            t.atoms.text,
+            {borderColor: t.palette.contrast_200},
+          ]}
+          placeholder={_(msg`Handle (ej. @usuario.para.social)`)}
+          placeholderTextColor={t.palette.contrast_400}
+          value={handle}
+          onChangeText={setHandle}
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+        <View style={styles.roleButtons}>
+          {(['organize', 'finance', 'execute'] as const).map(r => (
+            <TouchableOpacity
+              accessibilityRole="button"
+              key={r}
+              onPress={() => setRole(r)}
+              style={[
+                styles.roleBtn,
+                role === r
+                  ? {backgroundColor: t.palette.primary_500}
+                  : t.atoms.bg_contrast_50,
+              ]}>
+              <Text
+                style={[
+                  styles.roleBtnText,
+                  role === r
+                    ? {color: t.palette.contrast_100}
+                    : t.atoms.text_contrast_medium,
+                ]}>
+                {r === 'organize'
+                  ? 'Organizar'
+                  : r === 'finance'
+                    ? 'Financiar'
+                    : 'Ejecutar'}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        <TouchableOpacity
+          accessibilityRole="button"
+          disabled={!handle.trim() || !role || createNomination.isPending}
+          onPress={handleNominate}
+          style={[
+            styles.submitNominationBtn,
+            !handle.trim() || !role
+              ? {backgroundColor: t.palette.contrast_200}
+              : {backgroundColor: t.palette.primary_500},
+          ]}>
+          <Text
+            style={[
+              styles.submitNominationText,
+              {color: t.palette.contrast_100},
+            ]}>
+            {createNomination.isPending ? 'Enviando...' : 'Nominar'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {nominations.length > 0 && (
+        <View style={{position: 'relative', marginTop: 20}}>
+          <WebScrollControls scrollViewRef={scrollViewRef} />
+          <ScrollView
+            ref={scrollViewRef}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.nominationsList}>
+            {nominations.map(nom => (
+              <View
+                key={nom.id}
+                style={[styles.nominationCard, t.atoms.bg_contrast_50]}>
+                <Text style={[styles.nomineeName, t.atoms.text]}>
+                  {nom.nomineeHandle}
+                </Text>
+                <View style={styles.roleTagGroup}>
+                  <View
+                    style={[
+                      styles.roleTag,
+                      {backgroundColor: t.palette.primary_500 + '20'},
+                    ]}>
+                    <Text
+                      style={[
+                        styles.roleTagText,
+                        {color: t.palette.primary_500},
+                      ]}>
+                      {nom.reason}
+                    </Text>
+                  </View>
+                  <Text
+                    style={[styles.supportCount, t.atoms.text_contrast_medium]}>
+                    {nom.supportCount} apoyos
+                  </Text>
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+    </View>
   )
 }
 
@@ -2222,5 +2391,84 @@ const styles = StyleSheet.create({
     fontSize: 10,
     textAlign: 'center',
     fontStyle: 'italic',
+  },
+
+  // Nomination
+  nominationSection: {
+    padding: 16,
+    borderRadius: 16,
+    marginTop: 16,
+  },
+  nominationDesc: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  nominateForm: {
+    gap: 12,
+  },
+  nominateInput: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    fontSize: 15,
+  },
+  roleButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  roleBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  roleBtnText: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  submitNominationBtn: {
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderRadius: 12,
+    marginTop: 4,
+  },
+  submitNominationText: {
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  nominationsList: {
+    gap: 8,
+  },
+  nominationCard: {
+    padding: 12,
+    borderRadius: 10,
+    width: 220,
+    flexDirection: 'column',
+    justifyContent: 'center',
+    gap: 8,
+  },
+  nomineeName: {
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  roleTagGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  roleTag: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  roleTagText: {
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  supportCount: {
+    fontSize: 12,
+    fontWeight: '600',
   },
 })

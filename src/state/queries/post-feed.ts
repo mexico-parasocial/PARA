@@ -146,11 +146,11 @@ export function usePostFeedQuery(
   opts?: {
     enabled?: boolean
     ignoreFilterFor?: string
-    applyBaseCommunityFilters?: boolean
+    applyCompassCommunityFilters?: boolean
   },
 ) {
   const feedTuners = useFeedTuners(feedDesc, {
-    applyBaseCommunityFilters: opts?.applyBaseCommunityFilters,
+    applyCompassCommunityFilters: opts?.applyCompassCommunityFilters,
   })
   const moderationOpts = useModerationOpts()
   const {data: preferences} = usePreferencesQuery()

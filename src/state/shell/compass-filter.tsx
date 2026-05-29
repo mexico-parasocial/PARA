@@ -2,7 +2,7 @@ import {createContext, useCallback, useContext, useMemo, useState} from 'react'
 
 type ViewMode = 'View official parties' | "View by 9th's" | 'Followed policies'
 
-interface BaseFilterContextValue {
+interface CompassFilterContextValue {
   selectedFilters: string[]
   activeFilters: string[]
   viewMode: ViewMode
@@ -18,9 +18,11 @@ interface BaseFilterContextValue {
   resetFilters: () => void
 }
 
-const BaseFilterContext = createContext<BaseFilterContextValue | null>(null)
+const CompassFilterContext = createContext<CompassFilterContextValue | null>(
+  null,
+)
 
-export function BaseFilterProvider({children}: {children: React.ReactNode}) {
+export function CompassFilterProvider({children}: {children: React.ReactNode}) {
   const [selectedFilters, setSelectedFilters] = useState<string[]>([])
   const [activeFilters, setActiveFilters] = useState<string[]>([])
   const [viewMode, setViewMode] = useState<ViewMode>('View official parties')
@@ -95,16 +97,18 @@ export function BaseFilterProvider({children}: {children: React.ReactNode}) {
   )
 
   return (
-    <BaseFilterContext.Provider value={value}>
+    <CompassFilterContext.Provider value={value}>
       {children}
-    </BaseFilterContext.Provider>
+    </CompassFilterContext.Provider>
   )
 }
 
-export function useBaseFilter() {
-  const ctx = useContext(BaseFilterContext)
+export function useCompassFilter() {
+  const ctx = useContext(CompassFilterContext)
   if (!ctx) {
-    throw new Error('useBaseFilter must be used within a BaseFilterProvider')
+    throw new Error(
+      'useCompassFilter must be used within a CompassFilterProvider',
+    )
   }
   return ctx
 }

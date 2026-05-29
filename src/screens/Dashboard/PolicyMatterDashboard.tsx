@@ -19,10 +19,10 @@ import {
   useRecommendedPoliciesQuery,
   useStatePoliciesQuery,
 } from '#/state/queries/data-tab'
-import {useBaseFilter} from '#/state/shell/base-filter'
+import {useCompassFilter} from '#/state/shell/compass-filter'
 import {Text} from '#/view/com/util/text/Text'
 import {atoms as a, useTheme} from '#/alf'
-import {ActiveFiltersStackButton} from '#/components/BaseFilterControls'
+import {ActiveFiltersStackButton} from '#/components/CompassFilterControls'
 import {SearchInput} from '#/components/forms/SearchInput'
 import {Verified_Stroke2_Corner2_Rounded as VerifiedIcon} from '#/components/icons/Verified'
 import * as Layout from '#/components/Layout'
@@ -119,7 +119,7 @@ export function PolicyMatterDashboard({
     mode || 'Policies',
   )
   const activeMode = mode || activeTab
-  const {activeFilters, activeState} = useBaseFilter()
+  const {activeFilters, activeState} = useCompassFilter()
 
   const [selectedCategory, setSelectedCategory] = useState(
     route.params?.category || 'All',
@@ -512,10 +512,7 @@ function PolicyCard({
                 styles.verifiedBadge,
                 {backgroundColor: t.palette.positive_500 + '18'},
               ]}>
-              <VerifiedIcon
-                size="xs"
-                style={{color: t.palette.positive_500}}
-              />
+              <VerifiedIcon size="xs" style={{color: t.palette.positive_500}} />
             </View>
           ) : null}
         </View>

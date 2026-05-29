@@ -30,6 +30,7 @@ import {NavSignupCard} from '#/view/shell/NavSignupCard'
 import {atoms as a, tokens, useTheme, web} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import {Divider} from '#/components/Divider'
+import {Atom_Stroke2_Corner0_Rounded as AtomIcon} from '#/components/icons/Atom'
 import {
   Book_Filled_Corner0_Rounded as BookFilled,
   Book_Stroke2_Corner0_Rounded as Book,
@@ -193,7 +194,7 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
     currentRoute.name === 'CreateCabildeo' ||
     currentRoute.name === 'CreatePosition'
   const isAtCivicTree = currentRoute.name === 'CivicTree'
-  const isAtDeliberation = currentRoute.name === 'DeliberationGraph'
+  const isAtDeliberation = currentRoute.name === 'CommunityCivicTree'
   const isAtMyBase = currentRoute.name === 'MyBase'
   const isAtIdentityHub =
     currentRoute.name === 'IdentityHub' ||
@@ -311,7 +312,7 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
   }, [navigation, setDrawerOpen])
 
   const onPressDeliberation = useCallback(() => {
-    navigation.navigate('DeliberationGraph')
+    navigation.navigate('CommunityCivicTree')
     setDrawerOpen(false)
   }, [navigation, setDrawerOpen])
 
@@ -853,13 +854,7 @@ let MyBaseMenuItem = ({
   const {_} = useLingui()
   return (
     <MenuItem
-      icon={
-        isActive ? (
-          <UserCircleFilled style={[t.atoms.text]} width={iconWidth} />
-        ) : (
-          <UserCircle style={[t.atoms.text]} width={iconWidth} />
-        )
-      }
+      icon={<AtomIcon style={[t.atoms.text]} width={iconWidth} />}
       label={_(msg`My Base`)}
       bold={isActive}
       onPress={onPress}

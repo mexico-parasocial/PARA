@@ -144,7 +144,7 @@ export const router = new Router({
   DistrictProfile: '/districts/:districtId',
   Map: '/map',
   Compass: '/compass',
-  DeliberationGraph: '/deliberation',
+  CommunityCivicTree: ['/community-civic-tree', '/deliberation'],
   CivicTree: ['/civic-tree', '/mapa-civico'],
   CollectionDetail: [
     '/civic-tree/collections/:collectionId',

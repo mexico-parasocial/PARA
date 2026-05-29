@@ -81,13 +81,15 @@ export function GraphCanvas({
 }: GraphCanvasProps) {
   const t = useTheme()
   const {width: windowWidth, height: windowHeight} = useWindowDimensions()
+  const [layoutWidth, setLayoutWidth] = useState(0)
+  const width = layoutWidth || Math.min(windowWidth, 600)
   const graphHeight = propHeight ?? Math.min(windowHeight * 0.75, 600)
 
   const [pan, setPan] = useState({x: 0, y: 0})
   const [scale, setScale] = useState(1)
   const lastTapRef = useRef(0)
 
-  const {panResponder, panOffsetRef} = useNativeGraphGestures({
+  const {panResponder, resetPanOffset} = useNativeGraphGestures({
     panX: pan.x,
     panY: pan.y,
     scale,
@@ -121,7 +123,7 @@ export function GraphCanvas({
   const {nodes: simNodes, restart} = useGraphLayout(
     nodes.map(n => n.id),
     simEdges,
-    windowWidth,
+    width,
     graphHeight,
     simulationConfig ?? {},
     groupMap,
@@ -191,12 +193,12 @@ export function GraphCanvas({
       } else if (e.key === '0') {
         setScale(1)
         setPan({x: 0, y: 0})
-        panOffsetRef.current = {x: 0, y: 0}
+        resetPanOffset()
       }
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [])
+  }, [resetPanOffset])
 
   // Mouse wheel zoom (web)
   useEffect(() => {
@@ -230,7 +232,11 @@ export function GraphCanvas({
   const matchCount = nodes.filter(n => isNodeVisible(n)).length
 
   return (
-    <View style={styles.container} {...panResponder.panHandlers} data-graph-canvas>
+    <View
+      style={styles.container}
+      onLayout={e => setLayoutWidth(e.nativeEvent.layout.width)}
+      {...panResponder.panHandlers}
+      data-graph-canvas>
       {hasFilters && (
         <View style={styles.matchBadge}>
           <Text style={styles.matchBadgeText}>
@@ -277,7 +283,7 @@ export function GraphCanvas({
           onPress={() => {
             setScale(1)
             setPan({x: 0, y: 0})
-            panOffsetRef.current = {x: 0, y: 0}
+            resetPanOffset()
           }}
           style={[styles.zoomBtn, {backgroundColor: t.palette.contrast_100}]}>
           <Text style={{color: t.palette.contrast_900, fontSize: 12}}>⟲</Text>
@@ -293,7 +299,7 @@ export function GraphCanvas({
       </View>
 
       <Svg
-        width={windowWidth}
+        width={width}
         height={graphHeight}
         onPress={handleBackgroundPress}>
         <G
