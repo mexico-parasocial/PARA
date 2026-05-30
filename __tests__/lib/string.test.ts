@@ -6,7 +6,7 @@ import {
   createStarterPackLinkFromAndroidReferrer,
   parseStarterPackUri,
 } from '#/lib/strings/starter-pack'
-import {tenorUrlToBskyGifUrl} from '#/state/queries/tenor'
+import {klipyUrlToBskyGifUrl} from '#/state/queries/tenor'
 import {cleanError} from '../../src/lib/strings/errors'
 import {createFullHandle, makeValidHandle} from '../../src/lib/strings/handles'
 import {enforceLen} from '../../src/lib/strings/helpers'
@@ -1003,19 +1003,4 @@ describe('createStarterPackGooglePlayUri', () => {
     // @ts-expect-error test
     expect(createStarterPackGooglePlayUri(undefined, 'rkey')).toEqual(null)
   })
-})
-
-describe('tenorUrlToBskyGifUrl', () => {
-  const inputs = [
-    'https://media.tenor.com/someID_AAAAC/someName.gif',
-    'https://media.tenor.com/someID/someName.gif',
-  ]
-
-  it.each(inputs)(
-    'returns url with t.gifs.bsky.app as hostname for input url',
-    input => {
-      const out = tenorUrlToBskyGifUrl(input)
-      expect(out.startsWith('https://t.gifs.bsky.app/')).toEqual(true)
-    },
-  )
 })

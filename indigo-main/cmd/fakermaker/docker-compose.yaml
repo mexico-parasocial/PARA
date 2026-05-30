@@ -39,7 +39,7 @@ services:
       - LOG_LEVEL=info
       - LOG_DESTINATION=1
     working_dir: /app/packages/server
-    command: yarn run start
+    command: pnpmrun start
     links:
       - db
     depends_on:
@@ -63,7 +63,7 @@ services:
       - LOG_ENABLED=true
       - LOG_DESTINATION=1
     working_dir: /app/packages/pds
-    command: yarn run start
+    command: pnpmrun start
     links:
       - db
       - plc
@@ -111,7 +111,7 @@ services:
       - LOG_ENABLED=true
       - LOG_DESTINATION=1
     working_dir: /app/packages/bsky
-    command: yarn run start
+    command: pnpmrun start
     links:
       - db
       - plc

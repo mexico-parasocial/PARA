@@ -12,7 +12,7 @@ export const RQKEY_GIF = (url: string) => [RQKEY_GIF_ROOT, url]
 import {type BskyAgent} from '@atproto/api'
 
 import {type ResolvedLink, resolveGif, resolveLink} from '#/lib/api/resolve'
-import {type Gif} from './tenor'
+import {type Gif} from '#/features/gifPicker/types'
 
 export function useResolveLinkQuery(url: string) {
   const agent = useAgent()

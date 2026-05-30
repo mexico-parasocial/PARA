@@ -24,7 +24,7 @@ jobs:
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event_name == 'pull_request'}}
     steps:
       - name: ⬇️ Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -33,7 +33,7 @@ jobs:
       - name: 🔧 Setup Node
         uses: actions/setup-node@v6
         with:
-          node-version-file: .nvmrc
+          node-version-file: package.json
           cache: pnpm
 
       - name: Ensure tracking relevant branches and checkout base
@@ -68,7 +68,7 @@ jobs:
 
       - name: ⬇️ Get base stats from cache
         id: get-base-stats
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: stats-base.json
           key: stats-base-${{ steps.base-commit.outputs.base-commit }}
@@ -91,9 +91,10 @@ jobs:
         id: get-diff
         uses: NejcZdovc/bundle-size-diff@v1
         with:
-          base_path: 'stats-base.json'
-          pr_path: '../stats-new.json'
-          excluded_assets: '(.+).chunk.js|(.+).js.map|(.+).json|(.+).png|(.+).svg|(.+).webp|(.+).jpg|(.+).ico'
+          base_path: "stats-base.json"
+          pr_path: "../stats-new.json"
+          excluded_assets: "(.+).chunk.js|(.+).js.map|(.+).json|(.+).png|(.+).svg|(.+).webp|(.+).jpg|(.+).ico"
+
       - name: 💬 Drop a comment
         uses: marocchino/sticky-pull-request-comment@v2
         with:
@@ -109,7 +110,7 @@ jobs:
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event_name == 'pull_request'}}
     steps:
       - name: ⬇️ Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 100
 
@@ -122,7 +123,7 @@ jobs:
       - name: 🔧 Setup Node
         uses: actions/setup-node@v6
         with:
-          node-version-file: .nvmrc
+          node-version-file: package.json
           cache: pnpm
 
       - name: 📷 Check fingerprint and install dependencies

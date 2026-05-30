@@ -3,7 +3,7 @@ import WebKit
 import StoreKit
 
 class ViewController: UIViewController, WKScriptMessageHandler, WKNavigationDelegate {
-  let defaults = UserDefaults(suiteName: "group.com.parasocial.app")
+  let defaults = UserDefaults(suiteName: "group.app.bsky")
 
   var window: UIWindow
   var webView: WKWebView?

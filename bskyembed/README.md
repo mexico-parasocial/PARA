@@ -10,7 +10,7 @@ yarn
 Run the dev server:
 
 ```bash
-yarn dev
+pnpmdev
 ```
 
 You can see the embed homepage at http://localhost:5173
@@ -20,7 +20,7 @@ You can see the embed homepage at http://localhost:5173
 In another terminal window, run the snippet dev script:
 
 ```bash
-yarn dev-snippet
+pnpmdev-snippet
 ```
 
 You can then see the testbed page at http://localhost:5173/test

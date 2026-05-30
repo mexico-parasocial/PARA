@@ -12,7 +12,6 @@ export function ActionsWrapper({
   senderProfile,
   moderationOpts,
   children,
-  onTap,
 }: {
   message: ChatBskyConvoDefs.MessageView
   hasReactions?: boolean
@@ -20,16 +19,11 @@ export function ActionsWrapper({
   senderProfile?: bsky.profile.AnyProfileView
   moderationOpts: ModerationOpts | undefined
   children: React.ReactNode
-  onTap?: () => void
 }) {
   const {t: l} = useLingui()
 
   return (
-    <MessageContextMenu
-      message={message}
-      senderProfile={senderProfile}
-      moderationOpts={moderationOpts}
-      onTap={onTap}>
+    <MessageContextMenu message={message} senderProfile={senderProfile}>
       {trigger =>
         // will always be true, since this file is platform split
         trigger.IS_NATIVE && (

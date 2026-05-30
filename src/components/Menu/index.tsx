@@ -144,7 +144,7 @@ export function Item({
       accessibilityLabel={label}
       onFocus={onFocus}
       onBlur={onBlur}
-      onPress={async e => {
+      onPress={e => {
         if (IS_ANDROID) {
           /**
            * Below fix for iOS doesn't work for Android, this does.

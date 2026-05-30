@@ -74,7 +74,9 @@ export function ChatLocked({
                 a.text_sm,
                 a.font_semi_bold,
                 a.leading_snug,
-                t.atoms.text_contrast_high,
+                {
+                  color: t.palette.negative_500,
+                },
               ]}>
               <Trans>Unlock chat</Trans>
             </Text>

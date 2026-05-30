@@ -21,9 +21,10 @@ import * as ContextMenu from '#/components/ContextMenu'
 import {type TriggerProps} from '#/components/ContextMenu/types'
 import {AfterReportDialog} from '#/components/dms/AfterReportDialog'
 import {Clipboard_Stroke2_Corner2_Rounded as ClipboardIcon} from '#/components/icons/Clipboard'
+import {Flag_Stroke2_Corner0_Rounded as FlagIcon} from '#/components/icons/Flag'
+import {Language_Stroke2_Corner2_Rounded as LanguageIcon} from '#/components/icons/Language'
 import {Language_Stroke2_Corner0_Rounded as LanguageIcon} from '#/components/icons/Language'
 import {Trash_Stroke2_Corner0_Rounded as TrashIcon} from '#/components/icons/Trash'
-import {Warning_Stroke2_Corner0_Rounded as WarningIcon} from '#/components/icons/Warning'
 import {ReportDialog} from '#/components/moderation/ReportDialog'
 import * as Prompt from '#/components/Prompt'
 import {usePromptControl} from '#/components/Prompt'
@@ -39,15 +40,13 @@ export let MessageContextMenu = ({
   senderProfile,
   moderationOpts,
   children,
-  onTap,
 }: {
   message: ChatBskyConvoDefs.MessageView
   senderProfile?: bsky.profile.AnyProfileView
   moderationOpts: ModerationOpts | undefined
   children: TriggerProps['children']
-  onTap?: () => void
 }): React.ReactNode => {
-  const {t: l} = useLingui()
+  const {t: l, i18n} = useLingui()
   const ax = useAnalytics()
   const {currentAccount} = useSession()
   const queryClient = useQueryClient()
@@ -147,13 +146,15 @@ export let MessageContextMenu = ({
           label={l`Message options`}
           contentLabel={l`Message from @${
             sender?.handle ?? 'unknown' // should always be defined
-          }: ${message.text}`}
-          onTap={onTap}>
+          }: ${message.text}`}>
           {children}
         </ContextMenu.Trigger>
 
         <ContextMenu.Outer
           align={isFromSelf ? 'right' : 'left'}
+          label={l`Sent at ${i18n.date(new Date(message.sentAt), {
+            timeStyle: 'short',
+          })}`}
           style={[isFromSelf && isGroupChatEnabled ? null : a.ml_sm]}>
           {message.text.length > 0 && (
             <>
@@ -168,12 +169,11 @@ export let MessageContextMenu = ({
                 testID="messageDropdownCopyBtn"
                 label={l`Copy message text`}
                 onPress={onCopyMessage}>
+                <ContextMenu.ItemIcon icon={ClipboardIcon} position="left" />
                 <ContextMenu.ItemText>
                   {l`Copy message text`}
                 </ContextMenu.ItemText>
-                <ContextMenu.ItemIcon icon={ClipboardIcon} position="right" />
               </ContextMenu.Item>
-              <ContextMenu.Divider />
             </>
           )}
           {!isFromSelf && (
@@ -182,8 +182,8 @@ export let MessageContextMenu = ({
                 testID="messageDropdownReportBtn"
                 label={l`Report message`}
                 onPress={() => reportControl.open()}>
+              <ContextMenu.ItemIcon icon={FlagIcon} position="left" />
                 <ContextMenu.ItemText>{l`Report`}</ContextMenu.ItemText>
-                <ContextMenu.ItemIcon icon={WarningIcon} position="right" />
               </ContextMenu.Item>
               <ContextMenu.Divider />
             </>
@@ -192,8 +192,8 @@ export let MessageContextMenu = ({
             testID="messageDropdownDeleteBtn"
             label={l`Delete message for me`}
             onPress={() => deleteControl.open()}>
+            <ContextMenu.ItemIcon icon={TrashIcon} position="left" />
             <ContextMenu.ItemText>{l`Delete for me`}</ContextMenu.ItemText>
-            <ContextMenu.ItemIcon icon={TrashIcon} position="right" />
           </ContextMenu.Item>
           {!isFromSelf && (
             <>
@@ -203,7 +203,7 @@ export let MessageContextMenu = ({
                 label={l`Report message`}
                 onPress={() => reportControl.open()}>
                 <ContextMenu.ItemText>{l`Report`}</ContextMenu.ItemText>
-                <ContextMenu.ItemIcon icon={WarningIcon} position="right" />
+                <ContextMenu.ItemIcon icon={FlagIcon} position="right" />
               </ContextMenu.Item>
             </>
           )}
@@ -214,7 +214,7 @@ export let MessageContextMenu = ({
         subject={{
           view: 'message',
           convoId: convo.convo.view.id,
-          message,
+          did: message.sender.did,
         }}
         onAfterSubmit={() => {
           if (sender) {

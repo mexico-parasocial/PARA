@@ -14,7 +14,7 @@ import lingui from 'eslint-plugin-lingui'
 import reactCompiler from 'eslint-plugin-react-compiler'
 import bskyInternal from 'eslint-plugin-bsky-internal'
 import globals from 'globals'
-
+import tsParser from '@typescript-eslint/parser'
 
 export default defineConfig(
   /**
@@ -48,7 +48,6 @@ export default defineConfig(
   js.configs.recommended,
   tseslint.configs.recommendedTypeChecked,
   reactHooks.configs.flat.recommended,
-  // @ts-expect-error https://github.com/un-ts/eslint-plugin-import-x/issues/439
   importX.flatConfigs.recommended,
   importX.flatConfigs.typescript,
   importX.flatConfigs['react-native'],
@@ -63,6 +62,7 @@ export default defineConfig(
       'react-native': reactNative,
       'react-native-a11y': reactNativeA11y,
       'simple-import-sort': simpleImportSort,
+      // @ts-expect-error - not sure why
       lingui,
       'react-compiler': reactCompiler,
       'bsky-internal': bskyInternal,
@@ -74,8 +74,8 @@ export default defineConfig(
         ...globals.browser,
         ...globals.node,
       },
-      parser: tseslint.parser,
       parserOptions: {
+        parser: tsParser,
         projectService: true,
         tsconfigRootDir: import.meta.dirname,
         ecmaFeatures: {
@@ -183,10 +183,6 @@ export default defineConfig(
       /**
        * Import linting
        */
-      // Broken against React/React Native packages and some TS path aliases in
-      // the current import-x parser stack.
-      'import-x/default': 'off',
-      'import-x/namespace': 'off',
       'import-x/consistent-type-specifier-style': ['warn', 'prefer-inline'],
       'import-x/no-unresolved': [
         'error',
@@ -209,25 +205,10 @@ export default defineConfig(
             // this is a dep for @atproto/api, but we absolutely need them in sync, so just
             // rely on the transient version
             '@atproto/common-web',
-            // Para still needs this type until @atproto/api exports it cleanly
-            '@atproto/xrpc',
           ],
         },
       ],
       'import-x/no-nodejs-modules': 'error',
-      'no-restricted-imports': [
-        'error',
-        {
-          paths: [
-            {
-              name: 'react',
-              importNames: ['React', 'default'],
-              message:
-                'React is already in the global type namespace. Use named imports for runtime modules.',
-            },
-          ],
-        },
-      ],
 
       /**
        * TypeScript-specific rules
@@ -279,6 +260,20 @@ export default defineConfig(
       '@typescript-eslint/prefer-promise-reject-errors': 'warn',
       '@typescript-eslint/await-thenable': 'warn',
 
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'react',
+              importNames: ['React', 'default'],
+              message:
+                'React is already in the global type namespace. Use named imports for runtime modules.',
+            },
+          ],
+        },
+      ],
+
       /**
        * Turn off rules that we haven't enforced thus far
        */
@@ -297,6 +292,16 @@ export default defineConfig(
       'no-sparse-arrays': 'off',
       'no-fallthrough': 'off',
       'no-control-regex': 'off',
+    },
+  },
+
+  /**
+   * bskyogcard, dev-env - server-side, Node.js imports are fine
+   */
+  {
+    files: ['bskyogcard/**/*.{js,jsx,ts,tsx}', 'dev-env/**/*.{js,jsx,ts,tsx}'],
+    rules: {
+      'import-x/no-nodejs-modules': 'off',
     },
   },
 

@@ -27,10 +27,12 @@ import {useLockConvo} from '#/state/queries/messages/lock-conversation'
 import {useMuteConvo} from '#/state/queries/messages/mute-conversation'
 import {useSession} from '#/state/session'
 import {List} from '#/view/com/util/List'
-import {atoms as a, useBreakpoints, useTheme} from '#/alf'
+import {atoms as a, useTheme} from '#/alf'
 import {AvatarBubbles} from '#/components/AvatarBubbles'
 import {Button, type ButtonColor, ButtonIcon} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
+import {AfterReportConversationDialog} from '#/components/dms/AfterReportConversationDialog'
+import {ReportConversationDialog} from '#/components/dms/ReportConversationDialog'
 import {
   type ConvoWithDetails,
   type GroupConvoMember,
@@ -43,7 +45,7 @@ import {
 } from '#/components/icons/Bell2'
 import {ChainLink_Stroke2_Corner0_Rounded as ChainLinkIcon} from '#/components/icons/ChainLink'
 import {type Props as SVGIconProps} from '#/components/icons/common'
-import {EditBig_Stroke2_Corner0_Rounded as EditIcon} from '#/components/icons/EditBig'
+import {EditBig_Stroke2_Corner2_Rounded as EditIcon} from '#/components/icons/EditBig'
 import {Flag_Stroke2_Corner0_Rounded as FlagIcon} from '#/components/icons/Flag'
 import {Lock_Stroke2_Corner0_Rounded as LockIcon} from '#/components/icons/Lock'
 import * as Layout from '#/components/Layout'
@@ -83,15 +85,13 @@ type Props = NativeStackScreenProps<
 >
 
 export function MessagesConversationSettingsScreen({route}: Props) {
-  const {gtTablet} = useBreakpoints()
-
   const convoId = route.params.conversation
 
   return (
     <Layout.Screen>
       <Layout.Header.Outer>
         <Layout.Header.BackButton />
-        <Layout.Header.Content align={gtTablet ? 'left' : 'platform'}>
+        <Layout.Header.Content>
           <Layout.Header.TitleText>
             <Trans>Group chat settings</Trans>
           </Layout.Header.TitleText>
@@ -250,6 +250,7 @@ function GroupSettings({
           <MembersAndRequests
             memberCount={convo.details.memberCount}
             requestCount={requestCount}
+            memberLimit={convo.details.memberLimit}
             hasMoreRequests={!!hasMoreRequests}
             isOwner={isOwner}
           />
@@ -337,8 +338,7 @@ function SettingsHeader({
   const {joinLink} = convo.details
   const isJoinLinkEnabled = isOwner || joinLink?.enabledStatus === 'enabled'
 
-  // TODO Enable this once the feature is working end-to-end. -dsb
-  const isReportLinkEnabled = false
+  const reportSubjectDid = convo.primaryMember?.did
 
   const {mutate: editGroupName, isPending: isPendingEdit} =
     useEditGroupChatName(convo.view.id, {
@@ -417,29 +417,8 @@ function SettingsHeader({
   const lockChatPrompt = Prompt.usePromptControl()
   const leaveChatPrompt = Prompt.usePromptControl()
 
-  const handleToggleMute = () => {
-    muteConvo({mute: !convo.view.muted})
-  }
-
-  // TODO Need to implement this when the backend is ready. -dsb
-  const handleReportChat = () => {}
-
-  const handlePromptName = () => {
-    setNewGroupName(groupName)
-    editNamePrompt.open()
-  }
-
-  const handleEditName = () => {
-    editGroupName({name: newGroupName})
-  }
-
-  const handleConfirmLock = () => {
-    lockConvo({lock: true})
-  }
-
-  const handleUnlock = () => {
-    lockConvo({lock: false})
-  }
+  const reportControl = Prompt.usePromptControl()
+  const deleteControl = Prompt.usePromptControl()
 
   const createdAt = new Date(convo.details.createdAt)
 
@@ -489,7 +468,7 @@ function SettingsHeader({
                 : l`Mute this group chat`
             }
             text={convo.view.muted ? l`Muted` : l`Mute`}
-            onPress={handleToggleMute}
+            onPress={() => muteConvo({mute: !convo.view.muted})}
             loading={isPendingMute}
             disabled={!isReady}
           />
@@ -498,7 +477,10 @@ function SettingsHeader({
               icon={EditIcon}
               label={l`Edit this group chat's name`}
               text={l`Edit name`}
-              onPress={handlePromptName}
+              onPress={() => {
+                setNewGroupName(groupName)
+                editNamePrompt.open()
+              }}
               loading={isPendingEdit}
               disabled={!isReady}
             />
@@ -527,23 +509,25 @@ function SettingsHeader({
               }
               text={lockStatus === 'locked' ? l`Locked` : l`Lock`}
               onPress={
-                lockStatus === 'locked' ? handleUnlock : lockChatPrompt.open
+                lockStatus === 'locked'
+                  ? () => lockConvo({lock: false})
+                  : lockChatPrompt.open
               }
               loading={isPendingLock}
               disabled={!isReady}
             />
           ) : null}
-          {isOwner ? null : isReportLinkEnabled ? (
+          {!isOwner && reportSubjectDid ? (
             <SettingsButton
               color="secondary"
               icon={FlagIcon}
               label={l`Report this group chat`}
               text={l`Report`}
-              onPress={handleReportChat}
+              onPress={reportControl.open}
               disabled={!isReady}
             />
           ) : null}
-          {isOwner ? null : (
+          {!isOwner ? (
             <SettingsButton
               color="secondary"
               icon={ArrowBoxLeftIcon}
@@ -553,14 +537,14 @@ function SettingsHeader({
               loading={isPendingLeave}
               disabled={!isReady}
             />
-          )}
+          ) : null}
         </View>
       </View>
       <EditNamePrompt
         control={editNamePrompt}
         value={newGroupName}
         onChangeText={setNewGroupName}
-        onConfirm={handleEditName}
+        onConfirm={() => editGroupName({name: newGroupName})}
         isPending={isPendingEdit}
       />
       {convo.primaryMember && (
@@ -574,7 +558,7 @@ function SettingsHeader({
       )}
       <LockChatPrompt
         control={lockChatPrompt}
-        onConfirm={handleConfirmLock}
+        onConfirm={() => lockConvo({lock: true})}
         isPending={isPendingLock}
       />
       <LeaveChatPrompt
@@ -583,6 +567,24 @@ function SettingsHeader({
         onConfirm={leaveConvo}
         isPending={isPendingLeave}
       />
+      {reportSubjectDid ? (
+        <>
+          <ReportConversationDialog
+            control={reportControl}
+            convoId={convo.view.id}
+            did={reportSubjectDid}
+            onAfterSubmit={deleteControl.open}
+          />
+          <AfterReportConversationDialog
+            control={deleteControl}
+            currentScreen="conversation"
+            params={{
+              convoId: convo.view.id,
+              did: reportSubjectDid,
+            }}
+          />
+        </>
+      ) : null}
     </>
   )
 }

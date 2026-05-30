@@ -99,7 +99,7 @@ class ExpoScrollForwarderView: ExpoView, UIGestureRecognizerDelegate {
       self.didImpact = false
 
       if sv.contentOffset.y <= -130 {
-        self.beginRefreshing()
+        self.rctRefreshCtrl?.forwarderBeginRefreshing()
         return
       }
 
@@ -152,29 +152,6 @@ class ExpoScrollForwarderView: ExpoView, UIGestureRecognizerDelegate {
         self.stopTimer()
       }
     }
-  }
-
-  func beginRefreshing() {
-    guard let refreshControl = self.rctRefreshCtrl,
-          let scrollView = self.rctScrollView?.scrollView else {
-      return
-    }
-
-    refreshControl.endRefreshing()
-    refreshControl.sizeToFit()
-
-    UIView.animate(
-      withDuration: 0.3,
-      delay: 0,
-      options: .beginFromCurrentState,
-      animations: {
-        scrollView.setContentOffset(CGPoint(x: 0, y: -65), animated: false)
-      },
-      completion: { _ in
-        refreshControl.beginRefreshing()
-        refreshControl.sendActions(for: .valueChanged)
-      }
-    )
   }
 
   func dampenOffset(_ offset: CGFloat) -> CGFloat {

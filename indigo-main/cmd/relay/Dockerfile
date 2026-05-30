@@ -21,9 +21,9 @@ WORKDIR /app
 
 COPY cmd/relay/relay-admin-ui /app/
 
-RUN yarn install --frozen-lockfile
+RUN pnpminstall --frozen-lockfile
 
-RUN yarn build
+RUN pnpmbuild
 
 ### Run stage
 FROM alpine:3.22

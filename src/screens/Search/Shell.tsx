@@ -12,9 +12,7 @@ import {
   View,
   type ViewStyle,
 } from 'react-native'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
-import {Trans} from '@lingui/react/macro'
+import {Trans, useLingui} from '@lingui/react/macro'
 import {useFocusEffect, useNavigation, useRoute} from '@react-navigation/native'
 import {useQueryClient} from '@tanstack/react-query'
 
@@ -29,7 +27,6 @@ import {
   useProfilesQuery,
 } from '#/state/queries/profile'
 import {useSession} from '#/state/session'
-import {useSetMinimalShellMode} from '#/state/shell'
 import {
   makeSearchQuery,
   type Params,
@@ -49,6 +46,23 @@ import {SearchHistory} from './components/SearchHistory'
 import {SearchLanguageDropdown} from './components/SearchLanguageDropdown'
 import {Explore} from './Explore'
 import {SearchResults} from './SearchResults'
+
+type TabParam = 'user' | 'profile' | 'feed' | 'latest'
+
+// Map tab parameter to tab index
+function getTabIndex(tabParam?: TabParam) {
+  switch (tabParam) {
+    case 'feed':
+      return 3 // Feeds tab
+    case 'user':
+    case 'profile':
+      return 2 // People tab
+    case 'latest':
+      return 1 // Latest tab
+    default:
+      return 0 // Top tab
+  }
+}
 
 export function SearchScreenShell({
   queryParam,
@@ -71,15 +85,18 @@ export function SearchScreenShell({
   const navigation = useNavigation<NavigationProp>()
   const route = useRoute()
   const textInput = useRef<TextInput>(null)
-  const {_} = useLingui()
-  const setMinimalShellMode = useSetMinimalShellMode()
+  const {t: l} = useLingui()
   const {currentAccount} = useSession()
   const queryClient = useQueryClient()
+
+  // Get tab parameter from route params
+  const tabParam = (route.params as {q?: string; tab?: TabParam})?.tab
+  const [activeTab, setActiveTab] = useState(() => getTabIndex(tabParam))
 
   // Query terms
   const [searchText, setSearchText] = useState<string>(queryParam)
   const searchTextRef = useRef(searchText)
-  const setSearchTextWithRef = useCallback((text: string) => {
+  const updateSearchText = useCallback((text: string) => {
     searchTextRef.current = text
     setSearchText(text)
   }, [])
@@ -109,7 +126,7 @@ export function SearchScreenShell({
         item,
         ...termHistory.filter(search => search !== item),
       ].slice(0, 6)
-      void setTermHistory(newSearchHistory)
+      setTermHistory(newSearchHistory)
     },
     [termHistory, setTermHistory],
   )
@@ -120,20 +137,20 @@ export function SearchScreenShell({
         item.did,
         ...accountHistory.filter(p => p !== item.did),
       ].slice(0, 10)
-      void setAccountHistory(newAccountHistory)
+      setAccountHistory(newAccountHistory)
     },
     [accountHistory, setAccountHistory],
   )
 
   const deleteSearchHistoryItem = useCallback(
     (item: string) => {
-      void setTermHistory(termHistory.filter(search => search !== item))
+      setTermHistory(termHistory.filter(search => search !== item))
     },
     [termHistory, setTermHistory],
   )
   const deleteProfileHistoryItem = useCallback(
     (item: bsky.profile.AnyProfileView) => {
-      void setAccountHistory(accountHistory.filter(p => p !== item.did))
+      setAccountHistory(accountHistory.filter(p => p !== item.did))
     },
     [accountHistory, setAccountHistory],
   )
@@ -158,30 +175,30 @@ export function SearchScreenShell({
   useFocusEffect(
     useNonReactiveCallback(() => {
       if (IS_WEB) {
-        setSearchTextWithRef(queryParam)
+        updateSearchText(queryParam)
       }
     }),
   )
 
   const onPressClearQuery = useCallback(() => {
     scrollToTopWeb()
-    setSearchTextWithRef('')
+    updateSearchText('')
     textInput.current?.focus()
-  }, [setSearchTextWithRef])
+  }, [updateSearchText])
 
   const onChangeText = useCallback(
     (text: string) => {
       scrollToTopWeb()
-      setSearchTextWithRef(text)
+      updateSearchText(text)
     },
-    [setSearchTextWithRef],
+    [updateSearchText],
   )
 
   const navigateToItem = useCallback(
     (item: string) => {
       scrollToTopWeb()
       setShowAutocomplete(false)
-      void updateSearchHistory(item)
+      updateSearchHistory(item)
 
       if (IS_WEB) {
         // @ts-expect-error route is not typesafe
@@ -211,20 +228,23 @@ export function SearchScreenShell({
       // @ts-expect-error route is not typesafe
       navigation.replace(route.name, parameters)
     } else {
-      setSearchTextWithRef('')
+      updateSearchText('')
       navigation.setParams({q: '', tab: undefined})
     }
-  }, [setSearchTextWithRef, navigation, route.params, route.name])
+  }, [
+    setShowAutocomplete,
+    updateSearchText,
+    navigation,
+    route.params,
+    route.name,
+  ])
 
-  const onSubmit = useCallback(
-    (source: 'typed' | 'autocomplete') => () => {
-      ax.metric('search:query', {
-        source,
-      })
-      navigateToItem(searchTextRef.current)
-    },
-    [ax, navigateToItem],
-  )
+  const onSubmit = (source: 'typed' | 'autocomplete') => () => {
+    ax.metric('search:query', {
+      source,
+    })
+    navigateToItem(searchTextRef.current)
+  }
 
   const onAutocompleteResultPress = useCallback(() => {
     if (IS_WEB) {
@@ -236,10 +256,10 @@ export function SearchScreenShell({
 
   const handleHistoryItemClick = useCallback(
     (item: string) => {
-      setSearchTextWithRef(item)
+      updateSearchText(item)
       navigateToItem(item)
     },
-    [navigateToItem, setSearchTextWithRef],
+    [navigateToItem, updateSearchText],
   )
 
   const handleProfileClick = useCallback(
@@ -247,7 +267,7 @@ export function SearchScreenShell({
       unstableCacheProfileView(queryClient, profile)
       // Slight delay to avoid updating during push nav animation.
       setTimeout(() => {
-        void updateProfileHistory(profile)
+        updateProfileHistory(profile)
       }, 400)
     },
     [updateProfileHistory, queryClient],
@@ -267,17 +287,16 @@ export function SearchScreenShell({
       // @ts-expect-error route is not typesafe
       navigation.replace(route.name, parameters)
     } else {
-      setSearchTextWithRef('')
+      updateSearchText('')
       navigation.setParams({q: '', tab: undefined})
       textInput.current?.focus()
     }
-  }, [navigation, route, setSearchTextWithRef])
+  }, [navigation, route.name, route.params, updateSearchText])
 
   useFocusEffect(
     useCallback(() => {
-      setMinimalShellMode(false)
       return listenSoftReset(onSoftReset)
-    }, [onSoftReset, setMinimalShellMode]),
+    }, [onSoftReset]),
   )
 
   const onSearchInputFocus = useCallback(() => {
@@ -293,7 +312,7 @@ export function SearchScreenShell({
   }, [setShowAutocomplete])
 
   const focusSearchInput = useCallback(
-    (tab?: 'user' | 'profile' | 'feed') => {
+    (tab?: TabParam) => {
       textInput.current?.focus()
 
       // If a tab is specified, set the tab parameter
@@ -359,7 +378,6 @@ export function SearchScreenShell({
               <View style={[a.w_full, a.flex_row, a.align_stretch, a.gap_xs]}>
                 <View style={[a.flex_1]}>
                   <SearchInput
-                    hotkey={true}
                     ref={textInput}
                     value={searchText}
                     onFocus={onSearchInputFocus}
@@ -367,15 +385,15 @@ export function SearchScreenShell({
                     onClearText={onPressClearQuery}
                     onSubmitEditing={onSubmit('typed')}
                     placeholder={
-                      inputPlaceholder ??
-                      _(msg`Search for posts, users, or feeds`)
+                      inputPlaceholder ?? l`Search for posts, users, or feeds`
                     }
                     hitSlop={{...HITSLOP_20, top: 0}}
+                    hotkey={true}
                   />
                 </View>
                 {showAutocomplete && (
                   <Button
-                    label={_(msg`Cancel search`)}
+                    label={l`Cancel search`}
                     size="large"
                     variant="ghost"
                     color="secondary"
@@ -426,7 +444,11 @@ export function SearchScreenShell({
         ) : (
           <SearchHistory
             searchHistory={termHistory}
-            selectedProfiles={accountHistoryProfiles?.profiles || []}
+            selectedProfiles={
+              accountHistoryProfiles?.profiles.filter(p =>
+                accountHistory.includes(p.did),
+              ) ?? []
+            }
             onItemClick={handleHistoryItemClick}
             onProfileClick={handleProfileClick}
             onRemoveItemClick={deleteSearchHistoryItem}
@@ -440,6 +462,9 @@ export function SearchScreenShell({
           flex: 1,
         }}>
         <SearchScreenInner
+          key={params.lang}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
           query={query}
           queryWithParams={queryWithParams}
           headerHeight={headerHeight}
@@ -451,59 +476,27 @@ export function SearchScreenShell({
 }
 
 let SearchScreenInner = ({
+  activeTab,
+  setActiveTab,
   query,
   queryWithParams,
   headerHeight,
   focusSearchInput,
 }: {
+  activeTab: number
+  setActiveTab: React.Dispatch<React.SetStateAction<number>>
   query: string
   queryWithParams: string
   headerHeight: number
-  focusSearchInput: (tab?: 'user' | 'profile' | 'feed') => void
+  focusSearchInput: (tab?: TabParam) => void
 }): React.ReactNode => {
   const t = useTheme()
-  const setMinimalShellMode = useSetMinimalShellMode()
   const {hasSession} = useSession()
   const {gtTablet} = useBreakpoints()
-  const route = useRoute()
 
-  // Get tab parameter from route params
-  const tabParam = (
-    route.params as {q?: string; tab?: 'user' | 'profile' | 'feed'}
-  )?.tab
-
-  // Map tab parameter to tab index
-  const getInitialTabIndex = useCallback(() => {
-    if (!tabParam) return 0
-    switch (tabParam) {
-      case 'user':
-      case 'profile':
-        return 2 // People tab
-      case 'feed':
-        return 3 // Feeds tab
-      default:
-        return 0
-    }
-  }, [tabParam])
-
-  const [prevTabParam, setPrevTabParam] = useState(tabParam)
-  const [activeTab, setActiveTab] = useState(() => getInitialTabIndex())
-
-  if (tabParam !== prevTabParam) {
-    const newTabIndex = getInitialTabIndex()
-    setPrevTabParam(tabParam)
-    if (newTabIndex !== activeTab) {
-      setActiveTab(newTabIndex)
-    }
+  const onPageSelected = (index: number) => {
+    setActiveTab(index)
   }
-
-  const onPageSelected = useCallback(
-    (index: number) => {
-      setMinimalShellMode(false)
-      setActiveTab(index)
-    },
-    [setMinimalShellMode],
-  )
 
   return queryWithParams ? (
     <SearchResults
@@ -541,7 +534,7 @@ let SearchScreenInner = ({
             style={t.atoms.text_contrast_medium as StyleProp<ViewStyle>}
           />
           <Text style={[t.atoms.text_contrast_medium, a.text_md]}>
-            <Trans>Find posts, users, and feeds on PARA</Trans>
+            <Trans>Find posts, users, and feeds on Bluesky</Trans>
           </Text>
         </View>
       </View>

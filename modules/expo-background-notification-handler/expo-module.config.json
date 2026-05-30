@@ -4,8 +4,6 @@
     "modules": ["ExpoBackgroundNotificationHandlerModule"]
   },
   "android": {
-    "modules": [
-      "expo.modules.backgroundnotificationhandler.ExpoBackgroundNotificationHandlerModule"
-    ]
+    "modules": ["expo.modules.backgroundnotificationhandler.ExpoBackgroundNotificationHandlerModule"]
   }
 }

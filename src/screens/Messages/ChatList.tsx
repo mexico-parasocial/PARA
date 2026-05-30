@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useMemo, useState} from 'react'
 import {View} from 'react-native'
 import {useAnimatedRef} from 'react-native-reanimated'
-import {type ChatBskyConvoDefs} from '@atproto/api'
+import {type ChatBskyActorGetStatus, type ChatBskyConvoDefs} from '@atproto/api'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {useFocusEffect, useIsFocused} from '@react-navigation/native'
 import {type NativeStackScreenProps} from '@react-navigation/native-stack'
@@ -15,6 +15,7 @@ import {logger} from '#/logger'
 import {listenSoftReset} from '#/state/events'
 import {MESSAGE_SCREEN_POLL_INTERVAL} from '#/state/messages/convo/const'
 import {useMessagesEventBus} from '#/state/messages/events'
+import {useChatActorStatusQuery} from '#/state/queries/messages/get-status'
 import {useUnreadCountQuery} from '#/state/queries/matrix'
 import {useLeftConvos} from '#/state/queries/messages/leave-conversation'
 import {useListConvosQuery} from '#/state/queries/messages/list-conversations'
@@ -42,10 +43,13 @@ import {Text} from '#/components/Typography'
 import {useAgeAssurance} from '#/ageAssurance'
 import {IS_NATIVE} from '#/env'
 import {AgentSelection} from './components/AgentSelection'
+import {ChatDisabled} from './components/ChatDisabled'
 import {ChatListItem} from './components/ChatListItem'
 import {InboxRequests} from './components/InboxRequests'
 import {MatrixRoomListItem} from './components/MatrixRoomListItem'
 import {useIsWithinSplitView} from './components/splitView/context'
+
+type ChatStatus = ChatBskyActorGetStatus.OutputSchema
 
 type ListItem =
   | {
@@ -120,6 +124,7 @@ export function MessagesScreenInner({navigation, route}: Props) {
   const {t: l} = useLingui()
   const t = useTheme()
   const newChatControl = useDialogControl()
+  const {data: chatStatus} = useChatActorStatusQuery()
   const pushToConversation = route.params?.pushToConversation
 
   useEffect(() => {
@@ -174,14 +179,18 @@ export function MessagesScreenInner({navigation, route}: Props) {
           textStyle={t.atoms.text}
           iconColor={t.atoms.text.color}
           iconSize="4xl"
-          button={{
-            label: l`New chat`,
-            text: l`New chat`,
-            onPress: wrappedOpenChatControl,
-            size: 'small',
-            color: 'primary',
-            icon: MessagePlusIcon,
-          }}
+          button={
+            chatStatus?.chatDisabled
+              ? undefined
+              : {
+                  label: l`New chat`,
+                  text: l`New chat`,
+                  onPress: wrappedOpenChatControl,
+                  size: 'small',
+                  color: 'primary',
+                  icon: MessagePlusIcon,
+                }
+          }
           style={[a.h_full, a.justify_center, a.pb_5xl]}
         />
         <NewChat onNewChat={onNewChat} control={newChatControl} />
@@ -191,8 +200,8 @@ export function MessagesScreenInner({navigation, route}: Props) {
 
   return (
     <Layout.Screen testID="messagesScreen">
-      <Header newChatControl={newChatControl} />
-      <ChatList newChatControl={newChatControl} />
+      <Header newChatControl={newChatControl} chatStatus={chatStatus} />
+      <ChatList newChatControl={newChatControl} chatStatus={chatStatus} />
       <NewChat onNewChat={onNewChat} control={newChatControl} />
     </Layout.Screen>
   )
@@ -201,9 +210,11 @@ export function MessagesScreenInner({navigation, route}: Props) {
 export function ChatList({
   selectedChat,
   newChatControl,
+  chatStatus,
 }: {
   selectedChat?: string
   newChatControl: DialogControlProps
+  chatStatus?: ChatStatus
 }) {
   const t = useTheme()
   const {currentAccount} = useSession()
@@ -237,8 +248,12 @@ export function ChatList({
     refetch,
   } = useListConvosQuery({status: 'accepted'})
 
-  const {refetch: refetchInbox} = useListConvosQuery({
-    status: 'request',
+  const {
+    data: inboxData,
+    refetch: refetchInbox,
+    hasNextPage: hasMoreRequests,
+  } = useListConvosQuery({
+  status: 'request',
   })
 
   const {data: matrixUnreadData, refetch: refetchMatrixUnread} =
@@ -367,6 +382,11 @@ export function ChatList({
       refreshing={isPTRing}
       onRefresh={() => void onRefresh()}
       onEndReached={() => void onEndReached()}
+      ListHeaderComponent={
+        chatStatus?.chatDisabled ? (
+          <ChatDisabled shape="banner" style={[isWithinSplitView && a.mb_sm]} />
+        ) : undefined
+      }
       ListFooterComponent={
         <ListFooter
           isFetchingNextPage={isFetchingNextPage}
@@ -393,7 +413,9 @@ export function ChatList({
             ]
           : undefined
       }
-      contentContainerStyle={isWithinSplitView ? a.py_sm : undefined}
+      contentContainerStyle={
+        isWithinSplitView && !chatStatus?.chatDisabled && a.py_sm
+      }
     />
   )
 }
@@ -467,20 +489,30 @@ function ChatListEmptyState({
       textStyle={t.atoms.text}
       iconColor={t.atoms.text.color}
       iconSize="4xl"
-      button={{
-        label: l`New chat`,
-        text: l`New chat`,
-        onPress: onNewChat,
-        size: 'small',
-        color: 'primary',
-        icon: MessagePlusIcon,
-      }}
+      button={
+        chatStatus?.chatDisabled
+          ? undefined
+          : {
+              label: l`New chat`,
+              text: l`New chat`,
+              onPress: wrappedOpenChatControl,
+              size: 'small',
+              color: 'primary',
+              icon: MessagePlusIcon,
+            }
+      }
       style={[a.h_full, {paddingTop: '20%'}]}
       />
   )
 }
 
-export function Header({newChatControl}: {newChatControl: DialogControlProps}) {
+export function Header({
+  newChatControl,
+  chatStatus,
+}: {
+  newChatControl: DialogControlProps
+  chatStatus: ChatStatus | undefined
+}) {
   const {t: l} = useLingui()
   const {gtMobile} = useBreakpoints()
   const requireEmailVerification = useRequireEmailVerification()
@@ -526,7 +558,6 @@ export function Header({newChatControl}: {newChatControl: DialogControlProps}) {
               <Trans>Chats</Trans>
             </Layout.Header.TitleText>
           </Layout.Header.Content>
-
           <View style={[a.flex_row, a.align_center, a.gap_sm]}>
             <InboxRequests
               count={inboxAllConvos.length}
@@ -542,14 +573,16 @@ export function Header({newChatControl}: {newChatControl: DialogControlProps}) {
               style={[a.justify_center]}>
               <ButtonIcon icon={SettingsIcon} />
             </Link>
-            <Button
-              label={l`New chat`}
-              color="primary"
-              size="small"
-              shape="round"
-              onPress={wrappedOpenChatControl}>
-              <ButtonIcon icon={MessagePlusIcon} />
-            </Button>
+            {!chatStatus?.chatDisabled && (
+              <Button
+                label={l`New chat`}
+                color="primary"
+                size="small"
+                shape="round"
+                onPress={wrappedOpenChatControl}>
+                <ButtonIcon icon={NewChatIcon} />
+              </Button>
+            )}
           </View>
         </>
       ) : (

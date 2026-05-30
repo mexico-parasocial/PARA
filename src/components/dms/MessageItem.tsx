@@ -1,4 +1,4 @@
-import {memo, useEffect, useMemo, useRef} from 'react'
+import {memo, useEffect, useMemo} from 'react'
 import {
   type GestureResponderEvent,
   Pressable,
@@ -8,8 +8,6 @@ import {
   type ViewStyle,
 } from 'react-native'
 import Animated, {
-  FadeIn,
-  FadeOut,
   LayoutAnimationConfig,
   LinearTransition,
   useAnimatedStyle,
@@ -41,7 +39,6 @@ import {unstableCacheProfileView} from '#/state/queries/unstable-profile-cache'
 import {useSession} from '#/state/session'
 import {atoms as a, native, platform, useTheme} from '#/alf'
 import {isOnlyEmoji} from '#/alf/typography'
-import {alpha} from '#/alf/utils'
 import {Button} from '#/components/Button'
 import {useDialogControl} from '#/components/Dialog'
 import {ActionsWrapper} from '#/components/dms/ActionsWrapper'
@@ -53,18 +50,13 @@ import {Text} from '#/components/Typography'
 import {DateDivider} from './DateDivider'
 import {MessageItemEmbed} from './MessageItemEmbed'
 import {ReactionsDialog} from './ReactionsDialog'
-import {
-  CLUSTERED_MESSAGE_THRESHOLD_MS,
-  MESSAGE_GAP_THRESHOLD_MS,
-} from './util'
+import {CLUSTERED_MESSAGE_THRESHOLD_MS, MESSAGE_GAP_THRESHOLD_MS} from './util'
 
 const AVATAR_SIZE = 28
 const CLUSTERED_MESSAGE_GAP = 2
 const BORDER_RADIUS = 18
 const SQUARED_BORDER_RADIUS = 4
 const DISPLAY_NAME_INSET = 22
-
-const TAP_AND_DRAG_DELAY_MS = 100
 
 function isWithinClusterBoundary({
   isPending,
@@ -94,7 +86,7 @@ function isWithinClusterBoundary({
     // For pending messages, still check the time threshold
     if (isPending) return isOutsideThreshold
     return isOutsideThreshold
-    }
+  }
   return true
 }
 
@@ -127,7 +119,6 @@ let MessageItem = ({
   const profile = useMaybeProfileShadow(relatedProfiles.get(message.sender.did))
 
   const reactionsControl = useDialogControl()
-  const reactionTapRef = useRef(false)
 
   const isPending = item.type === 'pending-message'
 
@@ -197,13 +188,11 @@ let MessageItem = ({
   const hasEmbedAndText =
     AppBskyEmbedRecord.isView(message.embed) && rt.text.length > 0
 
-  const targetBottomRadius =
-    squaredBottomCorner || hasEmbedAndText
-      ? SQUARED_BORDER_RADIUS
-      : BORDER_RADIUS
-  const targetTopRadius = squaredTopCorner
+  const targetBottomRadius = squaredBottomCorner
     ? SQUARED_BORDER_RADIUS
     : BORDER_RADIUS
+  const targetTopRadius =
+    squaredTopCorner || hasEmbedAndText ? SQUARED_BORDER_RADIUS : BORDER_RADIUS
 
   const bottomRadiusSV = useSharedValue(targetBottomRadius)
   const topRadiusSV = useSharedValue(targetTopRadius)
@@ -235,6 +224,7 @@ let MessageItem = ({
   const avatar =
     profile && moderationOpts ? (
       <Link
+        style={[a.rounded_full]}
         label={l`${createSanitizedDisplayName(profile)}’s avatar`}
         accessibilityHint={l`Opens this profile`}
         to={makeProfileLink({
@@ -308,13 +298,7 @@ let MessageItem = ({
       one: '# person',
       other: '# people',
     })} reacted – ${groupedReactions.map(g => g.value).join(' ')}`
-  }, [
-    reactions,
-    groupedReactions,
-    currentAccount?.did,
-    relatedProfiles,
-    l,
-  ])
+  }, [reactions, groupedReactions, currentAccount?.did, relatedProfiles, l])
 
   const appliedReactions = (
     <LayoutAnimationConfig skipEntering skipExiting>
@@ -335,47 +319,23 @@ let MessageItem = ({
             style={[
               a.flex_row,
               a.gap_2xs,
-              a.px_xs,
               isFromSelf ? a.justify_end : a.justify_start,
               a.flex_wrap,
               a.rounded_lg,
               a.border,
               t.atoms.border_contrast_low,
+              t.atoms.shadow_xs,
               hasSelfReacted
-                ? {
-                    backgroundColor: t.palette.primary_100,
-                  }
+                ? {backgroundColor: t.palette.primary_100}
                 : t.atoms.bg_contrast_25,
               {
                 paddingTop: platform({android: 2, default: 3}),
                 paddingBottom: platform({android: 2, default: 3}),
+                paddingLeft: 6,
+                paddingRight: 6,
                 transform: [{translateY: -8}],
               },
-              // TODO: new arch supports boxShadow on native
-              // in the meantime this is an attempt to get close
-              platform({
-                web: {
-                  boxShadow: `0 2px 8px 0 ${alpha(t.palette.black, 0.1)}`,
-                },
-                ios: {
-                  shadowColor: t.palette.black,
-                  shadowOffset: {width: 0, height: 2},
-                  shadowOpacity: 0.1,
-                  shadowRadius: 8,
-                },
-                android: {elevation: 0.5},
-              }),
             ]}
-            onPressIn={() => {
-              // Don't toggle the date divider when tapping a reaction.
-              reactionTapRef.current = true
-            }}
-            onPressOut={() => {
-              // Include a delay here to account for tap-and-drag before release.
-              setTimeout(() => {
-                reactionTapRef.current = false
-              }, TAP_AND_DRAG_DELAY_MS)
-            }}
             onPress={isGroupChat ? reactionsControl.open : undefined}>
             {groupedReactions.map(group => (
               <Animated.View
@@ -391,7 +351,7 @@ let MessageItem = ({
                 <Text
                   emoji
                   style={[
-                    a.text_xs,
+                    a.text_md,
                     {textAlignVertical: 'center', includeFontPadding: false},
                   ]}>
                   {group.value}
@@ -403,7 +363,7 @@ let MessageItem = ({
               <View style={[a.p_2xs, a.pl_0, a.justify_center]}>
                 <Text
                   style={[
-                    a.text_xs,
+                    a.text_sm,
                     a.font_medium,
                     hasSelfReacted
                       ? {color: t.palette.primary_900}
@@ -428,20 +388,14 @@ let MessageItem = ({
   )
 
   const messageInset = platform<ViewStyle | undefined>({
-    ios: isFromSelf ? a.mr_md : isGroupChat ? a.ml_md : a.ml_sm,
-    android: isFromSelf ? a.mr_sm : isGroupChat ? a.ml_sm : undefined,
-    web: isFromSelf ? a.mr_sm : isGroupChat ? a.ml_sm : undefined,
+    android: a.mx_sm,
+    ios: a.mx_md,
+    web: a.mx_lg,
   })
 
   return (
     <>
-      <LayoutAnimationConfig skipExiting skipEntering>
-        {hasLargeGapFromPrev && (
-          <Animated.View entering={native(FadeIn)} exiting={native(FadeOut)}>
-            <DateDivider date={message.sentAt} />
-          </Animated.View>
-        )}
-      </LayoutAnimationConfig>
+      {hasLargeGapFromPrev && <DateDivider date={message.sentAt} />}
       <View
         style={[
           messageInset,
@@ -454,8 +408,15 @@ let MessageItem = ({
                 a.absolute,
                 a.bottom_0,
                 a.z_50,
-                {
-                  transform: [{translateY: hasReactions ? -24 : 0}],
+                hasReactions && {
+                  transform: [
+                    {
+                      translateY: platform({
+                        ios: -29,
+                        default: -27,
+                      }),
+                    },
+                  ],
                 },
               ]}>
               {avatar}
@@ -695,7 +656,7 @@ function BlockedPlaceholder({
           </Prompt.DescriptionText>
           <Prompt.Actions>
             <Prompt.Action onPress={() => {}} cta={l`Okay`} color="primary" />
-           {profile.viewer?.blocking && !profile.viewer.blockingByList && (
+            {profile.viewer?.blocking && !profile.viewer.blockingByList && (
               <Prompt.Action
                 onPress={() => queueUnblock()}
                 cta={l`Unblock`}

@@ -1,4 +1,5 @@
 import {type ID as PolicyUpdate202508} from '#/components/PolicyUpdateOverlay/updates/202508/config'
+import {type Gif} from '#/features/gifPicker/types'
 import {type Geolocation} from '#/geolocation/types'
 /**
  * Device data that's specific to the device and does not vary based account
@@ -73,4 +74,9 @@ export type Account = {
   birthdateLastUpdatedAt?: string
 
   lastSelectedHomeFeed?: string
+
+  /**
+   * Recently selected GIFs in the GIF picker. Most recent first, capped at 20.
+   */
+  recentGifs?: Gif[]
 }

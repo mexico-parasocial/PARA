@@ -1,7 +1,11 @@
-import {useCallback, useEffect, useMemo, useState} from 'react'
-import {View} from 'react-native'
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
+import {type LayoutChangeEvent, View} from 'react-native'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import {moderateProfile} from '@atproto/api'
+import {
+  ScrollEdgeEffect,
+  ScrollEdgeEffectProvider,
+} from '@bsky.app/expo-scroll-edge-effect'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {
   type RouteProp,
@@ -27,7 +31,7 @@ import {useModerationOpts} from '#/state/preferences/moderation-opts'
 import {useConvoQuery} from '#/state/queries/messages/conversation'
 import {useSession} from '#/state/session'
 import {MessagesList} from '#/screens/Messages/components/MessagesList'
-import {atoms as a, useTheme, web} from '#/alf'
+import {atoms as a, web} from '#/alf'
 import {AgeRestrictedScreen} from '#/components/ageAssurance/AgeRestrictedScreen'
 import {useAgeAssuranceCopy} from '#/components/ageAssurance/useAgeAssuranceCopy'
 import * as Dialog from '#/components/Dialog'
@@ -40,7 +44,6 @@ import {MessagesListHeader} from '#/components/dms/MessagesListHeader'
 import {type ConvoWithDetails, parseConvoView} from '#/components/dms/util'
 import {Error} from '#/components/Error'
 import * as Layout from '#/components/Layout'
-import {Loader} from '#/components/Loader'
 import * as Prompt from '#/components/Prompt'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
@@ -82,18 +85,20 @@ export function MessagesConversationScreenInner({route}: Props) {
 
   return (
     <Layout.Screen
+      minimalShell
       testID="convoScreen"
       noInsetTop={IS_LIQUID_GLASS}
       style={web([{minHeight: 0}, a.flex_1])}>
-      <ConvoProvider key={convoId} convoId={convoId}>
-        <Inner convoId={convoId} />
-      </ConvoProvider>
+      <ScrollEdgeEffectProvider>
+        <ConvoProvider key={convoId} convoId={convoId}>
+          <Inner convoId={convoId} />
+        </ConvoProvider>
+      </ScrollEdgeEffectProvider>
     </Layout.Screen>
   )
 }
 
 function Inner({convoId}: {convoId: string}) {
-  const t = useTheme()
   const convoState = useConvo()
   const {t: l} = useLingui()
   const {currentAccount} = useSession()
@@ -107,15 +112,7 @@ function Inner({convoId}: {convoId: string}) {
     ? parseConvoView(convoData, currentAccount?.did)
     : null
 
-  // Because we want to give the list a chance to asynchronously scroll to the end before it is visible to the user,
-  // we use `hasScrolled` to determine when to render. With that said however, there is a chance that the chat will be
-  // empty. So, we also check for that possible state as well and render once we can.
   const [hasScrolled, setHasScrolled] = useState(false)
-  const readyToShow =
-    hasScrolled ||
-    (isConvoActive(convoState) &&
-      !convoState.isFetchingHistory &&
-      convoState.items.length === 0)
 
   // Any time that we re-render the `Initializing` state, we have to reset `hasScrolled` to false. After entering this
   // state, we know that we're resetting the list of messages and need to re-scroll to the bottom when they get added.
@@ -146,11 +143,6 @@ function Inner({convoId}: {convoId: string}) {
 
   return (
     <Layout.Center style={[a.flex_1]}>
-      {!readyToShow && (
-        <View style={IS_LIQUID_GLASS && {paddingTop: topInset}}>
-          <MessagesListHeader convo={convo} />
-        </View>
-      )}
       <View style={[a.flex_1]}>
         <InnerReady
           convo={convo}
@@ -159,22 +151,6 @@ function Inner({convoId}: {convoId: string}) {
           isActive={isConvoActive(convoState)}
           isDisabled={convoState.status === ConvoStatus.Disabled}
         />
-        {!readyToShow && (
-          <View
-            style={[
-              a.absolute,
-              a.z_10,
-              a.w_full,
-              a.h_full,
-              a.justify_center,
-              a.align_center,
-              t.atoms.bg,
-            ]}>
-            <View style={[{marginBottom: 75}]}>
-              <Loader size="xl" />
-            </View>
-          </View>
-        )}
       </View>
     </Layout.Center>
   )
@@ -194,7 +170,11 @@ function InnerReady({
   isDisabled: boolean
 }) {
   const navigation = useNavigation<NavigationProp>()
-
+  const {top: topInset} = useSafeAreaInsets()
+  const [headerHeight, setHeaderHeight] = useState(0)
+  const onHeaderLayout = (e: LayoutChangeEvent) => {
+    setHeaderHeight(e.nativeEvent.layout.height)
+  }
   const {params} =
     useRoute<RouteProp<CommonNavigatorParams, 'MessagesConversation'>>()
   const {needsEmailVerification} = useEmail()
@@ -250,13 +230,20 @@ function InnerReady({
   let footer: React.ReactNode = null
   if (isDisabled) {
     footer = <ChatDisabled />
-  } else if (convo && primaryMember && primaryMemberModeration?.blocked) {
+  } else if (
+    convo &&
+    primaryMember &&
+    primaryMemberModeration &&
+    (convo.kind === 'group'
+      ? primaryMemberModeration?.blockCause?.type === 'blocking'
+      : primaryMemberModeration?.blocked)
+  ) {
     footer = (
       <MessagesListBlockedFooter
         recipient={primaryMember}
         convoId={convo.view.id}
-        moderation={primaryMemberModeration}
         isGroup={convo.kind === 'group'}
+        moderation={primaryMemberModeration}
       />
     )
   } else if (convo?.kind === 'group') {
@@ -269,13 +256,22 @@ function InnerReady({
 
   return (
     <>
-      {header}
+      {IS_LIQUID_GLASS ? (
+        <ScrollEdgeEffect
+          edge="top"
+          style={[a.absolute, a.w_full, a.z_10, {paddingTop: topInset}]}
+          onLayout={onHeaderLayout}>
+          {header}
+        </ScrollEdgeEffect>
+      ) : (
+        header
+      )}
       {isActive && (
         <MessagesList
           hasScrolled={hasScrolled}
           setHasScrolled={setHasScrolled}
           hasAcceptOverride={!!params.accept}
-          transparentHeaderHeight={0}
+          transparentHeaderHeight={IS_LIQUID_GLASS ? headerHeight : 0}
           footer={footer}
         />
       )}
@@ -304,7 +300,10 @@ function GroupChatGate() {
     ax.features.GroupChatsHasBeenReleased,
   )
 
+  const isAlreadyGoingBackRef = useRef(false)
   const onGoBack = () => {
+    if (isAlreadyGoingBackRef.current) return
+    isAlreadyGoingBackRef.current = true
     if (navigation.canGoBack()) {
       navigation.goBack()
     } else {
@@ -315,27 +314,29 @@ function GroupChatGate() {
   return (
     <Prompt.Outer
       control={groupChatGateDialogControl}
+      onClose={onGoBack}
       nativeOptions={{preventDismiss: true, preventExpansion: true}}
       testID="groupChatGateDialog">
       <Prompt.Content>
-        <View style={[a.w_full, a.align_center, a.py_2xl]}>
-          <Text style={{fontSize: 48}} emoji>
+        <View style={[a.w_full, a.align_center, a.py_3xl]}>
+          <Text style={{fontSize: 72}} emoji>
             🐴
           </Text>
         </View>
-        <Prompt.TitleText>
+        <Prompt.TitleText style={[a.text_center]}>
           {hasBeenReleased ? (
             <Trans>Group chats are now available</Trans>
           ) : (
             <Trans>Group chats are not yet available</Trans>
           )}
         </Prompt.TitleText>
-        <Prompt.DescriptionText>
+        <Prompt.DescriptionText style={[a.text_center]}>
           {hasBeenReleased ? (
             <Trans>Update your app to the latest version to join in!</Trans>
           ) : (
             <Trans>
-              This feature isn't available to you yet. Please check back later.
+              Hold your horses! This feature isn't available to you yet. Please
+              check back later.
             </Trans>
           )}
         </Prompt.DescriptionText>

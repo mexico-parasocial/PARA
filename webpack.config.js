@@ -69,7 +69,7 @@ module.exports = async function (env, argv) {
   patchSourceMapFilter(config.module.rules, /react-native-uuid/)
 
   // Fix source-map-loader looking for hoisted tslib in non-existent nested paths.
-  // Yarn 1 hoists tslib to root node_modules, but @atproto source maps reference
+  // pnpm1 hoists tslib to root node_modules, but @atproto source maps reference
   // nested paths that don't exist. Exclude all node_modules from source-map-loader.
   const sourceMapLoaderRule = config.module.rules?.find(
     rule =>

@@ -1,4 +1,4 @@
-import {useCallback} from 'react'
+import {useCallback, useMemo} from 'react'
 import {moderateProfile, type ModerationOpts} from '@atproto/api'
 import {keepPreviousData, useQuery} from '@tanstack/react-query'
 
@@ -24,10 +24,12 @@ export function useAutocomplete({
   type,
   query: q,
   limit,
+  showSearchFallback = false,
 }: {
   type: AutocompleteItemType
   query: string
   limit?: number
+  showSearchFallback?: boolean
 }): AutocompleteApi {
   const agent = useAgent()
   const moderationOpts = useModerationOpts()
@@ -44,11 +46,14 @@ export function useAutocomplete({
     ],
     async queryFn() {
       if (type === 'profile') {
+        // TODO return recents
         if (!q) return []
 
-        const normalized = q.toLowerCase().trim().replace(/\.$/, '')
+        // Going from "foo" to "foo." should not clear matches.
+        q = q.toLowerCase().trim().replace(/\.$/, '')
+
         const res = await agent.searchActorsTypeahead({
-          q: normalized,
+          q,
           limit: limit || 8,
         })
 
@@ -67,7 +72,7 @@ export function useAutocomplete({
     select: useCallback(
       (items: AutocompleteItem[]) => {
         const seen = new Set<string>()
-        const results: AutocompleteItem[] = []
+        let results: AutocompleteItem[] = []
 
         for (const item of items) {
           if (seen.has(item.key)) continue
@@ -92,9 +97,27 @@ export function useAutocomplete({
     placeholderData: keepPreviousData,
   })
 
+  const items = useMemo(() => {
+    if (!query.data) {
+      return []
+    }
+
+    const results = [...query.data]
+
+    if (showSearchFallback && q) {
+      results.unshift({
+        key: `search-${q}`,
+        type: 'search' as const,
+        value: q,
+      })
+    }
+
+    return results
+  }, [query.data, showSearchFallback, q])
+
   return {
     query: q,
-    items: query.data || [],
+    items,
   }
 }
 

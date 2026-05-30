@@ -9,9 +9,7 @@ import {
 } from 'react'
 import {Pressable, type ScrollView, View} from 'react-native'
 import {type AppBskyLabelerDefs, BSKY_LABELER_DID} from '@atproto/api'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
-import {Trans} from '@lingui/react/macro'
+import {Trans, useLingui} from '@lingui/react/macro'
 
 import {wait} from '#/lib/async/wait'
 import {getLabelingServiceTitle} from '#/lib/moderation'
@@ -94,9 +92,9 @@ export function ReportDialog(
  * developer, but nevertheless we should have a graceful fallback.
  */
 function Invalid() {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   return (
-    <Dialog.ScrollableInner label={_(msg`Report dialog`)}>
+    <Dialog.ScrollableInner label={l`Report dialog`}>
       <Text style={[a.font_bold, a.text_xl, a.leading_snug, a.pb_xs]}>
         <Trans>Invalid report subject</Trans>
       </Text>
@@ -115,7 +113,7 @@ function Inner(props: ReportDialogProps) {
   const ax = useAnalytics()
   const logger = ax.logger.useChild(ax.logger.Context.ReportDialog)
   const t = useTheme()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const ref = useRef<ScrollView>(null)
   const {control, onAfterSubmit, subject} = props
   const {
@@ -133,8 +131,8 @@ function Inner(props: ReportDialogProps) {
    * Submission handling
    */
   const {mutateAsync: submitReport} = useSubmitReportMutation()
-  const [isPending, setPending] = useState(false)
-  const [isSuccess, setSuccess] = useState(false)
+  const [isPending, setIsPending] = useState(false)
+  const [isSuccess, setIsSuccess] = useState(false)
 
   // some reasons ONLY go to PARA
   const isBskyOnlyReason = state?.selectedOption?.reason
@@ -154,7 +152,10 @@ function Inner(props: ReportDialogProps) {
         if (subjectTypes === undefined) return true
         if (subject.type === 'account') {
           return subjectTypes.includes('account')
-        } else if (subject.type === 'convoMessage') {
+        } else if (
+          props.subject.type === 'convoMessage' ||
+          props.subject.type === 'convo'
+        ) {
           return subjectTypes.includes('chat')
         } else {
           return subjectTypes.includes('record')
@@ -208,7 +209,7 @@ function Inner(props: ReportDialogProps) {
     logger.info('submitting')
 
     try {
-      setPending(true)
+      setIsPending(true)
       // wait at least 1s, make it feel substantial
       await wait(
         1e3,
@@ -217,7 +218,7 @@ function Inner(props: ReportDialogProps) {
           state,
         }),
       )
-      setSuccess(true)
+      setIsSuccess(true)
       ax.metric('reportDialog:success', {
         reason: state.selectedOption?.reason ?? '',
         labeler: state.selectedLabeler?.creator.handle ?? '',
@@ -229,31 +230,20 @@ function Inner(props: ReportDialogProps) {
           onAfterSubmit?.()
         })
       }, 1e3)
-    } catch (e: unknown) {
+    } catch (err) {
+      const e = err as Error
       ax.metric('reportDialog:failure', {})
       logger.error(e, {
         source: 'ReportDialog',
       })
       dispatch({
         type: 'setError',
-        error: _(msg`Something went wrong. Please try again.`),
+        error: l`Something went wrong. Please try again.`,
       })
     } finally {
-      setPending(false)
+      setIsPending(false)
     }
-  }, [
-    _,
-    ax,
-    control,
-    submitReport,
-    state,
-    dispatch,
-    logger,
-    onAfterSubmit,
-    setPending,
-    setSuccess,
-    subject,
-  ])
+  }, [logger, submitReport, props, state, ax, l])
 
   useCallOnce(() => {
     ax.metric('reportDialog:open', {
@@ -264,7 +254,7 @@ function Inner(props: ReportDialogProps) {
   return (
     <Dialog.ScrollableInner
       testID="report:dialog"
-      label={_(msg`Report dialog`)}
+      label={l`Report dialog`}
       ref={ref}
       style={[a.w_full, {maxWidth: 500}]}>
       <View style={[a.gap_2xl, IS_NATIVE && a.pt_md]}>
@@ -295,7 +285,7 @@ function Inner(props: ReportDialogProps) {
                 </Admonition.Content>
                 <Admonition.Button
                   color="negative_subtle"
-                  label={_(msg`Retry loading report options`)}
+                  label={l`Retry loading report options`}
                   onPress={() => refetchLabelers()}>
                   <ButtonText>
                     <Trans>Retry</Trans>
@@ -313,7 +303,7 @@ function Inner(props: ReportDialogProps) {
                   </View>
                   <Button
                     testID="report:clearCategory"
-                    label={_(msg`Change report category`)}
+                    label={l`Change report category`}
                     size="tiny"
                     variant="solid"
                     color="secondary"
@@ -343,9 +333,7 @@ function Inner(props: ReportDialogProps) {
                   {['post', 'account'].includes(props.subject.type) && (
                     <Link
                       to={SUPPORT_PAGE}
-                      label={_(
-                        msg`Need to report a copyright violation, legal request, or regulatory compliance issue?`,
-                      )}>
+                      label={l`Need to report a copyright violation, legal request, or regulatory compliance issue?`}>
                       {({hovered, pressed}) => (
                         <View
                           style={[
@@ -383,7 +371,7 @@ function Inner(props: ReportDialogProps) {
         <StepOuter>
           <StepTitle
             index={2}
-            title={_(msg`Select a reason`)}
+            title={l`Select a reason`}
             activeIndex1={state.activeStepIndex1}
           />
           {state.selectedOption ? (
@@ -393,7 +381,7 @@ function Inner(props: ReportDialogProps) {
               </View>
               <Button
                 testID="report:clearReportOption"
-                label={_(msg`Change report reason`)}
+                label={l`Change report reason`}
                 size="tiny"
                 variant="solid"
                 color="secondary"
@@ -433,7 +421,7 @@ function Inner(props: ReportDialogProps) {
           <StepOuter>
             <StepTitle
               index={3}
-              title={_(msg`Select moderation service`)}
+              title={l`Select moderation service`}
               activeIndex1={state.activeStepIndex1}
             />
             {state.activeStepIndex1 >= 3 && (
@@ -448,7 +436,7 @@ function Inner(props: ReportDialogProps) {
                           <LabelerCard labeler={state.selectedLabeler} />
                         </View>
                         <Button
-                          label={_(msg`Change moderation service`)}
+                          label={l`Change moderation service`}
                           size="tiny"
                           variant="solid"
                           color="secondary"
@@ -511,7 +499,7 @@ function Inner(props: ReportDialogProps) {
         <StepOuter>
           <StepTitle
             index={isAlwaysBskyLabeler ? 3 : 4}
-            title={_(msg`Submit report`)}
+            title={l`Submit report`}
             activeIndex1={
               isAlwaysBskyLabeler
                 ? state.activeStepIndex1 - 1
@@ -531,7 +519,7 @@ function Inner(props: ReportDialogProps) {
                   </Trans>{' '}
                   {!state.detailsOpen ? (
                     <InlineLinkText
-                      label={_(msg`Add more details (optional)`)}
+                      label={`Add more details (optional)`}
                       {...createStaticClick(() => {
                         dispatch({type: 'showDetails'})
                       })}>
@@ -549,7 +537,7 @@ function Inner(props: ReportDialogProps) {
                       onChangeText={details => {
                         dispatch({type: 'setDetails', details})
                       }}
-                      label={_(msg`Additional details (limit 300 characters)`)}
+                      label={l`Additional details (limit 300 characters)`}
                       style={{paddingRight: 60}}
                       numberOfLines={4}
                     />
@@ -572,12 +560,12 @@ function Inner(props: ReportDialogProps) {
               </View>
               <Button
                 testID="report:submit"
-                label={_(msg`Submit report`)}
+                label={`Submit report`}
                 size="large"
                 variant="solid"
                 color="primary"
                 disabled={isPending || isSuccess}
-                onPress={onSubmit}>
+                onPress={() => void onSubmit()}>
                 <ButtonText>
                   <Trans>Submit report</Trans>
                 </ButtonText>
@@ -705,7 +693,7 @@ function CategoryCard({
   onSelect?: (option: ReportCategoryConfig) => void
 }) {
   const t = useTheme()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const gutters = useGutters(['compact'])
   const onPress = useCallback(() => {
     onSelect?.(option)
@@ -713,7 +701,7 @@ function CategoryCard({
   return (
     <Button
       testID={`report:category:${option.title}`}
-      label={_(msg`Create report for ${option.title}`)}
+      label={l`Create report for ${option.title}`}
       onPress={onPress}
       disabled={!onSelect}>
       {({hovered, pressed}) => (
@@ -750,7 +738,7 @@ function OptionCard({
   onSelect?: (option: ReportOption) => void
 }) {
   const t = useTheme()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const gutters = useGutters(['compact'])
   const onPress = useCallback(() => {
     onSelect?.(option)
@@ -758,13 +746,7 @@ function OptionCard({
   return (
     <Button
       testID={`report:option:${option.title}`}
-      label={_(
-        msg({
-          message: `Create report for ${option.title}`,
-          comment:
-            'Accessibility label for button to create a moderation report for the selected option',
-        }),
-      )}
+      label={l`Create report for ${option.title}`}
       onPress={onPress}
       disabled={!onSelect}>
       {({hovered, pressed}) => (
@@ -813,7 +795,7 @@ function LabelerCard({
   onSelect?: (option: AppBskyLabelerDefs.LabelerViewDetailed) => void
 }) {
   const t = useTheme()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const onPress = useCallback(() => {
     onSelect?.(labeler)
   }, [onSelect, labeler])
@@ -824,7 +806,7 @@ function LabelerCard({
   return (
     <Button
       testID={`report:labeler:${labeler.creator.handle}`}
-      label={_(msg`Send report to ${title}`)}
+      label={l`Send report to ${title}`}
       onPress={onPress}
       disabled={!onSelect}>
       {({hovered, pressed}) => (

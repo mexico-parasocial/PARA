@@ -1,7 +1,7 @@
 name: Nightly Update Source Languages
 on:
   schedule:
-    - cron: '0 2 * * *' # run at 2 AM UTC
+    - cron: "0 2 * * *" # run at 2 AM UTC
   workflow_dispatch:
 
 jobs:
@@ -16,14 +16,14 @@ jobs:
 
     steps:
       - name: Check out Git repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           ssh-key: ${{secrets.GH_ACTION_DEPLOY_KEY}}
       - uses: pnpm/action-setup@v6
       - name: Install node
         uses: actions/setup-node@v6
         with:
-          node-version-file: .nvmrc
+          node-version-file: package.json
           cache: pnpm
       - name: pnpm install
         uses: Wandalen/wretry.action@master
@@ -42,7 +42,7 @@ jobs:
         uses: crowdin/github-action@v2
         with:
           upload_sources: true
-          upload_sources_args: '-b main'
+          upload_sources_args: "-b main"
           upload_translations: false
           push_translations: false
           push_sources: false

@@ -1,3 +1,6 @@
+packages:
+  - '.'
+
 nodeLinker: 'hoisted'
 autoInstallPeers: true # default: true
 strictPeerDependencies: false # default: false

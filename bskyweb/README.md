@@ -12,15 +12,15 @@ like:
     npm install --global yarn
 
     # setup tools and deps (in top level of this repo)
-    yarn install --frozen-lockfile
+    pnpminstall --frozen-lockfile
 
-    # run yarn web dev server, if you wanted
-    yarn web
+    # run pnpmweb dev server, if you wanted
+    pnpmweb
 
 Then build and copy over the big 'ol `bundle.web.js` file:
 
     # in the top level of this repo
-    yarn build-web
+    pnpmbuild-web
 
 ### Golang Daemon
 

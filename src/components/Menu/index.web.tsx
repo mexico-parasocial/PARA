@@ -107,7 +107,7 @@ const RadixTriggerPassThrough = forwardRef(
     props: {
       children: (
         props: RadixPassThroughTriggerProps & {
-          ref: React.Ref<HTMLButtonElement>
+          ref: React.Ref<HTMLElement>
         },
       ) => React.ReactNode
     },

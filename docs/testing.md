@@ -25,14 +25,14 @@ adb reverse tcp:3000 tcp:3000
 
 ### Running Maestro tests
 
-- In one tab, run `yarn e2e:mock-server`
-- In a second tab, run `yarn e2e:build`
-- In a third tab, run `yarn e2e:run`
+- In one tab, run `pnpme2e:mock-server`
+- In a second tab, run `pnpme2e:build`
+- In a third tab, run `pnpme2e:run`
 
 ## Using Flashlight for Performance Testing
 
 1. Make sure Maestro is installed (optional: only for automated testing) by following the instructions above
 2. Install Flashlight by following [these instructions](https://docs.flashlight.dev/)
-3. The simplest way to get started is by running `yarn perf:measure` which will run a live preview of the performance test results. You can [see a demo here](https://github.com/bamlab/flashlight/assets/4534323/4038a342-f145-4c3b-8cde-17949bf52612)
-4. The `yarn perf:test:measure` will run the `scroll.yaml` test located in `__e2e__/maestro/scroll.yaml` and give the results in `.perf/results.json` which can be viewed by running `yarn:perf:results`
-5. You can also run your own tests by running `yarn perf:test <path_to_test>` where `<path_to_test>` is the path to your test file. For example, `yarn perf:test __e2e__/maestro/scroll.yaml` will run the `scroll.yaml` test located in `__e2e__/maestro/scroll.yaml`.
+3. The simplest way to get started is by running `pnpmperf:measure` which will run a live preview of the performance test results. You can [see a demo here](https://github.com/bamlab/flashlight/assets/4534323/4038a342-f145-4c3b-8cde-17949bf52612)
+4. The `pnpmperf:test:measure` will run the `scroll.yaml` test located in `__e2e__/maestro/scroll.yaml` and give the results in `.perf/results.json` which can be viewed by running `yarn:perf:results`
+5. You can also run your own tests by running `pnpmperf:test <path_to_test>` where `<path_to_test>` is the path to your test file. For example, `pnpmperf:test __e2e__/maestro/scroll.yaml` will run the `scroll.yaml` test located in `__e2e__/maestro/scroll.yaml`.

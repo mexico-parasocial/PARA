@@ -5,11 +5,11 @@ import {type AppBskyDraftDefs, AtUri, RichText} from '@atproto/api'
 import {nanoid} from 'nanoid/non-secure'
 
 import {resolveLink} from '#/lib/api/resolve'
+import {getDeviceName} from '#/lib/deviceName'
 import {getImageDim} from '#/lib/media/manip'
 import {mimeToExt} from '#/lib/media/video/util'
 import {shortenLinks} from '#/lib/strings/rich-text-manip'
 import {type ComposerImage} from '#/state/gallery'
-import {type Gif} from '#/state/queries/tenor'
 import {threadgateAllowUISettingToAllowRecordValue} from '#/state/queries/threadgate/util'
 import {createPublicAgent} from '#/state/session/agent'
 import {
@@ -18,10 +18,15 @@ import {
   type PostDraft,
 } from '#/view/com/composer/state/composer'
 import {type VideoState} from '#/view/com/composer/state/video'
+import {type AnalyticsContextType} from '#/analytics'
+import {getDeviceId} from '#/analytics/identifiers'
+import {type Gif} from '#/features/gifPicker/types'
 import {logger} from './logger'
 import {type DraftPostDisplay, type DraftSummary} from './schema'
+import * as storage from './storage'
 
 const TENOR_HOSTNAME = 'media.tenor.com'
+const KLIPY_HOSTNAME = 'static.klipy.com'
 
 /**
  * Video data from a draft that needs to be restored by re-processing.
@@ -67,6 +72,8 @@ export async function composerStateToDraft(state: ComposerState): Promise<{
 
   const draft: AppBskyDraftDefs.Draft = {
     $type: 'app.bsky.draft.defs#draft',
+    deviceId: getDeviceId(),
+    deviceName: getDeviceName().slice(0, 100), // max length of 100 in lex
     posts,
     threadgateAllow: threadgateAllowUISettingToAllowRecordValue(
       state.thread.threadgate,
@@ -231,7 +238,7 @@ async function serializeVideo(
 
 /**
  * Serialize GIF to server format as external embed.
- * URL format: https://media.tenor.com/{id}/{filename}.gif?hh=HEIGHT&ww=WIDTH
+ * URL format: https://media.tenor.com/{id}/{filename}.gif?hh=HEIGHT&ww=WIDTH&alt=ALT_TEXT
  */
 function serializeGif(gifMedia: {
   type: 'gif'
@@ -245,11 +252,15 @@ function serializeGif(gifMedia: {
     return undefined
   }
 
-  // Build URL with dimensions in query params
+  // Build URL with dimensions and alt text in query params
   const url = new URL(gifFormat.url)
   if (gifFormat.dims) {
     url.searchParams.set('ww', String(gifFormat.dims[0]))
     url.searchParams.set('hh', String(gifFormat.dims[1]))
+  }
+  // Store alt text if present
+  if (gifMedia.alt) {
+    url.searchParams.set('alt', gifMedia.alt)
   }
 
   return {
@@ -262,17 +273,24 @@ function serializeGif(gifMedia: {
  * Convert server DraftView to DraftSummary for list display.
  * Also checks which media files exist locally.
  */
-export function draftViewToSummary(
-  view: AppBskyDraftDefs.DraftView,
-  localMediaExists: (path: string) => boolean,
-  currentDeviceId: string | null,
-): DraftSummary {
-  const firstPost = view.draft.posts[0]
-  const previewText = firstPost?.text?.slice(0, 100) || ''
-
-  let mediaCount = 0
-  let hasMedia = false
-  let hasMissingMedia = false
+export function draftViewToSummary({
+  view,
+  analytics,
+}: {
+  view: AppBskyDraftDefs.DraftView
+  analytics: AnalyticsContextType
+}): DraftSummary {
+  const meta = {
+    isOriginatingDevice: view.draft.deviceId === getDeviceId(),
+    postCount: view.draft.posts.length,
+    // minus anchor post
+    replyCount: view.draft.posts.length - 1,
+    hasMedia: false,
+    hasMissingMedia: false,
+    mediaCount: 0,
+    hasQuotes: false,
+    quoteCount: 0,
+  }
 
   const posts: DraftPostDisplay[] = view.draft.posts.map((post, index) => {
     const images: DraftPostDisplay['images'] = []
@@ -282,11 +300,11 @@ export function draftViewToSummary(
     // Process images
     if (post.embedImages) {
       for (const img of post.embedImages) {
-        mediaCount++
-        hasMedia = true
-        const exists = localMediaExists(img.localRef.path)
+        meta.mediaCount++
+        meta.hasMedia = true
+        const exists = storage.mediaExists(img.localRef.path)
         if (!exists) {
-          hasMissingMedia = true
+          meta.hasMissingMedia = true
         }
         images.push({
           localPath: img.localRef.path,
@@ -299,11 +317,11 @@ export function draftViewToSummary(
     // Process videos
     if (post.embedVideos) {
       for (const vid of post.embedVideos) {
-        mediaCount++
-        hasMedia = true
-        const exists = localMediaExists(vid.localRef.path)
+        meta.mediaCount++
+        meta.hasMedia = true
+        const exists = storage.mediaExists(vid.localRef.path)
         if (!exists) {
-          hasMissingMedia = true
+          meta.hasMissingMedia = true
         }
         videos.push({
           localPath: vid.localRef.path,
@@ -318,24 +336,16 @@ export function draftViewToSummary(
       for (const ext of post.embedExternals) {
         const gifData = parseGifFromUrl(ext.uri)
         if (gifData) {
-          mediaCount++
-          hasMedia = true
+          meta.mediaCount++
+          meta.hasMedia = true
           gif = gifData
         }
       }
     }
 
-    const rt = new RichText({text: post.text || ''})
-    rt.detectFacetsWithoutResolution()
-
-    // Process quote
-    let quote
     if (post.embedRecords && post.embedRecords.length > 0) {
-      // We don't have the full record here, just uri/cid
-      // We can't really show much about it without fetching
-      quote = {
-        uri: post.embedRecords[0].record.uri,
-      }
+      meta.quoteCount += post.embedRecords.length
+      meta.hasQuotes = true
     }
 
     return {
@@ -344,60 +354,33 @@ export function draftViewToSummary(
       images: images.length > 0 ? images : undefined,
       video: videos[0], // Only one video per post
       gif,
-      quote,
-      richtext: rt,
     }
   })
 
-  // Calculate metadata
-  let imagesCount = 0
-  let videoCount = 0
-  let gifCount = 0
-  let quoteCount = 0
-
-  for (const post of posts) {
-    if (post.images) imagesCount += post.images.length
-    if (post.video) videoCount++
-    if (post.gif) gifCount++
-    if (post.quote) quoteCount++
+  if (meta.isOriginatingDevice && meta.hasMissingMedia) {
+    analytics.logger.warn(`Draft is missing media on originating device`, {})
   }
-
-  const isOriginatingDevice =
-    !view.draft.deviceId || view.draft.deviceId === currentDeviceId
 
   return {
     id: view.id,
-    previewText,
-    hasMedia,
-    hasMissingMedia,
-    mediaCount,
-    postCount: view.draft.posts.length,
-    isReply: false, // Reply drafts not supported
     createdAt: view.createdAt,
     updatedAt: view.updatedAt,
-    posts,
     draft: view.draft,
-    meta: {
-      isOriginatingDevice,
-      threadSize: view.draft.posts.length,
-      images: imagesCount,
-      video: videoCount > 0,
-      gif: gifCount > 0,
-      quote: quoteCount > 0,
-    },
+    posts,
+    meta,
   }
 }
 
 /**
  * Parse GIF data from a Tenor URL.
- * URL format: https://media.tenor.com/{id}/{filename}.gif?hh=HEIGHT&ww=WIDTH
+ * URL format: https://media.tenor.com/{id}/{filename}.gif?hh=HEIGHT&ww=WIDTH&alt=ALT_TEXT
  */
 function parseGifFromUrl(
   uri: string,
 ): {url: string; width: number; height: number; alt: string} | undefined {
   try {
     const url = new URL(uri)
-    if (url.hostname !== TENOR_HOSTNAME) {
+    if (url.hostname !== TENOR_HOSTNAME && url.hostname !== KLIPY_HOSTNAME) {
       return undefined
     }
 
@@ -414,6 +397,8 @@ function parseGifFromUrl(
     url.searchParams.delete('ww')
     url.searchParams.delete('hh')
     url.searchParams.delete('alt')
+    url.searchParams.delete('mp4')
+    url.searchParams.delete('webm')
 
     return {url: url.toString(), width, height, alt}
   } catch {
@@ -476,6 +461,7 @@ export async function draftToComposerPosts(
 
           return {
             alt: img.alt || '',
+            // Preserve the original localRefPath for reuse when saving
             localRefPath: img.localRef.path,
             source: {
               id: nanoid(),
@@ -590,10 +576,6 @@ export async function draftToComposerPosts(
         richtext,
         shortenedGraphemeLength: shortenLinks(richtext).graphemeLength,
         labels,
-        flairs: [],
-        postType: null,
-        isOfficial: false,
-        isAdultContent: false,
         embed,
       } as PostDraft
     }),

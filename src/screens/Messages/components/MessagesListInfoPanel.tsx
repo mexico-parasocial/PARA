@@ -28,6 +28,7 @@ export function MessagesListInfoPanel({
 
   const {currentAccount} = useSession()
   const moderationOpts = useModerationOpts()
+
   const profile = convo.members.filter(
     profile => profile.did !== currentAccount?.did,
   )[0]

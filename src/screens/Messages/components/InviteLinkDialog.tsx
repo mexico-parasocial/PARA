@@ -41,15 +41,6 @@ enum Step {
   CONFIRM_DISABLE,
 }
 
-const timeFormatter = new Intl.DateTimeFormat(undefined, {
-  hour: 'numeric',
-  minute: 'numeric',
-})
-const dateFormatter = new Intl.DateTimeFormat(undefined, {
-  month: 'long',
-  day: 'numeric',
-  year: 'numeric',
-})
 
 export function InviteLinkDialog({
   convo,
@@ -65,7 +56,7 @@ export function InviteLinkDialog({
   moderationOpts: ModerationOpts
 }) {
   const t = useTheme()
-  const {t: l} = useLingui()
+  const {t: l, i18n} = useLingui()
 
   const ownerName = createSanitizedDisplayName(
     owner,
@@ -86,7 +77,9 @@ export function InviteLinkDialog({
   const [step, setStep] = useState(defaultStep)
   const [whoCanJoin, setWhoCanJoin] = useState(defaultWhoCanJoin)
 
-  // Resync local state when the server-side join link rules change
+  // Resync local state when the server-side join link rules change (mutation
+  // success, refetch, or change from another client). Keyed on the rule string
+  // so identity-only refetches don't bump a user mid-edit.
   const joinLinkRuleKey = joinLink
     ? `${joinLink.joinRule}${joinLink.requireApproval ? ':requireApproval' : ''}`
     : null
@@ -94,6 +87,7 @@ export function InviteLinkDialog({
     setStep(joinLinkRuleKey ? Step.MANAGE : Step.INFO)
     setWhoCanJoin([joinLinkRuleKey ?? 'anyone'])
   }, [joinLinkRuleKey])
+
 
   const {openComposer} = useOpenComposer()
 
@@ -229,7 +223,7 @@ export function InviteLinkDialog({
                 {whoCanJoinOptions.map(option => (
                   <Toggle.Item
                     key={option.name}
-                    highlightRow={true}
+                    highlightRow
                     label={isOwner ? option.owner : option.member}
                     name={option.name}
                     style={[a.flex_1]}>
@@ -318,8 +312,11 @@ export function InviteLinkDialog({
             {createdAt ? (
               <Text style={[a.mt_xs, a.text_xs, t.atoms.text_contrast_medium]}>
                 <Trans>
-                  Created {timeFormatter.format(createdAt)}{' '}
-                  {dateFormatter.format(createdAt)}
+                  Created{' '}
+                  {i18n.date(createdAt, {
+                    dateStyle: 'long',
+                    timeStyle: 'short',
+                  })}
                 </Trans>
               </Text>
             ) : null}
@@ -331,16 +328,11 @@ export function InviteLinkDialog({
                   label={l`Edit link settings`}
                   value={ownerValue}
                   onPress={() => setStep(Step.GENERATE)}>
-                  <Text
-                    numberOfLines={1}
-                    style={[
-                      a.mr_xs,
-                      a.text_md,
-                      t.atoms.text,
-                      {maxWidth: '80%'},
-                    ]}>
-                    {ownerValue}
-                  </Text>
+                  <View style={[a.flex_1, a.mr_xs]}>
+                    <Text numberOfLines={1} style={[a.text_md, t.atoms.text]}>
+                      {ownerValue}
+                    </Text>
+                  </View>
                 </EditTextButton>
               ) : (
                 <Text style={[a.text_sm, t.atoms.text]}>{memberValue}</Text>
@@ -477,8 +469,8 @@ export function InviteLinkDialog({
       break
   }
 
-  if (!isOwner && (!joinLink || joinLink?.enabledStatus === 'disabled')) {
-    header = l`Invite link`
+  if (!isOwner && (!joinLink || joinLink.enabledStatus === 'disabled')) {
+  header = l`Invite link`
     content = (
       <>
         <View style={[a.mt_lg]}>

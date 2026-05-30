@@ -22,6 +22,10 @@ export interface LinkMeta {
   title?: string
   description?: string
   image?: string
+  /**
+   * The AT-URI of the Atmosphere record representing this external content, if
+   * it exists. Example: a site.standard.document record.
+   */
   associatedRefs?: AppBskyEmbedExternal.External['associatedRefs']
   view?: AppBskyEmbedExternal.View
 }
