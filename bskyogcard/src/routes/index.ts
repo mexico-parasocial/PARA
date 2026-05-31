@@ -10,6 +10,6 @@ export * from './util.js'
 export default function (ctx: AppContext, app: Express) {
   app = health(ctx, app) // GET /_health
   app = starterPack(ctx, app) // GET /start/:actor/:rkey
-  app = avatarBubbles(ctx, app) // GET /avatar-bubbles?dids=...
+  app = avatarBubbles(ctx, app) // GET /avatar-bubbles?did=...
   return app
 }
