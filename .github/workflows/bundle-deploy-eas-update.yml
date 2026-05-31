@@ -86,7 +86,7 @@ jobs:
       - name: Type check
         run: pnpm typecheck
 
-      - name: 🔨 Setup EAS
+      - name: 🧐 Validate Expo token
         uses: expo/expo-github-action@main
         if: ${{ !steps.fingerprint.outputs.includes-changes }}
         with:
@@ -179,7 +179,7 @@ jobs:
           node-version-file: package.json
           cache: pnpm
 
-      - name: 🔨 Setup EAS
+      - name: 🧐 Validate Expo token
         uses: expo/expo-github-action@main
         with:
           eas-version: '19.0.5'
@@ -326,7 +326,7 @@ jobs:
           node-version-file: package.json
           cache: pnpm
 
-      - name: 🔨 Setup EAS
+      - name: 🧐 Validate Expo token
         uses: expo/expo-github-action@main
         with:
           eas-version: '19.0.5'
