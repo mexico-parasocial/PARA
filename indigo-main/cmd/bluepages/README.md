@@ -1,4 +1,6 @@
-# bluepages: an atproto identity directory
+
+bluepages: an atproto identity directory
+========================================
 
 This is a simple API server which caches atproto handle and DID resolution responses. It is useful when you have a bunch of services that do identity resolution, and you don't want duplicated caches.
 

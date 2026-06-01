@@ -26,7 +26,7 @@ const M8_BROKER_URL =
 
 const API_BASE = `${M8_BROKER_URL}/v1`
 
-async function getAccessToken(): Promise<string | null> {
+export async function getM8AccessToken(): Promise<string | null> {
   return AsyncStorage.getItem('m8_access_token')
 }
 
@@ -40,7 +40,7 @@ async function clearTokens() {
 }
 
 export async function m8Fetch(path: string, options: RequestInit = {}): Promise<Response> {
-  const token = await getAccessToken()
+  const token = await getM8AccessToken()
   const headers: Record<string, string> = {
     'content-type': 'application/json',
     ...(token ? { authorization: `Bearer ${token}` } : {}),
@@ -51,9 +51,9 @@ export async function m8Fetch(path: string, options: RequestInit = {}): Promise<
 
   if (res.status === 401) {
     // Attempt refresh
-    const refreshed = await refreshAccessToken()
+    const refreshed = await refreshM8AccessToken()
     if (refreshed) {
-      const newToken = await getAccessToken()
+      const newToken = await getM8AccessToken()
       headers.authorization = `Bearer ${newToken}`
       return fetch(`${API_BASE}${path}`, { ...options, headers })
     }
@@ -62,7 +62,7 @@ export async function m8Fetch(path: string, options: RequestInit = {}): Promise<
   return res
 }
 
-async function refreshAccessToken(): Promise<boolean> {
+export async function refreshM8AccessToken(): Promise<boolean> {
   const refreshToken = await AsyncStorage.getItem('m8_refresh_token')
   if (!refreshToken) return false
 
@@ -118,7 +118,7 @@ export async function getCurrentSession(): Promise<ProofBrokerSession> {
 }
 
 export async function restoreM8Session(): Promise<ProofBrokerSession | null> {
-  const token = await getAccessToken()
+  const token = await getM8AccessToken()
   if (!token) return null
   try {
     return await getCurrentSession()

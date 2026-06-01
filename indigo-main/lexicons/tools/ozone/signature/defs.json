@@ -6,8 +6,8 @@
       "type": "object",
       "required": ["property", "value"],
       "properties": {
-        "property": {"type": "string"},
-        "value": {"type": "string"}
+        "property": { "type": "string" },
+        "value": { "type": "string" }
       }
     }
   }

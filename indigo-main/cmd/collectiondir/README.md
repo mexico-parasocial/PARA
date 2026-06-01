@@ -1,4 +1,6 @@
-# `collectiondir`: Directory of Accounts by Collection
+
+`collectiondir`: Directory of Accounts by Collection
+====================================================
 
 This is a small atproto microservice which maintains a directory of which accounts in the network (DIDs) have data (records) for which collections (NSIDs).
 
@@ -24,6 +26,7 @@ Features and design points:
 - can bootstrap the full network using `com.atproto.sync.listRepos` and `com.atproto.repo.describeRepo`
 - single golang binary for easy deployment
 
+
 ## Analytics Endpoint
 
 ```
@@ -34,13 +37,11 @@ Features and design points:
 With no `c` parameter it returns all known collections with cursor paging.
 With up to 20 repeated `c` parameters it returns only those collections (no paging).
 It may be the cached result of a computation, up to several minutes out of date.
-
 ```json
-{
-  "collections": {"app.bsky.feed.post": 123456789, "some collection": 42},
-  "cursor": "opaque text"
-}
+{"collections":{"app.bsky.feed.post": 123456789, "some collection": 42},
+"cursor":"opaque text"}
 ```
+
 
 ## Database Schema
 

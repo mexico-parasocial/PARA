@@ -9,7 +9,7 @@
       "properties": {
         "images": {
           "type": "array",
-          "items": {"type": "ref", "ref": "#image"},
+          "items": { "type": "ref", "ref": "#image" },
           "maxLength": 4
         }
       }
@@ -20,8 +20,9 @@
       "properties": {
         "image": {
           "type": "blob",
+          "description": "The raw image file. May be up to 2 MB, formerly limited to 1 MB.",
           "accept": ["image/*"],
-          "maxSize": 1000000
+          "maxSize": 2000000
         },
         "alt": {
           "type": "string",
@@ -39,7 +40,7 @@
       "properties": {
         "images": {
           "type": "array",
-          "items": {"type": "ref", "ref": "#viewImage"},
+          "items": { "type": "ref", "ref": "#viewImage" },
           "maxLength": 4
         }
       }

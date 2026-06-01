@@ -1,6 +1,6 @@
 import {type BskyAgent} from '@atproto/api'
 
-import {postCivicVoteProof, type M8CivicVoteProof} from '#/lib/m8'
+import {type M8CivicVoteProof,postCivicVoteProof} from '#/lib/m8'
 
 export async function issueParaVoteProof(
   agent: BskyAgent,

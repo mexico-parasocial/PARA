@@ -1,4 +1,4 @@
-version: '3.9'
+version: "3.9"
 services:
   opensearch:
     container_name: opensearch
@@ -6,15 +6,15 @@ services:
       context: ../../
       dockerfile: cmd/palomar/Dockerfile.opensearch
     ports:
-      - '9200:9200'
-      - '9600:9600'
+      - "9200:9200"
+      - "9600:9600"
     environment:
-      - 'discovery.type=single-node'
-      - 'cluster.name=opensearch-palomar'
-      - 'plugins.security.disabled=true'
-      - 'bootstrap.memory_lock=true' # Disable JVM heap memory swapping
-      - 'OPENSEARCH_JAVA_OPTS=-Xms4096m -Xmx4096m' # Set min and max JVM heap sizes to at least 50% of system RAM
-      - 'OPENSEARCH_INITIAL_ADMIN_PASSWORD=0penSearch-Pal0mar'
+      - "discovery.type=single-node"
+      - "cluster.name=opensearch-palomar"
+      - "plugins.security.disabled=true"
+      - "bootstrap.memory_lock=true" # Disable JVM heap memory swapping
+      - "OPENSEARCH_JAVA_OPTS=-Xms4096m -Xmx4096m" # Set min and max JVM heap sizes to at least 50% of system RAM
+      - "OPENSEARCH_INITIAL_ADMIN_PASSWORD=0penSearch-Pal0mar"
     ulimits:
       memlock:
         soft: -1
@@ -32,25 +32,25 @@ services:
       context: ../../
       dockerfile: cmd/palomar/Dockerfile
     environment:
-      - 'GOLOG_LOG_LEVEL=info'
-      - 'ATP_PLC_HOST=https://plc.directory'
-      - 'ATP_BGS_HOST=wss://bsky.network'
-      - 'ELASTIC_HOSTS=http://opensearch:9200'
-      - 'ES_INSECURE_SSL=true'
-      - 'ENVIRONMENT=dev'
-      - 'ES_POST_INDEX=palomar_post_dev'
-      - 'ES_PROFILE_INDEX=palomar_profile_dev'
-      - 'PALOMAR_DISCOVER_REPOS=false'
-      - 'PALOMAR_BGS_SYNC_RATE_LIMIT=20'
-      - 'PALOMAR_INDEX_MAX_CONCURRENCY=5'
-      - 'DATABASE_URL=sqlite:///data/palomar/search.db'
-      - 'PALOMAR_BIND=:3997'
-      - 'PALOMAR_METRICS_LISTEN=:3996'
+      - "GOLOG_LOG_LEVEL=info"
+      - "ATP_PLC_HOST=https://plc.directory"
+      - "ATP_BGS_HOST=wss://bsky.network"
+      - "ELASTIC_HOSTS=http://opensearch:9200"
+      - "ES_INSECURE_SSL=true"
+      - "ENVIRONMENT=dev"
+      - "ES_POST_INDEX=palomar_post_dev"
+      - "ES_PROFILE_INDEX=palomar_profile_dev"
+      - "PALOMAR_DISCOVER_REPOS=false"
+      - "PALOMAR_BGS_SYNC_RATE_LIMIT=20"
+      - "PALOMAR_INDEX_MAX_CONCURRENCY=5"
+      - "DATABASE_URL=sqlite:///data/palomar/search.db"
+      - "PALOMAR_BIND=:3997"
+      - "PALOMAR_METRICS_LISTEN=:3996"
     depends_on:
       - opensearch
     ports:
-      - '3997:3997'
-      - '3996:3996'
+      - "3997:3997"
+      - "3996:3996"
     volumes:
       - type: bind
         source: ../../data
@@ -86,19 +86,19 @@ services:
       context: ../../
       dockerfile: cmd/palomar/Dockerfile
     ports:
-      - '3999:3999'
-      - '3998:3998'
+      - "3999:3999"
+      - "3998:3998"
     environment:
-      - 'GOLOG_LOG_LEVEL=info'
-      - 'ATP_PLC_HOST=https://plc.directory'
-      - 'ATP_BGS_HOST=wss://bsky.network'
-      - 'ELASTIC_HOSTS=http://opensearch:9200'
-      - 'ES_INSECURE_SSL=true'
-      - 'ENVIRONMENT=dev'
-      - 'ES_POST_INDEX=palomar_post_dev'
-      - 'ES_PROFILE_INDEX=palomar_profile_dev'
-      - 'DATABASE_URL=sqlite:///data/palomar/search.db'
-      - 'PALOMAR_READONLY=true'
+      - "GOLOG_LOG_LEVEL=info"
+      - "ATP_PLC_HOST=https://plc.directory"
+      - "ATP_BGS_HOST=wss://bsky.network"
+      - "ELASTIC_HOSTS=http://opensearch:9200"
+      - "ES_INSECURE_SSL=true"
+      - "ENVIRONMENT=dev"
+      - "ES_POST_INDEX=palomar_post_dev"
+      - "ES_PROFILE_INDEX=palomar_profile_dev"
+      - "DATABASE_URL=sqlite:///data/palomar/search.db"
+      - "PALOMAR_READONLY=true"
     volumes:
       - type: bind
         source: ../../data

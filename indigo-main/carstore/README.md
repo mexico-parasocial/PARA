@@ -9,7 +9,7 @@ User and PDS metadata stored in gorm (PostgreSQL or sqlite3).
 
 ## [FileCarStore](bs.go)
 
-Store 'car slices' from PDS source subscribeRepo firehose streams to filesystem.
+Store  'car slices' from PDS source subscribeRepo firehose streams to filesystem.
 Store metadata to gorm postgresql (or sqlite3).
 Periodic compaction of car slices into fewer larger car slices.
 User and PDS metadata stored in gorm (PostgreSQL or sqlite3).

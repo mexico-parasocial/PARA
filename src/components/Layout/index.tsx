@@ -21,7 +21,11 @@ import {
   web,
 } from '#/alf'
 import {useDialogContext} from '#/components/Dialog'
-import {CENTER_COLUMN_OFFSET, SCROLLBAR_OFFSET} from '#/components/Layout/const'
+import {
+  CENTER_COLUMN_OFFSET,
+  CENTER_COLUMN_WIDTH,
+  SCROLLBAR_OFFSET,
+} from '#/components/Layout/const'
 import {ScrollbarOffsetContext} from '#/components/Layout/context'
 import {IS_WEB} from '#/env'
 
@@ -148,7 +152,7 @@ export const Center = memo(function LayoutCenter({
         a.w_full,
         !isWithinSplitView && a.mx_auto,
         gtMobile && {
-          maxWidth: 600,
+          maxWidth: CENTER_COLUMN_WIDTH,
         },
         !isWithinOffsetView &&
           !isWithinSplitView && {

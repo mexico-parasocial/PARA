@@ -3,9 +3,9 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
+  TextInput,
   TouchableOpacity,
   View,
-  TextInput,
 } from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -1783,6 +1783,8 @@ function CabildeoNominationSection({cabildeoUri}: {cabildeoUri: string}) {
 
       <View style={styles.nominateForm}>
         <TextInput
+          accessibilityLabel="Text input field"
+          accessibilityHint="Enter a person or organization to nominate"
           style={[
             styles.nominateInput,
             t.atoms.bg_contrast_50,

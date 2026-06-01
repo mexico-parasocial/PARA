@@ -11,7 +11,7 @@
           "type": "object",
           "required": ["list"],
           "properties": {
-            "list": {"type": "string", "format": "at-uri"}
+            "list": { "type": "string", "format": "at-uri" }
           }
         }
       }

@@ -1,4 +1,6 @@
-# `rainbow`: atproto Firehose Fanout Service
+
+`rainbow`: atproto Firehose Fanout Service
+==========================================
 
 This is an atproto service which consumes from a firehose (eg, from a relay or PDS) and fans out events to many subscribers.
 
@@ -14,7 +16,7 @@ Features and design points:
 - single golang binary for easy deployment
 - observability: logging, prometheus metrics, and OTEL traces
 
-## Running
+## Running 
 
 This is a simple, single-binary Go program. You can also build and run it as a docker container (see `./Dockerfile`).
 

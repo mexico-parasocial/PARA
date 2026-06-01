@@ -1,4 +1,6 @@
-# HOWTO: Write automod Rules
+
+HOWTO: Write automod Rules
+==========================
 
 The short version is:
 
@@ -16,7 +18,7 @@ Automod rules are golang functions which get called every time a relevant event 
 
 There are multiple rule function types (eg, specifically for bsky "posts", or for atproto identity updates), but they all receive a `c` "Context" argument as the primary API for the rules system, including both accessing metadata and recording effects.
 
-Multiple rules for the same event may be run concurrently, or in arbitrary order. Effects _are not_ visible between rule execution on the same event, and are only persisted after all rules have finished executing. This means that if one rule increments a counter or adds a label, other rules will not "see" that effect when processing the same event.
+Multiple rules for the same event may be run concurrently, or in arbitrary order. Effects *are not* visible between rule execution on the same event, and are only persisted after all rules have finished executing. This means that if one rule increments a counter or adds a label, other rules will not "see" that effect when processing the same event.
 
 Effects are automatically de-duplicated by the rules engine, both between concurrent rules and against the current state of an effect's subject. This means that rules can generally "trigger" continuously (eg, report an account on the basis of multiple posts), and the action will only take place once (not reported multiple times).
 
@@ -24,11 +26,13 @@ It is expected that some rules will act together, for example paired rules on re
 
 The design philosophy of rules are that they mostly contain their own configuration, as code. Rules are not expected to be directly configurable, and changing the "effects" or action of a rule is a change to the rule code itself.
 
+
 ## Rule APIs
 
 There are two general categories of rules and effects: at the account-level, and at the record-level, with the later being a superset of the former.
 
 Note that none of the Context methods return errors. If errors are encountered (for example, network faults), error state is persisted internally to the Context object, a placeholder value is returned, and no effects will be persisted for the overall event execution. This is to keep rule code simple and readable.
+
 
 ### Rule Types
 
@@ -125,6 +129,7 @@ The `hepa` command provides `process-record` and `process-recent` sub-commands w
 There is also a `capture-recent` sub-command which will save a snapshot ("capture") of the current account identity and profile, and recent bsky posts, as JSON. This can be combined with testing helpers (which will load the capture and push it through a mock rules engine) to test that new rules actually trigger as expected against real-world data.
 
 Note that, of course, any real-world captures should have identifying or otherwise sensitive information redacted or replaced before committing to git.
+
 
 ## Examples
 

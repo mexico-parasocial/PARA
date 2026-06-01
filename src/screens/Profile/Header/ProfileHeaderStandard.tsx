@@ -19,6 +19,10 @@ import {
   COMPASS_CROSS_GRADIENTS,
   type CompassPositionId,
 } from '#/lib/compass/compassColors'
+import {
+  buildGermAssociatedProfileButton,
+  type GermAssociatedProfile,
+} from '#/lib/germ/messageMe'
 import {useHaptics} from '#/lib/haptics'
 import {useAnonymousMode} from '#/lib/m8/hooks/useAnonymousMode'
 import {formatUserDisplayName} from '#/lib/strings/profile-names'
@@ -37,6 +41,7 @@ import {CivicInsignia} from '#/components/CivicInsignia'
 import {DebugFieldDisplay} from '#/components/DebugFieldDisplay'
 import {useDialogControl} from '#/components/Dialog'
 import {MessageProfileButton} from '#/components/dms/MessageProfileButton'
+import {GermContactButton} from '#/components/germ/GermContactButton'
 import {PlusLarge_Stroke2_Corner0_Rounded as Plus} from '#/components/icons/Plus'
 import {
   KnownFollowers,
@@ -498,6 +503,16 @@ export function HeaderStandardButtons({
         return false
     }
   }, [profile])
+  const germButton = useMemo(
+    () =>
+      buildGermAssociatedProfileButton({
+        germ: getAssociatedGerm(profile),
+        profileDid: profile.did,
+        viewerDid: currentAccount?.did,
+        viewerIsFollowedByProfile: !!profile.viewer?.followedBy,
+      }),
+    [profile, currentAccount?.did],
+  )
 
   return (
     <>
@@ -545,6 +560,9 @@ export function HeaderStandardButtons({
               )}
 
               <MessageProfileButton profile={profile} />
+              {germButton && (
+                <GermContactButton url={germButton.url} label="Germ" />
+              )}
             </>
           )}
 
@@ -591,4 +609,13 @@ export function HeaderStandardButtons({
       />
     </>
   )
+}
+
+function getAssociatedGerm(
+  profile: AppBskyActorDefs.ProfileViewDetailed,
+): GermAssociatedProfile {
+  const associated = profile.associated as
+    | {germ?: GermAssociatedProfile}
+    | undefined
+  return associated?.germ ?? null
 }

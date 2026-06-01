@@ -15,7 +15,7 @@
               "type": "string"
             }
           },
-          "cursor": {"type": "string"},
+          "cursor": { "type": "string" },
           "limit": {
             "type": "integer",
             "minimum": 1,
@@ -30,7 +30,7 @@
           "type": "object",
           "required": ["accounts"],
           "properties": {
-            "cursor": {"type": "string"},
+            "cursor": { "type": "string" },
             "accounts": {
               "type": "array",
               "items": {

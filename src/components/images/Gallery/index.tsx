@@ -71,7 +71,11 @@ export function GalleryBleed({children}: {children: React.ReactNode}) {
     throw new Error('GalleryBleed children must be a single React element')
   }
 
-  const node = children as React.ReactElement<Record<string, unknown>>
+  const node = children as React.ReactElement<{
+    onLayout?: (e: {nativeEvent: {layout: {width: number}}}) => void
+    ref?: React.Ref<View>
+    style?: unknown
+  }>
 
   return (
     <Context.Provider value={{bleedRef: ref, bleedWidth}}>

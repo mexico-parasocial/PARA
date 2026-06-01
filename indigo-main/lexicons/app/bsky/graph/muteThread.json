@@ -11,7 +11,7 @@
           "type": "object",
           "required": ["root"],
           "properties": {
-            "root": {"type": "string", "format": "at-uri"}
+            "root": { "type": "string", "format": "at-uri" }
           }
         }
       }

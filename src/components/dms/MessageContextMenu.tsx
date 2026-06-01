@@ -22,8 +22,7 @@ import {type TriggerProps} from '#/components/ContextMenu/types'
 import {AfterReportDialog} from '#/components/dms/AfterReportDialog'
 import {Clipboard_Stroke2_Corner2_Rounded as ClipboardIcon} from '#/components/icons/Clipboard'
 import {Flag_Stroke2_Corner0_Rounded as FlagIcon} from '#/components/icons/Flag'
-import {Language_Stroke2_Corner2_Rounded as LanguageIcon} from '#/components/icons/Language'
-import {Language_Stroke2_Corner0_Rounded as LanguageIcon} from '#/components/icons/Language'
+import {Language_Stroke2_Corner0_Rounded as LanguageIcon,Language_Stroke2_Corner2_Rounded as LanguageIcon} from '#/components/icons/Language'
 import {Trash_Stroke2_Corner0_Rounded as TrashIcon} from '#/components/icons/Trash'
 import {ReportDialog} from '#/components/moderation/ReportDialog'
 import * as Prompt from '#/components/Prompt'
@@ -189,6 +188,7 @@ export let MessageContextMenu = ({
             </>
           )}
           <ContextMenu.Item
+            destructive
             testID="messageDropdownDeleteBtn"
             label={l`Delete message for me`}
             onPress={() => deleteControl.open()}>
@@ -199,6 +199,7 @@ export let MessageContextMenu = ({
             <>
               <ContextMenu.Divider />
               <ContextMenu.Item
+                destructive
                 testID="messageDropdownReportBtn"
                 label={l`Report message`}
                 onPress={() => reportControl.open()}>

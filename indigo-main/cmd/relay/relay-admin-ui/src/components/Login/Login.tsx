@@ -1,57 +1,57 @@
-import React, {useState} from 'react'
-import {useNavigate} from 'react-router-dom'
-import {RELAY_HOST} from '../../constants'
-import Notification, {NotificationMeta} from '../Notification/Notification'
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { RELAY_HOST } from "../../constants";
+import Notification, { NotificationMeta } from "../Notification/Notification";
 
 export default function Login() {
-  const [token, setToken] = useState('')
-  const navigate = useNavigate()
+  const [token, setToken] = useState("");
+  const navigate = useNavigate();
 
   // Notification Management
   const [shouldShowNotification, setShouldShowNotification] =
-    useState<boolean>(false)
+    useState<boolean>(false);
   const [notification, setNotification] = useState<NotificationMeta>({
-    message: '',
-    alertType: '',
-  })
+    message: "",
+    alertType: "",
+  });
 
   const handleSaveToken = (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     if (token) {
       // Try to make a request to the Admin API to verify the token
       fetch(`${RELAY_HOST}/admin/pds/list`, {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
           //Authorization: `Bearer ${token}`,
-          Authorization: `Basic ` + btoa('admin:' + token),
+          Authorization: `Basic ` + btoa("admin:" + token),
         },
       })
-        .then(res => {
+        .then((res) => {
           if (res.status !== 200) {
             setNotification({
               message: `Failed to validate Admin Token: Status ${res.status}`,
-              alertType: 'failure',
+              alertType: "failure",
               autodismiss: true,
-            })
-            setShouldShowNotification(true)
-            return
+            });
+            setShouldShowNotification(true);
+            return;
           }
-          localStorage.setItem('admin_route_token', token)
-          setToken('')
-          navigate('/')
+          localStorage.setItem("admin_route_token", token);
+          setToken("");
+          navigate("/");
         })
-        .catch(err => {
+        .catch((err) => {
           setNotification({
             message: `Failed to validate Admin Token: ${err}`,
-            alertType: 'failure',
+            alertType: "failure",
             autodismiss: true,
-          })
-          setShouldShowNotification(true)
-        })
+          });
+          setShouldShowNotification(true);
+        });
     }
-  }
+  };
 
   return (
     <>
@@ -65,10 +65,11 @@ export default function Login() {
                 subMessage={notification.subMessage}
                 autodismiss={notification.autodismiss}
                 unshow={() => {
-                  setShouldShowNotification(false)
-                  setNotification({message: '', alertType: ''})
+                  setShouldShowNotification(false);
+                  setNotification({ message: "", alertType: "" });
                 }}
-                show={shouldShowNotification}></Notification>
+                show={shouldShowNotification}
+              ></Notification>
             ) : (
               <></>
             )}
@@ -83,7 +84,8 @@ export default function Login() {
             <div>
               <label
                 htmlFor="token"
-                className="block text-sm font-medium leading-6 text-gray-900">
+                className="block text-sm font-medium leading-6 text-gray-900"
+              >
                 Access Token
               </label>
               <div className="mt-2">
@@ -92,7 +94,7 @@ export default function Login() {
                   name="token"
                   type="password"
                   value={token}
-                  onChange={e => setToken(e.target.value)}
+                  onChange={(e) => setToken(e.target.value)}
                   required
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
@@ -102,7 +104,8 @@ export default function Login() {
             <div>
               <button
                 type="submit"
-                className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+                className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              >
                 Set Token
               </button>
             </div>
@@ -110,5 +113,5 @@ export default function Login() {
         </div>
       </div>
     </>
-  )
+  );
 }

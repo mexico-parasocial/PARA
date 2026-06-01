@@ -37,9 +37,9 @@ import {useCabildeosQuery} from '#/state/queries/cabildeo'
 import {atoms as a, useTheme} from '#/alf'
 import * as Dialog from '#/components/Dialog'
 import {EmptyStateError} from '#/components/EmptyStates'
+import {CircleInfo_Stroke2_Corner0_Rounded as InfoIcon} from '#/components/icons/CircleInfo'
 import {CommunityIcon_Stroke as Community} from '#/components/icons/Community'
 import {Globe_Stroke2_Corner0_Rounded as GlobeIcon} from '#/components/icons/Globe'
-import {CircleInfo_Stroke2_Corner0_Rounded as InfoIcon} from '#/components/icons/CircleInfo'
 import {Megaphone_Stroke2_Corner0_Rounded as MegaphoneIcon} from '#/components/icons/Megaphone'
 import {Tree_Stroke2_Corner0_Rounded as TreeIcon} from '#/components/icons/Tree'
 import * as Layout from '#/components/Layout'
@@ -510,42 +510,6 @@ function LobbyingFocusCard({
   )
 }
 
-/** Section header with title and optional action */
-function SectionHeader({
-  title,
-  actionLabel,
-  onAction,
-}: {
-  title: string
-  actionLabel?: string
-  onAction?: () => void
-}) {
-  const t = useTheme()
-  return (
-    <View style={styles.sectionHeader}>
-      <Text
-        style={[
-          t.atoms.text,
-          {
-            fontSize: 14,
-            fontWeight: '900',
-            textTransform: 'uppercase',
-            letterSpacing: 1,
-          },
-        ]}>
-        {title}
-      </Text>
-      {actionLabel && onAction && (
-        <Pressable accessibilityRole="button" onPress={onAction}>
-          <Text style={[styles.sectionAction, {color: t.palette.primary_500}]}>
-            {actionLabel}
-          </Text>
-        </Pressable>
-      )}
-    </View>
-  )
-}
-
 /** Community Directory card */
 function CommunityDirectoryCard({onPress}: {onPress: () => void}) {
   const t = useTheme()
@@ -867,9 +831,10 @@ function LobbyingSection({
 
       <Dialog.Outer control={infoDialogControl}>
         <Dialog.Handle />
-        <Dialog.ScrollableInner
-          accessibilityDescribedBy="lobbying-info"
-          accessibilityLabel={_(msg`Lobbying Information`)}>
+          <Dialog.ScrollableInner
+            accessibilityDescribedBy="lobbying-info"
+            accessibilityHint={_(msg`Shows information about lobbying.`)}
+            accessibilityLabel={_(msg`Lobbying Information`)}>
           <View style={a.gap_md}>
             <Text style={[a.text_2xl, a.font_bold, t.atoms.text]}>
               <Trans>Lobbying</Trans>

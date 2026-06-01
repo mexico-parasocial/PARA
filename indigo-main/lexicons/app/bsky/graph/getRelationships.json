@@ -31,7 +31,7 @@
           "type": "object",
           "required": ["relationships"],
           "properties": {
-            "actor": {"type": "string", "format": "did"},
+            "actor": { "type": "string", "format": "did" },
             "relationships": {
               "type": "array",
               "items": {

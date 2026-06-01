@@ -65,6 +65,7 @@ function LightboxContainer({
   children: React.ReactNode
   handleBackgroundPress: () => void
 }) {
+  const {t: l} = useLingui()
   FocusGuards.useFocusGuards()
   return (
     <Pressable
@@ -254,38 +255,17 @@ function LightboxGallery({
       )}
       <Menu.Root>
         <Menu.Trigger label={l`Image options`}>
-          {({props}) => {
-            // Filter out React Native specific props that don't exist on HTML button
-            const {
-              onPress,
-              onPressIn,
-              onPressOut,
-              accessibilityRole,
-              accessibilityLabel,
-              accessibilityHint,
-              onPointerDown,
-              ...htmlProps
-            } = props as Record<string, unknown>
-            return (
-              <button
-                {...(htmlProps as Record<string, unknown>)}
-                aria-label={accessibilityLabel}
-                aria-describedby={accessibilityHint}
-                onClick={onPress}
-                style={flatten([
-                  a.absolute,
-                  styles.menuBtn,
-                  delayedFadeInAnim,
-                  {background: 'none', border: 'none', padding: 0, cursor: 'pointer'},
-                ])}>
-                <CircleChromeButton
-                  icon={EllipsisIcon}
-                  iconStyle={{transform: [{rotate: '90deg'}]}}
-                  label={l`Image options`}
-                />
-              </button>
-            )
-          }}
+          {({props}) => (
+            <View style={[a.absolute, styles.menuBtn, delayedFadeInAnim]}>
+              <CircleChromeButton
+                {...props}
+                accessible={false}
+                icon={EllipsisIcon}
+                iconStyle={{transform: [{rotate: '90deg'}]}}
+                label={l`Image options`}
+              />
+            </View>
+          )}
         </Menu.Trigger>
         <Menu.Outer>
           <Menu.Group>

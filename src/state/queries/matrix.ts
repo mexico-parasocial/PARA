@@ -1,5 +1,7 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
+import {matrixBridgeFetch} from '#/lib/matrix/bridge'
+
 const BRIDGE_API_URL =
   process.env.EXPO_PUBLIC_MATRIX_BRIDGE_URL || 'https://bridge.para.social'
 
@@ -17,7 +19,25 @@ interface MatrixTokenResponse {
 
 interface UnreadResponse {
   unread: number
-  communities: {roomId: string; communityUri: string; slug: string; unread: number}[]
+  communities: MatrixRoomSummary[]
+}
+
+export type MatrixRoomKind = 'main' | 'chamber-a' | 'chamber-b' | 'observers'
+
+export interface MatrixRoomSummary {
+  roomId: string
+  communityUri: string
+  slug: string
+  unread: number
+  kind: MatrixRoomKind
+}
+
+async function getBridgeErrorMessage(
+  res: Response,
+  fallback: string,
+): Promise<string> {
+  const err = (await res.json().catch(() => ({}))) as {error?: string}
+  return err.error || `${fallback}: ${res.status}`
 }
 
 export type SortitionEligibilityFilter = 'all' | 'verified' | 'senior'
@@ -64,12 +84,11 @@ export function useCommunitySpaceQuery(communityUri: string | undefined) {
     queryKey: ['matrix-space', communityUri],
     queryFn: async () => {
       if (!communityUri) throw new Error('No community URI')
-      const res = await fetch(
-        `${BRIDGE_API_URL}/api/space-for-community?uri=${encodeURIComponent(communityUri)}`,
+      const res = await matrixBridgeFetch(
+        `/api/space-for-community?uri=${encodeURIComponent(communityUri)}`,
       )
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `Failed to fetch space: ${res.status}`)
+        throw new Error(await getBridgeErrorMessage(res, 'Failed to fetch space'))
       }
       return res.json()
     },
@@ -78,86 +97,95 @@ export function useCommunitySpaceQuery(communityUri: string | undefined) {
   })
 }
 
-export function useMatrixTokenQuery(did: string | undefined) {
+export function useMatrixTokenQuery({enabled = true}: {enabled?: boolean} = {}) {
   return useQuery<MatrixTokenResponse>({
-    queryKey: ['matrix-token', did],
+    queryKey: ['matrix-token'],
     queryFn: async () => {
-      if (!did) throw new Error('No DID')
-      const res = await fetch(`${BRIDGE_API_URL}/api/matrix-token`, {
+      const res = await matrixBridgeFetch('/api/matrix-token', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({did}),
       })
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `Failed to fetch token: ${res.status}`)
+        throw new Error(await getBridgeErrorMessage(res, 'Failed to fetch token'))
       }
       return res.json()
     },
-    enabled: !!did,
+    enabled,
     staleTime: 1000 * 60 * 60, // 1 hour — tokens are long-lived in Synapse
   })
 }
 
-export function useUnreadCountQuery(did: string | undefined) {
+export function useUnreadCountQuery({enabled = true}: {enabled?: boolean} = {}) {
   return useQuery<UnreadResponse>({
-    queryKey: ['matrix-unread', did],
+    queryKey: ['matrix-unread'],
     queryFn: async () => {
-      if (!did) throw new Error('No DID')
-      const res = await fetch(
-        `${BRIDGE_API_URL}/api/unread?did=${encodeURIComponent(did)}`,
-      )
+      const res = await matrixBridgeFetch('/api/unread')
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `Failed to fetch unread: ${res.status}`)
+        throw new Error(await getBridgeErrorMessage(res, 'Failed to fetch unread'))
       }
       return res.json()
     },
-    enabled: !!did,
+    enabled,
     refetchInterval: 1000 * 60 * 2, // Poll every 2 minutes
   })
 }
 
+export function useMatrixRoomsQuery({
+  enabled = true,
+}: {enabled?: boolean} = {}) {
+  return useQuery<{rooms: MatrixRoomSummary[]}>({
+    queryKey: ['matrix-rooms'],
+    queryFn: async () => {
+      const res = await matrixBridgeFetch('/api/rooms')
+      if (!res.ok) {
+        throw new Error(await getBridgeErrorMessage(res, 'Failed to fetch rooms'))
+      }
+      return res.json()
+    },
+    enabled,
+    staleTime: 1000 * 60,
+  })
+}
+
 interface MarkReadInput {
-  did: string
   roomId: string
   eventId?: string
 }
 
 export function useMarkMatrixReadMutation() {
+  const queryClient = useQueryClient()
+
   return useMutation<void, Error, MarkReadInput>({
-    mutationFn: async ({did, roomId, eventId}) => {
-      const res = await fetch(`${BRIDGE_API_URL}/api/mark-read`, {
+    mutationFn: async ({roomId, eventId}) => {
+      const res = await matrixBridgeFetch('/api/mark-read', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({did, roomId, eventId}),
+        body: JSON.stringify({roomId, eventId}),
       })
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `Failed to mark read: ${res.status}`)
+        throw new Error(await getBridgeErrorMessage(res, 'Failed to mark read'))
       }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({queryKey: ['matrix-unread']})
+      void queryClient.invalidateQueries({queryKey: ['matrix-rooms']})
     },
   })
 }
 
 interface RegisterPushTokenInput {
-  did: string
   expoPushToken: string
   platform: string
 }
 
 export function useRegisterMatrixPushTokenMutation() {
   return useMutation<void, Error, RegisterPushTokenInput>({
-    mutationFn: async ({did, expoPushToken, platform}) => {
-      const res = await fetch(`${BRIDGE_API_URL}/api/push-token`, {
+    mutationFn: async ({expoPushToken, platform}) => {
+      const res = await matrixBridgeFetch('/api/push-token', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({did, expoPushToken, platform}),
+        body: JSON.stringify({expoPushToken, platform}),
       })
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
         throw new Error(
-          err.error || `Failed to register push token: ${res.status}`,
+          await getBridgeErrorMessage(res, 'Failed to register push token'),
         )
       }
     },

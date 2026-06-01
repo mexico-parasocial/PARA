@@ -20,7 +20,7 @@
             "maximum": 100,
             "default": 50
           },
-          "cursor": {"type": "string"}
+          "cursor": { "type": "string" }
         }
       },
       "output": {
@@ -29,8 +29,8 @@
           "type": "object",
           "required": ["list", "items"],
           "properties": {
-            "cursor": {"type": "string"},
-            "list": {"type": "ref", "ref": "app.bsky.graph.defs#listView"},
+            "cursor": { "type": "string" },
+            "list": { "type": "ref", "ref": "app.bsky.graph.defs#listView" },
             "items": {
               "type": "array",
               "items": {

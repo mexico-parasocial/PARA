@@ -11,7 +11,7 @@ import {
 import {Trans} from '@lingui/react/macro'
 import {useQueryClient} from '@tanstack/react-query'
 
-import {makePostThreadLink} from '#/lib/routes/links'
+import {makeProfileLink} from '#/lib/routes/links'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
 import {unstableCacheProfileView} from '#/state/queries/profile'
 import {useSession} from '#/state/session'
@@ -19,8 +19,11 @@ import {Link} from '#/view/com/util/Link'
 import {PostMeta} from '#/view/com/util/PostMeta'
 import {atoms as a, useTheme} from '#/alf'
 import {useInteractionState} from '#/components/hooks/useInteractionState'
+import {GalleryBleed} from '#/components/images/Gallery'
 import {ContentHider} from '#/components/moderation/ContentHider'
 import {PostAlerts} from '#/components/moderation/PostAlerts'
+import {StandardSiteEmbed} from '#/components/Post/Embed/StandardSiteEmbed'
+import {isStandardSiteEmbed} from '#/components/Post/Embed/StandardSiteEmbed/utils'
 import {RichText} from '#/components/RichText'
 import {Embed as StarterPackCard} from '#/components/StarterPack/StarterPackCard'
 import {SubtleHover} from '#/components/SubtleHover'
@@ -35,17 +38,14 @@ import {ModeratedFeedEmbed} from './FeedEmbed'
 import {ImageEmbed} from './ImageEmbed'
 import {ModeratedListEmbed} from './ListEmbed'
 import {PostPlaceholder as PostPlaceholderText} from './PostPlaceholder'
-import {StandardSiteEmbed} from './StandardSiteEmbed'
-import {isStandardSiteEmbed} from './StandardSiteEmbed/utils'
 import {
   type CommonProps,
   type EmbedProps,
-  PostEmbedViewContext,
-  QuoteEmbedViewContext,
+  type PostEmbedViewContext,
 } from './types'
 import {VideoEmbed} from './VideoEmbed'
 
-export {PostEmbedViewContext, QuoteEmbedViewContext} from './types'
+export {PostEmbedViewContext} from './types'
 
 export function Embed({embed: rawEmbed, ...rest}: EmbedProps) {
   const embed = parseEmbed(rawEmbed)
@@ -97,23 +97,28 @@ function MediaEmbed({
       )
     }
     case 'link': {
+      if (isStandardSiteEmbed(embed.view.external)) {
+        return (
+          <ContentHider
+            modui={rest.moderation?.ui('contentMedia')}
+            activeStyle={[a.mt_sm]}>
+            <StandardSiteEmbed
+              view={embed.view.external}
+              onEmbedInteractionCallback={rest.onOpen}
+              style={[a.mt_sm, rest.style]}
+            />
+          </ContentHider>
+        )
+      }
       return (
         <ContentHider
           modui={rest.moderation?.ui('contentMedia')}
           activeStyle={[a.mt_sm]}>
-          {isStandardSiteEmbed(embed.view.external) ? (
-            <StandardSiteEmbed
-              view={embed.view.external}
-              onOpen={rest.onOpen}
-              style={[a.mt_sm, rest.style]}
-            />
-          ) : (
-            <ExternalEmbed
-              link={embed.view.external}
-              onOpen={rest.onOpen}
-              style={[a.mt_sm, rest.style]}
-            />
-          )}
+          <ExternalEmbed
+            link={embed.view.external}
+            onOpen={rest.onOpen}
+            style={[a.mt_sm, rest.style]}
+          />
         </ContentHider>
       )
     }
@@ -173,11 +178,7 @@ function RecordEmbed({
         <QuoteEmbed
           {...rest}
           embed={embed}
-          viewContext={
-            rest.viewContext === PostEmbedViewContext.Feed
-              ? QuoteEmbedViewContext.FeedEmbedRecordWithMedia
-              : undefined
-          }
+          viewContext={rest.viewContext}
           isWithinQuote={rest.isWithinQuote}
           allowNestedQuotes={rest.allowNestedQuotes}
         />
@@ -235,11 +236,14 @@ export function QuoteEmbed({
   embed,
   onOpen,
   style,
+  linkDisabled,
   isWithinQuote: parentIsWithinQuote,
   allowNestedQuotes: parentAllowNestedQuotes,
+  viewContext,
 }: Omit<CommonProps, 'viewContext'> & {
   embed: EmbedType<'post'>
-  viewContext?: QuoteEmbedViewContext
+  viewContext?: PostEmbedViewContext
+  linkDisabled?: boolean
 }) {
   const moderationOpts = useModerationOpts()
   const quote = useMemo<$Typed<AppBskyFeedDefs.PostView>>(
@@ -258,11 +262,7 @@ export function QuoteEmbed({
   const t = useTheme()
   const queryClient = useQueryClient()
   const itemUrip = new AtUri(quote.uri)
-  const itemHref = makePostThreadLink(
-    quote.author,
-    itemUrip.rkey,
-    itemUrip.collection,
-  )
+  const itemHref = makeProfileLink(quote.author, 'post', itemUrip.rkey)
   const itemTitle = `Post by ${quote.author.handle}`
 
   const richText = useMemo(() => {
@@ -294,71 +294,83 @@ export function QuoteEmbed({
     onIn: onPressIn,
     onOut: onPressOut,
   } = useInteractionState()
+
+  const contents = (
+    <>
+      <PostMeta
+        author={quote.author}
+        moderation={moderation}
+        showAvatar
+        postHref={itemHref}
+        timestamp={quote.indexedAt}
+        linkDisabled
+      />
+      {moderation ? (
+        <PostAlerts modui={moderation.ui('contentView')} style={[a.py_xs]} />
+      ) : null}
+      {richText ? (
+        <RichText
+          value={richText}
+          style={a.text_md}
+          numberOfLines={20}
+          disableLinks
+        />
+      ) : null}
+      {quote.embed && (
+        <Embed
+          embed={quote.embed}
+          moderation={moderation}
+          viewContext={viewContext}
+          isWithinQuote={parentIsWithinQuote ?? true}
+          // already within quote? override nested
+          allowNestedQuotes={
+            parentIsWithinQuote ? false : parentAllowNestedQuotes
+          }
+        />
+      )}
+    </>
+  )
+
   return (
-    <View
-      style={[a.mt_sm]}
-      onPointerEnter={onPointerEnter}
-      onPointerLeave={onPointerLeave}>
-      <ContentHider
-        modui={moderation?.ui('contentList')}
-        style={[a.rounded_md, a.border, t.atoms.border_contrast_low, style]}
-        activeStyle={[a.p_md, a.pt_sm]}
-        childContainerStyle={[a.pt_sm]}>
-        {({active}) => (
-          <>
-            {!active && (
-              <SubtleHover
-                native
-                hover={hover || pressed}
-                style={[a.rounded_md]}
-              />
-            )}
-            <Link
-              style={[!active && a.p_md]}
-              hoverStyle={t.atoms.border_contrast_high}
-              href={itemHref}
-              title={itemTitle}
-              onBeforePress={onBeforePress}
-              onPressIn={onPressIn}
-              onPressOut={onPressOut}>
-              <View pointerEvents="none">
-                <PostMeta
-                  author={quote.author}
-                  moderation={moderation}
-                  showAvatar
-                  postHref={itemHref}
-                  timestamp={quote.indexedAt}
-                />
-              </View>
-              {moderation ? (
-                <PostAlerts
-                  modui={moderation.ui('contentView')}
-                  style={[a.py_xs]}
-                />
-              ) : null}
-              {richText ? (
-                <RichText
-                  value={richText}
-                  style={a.text_md}
-                  numberOfLines={20}
-                  disableLinks
-                />
-              ) : null}
-              {quote.embed && (
-                <Embed
-                  embed={quote.embed}
-                  moderation={moderation}
-                  isWithinQuote={parentIsWithinQuote ?? true}
-                  // already within quote? override nested
-                  allowNestedQuotes={
-                    parentIsWithinQuote ? false : parentAllowNestedQuotes
-                  }
+    <GalleryBleed>
+      <View
+        style={[a.mt_sm]}
+        onPointerEnter={linkDisabled ? undefined : onPointerEnter}
+        onPointerLeave={linkDisabled ? undefined : onPointerLeave}>
+        <ContentHider
+          modui={moderation?.ui('contentList')}
+          style={[a.rounded_md, a.border, t.atoms.border_contrast_low, style]}
+          activeStyle={[a.p_md, a.pt_sm]}
+          childContainerStyle={[a.pt_sm]}>
+          {({active}) => (
+            <>
+              {!active && !linkDisabled && (
+                <SubtleHover
+                  native
+                  hover={hover || pressed}
+                  style={[a.rounded_md]}
                 />
               )}
-            </Link>
-          </>
-        )}
-      </ContentHider>
-    </View>
+              {linkDisabled ? (
+                <View style={[!active && a.p_md]} pointerEvents="none">
+                  {contents}
+                </View>
+              ) : (
+                <Link
+                  style={[!active && a.p_md]}
+                  hoverStyle={t.atoms.border_contrast_high}
+                  href={itemHref}
+                  title={itemTitle}
+                  onBeforePress={onBeforePress}
+                  onPressIn={onPressIn}
+                  onPressOut={onPressOut}>
+                  {contents}
+                </Link>
+              )}
+            </>
+          )}
+        </ContentHider>
+      </View>
+    </GalleryBleed>
   )
 }

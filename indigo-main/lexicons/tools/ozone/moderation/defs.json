@@ -13,7 +13,7 @@
         "createdAt"
       ],
       "properties": {
-        "id": {"type": "integer"},
+        "id": { "type": "integer" },
         "event": {
           "type": "union",
           "refs": [
@@ -38,6 +38,7 @@
             "#modEventPriorityScore",
             "#ageAssuranceEvent",
             "#ageAssuranceOverrideEvent",
+            "#ageAssurancePurgeEvent",
             "#revokeAccountCredentialsEvent",
             "#scheduleTakedownEvent",
             "#cancelScheduledTakedownEvent"
@@ -48,15 +49,16 @@
           "refs": [
             "com.atproto.admin.defs#repoRef",
             "com.atproto.repo.strongRef",
-            "chat.bsky.convo.defs#messageRef"
+            "chat.bsky.convo.defs#messageRef",
+            "chat.bsky.convo.defs#convoRef"
           ]
         },
-        "subjectBlobCids": {"type": "array", "items": {"type": "string"}},
-        "createdBy": {"type": "string", "format": "did"},
-        "createdAt": {"type": "string", "format": "datetime"},
-        "creatorHandle": {"type": "string"},
-        "subjectHandle": {"type": "string"},
-        "modTool": {"type": "ref", "ref": "#modTool"}
+        "subjectBlobCids": { "type": "array", "items": { "type": "string" } },
+        "createdBy": { "type": "string", "format": "did" },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "creatorHandle": { "type": "string" },
+        "subjectHandle": { "type": "string" },
+        "modTool": { "type": "ref", "ref": "#modTool" }
       }
     },
     "modEventViewDetail": {
@@ -70,7 +72,7 @@
         "createdAt"
       ],
       "properties": {
-        "id": {"type": "integer"},
+        "id": { "type": "integer" },
         "event": {
           "type": "union",
           "refs": [
@@ -95,6 +97,7 @@
             "#modEventPriorityScore",
             "#ageAssuranceEvent",
             "#ageAssuranceOverrideEvent",
+            "#ageAssurancePurgeEvent",
             "#revokeAccountCredentialsEvent",
             "#scheduleTakedownEvent",
             "#cancelScheduledTakedownEvent"
@@ -106,29 +109,31 @@
             "#repoView",
             "#repoViewNotFound",
             "#recordView",
-            "#recordViewNotFound"
+            "#recordViewNotFound",
+            "#convoView"
           ]
         },
         "subjectBlobs": {
           "type": "array",
-          "items": {"type": "ref", "ref": "#blobView"}
+          "items": { "type": "ref", "ref": "#blobView" }
         },
-        "createdBy": {"type": "string", "format": "did"},
-        "createdAt": {"type": "string", "format": "datetime"},
-        "modTool": {"type": "ref", "ref": "#modTool"}
+        "createdBy": { "type": "string", "format": "did" },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "modTool": { "type": "ref", "ref": "#modTool" }
       }
     },
     "subjectStatusView": {
       "type": "object",
       "required": ["id", "subject", "createdAt", "updatedAt", "reviewState"],
       "properties": {
-        "id": {"type": "integer"},
+        "id": { "type": "integer" },
         "subject": {
           "type": "union",
           "refs": [
             "com.atproto.admin.defs#repoRef",
             "com.atproto.repo.strongRef",
-            "chat.bsky.convo.defs#messageRef"
+            "chat.bsky.convo.defs#messageRef",
+            "chat.bsky.convo.defs#convoRef"
           ]
         },
         "hosting": {
@@ -137,9 +142,9 @@
         },
         "subjectBlobCids": {
           "type": "array",
-          "items": {"type": "string", "format": "cid"}
+          "items": { "type": "string", "format": "cid" }
         },
-        "subjectRepoHandle": {"type": "string"},
+        "subjectRepoHandle": { "type": "string" },
         "updatedAt": {
           "type": "string",
           "format": "datetime",
@@ -202,7 +207,7 @@
         },
         "tags": {
           "type": "array",
-          "items": {"type": "string"}
+          "items": { "type": "string" }
         },
         "accountStats": {
           "description": "Statistics related to the account subject",
@@ -352,10 +357,10 @@
     "subjectReviewState": {
       "type": "string",
       "knownValues": [
-        "#reviewOpen",
-        "#reviewEscalated",
-        "#reviewClosed",
-        "#reviewNone"
+        "tools.ozone.moderation.defs#reviewOpen",
+        "tools.ozone.moderation.defs#reviewEscalated",
+        "tools.ozone.moderation.defs#reviewClosed",
+        "tools.ozone.moderation.defs#reviewNone"
       ]
     },
     "reviewOpen": {
@@ -392,7 +397,7 @@
         "policies": {
           "type": "array",
           "maxLength": 5,
-          "items": {"type": "string"},
+          "items": { "type": "string" },
           "description": "Names/Keywords of the policies that drove the decision."
         },
         "severityLevel": {
@@ -401,7 +406,7 @@
         },
         "targetServices": {
           "type": "array",
-          "items": {"type": "string", "knownValues": ["appview", "pds"]},
+          "items": { "type": "string", "knownValues": ["appview", "pds"] },
           "description": "List of services where the takedown should be applied. If empty or not provided, takedown is applied on all configured services."
         },
         "strikeCount": {
@@ -426,7 +431,7 @@
         "policies": {
           "type": "array",
           "maxLength": 5,
-          "items": {"type": "string"},
+          "items": { "type": "string" },
           "description": "Names/Keywords of the policy infraction for which takedown is being reversed."
         },
         "severityLevel": {
@@ -490,11 +495,11 @@
         },
         "createLabelVals": {
           "type": "array",
-          "items": {"type": "string"}
+          "items": { "type": "string" }
         },
         "negateLabelVals": {
           "type": "array",
-          "items": {"type": "string"}
+          "items": { "type": "string" }
         },
         "durationInHours": {
           "type": "integer",
@@ -582,7 +587,20 @@
         },
         "comment": {
           "type": "string",
+          "minLength": 1,
           "description": "Comment describing the reason for the override."
+        }
+      }
+    },
+    "ageAssurancePurgeEvent": {
+      "type": "object",
+      "description": "Purges all age assurance events for the subject. Only works on DID subjects. Moderator-only.",
+      "required": ["comment"],
+      "properties": {
+        "comment": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Comment describing the reason for the purge."
         }
       }
     },
@@ -592,6 +610,7 @@
       "required": ["comment"],
       "properties": {
         "comment": {
+          "minLength": 1,
           "type": "string",
           "description": "Comment describing the reason for the revocation."
         }
@@ -600,7 +619,7 @@
     "modEventAcknowledge": {
       "type": "object",
       "properties": {
-        "comment": {"type": "string"},
+        "comment": { "type": "string" },
         "acknowledgeAccountSubjects": {
           "type": "boolean",
           "description": "If true, all other reports on content authored by this account will be resolved (acknowledged)."
@@ -610,7 +629,7 @@
     "modEventEscalate": {
       "type": "object",
       "properties": {
-        "comment": {"type": "string"}
+        "comment": { "type": "string" }
       }
     },
     "modEventMute": {
@@ -618,7 +637,7 @@
       "description": "Mute incoming reports on a subject",
       "required": ["durationInHours"],
       "properties": {
-        "comment": {"type": "string"},
+        "comment": { "type": "string" },
         "durationInHours": {
           "type": "integer",
           "description": "Indicates how long the subject should remain muted."
@@ -639,7 +658,7 @@
       "type": "object",
       "description": "Mute incoming reports from an account",
       "properties": {
-        "comment": {"type": "string"},
+        "comment": { "type": "string" },
         "durationInHours": {
           "type": "integer",
           "description": "Indicates how long the account should remain muted. Falsy value here means a permanent mute."
@@ -676,7 +695,7 @@
         "policies": {
           "type": "array",
           "maxLength": 5,
-          "items": {"type": "string"},
+          "items": { "type": "string" },
           "description": "Names/Keywords of the policies that necessitated the email."
         },
         "severityLevel": {
@@ -702,7 +721,7 @@
       "type": "object",
       "description": "Divert a record's blobs to a 3rd party service for further scanning/tagging",
       "properties": {
-        "comment": {"type": "string"}
+        "comment": { "type": "string" }
       }
     },
     "modEventTag": {
@@ -712,17 +731,21 @@
       "properties": {
         "add": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": { "type": "string" },
           "description": "Tags to be added to the subject. If already exists, won't be duplicated."
         },
         "remove": {
           "type": "array",
-          "items": {"type": "string"},
+          "items": { "type": "string" },
           "description": "Tags to be removed to the subject. Ignores a tag If it doesn't exist, won't be duplicated."
         },
         "comment": {
           "type": "string",
           "description": "Additional comment about added/removed tags."
+        },
+        "durationInHours": {
+          "type": "integer",
+          "description": "Indicates how long the tags being added should remain before automatically being removed. Only applies to tags being added."
         }
       }
     },
@@ -731,7 +754,7 @@
       "description": "Logs account status related events on a repo subject. Normally captured by automod from the firehose and emitted to ozone for historical tracking.",
       "required": ["timestamp", "active"],
       "properties": {
-        "comment": {"type": "string"},
+        "comment": { "type": "string" },
         "active": {
           "type": "boolean",
           "description": "Indicates that the account has a repository which can be fetched from the host that emitted this event."
@@ -758,10 +781,10 @@
       "description": "Logs identity related events on a repo subject. Normally captured by automod from the firehose and emitted to ozone for historical tracking.",
       "required": ["timestamp"],
       "properties": {
-        "comment": {"type": "string"},
-        "handle": {"type": "string", "format": "handle"},
-        "pdsHost": {"type": "string", "format": "uri"},
-        "tombstone": {"type": "boolean"},
+        "comment": { "type": "string" },
+        "handle": { "type": "string", "format": "handle" },
+        "pdsHost": { "type": "string", "format": "uri" },
+        "tombstone": { "type": "boolean" },
         "timestamp": {
           "type": "string",
           "format": "datetime"
@@ -773,30 +796,30 @@
       "description": "Logs lifecycle event on a record subject. Normally captured by automod from the firehose and emitted to ozone for historical tracking.",
       "required": ["timestamp", "op"],
       "properties": {
-        "comment": {"type": "string"},
+        "comment": { "type": "string" },
         "op": {
           "type": "string",
           "knownValues": ["create", "update", "delete"]
         },
-        "cid": {"type": "string", "format": "cid"},
-        "timestamp": {"type": "string", "format": "datetime"}
+        "cid": { "type": "string", "format": "cid" },
+        "timestamp": { "type": "string", "format": "datetime" }
       }
     },
     "scheduleTakedownEvent": {
       "type": "object",
       "description": "Logs a scheduled takedown action for an account.",
       "properties": {
-        "comment": {"type": "string"},
-        "executeAt": {"type": "string", "format": "datetime"},
-        "executeAfter": {"type": "string", "format": "datetime"},
-        "executeUntil": {"type": "string", "format": "datetime"}
+        "comment": { "type": "string" },
+        "executeAt": { "type": "string", "format": "datetime" },
+        "executeAfter": { "type": "string", "format": "datetime" },
+        "executeUntil": { "type": "string", "format": "datetime" }
       }
     },
     "cancelScheduledTakedownEvent": {
       "type": "object",
       "description": "Logs cancellation of a scheduled takedown action for an account.",
       "properties": {
-        "comment": {"type": "string"}
+        "comment": { "type": "string" }
       }
     },
     "repoView": {
@@ -809,19 +832,19 @@
         "moderation"
       ],
       "properties": {
-        "did": {"type": "string", "format": "did"},
-        "handle": {"type": "string", "format": "handle"},
-        "email": {"type": "string"},
-        "relatedRecords": {"type": "array", "items": {"type": "unknown"}},
-        "indexedAt": {"type": "string", "format": "datetime"},
-        "moderation": {"type": "ref", "ref": "#moderation"},
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string", "format": "handle" },
+        "email": { "type": "string" },
+        "relatedRecords": { "type": "array", "items": { "type": "unknown" } },
+        "indexedAt": { "type": "string", "format": "datetime" },
+        "moderation": { "type": "ref", "ref": "#moderation" },
         "invitedBy": {
           "type": "ref",
           "ref": "com.atproto.server.defs#inviteCode"
         },
-        "invitesDisabled": {"type": "boolean"},
-        "inviteNote": {"type": "string"},
-        "deactivatedAt": {"type": "string", "format": "datetime"},
+        "invitesDisabled": { "type": "boolean" },
+        "inviteNote": { "type": "string" },
+        "deactivatedAt": { "type": "string", "format": "datetime" },
         "threatSignatures": {
           "type": "array",
           "items": {
@@ -841,15 +864,15 @@
         "moderation"
       ],
       "properties": {
-        "did": {"type": "string", "format": "did"},
-        "handle": {"type": "string", "format": "handle"},
-        "email": {"type": "string"},
-        "relatedRecords": {"type": "array", "items": {"type": "unknown"}},
-        "indexedAt": {"type": "string", "format": "datetime"},
-        "moderation": {"type": "ref", "ref": "#moderationDetail"},
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string", "format": "handle" },
+        "email": { "type": "string" },
+        "relatedRecords": { "type": "array", "items": { "type": "unknown" } },
+        "indexedAt": { "type": "string", "format": "datetime" },
+        "moderation": { "type": "ref", "ref": "#moderationDetail" },
         "labels": {
           "type": "array",
-          "items": {"type": "ref", "ref": "com.atproto.label.defs#label"}
+          "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
         },
         "invitedBy": {
           "type": "ref",
@@ -862,10 +885,10 @@
             "ref": "com.atproto.server.defs#inviteCode"
           }
         },
-        "invitesDisabled": {"type": "boolean"},
-        "inviteNote": {"type": "string"},
-        "emailConfirmedAt": {"type": "string", "format": "datetime"},
-        "deactivatedAt": {"type": "string", "format": "datetime"},
+        "invitesDisabled": { "type": "boolean" },
+        "inviteNote": { "type": "string" },
+        "emailConfirmedAt": { "type": "string", "format": "datetime" },
+        "deactivatedAt": { "type": "string", "format": "datetime" },
         "threatSignatures": {
           "type": "array",
           "items": {
@@ -879,7 +902,7 @@
       "type": "object",
       "required": ["did"],
       "properties": {
-        "did": {"type": "string", "format": "did"}
+        "did": { "type": "string", "format": "did" }
       }
     },
     "recordView": {
@@ -894,16 +917,16 @@
         "repo"
       ],
       "properties": {
-        "uri": {"type": "string", "format": "at-uri"},
-        "cid": {"type": "string", "format": "cid"},
-        "value": {"type": "unknown"},
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "value": { "type": "unknown" },
         "blobCids": {
           "type": "array",
-          "items": {"type": "string", "format": "cid"}
+          "items": { "type": "string", "format": "cid" }
         },
-        "indexedAt": {"type": "string", "format": "datetime"},
-        "moderation": {"type": "ref", "ref": "#moderation"},
-        "repo": {"type": "ref", "ref": "#repoView"}
+        "indexedAt": { "type": "string", "format": "datetime" },
+        "moderation": { "type": "ref", "ref": "#moderation" },
+        "repo": { "type": "ref", "ref": "#repoView" }
       }
     },
     "recordViewDetail": {
@@ -918,33 +941,41 @@
         "repo"
       ],
       "properties": {
-        "uri": {"type": "string", "format": "at-uri"},
-        "cid": {"type": "string", "format": "cid"},
-        "value": {"type": "unknown"},
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "value": { "type": "unknown" },
         "blobs": {
           "type": "array",
-          "items": {"type": "ref", "ref": "#blobView"}
+          "items": { "type": "ref", "ref": "#blobView" }
         },
         "labels": {
           "type": "array",
-          "items": {"type": "ref", "ref": "com.atproto.label.defs#label"}
+          "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
         },
-        "indexedAt": {"type": "string", "format": "datetime"},
-        "moderation": {"type": "ref", "ref": "#moderationDetail"},
-        "repo": {"type": "ref", "ref": "#repoView"}
+        "indexedAt": { "type": "string", "format": "datetime" },
+        "moderation": { "type": "ref", "ref": "#moderationDetail" },
+        "repo": { "type": "ref", "ref": "#repoView" }
       }
     },
     "recordViewNotFound": {
       "type": "object",
       "required": ["uri"],
       "properties": {
-        "uri": {"type": "string", "format": "at-uri"}
+        "uri": { "type": "string", "format": "at-uri" }
+      }
+    },
+    "convoView": {
+      "type": "object",
+      "required": ["did", "convoId"],
+      "properties": {
+        "did": { "type": "string", "format": "did" },
+        "convoId": { "type": "string" }
       }
     },
     "moderation": {
       "type": "object",
       "properties": {
-        "subjectStatus": {"type": "ref", "ref": "#subjectStatusView"}
+        "subjectStatus": { "type": "ref", "ref": "#subjectStatusView" }
       }
     },
     "moderationDetail": {
@@ -960,32 +991,32 @@
       "type": "object",
       "required": ["cid", "mimeType", "size", "createdAt"],
       "properties": {
-        "cid": {"type": "string", "format": "cid"},
-        "mimeType": {"type": "string"},
-        "size": {"type": "integer"},
-        "createdAt": {"type": "string", "format": "datetime"},
+        "cid": { "type": "string", "format": "cid" },
+        "mimeType": { "type": "string" },
+        "size": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "datetime" },
         "details": {
           "type": "union",
           "refs": ["#imageDetails", "#videoDetails"]
         },
-        "moderation": {"type": "ref", "ref": "#moderation"}
+        "moderation": { "type": "ref", "ref": "#moderation" }
       }
     },
     "imageDetails": {
       "type": "object",
       "required": ["width", "height"],
       "properties": {
-        "width": {"type": "integer"},
-        "height": {"type": "integer"}
+        "width": { "type": "integer" },
+        "height": { "type": "integer" }
       }
     },
     "videoDetails": {
       "type": "object",
       "required": ["width", "height", "length"],
       "properties": {
-        "width": {"type": "integer"},
-        "height": {"type": "integer"},
-        "length": {"type": "integer"}
+        "width": { "type": "integer" },
+        "height": { "type": "integer" },
+        "length": { "type": "integer" }
       }
     },
     "accountHosting": {

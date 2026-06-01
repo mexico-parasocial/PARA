@@ -29,9 +29,14 @@ export const RQKEY = (
   status: 'accepted' | 'request' | 'all',
   readState: 'all' | 'unread' = 'all',
   kind: 'all' | 'group' | 'direct' = 'all',
+  lockStatus:
+    | 'unlocked'
+    | 'locked'
+    | 'locked-permanently'
+    | undefined = undefined,
   limit?: number,
-) => [RQKEY_ROOT, status, readState, kind, limit]
-type RQPageParam = string | undefined
+) => [RQKEY_ROOT, status, readState, kind, lockStatus, limit]
+  type RQPageParam = string | undefined
 
 export function useListConvosQuery({
   enabled,
@@ -39,18 +44,20 @@ export function useListConvosQuery({
   readState = 'all',
   kind = 'all',
   limit = DEFAULT_LIMIT,
+  lockStatus,
 }: {
   enabled?: boolean
   status?: 'request' | 'accepted'
   readState?: 'all' | 'unread'
   kind?: 'all' | 'group' | 'direct'
   limit?: number
+  lockStatus?: 'unlocked' | 'locked' | 'locked-permanently'
 } = {}) {
   const agent = useAgent()
 
   return useInfiniteQuery({
     enabled,
-    queryKey: RQKEY(status ?? 'all', readState, kind, limit),
+    queryKey: RQKEY(status ?? 'all', readState, kind, lockStatus, limit),
     queryFn: async ({pageParam}) => {
       const {data} = await agent.chat.bsky.convo.listConvos(
         {
@@ -58,6 +65,7 @@ export function useListConvosQuery({
           cursor: pageParam,
           readState: readState === 'unread' ? 'unread' : undefined,
           kind: kind === 'all' ? undefined : kind,
+          lockStatus,
           status,
         },
         {headers: getAgentDmServiceHeaders(agent)},
@@ -103,7 +111,11 @@ export function ListConvosProviderInner({
 }: {
   children: React.ReactNode
 }) {
-  const {refetch, data} = useListConvosQuery({readState: 'unread', limit: 20})
+  const {refetch, data} = useListConvosQuery({
+    readState: 'unread',
+    limit: UNREAD_LIMIT,
+    lockStatus: 'unlocked',
+  })
   const messagesBus = useMessagesEventBus()
   const queryClient = useQueryClient()
   const {currentConvoId} = useCurrentConvoId()

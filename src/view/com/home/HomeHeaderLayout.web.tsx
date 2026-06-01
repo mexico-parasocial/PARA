@@ -16,6 +16,7 @@ import {Compass_Stroke2_Corner0_Rounded as CompassIcon} from '#/components/icons
 import {Hashtag_Stroke2_Corner0_Rounded as FeedsIcon} from '#/components/icons/Hashtag'
 import * as Layout from '#/components/Layout'
 import {Link} from '#/components/Link'
+import {useAnalytics} from '#/analytics'
 
 export function HomeHeaderLayout(props: {
   children: ReactNode
@@ -41,6 +42,7 @@ function HomeHeaderLayoutDesktopAndTablet({
   const {headerHeight} = useShellLayout()
   const {hasSession} = useSession()
   const {_} = useLingui()
+  const ax = useAnalytics()
   const gutters = useGutters([0, 'base'])
 
   return (
@@ -139,6 +141,9 @@ function HomeHeaderLayoutDesktopAndTablet({
               variant="ghost"
               color="secondary"
               shape="square"
+              onPress={() => {
+                ax.metric('nav:click', {item: 'feeds', surface: 'topBar'})
+              }}
               style={[a.justify_center]}>
               <ButtonIcon icon={FeedsIcon} size="lg" />
             </Link>

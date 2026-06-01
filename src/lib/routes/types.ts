@@ -218,7 +218,7 @@ export type DataTabNavigatorParams = CommonNavigatorParams & {
   MyBase: undefined
   MyAffiliations: undefined
   CommunityProfile: {communityId: string; communityName?: string}
-  CommunityChat: {communityUri: string; communityName: string}
+  CommunityChat: {communityUri: string; communityName: string; roomId?: string}
   CommunityMembers: {communityUri: string; communityName: string}
   ModeratorDashboard: {communityUri: string; communityName: string}
 }
@@ -232,7 +232,7 @@ export type FlatNavigatorParams = CommonNavigatorParams & {
   PartyFeed: {partyId: string}
   Notifications: undefined
   CommunityProfile: {communityId: string; communityName?: string}
-  CommunityChat: {communityUri: string; communityName: string}
+  CommunityChat: {communityUri: string; communityName: string; roomId?: string}
   CommunityRoles: {communityId: string; communityName: string}
   CommunityMembers: {communityUri: string; communityName: string}
   ModeratorDashboard: {communityUri: string; communityName: string}
@@ -291,7 +291,7 @@ export type AllNavigatorParams = CommonNavigatorParams & {
   MyAffiliations: undefined
   CreatePost: undefined
   CommunityProfile: {communityId: string; communityName?: string}
-  CommunityChat: {communityUri: string; communityName: string}
+  CommunityChat: {communityUri: string; communityName: string; roomId?: string}
   CommunityMembers: {communityUri: string; communityName: string}
   ModeratorDashboard: {communityUri: string; communityName: string}
   CommunityRoles: {communityId: string; communityName: string}

@@ -25,7 +25,7 @@
             "maximum": 100,
             "default": 50
           },
-          "cursor": {"type": "string"}
+          "cursor": { "type": "string" }
         }
       },
       "output": {
@@ -34,9 +34,9 @@
           "type": "object",
           "required": ["uri", "repostedBy"],
           "properties": {
-            "uri": {"type": "string", "format": "at-uri"},
-            "cid": {"type": "string", "format": "cid"},
-            "cursor": {"type": "string"},
+            "uri": { "type": "string", "format": "at-uri" },
+            "cid": { "type": "string", "format": "cid" },
+            "cursor": { "type": "string" },
             "repostedBy": {
               "type": "array",
               "items": {

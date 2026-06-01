@@ -9,8 +9,8 @@
         "type": "params",
         "required": ["countryCode"],
         "properties": {
-          "countryCode": {"type": "string"},
-          "regionCode": {"type": "string"}
+          "countryCode": { "type": "string" },
+          "regionCode": { "type": "string" }
         }
       },
       "output": {

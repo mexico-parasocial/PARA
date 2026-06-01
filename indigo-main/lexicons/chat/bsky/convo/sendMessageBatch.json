@@ -4,6 +4,8 @@
   "defs": {
     "main": {
       "type": "procedure",
+      "description": "Sends a batch of messages to a conversation.",
+      "errors": [{ "name": "ConvoLocked" }, { "name": "InvalidConvo" }],
       "input": {
         "encoding": "application/json",
         "schema": {
@@ -42,7 +44,7 @@
       "type": "object",
       "required": ["convoId", "message"],
       "properties": {
-        "convoId": {"type": "string"},
+        "convoId": { "type": "string" },
         "message": {
           "type": "ref",
           "ref": "chat.bsky.convo.defs#messageInput"

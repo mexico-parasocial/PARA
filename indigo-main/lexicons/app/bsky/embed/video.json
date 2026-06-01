@@ -15,7 +15,7 @@
         },
         "captions": {
           "type": "array",
-          "items": {"type": "ref", "ref": "#caption"},
+          "items": { "type": "ref", "ref": "#caption" },
           "maxLength": 20
         },
         "alt": {
@@ -27,6 +27,11 @@
         "aspectRatio": {
           "type": "ref",
           "ref": "app.bsky.embed.defs#aspectRatio"
+        },
+        "presentation": {
+          "type": "string",
+          "description": "A hint to the client about how to present the video.",
+          "knownValues": ["default", "gif"]
         }
       }
     },
@@ -49,9 +54,9 @@
       "type": "object",
       "required": ["cid", "playlist"],
       "properties": {
-        "cid": {"type": "string", "format": "cid"},
-        "playlist": {"type": "string", "format": "uri"},
-        "thumbnail": {"type": "string", "format": "uri"},
+        "cid": { "type": "string", "format": "cid" },
+        "playlist": { "type": "string", "format": "uri" },
+        "thumbnail": { "type": "string", "format": "uri" },
         "alt": {
           "type": "string",
           "maxGraphemes": 1000,
@@ -60,6 +65,11 @@
         "aspectRatio": {
           "type": "ref",
           "ref": "app.bsky.embed.defs#aspectRatio"
+        },
+        "presentation": {
+          "type": "string",
+          "description": "A hint to the client about how to present the video.",
+          "knownValues": ["default", "gif"]
         }
       }
     }

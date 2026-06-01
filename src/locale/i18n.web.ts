@@ -6,11 +6,15 @@ import {sanitizeAppLanguageSetting} from '#/locale/helpers'
 import {AppLanguage} from '#/locale/languages'
 import {useLanguagePrefs} from '#/state/preferences'
 
+type CatalogModule = {
+  messages: Record<string, unknown>
+}
+
 /**
  * We do a dynamic import of just the catalog that we need
  */
 export async function dynamicActivate(locale: AppLanguage) {
-  let mod: {messages: Record<string, unknown>}
+  let mod: CatalogModule
   let dateLocale: Locale = defaultLocale
 
   switch (locale) {

@@ -1,5 +1,6 @@
 import {useUnreadCountQuery} from '#/state/queries/matrix'
 import {useUnreadMessageCount} from '#/state/queries/messages/list-conversations'
+import {useSession} from '#/state/session'
 
 /**
  * Returns the total unread count across ALL chat backends:
@@ -9,8 +10,9 @@ import {useUnreadMessageCount} from '#/state/queries/messages/list-conversations
  * Used for drawer badges and bottom-tab indicators.
  */
 export function useTotalChatUnread(): {count: number; numUnread?: string} {
+  const {currentAccount} = useSession()
   const dmUnread = useUnreadMessageCount()
-  const matrixUnread = useUnreadCountQuery(undefined)
+  const matrixUnread = useUnreadCountQuery({enabled: !!currentAccount?.did})
 
   const dmCount = dmUnread?.count ?? 0
   const matrixCount = matrixUnread.data?.unread ?? 0

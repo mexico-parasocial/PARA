@@ -14,6 +14,7 @@ import {useActorStatus} from '#/lib/actor-status'
 import {FEEDBACK_FORM_URL, HELP_DESK_URL} from '#/lib/constants'
 import {useNavigationTabState} from '#/lib/hooks/useNavigationTabState'
 import {getCurrentRoute, getTabState, TabState} from '#/lib/routes/helpers'
+import {type SharedNavTab, TAB_TO_NAV_ITEM} from '#/lib/routes/tab-to-nav-item'
 import {type NavigationProp} from '#/lib/routes/types'
 import {sanitizeHandle} from '#/lib/strings/handles'
 import {colors} from '#/lib/styles'
@@ -208,8 +209,12 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
   // =
 
   const onPressTab = useCallback(
-    (tab: 'Home' | 'Search' | 'Notifications' | 'MyProfile') => {
-      const state = navigation.getState()
+    (tab: SharedNavTab, surface: 'drawer' | 'drawerHeader' = 'drawer') => {
+      ax.metric('nav:click', {
+        item: TAB_TO_NAV_ITEM[tab],
+        surface,
+      })
+    const state = navigation.getState()
       setDrawerOpen(false)
       if (IS_WEB) {
         // hack because we have flat navigator for web and MyProfile does not exist on the web navigator -ansh
@@ -245,7 +250,7 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
         }
       }
     },
-    [navigation, setDrawerOpen, currentAccount],
+    [navigation, setDrawerOpen, currentAccount, ax],
   )
 
   const onPressHome = useCallback(() => onPressTab('Home'), [onPressTab])
@@ -266,27 +271,36 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
     onPressTab('MyProfile')
   }, [onPressTab])
 
+  const onPressDrawerHeaderProfile = useCallback(() => {
+    onPressTab('MyProfile', 'drawerHeader')
+  }, [onPressTab])
+
   const onPressMyFeeds = useCallback(() => {
+    ax.metric('nav:click', {item: 'feeds', surface: 'drawer'})
     navigation.navigate('Feeds')
     setDrawerOpen(false)
-  }, [navigation, setDrawerOpen])
+  }, [navigation, setDrawerOpen, ax])
 
   const onPressLists = useCallback(() => {
+    ax.metric('nav:click', {item: 'lists', surface: 'drawer'})
     navigation.navigate('Lists')
     setDrawerOpen(false)
-  }, [navigation, setDrawerOpen])
+  }, [navigation, setDrawerOpen, ax])
 
   const onPressBookmarks = useCallback(() => {
+    ax.metric('nav:click', {item: 'saved', surface: 'drawer'})
     navigation.navigate('Bookmarks')
     setDrawerOpen(false)
-  }, [navigation, setDrawerOpen])
+  }, [navigation, setDrawerOpen, ax])
 
   const onPressSettings = useCallback(() => {
+    ax.metric('nav:click', {item: 'settings', surface: 'drawer'})
     navigation.navigate('Settings')
     setDrawerOpen(false)
-  }, [navigation, setDrawerOpen])
+  }, [navigation, setDrawerOpen, ax])
 
   const onPressCommunities = useCallback(() => {
+    ax.metric('nav:click', {item: 'communities', surface: 'drawer'})
     if (IS_WEB) {
       navigation.navigate('Communities')
       setDrawerOpen(false)
@@ -394,7 +408,7 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
           {hasSession && currentAccount ? (
             <DrawerProfileCard
               account={currentAccount}
-              onPressProfile={onPressProfile}
+              onPressProfile={onPressDrawerHeaderProfile}
             />
           ) : (
             <View style={[a.pr_xl]}>

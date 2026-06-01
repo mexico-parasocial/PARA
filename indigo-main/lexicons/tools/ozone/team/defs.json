@@ -6,22 +6,22 @@
       "type": "object",
       "required": ["did", "role"],
       "properties": {
-        "did": {"type": "string", "format": "did"},
-        "disabled": {"type": "boolean"},
+        "did": { "type": "string", "format": "did" },
+        "disabled": { "type": "boolean" },
         "profile": {
           "type": "ref",
           "ref": "app.bsky.actor.defs#profileViewDetailed"
         },
-        "createdAt": {"type": "string", "format": "datetime"},
-        "updatedAt": {"type": "string", "format": "datetime"},
-        "lastUpdatedBy": {"type": "string"},
+        "createdAt": { "type": "string", "format": "datetime" },
+        "updatedAt": { "type": "string", "format": "datetime" },
+        "lastUpdatedBy": { "type": "string" },
         "role": {
           "type": "string",
           "knownValues": [
-            "#roleAdmin",
-            "#roleModerator",
-            "#roleTriage",
-            "#roleVerifier"
+            "tools.ozone.team.defs#roleAdmin",
+            "tools.ozone.team.defs#roleModerator",
+            "tools.ozone.team.defs#roleTriage",
+            "tools.ozone.team.defs#roleVerifier"
           ]
         }
       }

@@ -68,6 +68,10 @@ check: ## Compile everything, checking syntax (does not output binaries)
 lexgen: ## Run codegen tool for lexicons (lexicon JSON to Go packages)
 	go run ./cmd/lexgen/ --build-file cmd/lexgen/bsky.json $(LEXDIR)
 
+.PHONY: lexgen-ext
+lexgen-ext: ## Run codegen tool for lexicons (lexicon JSON to Go packages)
+	go run ./cmd/lexgen/ --build-file cmd/lexgen/ext.json $(LEXDIR)
+
 .PHONY: cborgen
 cborgen: ## Run codegen tool for CBOR serialization
 	go run ./gen
@@ -94,7 +98,7 @@ build-relay-image: ## Builds relay docker image
 
 .PHONY: build-relay-admin-ui
 build-relay-admin-ui: ## Build relay admin web UI
-	cd  cmd/relay/relay-admin-ui; pnpminstall --frozen-lockfile; pnpmbuild
+	cd  cmd/relay/relay-admin-ui; yarn install --frozen-lockfile; yarn build
 	mkdir -p public
 	cp -r cmd/relay/relay-admin-ui/dist/* public/
 

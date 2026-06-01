@@ -1,9 +1,11 @@
+
+
 ## Behaviors
 
 Details about how the relay operates which might not be obvious!
 
-- unknown/unexpected fields on overall firehose messages (eg, `#commit`) are _not_ passed-through, so it is critical to upgrade the relay when there are protocol changes
-- records and commit objects _are_ passed through verbatim: they are serialized in `blocks` fields on `#commit` and `#sync` messages
+- unknown/unexpected fields on overall firehose messages (eg, `#commit`) are *not* passed-through, so it is critical to upgrade the relay when there are protocol changes
+- records and commit objects *are* passed through verbatim: they are serialized in `blocks` fields on `#commit` and `#sync` messages
 - some admin UI changes are persisted across restarts (stored in database), others are not (ephemeral)
   - ephemeral (but can be configured via env vars): new-hosts-per-day limit; enable/disable requestCrawl
   - persisted (in database): account takedowns, domain bans, host bans, host account limit
@@ -20,16 +22,18 @@ Details about how the relay operates which might not be obvious!
 - when connecting to remote hosts, including WebSocket subscriptions, the relay includes basic SSRF protections against connecting to private, reserved, or local IP addresses; or ports other than 80 or 443. This check is skipped if the remote host is specifically localhost (with an explicit port). If needed this constraint could be made configurable.
 - when connecting to a host (PDS), if the cursor was "in the future", the PDS will return an error frame and drop the connection. In this situation the relay will drop the connection and not automatically reconnect.
 
+
 ## Internal Implementation Details
 
 - the parallel event scheduler prevents multiple tasks for the same account (DID) from being processed at the same time
 - note the potential for race-conditions with messages about the same account (DID) coming from different hosts around the same time: in this case there is no guarantee about ordering
 - the relay keeps track of which events have been received-but-not-processed by sequence number, and only increments the `lastSeq` for actually-processed events. the "inflight" set of messages (sequence numbers) can grow rather large for active hosts, if there are many events for a single account (only one processed per account at a time)
-- the parallel scheduler keeps track of which events have been successfully processed. the slurper event processing code updates the cached sequence after relay processing is done, but this happens within the scheduler work scope, which means when it asks the scheduler what the highest seq is, it will never say the _current_ event has been processed. this means lastSeq needs to be pulled periodically, or else is slightly out of date.
+- the parallel scheduler keeps track of which events have been successfully processed. the slurper event processing code updates the cached sequence after relay processing is done, but this happens within the scheduler work scope, which means when it asks the scheduler what the highest seq is, it will never say the *current* event has been processed. this means lastSeq needs to be pulled periodically, or else is slightly out of date.
+
 
 ## Code Organization and History
 
-_Note: this was written in April 2025, and is likely to get out of date_
+*Note: this was written in April 2025, and is likely to get out of date*
 
 This codebase started as a fork of the prior `bigsky` / "BGS" relay implementation. The host and account state management, and message validation, were re-written. The "slurper" got a refactor, and some event stream and disk persistence code got lighter changes.
 
@@ -43,6 +47,7 @@ This codebase started as a fork of the prior `bigsky` / "BGS" relay implementati
 - `testing` package: end-to-end integration tests
 
 The `stream` code should probably get merged back in with the `indigo:events` at some point, but there are many small differences so it won't be a quick/trivial change.
+
 
 ## Verification Tools and Tests
 

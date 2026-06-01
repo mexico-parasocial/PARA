@@ -16,6 +16,7 @@ import {Compass_Stroke2_Corner0_Rounded as CompassIcon} from '#/components/icons
 import {Hashtag_Stroke2_Corner0_Rounded as FeedsIcon} from '#/components/icons/Hashtag'
 import * as Layout from '#/components/Layout'
 import {Link} from '#/components/Link'
+import {useAnalytics} from '#/analytics'
 import {IS_IOS} from '#/env'
 
 const HOME_HEADER_TOP_ROW_HEIGHT = 52
@@ -28,6 +29,7 @@ export function HomeHeaderLayoutMobile({
 }) {
   const t = useTheme()
   const {_} = useLingui()
+  const ax = useAnalytics()
   const {headerHeight} = useShellLayout()
   const insets = useSafeAreaInsets()
   const headerMinimalShellTransform = useMinimalShellHeaderTransform()
@@ -178,6 +180,9 @@ export function HomeHeaderLayoutMobile({
                 variant="ghost"
                 color="secondary"
                 shape="square"
+              onPress={() => {
+                ax.metric('nav:click', {item: 'feeds', surface: 'topBar'})
+              }}
                 style={[
                   a.justify_center,
                   {marginRight: -Layout.BUTTON_VISUAL_ALIGNMENT_OFFSET},
@@ -194,6 +199,9 @@ export function HomeHeaderLayoutMobile({
                 variant="ghost"
                 color="secondary"
                 shape="square"
+                onPress={() => {
+                  ax.metric('nav:click', {item: 'compass', surface: 'topBar'})
+                }}
                 style={[
                   a.justify_center,
                   {marginRight: -Layout.BUTTON_VISUAL_ALIGNMENT_OFFSET},

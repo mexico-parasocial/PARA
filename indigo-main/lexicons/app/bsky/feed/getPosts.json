@@ -12,7 +12,7 @@
           "uris": {
             "type": "array",
             "description": "List of post AT-URIs to return hydrated views for.",
-            "items": {"type": "string", "format": "at-uri"},
+            "items": { "type": "string", "format": "at-uri" },
             "maxLength": 25
           }
         }
@@ -25,7 +25,7 @@
           "properties": {
             "posts": {
               "type": "array",
-              "items": {"type": "ref", "ref": "app.bsky.feed.defs#postView"}
+              "items": { "type": "ref", "ref": "app.bsky.feed.defs#postView" }
             }
           }
         }

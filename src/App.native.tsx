@@ -1,5 +1,3 @@
-import '#/view/icons'
-
 import {Fragment, useEffect, useState} from 'react'
 import {GestureHandlerRootView} from 'react-native-gesture-handler'
 import {KeyboardProvider as KeyboardControllerProvider} from 'react-native-keyboard-controller'

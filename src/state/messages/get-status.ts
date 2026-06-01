@@ -1,9 +1,9 @@
 import {useQuery} from '@tanstack/react-query'
 
 import {DM_SERVICE_HEADERS} from '#/lib/constants'
+import {STALE} from '#/state/queries'
+import {createQueryKey} from '#/state/queries/util'
 import {useAgent} from '#/state/session'
-import {STALE} from '..'
-import {createQueryKey} from '../util'
 
 const chatActorStatusQueryKey = () =>
   createQueryKey('chat-actor-status', {}, {persistedVersion: 1})

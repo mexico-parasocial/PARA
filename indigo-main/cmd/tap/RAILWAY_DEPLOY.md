@@ -18,13 +18,12 @@ Railway makes it easy to deploy Tap with persistent storage in just a few minute
 
 Click on your Tap service, then go to the **Variables** tab and add:
 
-| Variable             | Value         | Purpose                                                 |
-| -------------------- | ------------- | ------------------------------------------------------- |
-| `TAP_LOG_LEVEL`      | `error`       | Reduces log noise (recommended for Railway's free tier) |
-| `TAP_ADMIN_PASSWORD` | _(see below)_ | Protects your API with Basic auth                       |
+| Variable | Value | Purpose |
+|----------|-------|---------|
+| `TAP_LOG_LEVEL` | `error` | Reduces log noise (recommended for Railway's free tier) |
+| `TAP_ADMIN_PASSWORD` | *(see below)* | Protects your API with Basic auth |
 
 **Generating a secure admin password:**
-
 ```bash
 openssl rand -hex 16
 ```

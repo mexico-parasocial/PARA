@@ -28,6 +28,7 @@ import {
   RichText,
 } from '@atproto/api'
 
+import {getDefaultChatIdentityMode} from '#/lib/chat/identity'
 import {mergeRefs} from '#/lib/merge-refs'
 import {ScrollProvider} from '#/lib/ScrollContext'
 import {shortenLinks, stripInvalidMentions} from '#/lib/strings/rich-text-manip'
@@ -46,12 +47,14 @@ import {
   ConvoStatus,
 } from '#/state/messages/convo/types'
 import {useGetPost} from '#/state/queries/post'
+import {createEmbedViewRecordFromPost} from '#/state/queries/postgate/util'
 import {useAgent} from '#/state/session'
 import {List, type ListMethods} from '#/view/com/util/List'
 import {MessageComposer} from '#/screens/Messages/components/MessageComposer'
 import {MessageInput} from '#/screens/Messages/components/MessageInput'
 import {MessageListError} from '#/screens/Messages/components/MessageListError'
 import {atoms as a, platform, tokens, useTheme, web} from '#/alf'
+import {ChatIdentityPill} from '#/components/chat/ChatIdentityPill'
 import {DateDivider} from '#/components/dms/DateDivider'
 import {MessageItem} from '#/components/dms/MessageItem'
 import {NewMessagesPill} from '#/components/dms/NewMessagesPill'
@@ -131,6 +134,7 @@ export function MessagesList({
   const getPost = useGetPost()
   const {embedUri, setEmbed} = useMessageEmbed()
   const t = useTheme()
+  const publicIdentityMode = getDefaultChatIdentityMode('public_dm')
 
   const textInputId = 'chat-input-' + useId()
   const flatListRef = useAnimatedRef<ListMethods>()
@@ -334,6 +338,7 @@ export function MessagesList({
       rt.detectFacetsWithoutResolution()
 
       let embed: $Typed<AppBskyEmbedRecord.Main> | undefined
+      let embedView: $Typed<AppBskyEmbedRecord.View> | undefined
 
       if (embedUri) {
         try {
@@ -345,6 +350,11 @@ export function MessagesList({
                 uri: post.uri,
                 cid: post.cid,
               },
+            }
+
+            embedView = {
+              $type: 'app.bsky.embed.record#view',
+              record: createEmbedViewRecordFromPost(post),
             }
 
             // look for the embed uri in the facets, so we can remove it from the text
@@ -394,11 +404,14 @@ export function MessagesList({
         setHasScrolled(true)
       }
 
-      convoState.sendMessage({
-        text: rt.text,
-        facets: rt.facets,
-        embed,
-      })
+      convoState.sendMessage(
+        {
+          text: rt.text,
+          facets: rt.facets,
+          embed,
+        },
+        embedView,
+      )
     },
     [agent, convoState, embedUri, getPost, hasScrolled, setHasScrolled],
   )
@@ -560,6 +573,7 @@ export function MessagesList({
                   }
                   hasEmbed={!!embedUri}
                   setEmbed={setEmbed}>
+                  <ChatIdentityPill mode={publicIdentityMode} compact />
                   <MessageInputEmbed embedUri={embedUri} setEmbed={setEmbed} />
                 </MessageComposer>
               ) : (
@@ -570,6 +584,7 @@ export function MessagesList({
                   }}
                   hasEmbed={!!embedUri}
                   setEmbed={setEmbed}>
+                  <ChatIdentityPill mode={publicIdentityMode} compact />
                   <MessageInputEmbed embedUri={embedUri} setEmbed={setEmbed} />
                 </MessageInput>
               )}

@@ -43,7 +43,7 @@ let MessageItemEmbed = ({
           // CLUSTERED_MESSAGE_GAP (2px) is the only spacing applied
           {marginTop: -a.mt_sm.marginTop},
         ]}>
-        <View style={{marginTop: -8}}>
+        <View>
           <Embed
             embed={embed}
             allowNestedQuotes

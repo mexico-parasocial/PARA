@@ -58,7 +58,9 @@
               "strField": {
                 "type": "string",
                 "maxLength": 100,
-                "knownValues": ["#green"]
+                "knownValues": [
+                  "#green"
+                ]
               }
             }
           }

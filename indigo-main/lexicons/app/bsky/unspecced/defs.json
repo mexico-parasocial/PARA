@@ -6,31 +6,31 @@
       "type": "object",
       "required": ["uri"],
       "properties": {
-        "uri": {"type": "string", "format": "at-uri"}
+        "uri": { "type": "string", "format": "at-uri" }
       }
     },
     "skeletonSearchActor": {
       "type": "object",
       "required": ["did"],
       "properties": {
-        "did": {"type": "string", "format": "did"}
+        "did": { "type": "string", "format": "did" }
       }
     },
     "skeletonSearchStarterPack": {
       "type": "object",
       "required": ["uri"],
       "properties": {
-        "uri": {"type": "string", "format": "at-uri"}
+        "uri": { "type": "string", "format": "at-uri" }
       }
     },
     "trendingTopic": {
       "type": "object",
       "required": ["topic", "link"],
       "properties": {
-        "topic": {"type": "string"},
-        "displayName": {"type": "string"},
-        "description": {"type": "string"},
-        "link": {"type": "string"}
+        "topic": { "type": "string" },
+        "displayName": { "type": "string" },
+        "description": { "type": "string" },
+        "link": { "type": "string" }
       }
     },
     "skeletonTrend": {
@@ -44,13 +44,13 @@
         "dids"
       ],
       "properties": {
-        "topic": {"type": "string"},
-        "displayName": {"type": "string"},
-        "link": {"type": "string"},
-        "startedAt": {"type": "string", "format": "datetime"},
-        "postCount": {"type": "integer"},
-        "status": {"type": "string", "knownValues": ["hot"]},
-        "category": {"type": "string"},
+        "topic": { "type": "string" },
+        "displayName": { "type": "string" },
+        "link": { "type": "string" },
+        "startedAt": { "type": "string", "format": "datetime" },
+        "postCount": { "type": "integer" },
+        "status": { "type": "string", "knownValues": ["hot"] },
+        "category": { "type": "string" },
         "dids": {
           "type": "array",
           "items": {
@@ -71,13 +71,13 @@
         "actors"
       ],
       "properties": {
-        "topic": {"type": "string"},
-        "displayName": {"type": "string"},
-        "link": {"type": "string"},
-        "startedAt": {"type": "string", "format": "datetime"},
-        "postCount": {"type": "integer"},
-        "status": {"type": "string", "knownValues": ["hot"]},
-        "category": {"type": "string"},
+        "topic": { "type": "string" },
+        "displayName": { "type": "string" },
+        "link": { "type": "string" },
+        "startedAt": { "type": "string", "format": "datetime" },
+        "postCount": { "type": "integer" },
+        "status": { "type": "string", "knownValues": ["hot"] },
+        "category": { "type": "string" },
         "actors": {
           "type": "array",
           "items": {
@@ -98,7 +98,7 @@
         "mutedByViewer"
       ],
       "properties": {
-        "post": {"type": "ref", "ref": "app.bsky.feed.defs#postView"},
+        "post": { "type": "ref", "ref": "app.bsky.feed.defs#postView" },
         "moreParents": {
           "type": "boolean",
           "description": "This post has more parents that were not present in the response. This is just a boolean, without the number of parents."
@@ -133,7 +133,7 @@
       "type": "object",
       "required": ["author"],
       "properties": {
-        "author": {"type": "ref", "ref": "app.bsky.feed.defs#blockedAuthor"}
+        "author": { "type": "ref", "ref": "app.bsky.feed.defs#blockedAuthor" }
       }
     },
     "ageAssuranceState": {

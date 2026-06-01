@@ -14,7 +14,7 @@
             "maximum": 100,
             "default": 50
           },
-          "cursor": {"type": "string"}
+          "cursor": { "type": "string" }
         }
       },
       "output": {
@@ -23,7 +23,7 @@
           "type": "object",
           "required": ["blocks"],
           "properties": {
-            "cursor": {"type": "string"},
+            "cursor": { "type": "string" },
             "blocks": {
               "type": "array",
               "items": {

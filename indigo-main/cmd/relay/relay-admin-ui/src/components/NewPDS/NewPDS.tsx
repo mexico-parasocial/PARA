@@ -1,155 +1,169 @@
-import {FC, useEffect, useState} from 'react'
+import { FC, useEffect, useState } from "react";
 import Notification, {
   NotificationMeta,
   NotificationType,
-} from '../Notification/Notification'
+} from "../Notification/Notification";
 
-import {RELAY_HOST} from '../../constants'
+import { RELAY_HOST } from "../../constants";
 
-import {useNavigate} from 'react-router-dom'
-import ConfirmNewPDSModal from './ConfirmNewPDSModal'
-import {ShieldCheckIcon} from '@heroicons/react/24/outline'
+import { useNavigate } from "react-router-dom";
+import ConfirmNewPDSModal from "./ConfirmNewPDSModal";
+import {
+  ShieldCheckIcon,
+} from "@heroicons/react/24/outline";
 
 const NewPDS: FC<{}> = () => {
-  const [pdsHost, setPDSHost] = useState<string>('')
+  const [pdsHost, setPDSHost] = useState<string>("");
 
   // Notification Management
   const [shouldShowNotification, setShouldShowNotification] =
-    useState<boolean>(false)
+    useState<boolean>(false);
   const [notification, setNotification] = useState<NotificationMeta>({
-    message: '',
-    alertType: '',
-  })
+    message: "",
+    alertType: "",
+  });
 
   // Modal state management
   const [modalAction, setModalAction] = useState<{
-    pds: string
-    type: 'add' | 'remove'
-  } | null>(null)
-  const [modalConfirm, setModalConfirm] = useState<() => void>(() => {})
-  const [modalCancel, setModalCancel] = useState<() => void>(() => {})
+    pds: string;
+    type: "add" | "remove";
+  } | null>(null);
+  const [modalConfirm, setModalConfirm] = useState<() => void>(() => { });
+  const [modalCancel, setModalCancel] = useState<() => void>(() => { });
 
   const [adminToken, setAdminToken] = useState<string>(
-    localStorage.getItem('admin_route_token') || '',
-  )
-  const navigate = useNavigate()
+    localStorage.getItem("admin_route_token") || ""
+  );
+  const navigate = useNavigate();
 
   const setAlertWithTimeout = (
     type: NotificationType,
     message: string,
-    dismiss: boolean,
+    dismiss: boolean
   ) => {
     setNotification({
       message,
       alertType: type,
       autodismiss: dismiss,
-    })
-    setShouldShowNotification(true)
-  }
+    });
+    setShouldShowNotification(true);
+  };
 
   useEffect(() => {
-    const token = localStorage.getItem('admin_route_token')
+    const token = localStorage.getItem("admin_route_token");
     if (token) {
-      setAdminToken(token)
+      setAdminToken(token);
     } else {
-      navigate('/login')
+      navigate("/login");
     }
-  }, [])
+  }, []);
 
   const requestAddPDS = (pds: string) => {
     fetch(`${RELAY_HOST}/admin/pds/requestCrawl`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         //Authorization: `Bearer ${adminToken}`,
-        Authorization: `Basic ` + btoa('admin:' + adminToken),
+        Authorization: `Basic ` + btoa("admin:" + adminToken),
       },
       body: JSON.stringify({
         hostname: pds,
       }),
     })
-      .then(res => {
+      .then((res) => {
         if (res.status !== 200) {
           try {
-            res.json().then(data => {
+            res.json().then((data) => {
               if (data.error) {
                 setAlertWithTimeout(
-                  'failure',
+                  "failure",
                   `Failed to add PDS: ${data.error}`,
-                  true,
-                )
+                  true
+                );
               } else {
                 setAlertWithTimeout(
-                  'failure',
+                  "failure",
                   `Failed to add PDS: ${res.statusText}`,
-                  true,
-                )
+                  true
+                );
               }
-            })
-          } catch (err) {
-            setAlertWithTimeout('failure', `Failed to add PDS: ${err}`, true)
+            });
+          }
+          catch (err) {
+            setAlertWithTimeout(
+              "failure",
+              `Failed to add PDS: ${err}`,
+              true
+            );
           }
         } else {
           try {
-            res.json().then(data => {
+            res.json().then((data) => {
               if (data.error) {
                 setAlertWithTimeout(
-                  'failure',
+                  "failure",
                   `Failed to add PDS: ${data.error}`,
-                  true,
-                )
+                  true
+                );
               } else {
                 setAlertWithTimeout(
-                  'success',
+                  "success",
                   `Successfully added PDS ${pds}`,
-                  true,
-                )
+                  true
+                );
               }
-            })
+            });
           } catch (err) {
-            setAlertWithTimeout('failure', `Failed to add PDS: ${err}`, true)
+            setAlertWithTimeout(
+              "failure",
+              `Failed to add PDS: ${err}`,
+              true
+            );
           }
         }
       })
-      .catch(err => {
-        setAlertWithTimeout('failure', `Failed to add PDS: ${err}`, true)
-      })
-  }
+      .catch((err) => {
+        setAlertWithTimeout("failure", `Failed to add PDS: ${err}`, true);
+      });
+  };
 
   const requestRemovePDS = (pds: string) => {
     setAlertWithTimeout(
-      'failure',
+      "failure",
       `Failed to remove PDS: ${pds} - Not implemented`,
-      true,
-    )
-  }
+      true
+    );
+  };
 
-  const handleAddPDS = (pds: string, type: 'add' | 'remove') => {
-    if (pds === '') {
-      setAlertWithTimeout('failure', 'PDS Hostname cannot be empty', true)
-      return
+  const handleAddPDS = (
+    pds: string,
+    type: "add" | "remove"
+  ) => {
+    if (pds === "") {
+      setAlertWithTimeout("failure", "PDS Hostname cannot be empty", true);
+      return;
     }
 
     // Strip the protocol from the hostname
-    pds = pds.replace(/^https?:\/\//, '')
+    pds = pds.replace(/^https?:\/\//, "");
 
-    setModalAction({pds: pds, type})
+    setModalAction({ pds: pds, type });
 
     setModalConfirm(() => {
       return () => {
-        if (type === 'add') requestAddPDS(pds)
-        else requestRemovePDS(pds)
+        if (type === "add") requestAddPDS(pds);
+        else requestRemovePDS(pds);
 
-        setModalAction(null)
-      }
-    })
+        setModalAction(null);
+      };
+    });
 
     setModalCancel(() => {
       return () => {
-        setModalAction(null)
-      }
-    })
-  }
+        setModalAction(null);
+      };
+    });
+  };
 
   return (
     <div className="mx-auto max-w-full">
@@ -160,10 +174,11 @@ const NewPDS: FC<{}> = () => {
           subMessage={notification.subMessage}
           autodismiss={notification.autodismiss}
           unshow={() => {
-            setShouldShowNotification(false)
-            setNotification({message: '', alertType: ''})
+            setShouldShowNotification(false);
+            setNotification({ message: "", alertType: "" });
           }}
-          show={shouldShowNotification}></Notification>
+          show={shouldShowNotification}
+        ></Notification>
       ) : (
         <></>
       )}
@@ -181,7 +196,8 @@ const NewPDS: FC<{}> = () => {
         <div className="max-w-3xl w-full">
           <label
             htmlFor="email"
-            className="block text-sm font-medium leading-6 text-gray-900">
+            className="block text-sm font-medium leading-6 text-gray-900"
+          >
             PDS Hostname
           </label>
           <div className="mt-2 inline-flex flex-col sm:flex-row">
@@ -192,17 +208,18 @@ const NewPDS: FC<{}> = () => {
               className="block w-72 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
               placeholder="hydnum.us-west.host.bsky.network"
               value={pdsHost}
-              onChange={e => {
-                setPDSHost(e.target.value)
+              onChange={(e) => {
+                setPDSHost(e.target.value);
               }}
             />
             <div className="inline-flex mt-4 sm:mt-0">
               <button
                 type="button"
                 onClick={() => {
-                  handleAddPDS(pdsHost.trim(), 'add')
+                  handleAddPDS(pdsHost.trim(), "add");
                 }}
-                className="ml-0 sm:ml-2 inline-flex whitespace-nowrap items-center gap-x-1.5 rounded-md bg-green-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600">
+                className="ml-0 sm:ml-2 inline-flex whitespace-nowrap items-center gap-x-1.5 rounded-md bg-green-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
+              >
                 <ShieldCheckIcon
                   className="-ml-0.5 h-5 w-5"
                   aria-hidden="true"
@@ -221,7 +238,7 @@ const NewPDS: FC<{}> = () => {
         />
       )}
     </div>
-  )
-}
+  );
+};
 
-export default NewPDS
+export default NewPDS;

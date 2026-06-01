@@ -6,29 +6,29 @@
       "type": "object",
       "required": ["uri", "cid", "name", "purpose"],
       "properties": {
-        "uri": {"type": "string", "format": "at-uri"},
-        "cid": {"type": "string", "format": "cid"},
-        "name": {"type": "string", "maxLength": 64, "minLength": 1},
-        "purpose": {"type": "ref", "ref": "#listPurpose"},
-        "avatar": {"type": "string", "format": "uri"},
-        "listItemCount": {"type": "integer", "minimum": 0},
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "name": { "type": "string", "maxLength": 64, "minLength": 1 },
+        "purpose": { "type": "ref", "ref": "#listPurpose" },
+        "avatar": { "type": "string", "format": "uri" },
+        "listItemCount": { "type": "integer", "minimum": 0 },
         "labels": {
           "type": "array",
-          "items": {"type": "ref", "ref": "com.atproto.label.defs#label"}
+          "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
         },
-        "viewer": {"type": "ref", "ref": "#listViewerState"},
-        "indexedAt": {"type": "string", "format": "datetime"}
+        "viewer": { "type": "ref", "ref": "#listViewerState" },
+        "indexedAt": { "type": "string", "format": "datetime" }
       }
     },
     "listView": {
       "type": "object",
       "required": ["uri", "cid", "creator", "name", "purpose", "indexedAt"],
       "properties": {
-        "uri": {"type": "string", "format": "at-uri"},
-        "cid": {"type": "string", "format": "cid"},
-        "creator": {"type": "ref", "ref": "app.bsky.actor.defs#profileView"},
-        "name": {"type": "string", "maxLength": 64, "minLength": 1},
-        "purpose": {"type": "ref", "ref": "#listPurpose"},
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "creator": { "type": "ref", "ref": "app.bsky.actor.defs#profileView" },
+        "name": { "type": "string", "maxLength": 64, "minLength": 1 },
+        "purpose": { "type": "ref", "ref": "#listPurpose" },
         "description": {
           "type": "string",
           "maxGraphemes": 300,
@@ -36,76 +36,76 @@
         },
         "descriptionFacets": {
           "type": "array",
-          "items": {"type": "ref", "ref": "app.bsky.richtext.facet"}
+          "items": { "type": "ref", "ref": "app.bsky.richtext.facet" }
         },
-        "avatar": {"type": "string", "format": "uri"},
-        "listItemCount": {"type": "integer", "minimum": 0},
+        "avatar": { "type": "string", "format": "uri" },
+        "listItemCount": { "type": "integer", "minimum": 0 },
         "labels": {
           "type": "array",
-          "items": {"type": "ref", "ref": "com.atproto.label.defs#label"}
+          "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
         },
-        "viewer": {"type": "ref", "ref": "#listViewerState"},
-        "indexedAt": {"type": "string", "format": "datetime"}
+        "viewer": { "type": "ref", "ref": "#listViewerState" },
+        "indexedAt": { "type": "string", "format": "datetime" }
       }
     },
     "listItemView": {
       "type": "object",
       "required": ["uri", "subject"],
       "properties": {
-        "uri": {"type": "string", "format": "at-uri"},
-        "subject": {"type": "ref", "ref": "app.bsky.actor.defs#profileView"}
+        "uri": { "type": "string", "format": "at-uri" },
+        "subject": { "type": "ref", "ref": "app.bsky.actor.defs#profileView" }
       }
     },
     "starterPackView": {
       "type": "object",
       "required": ["uri", "cid", "record", "creator", "indexedAt"],
       "properties": {
-        "uri": {"type": "string", "format": "at-uri"},
-        "cid": {"type": "string", "format": "cid"},
-        "record": {"type": "unknown"},
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "record": { "type": "unknown" },
         "creator": {
           "type": "ref",
           "ref": "app.bsky.actor.defs#profileViewBasic"
         },
-        "list": {"type": "ref", "ref": "#listViewBasic"},
+        "list": { "type": "ref", "ref": "#listViewBasic" },
         "listItemsSample": {
           "type": "array",
           "maxLength": 12,
-          "items": {"type": "ref", "ref": "#listItemView"}
+          "items": { "type": "ref", "ref": "#listItemView" }
         },
         "feeds": {
           "type": "array",
           "maxLength": 3,
-          "items": {"type": "ref", "ref": "app.bsky.feed.defs#generatorView"}
+          "items": { "type": "ref", "ref": "app.bsky.feed.defs#generatorView" }
         },
-        "joinedWeekCount": {"type": "integer", "minimum": 0},
-        "joinedAllTimeCount": {"type": "integer", "minimum": 0},
+        "joinedWeekCount": { "type": "integer", "minimum": 0 },
+        "joinedAllTimeCount": { "type": "integer", "minimum": 0 },
         "labels": {
           "type": "array",
-          "items": {"type": "ref", "ref": "com.atproto.label.defs#label"}
+          "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
         },
-        "indexedAt": {"type": "string", "format": "datetime"}
+        "indexedAt": { "type": "string", "format": "datetime" }
       }
     },
     "starterPackViewBasic": {
       "type": "object",
       "required": ["uri", "cid", "record", "creator", "indexedAt"],
       "properties": {
-        "uri": {"type": "string", "format": "at-uri"},
-        "cid": {"type": "string", "format": "cid"},
-        "record": {"type": "unknown"},
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "record": { "type": "unknown" },
         "creator": {
           "type": "ref",
           "ref": "app.bsky.actor.defs#profileViewBasic"
         },
-        "listItemCount": {"type": "integer", "minimum": 0},
-        "joinedWeekCount": {"type": "integer", "minimum": 0},
-        "joinedAllTimeCount": {"type": "integer", "minimum": 0},
+        "listItemCount": { "type": "integer", "minimum": 0 },
+        "joinedWeekCount": { "type": "integer", "minimum": 0 },
+        "joinedAllTimeCount": { "type": "integer", "minimum": 0 },
         "labels": {
           "type": "array",
-          "items": {"type": "ref", "ref": "com.atproto.label.defs#label"}
+          "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
         },
-        "indexedAt": {"type": "string", "format": "datetime"}
+        "indexedAt": { "type": "string", "format": "datetime" }
       }
     },
     "listPurpose": {
@@ -131,8 +131,8 @@
     "listViewerState": {
       "type": "object",
       "properties": {
-        "muted": {"type": "boolean"},
-        "blocked": {"type": "string", "format": "at-uri"}
+        "muted": { "type": "boolean" },
+        "blocked": { "type": "string", "format": "at-uri" }
       }
     },
     "notFoundActor": {
@@ -140,8 +140,8 @@
       "description": "indicates that a handle or DID could not be resolved",
       "required": ["actor", "notFound"],
       "properties": {
-        "actor": {"type": "string", "format": "at-identifier"},
-        "notFound": {"type": "boolean", "const": true}
+        "actor": { "type": "string", "format": "at-identifier" },
+        "notFound": { "type": "boolean", "const": true }
       }
     },
     "relationship": {
@@ -149,7 +149,7 @@
       "description": "lists the bi-directional graph relationships between one actor (not indicated in the object), and the target actors (the DID included in the object)",
       "required": ["did"],
       "properties": {
-        "did": {"type": "string", "format": "did"},
+        "did": { "type": "string", "format": "did" },
         "following": {
           "type": "string",
           "format": "at-uri",

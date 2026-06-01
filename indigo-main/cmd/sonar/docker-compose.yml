@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 services:
   sonar:
     build:
@@ -7,4 +7,4 @@ services:
     image: atproto-sonar
     restart: always
     ports:
-      - '8345:8345'
+      - "8345:8345"

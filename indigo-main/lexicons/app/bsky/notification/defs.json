@@ -10,25 +10,25 @@
       "type": "object",
       "required": ["include", "push"],
       "properties": {
-        "include": {"type": "string", "knownValues": ["all", "accepted"]},
-        "push": {"type": "boolean"}
+        "include": { "type": "string", "knownValues": ["all", "accepted"] },
+        "push": { "type": "boolean" }
       }
     },
     "filterablePreference": {
       "type": "object",
       "required": ["include", "list", "push"],
       "properties": {
-        "include": {"type": "string", "knownValues": ["all", "follows"]},
-        "list": {"type": "boolean"},
-        "push": {"type": "boolean"}
+        "include": { "type": "string", "knownValues": ["all", "follows"] },
+        "list": { "type": "boolean" },
+        "push": { "type": "boolean" }
       }
     },
     "preference": {
       "type": "object",
       "required": ["list", "push"],
       "properties": {
-        "list": {"type": "boolean"},
-        "push": {"type": "boolean"}
+        "list": { "type": "boolean" },
+        "push": { "type": "boolean" }
       }
     },
     "preferences": {
@@ -49,27 +49,27 @@
         "verified"
       ],
       "properties": {
-        "chat": {"type": "ref", "ref": "#chatPreference"},
-        "follow": {"type": "ref", "ref": "#filterablePreference"},
-        "like": {"type": "ref", "ref": "#filterablePreference"},
-        "likeViaRepost": {"type": "ref", "ref": "#filterablePreference"},
-        "mention": {"type": "ref", "ref": "#filterablePreference"},
-        "quote": {"type": "ref", "ref": "#filterablePreference"},
-        "reply": {"type": "ref", "ref": "#filterablePreference"},
-        "repost": {"type": "ref", "ref": "#filterablePreference"},
-        "repostViaRepost": {"type": "ref", "ref": "#filterablePreference"},
-        "starterpackJoined": {"type": "ref", "ref": "#preference"},
-        "subscribedPost": {"type": "ref", "ref": "#preference"},
-        "unverified": {"type": "ref", "ref": "#preference"},
-        "verified": {"type": "ref", "ref": "#preference"}
+        "chat": { "type": "ref", "ref": "#chatPreference" },
+        "follow": { "type": "ref", "ref": "#filterablePreference" },
+        "like": { "type": "ref", "ref": "#filterablePreference" },
+        "likeViaRepost": { "type": "ref", "ref": "#filterablePreference" },
+        "mention": { "type": "ref", "ref": "#filterablePreference" },
+        "quote": { "type": "ref", "ref": "#filterablePreference" },
+        "reply": { "type": "ref", "ref": "#filterablePreference" },
+        "repost": { "type": "ref", "ref": "#filterablePreference" },
+        "repostViaRepost": { "type": "ref", "ref": "#filterablePreference" },
+        "starterpackJoined": { "type": "ref", "ref": "#preference" },
+        "subscribedPost": { "type": "ref", "ref": "#preference" },
+        "unverified": { "type": "ref", "ref": "#preference" },
+        "verified": { "type": "ref", "ref": "#preference" }
       }
     },
     "activitySubscription": {
       "type": "object",
       "required": ["post", "reply"],
       "properties": {
-        "post": {"type": "boolean"},
-        "reply": {"type": "boolean"}
+        "post": { "type": "boolean" },
+        "reply": { "type": "boolean" }
       }
     },
     "subjectActivitySubscription": {
@@ -77,7 +77,7 @@
       "type": "object",
       "required": ["subject", "activitySubscription"],
       "properties": {
-        "subject": {"type": "string", "format": "did"},
+        "subject": { "type": "string", "format": "did" },
         "activitySubscription": {
           "type": "ref",
           "ref": "#activitySubscription"

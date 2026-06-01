@@ -7,7 +7,7 @@
       "type": "object",
       "required": ["record"],
       "properties": {
-        "record": {"type": "ref", "ref": "com.atproto.repo.strongRef"}
+        "record": { "type": "ref", "ref": "com.atproto.repo.strongRef" }
       }
     },
     "view": {
@@ -33,8 +33,8 @@
       "type": "object",
       "required": ["uri", "cid", "author", "value", "indexedAt"],
       "properties": {
-        "uri": {"type": "string", "format": "at-uri"},
-        "cid": {"type": "string", "format": "cid"},
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
         "author": {
           "type": "ref",
           "ref": "app.bsky.actor.defs#profileViewBasic"
@@ -45,12 +45,12 @@
         },
         "labels": {
           "type": "array",
-          "items": {"type": "ref", "ref": "com.atproto.label.defs#label"}
+          "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
         },
-        "replyCount": {"type": "integer"},
-        "repostCount": {"type": "integer"},
-        "likeCount": {"type": "integer"},
-        "quoteCount": {"type": "integer"},
+        "replyCount": { "type": "integer" },
+        "repostCount": { "type": "integer" },
+        "likeCount": { "type": "integer" },
+        "quoteCount": { "type": "integer" },
         "embeds": {
           "type": "array",
           "items": {
@@ -64,32 +64,32 @@
             ]
           }
         },
-        "indexedAt": {"type": "string", "format": "datetime"}
+        "indexedAt": { "type": "string", "format": "datetime" }
       }
     },
     "viewNotFound": {
       "type": "object",
       "required": ["uri", "notFound"],
       "properties": {
-        "uri": {"type": "string", "format": "at-uri"},
-        "notFound": {"type": "boolean", "const": true}
+        "uri": { "type": "string", "format": "at-uri" },
+        "notFound": { "type": "boolean", "const": true }
       }
     },
     "viewBlocked": {
       "type": "object",
       "required": ["uri", "blocked", "author"],
       "properties": {
-        "uri": {"type": "string", "format": "at-uri"},
-        "blocked": {"type": "boolean", "const": true},
-        "author": {"type": "ref", "ref": "app.bsky.feed.defs#blockedAuthor"}
+        "uri": { "type": "string", "format": "at-uri" },
+        "blocked": { "type": "boolean", "const": true },
+        "author": { "type": "ref", "ref": "app.bsky.feed.defs#blockedAuthor" }
       }
     },
     "viewDetached": {
       "type": "object",
       "required": ["uri", "detached"],
       "properties": {
-        "uri": {"type": "string", "format": "at-uri"},
-        "detached": {"type": "boolean", "const": true}
+        "uri": { "type": "string", "format": "at-uri" },
+        "detached": { "type": "boolean", "const": true }
       }
     }
   }

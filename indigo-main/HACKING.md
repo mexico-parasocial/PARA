@@ -1,3 +1,4 @@
+
 ## git repo contents
 
 Run with, eg, `go run ./cmd/rainbow`):
@@ -19,11 +20,11 @@ Run with, eg, `go run ./cmd/rainbow`):
 Packages:
 
 - `api`: mostly output of lexgen (codegen) for lexicons: structs, CBOR marshaling. some higher-level code, and a PLC client (may rename)
-  - `api/atproto`: generated types for `com.atproto` lexicon
-  - `api/agnostic`: variants of `com.atproto` types which work better with unknown lexicon data
-  - `api/bsky`: generated types for `app.bsky` lexicon
-  - `api/chat`: generated types for `chat.bsky` lexicon
-  - `api/ozone`: generated types for `tools.ozone` lexicon
+    - `api/atproto`: generated types for `com.atproto` lexicon
+    - `api/agnostic`: variants of `com.atproto` types which work better with unknown lexicon data
+    - `api/bsky`: generated types for `app.bsky` lexicon
+    - `api/chat`: generated types for `chat.bsky` lexicon
+    - `api/ozone`: generated types for `tools.ozone` lexicon
 - `atproto/atcrypto`: cryptographic helpers (signing, key generation and serialization)
 - `atproto/syntax`: string types and parsers for identifiers, datetimes, etc
 - `atproto/identity`: DID and handle resolution
@@ -38,13 +39,14 @@ Packages:
 - `mst`: merkle search tree implementation
 - `notifs`: helpers for notification objects (hydration, etc)
 - `pds`: PDS server implementation
-- `plc`: implementation of a _fake_ PLC server (not persisted), and a PLC client
+- `plc`: implementation of a *fake* PLC server (not persisted), and a PLC client
 - `repo`: implements atproto repo on top of a blockstore. CBOR types
 - `repomgr`: wraps many repos with a single carstore backend. handles events, locking
 - `search`: search server implementation
 - `testing`: integration tests; testing helpers
 - `util`: a few common definitions (may rename)
 - `xrpc`: XRPC client (not server) helpers
+
 
 ## Jargon
 
@@ -60,6 +62,7 @@ Packages:
 - CID: content identifier for binary blobs, basically a flexible encoding of hash values
 - MST: Merkle Search Tree, a key/value map data structure using content addressed nodes
 
+
 ## Lexicon and CBOR code generation
 
 `gen/main.go` has a list of types internal to packages in this repo which need CBOR helper codegen. If you edit those types, or update the listed types/packages, re-run codegen like:
@@ -70,7 +73,7 @@ Packages:
     # then generate
     go run ./gen
 
-To run codegen for new or updated Lexicons, using lexgen, first place (or git checkout) the JSON lexicon files at `../atproto/`. Then, in _this_ repository (indigo), run commands like:
+To run codegen for new or updated Lexicons, using lexgen, first place (or git checkout) the JSON lexicon files at `../atproto/`. Then, in *this* repository (indigo), run commands like:
 
     go run ./cmd/lexgen/ --package bsky --prefix app.bsky --outdir api/bsky ../atproto/lexicons/app/bsky/
     go run ./cmd/lexgen/ --package atproto --prefix com.atproto --outdir api/atproto ../atproto/lexicons/com/atproto/
@@ -83,6 +86,7 @@ To generate server stubs and handlers, push them in a temporary directory first,
 
     mkdir tmppds
     go run ./cmd/lexgen/ --package pds --gen-server --types-import com.atproto:github.com/bluesky-social/indigo/api/atproto --types-import app.bsky:github.com/bluesky-social/indigo/api/bsky --outdir tmppds --gen-handlers ../atproto/lexicons
+
 
 ## Tips and Tricks
 
@@ -103,14 +107,16 @@ Set the log level to be more verbose, using an env variable:
 
     GOLOG_LOG_LEVEL=info go run ./cmd/pds
 
+
 ## `gosky` basic usage
 
 Running against local typescript PDS in `dev-env` mode:
 
-    # as "alice" user
-    go run ./cmd/gosky/ --pds-host http://localhost:2583 account create-session alice.test hunter2 > bsky.auth
+	# as "alice" user
+	go run ./cmd/gosky/ --pds-host http://localhost:2583 account create-session alice.test hunter2 > bsky.auth
 
 The `bsky.auth` file is the default place that `gosky` and other client commands will look for auth info.
+
 
 ## Integrated Development
 

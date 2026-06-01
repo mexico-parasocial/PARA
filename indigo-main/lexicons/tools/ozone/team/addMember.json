@@ -11,7 +11,7 @@
           "type": "object",
           "required": ["did", "role"],
           "properties": {
-            "did": {"type": "string", "format": "did"},
+            "did": { "type": "string", "format": "did" },
             "role": {
               "type": "string",
               "knownValues": [

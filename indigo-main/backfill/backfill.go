@@ -80,6 +80,11 @@ type Backfiller struct {
 
 	syncLimiter *rate.Limiter
 
+	// Per-PDS rate limiting
+	pdsLimiters   map[string]*rate.Limiter
+	pdsLimitersMu sync.RWMutex
+	pdsRateLimit  rate.Limit
+
 	magicHeaderKey string
 	magicHeaderVal string
 
@@ -88,6 +93,8 @@ type Backfiller struct {
 	httpClient *http.Client
 
 	stop chan chan struct{}
+
+	log *slog.Logger
 
 	Directory identity.Directory
 }
@@ -120,11 +127,9 @@ type BackfillOptions struct {
 	ParallelRecordCreates int
 	NSIDFilter            string
 	SyncRequestsPerSecond int
-	RelayHost             string
-
-	// Client is an optional HTTP client to use for fetching repos from PDS servers.
-	// If nil, a default client will be created.
-	Client *http.Client
+	// Per-PDS rate limit (requests per second per host). 0 means no limit.
+	PDSRequestsPerSecond int
+	RelayHost            string
 }
 
 func DefaultBackfillOptions() *BackfillOptions {
@@ -133,6 +138,7 @@ func DefaultBackfillOptions() *BackfillOptions {
 		ParallelRecordCreates: 100,
 		NSIDFilter:            "",
 		SyncRequestsPerSecond: 2,
+		PDSRequestsPerSecond:  2,
 		RelayHost:             "https://bsky.network",
 	}
 }
@@ -157,12 +163,18 @@ func NewBackfiller(
 		opts.RelayHost = "http://" + opts.RelayHost[5:]
 	}
 
-	httpClient := opts.Client
-	if httpClient == nil {
-		httpClient = &http.Client{
-			Transport: otelhttp.NewTransport(http.DefaultTransport),
-			Timeout:   600 * time.Second,
-		}
+	var pdsRateLimit rate.Limit
+	if opts.PDSRequestsPerSecond > 0 {
+		pdsRateLimit = rate.Limit(opts.PDSRequestsPerSecond)
+	} else {
+		pdsRateLimit = rate.Inf
+	}
+
+	transport := &http.Transport{
+		TLSHandshakeTimeout:   10 * time.Second,
+		ResponseHeaderTimeout: 30 * time.Second,
+		MaxIdleConnsPerHost:   10,
+		IdleConnTimeout:       90 * time.Second,
 	}
 
 	return &Backfiller{
@@ -174,27 +186,34 @@ func NewBackfiller(
 		ParallelBackfills:     opts.ParallelBackfills,
 		ParallelRecordCreates: opts.ParallelRecordCreates,
 		NSIDFilter:            opts.NSIDFilter,
-		syncLimiter:           rate.NewLimiter(rate.Limit(opts.SyncRequestsPerSecond), 1),
+		syncLimiter:           rate.NewLimiter(rate.Limit(opts.SyncRequestsPerSecond), opts.SyncRequestsPerSecond),
+		pdsLimiters:           make(map[string]*rate.Limiter),
+		pdsRateLimit:          pdsRateLimit,
 		RelayHost:             opts.RelayHost,
-		httpClient:            httpClient,
-		stop:                  make(chan chan struct{}, 1),
-		Directory:             identity.DefaultDirectory(),
+		httpClient: &http.Client{
+			Transport: otelhttp.NewTransport(transport),
+		},
+		stop:      make(chan chan struct{}, 1),
+		Directory: identity.DefaultDirectory(),
 	}
 }
 
-// Start starts the backfill processor routine
-func (b *Backfiller) Start() {
+// StartWithLogger starts the backfill processor routine with a custom logger
+func (b *Backfiller) StartWithLogger(log *slog.Logger) {
 	ctx := context.Background()
 
-	log := slog.With("source", "backfiller", "name", b.Name)
-	log.Info("starting backfill processor")
+	if log == nil {
+		log = slog.Default()
+	}
+	b.log = log.With("source", "backfiller", "name", b.Name)
+	b.log.Info("starting backfill processor")
 
 	sem := semaphore.NewWeighted(int64(b.ParallelBackfills))
 
 	for {
 		select {
 		case stopped := <-b.stop:
-			log.Info("stopping backfill processor")
+			b.log.Info("stopping backfill processor")
 			sem.Acquire(ctx, int64(b.ParallelBackfills))
 			close(stopped)
 			return
@@ -202,26 +221,32 @@ func (b *Backfiller) Start() {
 		}
 
 		// Get the next job
+		dequeueStart := time.Now()
 		job, err := b.Store.GetNextEnqueuedJob(ctx)
 		if err != nil {
-			log.Error("failed to get next enqueued job", "error", err)
+			b.log.Error("failed to get next enqueued job", "error", err)
 			time.Sleep(1 * time.Second)
 			continue
 		} else if job == nil {
 			time.Sleep(1 * time.Second)
 			continue
 		}
+		backfillDispatchSeconds.WithLabelValues(b.Name, "dequeue").Observe(time.Since(dequeueStart).Seconds())
 
-		log := log.With("repo", job.Repo())
+		log := b.log.With("repo", job.Repo())
 
 		// Mark the backfill as "in progress"
+		setStateStart := time.Now()
 		err = job.SetState(ctx, StateInProgress)
 		if err != nil {
 			log.Error("failed to set job state", "error", err)
 			continue
 		}
+		backfillDispatchSeconds.WithLabelValues(b.Name, "set_state").Observe(time.Since(setStateStart).Seconds())
 
+		semStart := time.Now()
 		sem.Acquire(ctx, 1)
+		backfillDispatchSeconds.WithLabelValues(b.Name, "sem_acquire").Observe(time.Since(semStart).Seconds())
 		go func(j Job) {
 			defer sem.Release(1)
 			newState, err := b.BackfillRepo(ctx, j)
@@ -245,15 +270,23 @@ func (b *Backfiller) Start() {
 	}
 }
 
+// Start starts the backfill processor routine
+func (b *Backfiller) Start() {
+	b.StartWithLogger(slog.Default())
+}
+
 // Stop stops the backfill processor
 func (b *Backfiller) Stop(ctx context.Context) error {
-	log := slog.With("source", "backfiller", "name", b.Name)
-	log.Info("stopping backfill processor")
+	if b.log != nil {
+		b.log.Info("stopping backfill processor")
+	}
 	stopped := make(chan struct{})
 	b.stop <- stopped
 	select {
 	case <-stopped:
-		log.Info("backfill processor stopped")
+		if b.log != nil {
+			b.log.Info("backfill processor stopped")
+		}
 		return nil
 	case <-ctx.Done():
 		return ctx.Err()
@@ -331,13 +364,33 @@ type FetchRepoError struct {
 }
 
 func (e *FetchRepoError) Error() string {
-	reason := "unknown error"
+	var reason string
 	if e.StatusCode == http.StatusBadRequest {
 		reason = "repo not found"
 	} else {
 		reason = e.Status
 	}
 	return fmt.Sprintf("failed to get repo: %s (%d)", reason, e.StatusCode)
+}
+
+// getPDSLimiter returns a rate limiter for the given host, creating one if needed.
+func (b *Backfiller) getPDSLimiter(host string) *rate.Limiter {
+	b.pdsLimitersMu.RLock()
+	limiter, ok := b.pdsLimiters[host]
+	b.pdsLimitersMu.RUnlock()
+	if ok {
+		return limiter
+	}
+
+	b.pdsLimitersMu.Lock()
+	defer b.pdsLimitersMu.Unlock()
+	// Double-check after acquiring write lock
+	if limiter, ok = b.pdsLimiters[host]; ok {
+		return limiter
+	}
+	limiter = rate.NewLimiter(b.pdsRateLimit, int(b.pdsRateLimit))
+	b.pdsLimiters[host] = limiter
+	return limiter
 }
 
 // Fetches a repo CAR file over HTTP from the indicated host.
@@ -348,38 +401,85 @@ func (b *Backfiller) fetchRepo(ctx context.Context, did, since, host string) (io
 		url = url + fmt.Sprintf("&since=%s", since)
 	}
 
-	// GET and CAR decode the body
-	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create request: %w", err)
-	}
+	client := b.httpClient
 
-	req.Header.Set("Accept", "application/vnd.ipld.car")
-	req.Header.Set("User-Agent", fmt.Sprintf("atproto-backfill-%s/0.0.1", b.Name))
-	if b.magicHeaderKey != "" && b.magicHeaderVal != "" {
-		req.Header.Set(b.magicHeaderKey, b.magicHeaderVal)
-	}
+	// Retry delays for 429 errors: 1s, 3s, 5s
+	retryDelays := []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
+	maxAttempts := len(retryDelays) + 1
 
-	b.syncLimiter.Wait(ctx)
+	var lastErr error
+	for attempt := range maxAttempts {
+		if attempt > 0 {
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(retryDelays[attempt-1]):
+			}
+		}
 
-	resp, err := b.httpClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("failed to send request: %w", err)
-	}
+		req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create request: %w", err)
+		}
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, &FetchRepoError{
+		req.Header.Set("Accept", "application/vnd.ipld.car")
+		req.Header.Set("User-Agent", fmt.Sprintf("atproto-backfill-%s/0.0.1", b.Name))
+		if b.magicHeaderKey != "" && b.magicHeaderVal != "" {
+			req.Header.Set(b.magicHeaderKey, b.magicHeaderVal)
+		}
+
+		// Wait on per-PDS rate limiter first, so we don't consume a global
+		// token while blocked on a busy host. This lets workers targeting
+		// less busy hosts proceed with the global token instead.
+		pdsStart := time.Now()
+		if err := b.getPDSLimiter(host).Wait(ctx); err != nil {
+			return nil, fmt.Errorf("PDS rate limiter wait: %w", err)
+		}
+		pdsWait := time.Since(pdsStart).Seconds()
+		backfillRateLimitWaitSeconds.WithLabelValues(b.Name, "pds").Observe(pdsWait)
+		backfillRateLimitWaitSecondsByHost.WithLabelValues(b.Name, host).Add(pdsWait)
+
+		// Then wait on global rate limiter
+		syncStart := time.Now()
+		if err := b.syncLimiter.Wait(ctx); err != nil {
+			return nil, fmt.Errorf("sync rate limiter wait: %w", err)
+		}
+		syncWait := time.Since(syncStart).Seconds()
+		backfillRateLimitWaitSeconds.WithLabelValues(b.Name, "global").Observe(syncWait)
+		backfillRateLimitWaitsTotal.WithLabelValues(b.Name, "pds", host).Inc()
+
+		resp, err := client.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("failed to send request: %w", err)
+		}
+
+		if resp.StatusCode == http.StatusOK {
+			instrumentedReader := &instrumentedReader{
+				source:  resp.Body,
+				counter: backfillBytesProcessed.WithLabelValues(b.Name),
+			}
+			return instrumentedReader, nil
+		}
+
+		// TODO: read and log error response JSON body for diagnostics
+		// Drain the body so the underlying connection can be reused (relevant for HTTP/2)
+		io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
+
+		lastErr = &FetchRepoError{
 			StatusCode: resp.StatusCode,
 			Status:     resp.Status,
 		}
+
+		// Only retry on 429 Too Many Requests
+		if resp.StatusCode != http.StatusTooManyRequests {
+			return nil, lastErr
+		}
+
+		slog.Debug("got 429, retrying", "did", did, "attempt", attempt+1, "max_attempts", maxAttempts)
 	}
 
-	instrumentedReader := instrumentedReader{
-		source:  resp.Body,
-		counter: backfillBytesProcessed.WithLabelValues(b.Name),
-	}
-
-	return &instrumentedReader, nil
+	return nil, lastErr
 }
 
 // BackfillRepo backfills a repo
@@ -398,6 +498,8 @@ func (b *Backfiller) BackfillRepo(ctx context.Context, job Job) (string, error) 
 	log.Info(fmt.Sprintf("processing backfill for %s", repoDID))
 
 	var r io.ReadCloser
+	var pdsHost string
+	resolveStart := time.Now()
 	if b.tryRelayRepoFetch {
 		rr, err := b.fetchRepo(ctx, repoDID, job.Rev(), b.RelayHost)
 		if err != nil {
@@ -412,7 +514,7 @@ func (b *Backfiller) BackfillRepo(ctx context.Context, job Job) (string, error) 
 		if err != nil {
 			return "failed resolving DID to PDS repo", fmt.Errorf("resolving DID for PDS repo fetch: %w", err)
 		}
-		pdsHost := ident.PDSEndpoint()
+		pdsHost = ident.PDSEndpoint()
 		if pdsHost == "" {
 			return "DID document missing PDS endpoint", fmt.Errorf("no PDS endpoint for DID: %s", repoDID)
 		}
@@ -427,6 +529,7 @@ func (b *Backfiller) BackfillRepo(ctx context.Context, job Job) (string, error) 
 			return "failed to fetch repo CAR from PDS", err
 		}
 	}
+	fetchDone := time.Since(resolveStart)
 
 	numRecords := 0
 	numRoutines := b.ParallelRecordCreates
@@ -445,7 +548,7 @@ func (b *Backfiller) BackfillRepo(ctx context.Context, job Job) (string, error) 
 	go func() {
 		defer r.Close()
 		defer close(recordQueue)
-		err := repo.StreamRepoRecords(ctx, r, b.NSIDFilter, onCommit, func(recordPath string, nodeCid cid.Cid, data []byte) error {
+		err := repo.StreamRepoRecords(ctx, repoDID, r, b.NSIDFilter, onCommit, func(recordPath string, nodeCid cid.Cid, data []byte) error {
 			numRecords++
 			recordQueue <- recordQueueItem{recordPath: recordPath, nodeCid: nodeCid, data: data}
 			return nil
@@ -457,10 +560,8 @@ func (b *Backfiller) BackfillRepo(ctx context.Context, job Job) (string, error) 
 
 	// Consumer routines
 	wg := sync.WaitGroup{}
-	for i := 0; i < numRoutines; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range numRoutines {
+		wg.Go(func() {
 			for item := range recordQueue {
 
 				raw := item.data
@@ -474,20 +575,18 @@ func (b *Backfiller) BackfillRepo(ctx context.Context, job Job) (string, error) 
 				backfillRecordsProcessed.WithLabelValues(b.Name).Inc()
 				recordResults <- recordResult{recordPath: item.recordPath, err: err}
 			}
-		}()
+		})
 	}
 
 	resultWG := sync.WaitGroup{}
-	resultWG.Add(1)
 	// Handle results
-	go func() {
-		defer resultWG.Done()
+	resultWG.Go(func() {
 		for result := range recordResults {
 			if result.err != nil {
 				log.Error("Error processing record", "record", result.recordPath, "error", result.err)
 			}
 		}
-	}()
+	})
 
 	wg.Wait()
 	close(recordResults)
@@ -505,8 +604,10 @@ func (b *Backfiller) BackfillRepo(ctx context.Context, job Job) (string, error) 
 	numProcessed := b.FlushBuffer(ctx, job)
 
 	log.Info("backfill complete",
+		"pds", pdsHost,
 		"buffered_records_processed", numProcessed,
 		"records_backfilled", numRecords,
+		"resolve_and_fetch", fetchDone,
 		"duration", time.Since(start),
 	)
 

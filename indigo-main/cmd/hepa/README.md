@@ -1,4 +1,6 @@
-# hepa (indigo edition)
+
+hepa (indigo edition)
+=====================
 
 This is a simple auto-moderation daemon which wraps the automod package. This is public code. The actual version run by Bluesky is similar, but a private fork to protect methods and mechanisms.
 

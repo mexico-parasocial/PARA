@@ -38,10 +38,10 @@
         }
       },
       "errors": [
-        {"name": "InvalidEmail"},
-        {"name": "DidTooLong"},
-        {"name": "InvalidInitiation"},
-        {"name": "RegionNotSupported"}
+        { "name": "InvalidEmail" },
+        { "name": "DidTooLong" },
+        { "name": "InvalidInitiation" },
+        { "name": "RegionNotSupported" }
       ]
     }
   }

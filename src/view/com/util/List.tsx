@@ -6,7 +6,7 @@ import {
   useAnimatedScrollHandler,
   useSharedValue,
 } from 'react-native-reanimated'
-import {updateActiveVideoViewAsync} from '@haileyok/bluesky-video'
+import {updateActiveVideoViewAsync} from '@bsky.app/video'
 
 import {useDedupe} from '#/lib/hooks/useDedupe'
 import {useScrollHandlers} from '#/lib/ScrollContext'
@@ -18,7 +18,7 @@ import {FlatList_INTERNAL} from './Views'
 
 export type ListMethods = FlatList_INTERNAL
 // This is a generic type; we could update ~30 call sites but this approach is consistent with RN internals. -dsb
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 export type ListProps<ItemT = unknown> = Omit<
   FlatListPropsWithLayout<ItemT>,
   | 'onMomentumScrollBegin' // Use ScrollContext instead.

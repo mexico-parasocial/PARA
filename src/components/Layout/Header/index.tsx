@@ -29,6 +29,7 @@ import {
 } from '#/components/Layout/const'
 import {ScrollbarOffsetContext} from '#/components/Layout/context'
 import {Text} from '#/components/Typography'
+import {useAnalytics} from '#/analytics'
 import {IS_IOS} from '#/env'
 
 export function Outer({
@@ -153,13 +154,14 @@ export function BackButton({
 
 export function MenuButton() {
   const {_} = useLingui()
+  const ax = useAnalytics()
   const setDrawerOpen = useSetDrawerOpen()
   const {gtMobile} = useBreakpoints()
-  const {isWithinLeftPanel} = useIsWithinSplitView()
   const onPress = useCallback(() => {
+    ax.metric('nav:click', {item: 'menu', surface: 'topBar'})
     Keyboard.dismiss()
     setDrawerOpen(true)
-  }, [setDrawerOpen])
+  }, [setDrawerOpen, ax])
 
   return gtMobile ? null : (
     <Slot>

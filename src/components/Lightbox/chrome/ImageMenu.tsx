@@ -10,7 +10,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import {useLingui} from '@lingui/react/macro'
 
-import {atoms as a} from '#/alf'
+import {android, atoms as a, ios} from '#/alf'
 import {ArrowShareRight_Stroke2_Corner2_Rounded as ShareIcon} from '#/components/icons/ArrowShareRight'
 import {type Props as IconProps} from '#/components/icons/common'
 import {DotGrid3x1_Stroke2_Corner0_Rounded as DotsIcon} from '#/components/icons/DotGrid'
@@ -125,6 +125,8 @@ function MenuCard({
       style={[
         a.absolute,
         styles.card,
+        android({alignSelf: 'flex-start'}),
+        ios({width: MENU_WIDTH}),
         {
           top: anchor.y + anchor.height + GAP,
           left: anchor.x,
@@ -161,7 +163,6 @@ function MenuItem({
 
 const styles = StyleSheet.create({
   card: {
-    width: MENU_WIDTH,
     padding: 8,
     borderRadius: 16,
     borderWidth: 0.5,

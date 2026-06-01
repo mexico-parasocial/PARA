@@ -50,7 +50,7 @@
           "ref": "tools.ozone.communication.defs#templateView"
         }
       },
-      "errors": [{"name": "DuplicateTemplateName"}]
+      "errors": [{ "name": "DuplicateTemplateName" }]
     }
   }
 }

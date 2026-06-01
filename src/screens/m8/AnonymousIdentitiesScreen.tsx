@@ -9,6 +9,8 @@ import {
   View,
 } from 'react-native'
 
+import {getDefaultChatIdentityMode} from '#/lib/chat/identity'
+import {buildAnonymousGermContactButton} from '#/lib/germ/messageMe'
 import {
   getAnonymousIdentities,
   patchAnonymousIdentity,
@@ -19,6 +21,8 @@ import {
 } from '#/lib/m8/api'
 import {type AnonymousIdentityCard} from '#/lib/m8/types'
 import {useTheme} from '#/alf'
+import {ChatIdentityPill} from '#/components/chat/ChatIdentityPill'
+import {GermContactButton} from '#/components/germ/GermContactButton'
 import {Text} from '#/components/Typography'
 
 export default function AnonymousIdentitiesScreen() {
@@ -249,6 +253,17 @@ function IdentityCard({
 }) {
   const t = useTheme()
   const repliesEnabled = identity.posts.some(post => post.dmPolicy === 'requests')
+  const isolatedIdentityMode = getDefaultChatIdentityMode('isolated_post')
+  const germContact = buildAnonymousGermContactButton(
+    identity.germ?.status === 'active' && repliesEnabled
+      ? {
+          dmEnabled: true,
+          provider: 'germ',
+          label: 'Private reply via Germ DM',
+          contactUrl: identity.germ.contactUrl,
+        }
+      : {dmEnabled: false},
+  )
   const canEnableReplies =
     identity.status === 'active' &&
     identity.germ?.status === 'active' &&
@@ -274,6 +289,8 @@ function IdentityCard({
           tone={identity.deviceTrust.status === 'trusted' ? 'positive' : 'neutral'}
         />
       </View>
+
+      <ChatIdentityPill mode={isolatedIdentityMode} />
 
       <View style={styles.metaGrid}>
         <Metric label="Posts" value={String(identity.posts.length)} />
@@ -343,6 +360,9 @@ function IdentityCard({
       )}
 
       <View style={styles.actions}>
+        {germContact && (
+          <GermContactButton url={germContact.url} label="Open Germ" />
+        )}
         {identity.germ?.status === 'active' ? (
           <ActionButton label="Unlink Germ" disabled={busy} onPress={onUnlinkGerm} />
         ) : (

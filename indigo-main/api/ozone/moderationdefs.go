@@ -104,6 +104,15 @@ type ModerationDefs_AgeAssuranceOverrideEvent struct {
 	Status string `json:"status" cborgen:"status"`
 }
 
+// ModerationDefs_AgeAssurancePurgeEvent is a "ageAssurancePurgeEvent" in the tools.ozone.moderation.defs schema.
+//
+// Purges all age assurance events for the subject. Only works on DID subjects. Moderator-only.
+type ModerationDefs_AgeAssurancePurgeEvent struct {
+	LexiconTypeID string `json:"$type" cborgen:"$type,const=tools.ozone.moderation.defs#ageAssurancePurgeEvent"`
+	// comment: Comment describing the reason for the purge.
+	Comment string `json:"comment" cborgen:"comment"`
+}
+
 // ModerationDefs_BlobView is a "blobView" in the tools.ozone.moderation.defs schema.
 type ModerationDefs_BlobView struct {
 	Cid        string                           `json:"cid" cborgen:"cid"`
@@ -155,6 +164,13 @@ func (t *ModerationDefs_BlobView_Details) UnmarshalJSON(b []byte) error {
 type ModerationDefs_CancelScheduledTakedownEvent struct {
 	LexiconTypeID string  `json:"$type" cborgen:"$type,const=tools.ozone.moderation.defs#cancelScheduledTakedownEvent"`
 	Comment       *string `json:"comment,omitempty" cborgen:"comment,omitempty"`
+}
+
+// ModerationDefs_ConvoView is a "convoView" in the tools.ozone.moderation.defs schema.
+type ModerationDefs_ConvoView struct {
+	LexiconTypeID string `json:"$type" cborgen:"$type,const=tools.ozone.moderation.defs#convoView"`
+	ConvoId       string `json:"convoId" cborgen:"convoId"`
+	Did           string `json:"did" cborgen:"did"`
 }
 
 // ModerationDefs_IdentityEvent is a "identityEvent" in the tools.ozone.moderation.defs schema.
@@ -316,6 +332,8 @@ type ModerationDefs_ModEventTag struct {
 	Add []string `json:"add" cborgen:"add"`
 	// comment: Additional comment about added/removed tags.
 	Comment *string `json:"comment,omitempty" cborgen:"comment,omitempty"`
+	// durationInHours: Indicates how long the tags being added should remain before automatically being removed. Only applies to tags being added.
+	DurationInHours *int64 `json:"durationInHours,omitempty" cborgen:"durationInHours,omitempty"`
 	// remove: Tags to be removed to the subject. Ignores a tag If it doesn't exist, won't be duplicated.
 	Remove []string `json:"remove" cborgen:"remove"`
 }
@@ -406,6 +424,7 @@ type ModerationDefs_ModEventViewDetail_Event struct {
 	ModerationDefs_ModEventPriorityScore         *ModerationDefs_ModEventPriorityScore
 	ModerationDefs_AgeAssuranceEvent             *ModerationDefs_AgeAssuranceEvent
 	ModerationDefs_AgeAssuranceOverrideEvent     *ModerationDefs_AgeAssuranceOverrideEvent
+	ModerationDefs_AgeAssurancePurgeEvent        *ModerationDefs_AgeAssurancePurgeEvent
 	ModerationDefs_RevokeAccountCredentialsEvent *ModerationDefs_RevokeAccountCredentialsEvent
 	ModerationDefs_ScheduleTakedownEvent         *ModerationDefs_ScheduleTakedownEvent
 	ModerationDefs_CancelScheduledTakedownEvent  *ModerationDefs_CancelScheduledTakedownEvent
@@ -496,6 +515,10 @@ func (t *ModerationDefs_ModEventViewDetail_Event) MarshalJSON() ([]byte, error) 
 		t.ModerationDefs_AgeAssuranceOverrideEvent.LexiconTypeID = "tools.ozone.moderation.defs#ageAssuranceOverrideEvent"
 		return json.Marshal(t.ModerationDefs_AgeAssuranceOverrideEvent)
 	}
+	if t.ModerationDefs_AgeAssurancePurgeEvent != nil {
+		t.ModerationDefs_AgeAssurancePurgeEvent.LexiconTypeID = "tools.ozone.moderation.defs#ageAssurancePurgeEvent"
+		return json.Marshal(t.ModerationDefs_AgeAssurancePurgeEvent)
+	}
 	if t.ModerationDefs_RevokeAccountCredentialsEvent != nil {
 		t.ModerationDefs_RevokeAccountCredentialsEvent.LexiconTypeID = "tools.ozone.moderation.defs#revokeAccountCredentialsEvent"
 		return json.Marshal(t.ModerationDefs_RevokeAccountCredentialsEvent)
@@ -581,6 +604,9 @@ func (t *ModerationDefs_ModEventViewDetail_Event) UnmarshalJSON(b []byte) error 
 	case "tools.ozone.moderation.defs#ageAssuranceOverrideEvent":
 		t.ModerationDefs_AgeAssuranceOverrideEvent = new(ModerationDefs_AgeAssuranceOverrideEvent)
 		return json.Unmarshal(b, t.ModerationDefs_AgeAssuranceOverrideEvent)
+	case "tools.ozone.moderation.defs#ageAssurancePurgeEvent":
+		t.ModerationDefs_AgeAssurancePurgeEvent = new(ModerationDefs_AgeAssurancePurgeEvent)
+		return json.Unmarshal(b, t.ModerationDefs_AgeAssurancePurgeEvent)
 	case "tools.ozone.moderation.defs#revokeAccountCredentialsEvent":
 		t.ModerationDefs_RevokeAccountCredentialsEvent = new(ModerationDefs_RevokeAccountCredentialsEvent)
 		return json.Unmarshal(b, t.ModerationDefs_RevokeAccountCredentialsEvent)
@@ -600,6 +626,7 @@ type ModerationDefs_ModEventViewDetail_Subject struct {
 	ModerationDefs_RepoViewNotFound   *ModerationDefs_RepoViewNotFound
 	ModerationDefs_RecordView         *ModerationDefs_RecordView
 	ModerationDefs_RecordViewNotFound *ModerationDefs_RecordViewNotFound
+	ModerationDefs_ConvoView          *ModerationDefs_ConvoView
 }
 
 func (t *ModerationDefs_ModEventViewDetail_Subject) MarshalJSON() ([]byte, error) {
@@ -618,6 +645,10 @@ func (t *ModerationDefs_ModEventViewDetail_Subject) MarshalJSON() ([]byte, error
 	if t.ModerationDefs_RecordViewNotFound != nil {
 		t.ModerationDefs_RecordViewNotFound.LexiconTypeID = "tools.ozone.moderation.defs#recordViewNotFound"
 		return json.Marshal(t.ModerationDefs_RecordViewNotFound)
+	}
+	if t.ModerationDefs_ConvoView != nil {
+		t.ModerationDefs_ConvoView.LexiconTypeID = "tools.ozone.moderation.defs#convoView"
+		return json.Marshal(t.ModerationDefs_ConvoView)
 	}
 	return nil, fmt.Errorf("can not marshal empty union as JSON")
 }
@@ -641,6 +672,9 @@ func (t *ModerationDefs_ModEventViewDetail_Subject) UnmarshalJSON(b []byte) erro
 	case "tools.ozone.moderation.defs#recordViewNotFound":
 		t.ModerationDefs_RecordViewNotFound = new(ModerationDefs_RecordViewNotFound)
 		return json.Unmarshal(b, t.ModerationDefs_RecordViewNotFound)
+	case "tools.ozone.moderation.defs#convoView":
+		t.ModerationDefs_ConvoView = new(ModerationDefs_ConvoView)
+		return json.Unmarshal(b, t.ModerationDefs_ConvoView)
 	default:
 		return nil
 	}
@@ -668,6 +702,7 @@ type ModerationDefs_ModEventView_Event struct {
 	ModerationDefs_ModEventPriorityScore         *ModerationDefs_ModEventPriorityScore
 	ModerationDefs_AgeAssuranceEvent             *ModerationDefs_AgeAssuranceEvent
 	ModerationDefs_AgeAssuranceOverrideEvent     *ModerationDefs_AgeAssuranceOverrideEvent
+	ModerationDefs_AgeAssurancePurgeEvent        *ModerationDefs_AgeAssurancePurgeEvent
 	ModerationDefs_RevokeAccountCredentialsEvent *ModerationDefs_RevokeAccountCredentialsEvent
 	ModerationDefs_ScheduleTakedownEvent         *ModerationDefs_ScheduleTakedownEvent
 	ModerationDefs_CancelScheduledTakedownEvent  *ModerationDefs_CancelScheduledTakedownEvent
@@ -758,6 +793,10 @@ func (t *ModerationDefs_ModEventView_Event) MarshalJSON() ([]byte, error) {
 		t.ModerationDefs_AgeAssuranceOverrideEvent.LexiconTypeID = "tools.ozone.moderation.defs#ageAssuranceOverrideEvent"
 		return json.Marshal(t.ModerationDefs_AgeAssuranceOverrideEvent)
 	}
+	if t.ModerationDefs_AgeAssurancePurgeEvent != nil {
+		t.ModerationDefs_AgeAssurancePurgeEvent.LexiconTypeID = "tools.ozone.moderation.defs#ageAssurancePurgeEvent"
+		return json.Marshal(t.ModerationDefs_AgeAssurancePurgeEvent)
+	}
 	if t.ModerationDefs_RevokeAccountCredentialsEvent != nil {
 		t.ModerationDefs_RevokeAccountCredentialsEvent.LexiconTypeID = "tools.ozone.moderation.defs#revokeAccountCredentialsEvent"
 		return json.Marshal(t.ModerationDefs_RevokeAccountCredentialsEvent)
@@ -843,6 +882,9 @@ func (t *ModerationDefs_ModEventView_Event) UnmarshalJSON(b []byte) error {
 	case "tools.ozone.moderation.defs#ageAssuranceOverrideEvent":
 		t.ModerationDefs_AgeAssuranceOverrideEvent = new(ModerationDefs_AgeAssuranceOverrideEvent)
 		return json.Unmarshal(b, t.ModerationDefs_AgeAssuranceOverrideEvent)
+	case "tools.ozone.moderation.defs#ageAssurancePurgeEvent":
+		t.ModerationDefs_AgeAssurancePurgeEvent = new(ModerationDefs_AgeAssurancePurgeEvent)
+		return json.Unmarshal(b, t.ModerationDefs_AgeAssurancePurgeEvent)
 	case "tools.ozone.moderation.defs#revokeAccountCredentialsEvent":
 		t.ModerationDefs_RevokeAccountCredentialsEvent = new(ModerationDefs_RevokeAccountCredentialsEvent)
 		return json.Unmarshal(b, t.ModerationDefs_RevokeAccountCredentialsEvent)
@@ -861,6 +903,7 @@ type ModerationDefs_ModEventView_Subject struct {
 	AdminDefs_RepoRef    *comatproto.AdminDefs_RepoRef
 	RepoStrongRef        *comatproto.RepoStrongRef
 	ConvoDefs_MessageRef *chatbsky.ConvoDefs_MessageRef
+	ConvoDefs_ConvoRef   *chatbsky.ConvoDefs_ConvoRef
 }
 
 func (t *ModerationDefs_ModEventView_Subject) MarshalJSON() ([]byte, error) {
@@ -875,6 +918,10 @@ func (t *ModerationDefs_ModEventView_Subject) MarshalJSON() ([]byte, error) {
 	if t.ConvoDefs_MessageRef != nil {
 		t.ConvoDefs_MessageRef.LexiconTypeID = "chat.bsky.convo.defs#messageRef"
 		return json.Marshal(t.ConvoDefs_MessageRef)
+	}
+	if t.ConvoDefs_ConvoRef != nil {
+		t.ConvoDefs_ConvoRef.LexiconTypeID = "chat.bsky.convo.defs#convoRef"
+		return json.Marshal(t.ConvoDefs_ConvoRef)
 	}
 	return nil, fmt.Errorf("can not marshal empty union as JSON")
 }
@@ -895,6 +942,9 @@ func (t *ModerationDefs_ModEventView_Subject) UnmarshalJSON(b []byte) error {
 	case "chat.bsky.convo.defs#messageRef":
 		t.ConvoDefs_MessageRef = new(chatbsky.ConvoDefs_MessageRef)
 		return json.Unmarshal(b, t.ConvoDefs_MessageRef)
+	case "chat.bsky.convo.defs#convoRef":
+		t.ConvoDefs_ConvoRef = new(chatbsky.ConvoDefs_ConvoRef)
+		return json.Unmarshal(b, t.ConvoDefs_ConvoRef)
 	default:
 		return nil
 	}
@@ -1190,6 +1240,7 @@ type ModerationDefs_SubjectStatusView_Subject struct {
 	AdminDefs_RepoRef    *comatproto.AdminDefs_RepoRef
 	RepoStrongRef        *comatproto.RepoStrongRef
 	ConvoDefs_MessageRef *chatbsky.ConvoDefs_MessageRef
+	ConvoDefs_ConvoRef   *chatbsky.ConvoDefs_ConvoRef
 }
 
 func (t *ModerationDefs_SubjectStatusView_Subject) MarshalJSON() ([]byte, error) {
@@ -1204,6 +1255,10 @@ func (t *ModerationDefs_SubjectStatusView_Subject) MarshalJSON() ([]byte, error)
 	if t.ConvoDefs_MessageRef != nil {
 		t.ConvoDefs_MessageRef.LexiconTypeID = "chat.bsky.convo.defs#messageRef"
 		return json.Marshal(t.ConvoDefs_MessageRef)
+	}
+	if t.ConvoDefs_ConvoRef != nil {
+		t.ConvoDefs_ConvoRef.LexiconTypeID = "chat.bsky.convo.defs#convoRef"
+		return json.Marshal(t.ConvoDefs_ConvoRef)
 	}
 	return nil, fmt.Errorf("can not marshal empty union as JSON")
 }
@@ -1224,6 +1279,9 @@ func (t *ModerationDefs_SubjectStatusView_Subject) UnmarshalJSON(b []byte) error
 	case "chat.bsky.convo.defs#messageRef":
 		t.ConvoDefs_MessageRef = new(chatbsky.ConvoDefs_MessageRef)
 		return json.Unmarshal(b, t.ConvoDefs_MessageRef)
+	case "chat.bsky.convo.defs#convoRef":
+		t.ConvoDefs_ConvoRef = new(chatbsky.ConvoDefs_ConvoRef)
+		return json.Unmarshal(b, t.ConvoDefs_ConvoRef)
 	default:
 		return nil
 	}

@@ -11,8 +11,8 @@
           "type": "object",
           "required": ["did"],
           "properties": {
-            "did": {"type": "string", "format": "did"},
-            "disabled": {"type": "boolean"},
+            "did": { "type": "string", "format": "did" },
+            "disabled": { "type": "boolean" },
             "role": {
               "type": "string",
               "knownValues": [

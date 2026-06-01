@@ -8,7 +8,7 @@
         "type": "params",
         "required": ["actor"],
         "properties": {
-          "actor": {"type": "string", "format": "did"}
+          "actor": { "type": "string", "format": "did" }
         }
       },
       "output": {
@@ -17,9 +17,9 @@
           "type": "object",
           "required": ["day", "month", "all"],
           "properties": {
-            "day": {"type": "ref", "ref": "#metadata"},
-            "month": {"type": "ref", "ref": "#metadata"},
-            "all": {"type": "ref", "ref": "#metadata"}
+            "day": { "type": "ref", "ref": "#metadata" },
+            "month": { "type": "ref", "ref": "#metadata" },
+            "all": { "type": "ref", "ref": "#metadata" }
           }
         }
       }
@@ -33,10 +33,10 @@
         "convosStarted"
       ],
       "properties": {
-        "messagesSent": {"type": "integer"},
-        "messagesReceived": {"type": "integer"},
-        "convos": {"type": "integer"},
-        "convosStarted": {"type": "integer"}
+        "messagesSent": { "type": "integer" },
+        "messagesReceived": { "type": "integer" },
+        "convos": { "type": "integer" },
+        "convosStarted": { "type": "integer" }
       }
     }
   }

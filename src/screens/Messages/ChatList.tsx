@@ -15,8 +15,8 @@ import {logger} from '#/logger'
 import {listenSoftReset} from '#/state/events'
 import {MESSAGE_SCREEN_POLL_INTERVAL} from '#/state/messages/convo/const'
 import {useMessagesEventBus} from '#/state/messages/events'
+import {useMatrixRoomsQuery} from '#/state/queries/matrix'
 import {useChatActorStatusQuery} from '#/state/queries/messages/get-status'
-import {useUnreadCountQuery} from '#/state/queries/matrix'
 import {useLeftConvos} from '#/state/queries/messages/leave-conversation'
 import {useListConvosQuery} from '#/state/queries/messages/list-conversations'
 import {useSession} from '#/state/session'
@@ -53,6 +53,10 @@ type ChatStatus = ChatBskyActorGetStatus.OutputSchema
 
 type ListItem =
   | {
+      type: 'SECTION'
+      label: string
+    }
+  | {
       type: 'AGENT_SELECTION'
     }
   | {
@@ -66,10 +70,13 @@ type ListItem =
       communityUri: string
       slug: string
       unread: number
+      kind: 'main' | 'chamber-a' | 'chamber-b' | 'observers'
     }
 
 function renderItem({item}: {item: ListItem}) {
   switch (item.type) {
+    case 'SECTION':
+      return <SectionHeader label={item.label} />
     case 'AGENT_SELECTION':
       return <AgentSelection />
     case 'CONVERSATION':
@@ -81,6 +88,8 @@ function renderItem({item}: {item: ListItem}) {
 
 function keyExtractor(item: ListItem) {
   switch (item.type) {
+    case 'SECTION':
+      return `SECTION:${item.label}`
     case 'AGENT_SELECTION':
       return 'AGENT_SELECTION'
     case 'CONVERSATION':
@@ -157,7 +166,7 @@ export function MessagesScreenInner({navigation, route}: Props) {
     [navigation],
   )
 
-    const openChatControl = useCallback(() => {
+  const openChatControl = useCallback(() => {
     newChatControl.open()
   }, [newChatControl])
 
@@ -217,6 +226,7 @@ export function ChatList({
   chatStatus?: ChatStatus
 }) {
   const t = useTheme()
+  const {t: l} = useLingui()
   const {currentAccount} = useSession()
   const scrollElRef: ListRef = useAnimatedRef()
   const {isWithinSplitView} = useIsWithinSplitView()
@@ -248,16 +258,15 @@ export function ChatList({
     refetch,
   } = useListConvosQuery({status: 'accepted'})
 
-  const {
-    data: inboxData,
-    refetch: refetchInbox,
-    hasNextPage: hasMoreRequests,
-  } = useListConvosQuery({
-  status: 'request',
+  const {refetch: refetchInbox} = useListConvosQuery({
+    status: 'request',
   })
 
-  const {data: matrixUnreadData, refetch: refetchMatrixUnread} =
-    useUnreadCountQuery(currentAccount?.did)
+  const {
+    data: matrixRoomsData,
+    isLoading: isLoadingMatrixRooms,
+    refetch: refetchMatrixRooms,
+  } = useMatrixRoomsQuery({enabled: !!currentAccount?.did})
 
   useRefreshOnFocus(refetch)
   useRefreshOnFocus(refetchInbox)
@@ -265,40 +274,48 @@ export function ChatList({
   const leftConvos = useLeftConvos()
 
   const listItems = useMemo(() => {
-    const items: ListItem[] = [{type: 'AGENT_SELECTION'}]
+    const items: ListItem[] = []
+
+    if (matrixRoomsData?.rooms.length) {
+      items.push({type: 'SECTION', label: l`Comunidades`})
+      items.push(
+        ...matrixRoomsData.rooms.map(room => ({
+          type: 'MATRIX_ROOM' as const,
+          roomId: room.roomId,
+          communityUri: room.communityUri,
+          slug: room.slug,
+          unread: room.unread,
+          kind: room.kind,
+        })),
+      )
+    }
+
+    items.push({type: 'SECTION', label: l`Agentes`})
+    items.push({type: 'AGENT_SELECTION'})
 
     if (data?.pages) {
       const convos = data.pages
         .flatMap(page => page.convos)
         .filter(convo => !leftConvos.includes(convo.id))
 
-      items.push(
-        ...convos.map(convo => ({
-          type: 'CONVERSATION' as const,
-          conversation: convo,
-          selected: convo.id === selectedChat,
-        })),
-      )
-    }
-
-    if (matrixUnreadData?.communities?.length) {
-      items.push(
-        ...matrixUnreadData.communities
-          .filter(community => community.unread > 0)
-          .map(community => ({
-            type: 'MATRIX_ROOM' as const,
-            roomId: community.roomId,
-            communityUri: community.communityUri,
-            slug: community.slug,
-            unread: community.unread,
+      if (convos.length) {
+        items.push({type: 'SECTION', label: l`Mensajes directos`})
+        items.push(
+          ...convos.map(convo => ({
+            type: 'CONVERSATION' as const,
+            conversation: convo,
+            selected: convo.id === selectedChat,
           })),
-      )
+        )
+      }
     }
 
     return items
-  }, [data, leftConvos, matrixUnreadData, selectedChat])
+  }, [data, l, leftConvos, matrixRoomsData, selectedChat])
 
-  const hasListContent = listItems.some(item => item.type !== 'AGENT_SELECTION')
+  const hasListContent = listItems.some(
+    item => item.type === 'CONVERSATION' || item.type === 'MATRIX_ROOM',
+  )
 
   const onRefresh = useCallback(async () => {
     setIsPTRing(true)
@@ -306,7 +323,7 @@ export function ChatList({
       await Promise.all([
         refetch(),
         refetchInbox(),
-        currentAccount?.did ? refetchMatrixUnread() : Promise.resolve(),
+        currentAccount?.did ? refetchMatrixRooms() : Promise.resolve(),
       ])
     } catch (err) {
       logger.error('Failed to refresh conversations', {
@@ -314,7 +331,7 @@ export function ChatList({
       })
     }
     setIsPTRing(false)
-  }, [currentAccount, refetch, refetchInbox, refetchMatrixUnread])
+  }, [currentAccount, refetch, refetchInbox, refetchMatrixRooms])
 
   const onEndReached = useCallback(async () => {
     if (isFetchingNextPage || !hasNextPage || isError) return
@@ -337,14 +354,14 @@ export function ChatList({
     try {
       await Promise.all([
         refetch(),
-        currentAccount?.did ? refetchMatrixUnread() : Promise.resolve(),
+        currentAccount?.did ? refetchMatrixRooms() : Promise.resolve(),
       ])
     } catch (err) {
       logger.error('Failed to refresh conversations', {
         message: err instanceof Error ? err.message : String(err),
       })
     }
-  }, [currentAccount, scrollElRef, refetch, refetchMatrixUnread])
+  }, [currentAccount, scrollElRef, refetch, refetchMatrixRooms])
 
   const isScreenFocused = useIsFocused()
   useEffect(() => {
@@ -358,7 +375,7 @@ export function ChatList({
   if (!hasListContent) {
     return (
       <Layout.Center style={web({minHeight: '100%'})}>
-        {isLoading ? (
+        {isLoading || isLoadingMatrixRooms ? (
           <ChatListLoadingPlaceholder />
         ) : (
           <ChatListEmptyState
@@ -367,6 +384,7 @@ export function ChatList({
             isWithinSplitView={isWithinSplitView}
             onRetry={refetch}
             onNewChat={wrappedOpenChatControl}
+            chatDisabled={!!chatStatus?.chatDisabled}
           />
         )}
       </Layout.Center>
@@ -426,12 +444,14 @@ function ChatListEmptyState({
   isWithinSplitView,
   onRetry,
   onNewChat,
+  chatDisabled,
 }: {
   isError: boolean
   error: Error | null
   isWithinSplitView: boolean
   onRetry: () => void
   onNewChat: () => void
+  chatDisabled: boolean
 }) {
   const t = useTheme()
   const {t: l} = useLingui()
@@ -490,19 +510,43 @@ function ChatListEmptyState({
       iconColor={t.atoms.text.color}
       iconSize="4xl"
       button={
-        chatStatus?.chatDisabled
+        chatDisabled
           ? undefined
           : {
               label: l`New chat`,
               text: l`New chat`,
-              onPress: wrappedOpenChatControl,
+              onPress: onNewChat,
               size: 'small',
               color: 'primary',
               icon: MessagePlusIcon,
             }
       }
       style={[a.h_full, {paddingTop: '20%'}]}
-      />
+    />
+  )
+}
+
+function SectionHeader({label}: {label: string}) {
+  const t = useTheme()
+
+  return (
+    <View
+      style={[
+        a.px_lg,
+        a.pt_md,
+        a.pb_xs,
+        {backgroundColor: t.palette.contrast_0},
+      ]}>
+      <Text
+        style={[
+          a.text_xs,
+          a.font_semi_bold,
+          t.atoms.text_contrast_medium,
+          {textTransform: 'uppercase'},
+        ]}>
+        {label}
+      </Text>
+    </View>
   )
 }
 

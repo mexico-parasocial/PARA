@@ -24,7 +24,7 @@
           },
           "descriptionFacets": {
             "type": "array",
-            "items": {"type": "ref", "ref": "app.bsky.richtext.facet"}
+            "items": { "type": "ref", "ref": "app.bsky.richtext.facet" }
           },
           "list": {
             "type": "string",
@@ -34,9 +34,9 @@
           "feeds": {
             "type": "array",
             "maxLength": 3,
-            "items": {"type": "ref", "ref": "#feedItem"}
+            "items": { "type": "ref", "ref": "#feedItem" }
           },
-          "createdAt": {"type": "string", "format": "datetime"}
+          "createdAt": { "type": "string", "format": "datetime" }
         }
       }
     },
@@ -44,7 +44,7 @@
       "type": "object",
       "required": ["uri"],
       "properties": {
-        "uri": {"type": "string", "format": "at-uri"}
+        "uri": { "type": "string", "format": "at-uri" }
       }
     }
   }

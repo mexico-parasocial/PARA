@@ -25,7 +25,7 @@
             "description": "The duration of the status in minutes. Applications can choose to impose minimum and maximum limits.",
             "minimum": 1
           },
-          "createdAt": {"type": "string", "format": "datetime"}
+          "createdAt": { "type": "string", "format": "datetime" }
         }
       }
     },

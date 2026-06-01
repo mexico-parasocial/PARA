@@ -16,6 +16,7 @@ import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
+import {getDefaultChatIdentityMode} from '#/lib/chat/identity'
 import {type RepresentativeItem} from '#/lib/mock-data'
 import {hasOfficialScope} from '#/lib/official-civic-accounts'
 import {
@@ -34,6 +35,7 @@ import {EmptyState} from '#/view/com/util/EmptyState'
 import {List, type ListRef} from '#/view/com/util/List'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
+import {ChatIdentityPill} from '#/components/chat/ChatIdentityPill'
 import {EditBig_Stroke1_Corner0_Rounded as EditIcon} from '#/components/icons/EditBig'
 import {Text} from '#/components/Typography'
 import {IS_IOS} from '#/env'
@@ -86,6 +88,7 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
     const createOfficialResponse = useCreateOfficialPajareoResponseMutation()
     const supportEntry = useSupportRepresentativePajareoEntryMutation()
     const reportEntry = useReportRepresentativePajareoEntryMutation()
+    const isolatedIdentityMode = getDefaultChatIdentityMode('isolated_testimony')
 
     const entries = data?.entries ?? []
     const eligibility = data?.eligibility
@@ -258,6 +261,9 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
                 )
               })}
             </View>
+            {entryType === 'testimonio' && (
+              <ChatIdentityPill mode={isolatedIdentityMode} />
+            )}
             <TextInput
               accessibilityLabel={_(msg`Pajareo entry input`)}
               accessibilityHint={_(msg`Write an anonymous local signature, question, signal, or testimony.`)}

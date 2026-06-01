@@ -22,9 +22,9 @@
             "maximum": 100,
             "default": 50
           },
-          "priority": {"type": "boolean"},
-          "cursor": {"type": "string"},
-          "seenAt": {"type": "string", "format": "datetime"}
+          "priority": { "type": "boolean" },
+          "cursor": { "type": "string" },
+          "seenAt": { "type": "string", "format": "datetime" }
         }
       },
       "output": {
@@ -33,13 +33,13 @@
           "type": "object",
           "required": ["notifications"],
           "properties": {
-            "cursor": {"type": "string"},
+            "cursor": { "type": "string" },
             "notifications": {
               "type": "array",
-              "items": {"type": "ref", "ref": "#notification"}
+              "items": { "type": "ref", "ref": "#notification" }
             },
-            "priority": {"type": "boolean"},
-            "seenAt": {"type": "string", "format": "datetime"}
+            "priority": { "type": "boolean" },
+            "seenAt": { "type": "string", "format": "datetime" }
           }
         }
       }
@@ -56,9 +56,9 @@
         "indexedAt"
       ],
       "properties": {
-        "uri": {"type": "string", "format": "at-uri"},
-        "cid": {"type": "string", "format": "cid"},
-        "author": {"type": "ref", "ref": "app.bsky.actor.defs#profileView"},
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
+        "author": { "type": "ref", "ref": "app.bsky.actor.defs#profileView" },
         "reason": {
           "type": "string",
           "description": "The reason why this notification was delivered - e.g. your post was liked, or you received a new follower.",
@@ -74,16 +74,17 @@
             "unverified",
             "like-via-repost",
             "repost-via-repost",
-            "subscribed-post"
+            "subscribed-post",
+            "contact-match"
           ]
         },
-        "reasonSubject": {"type": "string", "format": "at-uri"},
-        "record": {"type": "unknown"},
-        "isRead": {"type": "boolean"},
-        "indexedAt": {"type": "string", "format": "datetime"},
+        "reasonSubject": { "type": "string", "format": "at-uri" },
+        "record": { "type": "unknown" },
+        "isRead": { "type": "boolean" },
+        "indexedAt": { "type": "string", "format": "datetime" },
         "labels": {
           "type": "array",
-          "items": {"type": "ref", "ref": "com.atproto.label.defs#label"}
+          "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
         }
       }
     }

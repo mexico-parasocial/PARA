@@ -11,11 +11,11 @@
           "type": "object",
           "required": ["canUpload"],
           "properties": {
-            "canUpload": {"type": "boolean"},
-            "remainingDailyVideos": {"type": "integer"},
-            "remainingDailyBytes": {"type": "integer"},
-            "message": {"type": "string"},
-            "error": {"type": "string"}
+            "canUpload": { "type": "boolean" },
+            "remainingDailyVideos": { "type": "integer" },
+            "remainingDailyBytes": { "type": "integer" },
+            "message": { "type": "string" },
+            "error": { "type": "string" }
           }
         }
       }

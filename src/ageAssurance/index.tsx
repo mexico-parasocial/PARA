@@ -39,6 +39,7 @@ const AgeAssuranceStateContext = createContext<{
   flags: {
     adultContentDisabled: boolean
     chatDisabled: boolean
+    isDeclaredUnderAdultAge: boolean
     isOverRegionMinAccessAge: boolean
     isOverAppMinAccessAge: boolean
   }
@@ -53,6 +54,7 @@ const AgeAssuranceStateContext = createContext<{
   flags: {
     adultContentDisabled: false,
     chatDisabled: false,
+    isDeclaredUnderAdultAge: false,
     isOverRegionMinAccessAge: false,
     isOverAppMinAccessAge: false,
   },
@@ -101,7 +103,7 @@ function InnerProvider({children}: {children: React.ReactNode}) {
     <AgeAssuranceStateContext.Provider
       value={useMemo(() => {
         const chatDisabled = state.access !== AgeAssuranceAccess.Full
-        const isUnderAdultAge = data?.birthdate
+        const isDeclaredUnderAdultAge = data?.birthdate
           ? isUnderAge(data.birthdate, 18)
           : true
         const isOverRegionMinAccessAge = data?.birthdate
@@ -111,7 +113,7 @@ function InnerProvider({children}: {children: React.ReactNode}) {
           ? !isUnderAge(data.birthdate, MIN_ACCESS_AGE)
           : false
         const adultContentDisabled =
-          state.access !== AgeAssuranceAccess.Full || isUnderAdultAge
+          state.access !== AgeAssuranceAccess.Full || isDeclaredUnderAdultAge
         return {
           Access: AgeAssuranceAccess,
           Status: AgeAssuranceStatus,
@@ -119,6 +121,7 @@ function InnerProvider({children}: {children: React.ReactNode}) {
           flags: {
             adultContentDisabled,
             chatDisabled,
+            isDeclaredUnderAdultAge,
             isOverRegionMinAccessAge,
             isOverAppMinAccessAge,
           },

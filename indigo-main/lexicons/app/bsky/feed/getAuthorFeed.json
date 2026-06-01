@@ -9,14 +9,14 @@
         "type": "params",
         "required": ["actor"],
         "properties": {
-          "actor": {"type": "string", "format": "at-identifier"},
+          "actor": { "type": "string", "format": "at-identifier" },
           "limit": {
             "type": "integer",
             "minimum": 1,
             "maximum": 100,
             "default": 50
           },
-          "cursor": {"type": "string"},
+          "cursor": { "type": "string" },
           "filter": {
             "type": "string",
             "description": "Combinations of post/repost types to include in response.",
@@ -41,7 +41,7 @@
           "type": "object",
           "required": ["feed"],
           "properties": {
-            "cursor": {"type": "string"},
+            "cursor": { "type": "string" },
             "feed": {
               "type": "array",
               "items": {
@@ -52,7 +52,7 @@
           }
         }
       },
-      "errors": [{"name": "BlockedActor"}, {"name": "BlockedByActor"}]
+      "errors": [{ "name": "BlockedActor" }, { "name": "BlockedByActor" }]
     }
   }
 }

@@ -1,8 +1,6 @@
 import {useEffect, useRef, useState} from 'react'
 import {type TextInput, View} from 'react-native'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
-import {Trans} from '@lingui/react/macro'
+import {Plural, Trans, useLingui} from '@lingui/react/macro'
 import * as EmailValidator from 'email-validator'
 import type tldts from 'tldts'
 
@@ -31,6 +29,7 @@ import {
   MIN_ACCESS_AGE,
   useAgeAssuranceRegionConfigWithFallback,
 } from '#/ageAssurance/util'
+import {useAnalytics} from '#/analytics'
 import {IS_NATIVE} from '#/env'
 import {
   useDeviceGeolocationApi,
@@ -59,7 +58,8 @@ export function StepInfo({
   refetchServer: () => void
   isLoadingStarterPack: boolean
 }) {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
+  const ax = useAnalytics()
   const {state, dispatch} = useSignupContext()
   const preemptivelyCompleteActivePolicyUpdate =
     usePreemptivelyCompleteActivePolicyUpdate()
@@ -92,12 +92,12 @@ export function StepInfo({
   const tldtsRef = useRef<typeof tldts>(undefined)
   useEffect(() => {
     // @ts-expect-error - valid path
-    import('tldts/dist/index.cjs.min.js').then(tldts => {
+    void import('tldts/dist/index.cjs.min.js').then(tldts => {
       tldtsRef.current = tldts
     })
     // This will get used in the avatar creator a few steps later, so lets preload it now
     // @ts-expect-error - valid path
-    import('react-native-view-shot/src/index')
+    void import('react-native-view-shot/src/index')
   }, [])
 
   const onNextPress = () => {
@@ -113,21 +113,21 @@ export function StepInfo({
     if (state.serviceDescription?.inviteCodeRequired && !inviteCode) {
       return dispatch({
         type: 'setError',
-        value: _(msg`Please enter your invite code.`),
+        value: l`Please enter your invite code.`,
         field: 'invite-code',
       })
     }
     if (!email) {
       return dispatch({
         type: 'setError',
-        value: _(msg`Please enter your email.`),
+        value: l`Please enter your email.`,
         field: 'email',
       })
     }
     if (!EmailValidator.validate(email)) {
       return dispatch({
         type: 'setError',
-        value: _(msg`Your email appears to be invalid.`),
+        value: l`Your email appears to be invalid.`,
         field: 'email',
       })
     }
@@ -137,9 +137,7 @@ export function StepInfo({
         setHasWarnedEmail(true)
         return dispatch({
           type: 'setError',
-          value: _(
-            msg`Please double-check that you have entered your email address correctly.`,
-          ),
+          value: l`Please double-check that you have entered your email address correctly.`,
         })
       }
     } else if (hasWarnedEmail) {
@@ -149,14 +147,14 @@ export function StepInfo({
     if (!password) {
       return dispatch({
         type: 'setError',
-        value: _(msg`Please choose your password.`),
+        value: l`Please choose your password.`,
         field: 'password',
       })
     }
     if (password.length < 8) {
       return dispatch({
         type: 'setError',
-        value: _(msg`Your password must be at least 8 characters long.`),
+        value: l`Your password must be at least 8 characters long.`,
         field: 'password',
       })
     }
@@ -166,13 +164,9 @@ export function StepInfo({
     dispatch({type: 'setEmail', value: email})
     dispatch({type: 'setPassword', value: password})
     dispatch({type: 'next'})
-    logger.metric(
-      'signup:nextPressed',
-      {
-        activeStep: state.activeStep,
-      },
-      {statsig: true},
-    )
+    ax.metric('signup:nextPressed', {
+      activeStep: state.activeStep,
+    })
   }
 
   return (
@@ -207,7 +201,7 @@ export function StepInfo({
                         dispatch({type: 'clearError'})
                       }
                     }}
-                    label={_(msg`Required for this provider`)}
+                    label={l`Required for this provider`}
                     defaultValue={state.inviteCode}
                     autoCapitalize="none"
                     autoComplete="email"
@@ -243,7 +237,7 @@ export function StepInfo({
                       dispatch({type: 'clearError'})
                     }
                   }}
-                  label={_(msg`Enter your email address`)}
+                  label={l`Enter your email address`}
                   defaultValue={state.email}
                   autoCapitalize="none"
                   autoComplete="email"
@@ -271,7 +265,7 @@ export function StepInfo({
                       dispatch({type: 'clearError'})
                     }
                   }}
-                  label={_(msg`Choose your password`)}
+                  label={l`Choose your password`}
                   defaultValue={state.password}
                   secureTextEntry
                   autoComplete="new-password"
@@ -299,8 +293,8 @@ export function StepInfo({
                     value: sanitizeDate(new Date(date)),
                   })
                 }}
-                label={_(msg`Date of birth`)}
-                accessibilityHint={_(msg`Select your date of birth`)}
+                label={l`Date of birth`}
+                accessibilityHint={l`Select your date of birth`}
                 maximumDate={new Date()}
               />
             </View>
@@ -314,17 +308,10 @@ export function StepInfo({
                     <Admonition.Icon />
                     <Admonition.Content>
                       <Admonition.Text>
-                        {!isOverAppMinAccessAge ? (
-                          <Trans>
-                            You must be {MIN_ACCESS_AGE} years of age or older
-                            to create an account.
-                          </Trans>
-                        ) : (
-                          <Trans>
-                            You must be {aaRegionConfig.minAccessAge} years of
-                            age or older to create an account in your region.
-                          </Trans>
-                        )}
+                        <Plural
+                          value={aaRegionConfig.minAccessAge}
+                          other="You must be # years of age or older to create an account in your region."
+                        />
                       </Admonition.Text>
                       {IS_NATIVE &&
                         !isDeviceGeolocationGranted &&
@@ -333,13 +320,11 @@ export function StepInfo({
                             <Trans>
                               Have we got your location wrong?{' '}
                               <SimpleInlineLinkText
-                                label={_(
-                                  msg`Tap here to confirm your location with GPS.`,
-                                )}
+                                label={l`Tap here to update your location with GPS.`}
                                 {...createStaticClick(() => {
                                   locationControl.open()
                                 })}>
-                                Tap here to confirm your location with GPS.
+                                Tap here to update your location with GPS.
                               </SimpleInlineLinkText>
                             </Trans>
                           </Admonition.Text>
@@ -365,7 +350,7 @@ export function StepInfo({
                   props.closeDialog(() => {
                     // set this after close!
                     setDeviceGeolocation(props.geolocation)
-                    Toast.show(_(msg`Your location has been updated.`), {
+                    Toast.show(l`Your location has been updated.`, {
                       type: 'success',
                     })
                   })
@@ -376,13 +361,13 @@ export function StepInfo({
         ) : undefined}
       </View>
       <BackNextButtons
-        hideNext={!isOverRegionMinAccessAge || !isOverAppMinAccessAge}
+        hideNext={!isOverRegionMinAccessAge}
         showRetry={isServerError}
         isLoading={state.isLoading}
         onBackPress={onPressBack}
         onNextPress={onNextPress}
         onRetryPress={refetchServer}
-        overrideNextText={hasWarnedEmail ? _(msg`It's correct`) : undefined}
+        overrideNextText={hasWarnedEmail ? l`It's correct` : undefined}
       />
     </>
   )

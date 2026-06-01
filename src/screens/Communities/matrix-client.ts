@@ -2,7 +2,7 @@
  * Lightweight custom Matrix client for PARA community chat.
  * Loaded in a WebView by CommunityChatScreen.
  *
- * Uses matrix-js-sdk browser build from unpkg CDN.
+ * Uses a PARA-hosted matrix-js-sdk browser build.
  * Configuration is injected via window.PARA_CONFIG.
  */
 
@@ -15,15 +15,14 @@ export interface MatrixClientConfig {
   communityName: string
   /**
    * Override the URL used to load matrix-js-sdk.
-   * Default: unpkg CDN (convenient for dev).
-   * Production: host on your own domain, e.g.
-   *   'https://chat.para.social/static/matrix-js-sdk.min.js'
+   * Default: PARA-hosted SDK. Keep this off public CDNs in production so the
+   * chat shell has a single trust boundary.
    */
   sdkUrl?: string
 }
 
 export function buildClientHtml(
-  sdkUrl = 'https://unpkg.com/matrix-js-sdk@34.11.0/dist/browser-matrix.min.js',
+  sdkUrl = 'https://chat.para.social/static/matrix-js-sdk.min.js',
 ): string {
   return `<!DOCTYPE html>
 <html lang="es">

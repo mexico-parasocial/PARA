@@ -15,7 +15,7 @@
             "format": "did",
             "description": "DID of the account to be blocked."
           },
-          "createdAt": {"type": "string", "format": "datetime"}
+          "createdAt": { "type": "string", "format": "datetime" }
         }
       }
     }

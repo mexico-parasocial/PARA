@@ -18,6 +18,7 @@ import {useMinimalShellFooterTransform} from '#/lib/hooks/useMinimalShellTransfo
 import {useNavigationTabState} from '#/lib/hooks/useNavigationTabState'
 import {clamp} from '#/lib/numbers'
 import {getTabState, TabState} from '#/lib/routes/helpers'
+import {type SharedNavTab, TAB_TO_NAV_ITEM} from '#/lib/routes/tab-to-nav-item'
 import {useTotalChatUnread} from '#/state/chat/useTotalChatUnread'
 import {emitSoftReset} from '#/state/events'
 import {useUnreadNotifications} from '#/state/queries/notifications/unread'
@@ -50,15 +51,17 @@ import {
   MagnifyingGlass_Stroke2_Corner0_Rounded as MagnifyingGlass,
 } from '#/components/icons/MagnifyingGlass'
 import {Text} from '#/components/Typography'
+import {useAnalytics} from '#/analytics'
+import {useActorStatus} from '#/features/liveNow'
 import {useDemoMode} from '#/storage/hooks/demo-mode'
 import {styles} from './BottomBarStyles'
 
-type TabOptions = 'Home' | 'Search' | 'Data' | 'Notifications' | 'MyProfile'
 
 export function BottomBar({navigation}: BottomTabBarProps) {
   const {hasSession, currentAccount} = useSession()
   const t = useTheme()
   const {_} = useLingui()
+  const ax = useAnalytics()
   const safeAreaInsets = useSafeAreaInsets()
   const {footerHeight} = useShellLayout()
   const {isAtHome, isAtSearch, isAtNotifications, isAtMyProfile, isAtData} =
@@ -88,8 +91,12 @@ export function BottomBar({navigation}: BottomTabBarProps) {
   }, [requestSwitchToAccount, closeAllActiveElements])
 
   const onPressTab = useCallback(
-    (tab: TabOptions) => {
-      const state = navigation.getState()
+    (tab: SharedNavTab) => {
+      ax.metric('nav:click', {
+        item: TAB_TO_NAV_ITEM[tab],
+        surface: 'bottomBar',
+      })
+    const state = navigation.getState()
       const tabState = getTabState(state, tab)
       if (tabState === TabState.InsideAtRoot) {
         emitSoftReset()
@@ -116,7 +123,7 @@ export function BottomBar({navigation}: BottomTabBarProps) {
         dedupe(() => navigation.navigate(`${tab}Tab`))
       }
     },
-    [navigation, dedupe],
+    [navigation, dedupe, ax],
   )
   const onPressHome = useCallback(() => onPressTab('Home'), [onPressTab])
   const onPressSearch = useCallback(() => onPressTab('Search'), [onPressTab])

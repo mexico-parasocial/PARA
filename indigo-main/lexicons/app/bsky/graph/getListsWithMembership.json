@@ -20,7 +20,7 @@
             "maximum": 100,
             "default": 50
           },
-          "cursor": {"type": "string"},
+          "cursor": { "type": "string" },
           "purposes": {
             "type": "array",
             "description": "Optional filter by list purpose. If not specified, all supported types are returned.",
@@ -37,10 +37,10 @@
           "type": "object",
           "required": ["listsWithMembership"],
           "properties": {
-            "cursor": {"type": "string"},
+            "cursor": { "type": "string" },
             "listsWithMembership": {
               "type": "array",
-              "items": {"type": "ref", "ref": "#listWithMembership"}
+              "items": { "type": "ref", "ref": "#listWithMembership" }
             }
           }
         }

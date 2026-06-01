@@ -6,12 +6,14 @@ Almost all the code for this service is actually in the `search/` directory at t
 
 In September 2023, this service was substantially re-written. It no longer stores records in a local database, returns only "skeleton" results (list of ATURIs or DIDs) via the HTTP API, and defines index mappings.
 
+
 ## Query String Syntax
 
 Currently only a simple query string syntax is supported. Double-quotes can surround phrases, `-` prefix negates a single keyword, and the following initial filters are supported:
 
 - `from:<handle>` will filter to results from that account, based on current (cached) identity resolution
 - entire DIDs as an un-quoted keyword will result in filtering to results from that account
+
 
 ## Configuration
 
@@ -66,7 +68,7 @@ Run an ephemeral opensearch instance on local port 9200, with SSL disabled, and 
 
     docker build -f Dockerfile.opensearch . -t opensearch-palomar
 
-    # in any non-development system, obviously change this default password
+	# in any non-development system, obviously change this default password
     docker run -p 9200:9200 -p 9600:9600 -e "discovery.type=single-node" -e "plugins.security.disabled=true" -e OPENSEARCH_INITIAL_ADMIN_PASSWORD=0penSearch-Pal0mar opensearch-palomar
 
 See [README.opensearch.md]() for more Opensearch operational tips.

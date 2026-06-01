@@ -29,7 +29,7 @@
               ]
             }
           },
-          "createdAt": {"type": "string", "format": "datetime"},
+          "createdAt": { "type": "string", "format": "datetime" },
           "hiddenReplies": {
             "type": "array",
             "maxLength": 300,
@@ -62,7 +62,7 @@
       "description": "Allow replies from actors on a list.",
       "required": ["list"],
       "properties": {
-        "list": {"type": "string", "format": "at-uri"}
+        "list": { "type": "string", "format": "at-uri" }
       }
     }
   }

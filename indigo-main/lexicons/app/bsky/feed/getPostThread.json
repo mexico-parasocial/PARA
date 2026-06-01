@@ -51,7 +51,7 @@
           }
         }
       },
-      "errors": [{"name": "NotFound"}]
+      "errors": [{ "name": "NotFound" }]
     }
   }
 }

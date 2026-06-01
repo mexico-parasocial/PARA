@@ -22,8 +22,9 @@ import {useAccountSwitcher} from '#/lib/hooks/useAccountSwitcher'
 import {useColorSchemeStyle} from '#/lib/hooks/useColorSchemeStyle'
 import {useNonReactiveCallback} from '#/lib/hooks/useNonReactiveCallback'
 import {
+  type ChatNotificationPayload,
   getNotificationPayload,
-  type NotificationPayload,
+  isChatNotificationPayload,
   notificationToURL,
   storePayloadForAccountSwitch,
 } from '#/lib/hooks/useNotificationHandler'
@@ -77,16 +78,6 @@ import {BottomBar} from '#/view/shell/bottom-bar/BottomBar'
 import {createNativeStackNavigatorWithAuth} from '#/view/shell/createNativeStackNavigatorWithAuth'
 import {AgoraScreen} from '#/screens/Agora/AgoraScreen'
 import {ProposalDetailScreen} from '#/screens/Agora/ProposalDetailScreen'
-import {CivicTreeScreen} from '#/screens/Data/CivicTreeScreen'
-import {CollectionDetailScreen} from '#/screens/Data/CollectionDetailScreen'
-import {CommunityCivicTreeScreen} from '#/screens/Data/CommunityCivicTreeScreen'
-import {CommunityDirectoryScreen} from '#/screens/Data/CommunityDirectoryScreen'
-import {CompassScreen} from '#/screens/Data/CompassScreen'
-import {CreatePostScreen} from '#/screens/Data/CreatePostScreen'
-import {DataScreen} from '#/screens/Data/DataScreen'
-import {MyAffiliationsScreen} from '#/screens/Data/MyAffiliationsScreen'
-// Lazy loaded below
-import {MyBaseScreen} from '#/screens/Data/MyBaseScreen'
 import {BookmarksScreen} from '#/screens/Bookmarks'
 import {CabildeoDetailScreen} from '#/screens/Communities/CabildeoDetailScreen'
 import {CabildeoListScreen} from '#/screens/Communities/CabildeoListScreen'
@@ -111,6 +102,16 @@ import {PoliciesDashboard} from '#/screens/Dashboard/PoliciesAndMatters'
 import {PolicyDetailsScreen} from '#/screens/Dashboard/PolicyDetails'
 import {RepresentativesScreen} from '#/screens/Dashboard/Representatives'
 import {VSScreen} from '#/screens/Dashboard/VSScreenV2'
+import {CivicTreeScreen} from '#/screens/Data/CivicTreeScreen'
+import {CollectionDetailScreen} from '#/screens/Data/CollectionDetailScreen'
+import {CommunityCivicTreeScreen} from '#/screens/Data/CommunityCivicTreeScreen'
+import {CommunityDirectoryScreen} from '#/screens/Data/CommunityDirectoryScreen'
+import {CompassScreen} from '#/screens/Data/CompassScreen'
+import {CreatePostScreen} from '#/screens/Data/CreatePostScreen'
+import {DataScreen} from '#/screens/Data/DataScreen'
+import {MyAffiliationsScreen} from '#/screens/Data/MyAffiliationsScreen'
+// Lazy loaded below
+import {MyBaseScreen} from '#/screens/Data/MyBaseScreen'
 import {SharedPreferencesTesterScreen} from '#/screens/E2E/SharedPreferencesTesterScreen'
 import {PartyFeedScreen} from '#/screens/Feeds/PartyFeed'
 import {FindContactsFlowScreen} from '#/screens/FindContactsFlowScreen'
@@ -1387,19 +1388,14 @@ function RoutesContainer({children}: React.PropsWithChildren<{}>) {
   const closeAllActiveElements = useCloseAllActiveElements()
 
   /**
-   * Handle navigation to a conversation, or prepares for account switch.
+   * Handle navigation to the messages tab, or prepares for account switch.
    *
    * Non-reactive because we need the latest data from some hooks
    * after an async call - sfn
    */
-  const handleChatMessage = useNonReactiveCallback(
-    (
-      payload: Extract<
-        NotificationPayload,
-        {reason: 'chat-message' | 'chat-reaction'}
-      >,
-    ) => {
-      notyLogger.debug(`handleChatMessage`, {payload})
+  const handleChatNotification = useNonReactiveCallback(
+    (payload: ChatNotificationPayload) => {
+      notyLogger.debug(`handleChatNotification`, {payload})
 
       if (payload.recipientDid !== currentAccount?.did) {
         // handled in useNotificationHandler after account switch finishes
@@ -1412,12 +1408,25 @@ function RoutesContainer({children}: React.PropsWithChildren<{}>) {
         } else {
           setShowLoggedOut(true)
         }
-      } else {
+      } else if (
+        payload.reason === 'chat-message' ||
+        payload.reason === 'chat-reaction' ||
+        payload.reason === 'chat-added-to-group'
+      ) {
+        // chat-added-to-group routes to the convo because the recipient was
+        // just added and now has access.
         // @ts-expect-error nested navigators aren't typed -sfn
-        navigate('DataTab', {
-          screen: 'Data',
-          params: {},
+        navigate('MessagesTab', {
+          screen: 'Messages',
+          params: {
+            pushToConversation: payload.convoId,
+          },
         })
+      } else {
+        // chat-removed-from-group, chat-join-request-rejected: the convo is
+        // no longer accessible to the recipient, so just open the list.
+        // @ts-expect-error nested navigators aren't typed -sfn
+        navigate('MessagesTab', {screen: 'Messages'})
       }
     },
   )
@@ -1452,8 +1461,8 @@ function RoutesContainer({children}: React.PropsWithChildren<{}>) {
           causedBoot: true,
         })
 
-        if (payload.reason === 'chat-message') {
-          handleChatMessage(payload)
+        if (isChatNotificationPayload(payload)) {
+          handleChatNotification(payload)
         } else {
           const path = notificationToURL(payload)
 

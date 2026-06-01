@@ -5,7 +5,9 @@
       "identity": {
         "did": "did:plc:vvpy7d6y2li5yo73cgbszibl",
         "handle": "pengua.bsky.social",
-        "alsoKnownAs": ["at://pengua.bsky.social"],
+        "alsoKnownAs": [
+          "at://pengua.bsky.social"
+        ],
         "services": {
           "atproto_pds": {
             "type": "AtprotoPersonalDataServer",

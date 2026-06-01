@@ -15,7 +15,7 @@
             "format": "at-uri",
             "description": "Reference (AT-URI) to the mod list record."
           },
-          "createdAt": {"type": "string", "format": "datetime"}
+          "createdAt": { "type": "string", "format": "datetime" }
         }
       }
     }

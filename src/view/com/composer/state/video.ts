@@ -13,6 +13,7 @@ import {
 import {type CompressedVideo} from '#/lib/media/video/types'
 import {uploadVideo} from '#/lib/media/video/upload'
 import {createVideoAgent} from '#/lib/media/video/util'
+import {isNetworkError} from '#/lib/strings/errors'
 import {logger} from '#/logger'
 
 type CaptionsTrack = {lang: string; file: File}
@@ -262,7 +263,7 @@ export async function processVideo(
   agent: BskyAgent,
   did: string,
   signal: AbortSignal,
-  _: I18n['_'],
+  i18n: I18n,
   TEMP_enableLargeVideoUploads: boolean,
 ) {
   let video: CompressedVideo | undefined
@@ -277,7 +278,7 @@ export async function processVideo(
   } catch (e) {
     const message = getCompressErrorMessage(
       e,
-      _,
+      i18n,
       TEMP_enableLargeVideoUploads,
     )
     if (message !== null) {
@@ -302,13 +303,13 @@ export async function processVideo(
       agent,
       did,
       signal,
-      _,
+      i18n,
       setProgress: p => {
         dispatch({type: 'update_progress', progress: p, signal})
       },
     })
   } catch (e) {
-    const message = getUploadErrorMessage(e, _, TEMP_enableLargeVideoUploads)
+    const message = getUploadErrorMessage(e, i18n, TEMP_enableLargeVideoUploads)
     if (message !== null) {
       dispatch({
         type: 'to_error',
@@ -360,7 +361,7 @@ export async function processVideo(
       logger.error('Error processing video', {safeMessage: e})
       dispatch({
         type: 'to_error',
-        error: _(msg`Video failed to process`),
+        error: i18n._(msg`Video failed to process`),
         signal,
       })
       return // Exit async loop
@@ -394,7 +395,7 @@ export async function processVideo(
 
 function getCompressErrorMessage(
   e: unknown,
-  _: I18n['_'],
+  i18n: I18n,
   TEMP_enableLargeVideoUploads: boolean,
 ): string | null {
   const videoSize = TEMP_enableLargeVideoUploads ? 300 : 100
@@ -402,59 +403,67 @@ function getCompressErrorMessage(
     return null
   }
   if (e instanceof VideoTooLargeError) {
-    return _(
-      msg`The selected video is larger than ${videoSize} MB. Please try again with a smaller file.`,
+    return i18n._(
+      msg`The selected video is larger than ${videoSize} MB. Please try again with a smaller file.`,
     )
   }
   logger.error('Error compressing video', {safeMessage: e})
-  return _(msg`An error occurred while compressing the video.`)
+  return i18n._(msg`An error occurred while compressing the video.`)
 }
 
 function getUploadErrorMessage(
   e: unknown,
-  _: I18n['_'],
+  i18n: I18n,
   TEMP_enableLargeVideoUploads: boolean,
 ): string | null {
   const videoSize = TEMP_enableLargeVideoUploads ? 300 : 100
   if (e instanceof AbortError) {
     return null
   }
-  logger.error('Error uploading video', {safeMessage: e})
   if (e instanceof ServerError || e instanceof UploadLimitError) {
     // https://github.com/bluesky-social/tango/blob/lumi/lumi/worker/permissions.go#L77
     switch (e.message) {
       case 'User is not allowed to upload videos':
-        return _(msg`You are not allowed to upload videos.`)
+        return i18n._(msg`You are not allowed to upload videos.`)
       case 'Uploading is disabled at the moment':
-        return _(
-          msg`Hold up! We're gradually giving access to video, and you're still waiting in line. Check back soon!`,
+        return i18n._(
+          msg`Hold up! We’re gradually giving access to video, and you’re still waiting in line. Check back soon!`,
         )
       case "Failed to get user's upload stats":
-        return _(
+        return i18n._(
           msg`We were unable to determine if you are allowed to upload videos. Please try again.`,
         )
       case 'User has exceeded daily upload bytes limit':
-        return _(
+        return i18n._(
           msg`You've reached your daily limit for video uploads (too many bytes)`,
         )
       case 'User has exceeded daily upload videos limit':
-        return _(
+        return i18n._(
           msg`You've reached your daily limit for video uploads (too many videos)`,
         )
       case 'Account is not old enough to upload videos':
-        return _(
+        return i18n._(
           msg`Your account is not yet old enough to upload videos. Please try again later.`,
         )
       case 'file size (100000001 bytes) is larger than the maximum allowed size (100000000 bytes)':
       case 'file size (300000001 bytes) is larger than the maximum allowed size (300000000 bytes)':
-        return _(
-          msg`The selected video is larger than ${videoSize} MB. Please try again with a smaller file.`,
+        return i18n._(
+          msg`The selected video is larger than ${videoSize} MB. Please try again with a smaller file.`,
         )
       case 'Confirm your email address to upload videos':
-        return _(msg`Please confirm your email address to upload videos.`)
-      default:
-        return e.message
+        return i18n._(msg`Please confirm your email address to upload videos.`)
     }
   }
-  return _(msg`An error occurred while uploading the video.`)
+
+  if (isNetworkError(e)) {
+    return i18n._(
+      msg`An error occurred while uploading the video. Please check your internet connection and try again.`,
+    )
+  } else {
+    // only log errors if they are unknown (and not network errors)
+    logger.error('Error uploading video', {safeMessage: e})
+  }
+
+  const message = e instanceof Error ? e.message : ''
+  return i18n._(msg`An error occurred while uploading the video. ${message}`)
 }

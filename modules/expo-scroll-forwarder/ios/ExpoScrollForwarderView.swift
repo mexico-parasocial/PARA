@@ -99,7 +99,7 @@ class ExpoScrollForwarderView: ExpoView, UIGestureRecognizerDelegate {
       self.didImpact = false
 
       if sv.contentOffset.y <= -130 {
-        self.rctRefreshCtrl?.forwarderBeginRefreshing()
+        self.beginRefresh()
         return
       }
 
@@ -204,6 +204,15 @@ class ExpoScrollForwarderView: ExpoView, UIGestureRecognizerDelegate {
 
   func scrollToOffset(_ offset: Int, animated: Bool = true) {
     self.rctScrollView?.scroll(toOffset: CGPoint(x: 0, y: offset), animated: animated)
+  }
+
+  func beginRefresh() {
+    guard let refreshControl = self.rctRefreshCtrl, !refreshControl.isRefreshing else {
+      return
+    }
+
+    refreshControl.beginRefreshing()
+    refreshControl.sendActions(for: .valueChanged)
   }
 
   func stopTimer() {

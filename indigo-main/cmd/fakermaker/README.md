@@ -1,21 +1,23 @@
+
 ## Running `fakermaker`
 
 Configure a `.env` file for use against `atproto` Typescript PDS implementation
 (in development mode, already running locally):
 
-    ATP_PDS_HOST=http://localhost:2583
-    ATP_AUTH_HANDLE="admin.test"
-    ATP_AUTH_PASSWORD="admin"
-    ATP_AUTH_ADMIN_PASSWORD="admin"
+	ATP_PDS_HOST=http://localhost:2583
+	ATP_AUTH_HANDLE="admin.test"
+	ATP_AUTH_PASSWORD="admin"
+	ATP_AUTH_ADMIN_PASSWORD="admin"
+
 
 Then, from the top-level directory, run test commands:
 
-    mkdir -p data/fakermaker
+	mkdir -p data/fakermaker
     export GOLOG_LOG_LEVEL=info
 
     # setup and create initial accounts; 100 by default
     # supply --use-invite-code and/or --domain-suffix SUFFIX as needed
-    go run ./cmd/fakermaker/ gen-accounts > data/fakermaker/accounts.json
+	go run ./cmd/fakermaker/ gen-accounts > data/fakermaker/accounts.json
 
     # create or update profiles for all the accounts
     go run ./cmd/fakermaker/ gen-profiles
@@ -30,7 +32,8 @@ Then, from the top-level directory, run test commands:
     go run ./cmd/fakermaker/ gen-interactions
 
     # lastly, read-only queries, including timelines, notifications, and post threads
-    go run ./cmd/fakermaker/ run-browsing
+    go run ./cmd/fakermaker/ run-browsing                                                                               
+
 
 ## Docker Compose Integration Tests
 

@@ -1,4 +1,5 @@
-# `indigo/automod`: rules engine for anti-spam and other moderation tasks
+`indigo/automod`: rules engine for anti-spam and other moderation tasks
+=======================================================================
 
 automod is a "rules engine" framework, used to augment human moderators in the atproto network by proactively identifying patterns of behavior and content. Batches of rules are processed for novel "events" such as a new post or update of an account handle. Counters and other statistics are collected, which can drive subsequent rule invocations. The outcome of rules can be moderation events like "report account for human review" or "label post". Much of what this framework does is simply aggregating and maintaining caches of relevant metadata about accounts and pieces of content, so that rules have efficient access to this information.
 
@@ -19,14 +20,14 @@ The runtime maintains state in several "stores", each of which has an interface 
 - `automod/cachestore`: generic data caching with expiration (TTL) and explicit purging. Used to cache account-level metadata, including identity lookups and (if available) private account metadata
 - `automod/countstore`: keyed integer counters with time bucketing (eg, "hour", "day", "total"). Also includes probabilistic "distinct value" counters (eg, Redis HyperLogLog counters, with roughly 2% precision)
 - `automod/setstore`: configurable static string sets. May eventually be runtime configurable
-- `automod/flagstore`: mechanism to keep track of automod-generated "flags" (like labels or hashtags) on accounts or records. Mostly used to detect _new_ flags. May eventually be moved in to the moderation service itself, similar to labels
+- `automod/flagstore`: mechanism to keep track of automod-generated "flags" (like labels or hashtags) on accounts or records. Mostly used to detect *new* flags. May eventually be moved in to the moderation service itself, similar to labels
 
 ## Prior Art
 
-- The [SQRL language](https://sqrl-lang.github.io/sqrl/) and runtime was originally developed by an industry vendor named Smyte, then acquired by Twitter, with some core Javascript components released open source in 2023. The SQRL documentation is extensive and describes many of the design trade-offs and features specific to rules engines. Bluesky considered adopting SQRL but decided to start with a simpler runtime with rules in a known language (golang).
+* The [SQRL language](https://sqrl-lang.github.io/sqrl/) and runtime was originally developed by an industry vendor named Smyte, then acquired by Twitter, with some core Javascript components released open source in 2023. The SQRL documentation is extensive and describes many of the design trade-offs and features specific to rules engines. Bluesky considered adopting SQRL but decided to start with a simpler runtime with rules in a known language (golang).
 
-- Reddit's [automod system](https://www.reddit.com/wiki/automoderator/) is simple an accessible for non-technical sub-reddit community moderators. Discord has a large ecosystem of bots which can help communities manage some moderation tasks, in particular mitigating spam and brigading.
+* Reddit's [automod system](https://www.reddit.com/wiki/automoderator/) is simple an accessible for non-technical sub-reddit community moderators. Discord has a large ecosystem of bots which can help communities manage some moderation tasks, in particular mitigating spam and brigading.
 
-- Facebook's FXL and Haxl rule languages have been in use for over a decade. The 2012 paper ["The Facebook Immune System"](https://css.csail.mit.edu/6.858/2012/readings/facebook-immune.pdf) gives a good overview of design goals and how a rules engine fits in to a an overall anti-spam/anti-abuse pipeline.
+* Facebook's FXL and Haxl rule languages have been in use for over a decade. The 2012 paper ["The Facebook Immune System"](https://css.csail.mit.edu/6.858/2012/readings/facebook-immune.pdf) gives a good overview of design goals and how a rules engine fits in to a an overall anti-spam/anti-abuse pipeline.
 
-- Email anti-spam systems like SpamAssassin and rspamd have been modular and configurable for several decades.
+* Email anti-spam systems like SpamAssassin and rspamd have been modular and configurable for several decades.

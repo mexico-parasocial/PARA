@@ -4,7 +4,9 @@
     "Identity": {
       "DID": "did:plc:suvj7i7gk6vzc7wvwd3gx6zq",
       "Handle": "hackerdarkweb.bsky.social",
-      "AlsoKnownAs": ["at://hackerdarkweb.bsky.social"],
+      "AlsoKnownAs": [
+        "at://hackerdarkweb.bsky.social"
+      ],
       "Services": {
         "atproto_pds": {
           "Type": "AtprotoPersonalDataServer",
@@ -24,7 +26,9 @@
       "DisplayName": "Hacker_dark_web"
     },
     "Private": null,
-    "AccountLabels": ["spam"],
+    "AccountLabels": [
+      "spam"
+    ],
     "AccountNegatedLabels": null,
     "AccountFlags": [],
     "FollowersCount": 3,
@@ -53,7 +57,9 @@
             }
           }
         ],
-        "langs": ["en"],
+        "langs": [
+          "en"
+        ],
         "text": "@crossbunbun.bsky.social Message on WhatsApp to recover your lost account \n\n‪+1 (765) 734‑3839‬"
       }
     },
@@ -63,7 +69,9 @@
       "value": {
         "$type": "app.bsky.feed.post",
         "createdAt": "2023-12-07T16:49:26.393Z",
-        "langs": ["en"],
+        "langs": [
+          "en"
+        ],
         "reply": {
           "parent": {
             "cid": "bafyreiai3o2b7d5alheiiohqb3zeagplz37lngvndowzabzy2ox2gil3ji",
@@ -97,7 +105,9 @@
             }
           }
         ],
-        "langs": ["en"],
+        "langs": [
+          "en"
+        ],
         "text": "@cyberfoxmeow.bsky.social Message on WhatsApp to recover your lost account \n\n‪+1 (765) 734‑3839‬"
       }
     },
@@ -107,7 +117,9 @@
       "value": {
         "$type": "app.bsky.feed.post",
         "createdAt": "2023-12-07T16:48:50.538Z",
-        "langs": ["en"],
+        "langs": [
+          "en"
+        ],
         "reply": {
           "parent": {
             "cid": "bafyreiguf5uuetq5fvr7bgh4vt42q6wzf34wlwseq5jz2s6elwuxbjtaym",
@@ -141,7 +153,9 @@
             }
           }
         ],
-        "langs": ["en"],
+        "langs": [
+          "en"
+        ],
         "text": "@lollardfish.bsky.social Message on WhatsApp to recover your lost account \n\n‪+1 (765) 734‑3839‬"
       }
     },
@@ -151,7 +165,9 @@
       "value": {
         "$type": "app.bsky.feed.post",
         "createdAt": "2023-12-07T16:48:30.192Z",
-        "langs": ["en"],
+        "langs": [
+          "en"
+        ],
         "reply": {
           "parent": {
             "cid": "bafyreihwjky3uxjzr5bzdty2d6acbdcjo6zoloxlqhbg3swo4v74struf4",
@@ -171,7 +187,9 @@
       "value": {
         "$type": "app.bsky.feed.post",
         "createdAt": "2023-12-07T16:47:47.163Z",
-        "langs": ["en"],
+        "langs": [
+          "en"
+        ],
         "reply": {
           "parent": {
             "cid": "bafyreifom67hymr6xtgzn73didgft27wo5w2kky2g5zktjrpiakqelksee",
@@ -205,7 +223,9 @@
             }
           }
         ],
-        "langs": ["en"],
+        "langs": [
+          "en"
+        ],
         "text": "@johncnj.bsky.social Message on WhatsApp to recover your lost account \n\n‪+1 (765) 734‑3839‬"
       }
     },
@@ -215,7 +235,9 @@
       "value": {
         "$type": "app.bsky.feed.post",
         "createdAt": "2023-12-07T16:47:16.632Z",
-        "langs": ["en"],
+        "langs": [
+          "en"
+        ],
         "reply": {
           "parent": {
             "cid": "bafyreibqcgtk44ovhreovuvp5f3z6jfwhlahktysizlgmvs5i6eajrfnby",
@@ -249,7 +271,9 @@
             }
           }
         ],
-        "langs": ["en"],
+        "langs": [
+          "en"
+        ],
         "text": "@dwuff.bsky.social Message on WhatsApp to recover your lost funds \n\n‪+1 (765) 734‑3839‬"
       }
     },
@@ -259,7 +283,9 @@
       "value": {
         "$type": "app.bsky.feed.post",
         "createdAt": "2023-12-04T12:05:26.627Z",
-        "langs": ["en"],
+        "langs": [
+          "en"
+        ],
         "reply": {
           "parent": {
             "cid": "bafyreifretb4p2o4u22j3kaeckh5z2cs2xseqr3tqjfkae52zlf5omzwzq",
@@ -279,7 +305,9 @@
       "value": {
         "$type": "app.bsky.feed.post",
         "createdAt": "2023-12-04T12:04:40.380Z",
-        "langs": ["en"],
+        "langs": [
+          "en"
+        ],
         "reply": {
           "parent": {
             "cid": "bafyreiavkwoo52ye6ltwgl4yk5hepsyykviaihzkfn4hapujnipd24ejua",
@@ -313,7 +341,9 @@
             }
           }
         ],
-        "langs": ["en"],
+        "langs": [
+          "en"
+        ],
         "text": "@carrie4jesus.bsky.social Message on WhatsApp to recover your lost account \n\n‪+1 (765) 734‑3839‬"
       }
     },
@@ -337,7 +367,9 @@
             }
           }
         ],
-        "langs": ["en"],
+        "langs": [
+          "en"
+        ],
         "text": "@ehhjax.bsky.social Message on WhatsApp to recover your lost account \n\n‪+1 (765) 734‑3839‬"
       }
     },
@@ -361,7 +393,9 @@
             }
           }
         ],
-        "langs": ["en"],
+        "langs": [
+          "en"
+        ],
         "text": "@sunshinesdaily.bsky.social Message on WhatsApp to recover your lost account \n\n‪+1 (765) 734‑3839‬"
       }
     },
@@ -371,7 +405,9 @@
       "value": {
         "$type": "app.bsky.feed.post",
         "createdAt": "2023-12-04T12:02:17.612Z",
-        "langs": ["en"],
+        "langs": [
+          "en"
+        ],
         "reply": {
           "parent": {
             "cid": "bafyreicillzq2egsxq5e653s4mhl7z6mcoggeriyq27pjhirzn57de7ogy",
@@ -405,7 +441,9 @@
             }
           }
         ],
-        "langs": ["en"],
+        "langs": [
+          "en"
+        ],
         "text": "@zaffreyael.bsky.social PRO HACKER\nMESSAGE ON WHATSAPP +1 (412) 568-3582\nFor the following services send me a message \n1.Cloning your partner WhatsApp to see who your partner is talking to on Whatsapp\n2.Recovery of all social media accounts Facebook, Instagram,YouTube Pinterest Twitter etc"
       }
     },
@@ -415,7 +453,9 @@
       "value": {
         "$type": "app.bsky.feed.post",
         "createdAt": "2023-11-28T00:02:01.996Z",
-        "langs": ["en"],
+        "langs": [
+          "en"
+        ],
         "reply": {
           "parent": {
             "cid": "bafyreiefwnjmxf6bx7effff5ypjah3nx7e7hfr3jksppllihqirhmtpblq",
@@ -449,7 +489,9 @@
             }
           }
         ],
-        "langs": ["en"],
+        "langs": [
+          "en"
+        ],
         "text": "@ashesinadream.bsky.social PRO HACKER\nMESSAGE ON WHATSAPP +1 (412) 568-3582\nFor the following services send me a message \n1.Cloning your partner WhatsApp to see who your partner is talking to on Whatsapp\n2.Recovery of all social media accounts Facebook, Instagram,YouTube Pinterest Twitter etc"
       }
     },
@@ -459,7 +501,9 @@
       "value": {
         "$type": "app.bsky.feed.post",
         "createdAt": "2023-11-28T00:01:10.283Z",
-        "langs": ["en"],
+        "langs": [
+          "en"
+        ],
         "reply": {
           "parent": {
             "cid": "bafyreiawxmoft5bjla57qoccflkiir7k7ztyegdfoi5od2npzmvq7gw5iu",

@@ -9,8 +9,8 @@
         "type": "params",
         "required": ["uri"],
         "properties": {
-          "uri": {"type": "string", "format": "at-uri"},
-          "cid": {"type": "string", "format": "cid"}
+          "uri": { "type": "string", "format": "at-uri" },
+          "cid": { "type": "string", "format": "cid" }
         }
       },
       "output": {
@@ -20,7 +20,7 @@
           "ref": "tools.ozone.moderation.defs#recordViewDetail"
         }
       },
-      "errors": [{"name": "RecordNotFound"}]
+      "errors": [{ "name": "RecordNotFound" }]
     }
   }
 }

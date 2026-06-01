@@ -1,4 +1,5 @@
-# `tap`: atproto sync utility
+`tap`: atproto sync utility
+========================================
 
 Tap simplifies AT sync by handling the firehose connection, verification, backfill, and filtering. Your application connects to a Tap and receives simple JSON events for only the repos and collections you care about, no need to worry about binary formats for validating cryptographic signatures.
 
@@ -46,7 +47,6 @@ go run ./cmd/tap run --no-replay --disable-acks
 ```
 
 Tips:
-
 - **Set `--no-replay`**: Always connect to the firehose head on restart instead of replaying from a stale cursor. Repos that fell behind will resync when their next firehose event arrives. This flag is incompatible with `--full-network` and is not recommended for production.
 - **Don't use `--full-network`**: Full network mode tracks every repo on the network and takes days to backfill. Instead, add specific DIDs with `/repos/add`.
 - **Use `--disable-acks` until you setup webhooks or event acks**: Use a simple WebSocket client like `websocat` to inspect events.
@@ -65,7 +65,7 @@ Tips:
 - `GET /stats/resync-buffer`: get number of events in resync buffer
 - `GET /stats/cursors`: get current firehose and list repos cursors
 
-If more than one client connects to the WebSocket, events will be transparently sharded across all connected clients. There are no guarantees around sharding, events are delivered to an any available websocket consumer. Though the general deliverability guarantees (as described in _Per-Repo Ordering Rules_) hold across shards.
+If more than one client connects to the WebSocket, events will be transparently sharded across all connected clients. There are no guarantees around sharding, events are delivered to an any available websocket consumer. Though the general deliverability guarantees (as described in *Per-Repo Ordering Rules*) hold across shards.
 
 ## Configuration
 
@@ -105,11 +105,12 @@ Tap supports three delivery modes:
 
 **Webhook**: Set `TAP_WEBHOOK_URL=http://...`. Events are POSTed as JSON. Events considered "acked" once the webhook responds with a 200. Recommended for lower throughput serverless environments.
 
+
 ## Network Boundary Modes
 
 Tap syncs a subset of repos in the network. It can operate in three modes for determining this network boundary.
 
-**Dynamically Configured** (default): Tap starts out tracking no repos. Specific repos can then by added via `/repos/add` and removed via `/repos/remove`.
+**Dynamically Configured** (default):  Tap starts out tracking no repos. Specific repos can then by added via `/repos/add` and removed via `/repos/remove`.
 
 **Collection Signal**: Set `TAP_SIGNAL_COLLECTION=com.example.nsid`. Track all repos that have at least one record in the specified collection. Many applications create a "declaration" or "profile" in a repo when that repo uses that application
 
@@ -124,6 +125,7 @@ If you are interested syncing all of a single record type, it is important to sp
 Collection filters use wildcards but only at the period breaks in NSIDs. For example:
 
 `TAP_COLLECTION_FILTERS=app.bsky.feed.post,app.bsky.graph.*`
+
 
 ## Event Format
 
@@ -167,7 +169,7 @@ Events are delivered as JSON:
 }
 ```
 
-## Backfill
+## Backfill 
 
 When a repo is added (via `/repos/add`, full network mode, or collection discovery):
 
@@ -181,7 +183,7 @@ This ensures your application receives a complete, ordered view of each repo wit
 
 ### Per-Repo Ordering Rules
 
-Tap offloads cursor management and takes care of delivery guarantees. Events are delivered _at least once_. Events may be delivered more than once if Tap crashes and restarts before receiving an ack for a given event or if the event times out before being acked (default 10s).
+Tap offloads cursor management and takes care of delivery guarantees. Events are delivered *at least once*. Events may be delivered more than once if Tap crashes and restarts before receiving an ack for a given event or if the event times out before being acked (default 10s).
 
 There is no global ordering of events across repos. However Tap will ensure ordering within each repo and will avoid sending the next event until the previous event has completed processing.
 
@@ -191,7 +193,6 @@ Events for the same repo are delivered with strict ordering:
 - **Historical events** (`live: false`, in the case of backfill/resyncs) can be sent concurrently with each other, but cannot be sent while a live event is in-flight
 
 Example sequence: `H1, H2, L1, H3, H4, L2, H5`
-
 - H1 and H2 sent concurrently
 - Wait for H1 and H2 to complete, then send L1 (alone)
 - Wait for L1 to complete, then send H3 and H4 concurrently
@@ -207,7 +208,6 @@ If exposing Tap to the internet, you should set `TAP_ADMIN_PASSWORD` to require 
 Tap uses HTTP Basic authentication with the username `admin`. Basic auth works by concatenating the username and password with a colon (`admin:yourpassword`), then base64-encoding the result. This is sent in the `Authorization` header as `Basic <encoded-value>`.
 
 Example with curl:
-
 ```bash
 curl -u admin:yourpassword http://localhost:2480/repos/add \
   -H "Content-Type: application/json" \
@@ -231,7 +231,6 @@ Identity resolution uses a cached directory (24-hour TTL). DNS lookups are skipp
 Tap is distributed as a single Go binary and is easy to build and run.
 
 **Build from source:**
-
 ```bash
 go build -o tap ./cmd/tap
 ./tap run
@@ -240,14 +239,12 @@ go build -o tap ./cmd/tap
 **Docker:**
 
 A pre-built Docker image is also available:
-
 ```bash
 docker pull ghcr.io/bluesky-social/indigo/tap:latest
 docker run -p 2480:2480 ghcr.io/bluesky-social/indigo/tap:latest
 ```
 
 To persist data, mount a volume at `/data`:
-
 ```bash
 docker run -p 2480:2480 -v ./data:/data ghcr.io/bluesky-social/indigo/tap:latest
 ```

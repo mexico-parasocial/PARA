@@ -3,7 +3,12 @@
   "version": "1.121.0",
   "private": true,
   "engines": {
-    "node": ">=24.15.0"
+    "node": ">=24.15.0",
+    "runtime": {
+      "name": "node",
+      "version": "^24.15.0",
+      "onFail": "download"
+    }
   },
   "devEngines": {
     "packageManager": {
@@ -100,14 +105,15 @@
     "@atproto/syntax": "0.6.1",
     "@bitdrift/react-native": "^0.6.8",
     "@braintree/sanitize-url": "^6.0.2",
-    "@bsky.app/alf": "^0.1.7",
+    "@bsky.app/alf": "^0.1.14",
     "@bsky.app/expo-guess-language": "^0.2.8",
     "@bsky.app/expo-image-crop-tool": "^0.5.1",
     "@bsky.app/expo-scroll-edge-effect": "^0.1.4",
     "@bsky.app/expo-translate-text": "^0.2.9",
     "@bsky.app/react-native-mmkv": "2.12.5",
-    "@bsky.app/sift": "^0.3.4",
-    "@bsky.app/tapper": "^0.5.3",
+    "@bsky.app/sift": "^0.3.8",
+    "@bsky.app/tapper": "^0.5.7",
+    "@bsky.app/video": "0.3.6",
     "@discord/bottom-sheet": "bluesky-social/react-native-bottom-sheet",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
@@ -119,13 +125,8 @@
     "@formatjs/intl-locale": "^4.2.13",
     "@formatjs/intl-numberformat": "^8.15.6",
     "@formatjs/intl-pluralrules": "^5.4.6",
-    "@fortawesome/fontawesome-svg-core": "^6.1.1",
-    "@fortawesome/free-regular-svg-icons": "^6.1.1",
-    "@fortawesome/free-solid-svg-icons": "^6.1.1",
-    "@fortawesome/react-native-fontawesome": "^0.3.2",
     "@growthbook/growthbook": "^1.6.5",
     "@growthbook/growthbook-react": "^1.6.5",
-    "@haileyok/bluesky-video": "0.3.2",
     "@ipld/dag-cbor": "^9.2.7",
     "@lingui/core": "^5.9.2",
     "@lingui/react": "^5.9.2",
@@ -241,9 +242,9 @@
     "react-native-progress": "bluesky-social/react-native-progress",
     "react-native-qrcode-styled": "^0.3.3",
     "react-native-qrcode-svg": "^6.3.21",
-    "react-native-reanimated": "^3.19.1",
+    "react-native-reanimated": "3.19.1",
     "react-native-safe-area-context": "~5.6.0",
-    "react-native-screens": "^4.24.0",
+    "react-native-screens": "4.24.0",
     "react-native-sticky-table": "1.0.0",
     "react-native-svg": "15.8.0",
     "react-native-uitextview": "^1.4.0",
@@ -390,5 +391,12 @@
     "assets/icons/*.svg": [
       "svgo"
     ]
+  },
+  "pnpm": {
+    "patchedDependencies": {
+      "expo-glass-effect": "patches/expo-glass-effect@55.0.8.patch",
+      "react-native-date-picker": "patches/react-native-date-picker@5.0.13.patch",
+      "react-native-reanimated": "patches/react-native-reanimated@3.19.1.patch"
+    }
   }
 }

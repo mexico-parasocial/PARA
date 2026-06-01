@@ -1,6 +1,8 @@
-# `relay`: atproto relay reference implementation
 
-_NOTE: "relays" used to be called "Big Graph Servers", or "BGS", or "bigsky". Many variables and packages still reference "bgs"_
+`relay`: atproto relay reference implementation
+===============================================
+
+*NOTE: "relays" used to be called "Big Graph Servers", or "BGS", or "bigsky". Many variables and packages still reference "bgs"*
 
 This is a reference implementation of an atproto relay, written and operated by Bluesky.
 
@@ -21,6 +23,7 @@ Features and design decisions:
 This daemon is relatively simple to self-host, though it isn't as well documented or supported as the PDS reference implementation (see details below).
 
 See `./HACKING.md` for more documentation of specific behaviors of this implementation.
+
 
 ## Development Tips
 
@@ -90,7 +93,7 @@ This implementation also has some off-protocol admin endpoints under `/admin/`. 
 
 ## Configuration and Operation
 
-_NOTE: this document is not a complete guide to operating a relay as a public service. That requires planning around acceptable use policies, financial sustainability, infrastructure selection, etc. This is just a quick overview of the mechanics of getting a relay up and running._
+*NOTE: this document is not a complete guide to operating a relay as a public service. That requires planning around acceptable use policies, financial sustainability, infrastructure selection, etc. This is just a quick overview of the mechanics of getting a relay up and running.*
 
 Some notable configuration env vars:
 
@@ -109,7 +112,7 @@ The relay admin interface has flexibility for many situations, but in some opera
 
 On the public web, you should probably run the relay behind a load-balancer or reverse proxy like `haproxy` or `caddy`, which manages TLS and can have various HTTP limits and behaviors configured. Remember that WebSocket support is required.
 
-The relay does not resolve atproto handles, but it does do DNS resolutions for hostnames, and may do a burst of resolutions at startup. Note that the go runtime may have an internal DNS implementation enabled (this is the default for the Dockerfile). The relay _will_ do a large number of DID resolutions, particularly calls to the PLC directory, and particularly after a process restart when the in-process identity cache is warming up.
+The relay does not resolve atproto handles, but it does do DNS resolutions for hostnames, and may do a burst of resolutions at startup. Note that the go runtime may have an internal DNS implementation enabled (this is the default for the Dockerfile). The relay *will* do a large number of DID resolutions, particularly calls to the PLC directory, and particularly after a process restart when the in-process identity cache is warming up.
 
 ### PostgreSQL
 

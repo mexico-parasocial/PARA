@@ -9,7 +9,7 @@
         "type": "params",
         "required": ["did"],
         "properties": {
-          "did": {"type": "string", "format": "did"},
+          "did": { "type": "string", "format": "did" },
           "events": {
             "type": "array",
             "items": {
@@ -23,7 +23,7 @@
               ]
             }
           },
-          "cursor": {"type": "string"},
+          "cursor": { "type": "string" },
           "limit": {
             "type": "integer",
             "minimum": 1,
@@ -38,7 +38,7 @@
           "type": "object",
           "required": ["events"],
           "properties": {
-            "cursor": {"type": "string"},
+            "cursor": { "type": "string" },
             "events": {
               "type": "array",
               "items": {
@@ -64,30 +64,30 @@
             "#handleUpdated"
           ]
         },
-        "createdBy": {"type": "string"},
-        "createdAt": {"type": "string", "format": "datetime"}
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "datetime" }
       }
     },
     "accountCreated": {
       "type": "object",
       "required": [],
       "properties": {
-        "email": {"type": "string"},
-        "handle": {"type": "string", "format": "handle"}
+        "email": { "type": "string" },
+        "handle": { "type": "string", "format": "handle" }
       }
     },
     "emailUpdated": {
       "type": "object",
       "required": ["email"],
       "properties": {
-        "email": {"type": "string"}
+        "email": { "type": "string" }
       }
     },
     "emailConfirmed": {
       "type": "object",
       "required": ["email"],
       "properties": {
-        "email": {"type": "string"}
+        "email": { "type": "string" }
       }
     },
     "passwordUpdated": {
@@ -99,7 +99,7 @@
       "type": "object",
       "required": ["handle"],
       "properties": {
-        "handle": {"type": "string", "format": "handle"}
+        "handle": { "type": "string", "format": "handle" }
       }
     }
   }

@@ -16,7 +16,7 @@ tap
 
 Go will fetch dependencies, compile, and install `tap` or another service with a one-line `go install` command.
 
-_Soon_, we plan to decouple the tools in this repo so you can install them individually like [goat](https://formulae.brew.sh/formula/goat).
+*Soon*, we plan to decouple the tools in this repo so you can install them individually like [goat](https://formulae.brew.sh/formula/goat).
 
 ## What is in here?
 
@@ -36,19 +36,19 @@ _Soon_, we plan to decouple the tools in this repo so you can install them indiv
 
 > ⚠️ All the packages in this repository are under active development. Features and software interfaces have not stabilized and may break or be removed.
 
-| Package                                                         | Docs                                                                                                                                                                        |
-| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `api/atproto`: generated types for `com.atproto.*` Lexicons     | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/bluesky-social/indigo/api/atproto)](https://pkg.go.dev/mod/github.com/bluesky-social/indigo/api/atproto)               |
-| `api/bsky`: generated types for `app.bsky.*` Lexicons           | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/bluesky-social/indigo/api/bsky)](https://pkg.go.dev/mod/github.com/bluesky-social/indigo/api/bsky)                     |
-| `atproto/atclient`: HTTP API client                             | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/bluesky-social/indigo/atproto/atclient)](https://pkg.go.dev/mod/github.com/bluesky-social/indigo/atproto/atclient)     |
-| `atproto/auth/oauth`: AT OAuth client                           | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/bluesky-social/indigo/atproto/auth/oauth)](https://pkg.go.dev/mod/github.com/bluesky-social/indigo/atproto/auth/oauth) |
-| `atproto/identity`: DID and handle resolution                   | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/bluesky-social/indigo/atproto/identity)](https://pkg.go.dev/mod/github.com/bluesky-social/indigo/atproto/identity)     |
-| `atproto/syntax`: string types and parsers for identifiers      | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/bluesky-social/indigo/atproto/syntax)](https://pkg.go.dev/mod/github.com/bluesky-social/indigo/atproto/syntax)         |
-| `atproto/lexicon`: schema validation of data                    | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/bluesky-social/indigo/atproto/lexicon)](https://pkg.go.dev/mod/github.com/bluesky-social/indigo/atproto/lexicon)       |
-| `atproto/repo`: repository data structure                       | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/bluesky-social/indigo/atproto/repo)](https://pkg.go.dev/mod/github.com/bluesky-social/indigo/atproto/repo)             |
-| `atproto/repo/mst`: Merkle Search Tree implementation           | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/bluesky-social/indigo/atproto/repo/mst)](https://pkg.go.dev/mod/github.com/bluesky-social/indigo/atproto/repo/mst)     |
-| `atproto/atcrypto`: cryptographic signing and key serialization | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/bluesky-social/indigo/atproto/atcrypto)](https://pkg.go.dev/mod/github.com/bluesky-social/indigo/atproto/atcrypto)     |
-| `go-didplc/didplc`: DID PLC implementation (external)           | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/did-method-plc/go-didplc/didplc)](https://pkg.go.dev/mod/github.com/did-method-plc/go-didplc/didplc)                   |
+| Package                                                      | Docs                                                                                                                                                                    |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `api/atproto`: generated types for `com.atproto.*` Lexicons  | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/bluesky-social/indigo/api/atproto)](https://pkg.go.dev/mod/github.com/bluesky-social/indigo/api/atproto)           |
+| `api/bsky`: generated types for `app.bsky.*` Lexicons        | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/bluesky-social/indigo/api/bsky)](https://pkg.go.dev/mod/github.com/bluesky-social/indigo/api/bsky)                 |
+| `atproto/atclient`: HTTP API client                          | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/bluesky-social/indigo/atproto/atclient)](https://pkg.go.dev/mod/github.com/bluesky-social/indigo/atproto/atclient) |
+| `atproto/auth/oauth`: AT OAuth client                        | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/bluesky-social/indigo/atproto/auth/oauth)](https://pkg.go.dev/mod/github.com/bluesky-social/indigo/atproto/auth/oauth)|
+| `atproto/identity`: DID and handle resolution                | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/bluesky-social/indigo/atproto/identity)](https://pkg.go.dev/mod/github.com/bluesky-social/indigo/atproto/identity) |
+| `atproto/syntax`: string types and parsers for identifiers   | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/bluesky-social/indigo/atproto/syntax)](https://pkg.go.dev/mod/github.com/bluesky-social/indigo/atproto/syntax)     |
+| `atproto/lexicon`: schema validation of data                 | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/bluesky-social/indigo/atproto/lexicon)](https://pkg.go.dev/mod/github.com/bluesky-social/indigo/atproto/lexicon)   |
+| `atproto/repo`: repository data structure                    | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/bluesky-social/indigo/atproto/repo)](https://pkg.go.dev/mod/github.com/bluesky-social/indigo/atproto/repo)         |
+| `atproto/repo/mst`: Merkle Search Tree implementation        | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/bluesky-social/indigo/atproto/repo/mst)](https://pkg.go.dev/mod/github.com/bluesky-social/indigo/atproto/repo/mst) |
+| `atproto/atcrypto`: cryptographic signing and key serialization | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/bluesky-social/indigo/atproto/atcrypto)](https://pkg.go.dev/mod/github.com/bluesky-social/indigo/atproto/atcrypto)|
+| `go-didplc/didplc`: DID PLC implementation (external) | [![PkgGoDev](https://pkg.go.dev/badge/mod/github.com/did-method-plc/go-didplc/didplc)](https://pkg.go.dev/mod/github.com/did-method-plc/go-didplc/didplc)|
 
 The TypeScript reference implementation, including PDS and bsky AppView services, is at [bluesky-social/atproto](https://github.com/bluesky-social/atproto). Source code for the Bluesky Social client app (for web and mobile) can be found at [bluesky-social/social-app](https://github.com/bluesky-social/social-app).
 

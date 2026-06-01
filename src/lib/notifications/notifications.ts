@@ -10,6 +10,7 @@ import {
   PUBLIC_APPVIEW_DID,
   PUBLIC_STAGING_APPVIEW_DID,
 } from '#/lib/constants'
+import {matrixBridgeFetch} from '#/lib/matrix/bridge'
 import {logger as notyLogger} from '#/lib/notifications/util'
 import {isNetworkError} from '#/lib/strings/errors'
 import {type SessionAccount, useAgent, useSession} from '#/state/session'
@@ -137,19 +138,15 @@ async function _registerMatrixPushToken({
   token: Notifications.DevicePushToken
 }) {
   try {
-    const BRIDGE_API_URL =
-      process.env.EXPO_PUBLIC_MATRIX_BRIDGE_URL || 'https://bridge.para.social'
-    const res = await fetch(`${BRIDGE_API_URL}/api/push-token`, {
+    const res = await matrixBridgeFetch('/api/push-token', {
       method: 'POST',
-      headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({
-        did,
         expoPushToken: token.data,
         platform: Platform.OS,
       }),
     })
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}))
+      const err = (await res.json().catch(() => ({}))) as {error?: string}
       throw new Error(err.error || `Failed: ${res.status}`)
     }
     notyLogger.debug(`registerMatrixPushToken: success`, {did})
@@ -179,13 +176,13 @@ export function useGetAndRegisterPushToken() {
       })
 
       if (token) {
-        registerPushToken({
+        void registerPushToken({
           token,
           isAgeRestricted:
             isAgeRestrictedOverride ?? aa.state.access !== aa.Access.Full,
         })
         if (currentAccount?.did) {
-          _registerMatrixPushToken({did: currentAccount.did, token})
+          void _registerMatrixPushToken({did: currentAccount.did, token})
         }
       }
 

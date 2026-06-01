@@ -1,156 +1,156 @@
-import {FC, useEffect, useState} from 'react'
+import { FC, useEffect, useState } from "react";
 import Notification, {
   NotificationMeta,
   NotificationType,
-} from '../Notification/Notification'
+} from "../Notification/Notification";
 
-import {RELAY_HOST} from '../../constants'
+import { RELAY_HOST } from "../../constants";
 
-import {useNavigate} from 'react-router-dom'
-import ConfirmRepoTakedownModal from './ConfirmRepoTakedownModal'
+import { useNavigate } from "react-router-dom";
+import ConfirmRepoTakedownModal from "./ConfirmRepoTakedownModal";
 import {
   ShieldCheckIcon,
   ShieldExclamationIcon,
-} from '@heroicons/react/24/outline'
+} from "@heroicons/react/24/outline";
 
 const Repos: FC<{}> = () => {
-  const [repoToTakedown, setRepoToTakedown] = useState<string>('')
+  const [repoToTakedown, setRepoToTakedown] = useState<string>("");
 
   // Notification Management
   const [shouldShowNotification, setShouldShowNotification] =
-    useState<boolean>(false)
+    useState<boolean>(false);
   const [notification, setNotification] = useState<NotificationMeta>({
-    message: '',
-    alertType: '',
-  })
+    message: "",
+    alertType: "",
+  });
 
   // Modal state management
   const [modalAction, setModalAction] = useState<{
-    repo: string
-    type: 'takedown' | 'untakedown'
-  } | null>(null)
-  const [modalConfirm, setModalConfirm] = useState<() => void>(() => {})
-  const [modalCancel, setModalCancel] = useState<() => void>(() => {})
+    repo: string;
+    type: "takedown" | "untakedown";
+  } | null>(null);
+  const [modalConfirm, setModalConfirm] = useState<() => void>(() => { });
+  const [modalCancel, setModalCancel] = useState<() => void>(() => { });
 
   const [adminToken, setAdminToken] = useState<string>(
-    localStorage.getItem('admin_route_token') || '',
-  )
-  const navigate = useNavigate()
+    localStorage.getItem("admin_route_token") || ""
+  );
+  const navigate = useNavigate();
 
   const setAlertWithTimeout = (
     type: NotificationType,
     message: string,
-    dismiss: boolean,
+    dismiss: boolean
   ) => {
     setNotification({
       message,
       alertType: type,
       autodismiss: dismiss,
-    })
-    setShouldShowNotification(true)
-  }
+    });
+    setShouldShowNotification(true);
+  };
 
   useEffect(() => {
-    const token = localStorage.getItem('admin_route_token')
+    const token = localStorage.getItem("admin_route_token");
     if (token) {
-      setAdminToken(token)
+      setAdminToken(token);
     } else {
-      navigate('/login')
+      navigate("/login");
     }
-  }, [])
+  }, []);
 
   const requestTakedownRepo = (repo: string) => {
     fetch(`${RELAY_HOST}/admin/repo/takeDown`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         //Authorization: `Bearer ${adminToken}`,
-        Authorization: `Basic ` + btoa('admin:' + adminToken),
+        Authorization: `Basic ` + btoa("admin:" + adminToken),
       },
       body: JSON.stringify({
         did: repo,
       }),
     })
-      .then(res => res.json())
-      .then(res => {
+      .then((res) => res.json())
+      .then((res) => {
         if (res.error) {
           setAlertWithTimeout(
-            'failure',
+            "failure",
             `Failed to takedown repo: ${res.error}`,
-            true,
-          )
+            true
+          );
         } else {
           setAlertWithTimeout(
-            'success',
+            "success",
             `Successfully tookdown repo ${repo}`,
-            true,
-          )
+            true
+          );
         }
       })
-      .catch(err => {
-        setAlertWithTimeout('failure', `Failed to takedown repo: ${err}`, true)
-      })
-  }
+      .catch((err) => {
+        setAlertWithTimeout("failure", `Failed to takedown repo: ${err}`, true);
+      });
+  };
 
   const requestUntakedownRepo = (repo: string) => {
     fetch(`${RELAY_HOST}/admin/repo/reverseTakedown`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
         //Authorization: `Bearer ${adminToken}`,
-        Authorization: `Basic ` + btoa('admin:' + adminToken),
+        Authorization: `Basic ` + btoa("admin:" + adminToken),
       },
       body: JSON.stringify({
         did: repo,
       }),
     })
-      .then(res => res.json())
+      .then((res) => res.json())
 
-      .then(res => {
+      .then((res) => {
         if (res.error !== 200) {
           setAlertWithTimeout(
-            'failure',
+            "failure",
             `Failed to untakedown repo: ${res.error}`,
-            true,
-          )
+            true
+          );
         } else {
           setAlertWithTimeout(
-            'success',
+            "success",
             `Successfully untookdown repo ${repo}`,
-            true,
-          )
+            true
+          );
         }
       })
-      .catch(err => {
+      .catch((err) => {
         setAlertWithTimeout(
-          'failure',
+          "failure",
           `Failed to untakedown repo: ${err}`,
-          true,
-        )
-      })
-  }
+          true
+        );
+      });
+  };
 
   const handleTakedownRepo = (
     repo: string,
-    type: 'takedown' | 'untakedown',
+    type: "takedown" | "untakedown"
   ) => {
-    setModalAction({repo: repo, type})
+    setModalAction({ repo: repo, type });
 
     setModalConfirm(() => {
       return () => {
-        if (type === 'takedown') requestTakedownRepo(repo)
-        else requestUntakedownRepo(repo)
+        if (type === "takedown") requestTakedownRepo(repo);
+        else requestUntakedownRepo(repo);
 
-        setModalAction(null)
-      }
-    })
+        setModalAction(null);
+      };
+    });
 
     setModalCancel(() => {
       return () => {
-        setModalAction(null)
-      }
-    })
-  }
+        setModalAction(null);
+      };
+    });
+  };
 
   return (
     <div className="mx-auto max-w-full">
@@ -161,10 +161,11 @@ const Repos: FC<{}> = () => {
           subMessage={notification.subMessage}
           autodismiss={notification.autodismiss}
           unshow={() => {
-            setShouldShowNotification(false)
-            setNotification({message: '', alertType: ''})
+            setShouldShowNotification(false);
+            setNotification({ message: "", alertType: "" });
           }}
-          show={shouldShowNotification}></Notification>
+          show={shouldShowNotification}
+        ></Notification>
       ) : (
         <></>
       )}
@@ -183,7 +184,8 @@ const Repos: FC<{}> = () => {
         <div className="max-w-3xl w-full">
           <label
             htmlFor="email"
-            className="block text-sm font-medium leading-6 text-gray-900">
+            className="block text-sm font-medium leading-6 text-gray-900"
+          >
             Repo DID
           </label>
           <div className="mt-2 inline-flex flex-col sm:flex-row">
@@ -194,17 +196,18 @@ const Repos: FC<{}> = () => {
               className="block w-72 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
               placeholder="did:plc:abadperson"
               value={repoToTakedown}
-              onChange={e => {
-                setRepoToTakedown(e.target.value)
+              onChange={(e) => {
+                setRepoToTakedown(e.target.value);
               }}
             />
             <div className="inline-flex mt-4 sm:mt-0">
               <button
                 type="button"
                 onClick={() => {
-                  handleTakedownRepo(repoToTakedown.trim(), 'takedown')
+                  handleTakedownRepo(repoToTakedown.trim(), "takedown");
                 }}
-                className="ml-0 sm:ml-2 inline-flex whitespace-nowrap items-center gap-x-1.5 rounded-md bg-red-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600">
+                className="ml-0 sm:ml-2 inline-flex whitespace-nowrap items-center gap-x-1.5 rounded-md bg-red-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-red-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+              >
                 <ShieldExclamationIcon
                   className="-ml-0.5 h-5 w-5"
                   aria-hidden="true"
@@ -214,9 +217,10 @@ const Repos: FC<{}> = () => {
               <button
                 type="button"
                 onClick={() => {
-                  handleTakedownRepo(repoToTakedown.trim(), 'untakedown')
+                  handleTakedownRepo(repoToTakedown.trim(), "untakedown");
                 }}
-                className="ml-2 inline-flex whitespace-nowrap items-center gap-x-1.5 rounded-md bg-green-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600">
+                className="ml-2 inline-flex whitespace-nowrap items-center gap-x-1.5 rounded-md bg-green-600 px-2.5 py-1.5 text-sm font-semibold text-white shadow-sm hover:bg-green-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-green-600"
+              >
                 <ShieldCheckIcon
                   className="-ml-0.5 h-5 w-5"
                   aria-hidden="true"
@@ -235,7 +239,7 @@ const Repos: FC<{}> = () => {
         />
       )}
     </div>
-  )
-}
+  );
+};
 
-export default Repos
+export default Repos;

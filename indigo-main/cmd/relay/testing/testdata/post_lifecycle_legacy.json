@@ -5,7 +5,9 @@
       "identity": {
         "did": "did:plc:44ybard66vv44zksje25o7dz",
         "handle": "bnewbold.net",
-        "alsoKnownAs": ["at://bnewbold.net"],
+        "alsoKnownAs": [
+          "at://bnewbold.net"
+        ],
         "services": {
           "atproto_pds": {
             "type": "AtprotoPersonalDataServer",

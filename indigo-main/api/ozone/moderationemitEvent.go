@@ -18,8 +18,10 @@ type ModerationEmitEvent_Input struct {
 	CreatedBy string                           `json:"createdBy" cborgen:"createdBy"`
 	Event     *ModerationEmitEvent_Input_Event `json:"event" cborgen:"event"`
 	// externalId: An optional external ID for the event, used to deduplicate events from external systems. Fails when an event of same type with the same external ID exists for the same subject.
-	ExternalId      *string                            `json:"externalId,omitempty" cborgen:"externalId,omitempty"`
-	ModTool         *ModerationDefs_ModTool            `json:"modTool,omitempty" cborgen:"modTool,omitempty"`
+	ExternalId *string                 `json:"externalId,omitempty" cborgen:"externalId,omitempty"`
+	ModTool    *ModerationDefs_ModTool `json:"modTool,omitempty" cborgen:"modTool,omitempty"`
+	// reportAction: Optional report-level targeting. If provided, this event will be linked to specific reports and reporters may be notified.
+	ReportAction    *ModerationEmitEvent_ReportAction  `json:"reportAction,omitempty" cborgen:"reportAction,omitempty"`
 	Subject         *ModerationEmitEvent_Input_Subject `json:"subject" cborgen:"subject"`
 	SubjectBlobCids []string                           `json:"subjectBlobCids,omitempty" cborgen:"subjectBlobCids,omitempty"`
 }
@@ -46,6 +48,7 @@ type ModerationEmitEvent_Input_Event struct {
 	ModerationDefs_ModEventPriorityScore         *ModerationDefs_ModEventPriorityScore
 	ModerationDefs_AgeAssuranceEvent             *ModerationDefs_AgeAssuranceEvent
 	ModerationDefs_AgeAssuranceOverrideEvent     *ModerationDefs_AgeAssuranceOverrideEvent
+	ModerationDefs_AgeAssurancePurgeEvent        *ModerationDefs_AgeAssurancePurgeEvent
 	ModerationDefs_RevokeAccountCredentialsEvent *ModerationDefs_RevokeAccountCredentialsEvent
 	ModerationDefs_ScheduleTakedownEvent         *ModerationDefs_ScheduleTakedownEvent
 	ModerationDefs_CancelScheduledTakedownEvent  *ModerationDefs_CancelScheduledTakedownEvent
@@ -136,6 +139,10 @@ func (t *ModerationEmitEvent_Input_Event) MarshalJSON() ([]byte, error) {
 		t.ModerationDefs_AgeAssuranceOverrideEvent.LexiconTypeID = "tools.ozone.moderation.defs#ageAssuranceOverrideEvent"
 		return json.Marshal(t.ModerationDefs_AgeAssuranceOverrideEvent)
 	}
+	if t.ModerationDefs_AgeAssurancePurgeEvent != nil {
+		t.ModerationDefs_AgeAssurancePurgeEvent.LexiconTypeID = "tools.ozone.moderation.defs#ageAssurancePurgeEvent"
+		return json.Marshal(t.ModerationDefs_AgeAssurancePurgeEvent)
+	}
 	if t.ModerationDefs_RevokeAccountCredentialsEvent != nil {
 		t.ModerationDefs_RevokeAccountCredentialsEvent.LexiconTypeID = "tools.ozone.moderation.defs#revokeAccountCredentialsEvent"
 		return json.Marshal(t.ModerationDefs_RevokeAccountCredentialsEvent)
@@ -221,6 +228,9 @@ func (t *ModerationEmitEvent_Input_Event) UnmarshalJSON(b []byte) error {
 	case "tools.ozone.moderation.defs#ageAssuranceOverrideEvent":
 		t.ModerationDefs_AgeAssuranceOverrideEvent = new(ModerationDefs_AgeAssuranceOverrideEvent)
 		return json.Unmarshal(b, t.ModerationDefs_AgeAssuranceOverrideEvent)
+	case "tools.ozone.moderation.defs#ageAssurancePurgeEvent":
+		t.ModerationDefs_AgeAssurancePurgeEvent = new(ModerationDefs_AgeAssurancePurgeEvent)
+		return json.Unmarshal(b, t.ModerationDefs_AgeAssurancePurgeEvent)
 	case "tools.ozone.moderation.defs#revokeAccountCredentialsEvent":
 		t.ModerationDefs_RevokeAccountCredentialsEvent = new(ModerationDefs_RevokeAccountCredentialsEvent)
 		return json.Unmarshal(b, t.ModerationDefs_RevokeAccountCredentialsEvent)
@@ -268,6 +278,20 @@ func (t *ModerationEmitEvent_Input_Subject) UnmarshalJSON(b []byte) error {
 	default:
 		return nil
 	}
+}
+
+// ModerationEmitEvent_ReportAction is a "reportAction" in the tools.ozone.moderation.emitEvent schema.
+//
+// Target specific reports when emitting a moderation event
+type ModerationEmitEvent_ReportAction struct {
+	// all: Target ALL reports on the subject
+	All *bool `json:"all,omitempty" cborgen:"all,omitempty"`
+	// ids: Target specific report IDs
+	Ids []int64 `json:"ids,omitempty" cborgen:"ids,omitempty"`
+	// note: Note to send to reporter(s) when actioning their report
+	Note *string `json:"note,omitempty" cborgen:"note,omitempty"`
+	// types: Target reports matching these report types on the subject (fully qualified NSIDs)
+	Types []string `json:"types,omitempty" cborgen:"types,omitempty"`
 }
 
 // ModerationEmitEvent calls the XRPC method "tools.ozone.moderation.emitEvent".

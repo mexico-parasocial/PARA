@@ -40,7 +40,7 @@
           "type": "object",
           "required": ["actors"],
           "properties": {
-            "cursor": {"type": "string"},
+            "cursor": { "type": "string" },
             "hitsTotal": {
               "type": "integer",
               "description": "Count of search hits. Optional, may be rounded/truncated, and may not be possible to paginate through all hits."
@@ -55,7 +55,7 @@
           }
         }
       },
-      "errors": [{"name": "BadQueryString"}]
+      "errors": [{ "name": "BadQueryString" }]
     }
   }
 }

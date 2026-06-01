@@ -6,8 +6,8 @@
       "type": "object",
       "required": ["jobId", "did", "state"],
       "properties": {
-        "jobId": {"type": "string"},
-        "did": {"type": "string", "format": "did"},
+        "jobId": { "type": "string" },
+        "did": { "type": "string", "format": "did" },
         "state": {
           "type": "string",
           "description": "The state of the video processing job. All values not listed as a known value indicate that the job is in process.",
@@ -19,9 +19,9 @@
           "maximum": 100,
           "description": "Progress within the current processing state."
         },
-        "blob": {"type": "blob"},
-        "error": {"type": "string"},
-        "message": {"type": "string"}
+        "blob": { "type": "blob" },
+        "error": { "type": "string" },
+        "message": { "type": "string" }
       }
     }
   }

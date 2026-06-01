@@ -28,7 +28,7 @@
           },
           "descriptionFacets": {
             "type": "array",
-            "items": {"type": "ref", "ref": "app.bsky.richtext.facet"}
+            "items": { "type": "ref", "ref": "app.bsky.richtext.facet" }
           },
           "avatar": {
             "type": "blob",
@@ -39,7 +39,7 @@
             "type": "union",
             "refs": ["com.atproto.label.defs#selfLabels"]
           },
-          "createdAt": {"type": "string", "format": "datetime"}
+          "createdAt": { "type": "string", "format": "datetime" }
         }
       }
     }

@@ -38,11 +38,13 @@ function devOnlyRouter(): Plugin {
 const config: UserConfig = {
   plugins: [
     preact(),
-    paths(),
     legacy({
       targets: ['defaults', 'not IE 11'],
     }),
     devOnlyRouter(),
+    analyzer({
+      enabled: process.env.ANALYZE === '1',
+    }),
   ],
   build: {
     assetsDir: 'static',
@@ -52,6 +54,9 @@ const config: UserConfig = {
         post: resolve(__dirname, 'post.html'),
       },
     },
+  },
+  resolve: {
+    tsconfigPaths: true,
   },
 }
 

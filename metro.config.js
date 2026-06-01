@@ -2,6 +2,7 @@
 const {getSentryExpoConfig} = require('@sentry/react-native/metro')
 const cfg = getSentryExpoConfig(__dirname)
 
+// inject `.e2e.ts` and `.e2e.tsx` into the sourceExts when running tests
 cfg.resolver.sourceExts = process.env.RN_SRC_EXT
   ? process.env.RN_SRC_EXT.split(',').concat(cfg.resolver.sourceExts)
   : cfg.resolver.sourceExts

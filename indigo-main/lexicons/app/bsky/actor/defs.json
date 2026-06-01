@@ -6,25 +6,25 @@
       "type": "object",
       "required": ["did", "handle"],
       "properties": {
-        "did": {"type": "string", "format": "did"},
-        "handle": {"type": "string", "format": "handle"},
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string", "format": "handle" },
         "displayName": {
           "type": "string",
           "maxGraphemes": 64,
           "maxLength": 640
         },
-        "pronouns": {"type": "string"},
-        "avatar": {"type": "string", "format": "uri"},
+        "pronouns": { "type": "string" },
+        "avatar": { "type": "string", "format": "uri" },
         "associated": {
           "type": "ref",
           "ref": "#profileAssociated"
         },
-        "viewer": {"type": "ref", "ref": "#viewerState"},
+        "viewer": { "type": "ref", "ref": "#viewerState" },
         "labels": {
           "type": "array",
-          "items": {"type": "ref", "ref": "com.atproto.label.defs#label"}
+          "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
         },
-        "createdAt": {"type": "string", "format": "datetime"},
+        "createdAt": { "type": "string", "format": "datetime" },
         "verification": {
           "type": "ref",
           "ref": "#verificationState"
@@ -43,30 +43,30 @@
       "type": "object",
       "required": ["did", "handle"],
       "properties": {
-        "did": {"type": "string", "format": "did"},
-        "handle": {"type": "string", "format": "handle"},
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string", "format": "handle" },
         "displayName": {
           "type": "string",
           "maxGraphemes": 64,
           "maxLength": 640
         },
-        "pronouns": {"type": "string"},
+        "pronouns": { "type": "string" },
         "description": {
           "type": "string",
           "maxGraphemes": 256,
           "maxLength": 2560
         },
-        "avatar": {"type": "string", "format": "uri"},
+        "avatar": { "type": "string", "format": "uri" },
         "associated": {
           "type": "ref",
           "ref": "#profileAssociated"
         },
-        "indexedAt": {"type": "string", "format": "datetime"},
-        "createdAt": {"type": "string", "format": "datetime"},
-        "viewer": {"type": "ref", "ref": "#viewerState"},
+        "indexedAt": { "type": "string", "format": "datetime" },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "viewer": { "type": "ref", "ref": "#viewerState" },
         "labels": {
           "type": "array",
-          "items": {"type": "ref", "ref": "com.atproto.label.defs#label"}
+          "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
         },
         "verification": {
           "type": "ref",
@@ -86,8 +86,8 @@
       "type": "object",
       "required": ["did", "handle"],
       "properties": {
-        "did": {"type": "string", "format": "did"},
-        "handle": {"type": "string", "format": "handle"},
+        "did": { "type": "string", "format": "did" },
+        "handle": { "type": "string", "format": "handle" },
         "displayName": {
           "type": "string",
           "maxGraphemes": 64,
@@ -98,13 +98,13 @@
           "maxGraphemes": 256,
           "maxLength": 2560
         },
-        "pronouns": {"type": "string"},
-        "website": {"type": "string", "format": "uri"},
-        "avatar": {"type": "string", "format": "uri"},
-        "banner": {"type": "string", "format": "uri"},
-        "followersCount": {"type": "integer"},
-        "followsCount": {"type": "integer"},
-        "postsCount": {"type": "integer"},
+        "pronouns": { "type": "string" },
+        "website": { "type": "string", "format": "uri" },
+        "avatar": { "type": "string", "format": "uri" },
+        "banner": { "type": "string", "format": "uri" },
+        "followersCount": { "type": "integer" },
+        "followsCount": { "type": "integer" },
+        "postsCount": { "type": "integer" },
         "associated": {
           "type": "ref",
           "ref": "#profileAssociated"
@@ -113,12 +113,12 @@
           "type": "ref",
           "ref": "app.bsky.graph.defs#starterPackViewBasic"
         },
-        "indexedAt": {"type": "string", "format": "datetime"},
-        "createdAt": {"type": "string", "format": "datetime"},
-        "viewer": {"type": "ref", "ref": "#viewerState"},
+        "indexedAt": { "type": "string", "format": "datetime" },
+        "createdAt": { "type": "string", "format": "datetime" },
+        "viewer": { "type": "ref", "ref": "#viewerState" },
         "labels": {
           "type": "array",
-          "items": {"type": "ref", "ref": "com.atproto.label.defs#label"}
+          "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
         },
         "pinnedPost": {
           "type": "ref",
@@ -141,15 +141,16 @@
     "profileAssociated": {
       "type": "object",
       "properties": {
-        "lists": {"type": "integer"},
-        "feedgens": {"type": "integer"},
-        "starterPacks": {"type": "integer"},
-        "labeler": {"type": "boolean"},
-        "chat": {"type": "ref", "ref": "#profileAssociatedChat"},
+        "lists": { "type": "integer" },
+        "feedgens": { "type": "integer" },
+        "starterPacks": { "type": "integer" },
+        "labeler": { "type": "boolean" },
+        "chat": { "type": "ref", "ref": "#profileAssociatedChat" },
         "activitySubscription": {
           "type": "ref",
           "ref": "#profileAssociatedActivitySubscription"
-        }
+        },
+        "germ": { "type": "ref", "ref": "#profileAssociatedGerm" }
       }
     },
     "profileAssociatedChat": {
@@ -159,6 +160,24 @@
         "allowIncoming": {
           "type": "string",
           "knownValues": ["all", "none", "following"]
+        },
+        "allowGroupInvites": {
+          "type": "string",
+          "knownValues": ["all", "none", "following"]
+        }
+      }
+    },
+    "profileAssociatedGerm": {
+      "type": "object",
+      "required": ["showButtonTo", "messageMeUrl"],
+      "properties": {
+        "messageMeUrl": {
+          "type": "string",
+          "format": "uri"
+        },
+        "showButtonTo": {
+          "type": "string",
+          "knownValues": ["usersIFollow", "everyone"]
         }
       }
     },
@@ -176,19 +195,19 @@
       "type": "object",
       "description": "Metadata about the requesting account's relationship with the subject account. Only has meaningful content for authed requests.",
       "properties": {
-        "muted": {"type": "boolean"},
+        "muted": { "type": "boolean" },
         "mutedByList": {
           "type": "ref",
           "ref": "app.bsky.graph.defs#listViewBasic"
         },
-        "blockedBy": {"type": "boolean"},
-        "blocking": {"type": "string", "format": "at-uri"},
+        "blockedBy": { "type": "boolean" },
+        "blocking": { "type": "string", "format": "at-uri" },
         "blockingByList": {
           "type": "ref",
           "ref": "app.bsky.graph.defs#listViewBasic"
         },
-        "following": {"type": "string", "format": "at-uri"},
-        "followedBy": {"type": "string", "format": "at-uri"},
+        "following": { "type": "string", "format": "at-uri" },
+        "followedBy": { "type": "string", "format": "at-uri" },
         "knownFollowers": {
           "description": "This property is present only in selected cases, as an optimization.",
           "type": "ref",
@@ -206,7 +225,7 @@
       "description": "The subject's followers whom you also follow",
       "required": ["count", "followers"],
       "properties": {
-        "count": {"type": "integer"},
+        "count": { "type": "integer" },
         "followers": {
           "type": "array",
           "minLength": 0,
@@ -226,7 +245,7 @@
         "verifications": {
           "type": "array",
           "description": "All verifications issued by trusted verifiers on behalf of this user. Verifications by untrusted verifiers are not included.",
-          "items": {"type": "ref", "ref": "#verificationView"}
+          "items": { "type": "ref", "ref": "#verificationView" }
         },
         "verifiedStatus": {
           "type": "string",
@@ -249,6 +268,15 @@
           "type": "string",
           "description": "The user who issued this verification.",
           "format": "did"
+        },
+        "issuerDisplayName": {
+          "type": "string",
+          "description": "The display name of the issuer."
+        },
+        "issuerHandle": {
+          "type": "string",
+          "description": "The handle of the issuer.",
+          "format": "handle"
         },
         "uri": {
           "type": "string",
@@ -276,6 +304,7 @@
           "#savedFeedsPref",
           "#savedFeedsPrefV2",
           "#personalDetailsPref",
+          "#declaredAgePref",
           "#feedViewPref",
           "#threadViewPref",
           "#interestsPref",
@@ -284,7 +313,8 @@
           "#bskyAppStatePref",
           "#labelersPref",
           "#postInteractionSettingsPref",
-          "#verificationPrefs"
+          "#verificationPrefs",
+          "#liveEventPreferences"
         ]
       }
     },
@@ -292,7 +322,7 @@
       "type": "object",
       "required": ["enabled"],
       "properties": {
-        "enabled": {"type": "boolean", "default": false}
+        "enabled": { "type": "boolean", "default": false }
       }
     },
     "contentLabelPref": {
@@ -304,7 +334,7 @@
           "description": "Which labeler does this preference apply to? If undefined, applies globally.",
           "format": "did"
         },
-        "label": {"type": "string"},
+        "label": { "type": "string" },
         "visibility": {
           "type": "string",
           "knownValues": ["ignore", "show", "warn", "hide"]
@@ -376,6 +406,24 @@
         }
       }
     },
+    "declaredAgePref": {
+      "type": "object",
+      "description": "Read-only preference containing value(s) inferred from the user's declared birthdate. Absence of this preference object in the response indicates that the user has not made a declaration.",
+      "properties": {
+        "isOverAge13": {
+          "type": "boolean",
+          "description": "Indicates if the user has declared that they are over 13 years of age."
+        },
+        "isOverAge16": {
+          "type": "boolean",
+          "description": "Indicates if the user has declared that they are over 16 years of age."
+        },
+        "isOverAge18": {
+          "type": "boolean",
+          "description": "Indicates if the user has declared that they are over 18 years of age."
+        }
+      }
+    },
     "feedViewPref": {
       "type": "object",
       "required": ["feed"],
@@ -424,7 +472,7 @@
         "tags": {
           "type": "array",
           "maxLength": 100,
-          "items": {"type": "string", "maxLength": 640, "maxGraphemes": 64},
+          "items": { "type": "string", "maxLength": 640, "maxGraphemes": 64 },
           "description": "A list of tags which describe the account owner's interests gathered during onboarding."
         }
       }
@@ -440,7 +488,7 @@
       "description": "A word that the account owner has muted.",
       "required": ["value", "targets"],
       "properties": {
-        "id": {"type": "string"},
+        "id": { "type": "string" },
         "value": {
           "type": "string",
           "description": "The muted word itself.",
@@ -488,7 +536,7 @@
       "properties": {
         "items": {
           "type": "array",
-          "items": {"type": "string", "format": "at-uri"},
+          "items": { "type": "string", "format": "at-uri" },
           "description": "A list of URIs of posts the account owner has hidden."
         }
       }
@@ -528,7 +576,7 @@
           "description": "An array of tokens which identify nudges (modals, popups, tours, highlight dots) that should be shown to the user.",
           "type": "array",
           "maxLength": 1000,
-          "items": {"type": "string", "maxLength": 100}
+          "items": { "type": "string", "maxLength": 100 }
         },
         "nuxs": {
           "description": "Storage for NUXs the user has encountered.",
@@ -546,7 +594,7 @@
       "type": "object",
       "required": ["guide"],
       "properties": {
-        "guide": {"type": "string", "maxLength": 100}
+        "guide": { "type": "string", "maxLength": 100 }
       }
     },
     "nux": {
@@ -587,6 +635,22 @@
         }
       }
     },
+    "liveEventPreferences": {
+      "type": "object",
+      "description": "Preferences for live events.",
+      "properties": {
+        "hiddenFeedIds": {
+          "description": "A list of feed IDs that the user has hidden from live events.",
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "hideAllFeeds": {
+          "description": "Whether to hide all feeds from live events.",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
     "postInteractionSettingsPref": {
       "type": "object",
       "description": "Default post interaction settings for the account. These values should be applied as default values when creating new posts. These refs should mirror the threadgate and postgate records exactly.",
@@ -621,16 +685,22 @@
       "type": "object",
       "required": ["status", "record"],
       "properties": {
+        "uri": { "type": "string", "format": "at-uri" },
+        "cid": { "type": "string", "format": "cid" },
         "status": {
           "type": "string",
           "description": "The status for the account.",
           "knownValues": ["app.bsky.actor.status#live"]
         },
-        "record": {"type": "unknown"},
+        "record": { "type": "unknown" },
         "embed": {
           "type": "union",
           "description": "An optional embed associated with the status.",
           "refs": ["app.bsky.embed.external#view"]
+        },
+        "labels": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "com.atproto.label.defs#label" }
         },
         "expiresAt": {
           "type": "string",
@@ -640,6 +710,10 @@
         "isActive": {
           "type": "boolean",
           "description": "True if the status is not expired, false if it is expired. Only present if expiration was set."
+        },
+        "isDisabled": {
+          "type": "boolean",
+          "description": "True if the user's go-live access has been disabled by a moderator, false otherwise."
         }
       }
     }

@@ -1,13 +1,13 @@
-import {useEffect} from 'react'
-import {useNavigate} from 'react-router-dom'
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Logout() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   useEffect(() => {
-    localStorage.removeItem('admin_route_token')
-    navigate('/login')
-  }, [])
+    localStorage.removeItem("admin_route_token");
+    navigate("/login");
+  }, []);
 
-  return <></>
+  return <></>;
 }

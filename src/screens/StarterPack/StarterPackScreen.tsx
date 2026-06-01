@@ -8,7 +8,6 @@ import {
   type ModerationOpts,
   RichText as RichTextAPI,
 } from '@atproto/api'
-import {FontAwesomeIcon} from '@fortawesome/react-native-fontawesome'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Plural, Trans} from '@lingui/react/macro'
@@ -24,7 +23,6 @@ import {
   type CommonNavigatorParams,
   type NavigationProp,
 } from '#/lib/routes/types'
-import {logEvent} from '#/lib/statsig/statsig'
 import {cleanError} from '#/lib/strings/errors'
 import {getStarterPackOgCard} from '#/lib/strings/starter-pack'
 import {logger} from '#/logger'
@@ -59,6 +57,7 @@ import {DotGrid3x1_Stroke2_Corner0_Rounded as Ellipsis} from '#/components/icons
 import {ListSparkle_Stroke2_Corner0_Rounded as ListSparkle} from '#/components/icons/ListSparkle'
 import {Pencil_Stroke2_Corner0_Rounded as Pencil} from '#/components/icons/Pencil'
 import {Trash_Stroke2_Corner0_Rounded as Trash} from '#/components/icons/Trash'
+import {Trending3_Stroke2_Corner1_Rounded as TrendingIcon} from '#/components/icons/Trending'
 import * as Layout from '#/components/Layout'
 import {ListMaybePlaceholder} from '#/components/Lists'
 import {Loader} from '#/components/Loader'
@@ -76,6 +75,7 @@ import {QrCodeDialog} from '#/components/StarterPack/QrCodeDialog'
 import {ShareDialog} from '#/components/StarterPack/ShareDialog'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
+import {useAnalytics} from '#/analytics'
 import {IS_WEB} from '#/env'
 import * as bsky from '#/types/bsky'
 
@@ -189,6 +189,7 @@ function StarterPackScreenLoaded({
   const showFeedsTab = Boolean(starterPack.feeds?.length)
   const showPostsTab = Boolean(starterPack.list)
   const {_} = useLingui()
+  const ax = useAnalytics()
 
   const tabs = [
     ...(showPeopleTab ? [_(msg`People`)] : []),
@@ -204,10 +205,10 @@ function StarterPackScreenLoaded({
   const [imageLoaded, setImageLoaded] = useState(false)
 
   useEffect(() => {
-    logEvent('starterPack:opened', {
+    ax.metric('starterPack:opened', {
       starterPack: starterPack.uri,
     })
-  }, [starterPack.uri])
+  }, [ax, starterPack.uri])
 
   const onOpenShareDialog = useCallback(() => {
     const rkey = new AtUri(starterPack.uri).rkey
@@ -320,6 +321,7 @@ function Header({
   const {record, creator} = starterPack
   const isOwn = creator?.did === currentAccount?.did
   const joinedAllTimeCount = starterPack.joinedAllTimeCount ?? 0
+  const ax = useAnalytics()
 
   const navigation = useNavigation<NavigationProp>()
 
@@ -397,7 +399,7 @@ function Header({
     })
     Toast.show(_(msg`All accounts have been followed!`))
     captureAction(ProgressGuideAction.Follow, dids.length)
-    logEvent('starterPack:followAll', {
+    ax.metric('starterPack:followAll', {
       logContext: 'StarterPackProfilesList',
       starterPack: starterPack.uri,
       count: dids.length,
@@ -473,27 +475,25 @@ function Header({
           {richText ? <RichText value={richText} style={[a.text_md]} /> : null}
           {!hasSession ? (
             <Button
-              label={_(msg`Join PARA`)}
+              label={_(msg`Join Bluesky`)}
               onPress={() => {
                 setActiveStarterPack({
                   uri: starterPack.uri,
                 })
                 requestSwitchToAccount({requestedAccount: 'new'})
               }}
-              variant="solid"
               color="primary"
               size="large">
               <ButtonText style={[a.text_lg]}>
-                <Trans>Join PARA</Trans>
+                <Trans>Join Bluesky</Trans>
               </ButtonText>
             </Button>
           ) : null}
           {joinedAllTimeCount >= 25 ? (
-            <View style={[a.flex_row, a.align_center, a.gap_sm]}>
-              <FontAwesomeIcon
-                icon="arrow-trend-up"
-                size={12}
-                color={t.atoms.text_contrast_medium.color}
+            <View style={[a.flex_row, a.align_center, a.gap_xs]}>
+              <TrendingIcon
+                width={16}
+                style={{color: t.atoms.text_contrast_medium.color}}
               />
               <Text
                 style={[
@@ -501,12 +501,12 @@ function Header({
                   a.text_sm,
                   t.atoms.text_contrast_medium,
                 ]}>
-                <Trans comment="Number of users (always at least 25) who have joined PARA using a specific starter pack">
+                <Trans comment="Number of users (always at least 25) who have joined Bluesky using a specific starter pack">
                   <Plural
                     value={starterPack.joinedAllTimeCount || 0}
                     other="# people have"
                   />{' '}
-                  joined PARA via this starter pack!
+                  joined Bluesky via this starter pack!
                 </Trans>
               </Text>
             </View>
@@ -528,6 +528,7 @@ function OverflowMenu({
 }) {
   const t = useTheme()
   const {_} = useLingui()
+  const ax = useAnalytics()
   const {gtMobile} = useBreakpoints()
   const {currentAccount} = useSession()
   const reportDialogControl = useReportDialogControl()
@@ -541,7 +542,7 @@ function OverflowMenu({
     error: deleteError,
   } = useDeleteStarterPackMutation({
     onSuccess: () => {
-      logEvent('starterPack:delete', {})
+      ax.metric('starterPack:delete', {})
       deleteDialogControl.close(() => {
         if (navigation.canGoBack()) {
           navigation.popToTop()
@@ -567,7 +568,7 @@ function OverflowMenu({
       rkey: routeParams.rkey,
       listUri: starterPack.list.uri,
     })
-    logEvent('starterPack:delete', {})
+    ax.metric('starterPack:delete', {})
   }
 
   return (
@@ -676,49 +677,47 @@ function OverflowMenu({
       )}
 
       <Prompt.Outer control={deleteDialogControl}>
-        <Prompt.Content>
-          <Prompt.TitleText>
-            <Trans>Delete starter pack?</Trans>
-          </Prompt.TitleText>
-          <Prompt.DescriptionText>
-            <Trans>Are you sure you want to delete this starter pack?</Trans>
-          </Prompt.DescriptionText>
-          {deleteError && (
-            <View
-              style={[
-                a.flex_row,
-                a.gap_sm,
-                a.rounded_sm,
-                a.p_md,
-                a.mb_lg,
-                a.border,
-                t.atoms.border_contrast_medium,
-                t.atoms.bg_contrast_25,
-              ]}>
-              <View style={[a.flex_1, a.gap_2xs]}>
-                <Text style={[a.font_semi_bold]}>
-                  <Trans>Unable to delete</Trans>
-                </Text>
-                <Text style={[a.leading_snug]}>{cleanError(deleteError)}</Text>
-              </View>
-              <CircleInfo size="sm" fill={t.palette.negative_400} />
+        <Prompt.TitleText>
+          <Trans>Delete starter pack?</Trans>
+        </Prompt.TitleText>
+        <Prompt.DescriptionText>
+          <Trans>Are you sure you want to delete this starter pack?</Trans>
+        </Prompt.DescriptionText>
+        {deleteError && (
+          <View
+            style={[
+              a.flex_row,
+              a.gap_sm,
+              a.rounded_sm,
+              a.p_md,
+              a.mb_lg,
+              a.border,
+              t.atoms.border_contrast_medium,
+              t.atoms.bg_contrast_25,
+            ]}>
+            <View style={[a.flex_1, a.gap_2xs]}>
+              <Text style={[a.font_semi_bold]}>
+                <Trans>Unable to delete</Trans>
+              </Text>
+              <Text style={[a.leading_snug]}>{cleanError(deleteError)}</Text>
             </View>
-          )}
-          <Prompt.Actions>
-            <Button
-              variant="solid"
-              color="negative"
-              size={gtMobile ? 'small' : 'large'}
-              label={_(msg`Yes, delete this starter pack`)}
-              onPress={onDeleteStarterPack}>
-              <ButtonText>
-                <Trans>Delete</Trans>
-              </ButtonText>
-              {isDeletePending && <ButtonIcon icon={Loader} />}
-            </Button>
-            <Prompt.Cancel />
-          </Prompt.Actions>
-        </Prompt.Content>
+            <CircleInfo size="sm" fill={t.palette.negative_400} />
+          </View>
+        )}
+        <Prompt.Actions>
+          <Button
+            variant="solid"
+            color="negative"
+            size={gtMobile ? 'small' : 'large'}
+            label={_(msg`Yes, delete this starter pack`)}
+            onPress={onDeleteStarterPack}>
+            <ButtonText>
+              <Trans>Delete</Trans>
+            </ButtonText>
+            {isDeletePending && <ButtonIcon icon={Loader} />}
+          </Button>
+          <Prompt.Cancel />
+        </Prompt.Actions>
       </Prompt.Outer>
 
       <CreateListFromStarterPackDialog

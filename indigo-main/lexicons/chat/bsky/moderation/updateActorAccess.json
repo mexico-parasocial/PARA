@@ -10,9 +10,9 @@
           "type": "object",
           "required": ["actor", "allowAccess"],
           "properties": {
-            "actor": {"type": "string", "format": "did"},
-            "allowAccess": {"type": "boolean"},
-            "ref": {"type": "string"}
+            "actor": { "type": "string", "format": "did" },
+            "allowAccess": { "type": "boolean" },
+            "ref": { "type": "string" }
           }
         }
       }

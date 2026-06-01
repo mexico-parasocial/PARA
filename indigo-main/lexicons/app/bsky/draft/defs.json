@@ -23,6 +23,16 @@
       "type": "object",
       "required": ["posts"],
       "properties": {
+        "deviceId": {
+          "type": "string",
+          "description": "UUIDv4 identifier of the device that created this draft.",
+          "maxLength": 100
+        },
+        "deviceName": {
+          "type": "string",
+          "description": "The device and/or platform on which the draft was created.",
+          "maxLength": 100
+        },
         "posts": {
           "description": "Array of draft posts that compose this draft.",
           "type": "array",
@@ -37,7 +47,7 @@
           "type": "array",
           "description": "Indicates human language of posts primary text content.",
           "maxLength": 3,
-          "items": {"type": "string", "format": "language"}
+          "items": { "type": "string", "format": "language" }
         },
         "postgateEmbeddingRules": {
           "description": "Embedding rules for the postgates to be created when this draft is published.",
@@ -71,9 +81,9 @@
       "properties": {
         "text": {
           "type": "string",
-          "maxLength": 3000,
-          "maxGraphemes": 300,
-          "description": "The primary post content."
+          "maxLength": 10000,
+          "maxGraphemes": 1000,
+          "description": "The primary post content. It has a higher limit than post contents to allow storing a larger text that can later be refined into smaller posts."
         },
         "labels": {
           "type": "union",
@@ -82,22 +92,22 @@
         },
         "embedImages": {
           "type": "array",
-          "items": {"type": "ref", "ref": "#draftEmbedImage"},
+          "items": { "type": "ref", "ref": "#draftEmbedImage" },
           "maxLength": 4
         },
         "embedVideos": {
           "type": "array",
-          "items": {"type": "ref", "ref": "#draftEmbedVideo"},
+          "items": { "type": "ref", "ref": "#draftEmbedVideo" },
           "maxLength": 1
         },
         "embedExternals": {
           "type": "array",
-          "items": {"type": "ref", "ref": "#draftEmbedExternal"},
+          "items": { "type": "ref", "ref": "#draftEmbedExternal" },
           "maxLength": 1
         },
         "embedRecords": {
           "type": "array",
-          "items": {"type": "ref", "ref": "#draftEmbedRecord"},
+          "items": { "type": "ref", "ref": "#draftEmbedRecord" },
           "maxLength": 1
         }
       }
@@ -197,14 +207,14 @@
       "type": "object",
       "required": ["uri"],
       "properties": {
-        "uri": {"type": "string", "format": "uri"}
+        "uri": { "type": "string", "format": "uri" }
       }
     },
     "draftEmbedRecord": {
       "type": "object",
       "required": ["record"],
       "properties": {
-        "record": {"type": "ref", "ref": "com.atproto.repo.strongRef"}
+        "record": { "type": "ref", "ref": "com.atproto.repo.strongRef" }
       }
     }
   }

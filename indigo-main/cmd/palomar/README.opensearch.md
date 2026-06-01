@@ -1,3 +1,4 @@
+
 # Basic OpenSearch Operations
 
 We use OpenSearch version 2.13+, with the `analysis-icu` and `analysis-kuromoji` plugins. These are included automatically on the AWS hosted version of Opensearch, otherwise you need to install:
@@ -81,6 +82,7 @@ actual query string, and "size" field with the max results to return):
 
 In the results take `.hits.hits[]._source` as the objects; `.hits.total` is the
 total number of search hits.
+
 
 ## Index Debugging
 

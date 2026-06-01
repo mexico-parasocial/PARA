@@ -20,7 +20,7 @@
             "format": "at-uri",
             "description": "Reference (AT-URI) to the list record (app.bsky.graph.list)."
           },
-          "createdAt": {"type": "string", "format": "datetime"}
+          "createdAt": { "type": "string", "format": "datetime" }
         }
       }
     }

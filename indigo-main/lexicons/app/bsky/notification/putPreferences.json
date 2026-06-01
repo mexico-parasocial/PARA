@@ -11,7 +11,7 @@
           "type": "object",
           "required": ["priority"],
           "properties": {
-            "priority": {"type": "boolean"}
+            "priority": { "type": "boolean" }
           }
         }
       }

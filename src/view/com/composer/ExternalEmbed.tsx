@@ -1,4 +1,4 @@
-import {type ReactNode, useMemo} from 'react'
+import {useMemo} from 'react'
 import {type StyleProp, View, type ViewStyle} from 'react-native'
 
 import {cleanError} from '#/lib/strings/errors'
@@ -89,7 +89,19 @@ export const ExternalEmbedLink = ({
     if (data) {
       if (data.type === 'external') {
         if (data.view && isStandardSiteEmbed(data.view.external)) {
-          return <StandardSiteEmbed view={data.view.external} hideSubscribe />
+          return (
+            <StandardSiteEmbed
+              preview
+              view={{
+                ...data.view?.external,
+                title: data.view?.external?.title || data.title || uri,
+                uri,
+                description:
+                  data.view?.external?.description || data.description,
+                thumb: data.view?.external?.thumb || data.thumb?.source.path,
+              }}
+            />
+          )
         }
         return (
           <ExternalEmbed
@@ -165,7 +177,7 @@ function Container({
   children,
 }: {
   style?: StyleProp<ViewStyle>
-  children: ReactNode
+  children: React.ReactNode
 }) {
   const t = useTheme()
   return (

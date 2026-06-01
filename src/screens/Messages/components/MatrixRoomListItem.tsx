@@ -2,17 +2,18 @@ import {TouchableOpacity, View} from 'react-native'
 import {useNavigation} from '@react-navigation/native'
 
 import {type NavigationProp} from '#/lib/routes/types'
+import {type MatrixRoomSummary} from '#/state/queries/matrix'
 import {atoms as a, useTheme} from '#/alf'
 import {Text} from '#/components/Typography'
 
-export interface MatrixRoomItem {
-  roomId: string
-  communityUri: string
-  slug: string
-  unread: number
+const roomKindLabel: Record<MatrixRoomSummary['kind'], string> = {
+  main: 'Sala principal',
+  'chamber-a': 'Cámara A',
+  'chamber-b': 'Cámara B',
+  observers: 'Consejo observador',
 }
 
-export function MatrixRoomListItem({room}: {room: MatrixRoomItem}) {
+export function MatrixRoomListItem({room}: {room: MatrixRoomSummary}) {
   const navigation = useNavigation<NavigationProp>()
   const t = useTheme()
 
@@ -25,6 +26,7 @@ export function MatrixRoomListItem({room}: {room: MatrixRoomItem}) {
         navigation.navigate('CommunityChat', {
           communityUri: room.communityUri,
           communityName: room.slug,
+          roomId: room.roomId,
         })
       }
       style={[
@@ -81,7 +83,7 @@ export function MatrixRoomListItem({room}: {room: MatrixRoomItem}) {
         <Text
           style={[a.text_sm, t.atoms.text_contrast_medium]}
           numberOfLines={1}>
-          Comunidad
+          {roomKindLabel[room.kind]} · Chat cívico privado
         </Text>
       </View>
     </TouchableOpacity>

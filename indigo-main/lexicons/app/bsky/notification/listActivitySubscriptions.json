@@ -14,7 +14,7 @@
             "maximum": 100,
             "default": 50
           },
-          "cursor": {"type": "string"}
+          "cursor": { "type": "string" }
         }
       },
       "output": {
@@ -23,7 +23,7 @@
           "type": "object",
           "required": ["subscriptions"],
           "properties": {
-            "cursor": {"type": "string"},
+            "cursor": { "type": "string" },
             "subscriptions": {
               "type": "array",
               "items": {

@@ -16,11 +16,14 @@ import (
 type ConvoGetMessages_Output struct {
 	Cursor   *string                                  `json:"cursor,omitempty" cborgen:"cursor,omitempty"`
 	Messages []*ConvoGetMessages_Output_Messages_Elem `json:"messages" cborgen:"messages"`
+	// relatedProfiles: Set of all members who authored or reacted to the returned messages. Members referred to by system messages are also included.
+	RelatedProfiles []*ActorDefs_ProfileViewBasic `json:"relatedProfiles,omitempty" cborgen:"relatedProfiles,omitempty"`
 }
 
 type ConvoGetMessages_Output_Messages_Elem struct {
 	ConvoDefs_MessageView        *ConvoDefs_MessageView
 	ConvoDefs_DeletedMessageView *ConvoDefs_DeletedMessageView
+	ConvoDefs_SystemMessageView  *ConvoDefs_SystemMessageView
 }
 
 func (t *ConvoGetMessages_Output_Messages_Elem) MarshalJSON() ([]byte, error) {
@@ -31,6 +34,10 @@ func (t *ConvoGetMessages_Output_Messages_Elem) MarshalJSON() ([]byte, error) {
 	if t.ConvoDefs_DeletedMessageView != nil {
 		t.ConvoDefs_DeletedMessageView.LexiconTypeID = "chat.bsky.convo.defs#deletedMessageView"
 		return json.Marshal(t.ConvoDefs_DeletedMessageView)
+	}
+	if t.ConvoDefs_SystemMessageView != nil {
+		t.ConvoDefs_SystemMessageView.LexiconTypeID = "chat.bsky.convo.defs#systemMessageView"
+		return json.Marshal(t.ConvoDefs_SystemMessageView)
 	}
 	return nil, fmt.Errorf("can not marshal empty union as JSON")
 }
@@ -48,6 +55,9 @@ func (t *ConvoGetMessages_Output_Messages_Elem) UnmarshalJSON(b []byte) error {
 	case "chat.bsky.convo.defs#deletedMessageView":
 		t.ConvoDefs_DeletedMessageView = new(ConvoDefs_DeletedMessageView)
 		return json.Unmarshal(b, t.ConvoDefs_DeletedMessageView)
+	case "chat.bsky.convo.defs#systemMessageView":
+		t.ConvoDefs_SystemMessageView = new(ConvoDefs_SystemMessageView)
+		return json.Unmarshal(b, t.ConvoDefs_SystemMessageView)
 	default:
 		return nil
 	}

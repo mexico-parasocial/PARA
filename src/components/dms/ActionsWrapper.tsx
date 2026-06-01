@@ -23,8 +23,11 @@ export function ActionsWrapper({
   const {t: l} = useLingui()
 
   return (
-    <MessageContextMenu message={message} senderProfile={senderProfile}>
-      {trigger =>
+    <MessageContextMenu
+      message={message}
+      senderProfile={senderProfile}
+      moderationOpts={moderationOpts}>
+    {trigger =>
         // will always be true, since this file is platform split
         trigger.IS_NATIVE && (
           <View style={[a.flex_1, a.relative]}>

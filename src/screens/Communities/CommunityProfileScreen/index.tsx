@@ -301,7 +301,7 @@ export function CommunityProfileScreen() {
   const [joinOverride, setJoinOverride] = useState<boolean | null>(null)
   const [isPTR, setIsPTR] = useState(false)
   const isJoined = joinOverride ?? board?.viewerMembershipState === 'active'
-  const {data: unreadData} = useUnreadCountQuery(agent.session?.did)
+  const {data: unreadData} = useUnreadCountQuery({enabled: !!agent.session?.did})
   const unreadCount = unreadData?.unread ?? 0
   const acceptInviteMutation = useAcceptDraftInviteMutation()
   const joinMutation = useJoinCommunityMutation()

@@ -3,7 +3,7 @@
 #   podman build -f ./cmd/relay/Dockerfile -t relay .
 
 ### Compile stage
-FROM golang:1.25-alpine3.22 AS build-env
+FROM golang:1.26-alpine3.22 AS build-env
 RUN apk add --no-cache build-base make git
 
 ADD . /dockerbuild
@@ -21,9 +21,9 @@ WORKDIR /app
 
 COPY cmd/relay/relay-admin-ui /app/
 
-RUN pnpminstall --frozen-lockfile
+RUN yarn install --frozen-lockfile
 
-RUN pnpmbuild
+RUN yarn build
 
 ### Run stage
 FROM alpine:3.22
