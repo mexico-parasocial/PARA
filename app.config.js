@@ -93,7 +93,7 @@ module.exports = function (_config) {
       newArchEnabled: false,
       ios: {
         supportsTablet: false,
-        bundleIdentifier: 'com.parasocial.app',
+        bundleIdentifier: 'com.para.app',
         config: {
           usesNonExemptEncryption: false,
           googleMapsApiKey: GOOGLE_MAPS_IOS_API_KEY,
@@ -170,7 +170,7 @@ module.exports = function (_config) {
         entitlements: {
           'com.apple.developer.kernel.increased-memory-limit': true,
           'com.apple.developer.kernel.extended-virtual-addressing': true,
-          'com.apple.security.application-groups': 'group.com.parasocial.app',
+          'com.apple.security.application-groups': 'group.com.para.app',
           'com.apple.developer.usernotifications.communication': true,
           //          'com.apple.developer.device-information.user-assigned-device-name': true,
         },
@@ -241,7 +241,7 @@ module.exports = function (_config) {
           backgroundColor: '#006AFF',
         },
         googleServicesFile: './google-services.json',
-        package: 'com.parasocial.app',
+        package: 'com.para.app',
         metaData: {
           'com.google.android.geo.API_KEY': GOOGLE_MAPS_ANDROID_API_KEY,
         },
@@ -468,19 +468,19 @@ module.exports = function (_config) {
                 appExtensions: [
                   {
                     targetName: 'Share-with-PARA',
-                    bundleIdentifier: 'com.parasocial.app.Share-with-PARA',
+                    bundleIdentifier: 'com.para.app.Share-with-PARA',
                     entitlements: {
                       'com.apple.security.application-groups': [
-                        'group.com.parasocial.app',
+                        'group.com.para.app',
                       ],
                     },
                   },
                   {
                     targetName: 'ParaNSE',
-                    bundleIdentifier: 'com.parasocial.app.ParaNSE',
+                    bundleIdentifier: 'com.para.app.ParaNSE',
                     entitlements: {
                       'com.apple.security.application-groups': [
-                        'group.com.parasocial.app',
+                        'group.com.para.app',
                       ],
                     },
                   },

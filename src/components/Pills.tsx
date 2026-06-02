@@ -1,4 +1,4 @@
-import {type ReactNode, useMemo} from 'react'
+import {useMemo} from 'react'
 import {View} from 'react-native'
 import {BSKY_LABELER_DID, type ModerationCause} from '@atproto/api'
 import {Trans} from '@lingui/react/macro'
@@ -30,7 +30,8 @@ export function Row({
   children,
   style,
   size = 'sm',
-}: {children: ReactNode | ReactNode[]} & CommonProps & ViewStyleProp) {
+}: {children: React.ReactNode | React.ReactNode[]} & CommonProps &
+  ViewStyleProp) {
   const styles = useMemo(() => {
     switch (size) {
       case 'lg':
@@ -63,7 +64,7 @@ export function Label({
   const control = useModerationDetailsDialogControl()
   const desc = useModerationCauseDescription(cause)
   const isLabeler = Boolean(desc.sourceType && desc.sourceDid)
-  const isPARALabel =
+  const isBlueskyLabel =
     desc.sourceType === 'labeler' && desc.sourceDid === BSKY_LABELER_DID
 
   const {outer, avi, text} = useMemo(() => {
@@ -119,7 +120,7 @@ export function Label({
               outer,
               (hovered || pressed) && t.atoms.bg_contrast_50,
             ]}>
-            {isPARALabel || !isLabeler ? (
+            {isBlueskyLabel || !isLabeler ? (
               <desc.icon
                 width={avi}
                 fill={t.atoms.text_contrast_medium.color}

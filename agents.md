@@ -21,8 +21,8 @@ PARA is a React Native mobile application built on the **AT Protocol (atproto)**
 
 ### React Query Notes
 
-- **Persistence:** In Para, persisted React Query entries are still keyed off `PERSISTED_QUERY_ROOT` in [src/state/queries/index.ts](/Users/mlv/Desktop/MASTER/PARA/src/state/queries/index.ts). If a query should survive app restarts, its query key needs that root at index `0`, and it should usually pair with `PERSISTED_QUERY_GCTIME`.
-- **Refresh behavior:** For paginated feeds and similar infinite queries, prefer `truncateAndInvalidate` from [src/state/queries/util.ts](/Users/mlv/Desktop/MASTER/PARA/src/state/queries/util.ts) over a bare `refetch()` when the goal is “reload from the top.” That trims cached pages back to the first page before invalidation so pull-to-refresh actually fetches fresh leading data.
+- **Persistence:** In Para, persisted React Query entries are still keyed off `PERSISTED_QUERY_ROOT` in [src/state/queries/index.ts](/Users/mlv/Desktop/TH1/PARA/src/state/queries/index.ts). If a query should survive app restarts, its query key needs that root at index `0`, and it should usually pair with `PERSISTED_QUERY_GCTIME`.
+- **Refresh behavior:** For paginated feeds and similar infinite queries, prefer `truncateAndInvalidate` from [src/state/queries/util.ts](/Users/mlv/Desktop/TH1/PARA/src/state/queries/util.ts) over a bare `refetch()` when the goal is “reload from the top.” That trims cached pages back to the first page before invalidation so pull-to-refresh actually fetches fresh leading data.
 - **Invalidation safety:** When a query key includes params, pass the full key shape during invalidation or truncation. Refresh bugs in feed surfaces often come from invalidating only the root feed descriptor while the live query also depends on `feedParams`.
 
 ### iOS Provisioning & App Clips
@@ -31,6 +31,65 @@ PARA is a React Native mobile application built on the **AT Protocol (atproto)**
 - **Personal Team Limitation:** Personal Apple Developer Teams (free accounts) do _not_ support the "App Clip" capability or the associated provisioning profiles.
 - **Current Setup:** The `PARAAppClip` target has been manually removed from the Xcode project to allow local deployments to physical devices.
 - **Future Reversion:** If building for production or a paid Enterprise/Organization team, restore the `PARAAppClip` target from `ios/PARA.xcodeproj/project.pbxproj` and ensure the `com.miguelabundis.para.AppClip` identifier is correctly provisioned.
+
+### iOS Personal-Team Capability Restrictions (2026-06-02)
+
+- **Issue:** `ios/PARA/PARA.entitlements` declared capabilities that even a paid
+  personal Apple Developer team cannot provision:
+  `aps-environment` (Push Notifications),
+  `com.apple.developer.associated-domains` (Universal Links / App Clips),
+  `com.apple.developer.kernel.extended-virtual-addressing`,
+  `com.apple.developer.kernel.increased-memory-limit`, and
+  `com.apple.developer.usernotifications.communication`.
+- **Symptom:** Xcode fails to create a development provisioning profile with
+  `Personal development teams, including "<name>", do not support the
+  Communication Notifications, Extended Virtual Addressing, Push
+  Notifications, and Associated Domains capabilities.`
+- **Decision:** Split into two entitlements files. Debug builds use a stripped
+  entitlements file; Release builds keep the full one for production.
+  - `ios/PARA/PARA.dev.entitlements` — Debug only. Contains only
+    `com.apple.security.application-groups` (the one capability safe for
+    personal teams).
+  - `ios/PARA/PARA.entitlements` — Release (unchanged). Full capabilities.
+- **Xcode wiring:** Debug config (`13B07F941A680F5B00A75B9A`) at
+  `ios/PARA.xcodeproj/project.pbxproj:659` now points to
+  `PARA/PARA.dev.entitlements`. Release config at line 698 still points to
+  `PARA/PARA.entitlements`.
+- **Implications:** Debug builds lose push notifications, universal links, and
+  the kernel extended-VA / increased-memory entitlements. Acceptable for local
+  dev — the user is running the app on their own device, not shipping.
+
+### iOS Bundle ID Rename (2026-06-02): `com.parasocial.app` → `com.para.app`
+
+- **Decision:** Consolidated all bundle IDs and app groups to a single
+  identifier prefix `com.para.app` (single app group `group.com.para.app`).
+- **Reasoning:** The user had duplicate/stale identifiers across the PARA
+  main target, BlueskyNSE, Share-with-Bluesky, and the App Clip extension.
+  One identifier everywhere simplifies signing and the Apple Developer
+  portal config.
+- **Files updated:**
+  - `ios/PARA.xcodeproj/project.pbxproj` — 6 `PRODUCT_BUNDLE_IDENTIFIER` lines
+    (PARA / PARA.BlueskyNSE / PARA.Share-with-Bluesky × Debug/Release)
+  - `ios/PARA/Info.plist` — `CFBundleURLSchemes` entry
+  - `ios/PARA/PARA.entitlements` + `PARA.dev.entitlements` — app group
+  - `ios/BlueskyNSE/BlueskyNSE.entitlements` — app group
+  - `ios/Share-with-Bluesky/Share-with-Bluesky.entitlements` — app group
+  - `ios/Share-with-Bluesky/ShareViewController.swift` — `containerURL`
+  - `ios/BlueskyNSE/NotificationService.swift` — `APP_GROUP` constant
+  - `app.config.js` — 4 `bundleIdentifier` + 3 `application-groups` + Android
+    `package`
+  - `plugins/shareExtension/*`, `plugins/notificationsExtension/*`,
+    `plugins/starterPackAppClipExtension/*` — Expo config plugins
+  - `google-services.json` (root + `android/app/`) — Android `package_name`
+- **Build flag:** `package.json` `ios` script now passes
+  `--allowProvisioningUpdates` to `xcodebuild` so automatic signing can
+  create the App ID + app group on first build (instead of failing with
+  "No profiles for ... were found").
+- **Apple Developer Portal setup required:** Before the first build, make
+  sure the team allows automatic signing. Xcode with the
+  `-allowProvisioningUpdates` flag will register `com.para.app` and
+  `group.com.para.app` automatically when the user is signed in with their
+  Apple ID.
 
 ### Local PDS Connection (Networking)
 
@@ -96,7 +155,7 @@ Raise the full local demo with the current workspace split:
 - **Profile color**: Blue Ocean
 - **Commands**:
   ```bash
-  cd /Users/mlv/Desktop/MASTER/PARA
+  cd /Users/mlv/Desktop/TH1/PARA
   pnpm install
   pnpm web
   ```
@@ -122,7 +181,7 @@ Raise the full local demo with the current workspace split:
 - **Profile color**: Blue Ocean
 - **Commands**:
   ```bash
-  cd /Users/mlv/Desktop/MASTER/watx
+  cd /Users/mlv/Desktop/TH1/WatZappa
   make nvm-setup
   make deps
   make build
@@ -140,7 +199,7 @@ Raise the full local demo with the current workspace split:
 
 - **Commands**:
   ```bash
-  cd /Users/mlv/Desktop/MASTER/PARA
+  cd /Users/mlv/Desktop/TH1/PARA
   pnpm seed:civic:apply --introspect-url http://127.0.0.1:2581
   ```
 - **Important**:
@@ -152,7 +211,7 @@ Raise the full local demo with the current workspace split:
 - **Profile color**: Blue Ocean
 - **Commands**:
   ```bash
-  cd /Users/mlv/Desktop/MASTER/PARA/bskyweb
+  cd /Users/mlv/Desktop/TH1/PARA/bskyweb
   go run ./cmd/bskyweb serve --appview-host https://appview.paramx.social.ngrok.pro --http-address :8100
   ```
 - **Important**:
@@ -193,6 +252,63 @@ Raise the full local demo with the current workspace split:
 
 ---
 
+## 🛠️ Node Version Management (WatZappa)
+
+### The problem (2026-06-02)
+
+`better-sqlite3` is a native module. It compiles a `.node` binary for the
+exact Node version that was active at `pnpm install` time. If you run
+`pnpm install` with Node 24, then run scripts with Node 22 (or vice
+versa), the binary won't load and you get:
+
+```
+Error: The module '.../better_sqlite3.node' was compiled against a
+different Node.js version using NODE_MODULE_VERSION 137. This version
+of Node.js requires NODE_MODULE_VERSION 127.
+```
+
+### Current pinning
+
+- `.nvmrc` → `22`
+- `engines.node` → `>=22.1.0`
+- User's nvm default → `24.15.0` (so the shell auto-switches to 22
+  when `cd`-ing into WatZappa, but any `pnpm install` run from a
+  different directory builds for the wrong version)
+
+### Safeguards in place (WatZappa/package.json)
+
+- **`preinstall`** — bails out with a clear error if `node --version`
+  is below 22. Run `nvm use 22` and retry.
+- **`postinstall`** — runs `pnpm rebuild better-sqlite3` so the binary
+  always matches the Node version that just ran the install, no matter
+  what state `node_modules` was in before.
+
+### The rule going forward
+
+- **Always `cd /Users/mlv/Desktop/TH1/WatZappa` before `pnpm install`.**
+  The `load-nvmrc` hook in `~/.zshrc` will auto-switch to Node 22.
+  Then run install. Don't run install from a parent directory or from
+  the PARA folder — you'll build against the wrong Node.
+- If you ever see the `NODE_MODULE_VERSION` mismatch again, the fix is:
+  ```bash
+  cd /Users/mlv/Desktop/TH1/WatZappa
+  nvm use 22
+  pnpm rebuild better-sqlite3
+  ```
+  Don't `pnpm install --force` unless the rebuild fails — it's slower
+  and you risk re-introducing other inconsistencies.
+
+### Why not just upgrade to Node 24
+
+The user's default is Node 24, which would eliminate the auto-switch
+friction. But WatZappa's `dev-infra/with-redis-and-db.sh` and several
+Docker images assume Node 22, and bsky upstream's dev-env still pins 22.
+Keeping the project on 22 matches upstream; switching the user's
+default Node 24 → 22 via `nvm alias default 22` would be the cleanest
+long-term move if WatZappa maintenance becomes frequent.
+
+---
+
 # PARA — AI Agent Notes
 
 This file captures decisions, conventions, and rules that AI agents must follow
@@ -229,6 +345,33 @@ decision is made.
   This is a no-op (the script logs a warning and returns).
 - **Backup:** `patches/` directory was backed up to
   `/tmp/para-patches-backup-20260601-190022/` before any rename.
+
+## 2026-06-02: Restored missing `src/components/Pills.tsx` (fixes QuoteEmbed crash)
+
+- **Symptom:** React Native red box on iOS: "Element type is invalid:
+  expected a string ... but got: undefined. Check the render method of
+  `QuoteEmbed`." Component stack: `Embed` → `RecordEmbed` →
+  `QuoteEmbed` → renders `PostAlerts` (when post has moderation alerts)
+  → throws.
+- **Root cause:** `src/components/moderation/PostAlerts.tsx:5` does
+  `import * as Pills from '#/components/Pills'` and uses `<Pills.Row>`
+  and `<Pills.Label>`. The `Pills` module did not exist in the PARA
+  fork (it was dropped during a bsky-upstream sync). 11+ files import
+  from `'#/components/Pills'`, all broken: `PostAlerts`, `ProfileCard`,
+  `ProfileHoverCard`, `ProfileHeaderAlerts`,
+  `ModerationDetailsDialog`, `ThreadItemPost`, `ThreadItemAnchor`,
+  `ThreadItemTreePost`, `maybeApplyGalleryOffsetStyles`, `PostFeedItem`.
+- **Fix:** Added `src/components/Pills.tsx` from bsky upstream
+  `1.122.0`. Exports `Row`, `Label`, `FollowsYou`, `CommonProps`,
+  `AppModerationCause`, `LabelProps`.
+- **Lesson learned:** When the PARA fork diverges from bsky upstream, a
+  missing file at a popular import path silently makes every consumer
+  render `undefined`. The "Element type is invalid" error from React
+  then points to whichever component happened to mount the broken
+  child — not to the missing module. When debugging this class of
+  error, always check that *every* import in the failing subtree
+  resolves to a real file, not just the import at the top of the
+  reported component.
 
 ## Political Compass Colors — CANONICAL SOURCE OF TRUTH
 

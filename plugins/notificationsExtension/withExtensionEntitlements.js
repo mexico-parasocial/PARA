@@ -13,7 +13,7 @@ const withExtensionEntitlements = (config, {extensionName}) => {
     )
 
     const notificationsExtensionEntitlements = {
-      'com.apple.security.application-groups': [`group.com.parasocial.app`],
+      'com.apple.security.application-groups': [`group.com.para.app`],
     }
 
     fs.mkdirSync(path.dirname(extensionEntitlementsPath), {
