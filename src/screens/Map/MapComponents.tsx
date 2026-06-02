@@ -1339,11 +1339,35 @@ export function MapLayersPanel({
   const {gtMobile} = useBreakpoints()
   const t = useTheme()
 
-  const layers: Array<{id: MapLayer; label: string; count?: number}> = [
-    {id: 'states', label: 'States', count: TOTAL_STATES},
-    {id: 'districts', label: 'Districts', count: TOTAL_DISTRICTS},
-    {id: 'cities', label: 'Cities', count: TOTAL_MAJOR_CITIES},
-    {id: 'civic', label: 'Civic', count: undefined},
+  const layers: Array<{
+    id: MapLayer
+    label: string
+    description: string
+    count?: number
+  }> = [
+    {
+      id: 'states',
+      label: 'States',
+      description: 'Overview',
+      count: TOTAL_STATES,
+    },
+    {
+      id: 'districts',
+      label: 'Districts',
+      description: 'Federal districts',
+      count: TOTAL_DISTRICTS,
+    },
+    {
+      id: 'cities',
+      label: 'Cities',
+      description: 'Urban centers',
+      count: TOTAL_MAJOR_CITIES,
+    },
+    {
+      id: 'civic',
+      label: 'Civic',
+      description: 'Activity density',
+    },
   ]
 
   return (
@@ -1351,61 +1375,81 @@ export function MapLayersPanel({
       style={[
         a.absolute,
         {top: gtMobile ? 78 : 74, left: gtMobile ? 20 : 66},
-        a.p_xs,
+        a.p_sm,
         a.rounded_xl,
         t.atoms.bg_contrast_25,
         web({backdropFilter: 'blur(10px)'}),
         a.border,
         t.atoms.border_contrast_low,
         a.shadow_lg,
-        {width: gtMobile ? 176 : 164, zIndex: 20},
+        {width: gtMobile ? 220 : 200, zIndex: 20},
       ]}>
-      <View style={[a.flex_row, a.align_center, a.gap_xs, a.mb_xs, a.px_xs]}>
-        <LayersIcon fill={t.palette.primary_500} width={16} height={16} />
-        <Text style={[a.text_xs, a.font_bold, t.atoms.text_contrast_medium]}>
+      <View style={[a.flex_row, a.align_center, a.gap_xs, a.mb_sm, a.px_xs]}>
+        <LayersIcon fill={t.palette.primary_500} width={17} height={17} />
+        <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
           <Trans>VIEW</Trans>
         </Text>
       </View>
 
-      <View style={[a.gap_xs]}>
-        {layers.map(layer => (
-          <TouchableOpacity
-            key={layer.id}
-            accessibilityRole="tab"
-            onPress={() => onSelectLayer(layer.id)}
-            style={[
-              a.flex_row,
-              a.align_center,
-              a.gap_xs,
-              a.p_xs,
-              a.rounded_md,
-              activeLayer === layer.id
-                ? [
-                    t.atoms.bg_contrast_200,
-                    a.border,
-                    {borderColor: t.palette.primary_500},
-                  ]
-                : [a.border, {borderColor: 'transparent'}],
-            ]}>
-            <Text
+      <View style={[a.gap_sm]}>
+        {layers.map(layer => {
+          const selected = activeLayer === layer.id
+
+          return (
+            <TouchableOpacity
+              key={layer.id}
+              accessibilityRole="tab"
+              accessibilityState={{selected}}
+              onPress={() => onSelectLayer(layer.id)}
               style={[
-                a.text_xs,
-                activeLayer === layer.id
-                  ? [a.font_bold, t.atoms.text]
-                  : t.atoms.text_contrast_medium,
+                a.flex_row,
+                a.align_center,
+                a.gap_sm,
+                a.px_sm,
+                a.py_sm,
+                a.rounded_lg,
+                a.border,
+                selected
+                  ? {
+                      borderColor: t.palette.primary_500,
+                      backgroundColor: t.palette.primary_500 + '16',
+                    }
+                  : {borderColor: 'transparent'},
               ]}>
-              {layer.label}
-            </Text>
-            <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>
-              {layer.count}
-            </Text>
-            {activeLayer === layer.id && (
-              <View style={[a.ml_auto]}>
-                <Check fill={t.palette.primary_500} width={12} height={12} />
+              <View style={[a.flex_1, {minWidth: 0}]}>
+                <Text
+                  style={[
+                    a.text_sm,
+                    selected
+                      ? [a.font_bold, t.atoms.text]
+                      : t.atoms.text_contrast_high,
+                  ]}>
+                  {layer.label}
+                </Text>
+                <Text
+                  style={[a.text_xs, t.atoms.text_contrast_medium]}
+                  numberOfLines={1}>
+                  {layer.description}
+                </Text>
               </View>
-            )}
-          </TouchableOpacity>
-        ))}
+              {typeof layer.count === 'number' && (
+                <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
+                  {layer.count}
+                </Text>
+              )}
+              <View
+                style={[
+                  a.align_center,
+                  a.justify_center,
+                  {width: 18, height: 18},
+                ]}>
+                {selected && (
+                  <Check fill={t.palette.primary_500} width={14} height={14} />
+                )}
+              </View>
+            </TouchableOpacity>
+          )
+        })}
       </View>
     </View>
   )

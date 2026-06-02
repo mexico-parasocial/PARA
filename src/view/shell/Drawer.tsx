@@ -46,6 +46,7 @@ import {
   CommunityIcon_Filled as CommunityFilled,
   CommunityIcon_Stroke as Community,
 } from '#/components/icons/Community'
+import {Compass_Stroke2_Corner0_Rounded as CompassIcon} from '#/components/icons/Compass'
 import {
   Hashtag_Filled_Corner0_Rounded as HashtagFilled,
   Hashtag_Stroke2_Corner0_Rounded as Hashtag,
@@ -80,6 +81,7 @@ import {InlineLinkText} from '#/components/Link'
 import {Text} from '#/components/Typography'
 import {useSimpleVerificationState} from '#/components/verification'
 import {VerificationCheck} from '#/components/verification/VerificationCheck'
+import {useAnalytics} from '#/analytics'
 import {IS_WEB} from '#/env'
 
 const iconWidth = 26
@@ -197,6 +199,7 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
   const isAtCivicTree = currentRoute.name === 'CivicTree'
   const isAtDeliberation = currentRoute.name === 'CommunityCivicTree'
   const isAtMyBase = currentRoute.name === 'MyBase'
+  const isAtCompass = currentRoute.name === 'Compass'
   const isAtIdentityHub =
     currentRoute.name === 'IdentityHub' ||
     currentRoute.name === 'MyWallet' ||
@@ -204,6 +207,7 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
     currentRoute.name === 'TrustedIssuers' ||
     currentRoute.name === 'ConsentAudit'
   const {hasSession, currentAccount} = useSession()
+  const ax = useAnalytics()
 
   // events
   // =
@@ -320,6 +324,12 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
     }
   }, [navigation, setDrawerOpen])
 
+  const onPressCompass = useCallback(() => {
+    ax.metric('nav:click', {item: 'compass', surface: 'drawer'})
+    navigation.navigate('Compass')
+    setDrawerOpen(false)
+  }, [navigation, setDrawerOpen, ax])
+
   const onPressAgora = useCallback(() => {
     navigation.navigate('Agora')
     setDrawerOpen(false)
@@ -429,6 +439,7 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
               onPress={onPressNotifications}
             />
             <FeedsMenuItem isActive={isAtFeeds} onPress={onPressMyFeeds} />
+            <CompassMenuItem isActive={isAtCompass} onPress={onPressCompass} />
             <BaseMenuItem isActive={isAtData} onPress={onPressData} />
             <MyBaseMenuItem isActive={isAtMyBase} onPress={onPressMyBase} />
             <CivicTreeMenuItem isActive={isAtCivicTree} onPress={onPressCivicTree} />
@@ -457,6 +468,7 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
           <>
             <HomeMenuItem isActive={isAtHome} onPress={onPressHome} />
             <FeedsMenuItem isActive={isAtFeeds} onPress={onPressMyFeeds} />
+            <CompassMenuItem isActive={isAtCompass} onPress={onPressCompass} />
             <SearchMenuItem isActive={isAtSearch} onPress={onPressSearch} />
           </>
         )}
@@ -682,6 +694,26 @@ let FeedsMenuItem = ({
   )
 }
 FeedsMenuItem = memo(FeedsMenuItem)
+
+let CompassMenuItem = ({
+  isActive,
+  onPress,
+}: {
+  isActive: boolean
+  onPress: () => void
+}): React.ReactNode => {
+  const {_} = useLingui()
+  const t = useTheme()
+  return (
+    <MenuItem
+      icon={<CompassIcon width={iconWidth} style={[t.atoms.text]} />}
+      label={_(msg`Political Compass`)}
+      bold={isActive}
+      onPress={onPress}
+    />
+  )
+}
+CompassMenuItem = memo(CompassMenuItem)
 
 let ListsMenuItem = ({onPress}: {onPress: () => void}): React.ReactNode => {
   const {_} = useLingui()

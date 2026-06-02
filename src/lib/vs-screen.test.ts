@@ -1,5 +1,11 @@
 import {type CabildeoReadView} from '#/lib/api/cabildeo'
-import {buildVsScreenViewModel} from '#/lib/vs-screen'
+import {
+  buildVsEntityOptions,
+  buildVsScreenViewModel,
+  resolveVsEntities,
+  setVsEntityInPair,
+  swapVsEntities,
+} from '#/lib/vs-screen'
 
 function cabildeo(
   overrides: Partial<CabildeoReadView> & {
@@ -150,6 +156,24 @@ describe('buildVsScreenViewModel', () => {
     expect(view.entities[0].participationTotal).toBe(0)
   })
 
+  it('falls back to all topics when the selected topic is not available', () => {
+    const view = buildVsScreenViewModel({
+      cabildeos: [
+        cabildeo({
+          uri: 'at://topic',
+          title: 'Education budget',
+          community: 'p/Jalisco',
+          flairs: ['#Education'],
+        }),
+      ],
+      entities: ['p/Jalisco', 'p/CDMX'],
+      selectedTopic: 'water',
+    })
+
+    expect(view.selectedTopic).toBe('all')
+    expect(view.totalRelevant).toBe(1)
+  })
+
   it('rolls up direct, delegated, vote, and position totals', () => {
     const view = buildVsScreenViewModel({
       cabildeos: [
@@ -176,5 +200,83 @@ describe('buildVsScreenViewModel', () => {
     expect(view.entities[0].delegatedVoteTotal).toBe(8)
     expect(view.entities[0].positionTotal).toBe(5)
     expect(view.entities[0].participationTotal).toBe(26)
+  })
+
+  it('preserves the requested entity ordering when swapped', () => {
+    const view = buildVsScreenViewModel({
+      cabildeos: [
+        cabildeo({
+          uri: 'at://jalisco',
+          title: 'Water plan',
+          community: 'p/Jalisco',
+        }),
+        cabildeo({
+          uri: 'at://cdmx',
+          title: 'Metro plan',
+          community: 'p/CDMX',
+        }),
+      ],
+      entities: swapVsEntities(['p/Jalisco', 'p/CDMX']),
+      selectedTopic: 'all',
+    })
+
+    expect(view.entities[0].id).toBe('p/CDMX')
+    expect(view.entities[1].id).toBe('p/Jalisco')
+    expect(view.policyAxisComparisons[0].entityDebateCounts).toHaveLength(2)
+  })
+})
+
+describe('VS entity helpers', () => {
+  it('builds searchable entity options from community metadata', () => {
+    const options = buildVsEntityOptions()
+
+    expect(options.some(option => option.id === 'p/Jalisco')).toBe(true)
+    expect(options.some(option => option.id === 'p/Morena')).toBe(true)
+    expect(
+      options.find(option => option.id === 'p/Morena')?.group,
+    ).toBe('Partidos')
+  })
+
+  it('normalizes party aliases into canonical comparison entities', () => {
+    expect(resolveVsEntities(['MORENA', 'PAN'])).toEqual([
+      'p/Morena',
+      'p/PAN',
+    ])
+  })
+
+  it('dedupes route entities before applying the fallback side', () => {
+    expect(resolveVsEntities(['p/Jalisco', 'Jalisco'])).toEqual([
+      'p/Jalisco',
+      'p/CDMX',
+    ])
+  })
+
+  it('accepts comma-delimited web route params', () => {
+    expect(resolveVsEntities('p/CDMX,p/Morena')).toEqual([
+      'p/CDMX',
+      'p/Morena',
+    ])
+  })
+
+  it('prevents selecting the same entity on both sides', () => {
+    const entities: [string, string] = ['p/Jalisco', 'p/CDMX']
+
+    expect(
+      setVsEntityInPair({
+        entities,
+        slot: 0,
+        entity: 'p/CDMX',
+      }),
+    ).toEqual(entities)
+  })
+
+  it('updates only the selected side when the next entity is valid', () => {
+    expect(
+      setVsEntityInPair({
+        entities: ['p/Jalisco', 'p/CDMX'],
+        slot: 1,
+        entity: 'PRI',
+      }),
+    ).toEqual(['p/Jalisco', 'p/PRI'])
   })
 })

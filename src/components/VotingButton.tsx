@@ -132,9 +132,16 @@ export function VotingButton({
   }
 
   const animatedStyle = useAnimatedStyle(() => {
-    return {
+    const base: {
+      transform: {translateY: number}[] | {scale: number}[] | any
+      cursor?: 'grabbing' | 'grab'
+    } = {
       transform: [{translateY: translateY.value}, {scale: scale.value}],
     }
+    if (Platform.OS === 'web') {
+      base.cursor = isActive.value ? 'grabbing' : 'grab'
+    }
+    return base
   })
 
   const voteTextStyle = useAnimatedStyle(() => {
@@ -216,7 +223,6 @@ export function VotingButton({
               borderColor: t.palette.contrast_50 + '40',
             },
             Platform.OS === 'web' && {
-              cursor: isActive.value ? 'grabbing' : 'grab',
               userSelect: 'none',
               touchAction: 'none',
             },
@@ -232,7 +238,7 @@ export function VotingButton({
                   size="sm"
                   style={{
                     color:
-                      liveVote.value > initialVote ? AGREE : t.atoms.text.color,
+                      currentVote > initialVote ? AGREE : t.atoms.text.color,
                   }}
                 />
               </Animated.View>
@@ -246,9 +252,7 @@ export function VotingButton({
 
           <View style={styles.textWrapper}>
             <Animated.Text style={[styles.voteText, voteTextStyle]}>
-              {liveVote.value > 0
-                ? `+${liveVote.value}`
-                : `${liveVote.value}`}
+              {currentVote > 0 ? `+${currentVote}` : `${currentVote}`}
             </Animated.Text>
           </View>
 
@@ -263,7 +267,7 @@ export function VotingButton({
                   size="sm"
                   style={{
                     color:
-                      liveVote.value < initialVote
+                      currentVote < initialVote
                         ? DISAGREE
                         : t.atoms.text.color,
                   }}

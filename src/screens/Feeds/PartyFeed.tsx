@@ -18,9 +18,7 @@ import {FeedPage} from '#/view/com/feeds/FeedPage'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonIcon} from '#/components/Button'
 import {ArrowOutOfBoxModified_Stroke2_Corner2_Rounded as Share} from '#/components/icons/ArrowOutOfBox'
-import {DotGrid_Stroke2_Corner0_Rounded as Ellipsis} from '#/components/icons/DotGrid'
 import * as Layout from '#/components/Layout'
-import * as Menu from '#/components/Menu'
 import {Text} from '#/components/Typography'
 
 type Props = NativeStackScreenProps<CommonNavigatorParams, 'PartyFeed'>
@@ -95,27 +93,15 @@ function PartyFeedScreenInner({profile}: {profile: PartyFeedProfile}) {
           </Layout.Header.Content>
           <Layout.Header.Slot>
             <View style={[a.flex_row, a.align_center, a.gap_xs]}>
-              <Menu.Root>
-                <Menu.Trigger label={_(msg`Open feed options menu`)}>
-                  {({props}) => (
-                    <Button
-                      {...props}
-                      label={_(msg`Open feed options menu`)}
-                      size="small"
-                      variant="ghost"
-                      shape="square"
-                      color="secondary">
-                      <ButtonIcon icon={Ellipsis} size="lg" />
-                    </Button>
-                  )}
-                </Menu.Trigger>
-                <Menu.Outer>
-                  <Menu.Item label={_(msg`Share feed`)} onPress={onPressShare}>
-                    <Menu.ItemText>{_(msg`Share feed`)}</Menu.ItemText>
-                    <Menu.ItemIcon icon={Share} position="right" />
-                  </Menu.Item>
-                </Menu.Outer>
-              </Menu.Root>
+              <Button
+                label={_(msg`Share feed`)}
+                size="small"
+                variant="ghost"
+                shape="square"
+                color="secondary"
+                onPress={onPressShare}>
+                <ButtonIcon icon={Share} size="lg" />
+              </Button>
             </View>
           </Layout.Header.Slot>
         </Layout.Header.Outer>
@@ -160,6 +146,7 @@ function PartyFeedScreenInner({profile}: {profile: PartyFeedProfile}) {
           isPageFocused
           isPageAdjacent={false}
           feedInfo={feedInfo}
+          useHeaderInset={false}
           renderEmptyState={() => <PartyFeedEmptyState name={profile.name} />}
         />
       </Layout.Center>

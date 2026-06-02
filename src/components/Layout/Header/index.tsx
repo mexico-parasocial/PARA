@@ -191,6 +191,7 @@ export function TitleText({
 }: {children: React.ReactNode} & TextStyleProp) {
   const {gtMobile} = useBreakpoints()
   const align = useContext(AlignmentContext)
+  const {isWithinLeftPanel} = useIsWithinSplitView()
   return (
     <Text
       style={[

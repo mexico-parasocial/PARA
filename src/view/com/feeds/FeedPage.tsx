@@ -53,6 +53,7 @@ export function FeedPage({
   renderEndOfFeed,
   savedFeedConfig,
   feedInfo,
+  useHeaderInset = true,
 }: {
   testID?: string
   feed: FeedDescriptor
@@ -63,6 +64,7 @@ export function FeedPage({
   renderEndOfFeed?: () => JSX.Element
   savedFeedConfig?: AppBskyActorDefs.SavedFeed
   feedInfo: FeedSourceInfo
+  useHeaderInset?: boolean
 }) {
   const {hasSession} = useSession()
   const {_} = useLingui()
@@ -75,7 +77,8 @@ export function FeedPage({
     'worklet'
     headerMode.set(withSpring(0, {overshootClamping: true}))
   }, [headerMode])
-  const headerOffset = useHeaderOffset()
+  const screenHeaderOffset = useHeaderOffset()
+  const headerOffset = useHeaderInset ? screenHeaderOffset : 0
   const feedFeedback = useFeedFeedback(feedInfo, hasSession)
   const scrollElRef = useRef<ListMethods>(null)
   const [hasNew, setHasNew] = useState(false)

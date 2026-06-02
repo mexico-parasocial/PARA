@@ -5,7 +5,6 @@ import {
   type AppBskyEmbedRecord,
   type AppBskyEmbedRecordWithMedia,
   type AppBskyEmbedVideo,
-  type AppBskyFeedPost,
   AppBskyFeedPost,
   AtUri,
   BlobRef,

@@ -157,6 +157,18 @@ export type VsTopicFilter = {
   label: string
 }
 
+export type VsEntityOption = {
+  id: string
+  name: string
+  plainName: string
+  initials: string
+  color: string
+  accent: string
+  subtitle: string
+  group: string
+  searchText: string
+}
+
 export type VsEntitySummary = {
   id: string
   name: string
@@ -254,11 +266,22 @@ export type VsScreenViewModel = {
 }
 
 export function resolveVsEntities(
-  input: string[] | undefined,
+  input: string[] | string | undefined,
 ): [string, string] {
-  const normalized = (input || [])
-    .map(value => normalizeVsEntity(value))
-    .filter((value): value is string => Boolean(value))
+  const seen = new Set<string>()
+  const rawEntities =
+    typeof input === 'string' ? input.split(',') : input || []
+  const normalized = rawEntities.reduce<string[]>((result, value) => {
+    const entity = normalizeVsEntity(value)
+    if (!entity) return result
+
+    const slug = normalizeCommunitySlug(entity)
+    if (seen.has(slug)) return result
+
+    seen.add(slug)
+    result.push(entity)
+    return result
+  }, [])
 
   if (normalized.length >= 2) {
     return [normalized[0], normalized[1]]
@@ -270,6 +293,59 @@ export function resolveVsEntities(
   }
 
   return [DEFAULT_ENTITIES[0], DEFAULT_ENTITIES[1]]
+}
+
+export function buildVsEntityOptions(): VsEntityOption[] {
+  const seen = new Set<string>()
+  return COMMUNITY_DATA.map(item => {
+    const id = normalizeVsEntity(item.communityName)
+    const slug = normalizeCommunitySlug(id)
+    if (seen.has(slug)) return null
+    seen.add(slug)
+    return entityOptionFromMeta(id, {
+      name: item.communityName,
+      plainName: item.name,
+      initials: buildInitials(item.name),
+      color: item.color,
+      accent: item.accent || item.color,
+      subtitle: item.subtitle || item.eyebrow || 'Community',
+      group:
+        item.directoryGroup === 'political'
+          ? 'Partidos'
+          : item.directoryGroup === 'civic'
+            ? 'Territorios'
+            : 'Comunidades',
+    })
+  }).filter((option): option is VsEntityOption => Boolean(option))
+}
+
+export function setVsEntityInPair({
+  entities,
+  slot,
+  entity,
+}: {
+  entities: [string, string]
+  slot: 0 | 1
+  entity: string
+}): [string, string] {
+  const normalized = normalizeVsEntity(entity)
+  if (!normalized) return entities
+
+  const otherSlot = slot === 0 ? 1 : 0
+  if (
+    normalizeCommunitySlug(normalized) ===
+    normalizeCommunitySlug(entities[otherSlot])
+  ) {
+    return entities
+  }
+
+  const next: [string, string] = [...entities]
+  next[slot] = normalized
+  return resolveVsEntities(next)
+}
+
+export function swapVsEntities(entities: [string, string]): [string, string] {
+  return [entities[1], entities[0]]
 }
 
 export function resolveInitialVsTopic(value: string | undefined) {
@@ -826,6 +902,25 @@ function getCommunityMeta(entity: string) {
     color: fallbackColor,
     accent: fallbackColor,
     subtitle: 'Community',
+  }
+}
+
+function entityOptionFromMeta(
+  id: string,
+  meta: Omit<VsEntityOption, 'id' | 'searchText'>,
+): VsEntityOption {
+  return {
+    id,
+    ...meta,
+    searchText: [
+      id,
+      meta.name,
+      meta.plainName,
+      meta.subtitle,
+      meta.group,
+    ]
+      .join(' ')
+      .toLowerCase(),
   }
 }
 

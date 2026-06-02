@@ -52,7 +52,6 @@ import {
 } from '#/components/icons/MagnifyingGlass'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
-import {useActorStatus} from '#/features/liveNow'
 import {useDemoMode} from '#/storage/hooks/demo-mode'
 import {styles} from './BottomBarStyles'
 

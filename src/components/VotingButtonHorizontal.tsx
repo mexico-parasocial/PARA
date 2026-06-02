@@ -87,11 +87,20 @@ export function VotingButtonHorizontal({
       [-1, 0, 1],
       [DISAGREE + '50', t.palette.contrast_100, AGREE + '50'],
     )
-    return {
+    const base: {
+      transform: any
+      backgroundColor: string
+      borderColor: string
+      cursor?: 'grabbing' | 'grab'
+    } = {
       transform: [{translateX: translationX.value}, {scale: scale.value}],
       backgroundColor: bg,
       borderColor: border,
     }
+    if (Platform.OS === 'web') {
+      base.cursor = isActive.value ? 'grabbing' : 'grab'
+    }
+    return base
   })
 
   const trackStyle = useAnimatedStyle(() => {
@@ -185,7 +194,6 @@ export function VotingButtonHorizontal({
             styles.control,
             controlStyle,
             Platform.OS === 'web' && {
-              cursor: isActive.value ? 'grabbing' : 'grab',
               userSelect: 'none',
               touchAction: 'none',
             },

@@ -12,7 +12,6 @@ import {Logomark} from '#/view/icons/Logomark'
 import {Logotype} from '#/view/icons/Logotype'
 import {atoms as a, useTheme} from '#/alf'
 import {ButtonIcon} from '#/components/Button'
-import {Compass_Stroke2_Corner0_Rounded as CompassIcon} from '#/components/icons/Compass'
 import {Hashtag_Stroke2_Corner0_Rounded as FeedsIcon} from '#/components/icons/Hashtag'
 import * as Layout from '#/components/Layout'
 import {Link} from '#/components/Link'
@@ -180,34 +179,15 @@ export function HomeHeaderLayoutMobile({
                 variant="ghost"
                 color="secondary"
                 shape="square"
-              onPress={() => {
-                ax.metric('nav:click', {item: 'feeds', surface: 'topBar'})
-              }}
-                style={[
-                  a.justify_center,
-                  {marginRight: -Layout.BUTTON_VISUAL_ALIGNMENT_OFFSET},
-                  a.bg_transparent,
-                ]}>
-                <ButtonIcon icon={FeedsIcon} size="lg" />
-              </Link>
-              <Link
-                testID="viewHeaderHomeCompassBtn"
-                to={{screen: 'Compass'}}
-                hitSlop={HITSLOP_10}
-                label={_(msg`Open compass`)}
-                size="small"
-                variant="ghost"
-                color="secondary"
-                shape="square"
                 onPress={() => {
-                  ax.metric('nav:click', {item: 'compass', surface: 'topBar'})
+                  ax.metric('nav:click', {item: 'feeds', surface: 'topBar'})
                 }}
                 style={[
                   a.justify_center,
                   {marginRight: -Layout.BUTTON_VISUAL_ALIGNMENT_OFFSET},
                   a.bg_transparent,
                 ]}>
-                <ButtonIcon icon={CompassIcon} size="lg" />
+                <ButtonIcon icon={FeedsIcon} size="lg" />
               </Link>
             </View>
           )}

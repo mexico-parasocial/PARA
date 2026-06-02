@@ -34,7 +34,7 @@ RUN mkdir --parents $NVM_DIR && \
 RUN \. "$NVM_DIR/nvm.sh" && \
   nvm install $NODE_VERSION && \
   nvm use $NODE_VERSION && \
-  npm install --global pnpm && \
+  npm install --global pnpm@11.5.0 && \
   pnpm install && \
   cd bskyembed && pnpm install --frozen-lockfile && cd .. && \
   pnpm intl:build && \

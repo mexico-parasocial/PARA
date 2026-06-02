@@ -65,6 +65,8 @@ type Palette = {
   labelColors?: Record<string, string>
 }
 
+type CompassDensityMode = '9ths' | '25ths' | '69ths'
+
 const BASE_QUADRANTS: QuadrantConfig[] = [
   {id: 'auth-left', label: 'Auth Left', row: 0, col: 0},
   {id: 'auth-center', label: 'Auth Center', row: 0, col: 1},
@@ -387,6 +389,16 @@ const buildQuadrants69 = (palette: Palette): Quadrant[] => {
 const INITIAL_SCALE = 1
 const MIN_SCALE = 0.5
 const MAX_SCALE = 3
+const DENSITY_SELECTOR_WIDTH = 258
+const DENSITY_SELECTOR_PADDING = 5
+const DENSITY_SELECTOR_OPTION_WIDTH =
+  (DENSITY_SELECTOR_WIDTH - DENSITY_SELECTOR_PADDING * 2) / 3
+
+const getDensityModeIndex = (mode: CompassDensityMode) => {
+  if (mode === '25ths') return 1
+  if (mode === '69ths') return 2
+  return 0
+}
 
 export function CompassScreen({navigation, route}: Props) {
   const {_: translate} = useLingui()
@@ -449,6 +461,7 @@ export function CompassScreen({navigation, route}: Props) {
     [quadrants69],
   )
   const radicalCenter = SIXTY_NINTHS_BY_ID['radical-centrism']
+  const socialLiberalism = SIXTY_NINTHS_BY_ID['social-liberalism']
 
   const currentQuadrants = show69ths
     ? quadrants69
@@ -456,10 +469,23 @@ export function CompassScreen({navigation, route}: Props) {
       ? quadrants25
       : quadrants9
   const gridDimension = show69ths ? SIXTY_NINTHS_GRID_SIZE : is25ths ? 5 : 3
+  const compassMode: CompassDensityMode = show69ths
+    ? '69ths'
+    : is25ths
+      ? '25ths'
+      : '9ths'
+  const densityOptions: {mode: CompassDensityMode; label: string}[] = [
+    {mode: '9ths', label: '9ths'},
+    {mode: '25ths', label: '25ths'},
+    {mode: '69ths', label: '69ths'},
+  ]
 
   // Animated values stay stable for the lifetime of the screen.
   const pan = useMemo(() => new Animated.ValueXY(), [])
   const scale = useMemo(() => new Animated.Value(INITIAL_SCALE), [])
+  const densitySelectorX = useRef(
+    new Animated.Value(getDensityModeIndex(compassMode)),
+  ).current
   // Track current scale for gesture calculations
   const currentScale = useRef(INITIAL_SCALE)
   useEffect(() => {
@@ -471,6 +497,15 @@ export function CompassScreen({navigation, route}: Props) {
       scale.removeListener(listenerId)
     }
   }, [scale])
+
+  useEffect(() => {
+    Animated.spring(densitySelectorX, {
+      toValue: getDensityModeIndex(compassMode),
+      useNativeDriver: true,
+      tension: 180,
+      friction: 20,
+    }).start()
+  }, [compassMode, densitySelectorX])
 
   // Process route params on mount to zoom/highlight user's position
   const hasProcessedParams = useRef(false)
@@ -565,6 +600,16 @@ export function CompassScreen({navigation, route}: Props) {
     setSelectedQuadrantStats(null)
   }
 
+  const handleDensityModeChange = (mode: CompassDensityMode) => {
+    setIs25ths(mode === '25ths')
+    setShow69ths(mode === '69ths')
+    setSelectedQuadrant(null)
+    setSelectedQuadrantStats(null)
+    setSelectedIdeology(null)
+    ideologyPromptControl.close()
+    handleRecenter()
+  }
+
   const handleQuadrantPress = (quadrant: Quadrant) => {
     setSelectedQuadrant(quadrant)
     setSelectedQuadrantStats(buildQuadrantStats(quadrant))
@@ -643,87 +688,6 @@ export function CompassScreen({navigation, route}: Props) {
         <View style={[a.flex_1, a.w_full, a.relative, a.overflow_hidden]}>
           <View style={[a.flex_1, a.w_full, a.align_center, a.justify_center]}>
             <View style={[{width: 600}, a.relative, a.align_center]}>
-              {/* Toggle Buttons Area - Centered and Styled */}
-              {!isAffiliateMode && (
-                <View
-                  style={[
-                    a.absolute,
-                    {
-                      top: 20,
-                      left: 0,
-                      right: 0,
-                      zIndex: 10,
-                      alignItems: 'center',
-                    },
-                  ]}>
-                  <View
-                    style={[
-                      a.flex_row,
-                      a.gap_sm,
-                      a.p_xs,
-                      a.rounded_full,
-                      cardBgColor,
-                      a.shadow_sm,
-                    ]}>
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      onPress={() => {
-                        setIs25ths(!is25ths)
-                        setShow69ths(false)
-                        setSelectedQuadrant(null)
-                        setSelectedIdeology(null)
-                        ideologyPromptControl.close()
-                        handleRecenter()
-                      }}
-                      style={[
-                        a.px_md,
-                        a.py_sm,
-                        a.rounded_full,
-                        is25ths
-                          ? t.atoms.bg_contrast_25
-                          : {backgroundColor: 'transparent'},
-                      ]}>
-                      <Text
-                        style={[
-                          a.font_bold,
-                          t.atoms.text,
-                          {opacity: is25ths ? 1 : 0.6},
-                        ]}>
-                        {is25ths ? <Trans>9ths</Trans> : <Trans>25ths</Trans>}
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      accessibilityRole="button"
-                      onPress={() => {
-                        setShow69ths(current => !current)
-                        setSelectedQuadrant(null)
-                        setSelectedQuadrantStats(null)
-                        setSelectedIdeology(null)
-                        ideologyPromptControl.close()
-                        handleRecenter()
-                      }}
-                      style={[
-                        a.px_md,
-                        a.py_sm,
-                        a.rounded_full,
-                        show69ths
-                          ? t.atoms.bg_contrast_25
-                          : {backgroundColor: 'transparent'},
-                      ]}>
-                      <Text
-                        style={[
-                          a.font_bold,
-                          t.atoms.text,
-                          {opacity: show69ths ? 1 : 0.6},
-                        ]}>
-                        69ths:{' '}
-                        {show69ths ? translate(msg`On`) : translate(msg`Off`)}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
-
               {!show69ths ? (
                 <>
                   <Text
@@ -929,6 +893,38 @@ export function CompassScreen({navigation, route}: Props) {
                           </Text>
                         </View>
                       </TouchableOpacity>
+                      <TouchableOpacity
+                        accessibilityRole="button"
+                        accessibilityLabel={socialLiberalism.title}
+                        accessibilityHint={translate(
+                          msg`Opens a brief ideology introduction.`,
+                        )}
+                        onPress={() =>
+                          handleSixtyNinthsPress(socialLiberalism.id)
+                        }
+                        style={[
+                          styles.socialLiberalismCell,
+                          {
+                            left:
+                              sixtyNinthsBoardSize / 2 +
+                              sixtyNinthsCellSize * 0.5,
+                            top:
+                              sixtyNinthsBoardSize / 2 +
+                              sixtyNinthsCellSize * 0.5,
+                            width: sixtyNinthsCellSize * 1.2,
+                            height: sixtyNinthsCellSize * 0.78,
+                            backgroundColor: getInterpolatedColor(
+                              palette,
+                              socialLiberalism.row,
+                              socialLiberalism.col,
+                              9,
+                            ),
+                          },
+                        ]}>
+                        <Text style={styles.sixtyNinthsCellLabel}>
+                          {socialLiberalism.label}
+                        </Text>
+                      </TouchableOpacity>
                     </View>
 
                     {sixtyNinthsExtraCells.map(quadrant => (
@@ -1130,6 +1126,72 @@ export function CompassScreen({navigation, route}: Props) {
             </View>
           </View>
         </View>
+
+        {!isAffiliateMode && (
+          <View
+            pointerEvents="box-none"
+            style={[
+              styles.densitySelectorDock,
+              {bottom: 86 + insets.bottom},
+            ]}>
+            <View
+              style={[
+                styles.densitySelectorWrap,
+                cardBgColor,
+                web({backdropFilter: 'blur(16px)'}),
+                a.shadow_md,
+              ]}>
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  styles.densitySelectorIndicator,
+                  {
+                    backgroundColor:
+                      t.name === 'light'
+                        ? 'rgba(255,255,255,0.86)'
+                        : 'rgba(255,255,255,0.16)',
+                    borderColor:
+                      t.name === 'light'
+                        ? 'rgba(255,255,255,0.96)'
+                        : 'rgba(255,255,255,0.2)',
+                    transform: [
+                      {
+                        translateX: densitySelectorX.interpolate({
+                          inputRange: [0, 1, 2],
+                          outputRange: [
+                            0,
+                            DENSITY_SELECTOR_OPTION_WIDTH,
+                            DENSITY_SELECTOR_OPTION_WIDTH * 2,
+                          ],
+                        }),
+                      },
+                    ],
+                  },
+                ]}
+              />
+              {densityOptions.map(option => {
+                const active = compassMode === option.mode
+                return (
+                  <TouchableOpacity
+                    key={option.mode}
+                    accessibilityRole="tab"
+                    accessibilityState={{selected: active}}
+                    onPress={() => handleDensityModeChange(option.mode)}
+                    style={styles.densitySelectorOption}>
+                    <Text
+                      style={[
+                        styles.densitySelectorText,
+                        t.atoms.text,
+                        {opacity: active ? 1 : 0.42},
+                      ]}>
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              })}
+            </View>
+          </View>
+        )}
 
         {/* Zoom controls – desktop only (bottom-right); on mobile they live in the top-right group below */}
         {gtMobile && (
@@ -1341,8 +1403,8 @@ export function CompassScreen({navigation, route}: Props) {
                 bottom: isAffiliateMode
                   ? 140 + insets.bottom
                   : gtMobile
-                    ? 40
-                    : 60 + insets.bottom,
+                    ? 104
+                    : 124 + insets.bottom,
               },
               gtMobile && {right: 40, width: 350},
               !gtMobile && {left: 20, right: 20},
@@ -1657,6 +1719,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 3,
     paddingVertical: 2,
   },
+  socialLiberalismCell: {
+    position: 'absolute',
+    borderWidth: 1.25,
+    borderColor: '#111111',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 3,
+    paddingVertical: 2,
+    zIndex: 4,
+  },
   sixtyNinthsCellLabel: {
     fontSize: 7.5,
     lineHeight: 8.5,
@@ -1763,6 +1835,7 @@ const styles = StyleSheet.create({
   },
   radicalCenterWrap: {
     position: 'absolute',
+    zIndex: 5,
   },
   ideologyLabelBox: {
     position: 'absolute',
@@ -1832,5 +1905,44 @@ const styles = StyleSheet.create({
     width: 48,
     height: 40,
     borderRadius: 12,
+  },
+  densitySelectorDock: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    zIndex: 18,
+    alignItems: 'center',
+  },
+  densitySelectorWrap: {
+    flexDirection: 'row',
+    width: DENSITY_SELECTOR_WIDTH,
+    padding: DENSITY_SELECTOR_PADDING,
+    borderRadius: 22,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  densitySelectorIndicator: {
+    position: 'absolute',
+    top: DENSITY_SELECTOR_PADDING,
+    bottom: DENSITY_SELECTOR_PADDING,
+    left: DENSITY_SELECTOR_PADDING,
+    width: DENSITY_SELECTOR_OPTION_WIDTH,
+    borderRadius: 17,
+    borderWidth: 1,
+  },
+  densitySelectorOption: {
+    width: DENSITY_SELECTOR_OPTION_WIDTH,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 17,
+    zIndex: 1,
+  },
+  densitySelectorText: {
+    fontSize: 14,
+    lineHeight: 17,
+    fontWeight: '800',
+    letterSpacing: 0,
   },
 })

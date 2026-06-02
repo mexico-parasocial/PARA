@@ -448,6 +448,7 @@ function UploadButton({
   fileInputRef: React.RefObject<HTMLInputElement | null>
 }) {
   const t = useTheme()
+  const {_} = useLingui()
 
   const handlePress = async () => {
     if (IS_WEB && fileInputRef.current) {

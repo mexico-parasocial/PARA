@@ -32,54 +32,66 @@ export function MapDiscourseLensContent({
     )
   }, [selectedDiscourseItem])
 
+  const active = !!selectedDiscourseItem && selectedDiscourseItem !== 'Any'
+
   return (
     <View style={[a.w_full, a.flex_1]}>
-      <View
-        style={[
-          a.flex_row,
-          a.align_center,
-          a.gap_xs,
-          a.mb_md,
-        ]}>
-        <FilterIcon
-          fill={t.palette.primary_500}
-          width={16}
-          height={16}
-        />
-        <Text
+      <View style={[a.flex_row, a.align_center, a.gap_sm, a.mb_md]}>
+        <View
           style={[
-            a.text_xs,
-            a.font_bold,
-            t.atoms.text_contrast_medium,
+            a.align_center,
+            a.justify_center,
+            a.rounded_md,
+            {width: 34, height: 34, backgroundColor: '#FF5A3618'},
           ]}>
-          DISCUSSION HEAT
-        </Text>
+          <FilterIcon fill="#FF5A36" width={18} height={18} />
+        </View>
+        <View style={[a.flex_1]}>
+          <Text style={[a.text_lg, a.font_bold, t.atoms.text]}>
+            <Trans>Choose a discourse lens</Trans>
+          </Text>
+          <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
+            <Trans>
+              Heatmap tint only. The map data underneath stays the same.
+            </Trans>
+          </Text>
+        </View>
       </View>
 
-      <Text style={[a.text_lg, a.font_bold, t.atoms.text, a.mt_xs]}>
-        <Trans>Choose a discourse lens</Trans>
-      </Text>
-      <Text
-        style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_xs, a.mb_md]}>
-        <Trans>
-          This is a visual layer only. It changes how states are tinted across
-          the map.
-        </Trans>
-      </Text>
+      {active && (
+        <View
+          style={[
+            a.mb_md,
+            a.p_md,
+            a.rounded_lg,
+            {backgroundColor: '#FF5A3614'},
+            a.border,
+            {borderColor: '#FF5A3636'},
+          ]}>
+          <Text style={[a.text_2xs, a.font_bold, {color: '#FF5A36'}]}>
+            CURRENT LENS
+          </Text>
+          <Text style={[a.text_md, a.font_bold, t.atoms.text, a.mt_2xs]}>
+            {discourseType}: {selectedDiscourseItem}
+          </Text>
+        </View>
+      )}
 
       <View style={[a.flex_row, a.gap_sm, a.mb_md]}>
         <TouchableOpacity
           accessibilityRole="button"
           onPress={() => onChangeDiscourseType('Matter')}
           style={[
+            a.flex_1,
+            a.align_center,
             styles.pillButton(t),
-            discourseType === 'Matter' ? styles.pillButtonActive(t) : null,
+            discourseType === 'Matter' ? styles.pillButtonActive : null,
           ]}>
           <Text
             style={[
               a.text_sm,
               discourseType === 'Matter'
-                ? [a.font_bold, {color: t.palette.primary_500}]
+                ? [a.font_bold, {color: '#FF5A36'}]
                 : t.atoms.text_contrast_medium,
             ]}>
             Matter
@@ -89,14 +101,16 @@ export function MapDiscourseLensContent({
           accessibilityRole="button"
           onPress={() => onChangeDiscourseType('Policy')}
           style={[
+            a.flex_1,
+            a.align_center,
             styles.pillButton(t),
-            discourseType === 'Policy' ? styles.pillButtonActive(t) : null,
+            discourseType === 'Policy' ? styles.pillButtonActive : null,
           ]}>
           <Text
             style={[
               a.text_sm,
               discourseType === 'Policy'
-                ? [a.font_bold, {color: t.palette.primary_500}]
+                ? [a.font_bold, {color: '#FF5A36'}]
                 : t.atoms.text_contrast_medium,
             ]}>
             Policy
@@ -128,13 +142,14 @@ export function MapDiscourseLensContent({
       <TouchableOpacity
         accessibilityRole="button"
         onPress={onClear}
-        style={[a.mt_md, a.align_center]}>
-        <Text
-          style={[
-            a.text_sm,
-            a.font_bold,
-            t.atoms.text_contrast_medium,
-          ]}>
+        style={[
+          a.mt_md,
+          a.align_center,
+          a.py_sm,
+          a.rounded_lg,
+          t.atoms.bg_contrast_25,
+        ]}>
+        <Text style={[a.text_sm, a.font_bold, t.atoms.text_contrast_medium]}>
           <Trans>Clear heatmap</Trans>
         </Text>
       </TouchableOpacity>
@@ -151,8 +166,8 @@ const styles = {
     borderColor: t.atoms.border_contrast_low.borderColor,
     backgroundColor: t.atoms.bg.backgroundColor,
   }),
-  pillButtonActive: (t: ReturnType<typeof useTheme>) => ({
-    borderColor: t.palette.primary_500,
-    backgroundColor: t.palette.primary_500 + '18',
-  }),
+  pillButtonActive: {
+    borderColor: '#FF5A36',
+    backgroundColor: '#FF5A3618',
+  },
 }

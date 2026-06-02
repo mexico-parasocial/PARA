@@ -201,6 +201,35 @@ decision is made.
 
 ---
 
+## 2026-06-01: pnpm 10 patch migration (mirror bsky upstream)
+
+- **Decision:** Migrated from `patch-package` to pnpm-native `patchedDependencies`.
+- **Reasoning:** Bsky upstream removed all `patchedDependencies` AND `patch-package`
+  because pnpm 10 changed the patch filename convention (`package@version.patch`
+  → `package+version.patch`) and enforces stricter version matching. Pnpm 10 also
+  ignores `patchedDependencies` in `pnpm-workspace.yaml` — it must live in
+  `package.json` under `pnpm.patchedDependencies`.
+- **Changes made:**
+  - All 18 patch files renamed from `@` to `+` filename convention
+  - `pnpm.patchedDependencies` block moved from `pnpm-workspace.yaml` to
+    `package.json`
+  - Three packages with `^`/`~` ranges were unresolved to newer versions that
+    no longer match the patches, so they are pinned via `overrides` in
+    `pnpm-workspace.yaml`:
+    - `expo-updates: 29.0.17` (was `~29.0.17`)
+    - `react-native-drawer-layout: 4.2.3` (was `^4.2.3`)
+    - `react-native-keyboard-controller: 1.21.8` (was `^1.21.8`)
+  - `patch-package` removed from `postinstall` and `devDependencies`
+    (pnpm-native patching replaces it; running both causes double-apply errors)
+  - `scripts/apply-nested-patches.js` kept (handles nested deps like
+    `dev-env/node_modules/@atproto/dev-env`)
+- **Pre-existing issue (not caused by this migration):**
+  `apply-nested-patches.js` warns about a missing `@atproto+dev-env+0.4.7.patch`
+  — the user is now on dev-env `0.5.5` and the nested patch was never updated.
+  This is a no-op (the script logs a warning and returns).
+- **Backup:** `patches/` directory was backed up to
+  `/tmp/para-patches-backup-20260601-190022/` before any rename.
+
 ## Political Compass Colors — CANONICAL SOURCE OF TRUTH
 
 **File:** `src/lib/compass/compassColors.ts`
