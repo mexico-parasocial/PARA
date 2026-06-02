@@ -6,10 +6,7 @@ import {
 } from '@atproto/api'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
-import {
-  DEFAULT_DISCOVER_SAVED_FEED,
-  TIMELINE_SAVED_FEED,
-} from '#/lib/constants'
+import {DEFAULT_DISCOVER_SAVED_FEED, TIMELINE_SAVED_FEED} from '#/lib/constants'
 import {replaceEqualDeep} from '#/lib/functions'
 import {getAge} from '#/lib/strings/time'
 import {logger} from '#/logger'
@@ -94,7 +91,7 @@ export function usePreferencesQuery() {
           aa.state.access !== aa.Access.Full ||
           aa.flags.adultContentDisabled
         ) {
-        data = {
+          data = {
             ...data,
             moderationPrefs: makeAgeRestrictedModerationPrefs(
               data.moderationPrefs,
