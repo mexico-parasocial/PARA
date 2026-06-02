@@ -22,4 +22,5 @@ export enum Features {
 
   // PARA governance flags
   HorizontalGovernanceEnable = 'para:horizontal_governance:enable',
+  PajareoEnable = 'para:pajareo:enable',
 }

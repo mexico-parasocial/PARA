@@ -94,10 +94,16 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
     const eligibility = data?.eligibility
     const officialAccount = officialAccountData?.account
     const viewerController = officialAccountData?.viewerController
+    const canRespond = Boolean(viewerDid)
     const canRespondOfficially = hasOfficialScope(
       viewerController,
       'official.pajareo.respond',
     )
+    const mutationError =
+      getErrorMessage(createEntry.error) ||
+      getErrorMessage(createOfficialResponse.error) ||
+      getErrorMessage(supportEntry.error) ||
+      getErrorMessage(reportEntry.error)
     const counts = useMemo(() => {
       return {
         firma: entries.filter(entry => entry.type === 'firma').length,
@@ -139,22 +145,17 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
       )
     }
 
-    const submitOfficialResponse = (entry: RepresentativePajareoEntry) => {
-      if (
-        !viewerDid ||
-        !officialAccount ||
-        !viewerController ||
-        !officialResponseBody.trim()
-      ) {
+    const submitResponse = (entry: RepresentativePajareoEntry) => {
+      if (!viewerDid || !officialResponseBody.trim()) {
         return
       }
       createOfficialResponse.mutate(
         {
           representativeId: representative.id,
           entryId: entry.id,
-          entityId: officialAccount.id,
-          entityName: officialAccount.name,
-          controllerDid: viewerController.controllerDid,
+          entityId: officialAccount?.id,
+          entityName: officialAccount?.name,
+          controllerDid: viewerController?.controllerDid,
           body: officialResponseBody.trim(),
         },
         {
@@ -296,6 +297,11 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
                 )}
               </ButtonText>
             </Button>
+            {mutationError ? (
+              <Text style={[styles.errorText, {color: t.palette.negative_500}]}>
+                {mutationError}
+              </Text>
+            ) : null}
           </View>
         )}
       </View>
@@ -303,6 +309,9 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
 
     const renderItem = ({item}: {item: unknown}) => {
       const entry = item as RepresentativePajareoEntry
+      const publicResponses = (entry.responses ?? []).filter(
+        response => response.kind !== 'official',
+      )
       return (
         <View style={[styles.entry, a.border_b, t.atoms.border_contrast_low]}>
           <View style={styles.entryHeader}>
@@ -342,16 +351,40 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
               </Text>
             </View>
           )}
-          {canRespondOfficially &&
-            !entry.officialResponse &&
+          {publicResponses.map(response => (
+            <View
+              key={response.id}
+              style={[
+                styles.publicResponse,
+                {backgroundColor: t.palette.contrast_50},
+              ]}>
+              <Text
+                style={[
+                  styles.publicResponseLabel,
+                  t.atoms.text_contrast_medium,
+                ]}>
+                <Trans>
+                  Respuesta de {response.responderDisplayName ?? response.responderDid}
+                </Trans>
+              </Text>
+              <Text style={[styles.officialResponseBody, t.atoms.text]}>
+                {response.body}
+              </Text>
+            </View>
+          ))}
+          {canRespond &&
             respondingEntryId === entry.id && (
               <View style={styles.officialComposer}>
                 <TextInput
-                  accessibilityLabel={_(msg`Official response input`)}
-                  accessibilityHint={_(msg`Write an official response from this civic account.`)}
+                  accessibilityLabel={_(msg`Pajareo response input`)}
+                  accessibilityHint={_(msg`Write a public response to this Pajareo entry.`)}
                   value={officialResponseBody}
                   onChangeText={setOfficialResponseBody}
-                  placeholder={_(msg`Responder oficialmente...`)}
+                  placeholder={
+                    canRespondOfficially
+                      ? _(msg`Responder oficialmente...`)
+                      : _(msg`Responder públicamente...`)
+                  }
                   placeholderTextColor={t.palette.contrast_400}
                   multiline
                   style={[
@@ -364,7 +397,7 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
                   ]}
                 />
                 <Button
-                  label={_(msg`Publicar respuesta oficial`)}
+                  label={_(msg`Publicar respuesta`)}
                   variant="solid"
                   color="primary"
                   size="small"
@@ -372,9 +405,13 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
                     !officialResponseBody.trim() ||
                     createOfficialResponse.isPending
                   }
-                  onPress={() => submitOfficialResponse(entry)}>
+                  onPress={() => submitResponse(entry)}>
                   <ButtonText>
-                    <Trans>Responder oficialmente</Trans>
+                    {canRespondOfficially ? (
+                      <Trans>Responder oficialmente</Trans>
+                    ) : (
+                      <Trans>Responder</Trans>
+                    )}
                   </ButtonText>
                 </Button>
               </View>
@@ -395,7 +432,7 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
                 <Trans>Reportar</Trans>
               </Text>
             </TouchableOpacity>
-            {canRespondOfficially && !entry.officialResponse && (
+            {canRespond && (
               <TouchableOpacity
                 accessibilityRole="button"
                 onPress={() =>
@@ -405,7 +442,11 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
                 }>
                 <Text
                   style={[styles.actionText, {color: t.palette.primary_500}]}>
-                  <Trans>Responder como oficial</Trans>
+                  {canRespondOfficially ? (
+                    <Trans>Responder como oficial</Trans>
+                  ) : (
+                    <Trans>Responder</Trans>
+                  )}
                 </Text>
               </TouchableOpacity>
             )}
@@ -455,6 +496,11 @@ function labelForEntryType(type: RepresentativePajareoEntryType) {
   if (type === 'pregunta') return 'Pregunta'
   if (type === 'señal') return 'Señal'
   return 'Testimonio'
+}
+
+function getErrorMessage(error: unknown) {
+  if (!error) return ''
+  return error instanceof Error ? error.message : String(error)
 }
 
 const styles = StyleSheet.create({
@@ -573,9 +619,19 @@ const styles = StyleSheet.create({
     marginTop: 12,
     gap: 5,
   },
+  publicResponse: {
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 12,
+    gap: 5,
+  },
   officialResponseLabel: {
     fontSize: 12,
     fontWeight: '900',
+  },
+  publicResponseLabel: {
+    fontSize: 12,
+    fontWeight: '800',
   },
   officialResponseBody: {
     fontSize: 14,
@@ -596,6 +652,10 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   actionText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  errorText: {
     fontSize: 12,
     fontWeight: '800',
   },

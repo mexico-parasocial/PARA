@@ -29,14 +29,14 @@ services:
   # 1. MASTER – The "brain". Tracks which volume server owns what.
   # ------------------------------------------------------------
   master:
-    image: chrislusf/seaweedfs:latest
+    image: chrislusf/seaweedfs:4.31
     container_name: para-seaweed-master
     command: >
       master
       -ip=master
       -port=9333
       -mdir=/data
-      -defaultReplication=001
+      -defaultReplication=000
       -metricsPort=9324
     ports:
       - "9333:9333"
@@ -46,7 +46,7 @@ services:
     networks:
       - seaweed-net
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:9333/cluster/status"]
+      test: ["CMD", "wget", "-qO-", "http://master:9333/cluster/status"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -61,7 +61,7 @@ services:
   # 2. VOLUME – The "muscle". Stores actual erasure-coded blocks.
   # ------------------------------------------------------------
   volume:
-    image: chrislusf/seaweedfs:latest
+    image: chrislusf/seaweedfs:4.31
     container_name: para-seaweed-volume
     command: >
       volume
@@ -82,7 +82,7 @@ services:
       master:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8080/status"]
+      test: ["CMD", "wget", "-qO-", "http://volume:8080/status"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -97,7 +97,7 @@ services:
   # 3. FILER – Metadata layer. Web UI on :8888.
   # ------------------------------------------------------------
   filer:
-    image: chrislusf/seaweedfs:latest
+    image: chrislusf/seaweedfs:4.31
     container_name: para-seaweed-filer
     command: >
       filer
@@ -119,7 +119,7 @@ services:
       volume:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8888/?limit=1"]
+      test: ["CMD", "wget", "-qO-", "http://filer:8888/?limit=1"]
       interval: 5s
       timeout: 3s
       retries: 10
@@ -134,12 +134,12 @@ services:
   # 4. S3 GATEWAY – What the PDS sees. Exposes AWS S3 API on :8333.
   # ------------------------------------------------------------
   s3:
-    image: chrislusf/seaweedfs:latest
+    image: chrislusf/seaweedfs:4.31
     container_name: para-seaweed-s3
     command: >
       s3
       -filer=filer:8888
-      -ip=s3
+      -ip.bind=0.0.0.0
       -port=8333
       -metricsPort=9327
       -config=/etc/seaweedfs/s3-config.json
@@ -154,7 +154,7 @@ services:
       filer:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:8333/"]
+      test: ["CMD-SHELL", "code=$$(curl -s -o /dev/null -w '%{http_code}' http://s3:8333/); [ \"$$code\" = \"200\" ] || [ \"$$code\" = \"403\" ]"]
       interval: 5s
       timeout: 3s
       retries: 10

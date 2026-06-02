@@ -18,7 +18,8 @@ REGION="${SEAWEEDFS_REGION:-us-east-1}"
 
 echo "⏳ Waiting for SeaweedFS S3 gateway at ${S3_ENDPOINT} ..."
 for i in {1..60}; do
-  if curl -sf "${S3_ENDPOINT}/" > /dev/null 2>&1; then
+  STATUS=$(curl -s -o /dev/null -w '%{http_code}' "${S3_ENDPOINT}/" 2>/dev/null || echo "000")
+  if [ "$STATUS" = "200" ] || [ "$STATUS" = "403" ]; then
     echo "✅ S3 gateway is up"
     break
   fi
@@ -33,6 +34,8 @@ echo "📦 Creating bucket '${BUCKET}' (if not exists) ..."
 
 # Use AWS CLI if available, otherwise fall back to curl + s3v4 sig
 if command -v aws &> /dev/null; then
+  AWS_ACCESS_KEY_ID="${ACCESS_KEY}" \
+  AWS_SECRET_ACCESS_KEY="${SECRET_KEY}" \
   aws --endpoint-url "${S3_ENDPOINT}" \
       s3 mb "s3://${BUCKET}" \
       --region "${REGION}" 2>/dev/null || true
@@ -45,6 +48,8 @@ fi
 
 echo "🔍 Verifying bucket ..."
 if command -v aws &> /dev/null; then
+  AWS_ACCESS_KEY_ID="${ACCESS_KEY}" \
+  AWS_SECRET_ACCESS_KEY="${SECRET_KEY}" \
   aws --endpoint-url "${S3_ENDPOINT}" \
       s3 ls "s3://${BUCKET}" \
       --region "${REGION}" > /dev/null 2>&1 && echo "✅ Bucket ready" || echo "⚠️  Bucket may not be fully ready yet"

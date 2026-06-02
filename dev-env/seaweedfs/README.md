@@ -2,6 +2,8 @@
 
 **Verdict:** SeaweedFS is a strong, low-risk replacement for Cloudflare R2 because the PDS already speaks S3. The integration is almost entirely config changes — zero code changes needed for Phase 1.
 
+This dev cluster pins SeaweedFS to `chrislusf/seaweedfs:4.31`. Avoid `latest` for alpha or production rehearsals so storage behavior does not change between deploys.
+
 ## Architecture
 
 ```
@@ -51,6 +53,11 @@ docker compose -f docker-compose.seaweedfs.yml down -v
 | `init-bucket.sh` | Idempotent bucket creation |
 | `diagnose.sh` | Full-stack health check + PUT/GET/DELETE smoke test |
 | `run-pds-tests.sh` | Orchestrates cluster → tests → teardown |
+| `seaweed-up.sh` | Starts the local 4.31 cluster, initializes the bucket, and runs diagnostics |
+| `seaweed-backup.sh` | Backs up local Seaweed Docker volumes to the Mac mini backup directory |
+| `seaweed-restore-drill.sh` | Restores a backup into a separate high-port drill project |
+| `switch-storage-preview.sh` | Prints R2/Seaweed env differences without editing production config |
+| `storage.*.env.example` | Safe profile examples for R2 and local Seaweed |
 | `../../patches/@atproto+dev-env+0.4.7.patch` | Patches `TestPds.create()` to read S3 env vars |
 
 ## How the Patch Works

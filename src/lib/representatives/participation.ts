@@ -37,10 +37,14 @@ export type RepresentativePajareoEntry = {
   body: string
   anonymousDisplayArea: string
   supportCount: number
+  reportCount?: number
+  responseCount?: number
   questionAnswered: boolean
   officialResponse?: RepresentativePajareoOfficialResponse
+  responses?: RepresentativePajareoResponse[]
   status: RepresentativePajareoEntryStatus
   createdAt: string
+  updatedAt?: string
 }
 
 export type RepresentativePajareoOfficialResponse = {
@@ -51,6 +55,20 @@ export type RepresentativePajareoOfficialResponse = {
   entityName: string
   body: string
   controllerHash: string
+  createdAt: string
+}
+
+export type RepresentativePajareoResponse = {
+  id: string
+  entryId: string
+  representativeId: string
+  kind: 'public' | 'official'
+  responderDid: string
+  responderDisplayName: string | null
+  entityId: string | null
+  entityName: string | null
+  body: string
+  controllerHash: string | null
   createdAt: string
 }
 

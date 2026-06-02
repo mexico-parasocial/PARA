@@ -13,6 +13,10 @@ import {
   type M8CivicVoteProof,
   type M8IdentityRequest,
   type M8IdentityVerificationResult,
+  type M8PajareoEntry,
+  type M8PajareoEntryType,
+  type M8PajareoFeed,
+  type M8PajareoResponse,
   type M8SessionStartResponse,
   type M8WalletPresentation,
   type ProofBrokerGrant,
@@ -540,6 +544,91 @@ export async function getAnonymousPublicContact(postUri: string): Promise<Anonym
     throw new Error(err.error ?? `Anonymous contact failed (${res.status})`)
   }
   return (await res.json()) as AnonymousPublicContact
+}
+
+export async function getPajareoRepresentative(
+  representativeId: string,
+): Promise<M8PajareoFeed> {
+  const res = await m8Fetch(`/pajareo/representatives/${encodeURIComponent(representativeId)}`)
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
+    throw new Error(err.error ?? `Pajareo feed failed (${res.status})`)
+  }
+  return (await res.json()) as M8PajareoFeed
+}
+
+export async function getPajareoRepresentativeMe(
+  representativeId: string,
+): Promise<M8PajareoFeed> {
+  const res = await m8Fetch(`/pajareo/representatives/${encodeURIComponent(representativeId)}/me`)
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
+    throw new Error(err.error ?? `Pajareo viewer feed failed (${res.status})`)
+  }
+  return (await res.json()) as M8PajareoFeed
+}
+
+export async function postPajareoEntry(
+  representativeId: string,
+  payload: {
+    type: M8PajareoEntryType
+    body: string
+  },
+): Promise<{entry: M8PajareoEntry}> {
+  const res = await m8Fetch(`/pajareo/representatives/${encodeURIComponent(representativeId)}/entries`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
+    throw new Error(err.error ?? `Create Pajareo entry failed (${res.status})`)
+  }
+  return (await res.json()) as {entry: M8PajareoEntry}
+}
+
+export async function postPajareoResponse(
+  entryId: string,
+  payload: {
+    body: string
+  },
+): Promise<{response: M8PajareoResponse}> {
+  const res = await m8Fetch(`/pajareo/entries/${encodeURIComponent(entryId)}/responses`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
+    throw new Error(err.error ?? `Create Pajareo response failed (${res.status})`)
+  }
+  return (await res.json()) as {response: M8PajareoResponse}
+}
+
+export async function postPajareoSupport(
+  entryId: string,
+): Promise<{entry: M8PajareoEntry}> {
+  const res = await m8Fetch(`/pajareo/entries/${encodeURIComponent(entryId)}/support`, {
+    method: 'POST',
+  })
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
+    throw new Error(err.error ?? `Support Pajareo entry failed (${res.status})`)
+  }
+  return (await res.json()) as {entry: M8PajareoEntry}
+}
+
+export async function postPajareoReport(
+  entryId: string,
+  reason?: string,
+): Promise<{entry: M8PajareoEntry}> {
+  const res = await m8Fetch(`/pajareo/entries/${encodeURIComponent(entryId)}/report`, {
+    method: 'POST',
+    body: JSON.stringify({reason}),
+  })
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
+    throw new Error(err.error ?? `Report Pajareo entry failed (${res.status})`)
+  }
+  return (await res.json()) as {entry: M8PajareoEntry}
 }
 
 export async function getDeviceTrustMe(): Promise<{deviceTrust: DeviceTrustSummary}> {

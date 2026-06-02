@@ -287,7 +287,7 @@ export type AnonymousIdentityPost = {
   communityUri: string | null
   postType: string
   proofArtifactIds: string[]
-  dmPolicy: 'off' | 'requests'
+  dmPolicy: 'off' | 'requests' | 'para-verified'
   stats: {
     replyCount: number
     repostCount: number
@@ -335,10 +335,81 @@ export type AnonymousPublicContact =
       dmEnabled: true
       provider: 'germ'
       label: 'Private reply via Germ DM'
-      contactUrl: string
+      contactUrl?: string
       mode: 'germ-card-link' | 'm8-relay-pending-germ'
       proofBadges: PublicProofBadge[]
+      dmPolicy?: 'requests' | 'para-verified'
+      senderRequirement?: 'none' | 'para-verified'
     }
+
+export type M8PajareoEntryType =
+  | 'firma'
+  | 'pregunta'
+  | 'señal'
+  | 'testimonio'
+
+export type M8PajareoResponse = {
+  id: string
+  entryId: string
+  representativeId: string
+  kind: 'public' | 'official'
+  responderDid: string
+  responderDisplayName: string | null
+  entityId: string | null
+  entityName: string | null
+  body: string
+  controllerHash: string | null
+  createdAt: string
+}
+
+export type M8PajareoOfficialResponse = {
+  id: string
+  entryId: string
+  representativeId: string
+  entityId: string
+  entityName: string
+  body: string
+  controllerHash: string
+  createdAt: string
+}
+
+export type M8PajareoEntry = {
+  id: string
+  representativeId: string
+  type: M8PajareoEntryType
+  body: string
+  anonymousDisplayArea: string
+  supportCount: number
+  reportCount: number
+  responseCount: number
+  questionAnswered: boolean
+  officialResponse?: M8PajareoOfficialResponse
+  responses: M8PajareoResponse[]
+  status: 'visible' | 'removed'
+  createdAt: string
+  updatedAt: string
+}
+
+export type M8PajareoEligibility = {
+  representativeId: string
+  eligible: boolean
+  reason: 'eligible' | 'representative_not_verified'
+  areaLabel: string
+}
+
+export type M8PajareoIdentitySummary = {
+  id: string
+  displayName: string
+  surface: 'civic'
+  communityUri: 'm8:pajareo'
+}
+
+export type M8PajareoFeed = {
+  representativeId: string
+  entries: M8PajareoEntry[]
+  eligibility?: M8PajareoEligibility
+  pajareoIdentity?: M8PajareoIdentitySummary
+}
 
 export type M8Tokens = {
   accessToken: string

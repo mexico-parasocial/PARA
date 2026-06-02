@@ -1,18 +1,20 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
+import {
+  getPajareoRepresentative,
+  getPajareoRepresentativeMe,
+  postPajareoEntry,
+  postPajareoReport,
+  postPajareoResponse,
+  postPajareoSupport,
+} from '#/lib/m8/api'
 import {type RepresentativeItem} from '#/lib/mock-data'
 import {
-  checkRepresentativeAreaEligibility,
-  createOfficialPajareoResponse,
   createRepresentativeNomination,
-  createRepresentativePajareoEntry,
   getRepresentativeNominations,
-  getRepresentativePajareoEntries,
   getRepresentativeParticipationIndex,
-  reportRepresentativePajareoEntry,
   type RepresentativeNominationMode,
   type RepresentativePajareoEntryType,
-  supportRepresentativePajareoEntry,
   updateRepresentativeNominationStatus,
 } from '#/lib/representatives/participation'
 
@@ -54,12 +56,21 @@ export function useRepresentativePajareoQuery({
       if (!representative) {
         return {entries: [], eligibility: null}
       }
-      return {
-        entries: getRepresentativePajareoEntries(representative.id),
-        eligibility: checkRepresentativeAreaEligibility({
-          representative,
-          viewerDid,
-        }),
+      if (!viewerDid) {
+        const feed = await getPajareoRepresentative(representative.id)
+        return {entries: feed.entries, eligibility: null}
+      }
+
+      try {
+        const feed = await getPajareoRepresentativeMe(representative.id)
+        return {
+          entries: feed.entries,
+          eligibility: feed.eligibility ?? null,
+          pajareoIdentity: feed.pajareoIdentity,
+        }
+      } catch {
+        const feed = await getPajareoRepresentative(representative.id)
+        return {entries: feed.entries, eligibility: null}
       }
     },
     enabled: Boolean(representative),
@@ -113,7 +124,10 @@ export function useCreateRepresentativePajareoEntryMutation() {
       viewerDid: string
       type: RepresentativePajareoEntryType
       body: string
-    }) => createRepresentativePajareoEntry(input),
+    }) => postPajareoEntry(input.representativeId, {
+      type: input.type,
+      body: input.body,
+    }).then(result => result.entry),
     onSuccess: entry => {
       void queryClient.invalidateQueries({queryKey: [participationRoot]})
       void queryClient.invalidateQueries({
@@ -126,8 +140,7 @@ export function useCreateRepresentativePajareoEntryMutation() {
 export function useSupportRepresentativePajareoEntryMutation() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (entryId: string) =>
-      supportRepresentativePajareoEntry(entryId),
+    mutationFn: async (entryId: string) => postPajareoSupport(entryId),
     onSuccess: () => {
       void queryClient.invalidateQueries({queryKey: [participationRoot]})
     },
@@ -135,9 +148,12 @@ export function useSupportRepresentativePajareoEntryMutation() {
 }
 
 export function useReportRepresentativePajareoEntryMutation() {
+  const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: async (entryId: string) =>
-      reportRepresentativePajareoEntry(entryId),
+    mutationFn: async (entryId: string) => postPajareoReport(entryId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({queryKey: [participationRoot]})
+    },
   })
 }
 
@@ -147,11 +163,11 @@ export function useCreateOfficialPajareoResponseMutation() {
     mutationFn: async (input: {
       representativeId: string
       entryId: string
-      entityId: string
-      entityName: string
-      controllerDid: string
+      entityId?: string
+      entityName?: string
+      controllerDid?: string
       body: string
-    }) => createOfficialPajareoResponse(input),
+    }) => postPajareoResponse(input.entryId, {body: input.body}).then(result => result.response),
     onSuccess: response => {
       void queryClient.invalidateQueries({queryKey: [participationRoot]})
       void queryClient.invalidateQueries({

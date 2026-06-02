@@ -17,6 +17,7 @@ import {useQueryClient} from '@tanstack/react-query'
 import {fetchParaIdentity} from '#/lib/api/para-identity'
 import {type ParaIdentityRecord} from '#/lib/api/para-lexicons'
 import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
+import {usePajareoEnabled} from '#/lib/hooks/usePajareoEnabled'
 import {useSetTitle} from '#/lib/hooks/useSetTitle'
 import {findRepresentativeByActor} from '#/lib/representatives/participation'
 import {
@@ -296,7 +297,9 @@ function ProfileScreenLoaded({
     isMe || (paraIdentity?.publicRaq ?? false)
   const showHighlightsTab =
     isMe || (paraIdentity?.publicHighlights ?? false)
-  const showPajareoTab = representativeProfile?.status === 'verified'
+  const isPajareoEnabled = usePajareoEnabled()
+  const showPajareoTab =
+    isPajareoEnabled && representativeProfile?.status === 'verified'
 
   const sectionTitles = [
     showFiltersTab ? _(msg`Labels`) : undefined,
