@@ -1,5 +1,6 @@
 import {useEffect, useMemo, useRef, useState} from 'react'
 import {
+  Linking,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -29,6 +30,7 @@ import {
   type NativeStackScreenProps,
   type NavigationProp,
 } from '#/lib/routes/types'
+import {usePartyLobbyingBriefingPacksQuery} from '#/state/queries/briefing-packs'
 import {
   useCabildeoPositionsQuery,
   useCabildeoQuery,
@@ -148,6 +150,59 @@ function RelatedCabildeos({
             </TouchableOpacity>
           )
         })}
+      </View>
+    </View>
+  )
+}
+
+function RelatedBriefingPacks({cabildeoUri}: {cabildeoUri: string}) {
+  const t = useTheme()
+  const {data: packs = []} = usePartyLobbyingBriefingPacksQuery({
+    cabildeoUri,
+    status: 'published',
+  })
+
+  if (packs.length === 0) return null
+
+  return (
+    <View style={{marginTop: 24, marginBottom: 16}}>
+      <Text
+        style={[
+          styles.sectionTitle,
+          t.atoms.text,
+          {marginBottom: 12, fontSize: 16},
+        ]}>
+        <Trans>Party Lobbying Briefing Packs</Trans>
+      </Text>
+      <View style={{gap: 10}}>
+        {packs.slice(0, 4).map(pack => (
+          <TouchableOpacity
+            accessibilityRole="button"
+            key={pack.uri}
+            activeOpacity={0.8}
+            onPress={() => {
+              if (pack.obsidianExportUri) {
+                Linking.openURL(pack.obsidianExportUri).catch(() => {})
+              }
+            }}
+            style={[
+              styles.briefingPackCard,
+              t.atoms.bg_contrast_25,
+              {borderColor: t.palette.contrast_100},
+            ]}>
+            <Text style={[styles.briefingPackParty, t.atoms.text]}>
+              {pack.party}
+            </Text>
+            <Text style={[styles.briefingPackTitle, t.atoms.text]}>
+              {pack.title}
+            </Text>
+            <Text
+              style={[styles.briefingPackSummary, t.atoms.text_contrast_medium]}
+              numberOfLines={2}>
+              {pack.summary}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
     </View>
   )
@@ -1716,6 +1771,7 @@ export function CabildeoDetailScreen({route}: Props) {
             currentUri={cabildeo.uri}
             community={cabildeo.community}
           />
+          <RelatedBriefingPacks cabildeoUri={cabildeo.uri} />
         </Layout.Center>
       </ScrollView>
       <SortitionConfigDialog
@@ -1973,6 +2029,25 @@ const styles = StyleSheet.create({
   },
   communityPill: {paddingHorizontal: 10, paddingVertical: 4, borderRadius: 8},
   communityPillText: {fontSize: 12, fontWeight: '800'},
+  briefingPackCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    gap: 5,
+  },
+  briefingPackParty: {
+    fontSize: 12,
+    fontWeight: '900',
+    textTransform: 'uppercase',
+  },
+  briefingPackTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  briefingPackSummary: {
+    fontSize: 12,
+    lineHeight: 17,
+  },
 
   deadlineBar: {
     flexDirection: 'row',

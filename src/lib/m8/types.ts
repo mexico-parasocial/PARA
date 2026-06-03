@@ -348,6 +348,30 @@ export type M8PajareoEntryType =
   | 'señal'
   | 'testimonio'
 
+export type M8PajareoSubjectKind =
+  | 'person'
+  | 'institution'
+  | 'person_in_institution'
+
+export type M8PajareoJurisdictionLevel =
+  | 'zone'
+  | 'state'
+  | 'nation'
+  | 'representative_area'
+
+export type M8PajareoSubject = {
+  kind: M8PajareoSubjectKind
+  personId: string | null
+  personName: string | null
+  institutionId: string | null
+  institutionName: string | null
+}
+
+export type M8PajareoJurisdiction = {
+  level: M8PajareoJurisdictionLevel
+  label: string
+}
+
 export type M8PajareoResponse = {
   id: string
   entryId: string
@@ -376,6 +400,8 @@ export type M8PajareoOfficialResponse = {
 export type M8PajareoEntry = {
   id: string
   representativeId: string
+  subject: M8PajareoSubject
+  jurisdiction: M8PajareoJurisdiction
   type: M8PajareoEntryType
   body: string
   anonymousDisplayArea: string

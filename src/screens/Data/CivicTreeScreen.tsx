@@ -6,11 +6,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import * as Clipboard from 'expo-clipboard'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
+import {buildPersonalCivicTreeVaultManifest} from '#/lib/civic-export/obsidian'
 import {CIVIC_TREE_LABELS} from '#/lib/civic-tree-labels'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
@@ -29,6 +31,7 @@ import {Bookmark as BookmarkIcon} from '#/components/icons/Bookmark'
 import {BulletList_Stroke2_Corner0_Rounded as ListIcon} from '#/components/icons/BulletList'
 import {DotGrid_Stroke2_Corner0_Rounded as GridIcon} from '#/components/icons/DotGrid'
 import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/Plus'
+import {SquareArrowTopRight_Stroke2_Corner0_Rounded as ExportIcon} from '#/components/icons/SquareArrowTopRight'
 import {Trash_Stroke2_Corner0_Rounded as TrashIcon} from '#/components/icons/Trash'
 import * as Layout from '#/components/Layout'
 import * as Prompt from '#/components/Prompt'
@@ -145,6 +148,19 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
     navigation.navigate('Agora')
   }, [navigation])
 
+  const onExportObsidianVault = useCallback(() => {
+    const manifest = buildPersonalCivicTreeVaultManifest(collections)
+    Clipboard.setStringAsync(JSON.stringify(manifest, null, 2))
+      .then(() => {
+        Toast.show(_(msg`Obsidian vault manifest copied`))
+      })
+      .catch((err: Error) => {
+        Toast.show(err.message || _(msg`Failed to copy export`), {
+          type: 'error',
+        })
+      })
+  }, [collections, _])
+
   // Build graph data from collections
   const graphNodes = useMemo(() => {
     return collections.map(c => ({
@@ -259,6 +275,36 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
           </View>
         ) : viewMode === 'graph' ? (
           <View style={styles.graphPane}>
+            <View
+              style={[
+                styles.exportHub,
+                t.atoms.bg_contrast_25,
+                {borderColor: t.palette.contrast_100},
+              ]}>
+              <View style={styles.exportHubText}>
+                <Text style={[styles.exportHubTitle, t.atoms.text]}>
+                  <Trans>Civic Export Hub</Trans>
+                </Text>
+                <Text
+                  style={[
+                    styles.exportHubSubtitle,
+                    t.atoms.text_contrast_medium,
+                  ]}>
+                  <Trans>Copy an Obsidian-ready vault manifest for your personal civic tree.</Trans>
+                </Text>
+              </View>
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={_(msg`Export to Obsidian`)}
+                accessibilityHint={_(msg`Copies an Obsidian-ready vault manifest for your civic tree`)}
+                onPress={onExportObsidianVault}
+                style={[
+                  styles.exportHubButton,
+                  {backgroundColor: t.palette.primary_500},
+                ]}>
+                <ExportIcon size="sm" style={{color: 'white'}} />
+              </TouchableOpacity>
+            </View>
             <View style={styles.searchBar}>
               <TextInput
                 accessibilityLabel={_(msg`Search collections`)}
@@ -324,6 +370,25 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
             }
             ListFooterComponent={
               <View style={{paddingTop: 16}}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={_(msg`Export to Obsidian`)}
+                  accessibilityHint={_(msg`Copies an Obsidian-ready vault manifest for your civic tree`)}
+                  onPress={onExportObsidianVault}
+                  style={[
+                    styles.addBtn,
+                    t.atoms.bg_contrast_25,
+                    {borderWidth: 1, borderColor: t.palette.contrast_100},
+                  ]}>
+                  <ExportIcon size="md" style={{color: t.palette.primary_500}} />
+                  <Text
+                    style={[
+                      styles.addBtnText,
+                      {color: t.palette.primary_500},
+                    ]}>
+                    <Trans>Export to Obsidian</Trans>
+                  </Text>
+                </TouchableOpacity>
                 {showCreate ? (
                   <View
                     style={[
@@ -552,6 +617,34 @@ const styles = StyleSheet.create({
   graphPane: {
     flex: 1,
     width: '100%',
+  },
+  exportHub: {
+    margin: 12,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  exportHubText: {
+    flex: 1,
+    gap: 2,
+  },
+  exportHubTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  exportHubSubtitle: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  exportHubButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   list: {
     flex: 1,

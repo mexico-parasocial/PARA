@@ -65,6 +65,7 @@ export function StepSuggestedAccounts() {
   // so we can enable/disable the button without having to dig through the shadow cache
   const [followedUsers, setFollowedUsers] = useState<string[]>([])
 
+
   /*
    * Special language handling copied wholesale from the Explore screen
    */
@@ -77,6 +78,7 @@ export function StepSuggestedAccounts() {
   const interests = Object.keys(interestsDisplayNames)
     .sort(boostInterests(popularInterests))
     .sort(boostInterests(state.interestsStepResults.selectedInterests))
+
   const {
     data: suggestedUsers,
     isLoading,
@@ -119,6 +121,7 @@ export function StepSuggestedAccounts() {
         ax.metric('suggestedUser:follow', {
           logContext: 'Onboarding',
           location: 'FollowAll',
+          recSource: !useFullExperience ? 'Search' : undefined,
           recId: suggestedUsersRecId,
           position: i,
           suggestedDid: did,
@@ -165,6 +168,7 @@ export function StepSuggestedAccounts() {
           'suggestedUser:seen',
           {
             logContext: 'Onboarding',
+            recSource: !useFullExperience ? 'Search' : undefined,
             recId: suggestedUsersRecId,
             position,
             suggestedDid: did,
@@ -174,7 +178,7 @@ export function StepSuggestedAccounts() {
         )
       }
     },
-    [selectedInterest, suggestedUsersRecId],
+    [selectedInterest, suggestedUsersRecId, useFullExperience],
   )
 
   return (
@@ -259,6 +263,7 @@ export function StepSuggestedAccounts() {
                 position={index}
                 category={selectedInterest}
                 onSeen={onProfileSeen}
+                recSource={!useFullExperience ? 'Search' : undefined}
                 recId={suggestedUsersRecId}
               />
             ))}

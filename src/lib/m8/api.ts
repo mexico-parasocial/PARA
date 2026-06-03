@@ -16,7 +16,9 @@ import {
   type M8PajareoEntry,
   type M8PajareoEntryType,
   type M8PajareoFeed,
+  type M8PajareoJurisdiction,
   type M8PajareoResponse,
+  type M8PajareoSubject,
   type M8SessionStartResponse,
   type M8WalletPresentation,
   type ProofBrokerGrant,
@@ -573,6 +575,8 @@ export async function postPajareoEntry(
   payload: {
     type: M8PajareoEntryType
     body: string
+    subject?: M8PajareoSubject
+    jurisdiction?: M8PajareoJurisdiction
   },
 ): Promise<{entry: M8PajareoEntry}> {
   const res = await m8Fetch(`/pajareo/representatives/${encodeURIComponent(representativeId)}/entries`, {

@@ -219,8 +219,8 @@ export function AddMembersFlow({
       }
     }
 
-    if (searchText === '') {
-      _items.unshift({
+    if (searchText === '' && _items.length > 0) {
+    _items.unshift({
         type: 'label',
         key: 'suggested',
         message: l`Suggested`,

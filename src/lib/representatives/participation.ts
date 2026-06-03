@@ -14,6 +14,30 @@ export type RepresentativePajareoEntryType =
   | 'señal'
   | 'testimonio'
 
+export type RepresentativePajareoSubjectKind =
+  | 'person'
+  | 'institution'
+  | 'person_in_institution'
+
+export type RepresentativePajareoJurisdictionLevel =
+  | 'zone'
+  | 'state'
+  | 'nation'
+  | 'representative_area'
+
+export type RepresentativePajareoSubject = {
+  kind: RepresentativePajareoSubjectKind
+  personId: string | null
+  personName: string | null
+  institutionId: string | null
+  institutionName: string | null
+}
+
+export type RepresentativePajareoJurisdiction = {
+  level: RepresentativePajareoJurisdictionLevel
+  label: string
+}
+
 export type RepresentativePajareoEntryStatus = 'visible' | 'removed'
 
 export type RepresentativeNomination = {
@@ -33,6 +57,8 @@ export type RepresentativeNomination = {
 export type RepresentativePajareoEntry = {
   id: string
   representativeId: string
+  subject?: RepresentativePajareoSubject
+  jurisdiction?: RepresentativePajareoJurisdiction
   type: RepresentativePajareoEntryType
   body: string
   anonymousDisplayArea: string

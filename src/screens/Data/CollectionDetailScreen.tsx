@@ -7,11 +7,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import * as Clipboard from 'expo-clipboard'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation, useRoute} from '@react-navigation/native'
 
+import {buildPersonalCivicTreeVaultManifest} from '#/lib/civic-export/obsidian'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
   type CivicTreeItem,
@@ -199,6 +201,20 @@ export function CollectionDetailScreen() {
       },
     )
   }, [collection, exportMutation, currentAccount?.handle, _])
+
+  const onExportToObsidian = useCallback(() => {
+    if (!collection) return
+    const manifest = buildPersonalCivicTreeVaultManifest([collection])
+    Clipboard.setStringAsync(JSON.stringify(manifest, null, 2))
+      .then(() => {
+        Toast.show(_(msg`Obsidian vault manifest copied`))
+      })
+      .catch((err: Error) => {
+        Toast.show(err.message || _(msg`Failed to copy export`), {
+          type: 'error',
+        })
+      })
+  }, [collection, _])
 
   return (
     <Layout.Screen>
@@ -394,6 +410,23 @@ export function CollectionDetailScreen() {
                       size="sm"
                       style={{color: t.palette.contrast_400}}
                     />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel={_(msg`Export to Obsidian`)}
+                    accessibilityHint={_(
+                      msg`Copies an Obsidian-ready vault manifest for this collection`,
+                    )}
+                    onPress={onExportToObsidian}
+                    disabled={collection.items.length === 0}
+                    style={[
+                      styles.secondaryBtn,
+                      {borderColor: t.palette.contrast_100},
+                      collection.items.length === 0 && {opacity: 0.5},
+                    ]}>
+                    <Text style={[styles.secondaryBtnText, t.atoms.text]}>
+                      <Trans>Obsidian</Trans>
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>

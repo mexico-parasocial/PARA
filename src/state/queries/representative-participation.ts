@@ -15,6 +15,8 @@ import {
   getRepresentativeParticipationIndex,
   type RepresentativeNominationMode,
   type RepresentativePajareoEntryType,
+  type RepresentativePajareoJurisdiction,
+  type RepresentativePajareoSubject,
   updateRepresentativeNominationStatus,
 } from '#/lib/representatives/participation'
 
@@ -124,9 +126,13 @@ export function useCreateRepresentativePajareoEntryMutation() {
       viewerDid: string
       type: RepresentativePajareoEntryType
       body: string
+      subject?: RepresentativePajareoSubject
+      jurisdiction?: RepresentativePajareoJurisdiction
     }) => postPajareoEntry(input.representativeId, {
       type: input.type,
       body: input.body,
+      subject: input.subject,
+      jurisdiction: input.jurisdiction,
     }).then(result => result.entry),
     onSuccess: entry => {
       void queryClient.invalidateQueries({queryKey: [participationRoot]})

@@ -8,10 +8,13 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import * as Clipboard from 'expo-clipboard'
 import {Trans} from '@lingui/react/macro'
 import {useRoute} from '@react-navigation/native'
 
+import {buildCommunityCivicTreeVaultManifest} from '#/lib/civic-export/obsidian'
 import {useAnonymousMode} from '#/lib/m8/hooks/useAnonymousMode'
+import {usePartyLobbyingBriefingPacksQuery} from '#/state/queries/briefing-packs'
 import {useCommunityBoardsQuery} from '#/state/queries/community-boards'
 import {
   COMMUNITY_CIVIC_TREE_CARD_TYPES,
@@ -37,6 +40,7 @@ import {useDialogControl} from '#/components/Dialog'
 import {SortitionConfigDialog} from '#/components/dialogs/SortitionConfigDialog'
 import {SearchInput} from '#/components/forms/SearchInput'
 import * as Layout from '#/components/Layout'
+import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {CommunityCivicTreeGraph} from './components/CommunityCivicTreeGraph'
 import {CommunityPulseSheet} from './components/CommunityPulseSheet'
@@ -182,6 +186,10 @@ export function CommunityCivicTreeScreen() {
   )
   const {data: summary} = useCommunityCivicTreeSummaryQuery(communityUri)
   const {data: pulse} = useCommunityCivicTreePulseQuery(communityUri, myDid)
+  const {data: briefingPacks = []} = usePartyLobbyingBriefingPacksQuery({
+    communityUri,
+    status: 'published',
+  })
 
   const selectedContribution = useMemo(() => {
     if (selectedContributionId) {
@@ -313,6 +321,21 @@ export function CommunityCivicTreeScreen() {
     [communityUri, myDid, voteContribution],
   )
 
+  const onExportCommunityObsidianVault = useCallback(() => {
+    if (!communityUri || !graphData) return
+    const manifest = buildCommunityCivicTreeVaultManifest({
+      communityName: selectedCommunity?.name ?? 'Community',
+      communityUri,
+      nodes: graphData.nodes,
+      edges: graphData.edges,
+    })
+    Clipboard.setStringAsync(JSON.stringify(manifest, null, 2))
+      .then(() => Toast.show('Obsidian vault manifest copied'))
+      .catch((err: Error) => {
+        Toast.show(err.message || 'Failed to copy export', {type: 'error'})
+      })
+  }, [communityUri, graphData, selectedCommunity?.name])
+
   return (
     <Layout.Screen>
       <Layout.Header.Outer>
@@ -369,6 +392,27 @@ export function CommunityCivicTreeScreen() {
                     <Trans>Summary</Trans>
                   </Text>
                 </TouchableOpacity>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Export community civic tree to Obsidian"
+                  accessibilityHint="Copies an Obsidian-ready vault manifest for this community tree"
+                  onPress={onExportCommunityObsidianVault}
+                  disabled={!graphData || graphData.nodes.length === 0}
+                  style={[
+                    styles.summarizeBtn,
+                    {backgroundColor: t.palette.primary_500 + '15'},
+                    (!graphData || graphData.nodes.length === 0) && {
+                      opacity: 0.5,
+                    },
+                  ]}>
+                  <Text
+                    style={[
+                      styles.topActionText,
+                      {color: t.palette.primary_500},
+                    ]}>
+                    <Trans>Obsidian</Trans>
+                  </Text>
+                </TouchableOpacity>
                 {suggestions.length > 0 && (
                   <TouchableOpacity
                     accessibilityRole="button"
@@ -401,6 +445,52 @@ export function CommunityCivicTreeScreen() {
               </View>
             </View>
           )}
+
+          {communityUri && briefingPacks.length > 0 ? (
+            <View
+              style={[
+                styles.briefingRail,
+                t.atoms.bg_contrast_25,
+                {borderColor: t.palette.contrast_100},
+              ]}>
+              <Text style={[styles.briefingRailTitle, t.atoms.text]}>
+                <Trans>Party Lobbying Briefing Packs</Trans>
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.briefingRailItems}>
+                {briefingPacks.map(pack => (
+                  <TouchableOpacity
+                    key={pack.uri}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Open ${pack.title}`}
+                    accessibilityHint="Opens this party lobbying briefing pack"
+                    onPress={() => {
+                      if (pack.obsidianExportUri) {
+                        void Linking.openURL(pack.obsidianExportUri)
+                      }
+                    }}
+                    style={[
+                      styles.briefingCard,
+                      {borderColor: t.palette.contrast_100},
+                    ]}>
+                    <Text style={[styles.briefingParty, t.atoms.text]}>
+                      {pack.party}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.briefingTitle,
+                        t.atoms.text_contrast_medium,
+                      ]}
+                      numberOfLines={2}>
+                      {pack.title}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
 
           {showContributionNotice && (
             <View
@@ -1168,6 +1258,37 @@ const styles = StyleSheet.create({
   topActionText: {
     fontSize: 12,
     fontWeight: '700',
+  },
+  briefingRail: {
+    marginHorizontal: 12,
+    marginTop: 10,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    gap: 8,
+  },
+  briefingRailTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  briefingRailItems: {
+    gap: 8,
+  },
+  briefingCard: {
+    width: 190,
+    minHeight: 72,
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 10,
+    gap: 4,
+  },
+  briefingParty: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  briefingTitle: {
+    fontSize: 12,
+    lineHeight: 16,
   },
   loadingText: {
     marginTop: 12,

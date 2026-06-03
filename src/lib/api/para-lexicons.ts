@@ -35,6 +35,8 @@ export const PARA_COMMUNITY_CIVIC_TREE_CARD_VOTE_COLLECTION =
   'com.para.community.civicTree.cardVote'
 export const PARA_COMMUNITY_CIVIC_TREE_CONFIG_COLLECTION =
   'com.para.community.civicTree.config'
+export const PARA_COMMUNITY_BRIEFING_PACK_COLLECTION =
+  'com.para.community.briefingPack'
 export const PARA_HIGHLIGHT_COLLECTION = 'com.para.highlight.annotation'
 export const PARA_OFFICIAL_CIVIC_ENTITY_COLLECTION = 'com.para.official.entity'
 export const PARA_OFFICIAL_CIVIC_CONTROLLER_COLLECTION =
@@ -388,6 +390,28 @@ export interface CommunityCivicTreeConfigRecord {
   approvalMarginRequired: number
   moderatorGateEnabled?: boolean
   sortitionEnabled?: boolean
+  updatedAt: string
+}
+
+export type CommunityBriefingPackType = 'party_lobbying'
+
+export type CommunityBriefingPackStatus = 'draft' | 'published' | 'archived'
+
+export interface CommunityBriefingPackRecord {
+  packType: CommunityBriefingPackType
+  communityUri: string
+  party: string
+  title: string
+  summary: string
+  cabildeoUris: string[]
+  civicTreeCardIds: string[]
+  evidenceUris: string[]
+  sembleCollectionUri?: string
+  marginCollectionUri?: string
+  obsidianExportUri?: string
+  status: CommunityBriefingPackStatus
+  createdBy: string
+  createdAt: string
   updatedAt: string
 }
 

@@ -22,6 +22,8 @@ import {hasOfficialScope} from '#/lib/official-civic-accounts'
 import {
   type RepresentativePajareoEntry,
   type RepresentativePajareoEntryType,
+  type RepresentativePajareoJurisdictionLevel,
+  type RepresentativePajareoSubjectKind,
 } from '#/lib/representatives/participation'
 import {useOfficialCivicAccountQuery} from '#/state/queries/official-civic-accounts'
 import {
@@ -49,6 +51,25 @@ const ENTRY_TYPES: Array<{value: RepresentativePajareoEntryType; label: string}>
     {value: 'testimonio', label: 'Testimonio'},
   ]
 
+const SUBJECT_TYPES: Array<{
+  value: RepresentativePajareoSubjectKind
+  label: string
+}> = [
+  {value: 'person', label: 'Persona'},
+  {value: 'person_in_institution', label: 'Persona + institución'},
+  {value: 'institution', label: 'Institución'},
+]
+
+const JURISDICTION_LEVELS: Array<{
+  value: RepresentativePajareoJurisdictionLevel
+  label: string
+}> = [
+  {value: 'representative_area', label: 'Área'},
+  {value: 'zone', label: 'Zona'},
+  {value: 'state', label: 'Estado'},
+  {value: 'nation', label: 'Nación'},
+]
+
 interface Props {
   representative: RepresentativeItem
   viewerDid?: string
@@ -74,6 +95,12 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
     const {_} = useLingui()
     const [entryType, setEntryType] =
       useState<RepresentativePajareoEntryType>('firma')
+    const [subjectKind, setSubjectKind] =
+      useState<RepresentativePajareoSubjectKind>('person')
+    const [institutionName, setInstitutionName] = useState('')
+    const [jurisdictionLevel, setJurisdictionLevel] =
+      useState<RepresentativePajareoJurisdictionLevel>('representative_area')
+    const [jurisdictionLabel, setJurisdictionLabel] = useState('')
     const [body, setBody] = useState('')
     const [officialResponseBody, setOfficialResponseBody] = useState('')
     const [respondingEntryId, setRespondingEntryId] = useState<string | null>(
@@ -89,6 +116,7 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
     const supportEntry = useSupportRepresentativePajareoEntryMutation()
     const reportEntry = useReportRepresentativePajareoEntryMutation()
     const isolatedIdentityMode = getDefaultChatIdentityMode('isolated_testimony')
+    const defaultAreaLabel = getDefaultAreaLabel(representative)
 
     const entries = data?.entries ?? []
     const eligibility = data?.eligibility
@@ -130,17 +158,50 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
       }
     }, [isFocused, scrollElRef, setScrollViewTag])
 
+    useEffect(() => {
+      setJurisdictionLabel(getDefaultJurisdictionLabel(
+        jurisdictionLevel,
+        defaultAreaLabel,
+        representative,
+      ))
+    }, [defaultAreaLabel, jurisdictionLevel, representative])
+
     const submit = () => {
       if (!viewerDid || !body.trim()) return
+      const selectedInstitutionName = institutionName.trim()
       createEntry.mutate(
         {
           representativeId: representative.id,
           viewerDid,
           type: entryType,
           body: body.trim(),
+          subject: {
+            kind: subjectKind,
+            personId: subjectKind === 'institution' ? null : representative.id,
+            personName: subjectKind === 'institution' ? null : representative.name,
+            institutionId: selectedInstitutionName
+              ? `institution:${slugify(selectedInstitutionName)}`
+              : null,
+            institutionName: selectedInstitutionName || null,
+          },
+          jurisdiction: {
+            level: jurisdictionLevel,
+            label:
+              jurisdictionLabel.trim() ||
+              getDefaultJurisdictionLabel(
+                jurisdictionLevel,
+                defaultAreaLabel,
+                representative,
+              ),
+          },
         },
         {
-          onSuccess: () => setBody(''),
+          onSuccess: () => {
+            setBody('')
+            if (subjectKind === 'person') {
+              setInstitutionName('')
+            }
+          },
         },
       )
     }
@@ -174,8 +235,8 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
         </Text>
         <Text style={[styles.description, t.atoms.text_contrast_medium]}>
           <Trans>
-            Firmas, preguntas y señales públicas de personas verificadas del
-            área representada.
+            Firmas, preguntas, señales y testimonios sobre personas o
+            instituciones públicas, con alcance local, estatal o nacional.
           </Trans>
         </Text>
         <View style={styles.statsRow}>
@@ -237,6 +298,101 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
         )}
         {eligibility?.eligible && (
           <View style={styles.composer}>
+            <Text style={[styles.fieldLabel, t.atoms.text]}>
+              <Trans>¿Sobre quién o qué es?</Trans>
+            </Text>
+            <View style={styles.typeRow}>
+              {SUBJECT_TYPES.map(option => {
+                const selected = option.value === subjectKind
+                return (
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    key={option.value}
+                    onPress={() => setSubjectKind(option.value)}
+                    style={[
+                      styles.typePill,
+                      selected
+                        ? {backgroundColor: t.palette.primary_500}
+                        : t.atoms.bg_contrast_50,
+                    ]}>
+                    <Text
+                      style={[
+                        styles.typeText,
+                        selected ? {color: 'white'} : t.atoms.text,
+                      ]}>
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              })}
+            </View>
+            {subjectKind !== 'person' && (
+              <TextInput
+                accessibilityLabel={_(msg`Institution name`)}
+                accessibilityHint={_(msg`Name the public institution this Pajareo entry is about.`)}
+                value={institutionName}
+                onChangeText={setInstitutionName}
+                placeholder={_(msg`Nombre de la institución pública`)}
+                placeholderTextColor={t.palette.contrast_400}
+                style={[
+                  styles.singleLineInput,
+                  t.atoms.text,
+                  {
+                    borderColor: t.palette.contrast_200,
+                    backgroundColor: t.palette.contrast_0,
+                  },
+                ]}
+              />
+            )}
+            <Text style={[styles.fieldLabel, t.atoms.text]}>
+              <Trans>Alcance territorial</Trans>
+            </Text>
+            <View style={styles.typeRow}>
+              {JURISDICTION_LEVELS.map(option => {
+                const selected = option.value === jurisdictionLevel
+                return (
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    key={option.value}
+                    onPress={() => setJurisdictionLevel(option.value)}
+                    style={[
+                      styles.typePill,
+                      selected
+                        ? {backgroundColor: t.palette.primary_500}
+                        : t.atoms.bg_contrast_50,
+                    ]}>
+                    <Text
+                      style={[
+                        styles.typeText,
+                        selected ? {color: 'white'} : t.atoms.text,
+                      ]}>
+                      {option.label}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              })}
+            </View>
+            {jurisdictionLevel !== 'nation' && (
+              <TextInput
+                accessibilityLabel={_(msg`Pajareo geographic scope`)}
+                accessibilityHint={_(msg`Name the zone, state, district, or represented area this entry applies to.`)}
+                value={jurisdictionLabel}
+                onChangeText={setJurisdictionLabel}
+                placeholder={_(msg`Ej. colonia, municipio, estado o distrito`)}
+                placeholderTextColor={t.palette.contrast_400}
+                style={[
+                  styles.singleLineInput,
+                  t.atoms.text,
+                  {
+                    borderColor: t.palette.contrast_200,
+                    backgroundColor: t.palette.contrast_0,
+                  },
+                ]}
+              />
+            )}
+            <Text style={[styles.fieldLabel, t.atoms.text]}>
+              <Trans>Tipo de Pajareo</Trans>
+            </Text>
             <View style={styles.typeRow}>
               {ENTRY_TYPES.map(option => {
                 const selected = option.value === entryType
@@ -287,7 +443,12 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
               variant="solid"
               color="primary"
               size="small"
-              disabled={!body.trim() || createEntry.isPending}
+              disabled={
+                !body.trim() ||
+                (subjectKind !== 'person' && !institutionName.trim()) ||
+                (jurisdictionLevel !== 'nation' && !jurisdictionLabel.trim()) ||
+                createEntry.isPending
+              }
               onPress={submit}>
               <ButtonText>
                 {createEntry.isPending ? (
@@ -323,6 +484,24 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
             </Text>
           </View>
           <Text style={[styles.entryBody, t.atoms.text]}>{entry.body}</Text>
+          <View style={styles.entryMetaRow}>
+            <Text
+              style={[
+                styles.entryMetaPill,
+                {backgroundColor: t.palette.contrast_50},
+                t.atoms.text_contrast_medium,
+              ]}>
+              {labelForSubject(entry)}
+            </Text>
+            <Text
+              style={[
+                styles.entryMetaPill,
+                {backgroundColor: t.palette.contrast_50},
+                t.atoms.text_contrast_medium,
+              ]}>
+              {labelForJurisdiction(entry)}
+            </Text>
+          </View>
           {entry.officialResponse && (
             <View
               style={[
@@ -498,6 +677,60 @@ function labelForEntryType(type: RepresentativePajareoEntryType) {
   return 'Testimonio'
 }
 
+function labelForSubject(entry: RepresentativePajareoEntry) {
+  const subject = entry.subject
+  if (!subject || subject.kind === 'person') {
+    return `Persona: ${subject?.personName ?? 'representante'}`
+  }
+  if (subject.kind === 'institution') {
+    return `Institución: ${subject.institutionName ?? 'institución pública'}`
+  }
+  return `${subject.personName ?? 'Persona'} en ${
+    subject.institutionName ?? 'institución pública'
+  }`
+}
+
+function labelForJurisdiction(entry: RepresentativePajareoEntry) {
+  const jurisdiction = entry.jurisdiction
+  if (!jurisdiction) return 'Área representada'
+  if (jurisdiction.level === 'nation') return `Nación: ${jurisdiction.label}`
+  if (jurisdiction.level === 'state') return `Estado: ${jurisdiction.label}`
+  if (jurisdiction.level === 'zone') return `Zona: ${jurisdiction.label}`
+  return `Área: ${jurisdiction.label}`
+}
+
+function getDefaultAreaLabel(representative: RepresentativeItem) {
+  if (representative.areaScope?.label) return representative.areaScope.label
+  if (representative.jurisdiction) return representative.jurisdiction
+  if (representative.state && representative.state !== 'National') {
+    return representative.state
+  }
+  return 'México'
+}
+
+function getDefaultJurisdictionLabel(
+  level: RepresentativePajareoJurisdictionLevel,
+  defaultAreaLabel: string,
+  representative: RepresentativeItem,
+) {
+  if (level === 'nation') return 'México'
+  if (level === 'state') {
+    return representative.state && representative.state !== 'National'
+      ? representative.state
+      : 'México'
+  }
+  return defaultAreaLabel
+}
+
+function slugify(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
 function getErrorMessage(error: unknown) {
   if (!error) return ''
   return error instanceof Error ? error.message : String(error)
@@ -581,6 +814,18 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
   },
+  fieldLabel: {
+    fontSize: 12,
+    fontWeight: '900',
+    marginTop: 2,
+  },
+  singleLineInput: {
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 14,
+  },
   input: {
     borderWidth: 1,
     borderRadius: 8,
@@ -612,6 +857,20 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 21,
     marginTop: 8,
+  },
+  entryMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 10,
+  },
+  entryMetaPill: {
+    borderRadius: 8,
+    overflow: 'hidden',
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    fontSize: 11,
+    fontWeight: '800',
   },
   officialResponse: {
     borderRadius: 8,
