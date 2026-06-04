@@ -1,19 +1,17 @@
+import {useRef} from 'react'
 import {InteractionManager, View} from 'react-native'
-import {
-  type AnimatedRef,
-  measure,
-  type MeasuredDimensions,
-  runOnJS,
-  runOnUI,
-} from 'react-native-reanimated'
+import {type AnimatedRef} from 'react-native-reanimated'
 import {Image} from 'expo-image'
 
-import {useLightboxControls} from '#/state/lightbox'
-import {atoms as a} from '#/alf'
+import {atoms as a, tokens} from '#/alf'
 import {AutoSizedImage} from '#/components/images/AutoSizedImage'
+import {Gallery} from '#/components/images/Gallery'
 import {ImageLayoutGrid} from '#/components/images/ImageLayoutGrid'
+import {useLightboxControls} from '#/components/Lightbox/state'
 import {type Dimensions} from '#/components/Lightbox/types'
+import {ImageContextMenu} from '#/components/Post/Embed/ImageContextMenu'
 import {PostEmbedViewContext} from '#/components/Post/Embed/types'
+import {useAnalytics} from '#/analytics'
 import {type EmbedType} from '#/types/bsky/post'
 import {type CommonProps} from './types'
 
@@ -23,8 +21,15 @@ export function ImageEmbed({
 }: CommonProps & {
   embed: EmbedType<'images'>
 }) {
+  const ax = useAnalytics()
   const {openLightbox} = useLightboxControls()
   const {images} = embed.view
+  const galleryEnabled = ax.features.enabled(ax.features.PostGalleryEmbedEnable)
+
+  // Captured from AutoSizedImage so the peek-commit handler can reuse the same
+  // ref + dims that a tap would — keeps the lightbox's return animation intact.
+  const singleContainerRef = useRef<AnimatedRef<any> | null>(null)
+  const singleDimsRef = useRef<Dimensions | null>(null)
 
   if (images.length > 0) {
     const items = images.map(img => ({
@@ -33,34 +38,22 @@ export function ImageEmbed({
       alt: img.alt,
       dimensions: img.aspectRatio ?? null,
     }))
-    const _openLightbox = (
+    const onPress = (
       index: number,
-      thumbRects: (MeasuredDimensions | null)[],
+      refs: AnimatedRef<any>[],
       fetchedDims: (Dimensions | null)[],
     ) => {
       openLightbox({
         images: items.map((item, i) => ({
           ...item,
-          thumbRect: thumbRects[i] ?? null,
+          thumbRect: null,
+          thumbRef: refs[i] ?? null,
           thumbDimensions: fetchedDims[i] ?? null,
+          thumbBorderRadius: tokens.borderRadius.md,
           type: 'image',
         })),
         index,
       })
-    }
-    const onPress = (
-      index: number,
-      refs: AnimatedRef<View>[],
-      fetchedDims: (Dimensions | null)[],
-    ) => {
-      runOnUI(() => {
-        'worklet'
-        const rects: (MeasuredDimensions | null)[] = []
-        for (const r of refs) {
-          rects.push(measure(r))
-        }
-        runOnJS(_openLightbox)(index, rects, fetchedDims)
-      })()
     }
     const onPressIn = (_: number) => {
       InteractionManager.runAfterInteractions(() => {
@@ -73,23 +66,61 @@ export function ImageEmbed({
 
     if (images.length === 1) {
       const image = images[0]
+      const aspect =
+        image.aspectRatio && image.aspectRatio.height > 0
+          ? image.aspectRatio.width / image.aspectRatio.height
+          : undefined
+      const openFromSingle = () => {
+        if (singleContainerRef.current) {
+          onPress(0, [singleContainerRef.current], [singleDimsRef.current])
+        }
+      }
       return (
         <View style={[a.mt_sm, rest.style]}>
-          <AutoSizedImage
-            crop={
-              rest.viewContext === PostEmbedViewContext.ThreadHighlighted
-                ? 'none'
-                : rest.viewContext ===
-                    PostEmbedViewContext.FeedEmbedRecordWithMedia
-                  ? 'square'
-                  : 'constrained'
-            }
-            image={image}
-            onPress={(containerRef, dims) => onPress(0, [containerRef], [dims])}
-            onPressIn={() => onPressIn(0)}
-            hideBadge={
-              rest.viewContext === PostEmbedViewContext.FeedEmbedRecordWithMedia
-            }
+          <ImageContextMenu
+            fullsizeUri={image.fullsize}
+            thumbUri={image.thumb}
+            aspectRatio={aspect}
+            borderRadius={tokens.borderRadius.md}
+            onPreviewPress={openFromSingle}>
+            <AutoSizedImage
+              crop={
+                rest.viewContext === PostEmbedViewContext.ThreadHighlighted
+                  ? 'none'
+                  : rest.viewContext ===
+                      PostEmbedViewContext.FeedEmbedRecordWithMedia
+                    ? 'square'
+                    : 'constrained'
+              }
+              image={image}
+              onContainerRef={ref => {
+                singleContainerRef.current = ref
+              }}
+              onDimsChange={dims => {
+                singleDimsRef.current = dims
+              }}
+              onPress={(containerRef, dims) =>
+                onPress(0, [containerRef], [dims])
+              }
+              onPressIn={() => onPressIn(0)}
+              hideBadge={
+                rest.viewContext ===
+                PostEmbedViewContext.FeedEmbedRecordWithMedia
+              }
+            />
+          </ImageContextMenu>
+        </View>
+      )
+    }
+
+    if (galleryEnabled) {
+      return (
+        <View style={[a.mt_sm, rest.style]}>
+          <Gallery
+            images={images}
+            onPress={onPress}
+            onPressIn={onPressIn}
+            viewContext={rest.viewContext}
           />
         </View>
       )

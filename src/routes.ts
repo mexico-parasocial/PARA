@@ -84,6 +84,7 @@ export const router = new Router({
   MessagesInbox: '/messages/inbox',
   MessagesConversation: '/messages/:conversation',
   MessagesConversationSettings: '/messages/:conversation/settings',
+  MessagesJoinRequests: '/messages/:conversation/requests',
   // Data
   Data: '/data',
   MyBase: '/my-base',

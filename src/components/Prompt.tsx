@@ -242,6 +242,7 @@ export function Basic({
   cancelButtonCta,
   confirmButtonCta,
   onConfirm,
+  onClose,
   confirmButtonColor,
   showCancel = true,
   isPending,
@@ -252,12 +253,13 @@ export function Basic({
   cancelButtonCta?: string
   confirmButtonCta?: string
   onConfirm: (e: GestureResponderEvent) => void
+  onClose?: () => void
   confirmButtonColor?: ButtonColor
   showCancel?: boolean
   isPending?: boolean
 }>) {
   return (
-    <Outer control={control} testID="confirmModal">
+    <Outer control={control} testID="confirmModal" onClose={onClose}>
       <Content>
         <TitleText>{title}</TitleText>
         {description && <DescriptionText>{description}</DescriptionText>}

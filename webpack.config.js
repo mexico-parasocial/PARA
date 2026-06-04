@@ -1,5 +1,3 @@
-const path = require('path')
-const webpack = require('webpack')
 const createExpoWebpackConfigAsync = require('@expo/webpack-config')
 const {withAlias} = require('@expo/webpack-config/addons')
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
@@ -43,61 +41,35 @@ function patchSourceMapFilter(rules, pathPattern) {
   }
 }
 
-
 module.exports = async function (env, argv) {
   env.babel = {
-    ...env.babel,
-    dangerouslyAddModulePathsToTranspile: [
-      ...(env.babel?.dangerouslyAddModulePathsToTranspile || []),
-      '@bsky.app/expo',
-      '@bsky.app/expo-scroll-edge-effect',
-    ],
+    dangerouslyAddModulePathsToTranspile: ['@bsky.app/expo', '@atproto/api'],
   }
   let config = await createExpoWebpackConfigAsync(env, argv)
   config = withAlias(config, {
     'react-native$': 'react-native-web',
     'react-native-webview': 'react-native-web-webview',
-    'react-native-maps': '@teovilla/react-native-web-maps',
-    'react-native-uitextview': path.resolve(
-      __dirname,
-      'src/platform/react-native-uitextview-mock.web.tsx',
-    ),
     'react-native-gesture-handler': false, // RNGH should not be used on web, so let's cause a build error if it sneaks in
     '@sentry-internal/replay': false, // not used, ~300kb of dead weight
   })
+
   // react-native-uuid ships sourceMappingURL comments but no .map files.
   patchSourceMapFilter(config.module.rules, /react-native-uuid/)
-
-  // Fix source-map-loader looking for hoisted tslib in non-existent nested paths.
-  // pnpm1 hoists tslib to root node_modules, but @atproto source maps reference
-  // nested paths that don't exist. Exclude all node_modules from source-map-loader.
-  const sourceMapLoaderRule = config.module.rules?.find(
-    rule =>
-      rule.use &&
-      Array.isArray(rule.use) &&
-      rule.use.some(u => u.loader && u.loader.includes('source-map-loader')),
-  )
-  if (sourceMapLoaderRule) {
-    sourceMapLoaderRule.exclude = /node_modules/
-  }
-
   config.module.rules = [
     ...(config.module.rules || []),
-    // Fix abort-controller/polyfill.mjs: strict ESM resolution requires
-    // file extensions on relative imports, but the package omits `.mjs`.
-    {
-      test: /\.mjs$/,
-      include: /node_modules/,
-      type: 'javascript/auto',
-      resolve: {
-        fullySpecified: false,
-      },
-    },
     reactNativeWebWebviewConfiguration,
   ]
-  const mode = env?.mode || 'development'
-  if (mode === 'development') {
+  if (env.mode === 'development') {
     config.plugins.push(new ReactRefreshWebpackPlugin())
+    // Reap zombie HMR WebSocket connections that linger after refresh.
+    // Without this, dead sockets exhaust the browser's per-origin connection
+    // pool and the dev server stops responding.
+    config.devServer.onListening = devServer => {
+      devServer.server.on('connection', socket => {
+        socket.setTimeout(10000)
+        socket.on('timeout', () => socket.destroy())
+      })
+    }
   } else {
     // Support static CDN for chunks
     config.output.publicPath = 'auto'
@@ -128,15 +100,5 @@ module.exports = async function (env, argv) {
       }),
     )
   }
-
-  // Suppress expo-contacts warning: ContactAccessButtonProps is a type-only
-  // re-export that doesn't exist at runtime on web.
-  config.plugins.push(
-    new webpack.IgnorePlugin({
-      resourceRegExp: /^\.\/ContactAccessButton$/,
-      contextRegExp: /expo-contacts/,
-    }),
-  )
-
   return config
 }

@@ -8,16 +8,19 @@ import {
 } from 'react'
 import {type LayoutChangeEvent, type ScrollViewProps, View} from 'react-native'
 import {
-  KeyboardAwareScrollView,
-  type KeyboardAwareScrollViewRef,
+  KeyboardChatScrollView,
+  type KeyboardChatScrollViewProps,
   KeyboardGestureArea,
 } from 'react-native-keyboard-controller'
-import {
+import Animated, {
   runOnJS,
   type ScrollEvent,
   type SharedValue,
   useAnimatedRef,
+  useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
+  withTiming,
 } from 'react-native-reanimated'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import {
@@ -27,8 +30,8 @@ import {
   ChatBskyConvoDefs,
   RichText,
 } from '@atproto/api'
+import {useScrollEdgeEffectRef} from '@bsky.app/expo-scroll-edge-effect'
 
-import {getDefaultChatIdentityMode} from '#/lib/chat/identity'
 import {mergeRefs} from '#/lib/merge-refs'
 import {ScrollProvider} from '#/lib/ScrollContext'
 import {shortenLinks, stripInvalidMentions} from '#/lib/strings/rich-text-manip'
@@ -42,10 +45,7 @@ import {
   isConvoActive,
   useConvoActive,
 } from '#/state/messages/convo'
-import {
-  type ConvoState,
-  ConvoStatus,
-} from '#/state/messages/convo/types'
+import {type ConvoState, ConvoStatus} from '#/state/messages/convo/types'
 import {useGetPost} from '#/state/queries/post'
 import {createEmbedViewRecordFromPost} from '#/state/queries/postgate/util'
 import {useAgent} from '#/state/session'
@@ -54,9 +54,9 @@ import {MessageComposer} from '#/screens/Messages/components/MessageComposer'
 import {MessageInput} from '#/screens/Messages/components/MessageInput'
 import {MessageListError} from '#/screens/Messages/components/MessageListError'
 import {atoms as a, platform, tokens, useTheme, web} from '#/alf'
-import {ChatIdentityPill} from '#/components/chat/ChatIdentityPill'
 import {DateDivider} from '#/components/dms/DateDivider'
 import {MessageItem} from '#/components/dms/MessageItem'
+import {MessageOverlays} from '#/components/dms/MessageOverlays'
 import {NewMessagesPill} from '#/components/dms/NewMessagesPill'
 import {SystemMessageGroup} from '#/components/dms/SystemMessageGroup'
 import {SystemMessageItem} from '#/components/dms/SystemMessageItem'
@@ -134,7 +134,6 @@ export function MessagesList({
   const getPost = useGetPost()
   const {embedUri, setEmbed} = useMessageEmbed()
   const t = useTheme()
-  const publicIdentityMode = getDefaultChatIdentityMode('public_dm')
 
   const textInputId = 'chat-input-' + useId()
   const flatListRef = useAnimatedRef<ListMethods>()
@@ -160,6 +159,16 @@ export function MessagesList({
     show: false,
     startContentOffset: 0,
   })
+
+  const listOpacity = useSharedValue(0)
+
+  useEffect(() => {
+    if (hasScrolled) {
+      listOpacity.set(withTiming(1, {duration: 200}))
+    } else {
+      listOpacity.set(0)
+    }
+  }, [hasScrolled, listOpacity])
 
   const inputHeightUI = useSharedValue(0)
   const [inputHeightJS, setInputHeightJS] = useState(0)
@@ -280,14 +289,14 @@ export function MessagesList({
       }
 
       prevContentHeight.current = height
-      prevItemCount.current = convoState.items.length
+      prevItemCount.current = renderItems.length
       didBackground.current = false
     },
     [
       hasScrolled,
       setHasScrolled,
       convoState.isFetchingHistory,
-      convoState.items.length,
+      renderItems.length,
       // these are stable
       flatListRef,
       isAtTop,
@@ -297,10 +306,8 @@ export function MessagesList({
   )
 
   const onStartReached = useCallback(() => {
-    if (hasScrolled && prevContentHeight.current > layoutHeight.get()) {
-      void convoState.fetchMessageHistory()
-    }
-  }, [convoState, hasScrolled, layoutHeight])
+    void convoState.fetchMessageHistory()
+  }, [convoState])
 
   const onScroll = useCallback(
     (e: ScrollEvent) => {
@@ -486,118 +493,139 @@ export function MessagesList({
     [inputHeightUI],
   )
 
+  const animatedListStyle = useAnimatedStyle(() => ({
+    opacity: listOpacity.get(),
+  }))
+
   return (
     <InviteLinkDialogProvider convo={convoState.convo}>
-      <KeyboardGestureArea
-        interpolator="ios"
-        // HACKFIX: https://github.com/kirillzyusko/react-native-keyboard-controller/issues/1419
-        offset={Math.round(inputHeightJS)}
-        // slightly too buggy unfortunately, enable when possible
-        // textInputNativeID={textInputId}
-        style={[a.flex_1]}>
-        {/* Custom scroll provider so that we can use the `onScroll` event in our custom List implementation */}
-        <ScrollProvider onScroll={onScroll}>
-          <List
-            ref={flatListRef}
-            data={renderItems}
-            renderItem={renderItem as (params: {item: RenderItem; index: number}) => React.ReactNode}
-            keyExtractor={keyExtractor}
-            disableFullWindowScroll={true}
-            disableVirtualization={true}
-            // The extra two items account for the header and the footer components
-            initialNumToRender={IS_NATIVE ? 32 : 62}
-            maxToRenderPerBatch={IS_WEB ? 32 : 62}
-            keyboardDismissMode="interactive"
-            keyboardShouldPersistTaps="handled"
-            maintainVisibleContentPosition={{minIndexForVisible: 0}}
-            removeClippedSubviews={false}
-            sideBorders={false}
-            onContentSizeChange={onContentSizeChange}
-            onStartReached={onStartReached}
-            onScrollToIndexFailed={onScrollToIndexFailed}
-            showsVerticalScrollIndicator={!IS_ANDROID}
-            scrollEventThrottle={100}
-            ListHeaderComponent={
-              <>
-                <MaybeLoader isLoading={convoState.isFetchingHistory} />
-                {convoState.hasAllHistory ? (
-                  convoState.convo?.kind === 'group' ? (
-                    <MessagesListGroupInfoPanel convo={convoState.convo} />
-                  ) : (
-                    <MessagesListInfoPanel convo={convoState.convo} />
-                  )
-                ) : null}
-              </>
-            }
-            // native only (prop is not supported on web)
-            renderScrollComponent={renderScrollComponent}
-            contentContainerStyle={{
-              paddingBottom: platform({
-                // ios is slightly larger as the input has no top padding
-                ios: tokens.space.lg,
-                android: tokens.space.md,
-                web: 0, // web uses ListFooterComponent instead for scroll reasons
-              }),
-            }}
-            ListFooterComponent={
-              <View
-                style={web({height: tokens.space.md + inputHeightJS})}
-                onLayout={onFooterLayout}
+      <MessageOverlays>
+        <KeyboardGestureArea
+          interpolator="ios"
+          // HACKFIX: https://github.com/kirillzyusko/react-native-keyboard-controller/issues/1419
+          offset={Math.round(inputHeightJS)}
+          // slightly too buggy unfortunately, enable when possible
+          // textInputNativeID={textInputId}
+          style={[a.flex_1]}>
+          {/* Custom scroll provider so that we can use the `onScroll` event in our custom List implementation */}
+          <Animated.View style={[a.flex_1, animatedListStyle]}>
+            <ScrollProvider onScroll={onScroll}>
+              <List
+                ref={flatListRef}
+                data={renderItems}
+                renderItem={renderItem}
+                keyExtractor={keyExtractor}
+                disableFullWindowScroll={true}
+                disableVirtualization={true}
+                // The extra two items account for the header and the footer components
+                initialNumToRender={IS_NATIVE ? 32 : 62}
+                maxToRenderPerBatch={IS_WEB ? 32 : 62}
+                keyboardDismissMode="interactive"
+                keyboardShouldPersistTaps="handled"
+                maintainVisibleContentPosition={{minIndexForVisible: 0}}
+                removeClippedSubviews={false}
+                sideBorders={false}
+                onContentSizeChange={onContentSizeChange}
+                onStartReached={onStartReached}
+                onScrollToIndexFailed={onScrollToIndexFailed}
+                showsVerticalScrollIndicator={!IS_ANDROID}
+                scrollEventThrottle={100}
+                ListHeaderComponent={
+                  <>
+                    <MaybeLoader isLoading={convoState.isFetchingHistory} />
+                    {convoState.hasAllHistory ? (
+                      convoState.convo?.kind === 'group' ? (
+                        <MessagesListGroupInfoPanel convo={convoState.convo} />
+                      ) : (
+                        <MessagesListInfoPanel convo={convoState.convo} />
+                      )
+                    ) : null}
+                  </>
+                }
+                // native only (prop is not supported on web)
+                renderScrollComponent={renderScrollComponent}
+                contentContainerStyle={{
+                  paddingBottom: platform({
+                    // ios is slightly larger as the input has no top padding
+                    ios: tokens.space.lg,
+                    android: tokens.space.md,
+                    web: 0, // web uses ListFooterComponent instead for scroll reasons
+                  }),
+                }}
+                ListFooterComponent={
+                  <View
+                    style={web({height: tokens.space.md + inputHeightJS})}
+                    onLayout={onFooterLayout}
+                  />
+                }
+                style={[
+                  web({
+                    scrollbarWidth: 'thin',
+                    scrollbarColor: `${t.palette.contrast_100} transparent`,
+                    scrollbarGutter: 'stable',
+                  }),
+                ]}
+                pointerEvents={!hasScrolled ? 'none' : 'auto'}
+                contentInset={{top: transparentHeaderHeight}}
+                scrollIndicatorInsets={{top: transparentHeaderHeight}}
               />
-            }
-            style={web({
-              scrollbarWidth: 'thin',
-              scrollbarColor: `${t.palette.contrast_100} transparent`,
-              scrollbarGutter: 'stable both-edges',
-            })}
-            contentInset={{top: transparentHeaderHeight}}
-            scrollIndicatorInsets={{top: transparentHeaderHeight}}
-          />
-        </ScrollProvider>
-        <KeyboardStickyView
-          style={[a.absolute, a.bottom_0, a.left_0, a.right_0]}
-          onLayout={onInputLayout}
-          minimumOffset={bottomInset}
-          offset={{
-            closed: platform({
-              ios: tokens.space.lg, // hide bottom padding when closed
-              default: 0,
-            }),
-            opened: 0,
-          }}>
-          {footer ?? (
-            <ConversationFooter
-              convoState={convoState}
-              hasAcceptOverride={hasAcceptOverride}>
-              {ax.features.enabled(ax.features.DmsNewMessageComposerEnable) ? (
-                <MessageComposer
-                  textInputId={textInputId}
-                  onSendMessage={(message: string) =>
-                    void onSendMessage(message)
-                  }
-                  hasEmbed={!!embedUri}
-                  setEmbed={setEmbed}>
-                  <ChatIdentityPill mode={publicIdentityMode} compact />
-                  <MessageInputEmbed embedUri={embedUri} setEmbed={setEmbed} />
-                </MessageComposer>
-              ) : (
-                <MessageInput
-                  textInputId={textInputId}
-                  onSendMessage={(message: string) => {
-                    void onSendMessage(message)
-                  }}
-                  hasEmbed={!!embedUri}
-                  setEmbed={setEmbed}>
-                  <ChatIdentityPill mode={publicIdentityMode} compact />
-                  <MessageInputEmbed embedUri={embedUri} setEmbed={setEmbed} />
-                </MessageInput>
-              )}
-            </ConversationFooter>
-          )}
-        </KeyboardStickyView>
-      </KeyboardGestureArea>
+            </ScrollProvider>
+          </Animated.View>
+          <KeyboardStickyView
+            style={[a.absolute, a.bottom_0, a.left_0, a.right_0]}
+            onLayout={onInputLayout}
+            minimumOffset={bottomInset}
+            offset={{
+              closed: platform({
+                ios: tokens.space.lg, // hide bottom padding when closed
+                default: 0,
+              }),
+              opened: 0,
+            }}>
+            {footer ?? (
+              <ConversationFooter
+                convoState={convoState}
+                hasAcceptOverride={hasAcceptOverride}>
+                {({loading}) =>
+                  ax.features.enabled(
+                    ax.features.DmsNewMessageComposerEnable,
+                  ) ? (
+                    <MessageComposer
+                      textInputId={textInputId}
+                      onSendMessage={(message: string) =>
+                        void onSendMessage(message)
+                      }
+                      hasEmbed={!!embedUri}
+                      setEmbed={setEmbed}
+                      loading={loading}>
+                      <MessageInputEmbed
+                        embedUri={embedUri}
+                        setEmbed={setEmbed}
+                      />
+                    </MessageComposer>
+                  ) : (
+                    <MessageInput
+                      textInputId={textInputId}
+                      onSendMessage={onSendMessage}
+                      hasEmbed={!!embedUri}
+                      setEmbed={setEmbed}
+                      loading={loading}>
+                      <MessageInputEmbed
+                        embedUri={embedUri}
+                        setEmbed={setEmbed}
+                      />
+                    </MessageInput>
+                  )
+                }
+              </ConversationFooter>
+            )}
+          </KeyboardStickyView>
+        </KeyboardGestureArea>
 
-      {newMessagesPill.show && <NewMessagesPill onPress={scrollToEndOnPress} />}
+        {newMessagesPill.show && (
+          <NewMessagesPill onPress={scrollToEndOnPress} />
+        )}
+      </MessageOverlays>
     </InviteLinkDialogProvider>
   )
 }
@@ -608,10 +636,10 @@ function ChatScrollComponent({
   inputHeight,
   ...props
 }: ScrollViewProps & {
-  ref?: React.RefObject<KeyboardAwareScrollViewRef>
+  ref?: React.RefObject<KeyboardChatScrollViewProps>
   inputHeight: SharedValue<number>
 }) {
-  const scrollEdgeRef = useRef<View>(null)
+  const scrollEdgeRef = useScrollEdgeEffectRef()
   const {bottom: bottomInset} = useSafeAreaInsets()
 
   const offset = platform({
@@ -620,13 +648,24 @@ function ChatScrollComponent({
     default: 0,
   })
 
+  const inputOffset = platform({
+    ios: bottomInset - tokens.space.lg,
+    android: bottomInset,
+    default: 0,
+  })
+
+  const extraContentPadding = useDerivedValue(
+    () => inputHeight.get() + inputOffset,
+  )
+
   return (
-    <KeyboardAwareScrollView
+    <KeyboardChatScrollView
       ref={mergeRefs([scrollEdgeRef, ref])}
       automaticallyAdjustContentInsets={false}
       keyboardDismissMode="interactive"
-      bottomOffset={offset}
-      extraKeyboardSpace={inputHeight.get()}
+      keyboardLiftBehavior="always"
+      extraContentPadding={extraContentPadding}
+      offset={offset}
       {...props}
     />
   )
@@ -660,23 +699,25 @@ function ConversationFooter({
 }: {
   convoState: ConvoState
   hasAcceptOverride?: boolean
-  children?: React.ReactNode // message input
+  children?: ((props: {loading?: boolean}) => React.ReactNode) | React.ReactNode
 }) {
   if (!isConvoActive(convoState)) {
     return null
   }
 
   const footerState = getFooterState(convoState, hasAcceptOverride)
+  const renderChildren = (loading?: boolean) =>
+    typeof children === 'function' ? children({loading}) : children
 
   switch (footerState) {
     case 'loading':
-      return null
+      return renderChildren(true)
     case 'new-chat':
       // new chat pill goes here - removed for now
-      return children
+      return renderChildren()
     case 'request':
       return <ChatStatusInfo convoState={convoState} />
     case 'standard':
-      return children
+      return renderChildren()
   }
 }

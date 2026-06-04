@@ -24,7 +24,7 @@ import {mergeRefs} from '#/lib/merge-refs'
 import {useA11y} from '#/state/a11y'
 import {useLargeAltBadgeEnabled} from '#/state/preferences/large-alt-badge'
 import {BlockDrawerGesture} from '#/view/shell/BlockDrawerGesture'
-import {atoms as a, useBreakpoints, useTheme, web} from '#/alf'
+import {atoms as a, tokens, useBreakpoints, useTheme, web} from '#/alf'
 import {ArrowsDiagonalOut_Stroke2_Corner0_Rounded as Fullscreen} from '#/components/icons/ArrowsDiagonal'
 import {AutoSizedImage} from '#/components/images/AutoSizedImage'
 import {
@@ -36,6 +36,7 @@ import {useKeyboardHandlers} from '#/components/images/Gallery/useKeyboardHandle
 import {usePointerHandlers} from '#/components/images/Gallery/usePointerHandlers'
 import {getAspectRatio} from '#/components/images/Gallery/utils'
 import {MediaInsetBorder} from '#/components/MediaInsetBorder'
+import {ImageContextMenu} from '#/components/Post/Embed/ImageContextMenu'
 import {PostEmbedViewContext} from '#/components/Post/Embed/types'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
@@ -48,7 +49,7 @@ interface GalleryProps {
   images: AppBskyEmbedImages.ViewImage[]
   onPress?: (
     index: number,
-    containerRefs: AnimatedRef<View>[],
+    containerRefs: AnimatedRef<any>[],
     fetchedDims: (Dimensions | null)[],
   ) => void
   onPressIn?: (index: number) => void
@@ -71,11 +72,7 @@ export function GalleryBleed({children}: {children: React.ReactNode}) {
     throw new Error('GalleryBleed children must be a single React element')
   }
 
-  const node = children as React.ReactElement<{
-    onLayout?: (e: {nativeEvent: {layout: {width: number}}}) => void
-    ref?: React.Ref<View>
-    style?: unknown
-  }>
+  const node = children as React.ReactElement<any>
 
   return (
     <Context.Provider value={{bleedRef: ref, bleedWidth}}>
@@ -156,7 +153,7 @@ export function Gallery({
   const flatListRef = useRef<FlatList>(null)
   const itemWidthsRef = useRef<Map<number, number>>(new Map())
   const itemRefsRef = useRef<Map<number, View>>(new Map())
-  const containerRefsRef = useRef<Map<number, AnimatedRef<View>>>(new Map())
+  const containerRefsRef = useRef<Map<number, AnimatedRef<any>>>(new Map())
   const thumbDimsRef = useRef<Map<number, Dimensions>>(new Map())
   const currentIndexRef = useRef(0)
 
@@ -268,6 +265,21 @@ export function Gallery({
           data={images}
           keyExtractor={(item, index) => item.thumb + index}
           renderItem={({item, index}) => {
+            const openLightboxAtIndex = onPress
+              ? () => {
+                  ax.metric('post:gallery:openLightbox', {
+                    fromImage: index + 1, // convert to 1-based index for easier analysis
+                    totalImages: images.length,
+                  })
+                  const refs: AnimatedRef<any>[] = []
+                  const dims: (Dimensions | null)[] = []
+                  for (let i = 0; i < images.length; i++) {
+                    refs.push(containerRefsRef.current.get(i)!)
+                    dims.push(thumbDimsRef.current.get(i) ?? null)
+                  }
+                  onPress(index, refs, dims)
+                }
+              : undefined
             return (
               <GalleryImage
                 hideBadges={hideBadges}
@@ -292,24 +304,9 @@ export function Gallery({
                 onThumbDims={(i, dims) => {
                   thumbDimsRef.current.set(i, dims)
                 }}
-                onPress={
-                  onPress
-                    ? () => {
-                        ax.metric('post:gallery:openLightbox', {
-                          fromImage: index + 1, // convert to 1-based index for easier analysis
-                          totalImages: images.length,
-                        })
-                        const refs: AnimatedRef<View>[] = []
-                        const dims: (Dimensions | null)[] = []
-                        for (let i = 0; i < images.length; i++) {
-                          refs.push(containerRefsRef.current.get(i)!)
-                          dims.push(thumbDimsRef.current.get(i) ?? null)
-                        }
-                        onPress(index, refs, dims)
-                      }
-                    : undefined
-                }
+                onPress={openLightboxAtIndex}
                 onPressIn={onPressIn ? () => onPressIn(index) : undefined}
+                onPreviewPress={openLightboxAtIndex}
               />
             )
           }}
@@ -382,6 +379,7 @@ function GalleryImage({
   onThumbDims,
   onPress,
   onPressIn,
+  onPreviewPress,
 }: {
   contentHeight: number
   image: AppBskyEmbedImages.ViewImage
@@ -391,10 +389,11 @@ function GalleryImage({
   itemRef: (node: View | null) => void
   hideBadges?: boolean
   largeAltBadge?: boolean
-  onContainerRef: (index: number, ref: AnimatedRef<View>) => void
+  onContainerRef: (index: number, ref: AnimatedRef<any>) => void
   onThumbDims: (index: number, dims: Dimensions) => void
   onPress?: () => void
   onPressIn?: () => void
+  onPreviewPress?: () => void
 }) {
   const t = useTheme()
   const {t: l} = useLingui()
@@ -420,124 +419,131 @@ function GalleryImage({
       collapsable={false}
       aria-roledescription={l`slide`}
       aria-label={image.alt || l`Image ${index + 1} of ${imageCount}`}>
-      <Pressable
-        ref={itemRef}
-        tabIndex={index === 0 ? 0 : -1}
-        onPress={onPress}
-        onPressIn={onPressIn}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        accessibilityRole="button"
-        accessibilityLabel={image.alt || l`Image ${index + 1}`}
-        accessibilityHint={l`Opens full image`}
-        android_ripple={{
-          color: utils.alpha(t.atoms.bg.backgroundColor, 0.2),
-          foreground: true,
-        }}
-        style={({pressed}) => [
-          a.rounded_md,
-          a.overflow_hidden,
-          t.atoms.bg_contrast_25,
-          web([
-            {
-              cursor: 'inherit',
-              outline: 0,
-              border: 0,
-            },
-            a.transition_transform,
-            {transitionDuration: '200ms'},
-            pressed && {transform: [{scale: 0.99}]},
-          ]),
-        ]}>
-        <Image
-          source={{uri: image.thumb}}
-          contentFit="cover"
-          accessible={true}
-          accessibilityLabel={image.alt}
-          accessibilityHint=""
-          accessibilityIgnoresInvertColors
-          loading={index === 0 ? 'eager' : 'lazy'}
-          style={[dims]}
-          onLoad={e => {
-            const ar = getAspectRatio(e.source)
-            if (ar && ar !== aspectRatio) {
-              setAspectRatio(ar)
-            }
-            onThumbDims(index, {
-              width: e.source.width,
-              height: e.source.height,
-            })
+      <ImageContextMenu
+        fullsizeUri={image.fullsize}
+        thumbUri={image.thumb}
+        aspectRatio={aspectRatio}
+        borderRadius={tokens.borderRadius.md}
+        onPreviewPress={onPreviewPress}>
+        <Pressable
+          ref={itemRef}
+          tabIndex={index === 0 ? 0 : -1}
+          onPress={onPress}
+          onPressIn={onPressIn}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          accessibilityRole="button"
+          accessibilityLabel={image.alt || l`Image ${index + 1}`}
+          accessibilityHint={l`Opens full image`}
+          android_ripple={{
+            color: utils.alpha(t.atoms.bg.backgroundColor, 0.2),
+            foreground: true,
           }}
-        />
-
-        {(hasAlt || isCropped) && !hideBadges ? (
-          <View
-            accessible={false}
-            style={[
-              a.absolute,
-              a.flex_row,
+          style={({pressed}) => [
+            a.rounded_md,
+            a.overflow_hidden,
+            t.atoms.bg_contrast_25,
+            web([
               {
-                bottom: a.p_xs.padding,
-                right: a.p_xs.padding,
-                gap: 3,
+                cursor: 'inherit',
+                outline: 0,
+                border: 0,
               },
-              largeAltBadge && {
-                gap: 4,
-              },
-            ]}>
-            {isCropped && (
-              <View
-                style={[
-                  a.rounded_sm,
-                  a.p_xs,
-                  t.atoms.bg_contrast_25,
-                  {
-                    opacity: 0.8,
-                  },
-                  largeAltBadge && {
-                    padding: 6,
-                  },
-                ]}>
-                <Fullscreen
-                  fill={t.atoms.text_contrast_high.color}
-                  width={largeAltBadge ? 18 : 12}
-                />
-              </View>
-            )}
-            {hasAlt && (
-              <View
-                style={[
-                  a.justify_center,
-                  a.rounded_sm,
-                  a.p_xs,
-                  t.atoms.bg_contrast_25,
-                  {
-                    opacity: 0.8,
-                  },
-                  largeAltBadge && {
-                    padding: 6,
-                  },
-                ]}>
-                <Text
-                  style={[
-                    a.font_bold,
-                    largeAltBadge ? a.text_xs : {fontSize: 8},
-                  ]}>
-                  <Trans>ALT</Trans>
-                </Text>
-              </View>
-            )}
-          </View>
-        ) : null}
+              a.transition_transform,
+              {transitionDuration: '200ms'},
+              pressed && {transform: [{scale: 0.99}]},
+            ]),
+          ]}>
+          <Image
+            source={{uri: image.thumb}}
+            contentFit="cover"
+            accessible={true}
+            accessibilityLabel={image.alt}
+            accessibilityHint=""
+            accessibilityIgnoresInvertColors
+            loading={index === 0 ? 'eager' : 'lazy'}
+            style={[dims]}
+            onLoad={e => {
+              const ar = getAspectRatio(e.source)
+              if (ar && ar !== aspectRatio) {
+                setAspectRatio(ar)
+              }
+              onThumbDims(index, {
+                width: e.source.width,
+                height: e.source.height,
+              })
+            }}
+          />
 
-        <MediaInsetBorder
-          style={
-            focused && {
-              borderWidth: 2,
+          {(hasAlt || isCropped) && !hideBadges ? (
+            <View
+              accessible={false}
+              style={[
+                a.absolute,
+                a.flex_row,
+                {
+                  bottom: a.p_xs.padding,
+                  right: a.p_xs.padding,
+                  gap: 3,
+                },
+                largeAltBadge && {
+                  gap: 4,
+                },
+              ]}>
+              {isCropped && (
+                <View
+                  style={[
+                    a.rounded_sm,
+                    a.p_xs,
+                    t.atoms.bg_contrast_25,
+                    {
+                      opacity: 0.8,
+                    },
+                    largeAltBadge && {
+                      padding: 6,
+                    },
+                  ]}>
+                  <Fullscreen
+                    fill={t.atoms.text_contrast_high.color}
+                    width={largeAltBadge ? 18 : 12}
+                  />
+                </View>
+              )}
+              {hasAlt && (
+                <View
+                  style={[
+                    a.justify_center,
+                    a.rounded_sm,
+                    a.p_xs,
+                    t.atoms.bg_contrast_25,
+                    {
+                      opacity: 0.8,
+                    },
+                    largeAltBadge && {
+                      padding: 6,
+                    },
+                  ]}>
+                  <Text
+                    style={[
+                      a.font_bold,
+                      largeAltBadge ? a.text_xs : {fontSize: 8},
+                    ]}>
+                    <Trans>ALT</Trans>
+                  </Text>
+                </View>
+              )}
+            </View>
+          ) : null}
+
+          <MediaInsetBorder
+            style={
+              focused && {
+                borderWidth: 2,
+              }
             }
-          }
-        />
-      </Pressable>
+          />
+        </Pressable>
+      </ImageContextMenu>
     </Animated.View>
   )
 }

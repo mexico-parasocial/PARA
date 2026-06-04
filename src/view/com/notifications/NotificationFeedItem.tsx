@@ -24,9 +24,8 @@ import {Plural, Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 import {useQueryClient} from '@tanstack/react-query'
 
-import {getDmServiceHeadersForServiceUrl, MAX_POST_LINES} from '#/lib/constants'
+import {DM_SERVICE_HEADERS, MAX_POST_LINES} from '#/lib/constants'
 import {useAnimatedValue} from '#/lib/hooks/useAnimatedValue'
-import {usePalette} from '#/lib/hooks/usePalette'
 import {makeProfileLink} from '#/lib/routes/links'
 import {type NavigationProp} from '#/lib/routes/types'
 import {forceLTR} from '#/lib/strings/bidi'
@@ -60,24 +59,19 @@ import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/
 import {Repost_Stroke2_Corner3_Rounded as RepostIcon} from '#/components/icons/Repost'
 import {StarterPack} from '#/components/icons/StarterPack'
 import {VerifiedCheck} from '#/components/icons/VerifiedCheck'
-import {InlineLinkText, Link, useLink} from '#/components/Link'
+import {InlineLinkText, Link} from '#/components/Link'
 import * as MediaPreview from '#/components/MediaPreview'
+import {ProfileBadges} from '#/components/ProfileBadges'
 import {ProfileHoverCard} from '#/components/ProfileHoverCard'
 import {Notification as StarterPackCard} from '#/components/StarterPack/StarterPackCard'
 import {SubtleHover} from '#/components/SubtleHover'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
-import {useSimpleVerificationState} from '#/components/verification'
-import {VerificationCheck} from '#/components/verification/VerificationCheck'
 import * as bsky from '#/types/bsky'
 
 const MAX_AUTHORS = 5
 
 const EXPANDED_AUTHOR_EL_HEIGHT = 35
-
-function isPostUri(uri?: string) {
-  return uri?.includes('app.bsky.feed.post') || uri?.includes('com.para.post')
-}
 
 interface Author {
   profile: AppBskyActorDefs.ProfileView
@@ -97,10 +91,9 @@ let NotificationFeedItem = ({
   hideTopBorder?: boolean
 }): React.ReactNode => {
   const queryClient = useQueryClient()
-  const pal = usePalette('default')
   const t = useTheme()
   const {_, i18n} = useLingui()
-  const [isAuthorsExpanded, setAuthorsExpanded] = useState<boolean>(false)
+  const [isAuthorsExpanded, setIsAuthorsExpanded] = useState<boolean>(false)
   const itemHref = useMemo(() => {
     switch (item.type) {
       case 'post-like':
@@ -150,7 +143,7 @@ let NotificationFeedItem = ({
       e.preventDefault()
       e.stopPropagation()
     }
-    setAuthorsExpanded(currentlyExpanded => !currentlyExpanded)
+    setIsAuthorsExpanded(currentlyExpanded => !currentlyExpanded)
   }
 
   const onBeforePress = useCallback(() => {
@@ -177,9 +170,6 @@ let NotificationFeedItem = ({
 
   const niceTimestamp = niceDate(i18n, item.notification.indexedAt)
   const firstAuthor = authors[0]
-  const firstAuthorVerification = useSimpleVerificationState({
-    profile: firstAuthor.profile,
-  })
   const firstAuthorName = sanitizeDisplayName(
     firstAuthor.profile.displayName || firstAuthor.profile.handle,
   )
@@ -210,11 +200,6 @@ let NotificationFeedItem = ({
     return false
   }, [item])
 
-  const {onPress} = useLink({
-    to: itemHref || '',
-    displayText: '',
-  })
-
   if (item.subjectUri && !item.subject && item.type !== 'feedgen-like') {
     // don't render anything if the target post was deleted or unfindable
     return <View />
@@ -235,8 +220,8 @@ let NotificationFeedItem = ({
           post={item.subject}
           style={
             isHighlighted && {
-              backgroundColor: pal.colors.unreadNotifBg,
-              borderColor: pal.colors.unreadNotifBorder,
+              backgroundColor: t.palette.primary_25,
+              borderColor: t.palette.primary_100,
             }
           }
           hideTopBorder={hideTopBorder}
@@ -255,24 +240,21 @@ let NotificationFeedItem = ({
         emoji
         label={_(msg`Go to ${firstAuthorName}'s profile`)}>
         {forceLTR(firstAuthorName)}
-        {firstAuthorVerification.showBadge && (
-          <View
-            style={[
-              a.relative,
-              {
-                paddingTop: platform({android: 2}),
-                marginBottom: platform({ios: -7}),
-                top: platform({web: 1}),
-                paddingLeft: 3,
-                paddingRight: 2,
-              },
-            ]}>
-            <VerificationCheck
-              width={14}
-              verifier={firstAuthorVerification.role === 'verifier'}
-            />
-          </View>
-        )}
+        <ProfileBadges
+          profile={firstAuthor.profile}
+          size="md"
+          style={[
+            a.relative,
+            {
+              // weird stuff here
+              paddingTop: platform({android: 2}),
+              marginBottom: platform({ios: -6}),
+              top: platform({web: 2}),
+              paddingLeft: 3,
+              paddingRight: 2,
+            },
+          ]}
+        />
       </InlineLinkText>
     </ProfileHoverCard>
   )
@@ -283,12 +265,12 @@ let NotificationFeedItem = ({
     : ''
 
   let a11yLabel = ''
-  let notificationContent: React.ReactElement
+  let notificationContent: React.ReactElement<any>
   let icon = (
     <HeartIconFilled
       size="xl"
       style={[
-        s.likeColor,
+        {color: t.palette.pink},
         // {position: 'relative', top: -4}
       ]}
     />
@@ -378,9 +360,9 @@ let NotificationFeedItem = ({
     }
     icon = <PersonPlusIcon size="xl" style={{color: t.palette.primary_500}} />
   } else if (item.type === 'contact-match') {
-    a11yLabel = _(msg`Your contact ${firstAuthorName} is on PARA`)
+    a11yLabel = _(msg`Your contact ${firstAuthorName} is on Bluesky`)
     notificationContent = (
-      <Trans>Your contact {firstAuthorLink} is on PARA</Trans>
+      <Trans>Your contact {firstAuthorLink} is on Bluesky</Trans>
     )
     icon = (
       <ContactsIconFilled size="xl" style={{color: t.palette.primary_500}} />
@@ -451,7 +433,6 @@ let NotificationFeedItem = ({
       <Trans>
         {firstAuthorLink} and{' '}
         <Text style={[a.text_md, a.font_semi_bold, a.leading_snug]}>
-          {' '}
           <Plural
             value={additionalAuthorsCount}
             one={`${formattedAuthorsCount} other`}
@@ -542,66 +523,39 @@ let NotificationFeedItem = ({
     icon = <RepostIcon size="xl" style={{color: t.palette.positive_500}} />
   } else if (item.type === 'subscribed-post') {
     const postsCount = 1 + (item.additional?.length || 0)
-    const isFollowedPostActivity = isPostUri(item.notification.reasonSubject)
-    if (isFollowedPostActivity) {
-      a11yLabel = hasMultipleAuthors
-        ? _(
-            msg`${firstAuthorName} and ${plural(additionalAuthorsCount, {
+    a11yLabel = hasMultipleAuthors
+      ? _(
+          msg`New posts from ${firstAuthorName} and ${plural(
+            additionalAuthorsCount,
+            {
               one: `${formattedAuthorsCount} other`,
               other: `${formattedAuthorsCount} others`,
-            })} replied or quoted a post you follow`,
-          )
-        : _(msg`${firstAuthorName} replied or quoted a post you follow`)
-      notificationContent = hasMultipleAuthors ? (
-        <Trans>
-          {firstAuthorLink} and{' '}
-          <Text style={[a.text_md, a.font_semi_bold, a.leading_snug]}>
-            <Plural
-              value={additionalAuthorsCount}
-              one={`${formattedAuthorsCount} other`}
-              other={`${formattedAuthorsCount} others`}
-            />
-          </Text>{' '}
-          replied or quoted a post you follow
-        </Trans>
-      ) : (
-        <Trans>{firstAuthorLink} replied or quoted a post you follow</Trans>
-      )
-    } else {
-      a11yLabel = hasMultipleAuthors
-        ? _(
-            msg`New posts from ${firstAuthorName} and ${plural(
-              additionalAuthorsCount,
-              {
-                one: `${formattedAuthorsCount} other`,
-                other: `${formattedAuthorsCount} others`,
-              },
-            )}`,
-          )
-        : _(
-            msg`New ${plural(postsCount, {
-              one: 'post',
-              other: 'posts',
-            })} from ${firstAuthorName}`,
-          )
-      notificationContent = hasMultipleAuthors ? (
-        <Trans>
-          New posts from {firstAuthorLink} and{' '}
-          <Text style={[a.text_md, a.font_semi_bold, a.leading_snug]}>
-            <Plural
-              value={additionalAuthorsCount}
-              one={`${formattedAuthorsCount} other`}
-              other={`${formattedAuthorsCount} others`}
-            />
-          </Text>{' '}
-        </Trans>
-      ) : (
-        <Trans>
-          New <Plural value={postsCount} one="post" other="posts" /> from{' '}
-          {firstAuthorLink}
-        </Trans>
-      )
-    }
+            },
+          )}`,
+        )
+      : _(
+          msg`New ${plural(postsCount, {
+            one: 'post',
+            other: 'posts',
+          })} from ${firstAuthorName}`,
+        )
+    notificationContent = hasMultipleAuthors ? (
+      <Trans>
+        New posts from {firstAuthorLink} and{' '}
+        <Text style={[a.text_md, a.font_semi_bold, a.leading_snug]}>
+          <Plural
+            value={additionalAuthorsCount}
+            one={`${formattedAuthorsCount} other`}
+            other={`${formattedAuthorsCount} others`}
+          />
+        </Text>{' '}
+      </Trans>
+    ) : (
+      <Trans>
+        New <Plural value={postsCount} one="post" other="posts" /> from{' '}
+        {firstAuthorLink}
+      </Trans>
+    )
     icon = <BellRingingIcon size="xl" style={{color: t.palette.primary_500}} />
   } else {
     return null
@@ -609,7 +563,7 @@ let NotificationFeedItem = ({
   a11yLabel += ` · ${niceTimestamp}`
 
   return (
-    <Button
+    <Link
       label={a11yLabel}
       testID={`feedItem-by-${item.notification.author.handle}`}
       style={[
@@ -621,16 +575,13 @@ let NotificationFeedItem = ({
         item.notification.isRead
           ? undefined
           : {
-              backgroundColor: pal.colors.unreadNotifBg,
-              borderColor: pal.colors.unreadNotifBorder,
+              backgroundColor: t.palette.primary_25,
+              borderColor: t.palette.primary_100,
             },
         !hideTopBorder && a.border_t,
         a.overflow_hidden,
       ]}
-      onPress={e => {
-        onBeforePress()
-        onPress(e)
-      }}
+      to={itemHref}
       accessible={!isAuthorsExpanded}
       accessibilityActions={
         hasMultipleAuthors
@@ -656,8 +607,6 @@ let NotificationFeedItem = ({
       onAccessibilityAction={e => {
         if (e.nativeEvent.actionName === 'activate') {
           onBeforePress()
-          // @ts-ignore
-          onPress(e)
         }
         if (e.nativeEvent.actionName === 'toggleAuthorsExpanded') {
           onToggleAuthorsExpanded()
@@ -760,7 +709,7 @@ let NotificationFeedItem = ({
           </View>
         </>
       )}
-    </Button>
+    </Link>
   )
 }
 NotificationFeedItem = memo(NotificationFeedItem)
@@ -816,13 +765,8 @@ function FollowBackButton({profile}: {profile: AppBskyActorDefs.ProfileView}) {
           )}`,
         ),
       )
-    } catch (err: unknown) {
-      if (
-        err != null &&
-        typeof err === 'object' &&
-        'name' in err &&
-        (err as {name: unknown}).name !== 'AbortError'
-      ) {
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') {
         Toast.show(_(msg`An issue occurred, please try again.`), {
           type: 'error',
         })
@@ -843,13 +787,8 @@ function FollowBackButton({profile}: {profile: AppBskyActorDefs.ProfileView}) {
           )}`,
         ),
       )
-    } catch (err: unknown) {
-      if (
-        err != null &&
-        typeof err === 'object' &&
-        'name' in err &&
-        (err as {name: unknown}).name !== 'AbortError'
-      ) {
+    } catch (err: any) {
+      if (err?.name !== 'AbortError') {
         Toast.show(_(msg`An issue occurred, please try again.`), {
           type: 'error',
         })
@@ -901,11 +840,7 @@ function FollowBackButton({profile}: {profile: AppBskyActorDefs.ProfileView}) {
           onPress={onPressFollow}>
           <ButtonIcon icon={PlusIcon} />
           <ButtonText>
-            {isFollowedBy ? (
-              <Trans>Follow back</Trans>
-            ) : (
-              <Trans>Follow</Trans>
-            )}{' '}
+            {isFollowedBy ? <Trans>Follow back</Trans> : <Trans>Follow</Trans>}
           </ButtonText>
         </Button>
       )}
@@ -918,9 +853,6 @@ function SayHelloBtn({profile}: {profile: AppBskyActorDefs.ProfileView}) {
   const agent = useAgent()
   const navigation = useNavigation<NavigationProp>()
   const [isLoading, setIsLoading] = useState(false)
-  const dmServiceHeaders = getDmServiceHeadersForServiceUrl(
-    agent.serviceUrl.toString(),
-  )
 
   if (
     profile.associated?.chat?.allowIncoming === 'none' ||
@@ -945,7 +877,7 @@ function SayHelloBtn({profile}: {profile: AppBskyActorDefs.ProfileView}) {
             {
               members: [profile.did, agent.session!.did],
             },
-            {headers: dmServiceHeaders},
+            {headers: DM_SERVICE_HEADERS},
           )
           navigation.navigate('MessagesConversation', {
             conversation: res.data.convo.id,
@@ -1080,9 +1012,6 @@ function ExpandedAuthorsList({
 function ExpandedAuthorCard({author}: {author: Author}) {
   const t = useTheme()
   const {_} = useLingui()
-  const verification = useSimpleVerificationState({
-    profile: author.profile,
-  })
   return (
     <Link
       key={author.profile.did}
@@ -1118,14 +1047,11 @@ function ExpandedAuthorCard({author}: {author: Author}) {
               author.profile.displayName || author.profile.handle,
             )}
           </Text>
-          {verification.showBadge && (
-            <View style={[a.pl_xs, a.self_center]}>
-              <VerificationCheck
-                width={14}
-                verifier={verification.role === 'verifier'}
-              />
-            </View>
-          )}
+          <ProfileBadges
+            profile={author.profile}
+            size="md"
+            style={[a.pl_2xs, a.self_center]}
+          />
           <Text
             numberOfLines={1}
             style={[
@@ -1167,6 +1093,7 @@ function AdditionalPostText({post}: {post?: AppBskyFeedDefs.PostView}) {
         <MediaPreview.Embed
           embed={post.embed}
           style={styles.additionalPostImages}
+          peekable
         />
       </>
     )

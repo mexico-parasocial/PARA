@@ -76,10 +76,12 @@ export function ReportDialog(
     () => (props.subject ? parseReportSubject(props.subject) : undefined),
     [props.subject],
   )
+  const propsOnClose = props.onClose
   const onClose = useCallback(() => {
     ax.metric('reportDialog:close', {})
-  }, [ax])
-  return (
+    propsOnClose?.()
+  }, [ax, propsOnClose])
+    return (
     <Dialog.Outer control={props.control} onClose={onClose}>
       <Dialog.Handle />
       {subject ? <Inner {...props} subject={subject} /> : <Invalid />}

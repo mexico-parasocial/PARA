@@ -83,7 +83,7 @@ export function RichText({
     }
   }, [value])
 
-  const plainStyles = [a.leading_snug, style]
+  const plainStyles = style
   const interactiveStyles = [plainStyles, interactiveStyle]
 
   const {text, facets} = richText

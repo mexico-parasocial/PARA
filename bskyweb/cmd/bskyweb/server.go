@@ -218,7 +218,7 @@ func serve(cctx *cli.Context) error {
 		RedirectCode: http.StatusFound,
 	}))
 
-		echoprom := echoprometheus.NewMiddlewareWithConfig(
+	echoprom := echoprometheus.NewMiddlewareWithConfig(
 		echoprometheus.MiddlewareConfig{
 			DoNotUseRequestPathFor404: true,
 		},
@@ -346,6 +346,8 @@ func serve(cctx *cli.Context) error {
 	e.GET("/intent/age-assurance", server.WebGeneric)
 	e.GET("/messages", server.WebGeneric)
 	e.GET("/messages/:conversation", server.WebGeneric)
+	e.GET("/messages/:conversation/settings", server.WebGeneric)
+	e.GET("/messages/:conversation/requests", server.WebGeneric)
 
 	// profile endpoints; only first populates info
 	e.GET("/profile/:handleOrDID", server.WebProfile)
@@ -685,7 +687,6 @@ func (srv *Server) WebStarterPack(c echo.Context) error {
 	return c.Render(http.StatusOK, "starterpack.html", data)
 }
 
-
 // chatInviteCodeRe is a permissive sanity check on the join code so we don't
 // proxy obviously-bad input to the chat appview. Codes are opaque per the
 // lexicon, but in practice URL-safe and short.
@@ -722,7 +723,6 @@ func (srv *Server) WebChatInvite(c echo.Context) error {
 	}
 	return c.Render(http.StatusOK, "chatinvite.html", data)
 }
-
 
 func (srv *Server) WebProfile(c echo.Context) error {
 	ctx := c.Request().Context()

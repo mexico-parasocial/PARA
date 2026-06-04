@@ -1,4 +1,4 @@
-import {useRef, useState} from 'react'
+import {useMemo, useRef, useState} from 'react'
 import {
   LayoutAnimation,
   Pressable,
@@ -37,14 +37,12 @@ export function ReactionsDialog({
   control,
   relatedProfiles,
   message,
-  reactions,
-  groupedReactions,
+  onClose,
 }: {
   control: Dialog.DialogControlProps
   relatedProfiles: Map<string, ChatBskyActorDefs.ProfileViewBasic>
   message: ChatBskyConvoDefs.MessageView
-  reactions?: ChatBskyConvoDefs.ReactionView[]
-  groupedReactions?: Reaction[]
+  onClose?: () => void
 }) {
   const {t: l} = useLingui()
 
@@ -53,6 +51,9 @@ export function ReactionsDialog({
   const convo = useConvoActive()
 
   const [selected, setSelected] = useState('all')
+
+  const reactions = message.reactions
+  const groupedReactions = useMemo(() => groupReactions(reactions), [reactions])
 
   const filteredReactions = reactions?.filter(
     r => selected === 'all' || r.value === selected,
@@ -78,7 +79,10 @@ export function ReactionsDialog({
   return (
     <Dialog.Outer
       control={control}
-      onClose={() => setSelected('all')}
+      onClose={() => {
+        setSelected('all')
+        onClose?.()
+      }}
       nativeOptions={{
         preventExpansion: true,
         minHeight: screenHeight / 2,
@@ -147,7 +151,7 @@ function ReactionRow({
   const isFromSelf = currentAccount?.did === profile.did
 
   const displayName = createSanitizedDisplayName(profile, true)
-  const handle = sanitizeHandle(profile?.handle, '@')
+  const handle = sanitizeHandle(profile.handle, '@')
 
   const handleOnPress = () => {
     const remainingReactions = allReactions.filter(
@@ -287,7 +291,7 @@ function ReactionTabs({
 
   return (
     <View accessibilityRole="tablist" style={[t.atoms.bg]}>
-    <DraggableScrollView
+      <DraggableScrollView
         ref={scrollViewRef}
         horizontal={true}
         scrollEventThrottle={16}
@@ -309,10 +313,10 @@ function ReactionTabs({
             a.align_center,
             a.justify_start,
           ]}>
-          {tabs?.map((tab, index) => (
+          {tabs.map((tab, index) => (
             <ReactionTab
               key={tab.key}
-            index={index}
+              index={index}
               tab={tab}
               selected={selected}
               total={tabs.length}
@@ -346,7 +350,8 @@ function ReactionTab({
 
   return (
     <Pressable
-      accessibilityRole="button"
+      accessibilityRole="tab"
+      accessibilityState={{selected: selected === tab.key}}
       accessibilityHint={
         tab.key === 'all'
           ? l`Tap to show all reactions`
@@ -376,8 +381,36 @@ function ReactionTab({
       }}
       onPress={() => onPress(tab.key)}>
       <Text emoji style={[a.text_sm]}>
-        {l`${tab.value} ${tab.count}`}
+        {tab.key === 'all'
+          ? l({
+              message: `All ${tab.count}`,
+              comment:
+                'Tab label showing the total count of reactions on a chat message.',
+            })
+          : `${tab.value} ${tab.count}`}
       </Text>
     </Pressable>
   )
+}
+
+export function groupReactions(
+  reactions: ChatBskyConvoDefs.ReactionView[] | undefined,
+): Reaction[] {
+  const grouped = new Map<string, Reaction>()
+  for (const reaction of reactions ?? []) {
+    if (!reaction) continue
+    const existing = grouped.get(reaction.value)
+    if (existing) {
+      existing.senders.push(reaction.sender)
+      existing.count++
+    } else {
+      grouped.set(reaction.value, {
+        key: reaction.value,
+        value: reaction.value,
+        senders: [reaction.sender],
+        count: 1,
+      })
+    }
+  }
+  return Array.from(grouped.values())
 }
