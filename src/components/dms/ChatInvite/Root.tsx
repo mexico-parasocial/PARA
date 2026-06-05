@@ -4,7 +4,7 @@ import {useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {type NavigationProp} from '#/lib/routes/types'
-import {useJoinLinkPreviewsQuery} from '#/state/queries/join-links'
+import {useJoinLinkPreviewsQuery} from '#/state/queries/join-link'
 import {useSession} from '#/state/session'
 import {type ButtonColor} from '#/components/Button'
 import {ArrowRight_Stroke2_Corner0_Rounded as ArrowRightIcon} from '#/components/icons/Arrow'

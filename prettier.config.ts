@@ -1,7 +1,7 @@
 import {type Config} from 'prettier'
 
 const config: Config = {
-semi: false,
+  semi: false,
   arrowParens: 'avoid',
   bracketSameLine: true,
   bracketSpacing: false,

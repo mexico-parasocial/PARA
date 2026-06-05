@@ -48,7 +48,7 @@ import {
   useConvoActive,
 } from '#/state/messages/convo'
 import {type ConvoState, ConvoStatus} from '#/state/messages/convo/types'
-import {useGetJoinLinkPreview} from '#/state/queries/join-links'
+import {useGetJoinLinkPreview} from '#/state/queries/join-link'
 import {useGetPost} from '#/state/queries/post'
 import {createEmbedViewRecordFromPost} from '#/state/queries/postgate/util'
 import {useAgent, useSession} from '#/state/session'
