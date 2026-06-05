@@ -8,7 +8,7 @@ import {useMutation, useQueryClient} from '@tanstack/react-query'
 import * as bcp47Match from 'bcp-47-match'
 
 import {wait} from '#/lib/async/wait'
-import {popularInterests, useInterestsDisplayNames} from '#/lib/interests'
+import {PARA_INTEREST_KEYS, useParaInterestsDisplayNames} from '#/lib/interests'
 import {isBlockedOrBlocking, isMuted} from '#/lib/moderation/blocked-and-muted'
 import {logger} from '#/logger'
 import {updateProfileShadow} from '#/state/cache/profile-shadow'
@@ -74,9 +74,9 @@ export function StepSuggestedAccounts() {
     if (contentLanguages.length === 0) return true
     return bcp47Match.basicFilter('en', contentLanguages).length > 0
   }, [contentLanguages])
-  const interestsDisplayNames = useInterestsDisplayNames()
+  const interestsDisplayNames = useParaInterestsDisplayNames()
   const interests = Object.keys(interestsDisplayNames)
-    .sort(boostInterests(popularInterests))
+    .sort(boostInterests(PARA_INTEREST_KEYS as unknown as string[]))
     .sort(boostInterests(state.interestsStepResults.selectedInterests))
 
   const {
@@ -339,9 +339,9 @@ function TabBar({
   defaultTabLabel?: string
 }) {
   const {_} = useLingui()
-  const interestsDisplayNames = useInterestsDisplayNames()
+  const interestsDisplayNames = useParaInterestsDisplayNames()
   const interests = Object.keys(interestsDisplayNames)
-    .sort(boostInterests(popularInterests))
+    .sort(boostInterests(PARA_INTEREST_KEYS as unknown as string[]))
     .sort(boostInterests(selectedInterests))
 
   return (

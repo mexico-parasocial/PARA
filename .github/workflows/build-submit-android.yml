@@ -28,8 +28,8 @@ jobs:
           fi
 
       - name: ⬇️ Checkout
-        uses: actions/checkout@v5
-        with:
+        uses: actions/checkout@v6.0.2
+      with:
           fetch-depth: 5
 
       - uses: pnpm/action-setup@v6

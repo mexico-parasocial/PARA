@@ -12,7 +12,13 @@ import {cleanError} from '#/lib/strings/errors'
 import {augmentSearchQuery} from '#/lib/strings/helpers'
 import {useActorSearch} from '#/state/queries/actor-search'
 import {usePopularFeedsSearch} from '#/state/queries/feed'
-import {useSearchPostsQuery} from '#/state/queries/search-posts'
+import {
+  hasParaSearchFilters,
+  type ParaSearchPostsFilters,
+  useParaSearchPostsQuery,
+  useSearchPostsQuery,
+} from '#/state/queries/search-posts'
+import {ParaSearchFiltersBar} from './ParaSearchFiltersBar'
 import {useSession} from '#/state/session'
 import {useLoggedOutViewControls} from '#/state/shell/logged-out'
 import {useCloseAllActiveElements} from '#/state/util'
@@ -38,6 +44,7 @@ let SearchResults = ({
   onPageSelected,
   headerHeight,
   initialPage = 0,
+  paraFilters: paraFiltersProp,
 }: {
   query: string
   queryWithParams: string
@@ -45,8 +52,11 @@ let SearchResults = ({
   onPageSelected: (page: number) => void
   headerHeight: number
   initialPage?: number
+  paraFilters?: ParaSearchPostsFilters
 }): React.ReactNode => {
   const {_} = useLingui()
+  const [paraFiltersState, setParaFilters] = useState<ParaSearchPostsFilters>({})
+  const paraFilters = paraFiltersProp ?? paraFiltersState
 
   const sections = useMemo(() => {
     if (!queryWithParams) return []
@@ -59,6 +69,7 @@ let SearchResults = ({
             query={queryWithParams}
             sort="top"
             active={activeTab === 0}
+            paraFilters={paraFilters}
           />
         ),
       },
@@ -69,6 +80,7 @@ let SearchResults = ({
             query={queryWithParams}
             sort="latest"
             active={activeTab === 1}
+            paraFilters={paraFilters}
           />
         ),
       },
@@ -88,24 +100,30 @@ let SearchResults = ({
       title: string
       component: React.ReactNode
     }[]
-  }, [_, query, queryWithParams, activeTab])
+  }, [_, query, queryWithParams, activeTab, paraFilters])
 
   // There may be fewer tabs after changing the search options.
   const selectedPage = initialPage > sections.length - 1 ? 0 : initialPage
 
   return (
-    <Pager
-      onPageSelected={onPageSelected}
-      renderTabBar={props => (
-        <Layout.Center style={[a.z_10, web([a.sticky, {top: headerHeight}])]}>
-          <TabBar items={sections.map(section => section.title)} {...props} />
-        </Layout.Center>
-      )}
-      initialPage={selectedPage}>
-      {sections.map((section, i) => (
-        <View key={i}>{section.component}</View>
-      ))}
-    </Pager>
+    <View style={[a.flex_1]}>
+      <ParaSearchFiltersBar
+        filters={paraFilters}
+        onChange={setParaFilters}
+      />
+      <Pager
+        onPageSelected={onPageSelected}
+        renderTabBar={props => (
+          <Layout.Center style={[a.z_10, web([a.sticky, {top: headerHeight}])]}>
+            <TabBar items={sections.map(section => section.title)} {...props} />
+          </Layout.Center>
+        )}
+        initialPage={selectedPage}>
+        {sections.map((section, i) => (
+          <View key={i}>{section.component}</View>
+        ))}
+      </Pager>
+    </View>
   )
 }
 SearchResults = memo(SearchResults)
@@ -220,10 +238,12 @@ let SearchScreenPostResults = ({
   query,
   sort,
   active,
+  paraFilters,
 }: {
   query: string
   sort?: 'top' | 'latest'
   active: boolean
+  paraFilters?: ParaSearchPostsFilters
 }): React.ReactNode => {
   const ax = useAnalytics()
   const {_} = useLingui()
@@ -235,6 +255,23 @@ let SearchScreenPostResults = ({
     return augmentSearchQuery(query || '', {did: currentAccount?.did})
   }, [query, currentAccount])
 
+  const useParaQuery = !!paraFilters && hasParaSearchFilters(paraFilters)
+
+  const bskyQuery = useSearchPostsQuery({
+    query: augmentedQuery,
+    sort,
+    enabled: active && !useParaQuery,
+  })
+
+  const paraQuery = useParaSearchPostsQuery({
+    query: augmentedQuery,
+    sort,
+    enabled: active && useParaQuery,
+    communityUris: paraFilters?.communityUris,
+    cabildeoUris: paraFilters?.cabildeoUris,
+    politicalCompassPositions: paraFilters?.politicalCompassPositions,
+  })
+
   const {
     isFetched,
     data: results,
@@ -244,7 +281,7 @@ let SearchScreenPostResults = ({
     fetchNextPage,
     isFetchingNextPage,
     hasNextPage,
-  } = useSearchPostsQuery({query: augmentedQuery, sort, enabled: active})
+  } = useParaQuery ? paraQuery : bskyQuery
 
   const t = useTheme()
   const onPullToRefresh = useCallback(async () => {

@@ -169,3 +169,7 @@ temp_*.tsx
 *.diff
 PLAN.md
 all_files.txt
+
+# superpowers plugin plans/specs — local-only workspace
+docs/superpowers/
+.claude/worktrees

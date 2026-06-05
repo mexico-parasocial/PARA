@@ -243,7 +243,8 @@ export async function post(
       writes: writes,
       validate: true,
     })
-  } catch (e: unknown) {
+  } catch (err) {
+    const e = err as Error
     const errorMessage = e instanceof Error ? e.message : String(e)
     logger.error(`Failed to create post`, {
       safeMessage: errorMessage,
@@ -496,6 +497,16 @@ async function resolveMedia(
         },
       }
     }
+    if (resolvedLink.type === 'chat-invite' && resolvedLink.view) {
+      return {
+        $type: 'app.bsky.embed.external',
+        external: {
+          uri: resolvedLink.uri,
+          title: resolvedLink.view.name,
+          description: `${resolvedLink.view.memberCount}/${resolvedLink.view.memberLimit}`,
+        },
+      }
+    }
   }
   return undefined
 }
@@ -539,6 +550,7 @@ async function computeCid(record: AppBskyFeedPost.Record): Promise<string> {
 }
 
 // Returns a transformed version of the object for use in DAG-CBOR.
+
 function prepareForHashing(v: unknown): unknown {
   // IMPORTANT: BlobRef#ipld() returns the correct object we need for hashing,
   // the API client will convert this for you but we're hashing in the client,
@@ -564,6 +576,7 @@ function prepareForHashing(v: unknown): unknown {
     const obj: Record<string, unknown> = {}
     let pure = true
     for (const key in v) {
+
       let value = v[key]
       // `value` is undefined
       if (value === undefined) {
@@ -582,6 +595,7 @@ function prepareForHashing(v: unknown): unknown {
   return v
 }
 
+ 
 function isPlainObject(v: unknown): boolean {
   if (typeof v !== 'object' || v === null) {
     return false

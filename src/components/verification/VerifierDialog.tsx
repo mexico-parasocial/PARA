@@ -86,6 +86,7 @@ function Inner({
             alt={_(
               msg`An illustration showing that PARA selects trusted verifiers, and trusted verifiers in turn verify individual user accounts.`,
             )}
+            useAppleWebpCodec
           />
         </View>
 

@@ -6,6 +6,7 @@ import {
   ChatBskyConvoDefs,
   type ChatBskyConvoGetLog,
   type ChatBskyConvoSendMessage,
+  type ChatBskyEmbedJoinLink,
   type ChatBskyGroupDefs,
 } from '@atproto/api'
 import {XRPCError} from '@atproto/api'
@@ -110,7 +111,9 @@ export class Convo {
     {
       id: string
       message: ChatBskyConvoSendMessage.InputSchema['message']
-      optimisticEmbedView?: $Typed<AppBskyEmbedRecord.View>
+      optimisticEmbedView?:
+        | $Typed<AppBskyEmbedRecord.View>
+        | $Typed<ChatBskyEmbedJoinLink.View>
     }
     > = new Map()
   private deletedMessages: Set<string> = new Set()
@@ -945,7 +948,9 @@ export class Convo {
 
   sendMessage(
     message: ChatBskyConvoSendMessage.InputSchema['message'],
-    optimisticEmbedView?: $Typed<AppBskyEmbedRecord.View>,
+    optimisticEmbedView?:
+      | $Typed<AppBskyEmbedRecord.View>
+      | $Typed<ChatBskyEmbedJoinLink.View>,
   ) {
   // Ignore empty messages for now since they have no other purpose atm
     if (!message.text.trim() && !message.embed) return

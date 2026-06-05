@@ -1,5 +1,5 @@
 import {useMemo, useState} from 'react'
-import {type TextStyle, View, type ViewStyle} from 'react-native'
+import {View} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -7,11 +7,7 @@ import {type NativeStackScreenProps} from '@react-navigation/native-stack'
 import {useQueryClient} from '@tanstack/react-query'
 import debounce from 'lodash.debounce'
 
-import {
-  type Interest,
-  interests as allInterests,
-  useInterestsDisplayNames,
-} from '#/lib/interests'
+import {type CivicCategoryKey, useCivicCategories} from '#/lib/interests'
 import {type CommonNavigatorParams} from '#/lib/routes/types'
 import {
   preferencesQueryKey,
@@ -90,7 +86,7 @@ function Inner({
   const {_} = useLingui()
   const agent = useAgent()
   const qc = useQueryClient()
-  const interestsDisplayNames = useInterestsDisplayNames()
+  const civicCategories = useCivicCategories()
   const preselectedInterests = useMemo(
     () => preferences.interests.tags || [],
     [preferences.interests.tags],
@@ -159,10 +155,12 @@ function Inner({
     }, 1500)
   }, [_, agent, setIsSaving, qc, preselectedInterests])
 
-  const onChangeInterests = async (interests: string[]) => {
+  const onChangeInterests = (interests: string[]) => {
     setInterests(interests)
-    saveInterests(interests)
+    void saveInterests(interests)
   }
+
+  const categoryKeys = Object.keys(civicCategories) as CivicCategoryKey[]
 
   return (
     <>
@@ -176,17 +174,32 @@ function Inner({
         values={interests}
         onChange={onChangeInterests}
         label={_(msg`Select your interests from the options below`)}>
-        <View style={[a.flex_row, a.flex_wrap, a.gap_sm]}>
-          {allInterests.map(interest => {
-            const name = interestsDisplayNames[interest]
-            if (!name) return null
+        <View style={[a.gap_lg]}>
+          {categoryKeys.map(categoryKey => {
+            const category = civicCategories[categoryKey]
             return (
-              <Toggle.Item
-                key={interest}
-                name={interest}
-                label={interestsDisplayNames[interest]}>
-                <InterestButton interest={interest} />
-              </Toggle.Item>
+              <View key={categoryKey} style={[a.gap_sm]}>
+                <View style={[a.flex_row, a.align_center, a.gap_sm]}>
+                  <Text style={[{fontSize: 18}]}>{category.emoji}</Text>
+                  <Text style={[a.font_semi_bold, a.text_md]}>
+                    {category.label}
+                  </Text>
+                </View>
+                <View style={[a.flex_row, a.flex_wrap, a.gap_sm]}>
+                  {category.interests.map(interest => {
+                    const label =
+                      category.interestLabels[interest] || interest
+                    return (
+                      <Toggle.Item
+                        key={interest}
+                        name={interest}
+                        label={label}>
+                        <CivicInterestPill label={label} />
+                      </Toggle.Item>
+                    )
+                  })}
+                </View>
+              </View>
             )
           })}
         </View>
@@ -195,54 +208,32 @@ function Inner({
   )
 }
 
-export function InterestButton({interest}: {interest: Interest}) {
+function CivicInterestPill({label}: {label: string}) {
   const t = useTheme()
-  const interestsDisplayNames = useInterestsDisplayNames()
   const ctx = Toggle.useItemContext()
-
-  const styles = useMemo(() => {
-    const hovered: ViewStyle[] = [t.atoms.bg_contrast_100]
-    const focused: ViewStyle[] = []
-    const pressed: ViewStyle[] = []
-    const selected: ViewStyle[] = [t.atoms.bg_contrast_900]
-    const selectedHover: ViewStyle[] = [t.atoms.bg_contrast_975]
-    const textSelected: TextStyle[] = [t.atoms.text_inverted]
-
-    return {
-      hovered,
-      focused,
-      pressed,
-      selected,
-      selectedHover,
-      textSelected,
-    }
-  }, [t])
 
   return (
     <View
       style={[
         a.rounded_full,
-        a.py_md,
-        a.px_xl,
-        t.atoms.bg_contrast_50,
-        ctx.hovered ? styles.hovered : {},
-        ctx.focused ? styles.hovered : {},
-        ctx.pressed ? styles.hovered : {},
-        ctx.selected ? styles.selected : {},
-        ctx.selected && (ctx.hovered || ctx.focused || ctx.pressed)
-          ? styles.selectedHover
+        a.px_lg,
+        {paddingVertical: 10},
+        ctx.selected
+          ? {backgroundColor: t.palette.contrast_900}
+          : {backgroundColor: t.palette.contrast_100},
+        ctx.hovered && !ctx.selected
+          ? {backgroundColor: t.palette.contrast_200}
           : {},
       ]}>
       <Text
-        selectable={false}
         style={[
-          {
-            color: t.palette.contrast_900,
-          },
           a.font_semi_bold,
-          ctx.selected ? styles.textSelected : {},
+          a.text_sm,
+          ctx.selected
+            ? {color: t.palette.contrast_100}
+            : {color: t.palette.contrast_900},
         ]}>
-        {interestsDisplayNames[interest]}
+        {label}
       </Text>
     </View>
   )

@@ -83,7 +83,8 @@ function Page({
           style={[a.w_full, a.aspect_square]}
           alt={alt}
           accessibilityIgnoresInvertColors={false} // I guess we do need it to blend into the background
-        />
+          useAppleWebpCodec
+/>
         {page === 1 && (
           <Image
             source={avatarUri}
@@ -97,6 +98,7 @@ function Page({
               },
             ]}
             accessibilityIgnoresInvertColors
+            useAppleWebpCodec
             alt={_(msg`Your profile picture`)}
           />
         )}

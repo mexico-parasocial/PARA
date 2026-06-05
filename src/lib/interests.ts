@@ -217,3 +217,32 @@ export function useInterestsDisplayNames() {
     } satisfies Record<Interest, string>
   }, [_])
 }
+
+// ─── PARA-native interest helpers ────────────────────────────────────────────
+// Used by suggested-accounts onboarding and the interest settings screen.
+
+/** Top-level PARA civic categories — used as chip filter values. */
+export const PARA_INTEREST_KEYS = [
+  'public-services',
+  'internal-revenue',
+  'economy',
+  'social-issues',
+  'external-affairs',
+  'internal-affairs',
+] as const satisfies readonly CivicCategoryKey[]
+
+/** Flat display-name map for both the 6 civic pillars AND their nested sub-interests. */
+export function useParaInterestsDisplayNames(): Record<string, string> {
+  const categories = useCivicCategories()
+  return useMemo<Record<string, string>>(() => {
+    const out: Record<string, string> = {}
+    for (const key of PARA_INTEREST_KEYS) {
+      const cat = categories[key]
+      out[key] = `${cat.emoji} ${cat.label}`
+      for (const sub of cat.interests) {
+        out[sub] = cat.interestLabels[sub] ?? sub
+      }
+    }
+    return out
+  }, [categories])
+}

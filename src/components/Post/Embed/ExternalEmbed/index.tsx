@@ -60,7 +60,7 @@ export const ExternalEmbed = ({
   const onShareExternal = useCallback(() => {
     if (link.uri && IS_NATIVE) {
       playHaptic('Heavy')
-      shareUrl(link.uri)
+      void shareUrl(link.uri)
     }
   }, [link.uri, playHaptic])
 
@@ -109,6 +109,7 @@ export const ExternalEmbed = ({
               source={{uri: imageUri}}
               accessibilityIgnoresInvertColors
               loading="lazy"
+              useAppleWebpCodec
             />
           ) : undefined}
 

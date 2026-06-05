@@ -77,6 +77,7 @@ export function FindContactsAnnouncement() {
               alt={_(
                 msg`An illustration depicting user avatars flowing from a contact book into the PARA app`,
               )}
+              useAppleWebpCodec
             />
           </View>
         </View>

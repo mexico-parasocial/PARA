@@ -84,6 +84,7 @@ export function InitialVerificationAnnouncement() {
               alt={_(
                 msg`An illustration showing that PARA selects trusted verifiers, and trusted verifiers in turn verify individual user accounts.`,
               )}
+              useAppleWebpCodec
             />
           </View>
 
@@ -118,6 +119,7 @@ export function InitialVerificationAnnouncement() {
               alt={_(
                 msg`An mockup of a iPhone showing the PARA app open to the profile of a verified user with a blue checkmark next to their display name.`,
               )}
+              useAppleWebpCodec
             />
           </View>
 

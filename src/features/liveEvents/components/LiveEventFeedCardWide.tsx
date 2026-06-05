@@ -76,6 +76,7 @@ export function LiveEventFeedCardWide({
               style={[a.absolute, a.inset_0, a.w_full, a.h_full]}
               contentFit="cover"
               placeholderContentFit="cover"
+              useAppleWebpCodec
             />
 
             <LinearGradient
