@@ -1,0 +1,15 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "para-web",
+      "runtimeExecutable": "node_modules/.bin/expo",
+      "runtimeArgs": ["start", "--web"],
+      "port": 19006,
+      "env": {
+        "EXPO_PUBLIC_USE_LOCAL_DEV_SERVICE": "1",
+        "EXPO_NO_GIT_STATUS": "1"
+      }
+    }
+  ]
+}
