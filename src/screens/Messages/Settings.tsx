@@ -14,6 +14,7 @@ import {useAgeAssuranceCopy} from '#/components/ageAssurance/useAgeAssuranceCopy
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
 import {Divider} from '#/components/Divider'
+import {resolveAllowGroupInvites} from '#/components/dms/util'
 import * as Toggle from '#/components/forms/Toggle'
 import {Car_Stroke2_Corner2_Rounded as CarIcon} from '#/components/icons/Car'
 import * as Layout from '#/components/Layout'
@@ -172,11 +173,7 @@ export function MessagesSettingsScreenInner({}: Props) {
               <Toggle.Group
                 label={l`Allow group chat invites from`}
                 type="radio"
-                values={[
-                  (profile?.associated?.chat?.allowGroupInvites as
-                    | AllowIncoming
-                    | undefined) ?? 'following',
-                ]}
+                values={[resolveAllowGroupInvites(profile?.associated?.chat)]}
                 onChange={onSelectGroupInvitesFrom}>
                 <View>
                   {allowGroupInvitesFromOptions.map(option => (

@@ -12,6 +12,7 @@ import {
 } from 'react-native'
 import {
   type AppBskyActorDefs,
+  AppBskyEmbedExternal,
   AppBskyEmbedVideo,
   type AppBskyFeedDefs,
 } from '@atproto/api'
@@ -58,6 +59,7 @@ import {
 } from '#/components/feeds/PostFeedVideoGridRow'
 import {TrendingInterstitial} from '#/components/interstitials/Trending'
 import {TrendingVideos as TrendingVideosInterstitial} from '#/components/interstitials/TrendingVideos'
+import {isStandardSiteEmbed} from '#/components/Post/Embed/StandardSiteEmbed/utils'
 import {useAnalytics} from '#/analytics'
 import {IS_IOS, IS_NATIVE, IS_WEB} from '#/env'
 import {DiscoverFeedLiveEventFeedsAndTrendingBanner} from '#/features/liveEvents/components/DiscoverFeedLiveEventFeedsAndTrendingBanner'
@@ -919,6 +921,7 @@ let PostFeed = ({
 
   const seenActorWithStatusRef = useRef<Set<string>>(new Set())
   const seenPostUrisRef = useRef<Set<string>>(new Set())
+  const seenStandardSiteUrisRef = useRef<Set<string>>(new Set())
 
   // Helper to calculate position in feed (count only root posts, not interstitials or thread replies)
   const getPostPosition = useNonReactiveCallback(

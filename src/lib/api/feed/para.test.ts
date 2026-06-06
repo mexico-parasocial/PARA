@@ -79,11 +79,52 @@ describe('ParaTimelineFeedAPI', () => {
       postType: 'policy',
     })
   })
+
+  it('falls back to the Bluesky timeline when the Para timeline method is unavailable', async () => {
+    const bskyPost = {
+      post: {
+        uri: 'at://did:plc:alice/app.bsky.feed.post/1',
+        cid: 'bafy-bsky-post',
+        author: {
+          did: 'did:plc:alice',
+          handle: 'alice.bsky.social',
+        },
+        record: {
+          $type: 'app.bsky.feed.post',
+          text: 'Hello from Bluesky',
+          createdAt: '2026-06-05T10:00:00.000Z',
+        },
+        indexedAt: '2026-06-05T10:00:00.000Z',
+      },
+    }
+    const agent = createAgent()
+    agent.call.mockRejectedValueOnce(new Error('Method Not Implemented'))
+    agent.getTimeline.mockResolvedValueOnce({
+      success: true,
+      data: {
+        cursor: 'bsky-cursor',
+        feed: [bskyPost],
+      },
+    })
+    const api = new ParaTimelineFeedAPI({agent: agent as unknown as BskyAgent})
+
+    const result = await api.fetch({cursor: 'cursor-1', limit: 30})
+
+    expect(agent.getTimeline).toHaveBeenCalledWith({
+      cursor: 'cursor-1',
+      limit: 30,
+    })
+    expect(result).toEqual({
+      cursor: 'bsky-cursor',
+      feed: [bskyPost],
+    })
+  })
 })
 
 function createAgent(data?: {feed?: unknown[]}): {
   call: jest.Mock
   getProfile: jest.Mock
+  getTimeline: jest.Mock
 } {
   return {
     call: jest.fn().mockResolvedValue({
@@ -100,5 +141,6 @@ function createAgent(data?: {feed?: unknown[]}): {
         labels: [],
       },
     }),
+    getTimeline: jest.fn(),
   }
 }

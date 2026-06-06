@@ -59,7 +59,9 @@
       },
       "channel": "production",
       "env": {
-        "EXPO_PUBLIC_ENV": "production"
+        "EXPO_PUBLIC_ENV": "production",
+        "GOOGLE_MAPS_IOS_API_KEY": "AIzaSyBHs7l9k9kuAXPD4RGQ1BZWtNVq-hYeyXY",
+        "GOOGLE_MAPS_ANDROID_API_KEY": "AIzaSyBHs7l9k9kuAXPD4RGQ1BZWtNVq-hYeyXY"
       }
     },
     "testflight": {

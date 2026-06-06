@@ -20,7 +20,6 @@ import {Link} from '#/view/com/util/Link'
 import {PostMeta} from '#/view/com/util/PostMeta'
 import {atoms as a, useTheme} from '#/alf'
 import {useInteractionState} from '#/components/hooks/useInteractionState'
-import {GalleryBleed} from '#/components/images/Gallery'
 import {ContentHider} from '#/components/moderation/ContentHider'
 import {PostAlerts} from '#/components/moderation/PostAlerts'
 import {StandardSiteEmbed} from '#/components/Post/Embed/StandardSiteEmbed'
@@ -320,7 +319,6 @@ export function QuoteEmbed({
         showAvatar
         postHref={itemHref}
         timestamp={quote.indexedAt}
-        linkDisabled
       />
       {moderation ? (
         <PostAlerts modui={moderation.ui('contentView')} style={[a.py_xs]} />
@@ -349,45 +347,43 @@ export function QuoteEmbed({
   )
 
   return (
-    <GalleryBleed>
-      <View
-        style={[a.mt_sm]}
-        onPointerEnter={linkDisabled ? undefined : onPointerEnter}
-        onPointerLeave={linkDisabled ? undefined : onPointerLeave}>
-        <ContentHider
-          modui={moderation?.ui('contentList')}
-          style={[a.rounded_md, a.border, t.atoms.border_contrast_low, style]}
-          activeStyle={[a.p_md, a.pt_sm]}
-          childContainerStyle={[a.pt_sm]}>
-          {({active}) => (
-            <>
-              {!active && !linkDisabled && (
-                <SubtleHover
-                  native
-                  hover={hover || pressed}
-                  style={[a.rounded_md]}
-                />
-              )}
-              {linkDisabled ? (
-                <View style={[!active && a.p_md]} pointerEvents="none">
-                  {contents}
-                </View>
-              ) : (
-                <Link
-                  style={[!active && a.p_md]}
-                  hoverStyle={t.atoms.border_contrast_high}
-                  href={itemHref}
-                  title={itemTitle}
-                  onBeforePress={onBeforePress}
-                  onPressIn={onPressIn}
-                  onPressOut={onPressOut}>
-                  {contents}
-                </Link>
-              )}
-            </>
-          )}
-        </ContentHider>
-      </View>
-    </GalleryBleed>
+    <View
+      style={[a.mt_sm]}
+      onPointerEnter={linkDisabled ? undefined : onPointerEnter}
+      onPointerLeave={linkDisabled ? undefined : onPointerLeave}>
+      <ContentHider
+        modui={moderation?.ui('contentList')}
+        style={[a.rounded_md, a.border, t.atoms.border_contrast_low, style]}
+        activeStyle={[a.p_md, a.pt_sm]}
+        childContainerStyle={[a.pt_sm]}>
+        {({active}) => (
+          <>
+            {!active && !linkDisabled && (
+              <SubtleHover
+                native
+                hover={hover || pressed}
+                style={[a.rounded_md]}
+              />
+            )}
+            {linkDisabled ? (
+              <View style={[!active && a.p_md]} pointerEvents="none">
+                {contents}
+              </View>
+            ) : (
+              <Link
+                style={[!active && a.p_md]}
+                hoverStyle={t.atoms.border_contrast_high}
+                href={itemHref}
+                title={itemTitle}
+                onBeforePress={onBeforePress}
+                onPressIn={onPressIn}
+                onPressOut={onPressOut}>
+                {contents}
+              </Link>
+            )}
+          </>
+        )}
+      </ContentHider>
+    </View>
   )
 }

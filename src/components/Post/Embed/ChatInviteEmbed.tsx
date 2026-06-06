@@ -23,8 +23,8 @@ export function ChatInviteEmbed({
   style?: StyleProp<ViewStyle>
 }) {
   return (
-    <ChatInvite.Root code={code}>
-      <ChatInviteEmbedBody link={link} onOpen={onOpen} style={style} />
+    <ChatInvite.Root code={code} hasFixedHeight>
+    <ChatInviteEmbedBody link={link} onOpen={onOpen} style={style} />
     </ChatInvite.Root>
   )
 }

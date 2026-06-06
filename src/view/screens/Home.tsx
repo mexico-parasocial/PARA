@@ -1,10 +1,16 @@
 import {useCallback, useEffect, useLayoutEffect, useMemo, useRef} from 'react'
 import {ActivityIndicator, StyleSheet} from 'react-native'
 import {withSpring} from 'react-native-reanimated'
+import {RichText} from '@atproto/api'
 import {useFocusEffect} from '@react-navigation/native'
 
 import {classifyCompassFeedFilters} from '#/lib/compass-filters'
-import {DEFAULT_DISCOVER_FEED_DESCRIPTOR} from '#/lib/constants'
+import {
+  BSKY_SERVICE,
+  DEFAULT_DISCOVER_FEED_DESCRIPTOR,
+  PUBLIC_BSKY_SERVICE,
+  STAGING_SERVICE,
+} from '#/lib/constants'
 import {useNonReactiveCallback} from '#/lib/hooks/useNonReactiveCallback'
 import {useOTAUpdates} from '#/lib/hooks/useOTAUpdates'
 import {useSetTitle} from '#/lib/hooks/useSetTitle'
@@ -108,7 +114,7 @@ const PARTIES_FEED_INFO: SavedFeedSourceInfo = {
   uri: 'para-timeline',
   cid: '',
   avatar: undefined,
-  description: {text: '', facets: []},
+  description: new RichText({text: ''}),
   creatorDid: '',
   creatorHandle: '',
   likeCount: undefined,
@@ -130,9 +136,14 @@ function HomeScreenReady({
   preferences: UsePreferencesQueryResponse
   pinnedFeedInfos: SavedFeedSourceInfo[]
 }) {
+  const {currentAccount, hasSession} = useSession()
+  const showParaFeeds = Boolean(
+    currentAccount?.service && !isBlueskyInfrastructure(currentAccount.service),
+  )
   const homeFeeds = useMemo(
-    () => [PARTIES_FEED_INFO, ...pinnedFeedInfos],
-    [pinnedFeedInfos],
+    () =>
+      showParaFeeds ? [PARTIES_FEED_INFO, ...pinnedFeedInfos] : pinnedFeedInfos,
+    [pinnedFeedInfos, showParaFeeds],
   )
   const allFeeds = useMemo(
     () => homeFeeds.map(f => f.feedDescriptor),
@@ -150,7 +161,7 @@ function HomeScreenReady({
   useOTAUpdates()
 
   useEffect(() => {
-    requestNotificationsPermission('Home')
+    void requestNotificationsPermission('Home')
   }, [requestNotificationsPermission])
 
   const pagerRef = useRef<PagerRef>(null)
@@ -165,7 +176,6 @@ function HomeScreenReady({
     }
   }, [selectedIndex])
 
-  const {hasSession} = useSession()
   const {headerMode} = useMinimalShellMode()
   const showHeader = useCallback(() => {
     'worklet'
@@ -386,6 +396,19 @@ function HomeScreenReady({
       />
     </Pager>
   )
+}
+
+function isBlueskyInfrastructure(service: string) {
+  try {
+    const hostname = new URL(service).hostname
+    return [
+      new URL(BSKY_SERVICE).hostname,
+      new URL(PUBLIC_BSKY_SERVICE).hostname,
+      new URL(STAGING_SERVICE).hostname,
+    ].includes(hostname)
+  } catch {
+    return false
+  }
 }
 
 const styles = StyleSheet.create({

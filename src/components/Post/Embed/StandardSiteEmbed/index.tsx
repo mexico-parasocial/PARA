@@ -5,7 +5,6 @@ import {plural} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react/macro'
 
 import {useHaptics} from '#/lib/haptics'
-import {useCallOnce} from '#/lib/once'
 import {shareUrl} from '#/lib/sharing'
 import {niceDate} from '#/lib/strings/time'
 import {toNiceDomain} from '#/lib/strings/url-helpers'
@@ -80,13 +79,15 @@ export const StandardSiteEmbed = ({
     onEmbedInteractionCallback?.()
     ax.metric('embed:standardSite:article:press', {url: view.uri})
   }
-  const onLongPress = () => {
-    if (view.uri && IS_NATIVE) {
-      playHaptic('Heavy')
-      shareUrl(view.uri)
-      ax.metric('embed:standardSite:article:longPress', {url: view.uri})
-    }
-  }
+  const onLongPress = IS_NATIVE
+    ? () => {
+        if (view.uri) {
+          playHaptic('Heavy')
+          void shareUrl(view.uri)
+          ax.metric('embed:standardSite:article:longPress', {url: view.uri})
+        }
+      }
+    : undefined
   const onPressPublication = () => {
     playHaptic('Light')
     onEmbedInteractionCallback?.()
@@ -94,21 +95,17 @@ export const StandardSiteEmbed = ({
       url: view.source?.uri || '',
     })
   }
-  const onLongPressPublication = () => {
-    if (view.source?.uri && IS_NATIVE) {
-      playHaptic('Heavy')
-      shareUrl(view.source.uri)
-      ax.metric('embed:standardSite:publication:longPress', {
-        url: view.source.uri,
-      })
-    }
-  }
-
-  useCallOnce(() => {
-    if (!preview) {
-      ax.metric('embed:standardSite:view', {url: view.uri})
-    }
-  })()
+  const onLongPressPublication = IS_NATIVE
+    ? () => {
+        if (view.source?.uri) {
+          playHaptic('Heavy')
+          void shareUrl(view.source.uri)
+          ax.metric('embed:standardSite:publication:longPress', {
+            url: view.source.uri,
+          })
+        }
+      }
+    : undefined
 
   if (isStandardPublication) {
     return (
@@ -446,21 +443,23 @@ export function SubscribeButton({
     }
   }
 
-  const onLongPress = () => {
-    if (view.source?.uri && IS_NATIVE) {
-      playHaptic('Heavy')
-      shareUrl(view.source.uri)
-      if (highlightedPublisher) {
-        ax.metric('embed:standardSite:subscribe:longPress', {
-          url: view.source?.uri || '',
-        })
-      } else {
-        ax.metric('embed:standardSite:publicationCta:longPress', {
-          url: view.source?.uri || '',
-        })
+  const onLongPress = IS_NATIVE
+    ? () => {
+        if (view.source?.uri) {
+          playHaptic('Heavy')
+          void shareUrl(view.source.uri)
+          if (highlightedPublisher) {
+            ax.metric('embed:standardSite:subscribe:longPress', {
+              url: view.source?.uri || '',
+            })
+          } else {
+            ax.metric('embed:standardSite:publicationCta:longPress', {
+              url: view.source?.uri || '',
+            })
+          }
+        }
       }
-    }
-  }
+    : undefined
 
   return (
     <StandardSiteThemeProvider view={view}>

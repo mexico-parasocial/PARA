@@ -1,9 +1,7 @@
 import {useCallback, useMemo, useState} from 'react'
 import {View} from 'react-native'
 import {AtUri} from '@atproto/api'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
-import {Plural, Trans} from '@lingui/react/macro'
+import {Plural, Trans, useLingui} from '@lingui/react/macro'
 
 import {useHaptics} from '#/lib/haptics'
 import {makeCustomFeedLink, makeProfileLink} from '#/lib/routes/links'
@@ -26,7 +24,6 @@ import {atoms as a, useBreakpoints, useTheme, web} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
 import {Divider} from '#/components/Divider'
-import {useRichText} from '#/components/hooks/useRichText'
 import {ArrowOutOfBoxModified_Stroke2_Corner2_Rounded as Share} from '#/components/icons/ArrowOutOfBox'
 import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfo} from '#/components/icons/CircleInfo'
 import {DotGrid_Stroke2_Corner0_Rounded as Ellipsis} from '#/components/icons/DotGrid'
@@ -85,7 +82,7 @@ export function ProfileFeedHeaderSkeleton() {
 
 export function ProfileFeedHeader({info}: {info: FeedSourceFeedInfo}) {
   const t = useTheme()
-  const {_, i18n} = useLingui()
+  const {t: l, i18n} = useLingui()
   const {hasSession} = useSession()
   const {gtMobile} = useBreakpoints()
   const infoControl = Dialog.useDialogControl()
@@ -119,7 +116,7 @@ export function ProfileFeedHeader({info}: {info: FeedSourceFeedInfo}) {
 
       if (savedFeedConfig) {
         await removeFeed(savedFeedConfig)
-        Toast.show(_(msg`Removed from your feeds`))
+        Toast.show(l`Removed from your feeds`)
         logger.metric('feed:unsave', {feedUrl: info.uri})
       } else {
         await addSavedFeeds([
@@ -129,14 +126,12 @@ export function ProfileFeedHeader({info}: {info: FeedSourceFeedInfo}) {
             pinned: false,
           },
         ])
-        Toast.show(_(msg`Saved to your feeds`))
+        Toast.show(l`Saved to your feeds`)
         logger.metric('feed:save', {feedUrl: info.uri})
       }
     } catch (err) {
       Toast.show(
-        _(
-          msg`There was an issue updating your feeds, please check your internet connection and try again.`,
-        ),
+        l`There was an issue updating your feeds, please check your internet connection and try again.`,
         {
           type: 'error',
         },
@@ -159,10 +154,10 @@ export function ProfileFeedHeader({info}: {info: FeedSourceFeedInfo}) {
         ])
 
         if (pinned) {
-          Toast.show(_(msg`Pinned ${info.displayName} to Home`))
+          Toast.show(l`Pinned ${info.displayName} to Home`)
           logger.metric('feed:pin', {feedUrl: info.uri})
         } else {
-          Toast.show(_(msg`Unpinned ${info.displayName} from Home`))
+          Toast.show(l`Unpinned ${info.displayName} from Home`)
           logger.metric('feed:unpin', {feedUrl: info.uri})
         }
       } else {
@@ -173,11 +168,11 @@ export function ProfileFeedHeader({info}: {info: FeedSourceFeedInfo}) {
             pinned: true,
           },
         ])
-        Toast.show(_(msg`Pinned ${info.displayName} to Home`))
+        Toast.show(l`Pinned ${info.displayName} to Home`)
         logger.metric('feed:pin', {feedUrl: info.uri})
       }
     } catch (e) {
-      Toast.show(_(msg`There was an issue contacting the server`), {
+      Toast.show(l`There was an issue contacting the server`, {
         type: 'error',
       })
       logger.error('Failed to toggle pinned feed', {message: e})
@@ -192,7 +187,7 @@ export function ProfileFeedHeader({info}: {info: FeedSourceFeedInfo}) {
           <Layout.Header.BackButton />
           <Layout.Header.Content align="left">
             <Button
-              label={_(msg`Open feed info screen`)}
+              label={l`Open feed info screen`}
               style={[
                 a.justify_start,
                 {
@@ -293,12 +288,12 @@ export function ProfileFeedHeader({info}: {info: FeedSourceFeedInfo}) {
             <Layout.Header.Slot>
               {isPinned ? (
                 <Menu.Root>
-                  <Menu.Trigger label={_(msg`Open feed options menu`)}>
+                  <Menu.Trigger label={l`Open feed options menu`}>
                     {({props}) => {
                       return (
                         <Button
                           {...props}
-                          label={_(msg`Open feed options menu`)}
+                          label={l`Open feed options menu`}
                           size="small"
                           variant="ghost"
                           shape="square"
@@ -312,23 +307,23 @@ export function ProfileFeedHeader({info}: {info: FeedSourceFeedInfo}) {
                   <Menu.Outer>
                     <Menu.Item
                       disabled={isFeedStateChangePending}
-                      label={_(msg`Unpin from home`)}
+                      label={l`Unpin from home`}
                       onPress={onTogglePinned}>
-                      <Menu.ItemText>{_(msg`Unpin from home`)}</Menu.ItemText>
+                      <Menu.ItemText>{l`Unpin from home`}</Menu.ItemText>
                       <Menu.ItemIcon icon={X} position="right" />
                     </Menu.Item>
                     <Menu.Item
                       disabled={isFeedStateChangePending}
                       label={
                         isSaved
-                          ? _(msg`Remove from my feeds`)
-                          : _(msg`Save to my feeds`)
+                          ? l`Remove from my feeds`
+                          : l`Save to my feeds`
                       }
                       onPress={onToggleSaved}>
                       <Menu.ItemText>
                         {isSaved
-                          ? _(msg`Remove from my feeds`)
-                          : _(msg`Save to my feeds`)}
+                          ? l`Remove from my feeds`
+                          : l`Save to my feeds`}
                       </Menu.ItemText>
                       <Menu.ItemIcon
                         icon={isSaved ? Trash : Plus}
@@ -339,7 +334,7 @@ export function ProfileFeedHeader({info}: {info: FeedSourceFeedInfo}) {
                 </Menu.Root>
               ) : (
                 <Button
-                  label={_(msg`Pin to Home`)}
+                  label={l`Pin to Home`}
                   size="small"
                   variant="ghost"
                   shape="square"
@@ -356,7 +351,7 @@ export function ProfileFeedHeader({info}: {info: FeedSourceFeedInfo}) {
       <Dialog.Outer control={infoControl}>
         <Dialog.Handle />
         <Dialog.ScrollableInner
-          label={_(msg`Feed menu`)}
+          label={l`Feed menu`}
           style={[gtMobile ? {width: 'auto', minWidth: 450} : a.w_full]}>
           <DialogInner
             info={info}
@@ -391,12 +386,11 @@ function DialogInner({
   isFeedStateChangePending: boolean
 }) {
   const t = useTheme()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const {hasSession} = useSession()
   const playHaptic = useHaptics()
   const control = Dialog.useDialogContext()
   const reportDialogControl = useReportDialogControl()
-  const [rt] = useRichText(info.description.text)
   const {mutateAsync: likeFeed, isPending: isLikePending} = useLikeMutation()
   const {mutateAsync: unlikeFeed, isPending: isUnlikePending} =
     useUnlikeMutation()
@@ -419,9 +413,7 @@ function DialogInner({
       }
     } catch (err) {
       Toast.show(
-        _(
-          msg`There was an issue contacting the server, please check your internet connection and try again.`,
-        ),
+        l`There was an issue contacting the server, please check your internet connection and try again.`,
         {
           type: 'error',
         },
@@ -433,9 +425,9 @@ function DialogInner({
   const onPressShare = useCallback(() => {
     playHaptic()
     const url = toShareUrl(info.route.href)
-    shareUrl(url)
+    void shareUrl(url)
     logger.metric('feed:share', {feedUrl: info.uri})
-  }, [info, playHaptic])
+  }, [ax, info, playHaptic])
 
   const onPressReport = useCallback(() => {
     reportDialogControl.open()
@@ -459,7 +451,7 @@ function DialogInner({
             <Trans>
               By{' '}
               <InlineLinkText
-                label={_(msg`View ${info.creatorHandle}'s profile`)}
+                label={l`View ${info.creatorHandle}'s profile`}
                 to={makeProfileLink({
                   did: info.creatorDid,
                   handle: info.creatorHandle,
@@ -474,7 +466,7 @@ function DialogInner({
         </View>
 
         <Button
-          label={_(msg`Share this feed`)}
+          label={l`Share this feed`}
           size="small"
           variant="ghost"
           color="secondary"
@@ -489,7 +481,7 @@ function DialogInner({
       <View style={[a.flex_row, a.gap_sm, a.align_center]}>
         {typeof likeCount === 'number' && (
           <InlineLinkText
-            label={_(msg`View users who like this feed`)}
+            label={l`View users who like this feed`}
             to={makeCustomFeedLink(info.creatorDid, feedRkey, 'liked-by')}
             style={[a.underline, t.atoms.text_contrast_medium]}
             onPress={() => control.close()}>
@@ -499,13 +491,12 @@ function DialogInner({
           </InlineLinkText>
         )}
       </View>
-
       {hasSession && (
         <>
           <View style={[a.flex_row, a.gap_sm, a.align_center, a.pt_sm]}>
             <Button
               disabled={isLikePending || isUnlikePending}
-              label={_(msg`Like this feed`)}
+              label={l`Like this feed`}
               size="small"
               variant="solid"
               color="secondary"
@@ -523,7 +514,7 @@ function DialogInner({
             </Button>
             <Button
               disabled={isFeedStateChangePending}
-              label={isPinned ? _(msg`Unpin feed`) : _(msg`Pin feed`)}
+              label={isPinned ? l`Unpin feed` : l`Pin feed`}
               size="small"
               variant="solid"
               color={isPinned ? 'secondary' : 'primary'}
@@ -546,7 +537,7 @@ function DialogInner({
               </Text>
 
               <Button
-                label={_(msg`Report feed`)}
+                label={l`Report feed`}
                 size="small"
                 variant="solid"
                 color="secondary"

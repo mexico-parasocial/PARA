@@ -28,6 +28,16 @@ export type ParaTimelineFilters = {
   flairTag?: string
 }
 
+type ParaRecordValue = Record<string, unknown> & {
+  $type?: string
+  createdAt?: string
+  embed?: unknown
+  flairs?: unknown
+  langs?: unknown
+  postType?: unknown
+  tags?: unknown
+}
+
 export class ParaFeedAPI implements FeedAPI {
   agent: BskyAgent
   actor: string
@@ -57,12 +67,12 @@ export class ParaFeedAPI implements FeedAPI {
     limit: number
   }): Promise<FeedAPIResponse> {
     // 1. Fetch Author Profile if needed (for PostView)
-    console.error('ParaFeedAPI: fetch called for', this.actor)
     if (!this.authorProfile) {
       try {
         const profileRes = await this.agent.getProfile({actor: this.actor})
         this.authorProfile = profileRes.data
       } catch (e) {
+        if (isConcurrentSessionUpdateError(e)) throw e
         console.error('Failed to fetch author profile for Para feed', e)
         return {feed: []}
       }
@@ -97,6 +107,7 @@ export class ParaFeedAPI implements FeedAPI {
         feed,
       }
     } catch (e) {
+      if (isConcurrentSessionUpdateError(e)) throw e
       console.error('Error fetching Para posts', e)
       return {feed: []}
     }
@@ -106,7 +117,7 @@ export class ParaFeedAPI implements FeedAPI {
     record: ComAtprotoRepoListRecords.Record,
     author: AppBskyActorDefs.ProfileViewDetailed,
   ): AppBskyFeedDefs.FeedViewPost {
-    const val = JSON.parse(JSON.stringify(record.value))
+    const val = JSON.parse(JSON.stringify(record.value)) as ParaRecordValue
     // HACK: Alias com.para.post to app.bsky.feed.post to pass client-side validation
     // The UI handles rendering, but the feed slicer enforces strict types.
     if (val.$type === PARA_POST_COLLECTION) {
@@ -115,23 +126,24 @@ export class ParaFeedAPI implements FeedAPI {
 
     // Hydrate Images (Basic)
     let embed: AppBskyFeedDefs.PostView['embed'] = undefined
-    if (val.embed && val.embed.$type === 'app.bsky.embed.images') {
-      const images = (val.embed.images || []).map(
-        (img: Record<string, unknown>) => {
-          // Construct Link to Blob
-          // format: <service>/xrpc/com.atproto.sync.getBlob?did=<did>&cid=<cid>
-          // Use agent.service (PDS)
-          // Ensure serviceUrl does not have trailing slash?
-          const serviceUrl = this.agent.service.toString().replace(/\/$/, '')
-          const cid = readBlobRefString(img.image)
-          const thumb = `${serviceUrl}/xrpc/com.atproto.sync.getBlob?did=${this.actor}&cid=${cid}`
-          return {
-            thumb,
-            fullsize: thumb,
-            alt: img.alt || '',
-          }
-        },
-      )
+    const rawEmbed = isObjectRecord(val.embed) ? val.embed : undefined
+    if (rawEmbed?.$type === 'app.bsky.embed.images') {
+      const rawImages = Array.isArray(rawEmbed.images) ? rawEmbed.images : []
+      const images = rawImages.map(img => {
+        const image = isObjectRecord(img) ? img : {}
+        // Construct Link to Blob
+        // format: <service>/xrpc/com.atproto.sync.getBlob?did=<did>&cid=<cid>
+        // Use agent.service (PDS)
+        // Ensure serviceUrl does not have trailing slash?
+        const serviceUrl = this.agent.service.toString().replace(/\/$/, '')
+        const cid = readBlobRefString(image.image)
+        const thumb = `${serviceUrl}/xrpc/com.atproto.sync.getBlob?did=${this.actor}&cid=${cid}`
+        return {
+          thumb,
+          fullsize: thumb,
+          alt: typeof image.alt === 'string' ? image.alt : '',
+        }
+      })
       embed = {
         $type: 'app.bsky.embed.images#view',
         images,
@@ -145,9 +157,14 @@ export class ParaFeedAPI implements FeedAPI {
     }
 
     // Preserve Para-specific fields through hydration
-    const paraFlairs: string[] = val.flairs || []
-    const paraPostType: string | undefined = val.postType
-    const paraTags: string[] = val.tags || []
+    const paraFlairs = readStringArray(val.flairs)
+    const paraPostType =
+      typeof val.postType === 'string' ? val.postType : undefined
+    const paraTags = readStringArray(val.tags)
+    const createdAt =
+      typeof val.createdAt === 'string'
+        ? val.createdAt
+        : new Date().toISOString()
 
     const postView: AppBskyFeedDefs.PostView = {
       uri: record.uri,
@@ -167,7 +184,7 @@ export class ParaFeedAPI implements FeedAPI {
         postType: paraPostType,
         tags: paraTags,
       },
-      indexedAt: val.createdAt,
+      indexedAt: createdAt,
       likeCount: 0, // MVP: No counts
       replyCount: 0,
       repostCount: 0,
@@ -232,9 +249,35 @@ export class ParaTimelineFeedAPI implements FeedAPI {
         feed,
       }
     } catch (e) {
+      if (isConcurrentSessionUpdateError(e)) throw e
+      if (isMethodNotImplementedError(e)) {
+        return this.fetchBlueskyTimeline({cursor, limit})
+      }
       console.error('Error fetching Para timeline posts', e)
       return {feed: []}
     }
+  }
+
+  private async fetchBlueskyTimeline({
+    cursor,
+    limit,
+  }: {
+    cursor: string | undefined
+    limit: number
+  }): Promise<FeedAPIResponse> {
+    try {
+      const res = await this.agent.getTimeline({cursor, limit})
+      if (res.success) {
+        return {
+          cursor: res.data.cursor,
+          feed: res.data.feed,
+        }
+      }
+    } catch (e) {
+      if (isConcurrentSessionUpdateError(e)) throw e
+      console.error('Error fetching Bluesky timeline fallback', e)
+    }
+    return {feed: []}
   }
 
   async hydrateTimelinePost(
@@ -255,6 +298,7 @@ export class ParaTimelineFeedAPI implements FeedAPI {
       this.profiles.set(actor, res.data)
       return res.data
     } catch (e) {
+      if (isConcurrentSessionUpdateError(e)) throw e
       console.error('Failed to fetch author profile for Para timeline', e)
       return {
         did: actor,
@@ -329,15 +373,51 @@ function readBlobRefString(value: unknown) {
   const ref = image.ref
   if (!ref) return ''
   if (typeof ref === 'string') return ref
-  if (
-    typeof ref === 'object' &&
-    'toString' in ref &&
-    typeof ref.toString === 'function'
-  ) {
-    const toString = ref.toString as () => string
+  if (typeof ref === 'object' && hasStringableRef(ref)) {
+    const toString = ref.toString
     return toString.call(ref)
   }
   return ''
+}
+
+function isObjectRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value && typeof value === 'object' && !Array.isArray(value))
+}
+
+function readStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : []
+}
+
+function hasStringableRef(value: object): value is {toString: () => string} {
+  const ref = value as {toString?: unknown}
+  return typeof ref.toString === 'function'
+}
+
+function isConcurrentSessionUpdateError(e: unknown): boolean {
+  return (
+    e instanceof Error && e.message === 'Concurrent session update detected'
+  )
+}
+
+function isMethodNotImplementedError(e: unknown): boolean {
+  if (!e || typeof e !== 'object') return false
+
+  const maybeError = e as {
+    error?: unknown
+    message?: unknown
+    status?: unknown
+  }
+  return (
+    maybeError.error === 'MethodNotImplemented' ||
+    maybeError.error === 'NotImplemented' ||
+    (typeof maybeError.message === 'string' &&
+      maybeError.message.toLowerCase().includes('method not implemented')) ||
+    (maybeError.status === 404 &&
+      typeof maybeError.message === 'string' &&
+      maybeError.message.toLowerCase().includes('not implemented'))
+  )
 }
 
 export function isParaPostView(value: unknown): value is ParaPostView {

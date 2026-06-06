@@ -83,7 +83,7 @@ module.exports = function (_config) {
       name: 'PARA',
       slug: 'para',
       scheme: 'para',
-      owner: 'pararepo',
+      owner: 'mike77790',
       runtimeVersion: {
         policy: 'appVersion',
       },
@@ -488,7 +488,7 @@ module.exports = function (_config) {
               },
             },
           },
-          projectId: '55bd077a-d905-4184-9c7f-94789ba0f302',
+          projectId: '2b1d8af4-dd93-43b6-8655-39fe7cff2f2a',
         },
       },
     },
