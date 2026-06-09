@@ -324,19 +324,27 @@ function GroupChatJoinDialogContent({code}: {code?: string}) {
                 : l`Anyone can join`}
             </Text>
           </View>
-          <View>
-            <View
-              style={[a.flex_row, a.gap_xs, a.align_center, a.justify_center]}>
-              <Text
-                emoji
-                style={[
-                  a.mb_2xs,
-                  a.text_center,
-                  a.text_sm,
-                  a.leading_snug,
-                  a.font_semi_bold,
-                  t.atoms.text,
-                ]}>
+          <View
+            style={[
+              a.px_2xl,
+              a.w_full,
+              a.flex_row,
+              a.gap_xs,
+              a.align_center,
+              a.justify_center,
+            ]}>
+            <Text
+              emoji
+              style={[
+                a.flex_shrink,
+                a.text_center,
+                a.text_sm,
+                a.leading_snug,
+                a.font_semi_bold,
+                web({minWidth: 0}),
+              ]}
+              numberOfLines={1}>
+              <Trans comment="The group chat creator, in the format 'By {displayName}'.">
                 By{' '}
                 <InlineLinkText
                   label={`@${joinLinkPreview.owner.handle}`}
@@ -370,23 +378,25 @@ function GroupChatJoinDialogContent({code}: {code?: string}) {
                     ),
                   )}
                 </InlineLinkText>
-              </Text>
-              <ProfileBadges
-                profile={joinLinkPreview.owner}
-                size="sm"
-                style={{marginTop: -3}}
-              />
-            </View>
-            <Text
-              style={[
-                a.text_center,
-                a.text_xs,
-                a.leading_snug,
-                t.atoms.text_contrast_high,
-              ]}>
-              {sanitizeHandle(joinLinkPreview.owner.handle, '@')}
+              </Trans>
             </Text>
+            <ProfileBadges
+              profile={joinLinkPreview.owner}
+              size="sm"
+              style={{marginTop: -3}}
+            />
           </View>
+          <Text
+            style={[
+              a.text_center,
+              a.text_xs,
+              a.leading_snug,
+              t.atoms.text_contrast_high,
+              web({minWidth: 0}),
+            ]}
+            numberOfLines={1}>
+            {sanitizeHandle(joinLinkPreview.owner.handle, '@')}
+          </Text>
         </View>
       </View>
       {convoId ? (
