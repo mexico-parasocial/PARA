@@ -1,4 +1,4 @@
-import {useEffect, useState} from 'react'
+import {Fragment, useEffect, useState} from 'react'
 import {View} from 'react-native'
 import {moderateProfile, type ModerationOpts} from '@atproto/api'
 import {Trans, useLingui} from '@lingui/react/macro'
@@ -10,7 +10,7 @@ import {useCreateJoinLink} from '#/state/queries/messages/create-join-link'
 import {useDisableJoinLink} from '#/state/queries/messages/disable-join-link'
 import {useEditJoinLink} from '#/state/queries/messages/edit-join-link'
 import {useEnableJoinLink} from '#/state/queries/messages/enable-join-link'
-import {atoms as a, native, useTheme, web} from '#/alf'
+import {atoms as a, useTheme, web} from '#/alf'
 import {
   Button,
   ButtonIcon,
@@ -40,7 +40,6 @@ enum Step {
   MANAGE,
   CONFIRM_DISABLE,
 }
-
 
 export function InviteLinkDialog({
   convo,
@@ -84,10 +83,11 @@ export function InviteLinkDialog({
     ? `${joinLink.joinRule}${joinLink.requireApproval ? ':requireApproval' : ''}`
     : null
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setStep(joinLinkRuleKey ? Step.MANAGE : Step.INFO)
+
     setWhoCanJoin([joinLinkRuleKey ?? 'anyone'])
   }, [joinLinkRuleKey])
-
 
   const {openComposer} = useOpenComposer()
 
@@ -208,11 +208,9 @@ export function InviteLinkDialog({
           : l`Generate invite link`
       content = (
         <>
-          <View>
-            <Text style={[a.text_md, t.atoms.text]}>
-              <Trans>Choose who can join this group chat and how.</Trans>
-            </Text>
-          </View>
+          <Text style={[a.text_md]}>
+            <Trans>Choose who can join this group chat and how.</Trans>
+          </Text>
           <View style={[a.mt_lg]}>
             <Toggle.Group
               label={l`Who can join this group chat and how`}
@@ -221,19 +219,20 @@ export function InviteLinkDialog({
               onChange={setWhoCanJoin}>
               <View style={[a.gap_sm]}>
                 {whoCanJoinOptions.map(option => (
-                  <Toggle.Item
-                    key={option.name}
-                    highlightRow
-                    label={isOwner ? option.owner : option.member}
-                    name={option.name}
-                    style={[a.flex_1]}>
-                    {({selected}) => (
-                      <TargetOption
-                        label={isOwner ? option.owner : option.member}
-                        selected={selected}
-                      />
-                    )}
-                  </Toggle.Item>
+                  <Fragment key={option.name}>
+                    <Toggle.Item
+                      highlightRow
+                      label={isOwner ? option.owner : option.member}
+                      name={option.name}
+                      style={[a.flex_1]}>
+                      {({selected}) => (
+                        <TargetOption
+                          label={isOwner ? option.owner : option.member}
+                          selected={selected}
+                        />
+                      )}
+                    </Toggle.Item>
+                  </Fragment>
                 ))}
               </View>
             </Toggle.Group>
@@ -322,8 +321,8 @@ export function InviteLinkDialog({
             ) : null}
           </View>
           {enabledStatus === 'enabled' ? (
-          <View style={[native(a.mt_lg)]}>
-              {isOwner ? (
+            isOwner ? (
+              <View style={[a.mt_lg]}>
                 <EditTextButton
                   label={l`Edit link settings`}
                   value={ownerValue}
@@ -334,10 +333,10 @@ export function InviteLinkDialog({
                     </Text>
                   </View>
                 </EditTextButton>
-              ) : (
-                <Text style={[a.text_sm, t.atoms.text]}>{memberValue}</Text>
-              )}
-            </View>
+              </View>
+            ) : (
+              <Text style={[a.mt_sm, a.mb_sm, a.text_sm]}>{memberValue}</Text>
+            )
           ) : null}
           {enabledStatus === 'enabled' ? (
             <View style={[a.flex_row, a.justify_between, a.gap_sm, a.mt_lg]}>
@@ -470,7 +469,7 @@ export function InviteLinkDialog({
   }
 
   if (!isOwner && (!joinLink || joinLink.enabledStatus === 'disabled')) {
-  header = l`Invite link`
+    header = l`Invite link`
     content = (
       <>
         <View style={[a.mt_lg]}>

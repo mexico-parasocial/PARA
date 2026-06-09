@@ -79,6 +79,7 @@ export type ItemProps = ViewStyleProp & {
   disabled?: boolean
   onChange?: (selected: boolean) => void
   isInvalid?: boolean
+  highlightRow?: boolean
   children: ((props: ItemState) => React.ReactNode) | React.ReactNode
   hitSlop?: PressableProps['hitSlop']
 }
@@ -157,6 +158,7 @@ export function Item({
   disabled: itemDisabled = false,
   onChange,
   isInvalid,
+  highlightRow,
   style,
   type = 'checkbox',
   label,
