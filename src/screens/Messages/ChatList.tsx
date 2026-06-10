@@ -17,7 +17,6 @@ import {MESSAGE_SCREEN_POLL_INTERVAL} from '#/state/messages/convo/const'
 import {useMessagesEventBus} from '#/state/messages/events'
 import {useMatrixRoomsQuery} from '#/state/queries/matrix'
 import {useChatActorStatusQuery} from '#/state/queries/messages/get-status'
-import {useLeftConvos} from '#/state/queries/messages/leave-conversation'
 import {useListConvosQuery} from '#/state/queries/messages/list-conversations'
 import {useSession} from '#/state/session'
 import {EmptyState} from '#/view/com/util/EmptyState'
@@ -275,8 +274,6 @@ export function ChatList({
   useRefreshOnFocus(refetch)
   useRefreshOnFocus(refetchInbox)
 
-  const leftConvos = useLeftConvos()
-
   const listItems = useMemo(() => {
     const items: ListItem[] = []
 
@@ -297,9 +294,7 @@ export function ChatList({
     items.push({type: 'AGENT_SELECTION'})
 
     if (data?.pages) {
-      const convos = data.pages
-        .flatMap(page => page.convos)
-        .filter(convo => !leftConvos.includes(convo.id))
+      const convos = data.pages.flatMap(page => page.convos)
 
       if (convos.length) {
         items.push({type: 'SECTION', label: l`Mensajes directos`})
@@ -314,7 +309,7 @@ export function ChatList({
     }
 
     return items
-  }, [data, l, leftConvos, matrixRoomsData, selectedChat])
+  }, [data, l, matrixRoomsData, selectedChat])
 
   const hasListContent = listItems.some(
     item => item.type === 'CONVERSATION' || item.type === 'MATRIX_ROOM',
@@ -565,7 +560,6 @@ export function Header({
   const {gtMobile} = useBreakpoints()
   const aa = useAgeAssurance()
   const requireEmailVerification = useRequireEmailVerification()
-  const leftConvos = useLeftConvos()
   const {isWithinSplitView} = useIsWithinSplitView()
 
   // In split view, the left column (and this header) stays mounted while the
@@ -580,23 +574,17 @@ export function Header({
       kind: aa.flags.groupChatDisabled ? 'direct' : 'all',
     })
 
-  const inboxAllConvos = useMemo(() => {
-    return (
-      unreadInboxData?.pages
-        .flatMap(page => page.convos)
-        .filter(
-          convo =>
-            !leftConvos.includes(convo.id) &&
-            !convo.muted &&
-            convo.members.every(
-              member => member.handle !== 'missing.invalid',
-            ) &&
-            (ChatBskyConvoDefs.isGroupConvo(convo.kind)
-              ? !aa.flags.groupChatDisabled
-              : true),
-        ) ?? []
-    )
-  }, [unreadInboxData, leftConvos, aa.flags.groupChatDisabled])
+  const inboxAllConvos =
+    unreadInboxData?.pages
+      .flatMap(page => page.convos)
+      .filter(
+        convo =>
+          !convo.muted &&
+          convo.members.every(member => member.handle !== 'missing.invalid') &&
+          (ChatBskyConvoDefs.isGroupConvo(convo.kind)
+            ? !aa.flags.groupChatDisabled
+            : true),
+      ) ?? []
 
   const openChatControl = useCallback(() => {
     newChatControl.open()

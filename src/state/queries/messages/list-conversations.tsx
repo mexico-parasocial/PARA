@@ -25,7 +25,6 @@ import {useAgeAssurance} from '#/ageAssurance'
 import {type AgeAssuranceFlags} from '#/ageAssurance/types'
 import * as bsky from '#/types/bsky'
 import {RQKEY as CONVO_KEY} from './conversation'
-import {useLeftConvos} from './leave-conversation'
 import {listConvoMembersQueryKey} from './list-convo-members'
 
 const DEFAULT_LIMIT = 10
@@ -37,10 +36,7 @@ export const RQKEY = (
   readState: 'all' | 'unread' = 'all',
   kind: 'all' | 'group' | 'direct' = 'all',
   lockStatus:
-    | 'unlocked'
-    | 'locked'
-    | 'locked-permanently'
-    | undefined = undefined,
+    'unlocked' | 'locked' | 'locked-permanently' | undefined = undefined,
   limit?: number,
 ) => [RQKEY_ROOT, status, readState, kind, lockStatus, limit]
 type RQPageParam = string | undefined
@@ -129,7 +125,6 @@ export function ListConvosProviderInner({
   const queryClient = useQueryClient()
   const {currentConvoId} = useCurrentConvoId()
   const {currentAccount} = useSession()
-  const leftConvos = useLeftConvos()
 
   const debouncedRefetch = useMemo(() => {
     const refetchAndInvalidate = () => {
@@ -190,9 +185,9 @@ export function ListConvosProviderInner({
           // memberCount bump to avoid double-counting.
           const alreadyKnownMember =
             queryClient
-              .getQueryData<
-                ChatBskyActorDefs.ProfileViewBasic[]
-              >(listConvoMembersQueryKey(convoId))
+              .getQueryData<ChatBskyActorDefs.ProfileViewBasic[]>(
+                listConvoMembersQueryKey(convoId),
+              )
               ?.some(m => m.did === did) ?? false
           mutateMembers(convoId, list =>
             list.some(m => m.did === did) ? list : list.concat(newMember),
@@ -211,9 +206,9 @@ export function ListConvosProviderInner({
           // list, skip the memberCount decrement to avoid double-counting.
           const alreadyRemovedMember =
             queryClient
-              .getQueryData<
-                ChatBskyActorDefs.ProfileViewBasic[]
-              >(listConvoMembersQueryKey(convoId))
+              .getQueryData<ChatBskyActorDefs.ProfileViewBasic[]>(
+                listConvoMembersQueryKey(convoId),
+              )
               ?.some(m => m.did === did) === false
           mutateMembers(convoId, list => list.filter(m => m.did !== did))
           mutateConvoView(convoId, convo =>
@@ -612,15 +607,12 @@ export function ListConvosProviderInner({
   ])
 
   const ctx = useMemo(() => {
-    const convos =
-      data?.pages
-        .flatMap(page => page.convos)
-        .filter(convo => !leftConvos.includes(convo.id)) ?? []
+    const convos = data?.pages.flatMap(page => page.convos) ?? []
     return {
       accepted: convos.filter(conv => conv.status === 'accepted'),
       request: convos.filter(conv => conv.status === 'request'),
     }
-  }, [data, leftConvos])
+  }, [data])
 
   return (
     <ListConvosContext.Provider value={ctx}>
@@ -676,7 +668,14 @@ export function useUnreadMessageCount() {
         hasNew: false,
       }
     }
-  }, [accepted, request, currentAccount?.did, currentConvoId, moderationOpts])
+  }, [
+    accepted,
+    request,
+    currentAccount?.did,
+    currentConvoId,
+    moderationOpts,
+    aa.flags,
+  ])
 }
 
 function calculateCount(

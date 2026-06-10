@@ -1,5 +1,5 @@
 import {useCallback, useMemo, useState} from 'react'
-import {View} from 'react-native'
+import {type ListRenderItem, View} from 'react-native'
 import {
   type ChatBskyConvoDefs,
   type ChatBskyConvoListConvos,
@@ -24,7 +24,6 @@ import {cleanError} from '#/lib/strings/errors'
 import {logger} from '#/logger'
 import {MESSAGE_SCREEN_POLL_INTERVAL} from '#/state/messages/convo/const'
 import {useMessagesEventBus} from '#/state/messages/events'
-import {useLeftConvos} from '#/state/queries/messages/leave-conversation'
 import {useListConvosQuery} from '#/state/queries/messages/list-conversations'
 import {useUpdateAllRead} from '#/state/queries/messages/update-all-read'
 import {EmptyState} from '#/view/com/util/EmptyState'
@@ -67,19 +66,13 @@ export function MessagesInboxScreenInner({}: Props) {
   const listConvosQuery = useListConvosQuery({status: 'request'})
   const {data} = listConvosQuery
 
-  const leftConvos = useLeftConvos()
-
   const conversations = useMemo(() => {
     if (data?.pages) {
-      const convos = data.pages
-        .flatMap(page => page.convos)
-        // filter out convos that are actively being left
-        .filter(convo => !leftConvos.includes(convo.id))
-
+      const convos = data.pages.flatMap(page => page.convos)
       return convos
     }
     return []
-  }, [data, leftConvos])
+  }, [data])
 
   const hasUnreadConvos = useMemo(() => {
     return conversations.some(
@@ -176,8 +169,8 @@ function RequestList({
 
   if (conversations.length < 1) {
     return (
-    <Layout.Center style={web([a.h_full])}>
-      {isLoading ? (
+      <Layout.Center style={web([a.h_full])}>
+        {isLoading ? (
           <ChatListLoadingPlaceholder />
         ) : (
           <>
@@ -208,7 +201,7 @@ function RequestList({
                     label={_(msg`Reload conversations`)}
                     size="small"
                     color="secondary_inverted"
-                    onPress={() => refetch()}>
+                    onPress={() => void refetch()}>
                     <ButtonText>
                       <Trans>Retry</Trans>
                     </ButtonText>
@@ -218,11 +211,13 @@ function RequestList({
               </>
             ) : (
               <EmptyState
-                message={l({
-                  message: `Inbox zero!`,
-                  comment:
-                    "Title message shown in chat requests inbox when it's empty",
-                })}
+                message={_(
+                  msg({
+                    message: `Inbox zero!`,
+                    comment:
+                      "Title message shown in chat requests inbox when it's empty",
+                  }),
+                )}
                 icon={InboxLargeIcon}
                 iconSize="4xl"
                 textStyle={t.atoms.text}
@@ -231,8 +226,8 @@ function RequestList({
                   isWithinSplitView
                     ? undefined
                     : {
-                        label: l`Back to Chats`,
-                        text: l`Back`,
+                        label: _(msg`Back to Chats`),
+                        text: _(msg`Back`),
                         onPress: () => {
                           if (navigation.canGoBack()) {
                             navigation.goBack()
@@ -258,11 +253,11 @@ function RequestList({
     <>
       <List
         data={conversations}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
         refreshing={isPTRing}
-        onRefresh={onRefresh}
-        onEndReached={onEndReached}
+        onRefresh={() => void onRefresh()}
+        onEndReached={() => void onEndReached()}
+        renderItem={renderItem as ListRenderItem<unknown>}
+        keyExtractor={keyExtractor as (item: unknown, index: number) => string}
         ListFooterComponent={
           <ListFooter
             isFetchingNextPage={isFetchingNextPage}
