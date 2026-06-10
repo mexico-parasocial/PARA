@@ -120,7 +120,7 @@ export function ImageItem({
   }
 
   return (
-    <View style={[a.relative, a.aspect_square, {maxWidth: 100}]}>
+    <View style={[a.flex_grow, a.relative, a.aspect_square, {maxWidth: 100}]}>
       <Image
         key={thumbnail}
         source={{uri: thumbnail}}
