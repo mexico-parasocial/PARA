@@ -87,7 +87,7 @@ export function Outer({
       try {
         cb()
       } catch (e: unknown) {
-        logger.error(e || 'Error running close callback')
+        logger.error(e instanceof Error ? e : 'Error running close callback')
       }
     }
 
@@ -157,6 +157,8 @@ export function Outer({
     [open, close],
   )
 
+  const isHeightConstrained = nativeOptions?.maxHeight != null
+
   const context = useMemo(
     () => ({
       close,
@@ -165,8 +167,9 @@ export function Outer({
       disableDrag,
       setDisableDrag,
       isWithinDialog: true,
+      isHeightConstrained,
     }),
-    [close, snapPoint, disableDrag, setDisableDrag],
+    [close, snapPoint, disableDrag, setDisableDrag, isHeightConstrained],
   )
 
   return (
@@ -213,10 +216,11 @@ export function Inner({children, style, header}: DialogInnerProps) {
 
 export const ScrollableInner = forwardRef<ScrollView, DialogInnerProps>(
   function ScrollableInner(
-    {children, contentContainerStyle, header, ...props},
+    {children, contentContainerStyle, header, footer, style, ...props},
     ref,
   ) {
-    const {nativeSnapPoint, disableDrag, setDisableDrag} = useDialogContext()
+    const {nativeSnapPoint, disableDrag, setDisableDrag, isHeightConstrained} =
+      useDialogContext()
     const isAtMaxSnapPoint = nativeSnapPoint === BottomSheetSnapPoint.Full
     const insets = useSafeAreaInsets()
     const [keyboardHeight, setKeyboardHeight] = useState(() =>
@@ -242,41 +246,45 @@ export const ScrollableInner = forwardRef<ScrollView, DialogInnerProps>(
     }
 
     return (
-      <ScrollView
-        contentContainerStyle={[
-          a.pt_2xl,
-          IS_LIQUID_GLASS ? a.px_2xl : a.px_xl,
-          platform({
-            ios: a.pb_2xl,
-            android: {
-              paddingBottom: keyboardHeight + insets.bottom + tokens.space.xl,
-            },
-          }),
-          contentContainerStyle,
-        ]}
-        ref={ref}
-        showsVerticalScrollIndicator={IS_ANDROID ? false : undefined}
-        contentInsetAdjustmentBehavior={
-          isAtMaxSnapPoint ? 'automatic' : 'never'
-        }
-        automaticallyAdjustKeyboardInsets={isAtMaxSnapPoint}
-        {...props}
-        bounces={isAtMaxSnapPoint}
-        scrollEventThrottle={50}
-        // set drag state based on scroll on android.
-        // we want to detect if it's at the top or not, so watch
-        // scrollEndDrag and momentumScrollEnd as well
-        onScroll={android(onScroll)}
-        onScrollEndDrag={android(onScroll)}
-        onMomentumScrollEnd={android(onScroll)}
-        keyboardShouldPersistTaps="handled"
-        // TODO: figure out why this positions the header absolutely (rather than stickily)
-        // on Android. fine to disable for now, because we don't have any
-        // dialogs that use this that actually scroll -sfn
-        stickyHeaderIndices={ios(header ? [0] : undefined)}>
-        {header}
-        {children}
-      </ScrollView>
+      <>
+        <ScrollView
+          style={[isHeightConstrained && a.flex_1, style]}
+          contentContainerStyle={[
+            a.pt_2xl,
+            IS_LIQUID_GLASS ? a.px_2xl : a.px_xl,
+            platform({
+              ios: a.pb_2xl,
+              android: {
+                paddingBottom: keyboardHeight + insets.bottom + tokens.space.xl,
+              },
+            }),
+            contentContainerStyle,
+          ]}
+          ref={ref}
+          showsVerticalScrollIndicator={IS_ANDROID ? false : undefined}
+          contentInsetAdjustmentBehavior={
+            isAtMaxSnapPoint ? 'automatic' : 'never'
+          }
+          automaticallyAdjustKeyboardInsets={isAtMaxSnapPoint}
+          {...props}
+          bounces={isAtMaxSnapPoint}
+          scrollEventThrottle={50}
+          // set drag state based on scroll on android.
+          // we want to detect if it's at the top or not, so watch
+          // scrollEndDrag and momentumScrollEnd as well
+          onScroll={android(onScroll)}
+          onScrollEndDrag={android(onScroll)}
+          onMomentumScrollEnd={android(onScroll)}
+          keyboardShouldPersistTaps="handled"
+          // TODO: figure out why this positions the header absolutely (rather than stickily)
+          // on Android. fine to disable for now, because we don't have any
+          // dialogs that use this that actually scroll -sfn
+          stickyHeaderIndices={ios(header ? [0] : undefined)}>
+          {header}
+          {children}
+        </ScrollView>
+        {footer}
+      </>
     )
   },
 )
@@ -314,6 +322,7 @@ export const InnerFlatList = forwardRef<
       onScroll={onScroll}
       onEndDrag={onScroll}
       onMomentumEnd={onScroll}>
+      {/* @ts-expect-error upstream List prop typing mismatch */}
       <List
         keyboardShouldPersistTaps="handled"
         contentInsetAdjustmentBehavior={
@@ -342,9 +351,11 @@ export const InnerFlatList = forwardRef<
 export function FlatListFooter({
   children,
   onLayout,
+  border = true,
 }: {
   children: React.ReactNode
   onLayout?: (event: LayoutChangeEvent) => void
+  border?: boolean
 }) {
   const t = useTheme()
   const {bottom} = useSafeAreaInsets()
@@ -365,7 +376,7 @@ export function FlatListFooter({
         a.bottom_0,
         a.w_full,
         a.z_10,
-        a.border_t,
+        border && a.border_t,
         t.atoms.bg,
         t.atoms.border_contrast_low,
         a.px_lg,

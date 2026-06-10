@@ -122,7 +122,11 @@ export type CommonNavigatorParams = {
   MessagesJoinRequests: {conversation: string}
   MessagesSettings: undefined
   MessagesInbox: undefined
-  Messages: {pushToConversation?: string; animation?: 'push' | 'pop'}
+  Messages: {
+    pushToConversation?: string
+    pushToNewGroupChat?: boolean
+    animation?: 'push' | 'pop'
+  }
   CommunityChat: {communityUri: string; communityName: string; roomId?: string}
   Communities: undefined
   MyCommunities: undefined
@@ -217,7 +221,11 @@ export type MyProfileTabNavigatorParams = CommonNavigatorParams & {
 }
 
 export type MessagesTabNavigatorParams = CommonNavigatorParams & {
-  Messages: {pushToConversation?: string; animation?: 'push' | 'pop'}
+  Messages: {
+    pushToConversation?: string
+    pushToNewGroupChat?: boolean
+    animation?: 'push' | 'pop'
+  }
 }
 
 export type DataTabNavigatorParams = CommonNavigatorParams & {
@@ -325,8 +333,7 @@ export type RootStackParams = {
 export type NavigationProp = NativeStackNavigationProp<AllNavigatorParams>
 
 export type State =
-  | NavigationState
-  | Omit<PartialState<NavigationState>, 'stale'>
+  NavigationState | Omit<PartialState<NavigationState>, 'stale'>
 
 export type RouteParams = Record<string, string>
 export type MatchResult = {params: RouteParams}

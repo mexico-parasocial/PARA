@@ -216,10 +216,12 @@ export function InitiateChatFlow({
   title,
   onSelectChat,
   onSelectGroupChat,
+  startInGroupChat = false,
 }: {
   title: string
   onSelectChat: (did: string) => void
   onSelectGroupChat: (dids: string[], groupName: string) => void
+  startInGroupChat?: boolean
 }) {
   const t = useTheme()
   const {t: l} = useLingui()
@@ -248,8 +250,8 @@ export function InitiateChatFlow({
     },
     dispatch,
   ] = useReducer(reducer, {
-    chatState: ChatState.NEW_CHAT,
-    screenTitle: title,
+    chatState: startInGroupChat ? ChatState.NEW_GROUP_CHAT : ChatState.NEW_CHAT,
+    screenTitle: startInGroupChat ? l`New group chat` : title,
     groupChatDids: [],
     groupChatProfiles: [],
     groupName: '',

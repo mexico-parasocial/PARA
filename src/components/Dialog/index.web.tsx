@@ -12,6 +12,7 @@ import {
   FlatList,
   type FlatListProps,
   type GestureResponderEvent,
+  type LayoutChangeEvent,
   type StyleProp,
   TouchableWithoutFeedback,
   View,
@@ -90,6 +91,7 @@ export function Outer({
   )
 
   const handleBackgroundPress = useCallback(
+    // eslint-disable-next-line @typescript-eslint/require-await
     async (e: GestureResponderEvent) => {
       webOptions?.onBackgroundPress ? webOptions.onBackgroundPress(e) : close()
     },
@@ -113,6 +115,7 @@ export function Outer({
       disableDrag: false,
       setDisableDrag: () => {},
       isWithinDialog: true,
+      isHeightConstrained: false,
     }),
     [close],
   )
@@ -126,6 +129,7 @@ export function Outer({
             <TouchableWithoutFeedback
               accessibilityHint={undefined}
               accessibilityLabel={_(msg`Close active dialog`)}
+              // eslint-disable-next-line @typescript-eslint/no-misused-promises
               onPress={handleBackgroundPress}>
               <View
                 style={[
@@ -176,6 +180,7 @@ export function Inner({
   accessibilityLabelledBy,
   accessibilityDescribedBy,
   header,
+  footer,
   contentContainerStyle,
 }: DialogInnerProps) {
   const t = useTheme()
@@ -199,7 +204,7 @@ export function Inner({
         style={flatten([
           a.relative,
           a.rounded_md,
-          a.align_self_center, // Ensure it centers itself within the parent
+          a.self_center, // Ensure it centers itself within the parent
           a.border,
           t.atoms.bg,
           {
@@ -222,6 +227,7 @@ export function Inner({
           <View style={[gtMobile ? a.p_2xl : a.p_xl, contentContainerStyle]}>
             {children}
           </View>
+          {footer}
         </DismissableLayer.DismissableLayer>
       </View>
     </FocusScope.FocusScope>
@@ -269,18 +275,27 @@ export const InnerFlatList = forwardRef<
   )
 })
 
-export function FlatListFooter({children}: {children: ReactNode}) {
+export function FlatListFooter({
+  children,
+  onLayout,
+  border = true,
+}: {
+  children: React.ReactNode
+  onLayout?: (event: LayoutChangeEvent) => void
+  border?: boolean
+}) {
   const t = useTheme()
 
   return (
     <View
+      onLayout={onLayout}
       style={[
         a.absolute,
         a.bottom_0,
         a.w_full,
         a.z_10,
         t.atoms.bg,
-        a.border_t,
+        border && a.border_t,
         t.atoms.border_contrast_low,
         a.px_lg,
         a.py_md,

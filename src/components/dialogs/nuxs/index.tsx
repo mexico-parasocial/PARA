@@ -19,6 +19,10 @@ import {useProfileQuery} from '#/state/queries/profile'
 import {type SessionAccount, useSession} from '#/state/session'
 import {useOnboardingState} from '#/state/shell'
 import {
+  enabled as isGroupChatsAnnouncementEnabled,
+  GroupChatsAnnouncement,
+} from '#/components/dialogs/nuxs/GroupChatsAnnouncement'
+import {
   enabled as isLiveNowBetaDialogEnabled,
   LiveNowBetaDialog,
 } from '#/components/dialogs/nuxs/LiveNowBetaDialog'
@@ -39,6 +43,10 @@ const queuedNuxs: {
   {
     id: Nux.LiveNowBetaDialog,
     enabled: isLiveNowBetaDialogEnabled,
+  },
+  {
+    id: Nux.GroupChatsAnnouncement,
+    enabled: isGroupChatsAnnouncementEnabled,
   },
 ]
 
@@ -110,6 +118,7 @@ function Inner({
 
   if (__DEV__ && typeof window !== 'undefined') {
     // @ts-ignore
+    // eslint-disable-next-line react-hooks/immutability
     window.clearNuxDialog = (id: Nux) => {
       if (!__DEV__ || !id) return
       resetNuxs([id])
@@ -146,6 +155,7 @@ function Inner({
       logger.debug(`NUX dialogs: activating '${id}' NUX`)
 
       // we have a winner
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setActiveNux(id)
 
       // immediately snooze for a day
@@ -158,6 +168,7 @@ function Inner({
         data: undefined,
       }).catch(e => {
         logger.error(`NUX dialogs: failed to upsert '${id}' NUX`, {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
           safeMessage: e.message,
         })
       })
@@ -187,6 +198,7 @@ function Inner({
     <Context.Provider value={ctx}>
       {/*For example, activeNux === Nux.NeueTypography && <NeueTypography />*/}
       {activeNux === Nux.LiveNowBetaDialog && <LiveNowBetaDialog />}
+      {activeNux === Nux.GroupChatsAnnouncement && <GroupChatsAnnouncement />}
     </Context.Provider>
   )
 }
