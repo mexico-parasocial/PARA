@@ -127,6 +127,29 @@ export function optimisticUpdate(
   }
 }
 
+export function markAllRead(
+  old: ConvoRequestListQueryData | undefined,
+): ConvoRequestListQueryData | undefined {
+  if (!old) return old
+
+  return {
+    ...old,
+    pages: old.pages.map(page => ({
+      ...page,
+      requests: page.requests.map((item): ConvoRequestItem => {
+        if (ChatBskyConvoDefs.isConvoView(item)) {
+          return {
+            ...item,
+            $type: 'chat.bsky.convo.defs#convoView',
+            unreadCount: 0,
+          }
+        }
+        return item
+      }),
+    })),
+  }
+}
+
 export function optimisticDelete(
   chatId: string,
   old: ConvoRequestListQueryData | undefined,
