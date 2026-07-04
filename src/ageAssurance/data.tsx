@@ -4,6 +4,7 @@ import {
   type AppBskyAgeassuranceGetConfig,
   type AppBskyAgeassuranceGetState,
   AtpAgent,
+  type ChatBskyActorDeclaration,
   getAgeAssuranceRegionConfig,
 } from '@atproto/api'
 import {createAsyncStoragePersister} from '@tanstack/query-async-storage-persister'
@@ -19,9 +20,11 @@ import {
   hasSnoozedBirthdateUpdateForDid,
   snoozeBirthdateUpdateAllowedForDid,
 } from '#/state/birthdate'
+import {fetchActorDeclarationRecord} from '#/state/queries/messages/actor-declaration'
 import {useAgent, useSession} from '#/state/session'
 import * as debug from '#/ageAssurance/debug'
 import {logger} from '#/ageAssurance/logger'
+import {type AgeAssuranceMetadata} from '#/ageAssurance/types'
 import {
   getBirthdateStringFromAge,
   isLegacyBirthdateBug,
@@ -54,7 +57,7 @@ const [, cacheHydrationPromise] = persistQueryClient({
   persister,
 })
 
-function getDidFromAgentSession(agent: AtpAgent) {
+export function getDidFromAgentSession(agent: AtpAgent) {
   const sessionManager = agent.sessionManager
   if (!sessionManager || !sessionManager.did) return
   return sessionManager.did
@@ -106,35 +109,36 @@ export function getConfigFromCache():
   )
 }
 let configPrefetchPromise: Promise<void> | undefined
-export async function prefetchConfig() {
+export function prefetchConfig() {
   if (configPrefetchPromise) {
     logger.debug(`prefetchAgeAssuranceConfig: already in progress`)
     return
   }
 
-  configPrefetchPromise = new Promise(async resolve => {
-    await cacheHydrationPromise
-    const cached = getConfigFromCache()
+  configPrefetchPromise = new Promise<void>(resolve => {
+    void cacheHydrationPromise.then(async () => {
+      const cached = getConfigFromCache()
 
-    if (cached) {
-      logger.debug(`prefetchAgeAssuranceConfig: using cache`)
-      resolve()
-    } else {
-      try {
-        logger.debug(`prefetchAgeAssuranceConfig: resolving...`)
-        const res = await networkRetry(3, () => getConfig())
-        qc.setQueryData<AppBskyAgeassuranceGetConfig.OutputSchema>(
-          configQueryKey,
-          res,
-        )
-      } catch (e: unknown) {
-        logger.warn(`prefetchAgeAssuranceConfig: failed`, {
-          safeMessage: (e as Error)?.message,
-        })
-      } finally {
+      if (cached) {
+        logger.debug(`prefetchAgeAssuranceConfig: using cache`)
         resolve()
+      } else {
+        try {
+          logger.debug(`prefetchAgeAssuranceConfig: resolving...`)
+          const res = await networkRetry(3, () => getConfig())
+          qc.setQueryData<AppBskyAgeassuranceGetConfig.OutputSchema>(
+            configQueryKey,
+            res,
+          )
+        } catch (e: unknown) {
+          logger.warn(`prefetchAgeAssuranceConfig: failed`, {
+            safeMessage: (e as Error)?.message,
+          })
+        } finally {
+          resolve()
+        }
       }
-    }
+    })
   })
 }
 
@@ -250,7 +254,7 @@ export async function refetchServerState({agent}: {agent: AtpAgent}) {
 export function usePatchServerState() {
   const {currentAccount} = useSession()
   return useCallback(
-    async (next: AppBskyAgeassuranceDefs.State) => {
+    (next: AppBskyAgeassuranceDefs.State) => {
       if (!currentAccount) return
       const did = currentAccount.did
       const prev = getServerStateFromCache({did})
@@ -315,7 +319,7 @@ export function useServerStateQuery() {
       // only refetch when needed
       if (isAssured || !isAArequired) return
 
-      refetch()
+      void refetch()
     })
   }, [did, refetch, isAssured])
 
@@ -328,6 +332,7 @@ export function useServerStateQuery() {
 
 export type OtherRequiredData = {
   birthdate: string | undefined
+  actorDeclaration?: ChatBskyActorDeclaration.Main
 }
 export function createOtherRequiredDataQueryKey({did}: {did: string}) {
   return ['otherRequiredData', did]
@@ -338,9 +343,14 @@ export async function getOtherRequiredData({
   agent: AtpAgent
 }): Promise<OtherRequiredData> {
   if (debug.enabled) return debug.resolve(debug.otherRequiredData)
-  const [prefs] = await Promise.all([agent.getPreferences()])
+  const did = getDidFromAgentSession(agent)
+  const [prefs, actorDeclaration] = await Promise.all([
+    agent.getPreferences(),
+    fetchActorDeclarationRecord({did, agent}),
+  ])
   const data: OtherRequiredData = {
     birthdate: prefs.birthDate ? prefs.birthDate.toISOString() : undefined,
+    actorDeclaration,
   }
 
   /**
@@ -358,7 +368,6 @@ export async function getOtherRequiredData({
     }
   }
 
-  const did = getDidFromAgentSession(agent)
   if (data && did && birthdateCache.has(did)) {
     /*
      * If birthdate was just set, use the local cache value. On subsequent
@@ -393,6 +402,24 @@ export function getOtherRequiredDataFromCache({
     createOtherRequiredDataQueryKey({did}),
   )
 }
+
+export function setOtherRequiredDataActorDeclarationCache({
+  did,
+  actorDeclaration,
+}: {
+  did: string
+  actorDeclaration: ChatBskyActorDeclaration.Main
+}) {
+  const prev = getOtherRequiredDataFromCache({did})
+  qc.setQueryData<OtherRequiredData>(createOtherRequiredDataQueryKey({did}), {
+    ...(prev || {}),
+    actorDeclaration: {
+      ...(prev?.actorDeclaration || {}),
+      ...actorDeclaration,
+    },
+  } as OtherRequiredData)
+}
+
 export async function prefetchOtherRequiredData({agent}: {agent: AtpAgent}) {
   const did = getDidFromAgentSession(agent)
 
@@ -420,7 +447,7 @@ export async function prefetchOtherRequiredData({agent}: {agent: AtpAgent}) {
 export function usePatchOtherRequiredData() {
   const {currentAccount} = useSession()
   return useCallback(
-    async (next: OtherRequiredData) => {
+    (next: OtherRequiredData) => {
       if (!currentAccount) return
       const did = currentAccount.did
       const prev = getOtherRequiredDataFromCache({did})
@@ -456,9 +483,9 @@ export function useOtherRequiredDataQuery() {
 }
 
 /**
- * Helper to prefetch all age assurance data.
+ * Helper to prefetch all age assurance data from the server.
  */
-export function prefetchAgeAssuranceData({agent}: {agent: AtpAgent}) {
+export function prefetchAgeAssuranceServerData({agent}: {agent: AtpAgent}) {
   return Promise.allSettled([
     // config fetch initiated at the top of the App.platform.tsx files, awaited here
     configPrefetchPromise,
@@ -467,8 +494,8 @@ export function prefetchAgeAssuranceData({agent}: {agent: AtpAgent}) {
   ])
 }
 
-export function clearAgeAssuranceDataForDid({did}: {did: string}) {
-  logger.debug(`clearAgeAssuranceDataForDid: ${did}`)
+export function clearAgeAssuranceServerDataForDid({did}: {did: string}) {
+  logger.debug(`clearAgeAssuranceServerDataForDid: ${did}`)
   qc.removeQueries({queryKey: createServerStateQueryKey({did}), exact: true})
   qc.removeQueries({
     queryKey: createOtherRequiredDataQueryKey({did}),
@@ -476,8 +503,8 @@ export function clearAgeAssuranceDataForDid({did}: {did: string}) {
   })
 }
 
-export function clearAgeAssuranceData() {
-  logger.debug(`clearAgeAssuranceData`)
+export function clearAgeAssuranceServerDataForAll() {
+  logger.debug(`clearAgeAssuranceServerDataForAll`)
   qc.clear()
 }
 
@@ -485,30 +512,30 @@ export function clearAgeAssuranceData() {
  * Context
  */
 
-export type AgeAssuranceData = {
+export type AgeAssuranceServerData = {
+  /**
+   * The raw config from the appview.
+   */
   config: AppBskyAgeassuranceDefs.Config | undefined
+  /**
+   * The raw state from the appview. Must be further processed before being useful.
+   */
   state: AppBskyAgeassuranceDefs.State | undefined
-  data:
-    | {
-        accountCreatedAt: AppBskyAgeassuranceDefs.StateMetadata['accountCreatedAt']
-        declaredAge: number | undefined
-        birthdate: string | undefined
-      }
-    | undefined
+  metadata: AgeAssuranceMetadata | undefined
 }
-export const AgeAssuranceDataContext = createContext<AgeAssuranceData>({
+const AgeAssuranceServerDataContext = createContext<AgeAssuranceServerData>({
   config: undefined,
   state: undefined,
-  data: {
+  metadata: {
     accountCreatedAt: undefined,
     declaredAge: undefined,
     birthdate: undefined,
   },
 })
-export function useAgeAssuranceDataContext() {
-  return useContext(AgeAssuranceDataContext)
+export function useAgeAssuranceServerDataContext() {
+  return useContext(AgeAssuranceServerDataContext)
 }
-export function AgeAssuranceDataProvider({
+export function AgeAssuranceServerDataProvider({
   children,
 }: {
   children: React.ReactNode
@@ -521,7 +548,8 @@ export function AgeAssuranceDataProvider({
     () => ({
       config,
       state,
-      data: {
+      metadata: {
+        // yes, it's weird, but accountCreatedAt comes back on the `getState` endpoint
         accountCreatedAt: metadata?.accountCreatedAt,
         declaredAge: data?.birthdate
           ? getAge(new Date(data.birthdate))
@@ -532,8 +560,8 @@ export function AgeAssuranceDataProvider({
     [config, state, data, metadata],
   )
   return (
-    <AgeAssuranceDataContext.Provider value={ctx}>
+    <AgeAssuranceServerDataContext.Provider value={ctx}>
       {children}
-    </AgeAssuranceDataContext.Provider>
+    </AgeAssuranceServerDataContext.Provider>
   )
 }

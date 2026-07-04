@@ -1,6 +1,6 @@
 {
   "name": "para.app",
-  "version": "1.123.0",
+  "version": "1.124.0",
   "private": true,
   "engines": {
     "node": ">=24.15.0",
@@ -13,7 +13,7 @@
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "11.5.0",
+      "version": "11.5.2",
       "onFail": "warn"
     },
     "runtime": {
@@ -69,7 +69,7 @@
     "seed:civic:reset": "node ./scripts/civic-seed/index.mjs reset",
     "seed:civic:test": "node --test ./scripts/civic-seed/lib.test.mjs",
     "seed:civic:dm-smoke": "node ./scripts/civic-seed/dm-smoke.mjs",
-    "lint": "eslint --cache --quiet src",
+    "lint": "eslint --cache --quiet src modules",
     "lint-native": "swiftlint ./modules && ktlint ./modules",
     "lint-native:fix": "swiftlint --fix ./modules && ktlint --format ./modules",
     "typecheck": "tsgo --project ./tsconfig.check.json",
@@ -102,7 +102,7 @@
     "icons:optimize": "svgo -f ./assets/icons"
   },
   "dependencies": {
-    "@atproto/api": "0.20.9",
+    "@atproto/api": "0.20.11",
     "@atproto/syntax": "0.6.1",
     "@bitdrift/react-native": "^0.6.8",
     "@braintree/sanitize-url": "^6.0.2",

@@ -2,6 +2,7 @@ import {ChatBskyConvoDefs, type ChatBskyGroupEnableJoinLink} from '@atproto/api'
 import {useMutation, useQueryClient} from '@tanstack/react-query'
 
 import {logger} from '#/logger'
+import {invalidateJoinLinkPreviewsForCode} from '#/state/queries/join-links'
 import {useAgent} from '#/state/session'
 import {
   rollbackConvoOptimistic,
@@ -59,6 +60,7 @@ export function useEnableJoinLink(
           }
         })
       }
+      void invalidateJoinLinkPreviewsForCode(queryClient, data.joinLink.code)
       onSuccess?.(data)
     },
     onError: (e, _variables, context) => {

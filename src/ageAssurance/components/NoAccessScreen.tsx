@@ -33,7 +33,7 @@ import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {BottomSheetOutlet} from '#/../modules/bottom-sheet'
 import {useAgeAssurance} from '#/ageAssurance'
-import {useAgeAssuranceDataContext} from '#/ageAssurance/data'
+import {useAgeAssuranceServerDataContext} from '#/ageAssurance/data'
 import {useComputeAgeAssuranceRegionAccess} from '#/ageAssurance/useComputeAgeAssuranceRegionAccess'
 import {
   isLegacyBirthdateBug,
@@ -52,7 +52,7 @@ export function NoAccessScreen() {
   const birthdateControl = useDialogControl()
   const deactivateAccountControl = useDialogControl()
   const deleteAccountControl = useDialogControl()
-  const {data} = useAgeAssuranceDataContext()
+  const {metadata} = useAgeAssuranceServerDataContext()
   const region = useAgeAssuranceRegionConfig()
   const isBirthdateUpdateAllowed = useIsBirthdateUpdateAllowed()
   const {logoutCurrentAccount} = useSessionApi()
@@ -61,15 +61,15 @@ export function NoAccessScreen() {
   const aa = useAgeAssurance()
   const isBlocked = aa.state.status === aa.Status.Blocked
   const isAARegion = !!region
-  const hasDeclaredAge = data?.declaredAge !== undefined
+  const hasDeclaredAge = metadata?.declaredAge !== undefined
   const canUpdateBirthday =
-    isBirthdateUpdateAllowed || isLegacyBirthdateBug(data?.birthdate || '')
+    isBirthdateUpdateAllowed || isLegacyBirthdateBug(metadata?.birthdate || '')
 
   useEffect(() => {
     // just counting overall hits here
     logger.metric(`blockedGeoOverlay:shown`, {})
     logger.metric(`ageAssurance:noAccessScreen:shown`, {
-      accountCreatedAt: data?.accountCreatedAt || 'unknown',
+      accountCreatedAt: metadata?.accountCreatedAt || 'unknown',
       isAARegion,
       hasDeclaredAge,
       canUpdateBirthday,

@@ -8,18 +8,20 @@ import {useUpdateActorDeclaration} from '#/state/queries/messages/actor-declarat
 import {useProfileQuery} from '#/state/queries/profile'
 import {useSession} from '#/state/session'
 import {ExportCarDialog} from '#/screens/Settings/components/ExportCarDialog'
-import {atoms as a} from '#/alf'
+import {atoms as a, useTheme} from '#/alf'
 import {AgeRestrictedScreen} from '#/components/ageAssurance/AgeRestrictedScreen'
 import {useAgeAssuranceCopy} from '#/components/ageAssurance/useAgeAssuranceCopy'
-import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
 import {Divider} from '#/components/Divider'
 import {resolveAllowGroupInvites} from '#/components/dms/util'
 import * as Toggle from '#/components/forms/Toggle'
+import {Bell_Stroke2_Corner0_Rounded as BellIcon} from '#/components/icons/Bell'
 import {Car_Stroke2_Corner2_Rounded as CarIcon} from '#/components/icons/Car'
+import {ChevronRight_Stroke2_Corner0_Rounded as ChevronRightIcon} from '#/components/icons/Chevron'
 import * as Layout from '#/components/Layout'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
+import {useAgeAssurance} from '#/ageAssurance'
 import {useAnalytics} from '#/analytics'
 import {IS_NATIVE} from '#/env'
 import {useBackgroundNotificationPreferences} from '../../../modules/expo-background-notification-handler/src/BackgroundNotificationHandlerProvider'
@@ -42,16 +44,20 @@ export function MessagesSettingsScreen(props: Props) {
 }
 
 export function MessagesSettingsScreenInner({}: Props) {
+  const t = useTheme()
   const {t: l} = useLingui()
   const ax = useAnalytics()
+  const aa = useAgeAssurance()
   const {currentAccount} = useSession()
   const {data: profile} = useProfileQuery({
     did: currentAccount!.did,
   })
   const {preferences, setPref} = useBackgroundNotificationPreferences()
+
   const exportCarControl = Dialog.useDialogControl()
 
   const isGroupChatEnabled = ax.features.enabled(ax.features.GroupChatsEnable)
+  const groupInvitesLocked = aa.flags.groupChatDisabled
 
   const allowMessagesFromOptions: {name: AllowIncoming; label: string}[] = [
     {
@@ -68,30 +74,23 @@ export function MessagesSettingsScreenInner({}: Props) {
     },
   ]
 
-  const allowGroupInvitesFromOptions: {name: AllowIncoming; label: string}[] =
-    [
-      {
-        name: 'all',
-        label: l({
-          context: 'allow group chat invites from',
-          message: `Everyone`,
-        }),
-      },
-      {
-        name: 'following',
-        label: l({
-          context: 'allow group chat invites from',
-          message: `Users I follow`,
-        }),
-      },
-      {
-        name: 'none',
-        label: l({
-          context: 'allow group chat invites from',
-          message: `No one`,
-        }),
-      },
-    ]
+  const allowGroupInvitesFromOptions: {name: AllowIncoming; label: string}[] = [
+    {
+      name: 'all',
+      label: l({context: 'allow group chat invites from', message: `Everyone`}),
+    },
+    {
+      name: 'following',
+      label: l({
+        context: 'allow group chat invites from',
+        message: `Users I follow`,
+      }),
+    },
+    {
+      name: 'none',
+      label: l({context: 'allow group chat invites from', message: `No one`}),
+    },
+  ]
 
   const {mutate: updateDeclaration} = useUpdateActorDeclaration({
     onError: () => {
@@ -138,91 +137,149 @@ export function MessagesSettingsScreenInner({}: Props) {
         <Layout.Header.Slot />
       </Layout.Header.Outer>
       <Layout.Content>
-        <View style={[a.p_lg, a.gap_md]}>
-          <Text style={[a.text_lg, a.font_semi_bold]}>
-            <Trans>Allow new messages from</Trans>
-          </Text>
-          <Toggle.Group
-            label={l`Allow new messages from`}
-            type="radio"
-            values={[
-              (profile?.associated?.chat?.allowIncoming as AllowIncoming) ??
-                'following',
-            ]}
-            onChange={onSelectMessagesFrom}>
-            <View>
-              {allowMessagesFromOptions.map(option => (
-                <Toggle.Item
-                  key={option.name}
-                  name={option.name}
-                  label={option.label}
-                  style={[a.justify_between, a.py_sm]}>
-                  <Toggle.LabelText>{option.label}</Toggle.LabelText>
-                  <Toggle.Radio />
-                </Toggle.Item>
-              ))}
-            </View>
-          </Toggle.Group>
-
-          {isGroupChatEnabled && (
+        <View style={[a.py_xl, a.gap_md]}>
+          <View style={[a.px_xl]}>
+            <Text style={[a.pb_xs, a.text_md, a.font_semi_bold, t.atoms.text]}>
+              <Trans>Allow direct messages from</Trans>
+            </Text>
+            <Text
+              style={[
+                a.pb_md,
+                a.text_sm,
+                a.leading_snug,
+                t.atoms.text_contrast_high,
+              ]}>
+              <Trans>
+                You can continue ongoing conversations regardless of which
+                setting you choose.
+              </Trans>
+            </Text>
+            <Toggle.Group
+              label={l`Allow direct messages from`}
+              type="radio"
+              values={[
+                (profile?.associated?.chat?.allowIncoming as AllowIncoming) ??
+                  'following',
+              ]}
+              onChange={onSelectMessagesFrom}>
+              <View>
+                {allowMessagesFromOptions.map(option => (
+                  <Toggle.Item
+                    key={option.name}
+                    highlightRow
+                    name={option.name}
+                    label={option.label}>
+                    {({selected}) => (
+                      <Toggle.RadioWithLabel
+                        label={option.label}
+                        selected={selected}
+                      />
+                    )}
+                  </Toggle.Item>
+                ))}
+              </View>
+            </Toggle.Group>
+          </View>
+          <Divider style={{marginVertical: 10}} />
+          {isGroupChatEnabled ? (
             <>
-              <Divider style={a.my_md} />
-              <Text style={[a.text_lg, a.font_semi_bold]}>
-                <Trans>Allow group chat invites from</Trans>
-              </Text>
-              <Toggle.Group
-                label={l`Allow group chat invites from`}
-                type="radio"
-                values={[resolveAllowGroupInvites(profile?.associated?.chat)]}
-                onChange={onSelectGroupInvitesFrom}>
-                <View>
-                  {allowGroupInvitesFromOptions.map(option => (
-                    <Toggle.Item
-                      key={option.name}
-                      name={option.name}
-                      label={option.label}
-                      style={[a.justify_between, a.py_sm]}>
-                      <Toggle.LabelText>{option.label}</Toggle.LabelText>
-                      <Toggle.Radio />
-                    </Toggle.Item>
-                  ))}
-                </View>
-              </Toggle.Group>
+              <View style={[a.px_xl]}>
+                <Text
+                  style={[a.pb_xs, a.text_md, a.font_semi_bold, t.atoms.text]}>
+                  <Trans>Allow group chat invites from</Trans>
+                </Text>
+                <Text
+                  style={[
+                    a.pb_md,
+                    a.text_sm,
+                    a.leading_snug,
+                    t.atoms.text_contrast_high,
+                  ]}>
+                  {groupInvitesLocked ? (
+                    <Trans>
+                      Group chats are only available to users 18 and over.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      You can continue ongoing conversations regardless of which
+                      setting you choose.
+                    </Trans>
+                  )}
+                </Text>
+                <Toggle.Group
+                  disabled={groupInvitesLocked}
+                  label={l`Allow group chat invites from`}
+                  type="radio"
+                  values={[
+                    groupInvitesLocked
+                      ? 'none'
+                      : resolveAllowGroupInvites(profile?.associated?.chat),
+                  ]}
+                  onChange={onSelectGroupInvitesFrom}>
+                  <View>
+                    {allowGroupInvitesFromOptions.map(option => (
+                      <Toggle.Item
+                        key={option.name}
+                        highlightRow
+                        name={option.name}
+                        label={option.label}>
+                        {({selected}) => (
+                          <Toggle.RadioWithLabel
+                            label={option.label}
+                            selected={selected}
+                          />
+                        )}
+                      </Toggle.Item>
+                    ))}
+                  </View>
+                </Toggle.Group>
+              </View>
+              <Divider style={{marginVertical: 10}} />
             </>
-          )}
-
-          <Divider style={a.my_md} />
-          <Button
-            label={l`Export chat data`}
-            variant="solid"
-            color="secondary"
-            size="small"
-            onPress={() => exportCarControl.open()}>
-            <ButtonIcon icon={CarIcon} />
-            <ButtonText>
-              <Trans>Export chat data</Trans>
-            </ButtonText>
-          </Button>
-
+          ) : null}
           {IS_NATIVE && (
             <>
-              <Divider style={a.my_md} />
-              <Text style={[a.text_lg, a.font_semi_bold]}>
-                <Trans>Notification Sounds</Trans>
-              </Text>
-              <Toggle.Item
-                name="playSoundChat"
-                label={l`Play sound for new messages`}
-                style={[a.justify_between, a.py_sm]}
-                onChange={onSelectSoundSetting}
-                value={preferences.playSoundChat}>
-                <Toggle.LabelText>
-                  <Trans>Play sound for new messages</Trans>
-                </Toggle.LabelText>
-                <Toggle.Switch />
-              </Toggle.Item>
+              <View style={[a.px_xl]}>
+                <Toggle.Item
+                  label={l`Notification sounds`}
+                  name="playSoundChat"
+                  value={preferences.playSoundChat}
+                  style={[a.flex_row, a.align_center, a.justify_between]}
+                  onChange={onSelectSoundSetting}>
+                  <BellIcon style={[a.mr_2xs, t.atoms.text]} size="lg" />
+                  <Text
+                    style={[
+                      a.flex_1,
+                      a.text_md,
+                      a.font_semi_bold,
+                      t.atoms.text,
+                    ]}>
+                    <Trans>Notification sounds</Trans>
+                  </Text>
+                  <Toggle.Switch />
+                </Toggle.Item>
+              </View>
+              <Divider style={{marginVertical: 10}} />
             </>
           )}
+          <View style={[a.px_xl]}>
+            <Toggle.Item
+              label={l`Export my chat data`}
+              name="playSoundChat"
+              value={preferences.playSoundChat}
+              style={[a.flex_row, a.align_center, a.justify_between]}
+              onChange={() => {
+                exportCarControl.open()
+              }}>
+              <CarIcon style={[a.mr_2xs, t.atoms.text]} size="lg" />
+              <Text
+                style={[a.flex_1, a.text_md, a.font_semi_bold, t.atoms.text]}>
+                <Trans>Export my chat data</Trans>
+              </Text>
+              <ChevronRightIcon style={[a.ml_2xs, t.atoms.text]} size="lg" />
+            </Toggle.Item>
+          </View>
+          <Divider style={{marginVertical: 10}} />
         </View>
       </Layout.Content>
       <ExportCarDialog control={exportCarControl} />

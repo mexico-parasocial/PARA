@@ -6,9 +6,9 @@ import {
   type AppBskyEmbedRecordWithMedia,
   type AppBskyEmbedVideo,
   AppBskyFeedPost,
-  AtUri,
   BlobRef,
   type BskyAgent,
+  ChatBskyGroupDefs,
   type ComAtprotoLabelDefs,
   type ComAtprotoRepoApplyWrites,
   type ComAtprotoRepoStrongRef,
@@ -105,8 +105,6 @@ interface PostOpts {
   /** Para-specific: community slug for feed indexing */
   community?: string
 }
-
-
 
 export async function post(
   agent: BskyAgent,
@@ -497,7 +495,10 @@ async function resolveMedia(
         },
       }
     }
-    if (resolvedLink.type === 'chat-invite' && resolvedLink.view) {
+    if (
+      resolvedLink.type === 'chat-invite' &&
+      ChatBskyGroupDefs.isJoinLinkPreviewView(resolvedLink.view)
+    ) {
       return {
         $type: 'app.bsky.embed.external',
         external: {
@@ -576,7 +577,6 @@ function prepareForHashing(v: unknown): unknown {
     const obj: Record<string, unknown> = {}
     let pure = true
     for (const key in v) {
-
       let value = v[key]
       // `value` is undefined
       if (value === undefined) {
@@ -595,7 +595,6 @@ function prepareForHashing(v: unknown): unknown {
   return v
 }
 
- 
 function isPlainObject(v: unknown): boolean {
   if (typeof v !== 'object' || v === null) {
     return false

@@ -1,5 +1,6 @@
 import {View} from 'react-native'
 import {
+  ChatBskyGroupDefs,
   ChatBskyGroupRequestJoin,
   ChatBskyGroupWithdrawJoinRequest,
   moderateProfile,
@@ -14,7 +15,7 @@ import {isNetworkError} from '#/lib/strings/errors'
 import {sanitizeHandle} from '#/lib/strings/handles'
 import {logger} from '#/logger'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
-import {useJoinLinkPreviewsQuery} from '#/state/queries/join-link'
+import {useJoinLinkPreviewsQuery} from '#/state/queries/join-links'
 import {useRequestJoinGroupChat} from '#/state/queries/messages/request-join-group-chat'
 import {useWithdrawJoinGroupChatRequest} from '#/state/queries/messages/withdraw-join-group-chat'
 import {useSession} from '#/state/session'
@@ -40,6 +41,7 @@ import {InlineLinkText} from '#/components/Link'
 import {Loader} from '#/components/Loader'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
+import type * as bsky from '#/types/bsky'
 import {ProfileBadges} from '../ProfileBadges'
 
 export function GroupChatJoinDialog() {
@@ -211,7 +213,7 @@ function GroupChatJoinDialogContent({code}: {code?: string}) {
 
   const joinLinkPreview = data.joinLinkPreviews[0]
 
-  if (!joinLinkPreview) {
+  if (!ChatBskyGroupDefs.isJoinLinkPreviewView(joinLinkPreview)) {
     return (
       <>
         <View style={[a.py_lg, a.align_center]}>
@@ -253,12 +255,7 @@ function GroupChatJoinDialogContent({code}: {code?: string}) {
     ? l`Request to join`
     : l`Join`
   let buttonColor: ButtonColor = 'primary'
-  if (joinLinkPreview.enabledStatus !== 'enabled') {
-    canJoin = false
-    ButtonIconImage = WarningIcon
-    buttonText = l`Chat invite link no longer available`
-    buttonColor = 'secondary'
-  } else if (joinLinkPreview.memberCount >= joinLinkPreview.memberLimit) {
+  if (joinLinkPreview.memberCount >= joinLinkPreview.memberLimit) {
     canJoin = false
     ButtonIconImage = HandIcon
     buttonText = l`This chat is full`
@@ -278,11 +275,12 @@ function GroupChatJoinDialogContent({code}: {code?: string}) {
     <>
       <View style={[a.py_lg, a.align_center]}>
         <AvatarBubbles
-          profiles={[
-            joinLinkPreview.owner,
-            ...Array(joinLinkPreview.memberCount - 1).fill(undefined),
-          ]}
-          self
+          profiles={
+            [
+              joinLinkPreview.owner,
+              ...Array(joinLinkPreview.memberCount - 1).fill(undefined),
+            ].filter(Boolean) as bsky.profile.AnyProfileView[]
+          }
           size={135}
         />
         <View style={[a.gap_sm, a.align_center, a.mt_lg]}>
@@ -311,10 +309,7 @@ function GroupChatJoinDialogContent({code}: {code?: string}) {
               </Trans>
             </Text>
             <View style={[a.flex_row, a.ml_md]}>
-              <PersonGroupIcon
-                size="xs"
-                style={[a.mr_xs, t.atoms.text, {marginTop: -2}]}
-              />
+              <PersonGroupIcon size="xs" style={[a.mr_xs, t.atoms.text]} />
             </View>
             <Text
               style={[a.text_center, a.text_xs, a.leading_snug, t.atoms.text]}>
@@ -371,7 +366,7 @@ function GroupChatJoinDialogContent({code}: {code?: string}) {
                 </InlineLinkText>
               </Text>
               <ProfileBadges
-                profile={data.joinLinkPreviews[0].owner}
+                profile={joinLinkPreview.owner}
                 size="sm"
                 style={{marginTop: -3}}
               />

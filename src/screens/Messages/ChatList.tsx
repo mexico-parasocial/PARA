@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useMemo, useState} from 'react'
-import {View} from 'react-native'
+import {type ListRenderItem, View} from 'react-native'
 import {useAnimatedRef} from 'react-native-reanimated'
-import {type ChatBskyActorGetStatus, type ChatBskyConvoDefs} from '@atproto/api'
+import {type ChatBskyActorGetStatus, ChatBskyConvoDefs} from '@atproto/api'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {useFocusEffect, useIsFocused} from '@react-navigation/native'
 import {type NativeStackScreenProps} from '@react-navigation/native-stack'
@@ -230,6 +230,7 @@ export function ChatList({
   const t = useTheme()
   const {t: l} = useLingui()
   const {currentAccount} = useSession()
+  const aa = useAgeAssurance()
   const scrollElRef: ListRef = useAnimatedRef()
   const {isWithinSplitView} = useIsWithinSplitView()
 
@@ -262,6 +263,7 @@ export function ChatList({
 
   const {refetch: refetchInbox} = useListConvosQuery({
     status: 'request',
+    kind: aa.flags.groupChatDisabled ? 'direct' : 'all',
   })
 
   const {
@@ -383,6 +385,7 @@ export function ChatList({
             isError={isError}
             error={error}
             isWithinSplitView={isWithinSplitView}
+            // eslint-disable-next-line @typescript-eslint/no-misused-promises
             onRetry={refetch}
             onNewChat={wrappedOpenChatControl}
             chatDisabled={!!chatStatus?.chatDisabled}
@@ -393,11 +396,11 @@ export function ChatList({
   }
 
   return (
-    <List<ListItem>
+    <List
       ref={scrollElRef}
       data={listItems}
-      renderItem={renderItem}
-      keyExtractor={keyExtractor}
+      renderItem={renderItem as ListRenderItem<unknown>}
+      keyExtractor={keyExtractor as (item: unknown, index: number) => string}
       refreshing={isPTRing}
       onRefresh={() => void onRefresh()}
       onEndReached={() => void onEndReached()}
@@ -560,6 +563,7 @@ export function Header({
 }) {
   const {t: l} = useLingui()
   const {gtMobile} = useBreakpoints()
+  const aa = useAgeAssurance()
   const requireEmailVerification = useRequireEmailVerification()
   const leftConvos = useLeftConvos()
   const {isWithinSplitView} = useIsWithinSplitView()
@@ -573,6 +577,7 @@ export function Header({
     useListConvosQuery({
       status: 'request',
       readState: 'unread',
+      kind: aa.flags.groupChatDisabled ? 'direct' : 'all',
     })
 
   const inboxAllConvos = useMemo(() => {
@@ -583,10 +588,15 @@ export function Header({
           convo =>
             !leftConvos.includes(convo.id) &&
             !convo.muted &&
-            convo.members.every(member => member.handle !== 'missing.invalid'),
+            convo.members.every(
+              member => member.handle !== 'missing.invalid',
+            ) &&
+            (ChatBskyConvoDefs.isGroupConvo(convo.kind)
+              ? !aa.flags.groupChatDisabled
+              : true),
         ) ?? []
     )
-  }, [unreadInboxData, leftConvos])
+  }, [unreadInboxData, leftConvos, aa.flags.groupChatDisabled])
 
   const openChatControl = useCallback(() => {
     newChatControl.open()

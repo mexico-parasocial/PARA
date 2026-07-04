@@ -24,9 +24,9 @@ import {createStaticClick, SimpleInlineLinkText} from '#/components/Link'
 import {Loader} from '#/components/Loader'
 import {usePreemptivelyCompleteActivePolicyUpdate} from '#/components/PolicyUpdateOverlay/usePreemptivelyCompleteActivePolicyUpdate'
 import * as Toast from '#/components/Toast'
+import {MIN_ACCESS_AGE} from '#/ageAssurance/const'
 import {
   isUnderAge,
-  MIN_ACCESS_AGE,
   useAgeAssuranceRegionConfigWithFallback,
 } from '#/ageAssurance/util'
 import {useAnalytics} from '#/analytics'
@@ -208,6 +208,7 @@ export function StepInfo({
                     keyboardType="email-address"
                     returnKeyType="next"
                     submitBehavior={native('submit')}
+                    // eslint-disable-next-line react-hooks/refs
                     onSubmitEditing={native(() =>
                       emailInputRef.current?.focus(),
                     )}
@@ -244,6 +245,7 @@ export function StepInfo({
                   keyboardType="email-address"
                   returnKeyType="next"
                   submitBehavior={native('submit')}
+                  // eslint-disable-next-line react-hooks/refs
                   onSubmitEditing={native(() =>
                     passwordInputRef.current?.focus(),
                   )}
@@ -272,6 +274,7 @@ export function StepInfo({
                   autoCapitalize="none"
                   returnKeyType="next"
                   submitBehavior={native('blurAndSubmit')}
+                  // eslint-disable-next-line react-hooks/refs
                   onSubmitEditing={native(() =>
                     birthdateInputRef.current?.focus(),
                   )}

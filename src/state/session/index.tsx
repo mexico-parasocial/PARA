@@ -38,8 +38,8 @@ import {
 } from '#/state/session/types'
 import {useOnboardingDispatch} from '#/state/shell/onboarding'
 import {
-  clearAgeAssuranceData,
-  clearAgeAssuranceDataForDid,
+  clearAgeAssuranceServerDataForAll,
+  clearAgeAssuranceServerDataForDid,
 } from '#/ageAssurance/data'
 
 const StateContext = createContext<SessionStateContext>({
@@ -55,8 +55,8 @@ AgentContext.displayName = 'SessionAgentContext'
 const ApiContext = createContext<SessionApiContext>({
   createAccount: async () => {},
   login: async () => {},
-  logoutCurrentAccount: async () => {},
-  logoutEveryAccount: async () => {},
+  logoutCurrentAccount: () => {},
+  logoutEveryAccount: () => {},
   resumeSession: async () => {},
   removeAccount: () => {},
   partialRefreshSession: async () => {},
@@ -102,7 +102,7 @@ class SessionStore {
         ),
       }
       addSessionDebugLog({type: 'persisted:broadcast', data: persistedData})
-      persisted.write('session', persistedData)
+      void persisted.write('session', persistedData)
     }
     this.listeners.forEach(listener => listener())
   }
@@ -229,7 +229,9 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
         if (currentAccount && isLikelyLocalServiceUrl(currentAccount.service)) {
           userActionHistory.reset()
         }
-        clearAgeAssuranceDataForDid({did: prevState.currentAgentState.did})
+        clearAgeAssuranceServerDataForDid({
+          did: prevState.currentAgentState.did,
+        })
         void clearPersistedQueryStorage(prevState.currentAgentState.did)
       }
       // reset onboarding flow on logout
@@ -260,7 +262,7 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
         },
       )
       addSessionDebugLog({type: 'method:end', method: 'logout'})
-      clearAgeAssuranceData()
+      clearAgeAssuranceServerDataForAll()
       if (
         prevState.accounts.some(account =>
           isLikelyLocalServiceUrl(account.service),
@@ -344,7 +346,7 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
         accountDid: account.did,
       })
       addSessionDebugLog({type: 'method:end', method: 'removeAccount', account})
-      clearAgeAssuranceDataForDid({did: account.did})
+      clearAgeAssuranceServerDataForDid({did: account.did})
     },
     [store, cancelPendingTask],
   )
@@ -368,7 +370,7 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
            * follower tabs. Follower tabs will therefore receive the fresh
            * session. See APP-1960, or ask Eric.
            */
-          resumeSession(syncedAccount)
+          void resumeSession(syncedAccount)
         } else {
           const agent = state.currentAgentState.agent as BskyAgent
           const prevSession = agent.session
@@ -417,6 +419,7 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
   )
 
   // @ts-expect-error window type is not declared, debug only
+  // eslint-disable-next-line react-hooks/immutability
   if (__DEV__ && IS_WEB) window.agent = state.currentAgentState.agent
 
   const agent = state.currentAgentState.agent as BskyAppAgent

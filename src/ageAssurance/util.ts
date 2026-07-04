@@ -1,34 +1,21 @@
 import {useMemo} from 'react'
 import {
-  ageAssuranceRuleIDs as ids,
   type AppBskyAgeassuranceDefs,
   getAgeAssuranceRegionConfig,
   type ModerationPrefs,
 } from '@atproto/api'
 
 import {getAge} from '#/lib/strings/time'
-import {DEFAULT_LOGGED_OUT_LABEL_PREFERENCES} from '#/state/queries/preferences/moderation'
-import {useAgeAssuranceDataContext} from '#/ageAssurance/data'
-import {AgeAssuranceAccess} from '#/ageAssurance/types'
+import {DEFAULT_LOGGED_OUT_LABEL_PREFERENCES} from '#/state/queries/preferences/const'
+import {FALLBACK_REGION_CONFIG, MIN_ACCESS_AGE} from '#/ageAssurance/const'
+import {useAgeAssuranceServerDataContext} from '#/ageAssurance/data'
+import {
+  AgeAssuranceAccess,
+  type AgeAssuranceFlags,
+  type AgeAssuranceMetadata,
+  type AgeAssuranceState,
+} from '#/ageAssurance/types'
 import {type Geolocation, useGeolocation} from '#/geolocation'
-
-export const MIN_ACCESS_AGE = 13
-const FALLBACK_REGION_CONFIG: AppBskyAgeassuranceDefs.ConfigRegion = {
-  countryCode: '*',
-  regionCode: undefined,
-  minAccessAge: MIN_ACCESS_AGE,
-  rules: [
-    {
-      $type: ids.IfDeclaredOverAge,
-      age: MIN_ACCESS_AGE,
-      access: AgeAssuranceAccess.Full,
-    },
-    {
-      $type: ids.Default,
-      access: AgeAssuranceAccess.Full, // LOCAL DEV: bypass (PDS lacks ageassurance endpoints)
-    },
-  ],
-}
 
 /**
  * Get age assurance region config based on geolocation, with fallback to
@@ -56,7 +43,7 @@ export function getAgeAssuranceRegionConfigWithFallback(
  */
 export function useAgeAssuranceRegionConfig() {
   const geolocation = useGeolocation()
-  const {config} = useAgeAssuranceDataContext()
+  const {config} = useAgeAssuranceServerDataContext()
   return useMemo(() => {
     if (!config) return
     // use generic helper, we want to potentially return undefined
@@ -109,3 +96,38 @@ export const makeAgeRestrictedModerationPrefs = (
   adultContentEnabled: false,
   labels: DEFAULT_LOGGED_OUT_LABEL_PREFERENCES,
 })
+
+export function computeAgeAssuranceFlags({
+  state,
+  regionConfig,
+  metadata,
+}: {
+  state: AgeAssuranceState
+  regionConfig: AppBskyAgeassuranceDefs.ConfigRegion
+  metadata?: AgeAssuranceMetadata
+}): AgeAssuranceFlags {
+  const isAgeRestricted = state.access !== AgeAssuranceAccess.Full
+  const chatDisabled = isAgeRestricted
+  const isDeclaredUnderAdultAge = metadata?.declaredAge
+    ? metadata.declaredAge < 18
+    : true
+  const groupChatDisabled = chatDisabled || isDeclaredUnderAdultAge
+  const isOverRegionMinAccessAge = metadata?.declaredAge
+    ? metadata.declaredAge >= regionConfig.minAccessAge
+    : false
+  const isOverAppMinAccessAge = metadata?.declaredAge
+    ? metadata.declaredAge >= MIN_ACCESS_AGE
+    : false
+  const adultContentDisabled =
+    state.access !== AgeAssuranceAccess.Full || isDeclaredUnderAdultAge
+
+  return {
+    isAgeRestricted,
+    adultContentDisabled,
+    chatDisabled,
+    groupChatDisabled,
+    isDeclaredUnderAdultAge,
+    isOverRegionMinAccessAge,
+    isOverAppMinAccessAge,
+  }
+}

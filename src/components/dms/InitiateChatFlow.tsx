@@ -36,6 +36,7 @@ import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/Ti
 import * as ProfileCard from '#/components/ProfileCard'
 import * as Prompt from '#/components/Prompt'
 import {Text} from '#/components/Typography'
+import {useAgeAssurance} from '#/ageAssurance'
 import {IS_NATIVE, IS_WEB} from '#/env'
 import type * as bsky from '#/types/bsky'
 import {ChatProfileTabs} from './ChatProfileTabs'
@@ -209,6 +210,7 @@ export function InitiateChatFlow({
   const [footerHeight, setFooterHeight] = useState(0)
   const listRef = useRef<ListMethods>(null)
   const {currentAccount} = useSession()
+  const aa = useAgeAssurance()
   const inputRef = useRef<TextInput>(null)
   const accountTooNewPromptControl = Dialog.useDialogControl()
 
@@ -330,7 +332,11 @@ export function InitiateChatFlow({
       })
     }
 
-    if (chatState === ChatState.NEW_CHAT && searchText === '') {
+    if (
+      chatState === ChatState.NEW_CHAT &&
+      searchText === '' &&
+      !aa.flags.groupChatDisabled
+    ) {
       _items.unshift({type: 'newGroupChat', key: 'newGroupChat'})
     }
 
@@ -344,6 +350,7 @@ export function InitiateChatFlow({
     results,
     currentAccount?.did,
     follows,
+    aa.flags.groupChatDisabled,
   ])
 
   if (searchText && !isFetching && !items.length && !isError) {
@@ -775,7 +782,6 @@ function NewGroupChatButton({
   const t = useTheme()
   const {t: l} = useLingui()
 
-
   return (
     <Button
       label={l({
@@ -784,7 +790,7 @@ function NewGroupChatButton({
         comment: 'Button used to create a new group chat.',
       })}
       onPress={onPress}>
-    {({hovered, pressed, focused}) => (
+      {({hovered, pressed, focused}) => (
         <View
           style={[
             a.px_lg,

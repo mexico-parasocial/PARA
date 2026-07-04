@@ -56,6 +56,7 @@ import {
   type AppBskyUnspeccedGetPostThreadV2,
   AtUri,
   type BskyAgent,
+  ChatBskyGroupDefs,
   RichText,
 } from '@atproto/api'
 import {msg, plural} from '@lingui/core/macro'
@@ -66,7 +67,6 @@ import {useQueries, useQueryClient} from '@tanstack/react-query'
 
 import * as apilib from '#/lib/api/index'
 import {EmbeddingDisabledError} from '#/lib/api/resolve'
-import {resolveLinkQueryOptions} from '#/state/queries/resolve-link'
 import {useAppState} from '#/lib/appState'
 import {retry} from '#/lib/async/retry'
 import {until} from '#/lib/async/until'
@@ -115,6 +115,7 @@ import {
 } from '#/state/preferences/languages'
 import {usePreferencesQuery} from '#/state/queries/preferences'
 import {useProfileQuery} from '#/state/queries/profile'
+import {resolveLinkQueryOptions} from '#/state/queries/resolve-link'
 import {useAgent, useSession} from '#/state/session'
 import {useCompassFilter} from '#/state/shell/compass-filter'
 import {useComposerControls} from '#/state/shell/composer'
@@ -159,7 +160,14 @@ import * as Prompt from '#/components/Prompt'
 import * as Toast from '#/components/Toast'
 import {Text as NewText} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
-import {IS_ANDROID, IS_IOS, IS_LIQUID_GLASS, IS_NATIVE, IS_WEB} from '#/env'
+import {
+  IS_ANDROID,
+  IS_IOS,
+  IS_LIQUID_GLASS,
+  IS_NATIVE,
+  IS_WEB,
+  IS_WEB_SAFARI,
+} from '#/env'
 import {type Gif} from '#/features/gifPicker/types'
 import {BottomSheetPortalProvider} from '../../../../modules/bottom-sheet'
 import {DraftsButton} from './drafts/DraftsButton'
@@ -408,7 +416,7 @@ export const ComposePost = ({
           abortController,
         },
       })
-      processVideo(
+      void processVideo(
         asset,
         videoAction => {
           composerDispatch({
@@ -556,7 +564,7 @@ export const ComposePost = ({
         }
 
         // Start video compression and upload
-        processVideo(
+        void processVideo(
           asset,
           videoAction => {
             composerDispatch({
@@ -639,7 +647,7 @@ export const ComposePost = ({
       // This is async but we don't await - videos process in the background
       for (const [postIndex, videoInfo] of restoredVideos) {
         const postId = posts[postIndex].id
-        restoreVideo(postId, videoInfo)
+        void restoreVideo(postId, videoInfo)
       }
     },
     [composerDispatch, restoreVideo, ax],
@@ -819,7 +827,9 @@ export const ComposePost = ({
     })),
   })
   const hasUnavailableChatInvite = linkQueries.some(
-    q => q.data?.type === 'chat-invite' && !q.data.view,
+    q =>
+      q.data?.type === 'chat-invite' &&
+      !ChatBskyGroupDefs.isJoinLinkPreviewView(q.data.view),
   )
 
   const canPost =
@@ -1151,7 +1161,7 @@ export const ComposePost = ({
   // Preserves the referential identity passed to each post item.
   // Avoids re-rendering all posts on each keystroke.
   const onComposerPostPublish = useNonReactiveCallback(() => {
-    onPressPublish()
+    void onPressPublish()
   })
 
   useEffect(() => {
@@ -1169,11 +1179,12 @@ export const ComposePost = ({
         }
       }
       if (erroredVideos > 0) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setPublishOnUpload(false)
       } else if (uploadingVideos === 0) {
         setPublishOnUpload(false)
         if (!isPublishing && !error) {
-          onPressPublish()
+          void onPressPublish()
         }
       }
     }
@@ -1196,8 +1207,10 @@ export const ComposePost = ({
   }
 
   const scrollViewRef = useAnimatedRef<Animated.ScrollView>()
+  // eslint-disable-next-line react-hooks/immutability
   useEffect(() => {
     if (composerState.mutableNeedsFocusActive) {
+      // eslint-disable-next-line react-hooks/immutability
       composerState.mutableNeedsFocusActive = false
       // On Android, this risks getting the cursor stuck behind the keyboard.
       // Not worth it.
@@ -1206,6 +1219,24 @@ export const ComposePost = ({
       }
     }
   }, [composerState])
+
+  useEffect(() => {
+    // Safari ignores `overscroll-behavior`, so horizontal trackpad swipes over
+    // the composer (e.g. on a quote post) can still trigger the browser's
+    // back/forward navigation gesture. Suppress predominantly-horizontal wheel
+    // events so the history-nav gesture never fires. Chrome and Firefox are
+    // covered by the `overscrollBehaviorX: 'contain'` style on the ScrollView.
+    if (!IS_WEB_SAFARI) return
+    const el =
+      scrollViewRef.current?.getScrollableNode() as unknown as HTMLElement | null
+    if (!el) return
+    const onWheel = (e: WheelEvent) => {
+      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return
+      e.preventDefault()
+    }
+    el.addEventListener('wheel', onWheel, {passive: false})
+    return () => el.removeEventListener('wheel', onWheel)
+  }, [scrollViewRef])
 
   const isLastThreadedPost = thread.posts.length > 1 && nextPost === undefined
   const {
@@ -1286,9 +1317,11 @@ export const ComposePost = ({
             publishingStage={publishingStage}
             topBarAnimatedStyle={topBarAnimatedStyle}
             onCancel={onPressCancel}
+            // eslint-disable-next-line @typescript-eslint/no-misused-promises
             onPublish={onPressPublish}
             draftsButton={
               <DraftsButton
+                // eslint-disable-next-line @typescript-eslint/no-misused-promises
                 onSelectDraft={handleSelectDraft}
                 onSaveDraft={handleSaveDraft}
                 onDiscard={onClose}
@@ -1319,7 +1352,18 @@ export const ComposePost = ({
             layout={native(LinearTransition)}
             onScroll={scrollHandler}
             contentContainerStyle={a.flex_grow}
-            style={a.flex_1}
+            style={[
+              a.flex_1,
+              web({
+                scrollbarGutter: 'stable',
+                scrollbarColor: `${_t.palette.contrast_200} transparent`,
+                // Prevent horizontal trackpad swipes from triggering the
+                // browser's back/forward overscroll-navigation gesture.
+                // Handles Chrome and Firefox; Safari is handled separately
+                // via a wheel listener since it ignores overscroll-behavior.
+                overscrollBehaviorX: 'contain',
+              }),
+            ]}
             keyboardShouldPersistTaps="always"
             onContentSizeChange={onScrollViewContentSizeChange}
             onLayout={onScrollViewLayout}>
@@ -1394,6 +1438,7 @@ export const ComposePost = ({
                       ? _(msg`Save changes`)
                       : _(msg`Save draft`)
                   }
+                  // eslint-disable-next-line @typescript-eslint/no-misused-promises
                   onPress={handleSaveDraft}
                   color="primary"
                 />
@@ -1581,6 +1626,7 @@ let ComposerPost = memo(function ComposerPost({
               postId: post.id,
             })
           }}
+          // eslint-disable-next-line @typescript-eslint/no-misused-promises
           onPhotoPasted={onPhotoPasted}
           onNewLink={onNewLink}
           onError={onError}
@@ -1935,8 +1981,10 @@ function ComposerPills({
 
   const checkScroll = useCallback(() => {
     if (scrollRef.current) {
-      // @ts-ignore
-      const node = scrollRef.current.getScrollableNode()
+      const node = scrollRef.current.getScrollableNode() as
+        | HTMLElement
+        | null
+        | undefined
       if (node) {
         setScrollState({
           left: node.scrollLeft > 1,
@@ -1965,8 +2013,10 @@ function ComposerPills({
   const scroll = useCallback(
     (direction: 'left' | 'right') => {
       if (scrollRef.current) {
-        // @ts-ignore
-        const node = scrollRef.current.getScrollableNode()
+        const node = scrollRef.current.getScrollableNode() as
+          | HTMLElement
+          | null
+          | undefined
         if (node) {
           const amount = direction === 'left' ? -200 : 200
           node.scrollBy({left: amount, behavior: 'smooth'})
@@ -2167,6 +2217,7 @@ function ComposerFooter({
 
   useEffect(() => {
     if (openGallery) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShouldOpenGallery(true)
       const timer = setTimeout(() => setShouldOpenGallery(false), 100)
       return () => clearTimeout(timer)
@@ -2246,9 +2297,9 @@ function ComposerFooter({
               })
               imagesToAdd.push(composerImage)
             }),
-          ).catch(e => {
+          ).catch((e: unknown) => {
             logger.error(`createComposerImage failed`, {
-              safeMessage: e.message,
+              safeMessage: (e as Error)?.message,
             })
           })
 

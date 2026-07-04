@@ -8,7 +8,14 @@ import {
   useRef,
   useState,
 } from 'react'
-import {FlatList, Pressable, useWindowDimensions, View} from 'react-native'
+import {
+  FlatList,
+  Pressable,
+  type StyleProp,
+  useWindowDimensions,
+  View,
+  type ViewStyle,
+} from 'react-native'
 import Animated, {
   type AnimatedRef,
   useAnimatedRef,
@@ -49,7 +56,7 @@ interface GalleryProps {
   images: AppBskyEmbedImages.ViewImage[]
   onPress?: (
     index: number,
-    containerRefs: AnimatedRef<any>[],
+    containerRefs: AnimatedRef<View>[],
     fetchedDims: (Dimensions | null)[],
   ) => void
   onPressIn?: (index: number) => void
@@ -77,12 +84,17 @@ export function GalleryBleed({children}: {children: React.ReactNode}) {
     throw new Error('GalleryBleed children must be a single React element')
   }
 
-  const node = children as React.ReactElement<any>
+  const node = children as React.ReactElement<{
+    ref?: React.Ref<unknown>
+    onLayout?: (e: {nativeEvent: {layout: {width: number}}}) => void
+    style?: StyleProp<ViewStyle>
+  }>
 
   return (
     <Context.Provider value={{bleedRef: ref, bleedWidth}}>
       {cloneElement(node, {
-        ref: mergeRefs([ref, node?.props?.ref]),
+        // eslint-disable-next-line react-hooks/refs
+        ref: mergeRefs([ref, node.props.ref]),
         onLayout: (e: {nativeEvent: {layout: {width: number}}}) => {
           setBleedWidth(e.nativeEvent.layout.width)
           node.props.onLayout?.(e)
@@ -159,7 +171,7 @@ export function Gallery({
   const flatListRef = useRef<FlatList>(null)
   const itemWidthsRef = useRef<Map<number, number>>(new Map())
   const itemRefsRef = useRef<Map<number, View>>(new Map())
-  const containerRefsRef = useRef<Map<number, AnimatedRef<any>>>(new Map())
+  const containerRefsRef = useRef<Map<number, AnimatedRef<View>>>(new Map())
   const thumbDimsRef = useRef<Map<number, Dimensions>>(new Map())
   const currentIndexRef = useRef(0)
 
@@ -273,11 +285,13 @@ export function Gallery({
           alwaysBounceVertical={false}
           scrollEventThrottle={16}
           data={images}
-          keyExtractor={(item, index) => item.thumb + index}
+          keyExtractor={(item: AppBskyEmbedImages.ViewImage, index: number) =>
+            item.thumb + index
+          }
           renderItem={({item, index}) => {
             const openLightboxAtIndex = onPress
               ? () => {
-                  const refs: AnimatedRef<any>[] = []
+                  const refs: AnimatedRef<View>[] = []
                   const dims: (Dimensions | null)[] = []
                   for (let i = 0; i < images.length; i++) {
                     refs.push(containerRefsRef.current.get(i)!)
@@ -395,7 +409,7 @@ function GalleryImage({
   itemRef: (node: View | null) => void
   hideBadges?: boolean
   largeAltBadge?: boolean
-  onContainerRef: (index: number, ref: AnimatedRef<any>) => void
+  onContainerRef: (index: number, ref: AnimatedRef<View>) => void
   onThumbDims: (index: number, dims: Dimensions) => void
   onPress?: () => void
   onPressIn?: () => void
@@ -481,6 +495,38 @@ function GalleryImage({
             }}
           />
 
+          {!hideBadges && imageCount > 1 ? (
+            <View
+              accessible={false}
+              pointerEvents="none"
+              style={[
+                a.absolute,
+                a.justify_center,
+                a.rounded_sm,
+                a.p_xs,
+                t.atoms.bg_contrast_25,
+                {
+                  top: a.p_xs.padding,
+                  right: a.p_xs.padding,
+                  opacity: 0.8,
+                },
+                largeAltBadge && {
+                  padding: 6,
+                },
+              ]}>
+              <Text
+                style={[
+                  a.font_bold,
+                  largeAltBadge ? a.text_xs : {fontSize: 8},
+                ]}>
+                <Trans
+                  context="gallery-badge-image-position-numbers"
+                  comment="Badge showing the current image position out of the total number of images in a gallery.">
+                  {index + 1}/{imageCount}
+                </Trans>
+              </Text>
+            </View>
+          ) : null}
           {(hasAlt || isCropped) && !hideBadges ? (
             <View
               accessible={false}

@@ -26,6 +26,25 @@ export const deviceGeolocation: Geolocation | undefined =
       }
     : undefined
 
+export const otherRequiredData: OtherRequiredData = {
+  birthdate: new Date(2010, 12, 1).toISOString(),
+}
+
+const serverStateEnabled = false || IS_E2E
+export const serverState: AppBskyAgeassuranceGetState.OutputSchema | undefined =
+  serverStateEnabled
+    ? {
+        state: {
+          lastInitiatedAt: new Date(2025, 1, 1).toISOString(),
+          status: 'assured',
+          access: 'safe',
+        },
+        metadata: {
+          accountCreatedAt: new Date(2023, 1, 1).toISOString(),
+        },
+      }
+    : undefined
+
 export const config: AppBskyAgeassuranceDefs.Config = {
   regions: [
     {
@@ -52,25 +71,6 @@ export const config: AppBskyAgeassuranceDefs.Config = {
     },
   ],
 }
-
-export const otherRequiredData: OtherRequiredData = {
-  birthdate: new Date(2000, 1, 1).toISOString(),
-}
-
-const serverStateEnabled = false || IS_E2E
-export const serverState: AppBskyAgeassuranceGetState.OutputSchema | undefined =
-  serverStateEnabled
-    ? {
-        state: {
-          lastInitiatedAt: new Date(2025, 1, 1).toISOString(),
-          status: 'assured',
-          access: 'safe',
-        },
-        metadata: {
-          accountCreatedAt: new Date(2023, 1, 1).toISOString(),
-        },
-      }
-    : undefined
 
 export async function resolve<T>(data: T) {
   await new Promise(y => setTimeout(y, 500)) // simulate network

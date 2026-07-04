@@ -1,39 +1,43 @@
-import React from 'react'
-import {StyleProp, ViewStyle} from 'react-native'
-import {requireNativeModule, requireNativeViewManager} from 'expo-modules-core'
+import {
+  type ComponentType,
+  createRef,
+  PureComponent,
+  type ReactNode,
+  type RefObject,
+} from 'react'
+import {type StyleProp, type ViewStyle} from 'react-native'
+import {requireNativeViewManager} from 'expo-modules-core'
 
-import {VisibilityViewProps} from './types'
-const NativeView: React.ComponentType<{
+import {type VisibilityViewProps} from './types'
+const NativeView: ComponentType<{
   onChangeStatus: (e: {nativeEvent: {isActive: boolean}}) => void
-  children: React.ReactNode
-  enabled: Boolean
+  children: ReactNode
+  enabled: boolean
   style: StyleProp<ViewStyle>
 }> = requireNativeViewManager('ExpoBlueskyVisibilityView')
 
-const NativeModule = requireNativeModule('ExpoBlueskyVisibilityView')
+export class VisibilityView extends PureComponent<VisibilityViewProps> {
+  ref: RefObject<unknown>
 
-export async function updateActiveViewAsync() {
-  await NativeModule.updateActiveViewAsync()
-}
+  constructor(props: VisibilityViewProps) {
+    super(props)
+    this.ref = createRef()
+    this.onChangeStatus = this.onChangeStatus.bind(this)
+  }
 
-export default function VisibilityView({
-  children,
-  onChangeStatus: onChangeStatusOuter,
-  enabled,
-}: VisibilityViewProps) {
-  const onChangeStatus = React.useCallback(
-    (e: {nativeEvent: {isActive: boolean}}) => {
-      onChangeStatusOuter(e.nativeEvent.isActive)
-    },
-    [onChangeStatusOuter],
-  )
+  onChangeStatus(e: {nativeEvent: {isActive: boolean}}) {
+    this.props.onChangeStatus(e.nativeEvent.isActive)
+  }
 
-  return (
-    <NativeView
-      onChangeStatus={onChangeStatus}
-      enabled={enabled}
-      style={{flex: 1}}>
-      {children}
-    </NativeView>
-  )
+  render() {
+    return (
+      <NativeView
+        ref={this.ref}
+        enabled={this.props.enabled}
+        style={this.props.style}
+        onChangeStatus={this.onChangeStatus}>
+        {this.props.children}
+      </NativeView>
+    )
+  }
 }
