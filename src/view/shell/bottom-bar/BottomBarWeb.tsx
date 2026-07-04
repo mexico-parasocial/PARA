@@ -42,11 +42,21 @@ import {
   MagnifyingGlass_Filled_Stroke2_Corner0_Rounded as MagnifyingGlassFilled,
   MagnifyingGlass_Stroke2_Corner0_Rounded as MagnifyingGlass,
 } from '#/components/icons/MagnifyingGlass'
+import {
+  Message_Stroke2_Corner0_Rounded as MessageIcon,
+  Message_Stroke2_Corner0_Rounded_Filled as MessageFilledIcon,
+} from '#/components/icons/Message'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
 import {styles} from './BottomBarStyles'
 
-type NavItemValue = 'home' | 'search' | 'chat' | 'notifications' | 'profile'
+type NavItemValue =
+  | 'home'
+  | 'search'
+  | 'data'
+  | 'chat'
+  | 'notifications'
+  | 'profile'
 
 export function BottomBarWeb() {
   const {_} = useLingui()
@@ -125,10 +135,26 @@ export function BottomBarWeb() {
             {hasSession && (
               <>
                 <NavItem
-                  routeName="Data"
-                  href="/data"
-                  navItem="data"
+                  routeName="Messages"
+                  href="/messages"
+                  navItem="chat"
                   notificationCount={chatUnreadStr}>
+                  {({isActive}) => {
+                    const Icon = isActive ? MessageFilledIcon : MessageIcon
+                    return (
+                      <Icon
+                        aria-hidden={true}
+                        width={iconWidth}
+                        style={[
+                          styles.ctrlIcon,
+                          t.atoms.text,
+                          styles.messagesIcon,
+                        ]}
+                      />
+                    )
+                  }}
+                </NavItem>
+                <NavItem routeName="Data" href="/data" navItem="data">
                   {({isActive}) => {
                     const Icon = isActive ? BookFilled : Book
                     return (

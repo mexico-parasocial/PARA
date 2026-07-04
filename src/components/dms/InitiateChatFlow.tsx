@@ -8,7 +8,7 @@ import {
 } from 'react'
 import {LayoutAnimation, type TextInput, View} from 'react-native'
 import {moderateProfile, type ModerationOpts} from '@atproto/api'
-import {Trans, useLingui} from '@lingui/react/macro'
+import {Plural, Trans, useLingui} from '@lingui/react/macro'
 
 import {MAX_GROUP_NAME_GRAPHEME_LENGTH} from '#/lib/constants'
 import {sanitizeDisplayName} from '#/lib/strings/display-names'
@@ -601,7 +601,13 @@ export function InitiateChatFlow({
                     ]}>
                     <Trans>
                       Group name is too long. The maximum number of characters
-                      is {MAX_GROUP_NAME_GRAPHEME_LENGTH}.
+                      is{' '}
+                      <Plural
+                        value={MAX_GROUP_NAME_GRAPHEME_LENGTH}
+                        one="# character"
+                        other="# characters"
+                      />
+                      .
                     </Trans>
                   </Text>
                 ) : null}

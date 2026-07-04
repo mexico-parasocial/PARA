@@ -1,5 +1,5 @@
 import {useState} from 'react'
-import {View} from 'react-native'
+import {Pressable, View} from 'react-native'
 import {
   ChatBskyActorDefs,
   type ChatBskyConvoDefs,
@@ -8,6 +8,7 @@ import {
 import {Trans, useLingui} from '@lingui/react/macro'
 import {StackActions, useNavigation} from '@react-navigation/native'
 
+import {HITSLOP_10} from '#/lib/constants'
 import {useBottomBarOffset} from '#/lib/hooks/useBottomBarOffset'
 import {useInitialNumToRender} from '#/lib/hooks/useInitialNumToRender'
 import {
@@ -57,7 +58,7 @@ import {InviteLinkDialog} from '../components/InviteLinkDialog'
 import {AddMembersLink} from './AddMembersLink'
 import {Member, MemberPlaceholder} from './Member'
 import {MembersAndRequests} from './MembersAndRequests'
-import {EditNamePrompt, LeaveChatPrompt, LockChatPrompt} from './prompts'
+import {EditNamePrompt, LeaveAndLockChatPrompt, LeaveChatPrompt, LockChatPrompt} from './prompts'
 
 const dateFormatter = new Intl.DateTimeFormat(undefined, {
   month: 'long',
@@ -415,6 +416,7 @@ function SettingsHeader({
   const editNamePrompt = Prompt.usePromptControl()
   const lockChatPrompt = Prompt.usePromptControl()
   const leaveChatPrompt = Prompt.usePromptControl()
+  const leaveAndLockChatPrompt = Prompt.usePromptControl()
 
   const reportControl = Prompt.usePromptControl()
   const deleteControl = Prompt.usePromptControl()
@@ -423,6 +425,21 @@ function SettingsHeader({
 
   const canLockGroupChat = isOwner && lockStatus !== 'locked-permanently'
 
+  function handleLockAndLeave() {
+    if (lockStatus === 'locked') {
+      leaveConvo()
+    } else {
+      lockConvo(
+        {lock: true},
+        {
+          onSuccess: () => {
+            leaveConvo()
+          },
+        },
+      )
+    }
+  }
+
   return (
     <>
       <View
@@ -430,16 +447,38 @@ function SettingsHeader({
         <View style={[a.align_center, a.justify_center]}>
           <AvatarBubbles profiles={convo.members} moderationOpts={moderationOpts} />
         </View>
-        <Text
-          style={[
-            a.text_2xl,
-            a.font_bold,
-            a.text_center,
-            a.pt_lg,
-            t.atoms.text,
-          ]}>
-          {groupName}
-        </Text>
+        {isOwner ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityHint={l`Edit this group chat's name`}
+            hitSlop={HITSLOP_10}
+            onPress={() => {
+              setNewGroupName(groupName)
+              editNamePrompt.open()
+            }}>
+            <Text
+              style={[
+                a.text_2xl,
+                a.font_bold,
+                a.text_center,
+                a.pt_lg,
+                t.atoms.text,
+              ]}>
+              {groupName}
+            </Text>
+          </Pressable>
+        ) : (
+          <Text
+            style={[
+              a.text_2xl,
+              a.font_bold,
+              a.text_center,
+              a.pt_lg,
+              t.atoms.text,
+            ]}>
+            {groupName}
+          </Text>
+        )}
         <Text
           style={[
             a.text_sm,
@@ -526,17 +565,15 @@ function SettingsHeader({
               disabled={!isReady}
             />
           ) : null}
-          {!isOwner ? (
-            <SettingsButton
-              color="secondary"
-              icon={ArrowBoxLeftIcon}
-              label={l`Leave this group chat`}
-              text={l`Leave`}
-              onPress={leaveChatPrompt.open}
-              loading={isPendingLeave}
-              disabled={!isReady}
-            />
-          ) : null}
+          <SettingsButton
+            color="secondary"
+            icon={ArrowBoxLeftIcon}
+            label={l`Leave this group chat`}
+            text={l`Leave`}
+            onPress={isOwner ? leaveAndLockChatPrompt.open : leaveChatPrompt.open}
+            loading={isPendingLeave || isPendingLock}
+            disabled={!isReady}
+          />
         </View>
       </View>
       <EditNamePrompt
@@ -564,7 +601,11 @@ function SettingsHeader({
         control={leaveChatPrompt}
         groupName={groupName}
         onConfirm={leaveConvo}
-        isPending={isPendingLeave}
+      />
+      <LeaveAndLockChatPrompt
+        control={leaveAndLockChatPrompt}
+        groupName={groupName}
+        onConfirm={handleLockAndLeave}
       />
       {reportSubjectDid ? (
         <>

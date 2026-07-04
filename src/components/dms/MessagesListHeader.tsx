@@ -1,17 +1,12 @@
 import {useMemo} from 'react'
 import {View} from 'react-native'
-import {
-  ChatBskyConvoDefs,
-  moderateProfile,
-  type ModerationOpts,
-} from '@atproto/api'
+import {moderateProfile, type ModerationOpts} from '@atproto/api'
 import {useLingui} from '@lingui/react/macro'
 
 import {createSanitizedDisplayName} from '#/lib/moderation/create-sanitized-display-name'
 import {makeProfileLink} from '#/lib/routes/links'
 import {useProfileShadow} from '#/state/cache/profile-shadow'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
-import {useSession} from '#/state/session'
 import {PreviewableUserAvatar} from '#/view/com/util/UserAvatar'
 import {useIsWithinSplitView} from '#/screens/Messages/components/splitView/context'
 import {atoms as a, useTheme} from '#/alf'
@@ -86,7 +81,6 @@ function ProfileHeaderReady({
   moderationOpts: ModerationOpts
 }) {
   const {t: l} = useLingui()
-  const {currentAccount} = useSession()
   const profile = useProfileShadow(convo.primaryMember)
 
   const moderation = moderateProfile(profile, moderationOpts)
@@ -107,11 +101,6 @@ function ProfileHeaderReady({
     ? l`Deleted Account`
     : createSanitizedDisplayName(profile, true, moderation.ui('displayName'))
 
-  const latestReportableMessage =
-    ChatBskyConvoDefs.isMessageView(convo.view.lastMessage) &&
-    convo.view.lastMessage.sender?.did !== currentAccount?.did
-      ? convo.view.lastMessage
-      : undefined
 
   return (
     <Wrapper
@@ -139,11 +128,10 @@ function ProfileHeaderReady({
       }
       settings={
         <ConvoMenu
-          convo={convo.view}
+          convo={convo}
           profile={profile}
           currentScreen="conversation"
           blockInfo={blockInfo}
-          latestReportableMessage={latestReportableMessage}
         />
       }
     />

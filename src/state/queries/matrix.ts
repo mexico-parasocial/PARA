@@ -2,9 +2,6 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {matrixBridgeFetch} from '#/lib/matrix/bridge'
 
-const BRIDGE_API_URL =
-  process.env.EXPO_PUBLIC_MATRIX_BRIDGE_URL || 'https://bridge.para.social'
-
 interface CommunitySpaceResponse {
   spaceId: string
   slug: string
@@ -202,10 +199,9 @@ export function useCommunityProposalsQuery(
     queryKey: ['proposals', communityUri, state],
     queryFn: async () => {
       if (!communityUri) throw new Error('No community URI')
-      const url = new URL(`${BRIDGE_API_URL}/api/proposals`)
-      url.searchParams.set('community', communityUri)
-      if (state) url.searchParams.set('state', state)
-      const res = await fetch(url.toString())
+      const params = new URLSearchParams({community: communityUri})
+      if (state) params.set('state', state)
+      const res = await matrixBridgeFetch(`/api/proposals?${params.toString()}`)
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         throw new Error(err.error || `Failed to fetch proposals: ${res.status}`)
@@ -222,8 +218,8 @@ export function useCommunityDecisionsQuery(communityUri: string | undefined) {
     queryKey: ['decisions', communityUri],
     queryFn: async () => {
       if (!communityUri) throw new Error('No community URI')
-      const res = await fetch(
-        `${BRIDGE_API_URL}/api/decisions?community=${encodeURIComponent(communityUri)}`,
+      const res = await matrixBridgeFetch(
+        `/api/decisions?community=${encodeURIComponent(communityUri)}`,
       )
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
@@ -244,8 +240,8 @@ export function useSortitionProofQuery(
     queryKey: ['sortition-proof', did, communityUri],
     queryFn: async () => {
       if (!did || !communityUri) throw new Error('Missing did or communityUri')
-      const res = await fetch(
-        `${BRIDGE_API_URL}/api/sortition-proof?did=${encodeURIComponent(did)}&community=${encodeURIComponent(communityUri)}`,
+      const res = await matrixBridgeFetch(
+        `/api/sortition-proof?did=${encodeURIComponent(did)}&community=${encodeURIComponent(communityUri)}`,
       )
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
@@ -276,10 +272,9 @@ export function useSortitionRunQuery(
     queryKey: ['sortition-run', cabildeoUri, viewerDid],
     queryFn: async () => {
       if (!cabildeoUri) throw new Error('No Cabildeo URI')
-      const url = new URL(`${BRIDGE_API_URL}/api/sortition/runs`)
-      url.searchParams.set('cabildeo', cabildeoUri)
-      if (viewerDid) url.searchParams.set('viewerDid', viewerDid)
-      const res = await fetch(url.toString())
+      const params = new URLSearchParams({cabildeo: cabildeoUri})
+      if (viewerDid) params.set('viewerDid', viewerDid)
+      const res = await matrixBridgeFetch(`/api/sortition/runs?${params.toString()}`)
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         throw new Error(err.error || `Failed to fetch sortition run: ${res.status}`)
@@ -303,9 +298,8 @@ export function useCreateSortitionRunMutation() {
       eligibilityFilter: SortitionEligibilityFilter
       roundOffset: number
     }) => {
-      const res = await fetch(`${BRIDGE_API_URL}/api/sortition/runs`, {
+      const res = await matrixBridgeFetch('/api/sortition/runs', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(input),
       })
       if (!res.ok) {
@@ -329,8 +323,8 @@ export function useCommunityConstitutionQuery(
     queryKey: ['constitution', communityUri],
     queryFn: async () => {
       if (!communityUri) throw new Error('No community URI')
-      const res = await fetch(
-        `${BRIDGE_API_URL}/api/constitution?uri=${encodeURIComponent(communityUri)}`,
+      const res = await matrixBridgeFetch(
+        `/api/constitution?uri=${encodeURIComponent(communityUri)}`,
       )
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
@@ -391,8 +385,8 @@ export function useChatBadgesQuery(
     queryKey: ['chat-badges', did, communityUri],
     queryFn: async () => {
       if (!did || !communityUri) throw new Error('Missing did or communityUri')
-      const res = await fetch(
-        `${BRIDGE_API_URL}/api/chat-badges?did=${encodeURIComponent(did)}&community=${encodeURIComponent(communityUri)}`,
+      const res = await matrixBridgeFetch(
+        `/api/chat-badges?did=${encodeURIComponent(did)}&community=${encodeURIComponent(communityUri)}`,
       )
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
@@ -429,11 +423,12 @@ export function useChatMemberListQuery(
     queryKey: ['chat-member-list', communityUri, limit, offset],
     queryFn: async () => {
       if (!communityUri) throw new Error('No community URI')
-      const url = new URL(`${BRIDGE_API_URL}/api/chat-member-list`)
-      url.searchParams.set('community', communityUri)
-      url.searchParams.set('limit', String(limit))
-      url.searchParams.set('offset', String(offset))
-      const res = await fetch(url.toString())
+      const params = new URLSearchParams({
+        community: communityUri,
+        limit: String(limit),
+        offset: String(offset),
+      })
+      const res = await matrixBridgeFetch(`/api/chat-member-list?${params.toString()}`)
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         throw new Error(
@@ -465,10 +460,11 @@ export function useModerationDashboardQuery(
     queryFn: async () => {
       if (!communityUri || !modDid)
         throw new Error('Missing communityUri or modDid')
-      const url = new URL(`${BRIDGE_API_URL}/api/moderation-dashboard`)
-      url.searchParams.set('community', communityUri)
-      url.searchParams.set('modDid', modDid)
-      const res = await fetch(url.toString())
+      const params = new URLSearchParams({
+        community: communityUri,
+        modDid,
+      })
+      const res = await matrixBridgeFetch(`/api/moderation-dashboard?${params.toString()}`)
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         throw new Error(err.error || `Failed to fetch dashboard: ${res.status}`)
@@ -493,9 +489,8 @@ interface ReportUserInput {
 export function useReportUserMutation() {
   return useMutation<void, Error, ReportUserInput>({
     mutationFn: async input => {
-      const res = await fetch(`${BRIDGE_API_URL}/api/moderation-report`, {
+      const res = await matrixBridgeFetch('/api/moderation-report', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(input),
       })
       if (!res.ok) {
@@ -519,9 +514,8 @@ interface ApplySanctionInput {
 export function useApplySanctionMutation() {
   return useMutation<void, Error, ApplySanctionInput>({
     mutationFn: async input => {
-      const res = await fetch(`${BRIDGE_API_URL}/api/moderation-sanction`, {
+      const res = await matrixBridgeFetch('/api/moderation-sanction', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(input),
       })
       if (!res.ok) {
@@ -539,8 +533,8 @@ export function useUserChatPreferencesQuery(did: string | undefined) {
     queryKey: ['user-chat-preferences', did],
     queryFn: async () => {
       if (!did) throw new Error('No DID')
-      const res = await fetch(
-        `${BRIDGE_API_URL}/api/user-chat-preferences?did=${encodeURIComponent(did)}`,
+      const res = await matrixBridgeFetch(
+        `/api/user-chat-preferences?did=${encodeURIComponent(did)}`,
       )
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
@@ -562,9 +556,8 @@ interface UpdateChatPreferencesInput {
 export function useUpdateUserChatPreferencesMutation() {
   return useMutation<void, Error, UpdateChatPreferencesInput>({
     mutationFn: async ({did, showChatBadges}) => {
-      const res = await fetch(`${BRIDGE_API_URL}/api/user-chat-preferences`, {
+      const res = await matrixBridgeFetch('/api/user-chat-preferences', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({did, showChatBadges}),
       })
       if (!res.ok) {
@@ -573,6 +566,125 @@ export function useUpdateUserChatPreferencesMutation() {
           err.error || `Failed to update preferences: ${res.status}`,
         )
       }
+    },
+  })
+}
+
+// ─── Extract (link/URL metadata extraction) ───
+
+interface ExtractInput {
+  url: string
+  communityUri?: string
+}
+
+interface ExtractResult {
+  title: string | null
+  description: string | null
+  imageUrl: string | null
+  favicon: string | null
+  domain: string | null
+}
+
+export function useExtractMutation() {
+  return useMutation<ExtractResult, Error, ExtractInput>({
+    mutationFn: async input => {
+      const res = await matrixBridgeFetch('/api/extract', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `Failed to extract: ${res.status}`)
+      }
+      return res.json()
+    },
+  })
+}
+
+// ─── Moderation Recompute ───
+
+interface RecomputeInput {
+  communityUri: string
+}
+
+interface RecomputeResult {
+  recomputed: boolean
+  membersUpdated: number
+  timestamp: string
+}
+
+export function useModerationRecomputeMutation() {
+  return useMutation<RecomputeResult, Error, RecomputeInput>({
+    mutationFn: async input => {
+      const res = await matrixBridgeFetch('/api/moderation-recompute', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `Failed to recompute: ${res.status}`)
+      }
+      return res.json()
+    },
+  })
+}
+
+// ─── Sortition Run Processing ───
+
+interface ProcessSortitionInput {
+  runId: string
+}
+
+export function useProcessSortitionRunMutation() {
+  const queryClient = useQueryClient()
+  return useMutation<void, Error, ProcessSortitionInput>({
+    mutationFn: async input => {
+      const res = await matrixBridgeFetch('/api/sortition/runs/process', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `Failed to process sortition: ${res.status}`)
+      }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({queryKey: ['sortition-run']})
+    },
+  })
+}
+
+// ─── Verify Sortition ───
+
+interface VerifySortitionInput {
+  runId: string
+  did: string
+}
+
+interface VerifySortitionResult {
+  verified: boolean
+  selected: boolean
+  chamber: string | null
+  hashOutput: string
+  proof: {
+    drandRound: number
+    drandRandomness: string
+    hashInput: string
+  }
+}
+
+export function useVerifySortitionMutation() {
+  return useMutation<VerifySortitionResult, Error, VerifySortitionInput>({
+    mutationFn: async input => {
+      const res = await matrixBridgeFetch('/api/verify-sortition', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `Failed to verify sortition: ${res.status}`)
+      }
+      return res.json()
     },
   })
 }

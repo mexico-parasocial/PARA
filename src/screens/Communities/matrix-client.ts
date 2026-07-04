@@ -21,9 +21,9 @@ export interface MatrixClientConfig {
   sdkUrl?: string
 }
 
-export function buildClientHtml(
-  sdkUrl = 'https://chat.para.social/static/matrix-js-sdk.min.js',
-): string {
+const SDK_VERSION = '41.8.0'
+
+export function buildClientHtml(sdkBundle?: string): string {
   return `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -279,6 +279,79 @@ export function buildClientHtml(
       opacity: 0.5;
       cursor: not-allowed;
     }
+
+    /* Media messages */
+    .message-bubble img {
+      max-width: 100%;
+      max-height: 240px;
+      border-radius: 12px;
+      display: block;
+    }
+    .message-bubble a.file {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: inherit;
+      text-decoration: none;
+      word-break: break-word;
+    }
+
+    /* Reactions */
+    .reactions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 4px;
+      padding: 0 8px;
+    }
+    .reaction {
+      font-size: 12px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+    }
+    .reaction.self {
+      background: var(--primary);
+      color: var(--primary-text);
+      border-color: var(--primary);
+    }
+
+    /* Reaction picker */
+    #reaction-picker {
+      position: fixed;
+      bottom: 80px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 8px 12px;
+      box-shadow: 0 4px 20px var(--shadow);
+      display: none;
+      gap: 8px;
+      z-index: 100;
+    }
+    #reaction-picker.visible { display: flex; }
+    #reaction-picker span {
+      font-size: 24px;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 50%;
+      transition: transform 0.1s;
+    }
+    #reaction-picker span:active { transform: scale(1.2); }
+
+    /* Typing indicator */
+    #typing-indicator {
+      display: none;
+      padding: 4px 16px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
   </style>
 </head>
 <body>
@@ -300,29 +373,35 @@ export function buildClientHtml(
     </div>
 
     <div id="messages"></div>
+    <div id="typing-indicator">Alguien está escribiendo...</div>
 
     <div id="composer">
       <textarea id="input" rows="1" placeholder="Escribe un mensaje..."></textarea>
       <button id="send">➤</button>
     </div>
+
+    <div id="reaction-picker">
+      <span data-emoji="👍">👍</span>
+      <span data-emoji="❤️">❤️</span>
+      <span data-emoji="😂">😂</span>
+      <span data-emoji="😮">😮</span>
+      <span data-emoji="😢">😢</span>
+      <span data-emoji="🎉">🎉</span>
+      <span data-emoji="🔥">🔥</span>
+    </div>
   </div>
 
   <!--
-    SECURITY NOTE: Loading the Matrix SDK from a CDN (unpkg) is convenient for
-    development but creates a supply-chain risk. In production, self-host this
-    file on your own domain (e.g. https://chat.para.social/static/matrix-js-sdk.min.js)
-    and update the src below. The integrity hash pins the exact build.
-
-    To update the SDK version:
-    1. Download the new browser build
-    2. Compute SRI: curl -sL URL | openssl dgst -sha384 -binary | openssl base64 -A
-    3. Update src and integrity below.
+    PARA Chat uses a self-hosted, pinned build of matrix-js-sdk.
+    Version: ${SDK_VERSION}
+    To update: bump matrix-js-sdk in package.json, run pnpm build:chat-bundle,
+    and commit the regenerated assets/chat/matrix-js-sdk.bundle.txt.
   -->
-  <script id="matrix-sdk-script"
-    src="${sdkUrl}"
-    integrity="sha384-PXdWGFv64mA2MdFTsOmjdSCIf/izWrYIb1P504cN8Kgn8XL9zijRXNICYup07Wuj"
-    crossorigin="anonymous"
-  ></script>
+  ${
+    sdkBundle
+      ? `<script id="matrix-sdk-script">${sdkBundle}</script>`
+      : `<script id="matrix-sdk-script" src="https://chat.para.social/static/matrix-js-sdk.bundle.txt"></script>`
+  }
   <script>
     (function() {
       'use strict';
@@ -369,12 +448,41 @@ export function buildClientHtml(
       }
 
       let lastDate = '';
+      const messageElements = new Map(); // eventId -> msgDiv
+      const reactionPickers = new Set();
+
+      function mxcToHttp(mxcUrl) {
+        if (!mxcUrl || !mxcUrl.startsWith('mxc://')) return null;
+        const parts = mxcUrl.replace('mxc://', '').split('/');
+        const serverName = parts[0];
+        const mediaId = parts[1];
+        return CONFIG.homeServer + '/_matrix/media/v3/download/' + encodeURIComponent(serverName) + '/' + encodeURIComponent(mediaId);
+      }
 
       function renderEvent(event) {
-        if (event.getType() !== 'm.room.message') return;
+        const type = event.getType();
+        if (type === 'm.reaction') {
+          updateReactions(event);
+          return;
+        }
+        if (type === 'm.room.redaction') {
+          removeMessage(event.getAssociatedId());
+          return;
+        }
+        if (type !== 'm.room.message') return;
+
         const content = event.getContent();
-        const body = content && content.body ? content.body : '';
-        if (!body) return;
+        const msgtype = content.msgtype;
+        const eventId = event.getId();
+
+        // Handle edits: if this is an edit, update the original message
+        const relatesTo = content['m.relates_to'];
+        if (relatesTo && relatesTo.rel_type === 'm.replace' && relatesTo.event_id) {
+          updateMessageBody(relatesTo.event_id, content['m.new_content'] || content);
+          return;
+        }
+
+        if (!content.body && msgtype !== 'm.image' && msgtype !== 'm.video' && msgtype !== 'm.audio' && msgtype !== 'm.file') return;
 
         const sender = event.getSender();
         const ts = event.getTs();
@@ -391,6 +499,7 @@ export function buildClientHtml(
 
         const msgDiv = document.createElement('div');
         msgDiv.className = 'message ' + (isSelf ? 'self' : 'other');
+        msgDiv.dataset.eventId = eventId;
 
         if (!isSelf) {
           const senderEl = document.createElement('div');
@@ -401,7 +510,7 @@ export function buildClientHtml(
 
         const bubble = document.createElement('div');
         bubble.className = 'message-bubble';
-        bubble.textContent = body;
+        bubble.appendChild(renderMessageContent(content));
         msgDiv.appendChild(bubble);
 
         const timeEl = document.createElement('div');
@@ -409,8 +518,152 @@ export function buildClientHtml(
         timeEl.textContent = formatTime(ts);
         msgDiv.appendChild(timeEl);
 
+        const reactionsEl = document.createElement('div');
+        reactionsEl.className = 'reactions';
+        reactionsEl.dataset.eventId = eventId;
+        msgDiv.appendChild(reactionsEl);
+
+        msgDiv.addEventListener('click', function(e) {
+          if (e.target.closest('a.file') || e.target.closest('.reaction')) return;
+          showReactionPicker(eventId);
+        });
+
+        messageElements.set(eventId, msgDiv);
         messagesEl.appendChild(msgDiv);
         scrollToBottom();
+
+        // Send read receipt for this message
+        if (client && eventId && !isSelf) {
+          client.sendReadReceipt(event).catch(() => {});
+        }
+      }
+
+      function renderMessageContent(content) {
+        const msgtype = content.msgtype;
+        if (msgtype === 'm.image') {
+          const url = mxcToHttp(content.url);
+          if (url) {
+            const img = document.createElement('img');
+            img.src = url;
+            img.alt = content.body || 'Image';
+            return img;
+          }
+        }
+        if (msgtype === 'm.video' || msgtype === 'm.audio') {
+          const url = mxcToHttp(content.url);
+          if (url) {
+            const link = document.createElement('a');
+            link.className = 'file';
+            link.href = url;
+            link.target = '_blank';
+            link.textContent = (msgtype === 'm.video' ? '🎬 ' : '🎵 ') + (content.body || 'Media');
+            return link;
+          }
+        }
+        if (msgtype === 'm.file') {
+          const url = mxcToHttp(content.url);
+          if (url) {
+            const link = document.createElement('a');
+            link.className = 'file';
+            link.href = url;
+            link.target = '_blank';
+            link.textContent = '📎 ' + (content.body || 'File');
+            return link;
+          }
+        }
+        const span = document.createElement('span');
+        span.textContent = content.body || '';
+        return span;
+      }
+
+      function updateMessageBody(eventId, content) {
+        const msgDiv = messageElements.get(eventId);
+        if (!msgDiv) return;
+        const bubble = msgDiv.querySelector('.message-bubble');
+        if (bubble) {
+          bubble.innerHTML = '';
+          bubble.appendChild(renderMessageContent(content));
+        }
+      }
+
+      function removeMessage(eventId) {
+        const msgDiv = messageElements.get(eventId);
+        if (msgDiv) {
+          msgDiv.remove();
+          messageElements.delete(eventId);
+        }
+      }
+
+      function updateReactions(event) {
+        const content = event.getContent();
+        const relatesTo = content && content['m.relates_to'];
+        if (!relatesTo || relatesTo.rel_type !== 'm.annotation') return;
+        const eventId = relatesTo.event_id;
+        const key = relatesTo.key;
+        if (!eventId || !key) return;
+
+        const reactionsEl = document.querySelector('.reactions[data-event-id="' + eventId + '"]');
+        if (!reactionsEl) return;
+
+        const sender = event.getSender();
+        const existing = reactionsEl.querySelector('.reaction[data-key="' + key + '"]');
+        if (existing) {
+          // Toggle: if sender already reacted with this key, remove; else add sender
+          const senders = existing.dataset.senders ? existing.dataset.senders.split(',') : [];
+          const idx = senders.indexOf(sender);
+          if (idx >= 0) {
+            senders.splice(idx, 1);
+          } else {
+            senders.push(sender);
+          }
+          if (senders.length === 0) {
+            existing.remove();
+            return;
+          }
+          existing.dataset.senders = senders.join(',');
+          existing.textContent = key + ' ' + senders.length;
+          existing.classList.toggle('self', senders.includes(myUserId));
+        } else {
+          const btn = document.createElement('span');
+          btn.className = 'reaction' + (sender === myUserId ? ' self' : '');
+          btn.dataset.key = key;
+          btn.dataset.senders = sender;
+          btn.textContent = key + ' 1';
+          btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            sendReaction(eventId, key);
+          });
+          reactionsEl.appendChild(btn);
+        }
+      }
+
+      function showReactionPicker(eventId) {
+        const picker = document.getElementById('reaction-picker');
+        picker.dataset.eventId = eventId;
+        picker.classList.add('visible');
+        function hide(e) {
+          if (!picker.contains(e.target)) {
+            picker.classList.remove('visible');
+            document.removeEventListener('click', hide);
+          }
+        }
+        // Defer so the current click doesn't immediately hide it
+        setTimeout(() => document.addEventListener('click', hide), 0);
+      }
+
+      async function sendReaction(eventId, emoji) {
+        if (!client || !room || !eventId) return;
+        try {
+          await client.sendEvent(room.roomId, 'm.reaction', {
+            'm.relates_to': {
+              rel_type: 'm.annotation',
+              event_id: eventId,
+              key: emoji,
+            },
+          });
+        } catch (err) {
+          console.error('Failed to send reaction:', err);
+        }
       }
 
       function scrollToBottom() {
@@ -423,6 +676,7 @@ export function buildClientHtml(
         const events = timeline.getEvents();
         messagesEl.innerHTML = '';
         lastDate = '';
+        messageElements.clear();
         events.forEach(renderEvent);
         scrollToBottom();
       }
@@ -499,6 +753,17 @@ export function buildClientHtml(
             }
           });
 
+          client.on('RoomMember.typing', function(event, member) {
+            const typing = member.typing;
+            const indicator = document.getElementById('typing-indicator');
+            if (typing && member.userId !== myUserId) {
+              indicator.style.display = 'block';
+              indicator.textContent = member.name + ' está escribiendo...';
+            } else {
+              indicator.style.display = 'none';
+            }
+          });
+
           await client.startClient({ initialSyncLimit: 50 });
         } catch (err) {
           console.error('Init error:', err);
@@ -507,6 +772,18 @@ export function buildClientHtml(
           setStatus('error');
         }
       }
+
+      // Reaction picker listeners
+      const picker = document.getElementById('reaction-picker');
+      picker.querySelectorAll('span').forEach(function(span) {
+        span.addEventListener('click', function(e) {
+          e.stopPropagation();
+          const eventId = picker.dataset.eventId;
+          const emoji = span.dataset.emoji;
+          picker.classList.remove('visible');
+          if (eventId && emoji) sendReaction(eventId, emoji);
+        });
+      });
 
       // Event listeners
       sendBtn.addEventListener('click', sendMessage);
@@ -518,6 +795,10 @@ export function buildClientHtml(
       });
       inputEl.addEventListener('input', function() {
         this.rows = Math.min(5, Math.max(1, this.value.split('\\n').length));
+        // Send typing notification
+        if (client && room) {
+          client.sendTyping(room.roomId, true, 30000).catch(() => {});
+        }
       });
 
       // Start

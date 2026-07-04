@@ -88,7 +88,7 @@ func serve(cctx *cli.Context) error {
 		Host:   appviewHost,
 	}
 
-	// optional client for the chat appview, used by /c/<code> for OG previews.
+	// optional client for the chat appview, used by /chat/<code> for OG previews.
 	var chatXrpcc *xrpc.Client
 	if chatHost != "" {
 		chatXrpcc = &xrpc.Client{
@@ -286,14 +286,15 @@ func serve(cctx *cli.Context) error {
 			return next(c)
 		}
 	})
-	// generic routes
-	e.GET("/hashtag/:tag", server.WebGeneric)
+
+	// home
 	e.GET("/", server.WebHome)
-	e.GET("/index.html", func(c echo.Context) error { return c.Redirect(301, "/") })
-	e.GET("/signin", server.WebGeneric)
-	e.GET("/signup", server.WebGeneric)
+
+	// download
 	e.GET("/download", server.Download)
 
+	// generic routes
+	e.GET("/hashtag/:tag", server.WebGeneric)
 	e.GET("/topic/:topic", server.WebGeneric)
 	e.GET("/search", server.WebGeneric)
 	e.GET("/feeds", server.WebGeneric)
@@ -323,16 +324,6 @@ func serve(cctx *cli.Context) error {
 	e.GET("/settings/interests", server.WebGeneric)
 	e.GET("/settings/about", server.WebGeneric)
 	e.GET("/settings/notifications", server.WebGeneric)
-	e.GET("/settings/notifications/replies", server.WebGeneric)
-	e.GET("/settings/notifications/mentions", server.WebGeneric)
-	e.GET("/settings/notifications/quotes", server.WebGeneric)
-	e.GET("/settings/notifications/likes", server.WebGeneric)
-	e.GET("/settings/notifications/reposts", server.WebGeneric)
-	e.GET("/settings/notifications/new-followers", server.WebGeneric)
-	e.GET("/settings/notifications/likes-on-reposts", server.WebGeneric)
-	e.GET("/settings/notifications/reposts-on-reposts", server.WebGeneric)
-	e.GET("/settings/notifications/activity", server.WebGeneric)
-	e.GET("/settings/notifications/miscellaneous", server.WebGeneric)
 	e.GET("/sys/debug", server.WebGeneric)
 	e.GET("/sys/debug-mod", server.WebGeneric)
 	e.GET("/sys/log", server.WebGeneric)
@@ -345,6 +336,7 @@ func serve(cctx *cli.Context) error {
 	e.GET("/intent/verify-email", server.WebGeneric)
 	e.GET("/intent/age-assurance", server.WebGeneric)
 	e.GET("/messages", server.WebGeneric)
+	e.GET("/messages/inbox", server.WebGeneric)
 	e.GET("/messages/:conversation", server.WebGeneric)
 	e.GET("/messages/:conversation/settings", server.WebGeneric)
 	e.GET("/messages/:conversation/requests", server.WebGeneric)
@@ -373,6 +365,9 @@ func serve(cctx *cli.Context) error {
 	e.GET("/starter-pack/:handleOrDID/:rkey", server.WebStarterPack)
 	e.GET("/starter-pack-short/:code", server.WebGeneric)
 	e.GET("/start/:handleOrDID/:rkey", server.WebStarterPack)
+
+	// chat invites
+	e.GET("/chat/:code", server.WebChatInvite)
 
 	// bookmarks
 	e.GET("/saved", server.WebGeneric)
@@ -517,6 +512,20 @@ var hideEmbedLabels = map[string]bool{
 	"sensitive":         true,
 }
 
+// Replies surfaced into a post's JSON-LD comment[] are dropped entirely when
+// any of these labels are present (in addition to hideEmbedLabels). Targets
+// abuse/spam in third-party reply text, since reply text would otherwise be
+// emitted into the parent post's structured data.
+var hideReplyLabels = map[string]bool{
+	"!hide":         true,
+	"!warn":         true,
+	"porn":          true,
+	"sexual":        true,
+	"nudity":        true,
+	"graphic-media": true,
+	"spam":          true,
+}
+
 func (srv *Server) WebPost(c echo.Context) error {
 	ctx := c.Request().Context()
 	data := srv.NewTemplateContext()
@@ -541,17 +550,22 @@ func (srv *Server) WebPost(c echo.Context) error {
 		log.Warnf("failed to fetch profile for: %s\t%v", identifier, err)
 		return c.Render(http.StatusOK, "post.html", data)
 	}
-	unauthedViewingOkay := true
-	for _, label := range pv.Labels {
-		if label.Src == pv.Did && label.Val == "!no-unauthenticated" {
-			unauthedViewingOkay = false
-		}
-	}
+	unauthedViewingOkay := !profileRequiresAuth(pv)
 
 	req := c.Request()
+	requestURI := fmt.Sprintf("https://%s%s", req.Host, req.URL.Path)
+
+	// Always prefer the handle-form URL so JSON-LD `url` and
+	// <link rel="canonical"> match. Falls back to requestURI when the
+	// handle is unusable (template strips query/fragment).
+	canonicalURL := bskyPostURL(pv.Handle, rkey.String())
+
 	if !unauthedViewingOkay {
 		// Provide minimal OpenGraph data for auth-required posts
-		data["requestURI"] = fmt.Sprintf("https://%s%s", req.Host, req.URL.Path)
+		data["requestURI"] = requestURI
+		if canonicalURL != "" {
+			data["canonicalURL"] = canonicalURL
+		}
 		data["requiresAuth"] = true
 		data["profileHandle"] = pv.Handle
 		if pv.DisplayName != nil {
@@ -568,81 +582,44 @@ func (srv *Server) WebPost(c echo.Context) error {
 		return c.Render(http.StatusOK, "post.html", data)
 	}
 
-	postView := tpv.Thread.FeedDefs_ThreadViewPost.Post
+	threadView := tpv.Thread.FeedDefs_ThreadViewPost
+	if threadView == nil || threadView.Post == nil {
+		return c.Render(http.StatusOK, "post.html", data)
+	}
+	postView := threadView.Post
 	data["postView"] = postView
-	data["requestURI"] = fmt.Sprintf("https://%s%s", req.Host, req.URL.Path)
+	data["requestURI"] = requestURI
+	if canonicalURL != "" {
+		data["canonicalURL"] = canonicalURL
+	}
 
-	// If any undesirable labels are set, the embed will not be included in
-	// metadata
-	isEmbedHidden := false
-	for _, label := range postView.Labels {
-		isNeg := label.Neg != nil && *label.Neg
-		if hideEmbedLabels[label.Val] && !isNeg {
-			isEmbedHidden = true
-			break
+	// Share extraction helpers with jsonld.go so og:image and JSON-LD
+	// image[] are byte-identical (per Google's requirement).
+	isEmbedHidden := postEmbedHidden(postView, hideEmbedLabels)
+	data["postText"] = postRecordText(postView)
+
+	if thumbs := extractPostMedia(postView, isEmbedHidden); len(thumbs) > 0 {
+		data["imgThumbUrls"] = thumbs
+	}
+	if vm := extractVideoMeta(postView, isEmbedHidden); vm.URL != "" {
+		data["videoUrl"] = vm.URL
+		data["videoType"] = vm.Type
+		if vm.HasSize {
+			data["videoWidth"] = vm.Width
+			data["videoHeight"] = vm.Height
 		}
 	}
 
-	if postView.Record != nil {
-		postRecord, ok := postView.Record.Val.(*appbsky.FeedPost)
-		if ok {
-			data["postText"] = ExpandPostText(postRecord)
-
-			if !isEmbedHidden && postRecord.Labels != nil && postRecord.Labels.LabelDefs_SelfLabels != nil {
-				for _, label := range postRecord.Labels.LabelDefs_SelfLabels.Values {
-					if hideEmbedLabels[label.Val] {
-						isEmbedHidden = true
-						break
-					}
-				}
-			}
-		}
+	// Build JSON-LD. Fall back to requestURI when handle is unusable so the
+	// envelope url is never empty.
+	jsonldURL := canonicalURL
+	if jsonldURL == "" {
+		jsonldURL = requestURI
 	}
-
-	if postView.Embed != nil && !isEmbedHidden {
-		hasImages := postView.Embed.EmbedImages_View != nil
-		hasVideo := postView.Embed.EmbedVideo_View != nil
-		hasMedia := postView.Embed.EmbedRecordWithMedia_View != nil && postView.Embed.EmbedRecordWithMedia_View.Media != nil
-		hasMediaImages := hasMedia && postView.Embed.EmbedRecordWithMedia_View.Media.EmbedImages_View != nil
-		hasMediaVideo := hasMedia && postView.Embed.EmbedRecordWithMedia_View.Media.EmbedVideo_View != nil
-
-		if hasImages {
-			var thumbUrls []string
-			for i := range postView.Embed.EmbedImages_View.Images {
-				thumbUrls = append(thumbUrls, postView.Embed.EmbedImages_View.Images[i].Thumb)
-			}
-			data["imgThumbUrls"] = thumbUrls
-		} else if hasVideo {
-			if postView.Embed.EmbedVideo_View.Thumbnail != nil {
-				data["imgThumbUrls"] = []string{*postView.Embed.EmbedVideo_View.Thumbnail}
-			}
-			if postView.Embed.EmbedVideo_View.Playlist != "" {
-				data["videoUrl"] = postView.Embed.EmbedVideo_View.Playlist
-				data["videoType"] = "application/vnd.apple.mpegurl"
-				if postView.Embed.EmbedVideo_View.AspectRatio != nil {
-					data["videoWidth"] = postView.Embed.EmbedVideo_View.AspectRatio.Width
-					data["videoHeight"] = postView.Embed.EmbedVideo_View.AspectRatio.Height
-				}
-			}
-		} else if hasMediaImages {
-			var thumbUrls []string
-			for i := range postView.Embed.EmbedRecordWithMedia_View.Media.EmbedImages_View.Images {
-				thumbUrls = append(thumbUrls, postView.Embed.EmbedRecordWithMedia_View.Media.EmbedImages_View.Images[i].Thumb)
-			}
-			data["imgThumbUrls"] = thumbUrls
-		} else if hasMediaVideo {
-			if postView.Embed.EmbedRecordWithMedia_View.Media.EmbedVideo_View.Thumbnail != nil {
-				data["imgThumbUrls"] = []string{*postView.Embed.EmbedRecordWithMedia_View.Media.EmbedVideo_View.Thumbnail}
-			}
-			if postView.Embed.EmbedRecordWithMedia_View.Media.EmbedVideo_View.Playlist != "" {
-				data["videoUrl"] = postView.Embed.EmbedRecordWithMedia_View.Media.EmbedVideo_View.Playlist
-				data["videoType"] = "application/vnd.apple.mpegurl"
-				if postView.Embed.EmbedRecordWithMedia_View.Media.EmbedVideo_View.AspectRatio != nil {
-					data["videoWidth"] = postView.Embed.EmbedRecordWithMedia_View.Media.EmbedVideo_View.AspectRatio.Width
-					data["videoHeight"] = postView.Embed.EmbedRecordWithMedia_View.Media.EmbedVideo_View.AspectRatio.Height
-				}
-			}
-		}
+	if jsonld, err := buildPostJSONLD(postView, threadView.Replies, jsonldURL, hideEmbedLabels, hideReplyLabels); err == nil {
+		data["postJSONLD"] = jsonld
+	} else {
+		log.Warnf("failed to build post JSON-LD for %s: %v", uri, err)
 	}
 
 	return c.Render(http.StatusOK, "post.html", data)
@@ -718,7 +695,7 @@ func (srv *Server) WebChatInvite(c echo.Context) error {
 
 	data["title"] = preview.Name
 	if srv.cfg.ogcardHost != "" {
-		// bskyogcard registers this route as /chat-invite/:code, not /c/:code.
+		// bskyogcard registers this route as /chat-invite/:code, not /chat/:code.
 		data["imgThumbUrl"] = fmt.Sprintf("%s/chat-invite/%s", srv.cfg.ogcardHost, code)
 	}
 	return c.Render(http.StatusOK, "chatinvite.html", data)
@@ -741,20 +718,54 @@ func (srv *Server) WebProfile(c echo.Context) error {
 		log.Warnf("failed to fetch profile for: %s\t%v", identifier, err)
 		return c.Render(http.StatusOK, "profile.html", data)
 	}
-	unauthedViewingOkay := true
-	for _, label := range pv.Labels {
-		if label.Src == pv.Did && label.Val == "!no-unauthenticated" {
-			unauthedViewingOkay = false
-		}
-	}
+	unauthedViewingOkay := !profileRequiresAuth(pv)
 
 	req := c.Request()
 	data["profileView"] = pv
 	data["requestURI"] = fmt.Sprintf("https://%s%s", req.Host, req.URL.Path)
 	data["requestHost"] = req.Host
 
-	if !unauthedViewingOkay {
+	// Prefer the handle-form URL so JSON-LD `url` and
+	// <link rel="canonical"> match. Template falls back to requestURI
+	// when the handle is unusable.
+	if url := bskyProfileURL(pv.Handle); url != "" {
+		data["canonicalURL"] = url
+	}
+
+	// Fetch recent posts for ProfilePage.hasPart. Skipped for auth-required
+	// profiles (posts aren't publicly indexable anyway). Failures degrade
+	// gracefully — the profile still renders without hasPart.
+	//
+	// NOTE: extra XRPC call on every public profile render; consider
+	// caching per-profile if upstream load becomes a concern.
+	var recentPosts []*appbsky.FeedDefs_PostView
+	if unauthedViewingOkay {
+		af, err := appbsky.FeedGetAuthorFeed(ctx, srv.xrpcc, pv.Did, "", "posts_no_replies", false, authorFeedFetchLimit)
+		if err != nil {
+			log.Warnf("failed to fetch author feed for: %s\t%v", pv.Did, err)
+		} else {
+			for _, p := range af.Feed {
+				if p == nil || p.Post == nil {
+					continue
+				}
+				// Only the author's own posts (matches RSS handler).
+				if p.Post.Author == nil || p.Post.Author.Did != pv.Did {
+					continue
+				}
+				recentPosts = append(recentPosts, p.Post)
+				if len(recentPosts) >= maxRecentPosts {
+					break
+				}
+			}
+		}
+	} else {
 		data["requiresAuth"] = true
+	}
+
+	if jsonld, err := buildProfileJSONLD(pv, recentPosts, hideEmbedLabels, hideReplyLabels); err == nil {
+		data["profileJSONLD"] = jsonld
+	} else {
+		log.Warnf("failed to build profile JSON-LD for %s: %v", pv.Did, err)
 	}
 
 	return c.Render(http.StatusOK, "profile.html", data)
@@ -784,12 +795,7 @@ func (srv *Server) WebFeed(c echo.Context) error {
 		log.Warnf("failed to fetch profile for: %s\t%v", identifier, err)
 		return c.Render(http.StatusOK, "feed.html", data)
 	}
-	unauthedViewingOkay := true
-	for _, label := range pv.Labels {
-		if label.Src == pv.Did && label.Val == "!no-unauthenticated" {
-			unauthedViewingOkay = false
-		}
-	}
+	unauthedViewingOkay := !profileRequiresAuth(pv)
 
 	if !unauthedViewingOkay {
 		return c.Render(http.StatusOK, "feed.html", data)

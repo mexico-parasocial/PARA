@@ -82,6 +82,7 @@ export const router = new Router({
   MessagesSettings: '/messages/settings',
   Representatives: '/representatives',
   MessagesInbox: '/messages/inbox',
+  CommunityChat: '/messages/community/:communityUri/chat',
   MessagesConversation: '/messages/:conversation',
   MessagesConversationSettings: '/messages/:conversation/settings',
   MessagesJoinRequests: '/messages/:conversation/requests',

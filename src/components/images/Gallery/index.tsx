@@ -54,6 +54,11 @@ interface GalleryProps {
   ) => void
   onPressIn?: (index: number) => void
   viewContext?: PostEmbedViewContext
+  metricsPostContext?: {
+    postUri: string
+    postAuthorDid: string
+    feedDescriptor?: string
+  }
 }
 
 const Context = createContext<{
@@ -97,6 +102,7 @@ export function Gallery({
   onPress,
   onPressIn,
   viewContext,
+  metricsPostContext,
 }: GalleryProps) {
   const {t: l} = useLingui()
   const ax = useAnalytics()
@@ -160,13 +166,17 @@ export function Gallery({
   const emitSwipeMetric = useMemo(
     () =>
       debounce((fromIndex: number, toIndex: number) => {
-        ax.metric('post:gallery:swipe', {
-          fromImage: fromIndex + 1, // convert to 1-based index for easier analysis
-          toImage: toIndex + 1, // convert to 1-based index for easier analysis
+        if (!metricsPostContext) return
+        ax.metric('post:photoEmbed:carouselSwipe', {
+          fromImage: fromIndex + 1,
+          toImage: toIndex + 1,
           totalImages: images.length,
+          postUri: metricsPostContext.postUri,
+          postAuthorDid: metricsPostContext.postAuthorDid,
+          feedDescriptor: metricsPostContext.feedDescriptor,
         })
       }, 200),
-    [ax, images.length],
+    [ax, images.length, metricsPostContext],
   )
 
   const setCurrentIndex = (index: number) => {
@@ -267,10 +277,6 @@ export function Gallery({
           renderItem={({item, index}) => {
             const openLightboxAtIndex = onPress
               ? () => {
-                  ax.metric('post:gallery:openLightbox', {
-                    fromImage: index + 1, // convert to 1-based index for easier analysis
-                    totalImages: images.length,
-                  })
                   const refs: AnimatedRef<any>[] = []
                   const dims: (Dimensions | null)[] = []
                   for (let i = 0; i < images.length; i++) {

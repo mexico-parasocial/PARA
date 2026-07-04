@@ -1,5 +1,5 @@
 import {type JSX, useCallback, useRef} from 'react'
-import {Linking} from 'react-native'
+import * as Linking from 'expo-linking'
 import * as Notifications from 'expo-notifications'
 import {i18n, type MessageDescriptor} from '@lingui/core'
 import {msg} from '@lingui/core/macro'
@@ -25,6 +25,7 @@ import {
   type ChatNotificationPayload,
   getNotificationPayload,
   isChatNotificationPayload,
+  type NotificationPayload,
   notificationToURL,
   storePayloadForAccountSwitch,
 } from '#/lib/hooks/useNotificationHandler'
@@ -37,6 +38,7 @@ import {
   type DataTabNavigatorParams,
   type FlatNavigatorParams,
   type HomeTabNavigatorParams,
+  type MessagesTabNavigatorParams,
   type MyProfileTabNavigatorParams,
   type NotificationsTabNavigatorParams,
   type RootStackParams,
@@ -45,6 +47,7 @@ import {
   type State,
 } from '#/lib/routes/types'
 import {bskyTitle} from '#/lib/strings/headings'
+import {CHAT_INVITE_CODE_REGEX} from '#/lib/strings/url-helpers'
 import {useUnreadNotifications} from '#/state/queries/notifications/unread'
 import {useSession} from '#/state/session'
 import {
@@ -213,6 +216,8 @@ const NotificationsTab =
 const MyProfileTab =
   createNativeStackNavigatorWithAuth<MyProfileTabNavigatorParams>()
 const DataTab = createNativeStackNavigatorWithAuth<DataTabNavigatorParams>()
+const MessagesTab =
+  createNativeStackNavigatorWithAuth<MessagesTabNavigatorParams>()
 const Flat = createNativeStackNavigatorWithAuth<FlatNavigatorParams>()
 const Tab = createBottomTabNavigator<BottomTabNavigatorParams>()
 const RootStack = createNativeStackNavigatorWithAuth<RootStackParams>()
@@ -690,46 +695,46 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
         options={{title: title(msg`Topic`)}}
       />
       <Stack.Group screenLayout={renderMessagesSplitViewLayout}>
-      <Stack.Screen
-        name="Messages"
-        getComponent={() => MessagesScreen}
-        options={{title: title(msg`Messages`), requireAuth: true}}
-/>
-      <Stack.Screen
-        name="MessagesConversation"
-        getComponent={() => MessagesConversationScreen}
-        options={{title: title(msg`Chat`), requireAuth: true}}
-      />
-      <Stack.Screen
-        name="MessagesConversationSettings"
-        getComponent={() => MessagesConversationSettingsScreen}
-        options={{title: title(msg`Chat settings`), requireAuth: true}}
-      />
-      <Stack.Screen
-        name="AgentChat"
-        getComponent={() => AgentChatScreen}
-        options={{title: title(msg`Agent Chat`), requireAuth: true}}
-      />
-      <Stack.Screen
-        name="CommunityAgentProfile"
-        getComponent={() => CommunityAgentProfileScreen}
-        options={{title: title(msg`Agent Profile`)}}
-      />
+        <Stack.Screen
+          name="Messages"
+          getComponent={() => MessagesScreen}
+          options={{title: title(msg`Messages`), requireAuth: true}}
+        />
+        <Stack.Screen
+          name="MessagesConversation"
+          getComponent={() => MessagesConversationScreen}
+          options={{title: title(msg`Chat`), requireAuth: true}}
+        />
+        <Stack.Screen
+          name="MessagesConversationSettings"
+          getComponent={() => MessagesConversationSettingsScreen}
+          options={{title: title(msg`Chat settings`), requireAuth: true}}
+        />
+        <Stack.Screen
+          name="AgentChat"
+          getComponent={() => AgentChatScreen}
+          options={{title: title(msg`Agent Chat`), requireAuth: true}}
+        />
+        <Stack.Screen
+          name="CommunityAgentProfile"
+          getComponent={() => CommunityAgentProfileScreen}
+          options={{title: title(msg`Agent Profile`)}}
+        />
         <Stack.Screen
           name="MessagesJoinRequests"
           getComponent={() => MessagesJoinRequestsScreen}
           options={{title: title(msg`Requests to join`), requireAuth: true}}
         />
-      <Stack.Screen
-        name="MessagesSettings"
-        getComponent={() => MessagesSettingsScreen}
-        options={{title: title(msg`Chat settings`), requireAuth: true}}
-      />
-      <Stack.Screen
-        name="MessagesInbox"
-        getComponent={() => MessagesInboxScreen}
-        options={{title: title(msg`Chat request inbox`), requireAuth: true}}
-      />
+        <Stack.Screen
+          name="MessagesSettings"
+          getComponent={() => MessagesSettingsScreen}
+          options={{title: title(msg`Chat settings`), requireAuth: true}}
+        />
+        <Stack.Screen
+          name="MessagesInbox"
+          getComponent={() => MessagesInboxScreen}
+          options={{title: title(msg`Chat request inbox`), requireAuth: true}}
+        />
       </Stack.Group>
       <Stack.Screen
         name="NotificationsActivityList"
@@ -1006,6 +1011,10 @@ function TabsNavigator({
         name="MyProfileTab"
         getComponent={() => MyProfileTabNavigator}
       />
+      <Tab.Screen
+        name="MessagesTab"
+        getComponent={() => MessagesTabNavigator}
+      />
     </Tab.Navigator>
   )
 }
@@ -1190,6 +1199,22 @@ function DataTabNavigator() {
   )
 }
 
+function MessagesTabNavigator() {
+  const t = useTheme()
+  return (
+    <MessagesTab.Navigator
+      screenOptions={screenOptions(t)}
+      initialRouteName="Messages">
+      <MessagesTab.Screen
+        name="CommunityChat"
+        getComponent={() => CommunityChatScreen}
+        options={{title: 'Chat'}}
+      />
+      {commonScreens(MessagesTab as typeof Flat)}
+    </MessagesTab.Navigator>
+  )
+}
+
 /**
  * The FlatNavigator is used by Web to represent the routes
  * in a single ("flat") stack.
@@ -1223,8 +1248,7 @@ const FlatNavigator = ({
         name="Notifications"
         getComponent={() => NotificationsScreen}
         options={{title: title(msg`Notifications`), requireAuth: true}}
-
-/>
+      />
       <Flat.Screen
         name="Data"
         getComponent={() => DataScreen}
@@ -1350,6 +1374,19 @@ const LINKING = {
       return buildStateObject('Flat', 'Home', params)
     }
 
+    // Chat invite URLs (`/chat/:code`) are handled by `useIntentHandler`, which
+    // opens the GroupChatJoinDialog (or the logged-out join flow). Route the
+    // path to Home so the dialog overlays Home instead of NotFound. On native,
+    // react-navigation strips the `bluesky://` prefix and passes the path
+    // without a leading slash, so normalize before matching.
+    const normalizedPath = path.startsWith('/') ? path : `/${path}`
+    if (CHAT_INVITE_CODE_REGEX.test(normalizedPath.split('?')[0])) {
+      if (IS_NATIVE) {
+        return buildStateObject('HomeTab', 'Home', params)
+      }
+      return buildStateObject('Flat', 'Home', params)
+    }
+
     if (IS_NATIVE) {
       if (name === 'Search') {
         return buildStateObject('SearchTab', 'Search', params)
@@ -1362,6 +1399,19 @@ const LINKING = {
       }
       if (name === 'Data') {
         return buildStateObject('DataTab', 'Data', params)
+      }
+      if (
+        name === 'Messages' ||
+        name === 'MessagesConversation' ||
+        name === 'MessagesConversationSettings' ||
+        name === 'MessagesSettings' ||
+        name === 'MessagesInbox' ||
+        name === 'MessagesJoinRequests' ||
+        name === 'AgentChat' ||
+        name === 'CommunityAgentProfile' ||
+        name === 'CommunityChat'
+      ) {
+        return buildStateObject('MessagesTab', name, params)
       }
       // if the path is something else, like a post, profile, or even settings, we need to initialize the home tab as pre-existing state otherwise the back button will not work
       return buildStateObject('HomeTab', name, params, [
@@ -1377,13 +1427,11 @@ const LINKING = {
   },
 } satisfies LinkingOptions<AllNavigatorParams>
 
-/**
- * Used to ensure we don't handle the same notification twice
- */
-let lastHandledNotificationDateDedupe: number | undefined
+let didHandlePushNotificationEntry = false
 
 function RoutesContainer({children}: React.PropsWithChildren<{}>) {
   const ax = useAnalytics()
+  // eslint-disable-next-line react-compiler/react-compiler
   const notyLogger = ax.logger.useChild(ax.logger.Context.Notifications)
   const theme = useColorSchemeStyle(DefaultTheme, DarkTheme)
   const {currentAccount, accounts} = useSession()
@@ -1392,6 +1440,7 @@ function RoutesContainer({children}: React.PropsWithChildren<{}>) {
   const previousScreen = useRef<string | undefined>(undefined)
   const emailDialogControl = useEmailDialogControl()
   const closeAllActiveElements = useCloseAllActiveElements()
+  const linkingUrl = Linking.useLinkingURL()
 
   /**
    * Handle navigation to the messages tab, or prepares for account switch.
@@ -1410,7 +1459,7 @@ function RoutesContainer({children}: React.PropsWithChildren<{}>) {
 
         const account = accounts.find(a => a.did === payload.recipientDid)
         if (account) {
-          onPressSwitchAccount(account, 'Notification')
+          void onPressSwitchAccount(account, 'Notification')
         } else {
           setShowLoggedOut(true)
         }
@@ -1422,7 +1471,7 @@ function RoutesContainer({children}: React.PropsWithChildren<{}>) {
         // chat-added-to-group routes to the convo because the recipient was
         // just added and now has access.
         // @ts-expect-error nested navigators aren't typed -sfn
-        navigate('MessagesTab', {
+        void navigate('MessagesTab', {
           screen: 'Messages',
           params: {
             pushToConversation: payload.convoId,
@@ -1432,34 +1481,43 @@ function RoutesContainer({children}: React.PropsWithChildren<{}>) {
         // chat-removed-from-group, chat-join-request-rejected: the convo is
         // no longer accessible to the recipient, so just open the list.
         // @ts-expect-error nested navigators aren't typed -sfn
-        navigate('MessagesTab', {screen: 'Messages'})
+        void navigate('MessagesTab', {screen: 'Messages'})
       }
     },
   )
 
-  async function handlePushNotificationEntry() {
+  function handlePushNotificationEntry() {
     if (!IS_NATIVE) return
 
-    // deep links take precedence - on android,
-    // getLastNotificationResponseAsync returns a "notification"
-    // that is actually a deep link. avoid handling it twice -sfn
-    if (await Linking.getInitialURL()) {
-      return
-    }
+    // Only consume a launching notification once per JS runtime. Account
+    // switches remount the entire tree (see `key={currentAccount?.did}` in
+    // `App.native.tsx`), which re-fires `onNavigationReady` and would
+    // otherwise re-process whatever `getLastNotificationResponse` still has
+    // cached natively (APP-2338).
+    if (didHandlePushNotificationEntry) return
+    didHandlePushNotificationEntry = true
 
-    /**
-     * The notification that caused the app to open, if applicable
-     */
-    const response = await Notifications.getLastNotificationResponseAsync()
+    // intent urls are handled by `useIntentHandler`
+    if (linkingUrl) return
 
-    if (response) {
-      notyLogger.debug(`handlePushNotificationEntry: response`, {response})
+    const notificationResponse = Notifications.getLastNotificationResponse()
 
-      if (response.notification.date === lastHandledNotificationDateDedupe)
-        return
-      lastHandledNotificationDateDedupe = response.notification.date
+    if (notificationResponse) {
+      notyLogger.debug(`handlePushNotificationEntry: response`, {
+        response: notificationResponse,
+      })
 
-      const payload = getNotificationPayload(response.notification)
+      // Clear the last notification response to ensure it's not used again
+      try {
+        Notifications.clearLastNotificationResponse()
+      } catch (error) {
+        notyLogger.error(
+          `handlePushNotificationEntry: error clearing notification response`,
+          {error},
+        )
+      }
+
+      const payload = getNotificationPayload(notificationResponse.notification)
 
       if (payload) {
         ax.metric('notifications:openApp', {
@@ -1469,6 +1527,20 @@ function RoutesContainer({children}: React.PropsWithChildren<{}>) {
 
         if (isChatNotificationPayload(payload)) {
           handleChatNotification(payload)
+        } else if (payload.reason === 'matrix-message') {
+          const matrixPayload = payload as Extract<
+            NonNullable<NotificationPayload>,
+            {reason: 'matrix-message'}
+          >
+          // @ts-expect-error nested navigators aren't typed -sfn
+          void navigate('MessagesTab', {
+            screen: 'CommunityChat',
+            params: {
+              communityUri: matrixPayload.communityUri,
+              communityName: matrixPayload.communityName,
+              roomId: matrixPayload.roomId,
+            },
+          })
         } else {
           const path = notificationToURL(payload)
 
@@ -1478,7 +1550,7 @@ function RoutesContainer({children}: React.PropsWithChildren<{}>) {
           } else if (path) {
             const [screen, params] = router.matchPath(path)
             // @ts-expect-error nested navigators aren't typed -sfn
-            navigate('HomeTab', {screen, params})
+            void navigate('HomeTab', {screen, params})
             notyLogger.debug(`handlePushNotificationEntry: navigate`, {
               screen,
               params,
@@ -1594,7 +1666,7 @@ function resetToTab(
   tabName: 'HomeTab' | 'SearchTab' | 'DataTab' | 'NotificationsTab',
 ) {
   if (navigationRef.isReady()) {
-    navigate(tabName)
+    void navigate(tabName)
     if (navigationRef.canGoBack()) {
       navigationRef.dispatch(StackActions.popToTop()) //we need to check .canGoBack() before calling it
     }

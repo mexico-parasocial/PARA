@@ -341,6 +341,7 @@ export function QuoteEmbed({
           allowNestedQuotes={
             parentIsWithinQuote ? false : parentAllowNestedQuotes
           }
+          post={quote}
         />
       )}
     </>

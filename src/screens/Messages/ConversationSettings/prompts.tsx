@@ -1,5 +1,5 @@
 import {View} from 'react-native'
-import {Trans, useLingui} from '@lingui/react/macro'
+import {Plural, Trans, useLingui} from '@lingui/react/macro'
 
 import {MAX_GROUP_NAME_GRAPHEME_LENGTH} from '#/lib/constants'
 import {isOverMaxGraphemeCount} from '#/lib/strings/helpers'
@@ -60,7 +60,12 @@ export function EditNamePrompt({
                 ]}>
                 <Trans>
                   Group name is too long. The maximum number of characters is{' '}
-                  {MAX_GROUP_NAME_GRAPHEME_LENGTH}.
+                  <Plural
+                    value={MAX_GROUP_NAME_GRAPHEME_LENGTH}
+                    one="# character"
+                    other="# characters"
+                  />
+                  .
                 </Trans>
               </Text>
             ) : null}
@@ -115,8 +120,32 @@ export function LeaveChatPrompt({
     <Prompt.Basic
       control={control}
       title={l`Are you sure you want to leave ${groupName}?`}
-      description={l`You won’t be able to rejoin unless you’re invited.`}
+      description={l`You won't be able to rejoin unless you're invited.`}
       confirmButtonCta={l`Leave group chat`}
+      confirmButtonColor="negative"
+      cancelButtonCta={l`Cancel`}
+      onConfirm={onConfirm}
+    />
+  )
+}
+
+export function LeaveAndLockChatPrompt({
+  control,
+  groupName,
+  onConfirm,
+}: {
+  control: Dialog.DialogOuterProps['control']
+  groupName: string
+  onConfirm: () => void
+}) {
+  const {t: l} = useLingui()
+
+  return (
+    <Prompt.Basic
+      control={control}
+      title={l`Leave ${groupName}?`}
+      description={l`As the owner, you must lock this group chat before leaving. Once locked, no new members can join and the chat will be read-only for existing members.`}
+      confirmButtonCta={l`Lock and leave`}
       confirmButtonColor="negative"
       cancelButtonCta={l`Cancel`}
       onConfirm={onConfirm}

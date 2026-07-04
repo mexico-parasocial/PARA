@@ -458,6 +458,7 @@ let FeedItemInner = ({
             postAuthor={post.author}
             onOpenEmbed={onOpenEmbed}
             post={post}
+            feedDescriptor={feedDescriptor}
             threadgateRecord={threadgateRecord}
           />
           <PostControls
@@ -489,6 +490,7 @@ let PostContent = ({
   postEmbed,
   postAuthor,
   onOpenEmbed,
+  feedDescriptor,
   threadgateRecord,
 }: {
   moderation: ModerationDecision
@@ -497,6 +499,7 @@ let PostContent = ({
   postAuthor: AppBskyFeedDefs.PostView['author']
   onOpenEmbed: () => void
   post: AppBskyFeedDefs.PostView
+  feedDescriptor?: string
   threadgateRecord?: AppBskyFeedThreadgate.Record
 }): React.ReactNode => {
   const {currentAccount} = useSession()
@@ -576,6 +579,8 @@ let PostContent = ({
             moderation={moderation}
             onOpen={onOpenEmbed}
             viewContext={PostEmbedViewContext.Feed}
+            feedDescriptor={feedDescriptor}
+            post={post}
           />
         </View>
       ) : null}

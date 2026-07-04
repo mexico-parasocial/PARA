@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useMemo} from 'react'
+import {useCallback, useEffect, useMemo, useState} from 'react'
 import {
   ActivityIndicator,
   StyleSheet,
@@ -6,6 +6,8 @@ import {
   View,
 } from 'react-native'
 import {WebView} from 'react-native-webview'
+import * as FileSystem from 'expo-file-system'
+import {Asset} from 'expo-asset'
 import {useNavigation, useRoute} from '@react-navigation/native'
 
 import {getDefaultChatIdentityMode} from '#/lib/chat/identity'
@@ -74,6 +76,31 @@ export function CommunityChatScreen() {
   ].filter(Boolean) as string[]
 
   const isLoading = spaceLoading || tokenLoading
+
+  const [sdkBundle, setSdkBundle] = useState<string | undefined>()
+
+  useEffect(() => {
+    let cancelled = false
+    async function loadBundle() {
+      try {
+        const asset = Asset.fromModule(
+          require('../../../assets/chat/matrix-js-sdk.bundle.txt'),
+        )
+        await asset.downloadAsync()
+        const content = await FileSystem.readAsStringAsync(
+          asset.localUri || asset.uri,
+        )
+        if (!cancelled) setSdkBundle(content)
+      } catch (err) {
+        console.warn('[CommunityChat] Failed to load local Matrix SDK bundle:', err)
+        if (!cancelled) setSdkBundle(undefined)
+      }
+    }
+    void loadBundle()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const injectedJavaScript = useMemo(() => {
     if (!tokenData || !activeRoomId) return ''
@@ -262,7 +289,7 @@ export function CommunityChatScreen() {
       </View>
       <WebView
         source={{
-          html: buildClientHtml(),
+          html: buildClientHtml(sdkBundle),
           baseUrl: 'https://chat.para.social',
         }}
         style={styles.webview}

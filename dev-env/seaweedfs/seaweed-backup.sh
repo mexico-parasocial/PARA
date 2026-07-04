@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Backs up local SeaweedFS Docker volumes to a timestamped Mac mini directory.
-# This backs up the rehearsal cluster only. It does not touch R2 or production.
+# Backs up SeaweedFS Docker volumes to a timestamped directory.
+# Supports both the rehearsal cluster (project 'seaweedfs') and the bare-metal
+# stack (project 'watzappa'). Set SEAWEEDFS_COMPOSE_PROJECT to override.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BACKUP_ROOT="${SEAWEEDFS_BACKUP_ROOT:-/Users/mlv/Backups/para/seaweedfs}"
@@ -16,11 +17,32 @@ volumes=(
   "seaweed_filer"
 )
 
+# Docker Compose names volumes differently depending on the project and whether
+# the compose file uses an explicit short name or a long name. We accept either
+# {project}_{name} or {project}_{name}_data.
+find_volume() {
+  local short_name="$1"
+  local candidate1="${PROJECT_NAME}_${short_name}"
+  local candidate2="${PROJECT_NAME}_${short_name}_data"
+
+  if docker volume inspect "$candidate1" > /dev/null 2>&1; then
+    echo "$candidate1"
+  elif docker volume inspect "$candidate2" > /dev/null 2>&1; then
+    echo "$candidate2"
+  else
+    echo ""
+  fi
+}
+
 require_volume() {
-  local volume="$1"
-  if ! docker volume inspect "$volume" > /dev/null 2>&1; then
-    echo "Missing Docker volume: $volume" >&2
-    echo "Start the cluster first with: ${SCRIPT_DIR}/seaweed-up.sh" >&2
+  local short_name="$1"
+  local volume
+  volume="$(find_volume "$short_name")"
+  if [ -z "$volume" ]; then
+    echo "Missing Docker volume for '${short_name}'. Tried:" >&2
+    echo "  ${PROJECT_NAME}_${short_name}" >&2
+    echo "  ${PROJECT_NAME}_${short_name}_data" >&2
+    echo "Start the cluster first or set SEAWEEDFS_COMPOSE_PROJECT." >&2
     exit 1
   fi
 }
@@ -35,8 +57,8 @@ echo "Backup:  $BACKUP_DIR"
 echo ""
 
 for short_name in "${volumes[@]}"; do
-  volume="${PROJECT_NAME}_${short_name}"
-  require_volume "$volume"
+  volume="$(find_volume "$short_name")"
+  require_volume "$short_name"
   echo "Backing up $volume ..."
   docker run --rm \
     -v "${volume}:/data:ro" \
@@ -51,7 +73,7 @@ cp "${SCRIPT_DIR}/s3-config.json" "${BACKUP_DIR}/s3-config.json"
 cat > "${BACKUP_DIR}/manifest.txt" <<EOF
 created_at=${TIMESTAMP}
 compose_project=${PROJECT_NAME}
-seaweed_image=chrislusf/seaweedfs:4.31
+seaweed_image=chrislusf/seaweedfs:4.37
 source=${SCRIPT_DIR}
 volumes=${PROJECT_NAME}_seaweed_master,${PROJECT_NAME}_seaweed_volume,${PROJECT_NAME}_seaweed_filer
 EOF

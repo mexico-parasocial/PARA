@@ -8,12 +8,14 @@ import {
 } from '@atproto/api'
 import {plural} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react/macro'
+import {useNavigation} from '@react-navigation/native'
 import {useQueryClient} from '@tanstack/react-query'
 
 import {GestureActionView} from '#/lib/custom-animations/GestureActionView'
 import {useHaptics} from '#/lib/haptics'
 import {createSanitizedDisplayName} from '#/lib/moderation/create-sanitized-display-name'
 import {decrementBadgeCount} from '#/lib/notifications/notifications'
+import {type NavigationProp} from '#/lib/routes/types'
 import {sanitizeHandle} from '#/lib/strings/handles'
 import {
   type Shadow,
@@ -22,10 +24,13 @@ import {
 } from '#/state/cache/profile-shadow'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
 import {
+  type MatrixRoomSummary,
+  useMarkMatrixReadMutation,
+} from '#/state/queries/matrix'
+import {
   precacheConvoQuery,
   useMarkAsReadMutation,
 } from '#/state/queries/messages/conversation'
-import {JOIN_REQUESTS_THRESHOLD} from '#/state/queries/messages/list-join-requests'
 import {unstableCacheProfileView} from '#/state/queries/profile'
 import {useSession} from '#/state/session'
 import {TimeElapsed} from '#/view/com/util/TimeElapsed'
@@ -47,6 +52,7 @@ import {Lock_Stroke2_Corner2_Rounded as LockIcon} from '#/components/icons/Lock'
 import {Trash_Stroke2_Corner0_Rounded} from '#/components/icons/Trash'
 import {Link} from '#/components/Link'
 import {useMenuControl} from '#/components/Menu'
+import * as Menu from '#/components/Menu'
 import {PostAlerts} from '#/components/moderation/PostAlerts'
 import {createPortalGroup} from '#/components/Portal'
 import {ProfileBadges} from '#/components/ProfileBadges'
@@ -56,21 +62,46 @@ import {IS_NATIVE} from '#/env'
 import type * as bsky from '#/types/bsky'
 import {useIsWithinSplitView} from './splitView/context'
 
+const roomKindLabel: Record<MatrixRoomSummary['kind'], string> = {
+  main: 'Sala principal',
+  'chamber-a': 'Cámara A',
+  'chamber-b': 'Cámara B',
+  observers: 'Consejo observador',
+}
+
+const JOIN_REQUESTS_THRESHOLD = 20
+
 export const ChatListItemPortal = createPortalGroup()
 
-export function ChatListItem({
-  convo: convoView,
-  showMenu = true,
-  selected = false,
-  children,
-}: {
-  convo: ChatBskyConvoDefs.ConvoView
-  showMenu?: boolean
-  selected?: boolean
-  children?: React.ReactNode
-}) {
+export type ChatListItemProps =
+  | {
+      type?: 'conversation'
+      convo: ChatBskyConvoDefs.ConvoView
+      showMenu?: boolean
+      selected?: boolean
+      children?: React.ReactNode
+    }
+  | {
+      type: 'matrix-room'
+      room: {
+        roomId: string
+        communityUri: string
+        slug: string
+        unread: number
+        kind: 'main' | 'chamber-a' | 'chamber-b' | 'observers'
+      }
+      selected?: boolean
+    }
+
+export function ChatListItem(props: ChatListItemProps) {
   const {currentAccount} = useSession()
   const moderationOpts = useModerationOpts()
+
+  if (props.type === 'matrix-room') {
+    return <MatrixChatListItem room={props.room} selected={props.selected} />
+  }
+
+  const {convo: convoView, showMenu = true, selected = false, children} = props
 
   if (!moderationOpts) {
     return null
@@ -307,19 +338,12 @@ function BaseChatItem({
     isDeletedAccount ||
     (convo.kind === 'group' && convo.details.lockStatus !== 'unlocked')
 
-  const {
-    lastMessage,
-    LastMessageIcon,
-    lastMessageSentAt,
-    latestReportableMessage,
-  } = useMemo(() => {
+  const {lastMessage, LastMessageIcon, lastMessageSentAt} = useMemo(() => {
     let lastMessage = l`No messages yet`
 
     let LastMessageIcon: React.ComponentType<SVGIconProps> | null = null
 
     let lastMessageSentAt: string | null = null
-
-    let latestReportableMessage: ChatBskyConvoDefs.MessageView | undefined
 
     // Deleted message
     if (ChatBskyConvoDefs.isDeletedMessageView(convo.view.lastMessage)) {
@@ -340,7 +364,6 @@ function BaseChatItem({
       if (info) {
         lastMessage = info.message ?? lastMessage
         lastMessageSentAt = info.sentAt
-        latestReportableMessage = info.reportableMessage
       }
     }
 
@@ -385,7 +408,6 @@ function BaseChatItem({
       lastMessage,
       LastMessageIcon,
       lastMessageSentAt,
-      latestReportableMessage,
     }
   }, [l, convo, currentAccount?.did, isDeletedAccount, i18n])
 
@@ -663,7 +685,7 @@ function BaseChatItem({
           {/* TODO: Allow showing menu for groups where the owner has left! */}
           {showMenu && primaryProfile && (
             <ConvoMenu
-              convo={convo.view}
+              convo={convo}
               profile={primaryProfile}
               control={menuControl}
               currentScreen="list"
@@ -681,7 +703,6 @@ function BaseChatItem({
                     !gtMobile || showActions || menuControl.isOpen ? 1 : 0,
                 },
               ]}
-              latestReportableMessage={latestReportableMessage}
             />
           )}
 
@@ -692,6 +713,185 @@ function BaseChatItem({
           />
         </View>
       </GestureActionView>
+    </ChatListItemPortal.Provider>
+  )
+}
+
+function MatrixChatListItem({
+  room,
+  selected = false,
+}: {
+  room: MatrixRoomSummary
+  selected?: boolean
+}) {
+  const t = useTheme()
+  const {t: l} = useLingui()
+  const navigation = useNavigation<NavigationProp>()
+  const {isWithinLeftPanel} = useIsWithinSplitView()
+  const menuControl = useMenuControl()
+  const {mutate: markRead} = useMarkMatrixReadMutation()
+  const playHaptic = useHaptics()
+
+  const title = room.slug
+  const lastMessage = l`${roomKindLabel[room.kind]} · Chat cívico privado`
+  const hasUnread = room.unread > 0
+  const avatarSize = isWithinLeftPanel ? 48 : 52
+
+  const onPress = useCallback(() => {
+    navigation.navigate('CommunityChat', {
+      communityUri: room.communityUri,
+      communityName: room.slug,
+      roomId: room.roomId,
+    })
+  }, [navigation, room])
+
+  const onLongPress = useCallback(() => {
+    playHaptic()
+    menuControl.open()
+  }, [playHaptic, menuControl])
+
+  const onMarkRead = useCallback(() => {
+    markRead({roomId: room.roomId})
+  }, [markRead, room.roomId])
+
+  const onViewCommunity = useCallback(() => {
+    const communityId = room.communityUri.replace(/^at:\/\//, '')
+    navigation.navigate('CommunityProfile', {
+      communityId,
+      communityName: room.slug,
+    })
+  }, [navigation, room])
+
+  return (
+    <ChatListItemPortal.Provider>
+      <View style={[a.relative, t.atoms.bg, isWithinLeftPanel && a.mx_sm]}>
+        <View
+          style={[
+            a.z_10,
+            a.absolute,
+            {top: tokens.space.md, left: tokens.space.lg},
+          ]}>
+          <View
+            style={[
+              a.justify_center,
+              a.align_center,
+              {
+                width: avatarSize,
+                height: avatarSize,
+                borderRadius: avatarSize / 2,
+                backgroundColor: t.palette.primary_500 + '20',
+              },
+            ]}>
+            <Text style={[a.text_xl]}>🏛️</Text>
+          </View>
+        </View>
+
+        <Link
+          to={`/messages/community/${encodeURIComponent(room.communityUri)}/chat`}
+          action={isWithinLeftPanel ? 'navigate' : 'push'}
+          label={title}
+          accessibilityHint={l`Go to the community chat for ${room.slug}`}
+          accessibilityActions={
+            IS_NATIVE
+              ? [
+                  {
+                    name: 'magicTap',
+                    label: l`Open community chat options`,
+                  },
+                  {
+                    name: 'longpress',
+                    label: l`Open community chat options`,
+                  },
+                ]
+              : undefined
+          }
+          onPress={onPress}
+          onLongPress={IS_NATIVE ? onLongPress : undefined}
+          onAccessibilityAction={onLongPress}>
+          {({hovered, pressed, focused}) => (
+            <View
+              style={[
+                a.flex_row,
+                a.align_start,
+                a.flex_1,
+                a.px_lg,
+                a.py_md,
+                a.gap_md,
+                isWithinLeftPanel && a.rounded_sm,
+                {
+                  backgroundColor: hasUnread
+                    ? t.palette.primary_25
+                    : t.palette.contrast_0,
+                },
+                (hovered || pressed || focused) && t.atoms.bg_contrast_25,
+                selected && t.atoms.bg_contrast_50,
+              ]}>
+              <View style={{width: avatarSize, height: avatarSize}} />
+
+              <View
+                style={[a.flex_1, a.justify_center, web({paddingRight: 40})]}>
+                <View style={[a.w_full, a.flex_row, a.align_center, a.pb_2xs]}>
+                  <View style={[a.flex_shrink]}>
+                    <Text
+                      emoji
+                      numberOfLines={1}
+                      style={[
+                        a.text_md,
+                        t.atoms.text,
+                        a.font_semi_bold,
+                        {lineHeight: 21},
+                      ]}>
+                      {title}
+                    </Text>
+                  </View>
+
+                  {hasUnread && (
+                    <View
+                      style={[
+                        a.rounded_full,
+                        {
+                          backgroundColor: t.palette.primary_500,
+                          height: 8,
+                          width: 8,
+                          marginLeft: 6,
+                        },
+                        web({whiteSpace: 'preserve nowrap'}),
+                      ]}
+                    />
+                  )}
+                </View>
+
+                <View style={[a.flex_row, a.align_center]}>
+                  <Text
+                    emoji
+                    numberOfLines={2}
+                    style={[
+                      hasUnread ? a.font_medium : t.atoms.text_contrast_high,
+                    ]}>
+                    {lastMessage}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          )}
+        </Link>
+
+        <ChatListItemPortal.Outlet />
+
+        <Menu.Root control={menuControl}>
+          <Menu.Outer>
+            <Menu.Item
+              label={l`Mark as read`}
+              onPress={onMarkRead}
+              disabled={!hasUnread}
+            />
+            <Menu.Item
+              label={l`View community profile`}
+              onPress={onViewCommunity}
+            />
+          </Menu.Outer>
+        </Menu.Root>
+      </View>
     </ChatListItemPortal.Provider>
   )
 }

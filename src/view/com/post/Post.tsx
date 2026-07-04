@@ -237,6 +237,7 @@ function PostInner({
                 embed={post.embed}
                 moderation={moderation}
                 viewContext={PostEmbedViewContext.Feed}
+                post={post}
               />
             ) : null}
           </ContentHider>

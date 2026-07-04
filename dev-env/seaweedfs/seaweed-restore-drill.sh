@@ -35,10 +35,20 @@ BUCKET="${SEAWEEDFS_BUCKET:-blobs}"
 
 mkdir -p "$DRILL_DIR"
 
+# Use the image version recorded in the backup manifest if available,
+# otherwise default to the current 4.37 release.
+SEAWEED_IMAGE="chrislusf/seaweedfs:4.37"
+if [ -f "${BACKUP_DIR}/manifest.txt" ]; then
+  MANIFEST_IMAGE=$(grep "^seaweed_image=" "${BACKUP_DIR}/manifest.txt" | cut -d= -f2- | head -1 || true)
+  if [ -n "$MANIFEST_IMAGE" ]; then
+    SEAWEED_IMAGE="$MANIFEST_IMAGE"
+  fi
+fi
+
 cat > "$RESTORE_COMPOSE_FILE" <<EOF
 services:
   master:
-    image: chrislusf/seaweedfs:4.31
+    image: ${SEAWEED_IMAGE}
     command: >
       master
       -ip=master
@@ -53,7 +63,7 @@ services:
       - seaweed_master:/data
 
   volume:
-    image: chrislusf/seaweedfs:4.31
+    image: ${SEAWEED_IMAGE}
     command: >
       volume
       -mserver=master:9333
@@ -71,7 +81,7 @@ services:
       - master
 
   filer:
-    image: chrislusf/seaweedfs:4.31
+    image: ${SEAWEED_IMAGE}
     command: >
       filer
       -master=master:9333
@@ -89,7 +99,7 @@ services:
       - volume
 
   s3:
-    image: chrislusf/seaweedfs:4.31
+    image: ${SEAWEED_IMAGE}
     command: >
       s3
       -filer=filer:8888
@@ -171,9 +181,8 @@ wait_for_http() {
 wait_for_http "http://localhost:19333/cluster/status" "200"
 wait_for_http "http://localhost:18080/status" "200"
 wait_for_http "http://localhost:18890/?limit=1" "200"
-S3_STATUS=$(curl -s -o /dev/null -w '%{http_code}' "$S3_ENDPOINT/" 2>/dev/null || echo "000")
-if [ "$S3_STATUS" != "200" ] && [ "$S3_STATUS" != "403" ]; then
-  echo "Restored S3 gateway failed health check: HTTP $S3_STATUS" >&2
+if ! wait_for_http "$S3_ENDPOINT/" "200,403"; then
+  echo "Restored S3 gateway failed health check" >&2
   exit 1
 fi
 

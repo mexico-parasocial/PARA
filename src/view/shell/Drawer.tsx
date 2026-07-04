@@ -55,9 +55,7 @@ import {
   HomeOpen_Filled_Corner0_Rounded as HomeFilled,
   HomeOpen_Stoke2_Corner0_Rounded as Home,
 } from '#/components/icons/HomeOpen'
-import {
-  Key_Stroke2_Corner2_Rounded as Key,
-} from '#/components/icons/Key'
+import {Key_Stroke2_Corner2_Rounded as Key} from '#/components/icons/Key'
 import {
   Library_Filled_Corner0_Rounded as LibraryFilled,
   Library_Stroke2_Corner0_Rounded as Library,
@@ -183,6 +181,7 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
     isAtNotifications,
     isAtMyProfile,
     isAtData,
+    isAtMessages,
     isAtCommunities,
   } = useNavigationTabState()
   const currentRoute = useNavigationState(state =>
@@ -218,7 +217,7 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
         item: TAB_TO_NAV_ITEM[tab],
         surface,
       })
-    const state = navigation.getState()
+      const state = navigation.getState()
       setDrawerOpen(false)
       if (IS_WEB) {
         // hack because we have flat navigator for web and MyProfile does not exist on the web navigator -ansh
@@ -246,11 +245,13 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
             // fallback: reset navigation
             navigation.reset({
               index: 0,
-              routes: [{name: `${tab}Tab`}],
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              routes: [{name: `${tab}Tab` as any}],
             })
           }
         } else {
-          navigation.navigate(`${tab}Tab`)
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          navigation.navigate(`${tab}Tab` as any)
         }
       }
     },
@@ -262,9 +263,8 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
   const onPressSearch = useCallback(() => onPressTab('Search'), [onPressTab])
 
   const onPressMessages = useCallback(() => {
-    navigation.navigate('Messages', {})
-    setDrawerOpen(false)
-  }, [navigation, setDrawerOpen])
+    onPressTab('Messages')
+  }, [onPressTab])
 
   const onPressNotifications = useCallback(
     () => onPressTab('Notifications'),
@@ -433,7 +433,7 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
           <>
             <SearchMenuItem isActive={isAtSearch} onPress={onPressSearch} />
             <HomeMenuItem isActive={isAtHome} onPress={onPressHome} />
-            <ChatMenuItem isActive={false} onPress={onPressMessages} />
+            <ChatMenuItem isActive={isAtMessages} onPress={onPressMessages} />
             <NotificationsMenuItem
               isActive={isAtNotifications}
               onPress={onPressNotifications}
@@ -442,8 +442,14 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
             <CompassMenuItem isActive={isAtCompass} onPress={onPressCompass} />
             <BaseMenuItem isActive={isAtData} onPress={onPressData} />
             <MyBaseMenuItem isActive={isAtMyBase} onPress={onPressMyBase} />
-            <CivicTreeMenuItem isActive={isAtCivicTree} onPress={onPressCivicTree} />
-            <IdentityHubMenuItem isActive={isAtIdentityHub} onPress={onPressIdentityHub} />
+            <CivicTreeMenuItem
+              isActive={isAtCivicTree}
+              onPress={onPressCivicTree}
+            />
+            <IdentityHubMenuItem
+              isActive={isAtIdentityHub}
+              onPress={onPressIdentityHub}
+            />
             <CommunitiesMenuItem
               isActive={isAtCommunities}
               onPress={onPressCommunities}
@@ -940,9 +946,7 @@ let IdentityHubMenuItem = ({
   const {_} = useLingui()
   return (
     <MenuItem
-      icon={
-        <Key style={[t.atoms.text]} width={iconWidth} />
-      }
+      icon={<Key style={[t.atoms.text]} width={iconWidth} />}
       label={_(msg`Identity & Wallet`)}
       bold={isActive}
       onPress={onPress}

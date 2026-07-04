@@ -13,6 +13,7 @@ import {
   KeyboardGestureArea,
 } from 'react-native-keyboard-controller'
 import Animated, {
+  FadeIn,
   runOnJS,
   type ScrollEvent,
   type SharedValue,
@@ -615,41 +616,43 @@ export function MessagesList({
               opened: 0,
             }}>
             {footer ?? (
-              <ConversationFooter
-                convoState={convoState}
-                hasAcceptOverride={hasAcceptOverride}>
-                {({loading}) =>
-                  ax.features.enabled(
-                    ax.features.DmsNewMessageComposerEnable,
-                  ) ? (
-                    <MessageComposer
-                      textInputId={textInputId}
-                      onSendMessage={(message: string) =>
-                        void onSendMessage(message)
-                      }
-                      hasEmbed={!!messageEmbed}
-                      setEmbed={setEmbed}
-                      loading={loading}>
-                      <MessageInputEmbed
-                        embed={messageEmbed}
+              <Animated.View entering={FadeIn.duration(200)}>
+                <ConversationFooter
+                  convoState={convoState}
+                  hasAcceptOverride={hasAcceptOverride}>
+                  {({loading}) =>
+                    ax.features.enabled(
+                      ax.features.DmsNewMessageComposerEnable,
+                    ) ? (
+                      <MessageComposer
+                        textInputId={textInputId}
+                        onSendMessage={(message: string) =>
+                          void onSendMessage(message)
+                        }
+                        hasEmbed={!!messageEmbed}
                         setEmbed={setEmbed}
-                      />
-                    </MessageComposer>
-                  ) : (
-                    <MessageInput
-                      textInputId={textInputId}
-                      onSendMessage={onSendMessage}
-                      hasEmbed={!!messageEmbed}
-                      setEmbed={setEmbed}
-                      loading={loading}>
-                      <MessageInputEmbed
-                        embed={messageEmbed}
+                        loading={loading}>
+                        <MessageInputEmbed
+                          embed={messageEmbed}
+                          setEmbed={setEmbed}
+                        />
+                      </MessageComposer>
+                    ) : (
+                      <MessageInput
+                        textInputId={textInputId}
+                        onSendMessage={onSendMessage}
+                        hasEmbed={!!messageEmbed}
                         setEmbed={setEmbed}
-                      />
-                    </MessageInput>
-                  )
-                }
-              </ConversationFooter>
+                        loading={loading}>
+                        <MessageInputEmbed
+                          embed={messageEmbed}
+                          setEmbed={setEmbed}
+                        />
+                      </MessageInput>
+                    )
+                  }
+                </ConversationFooter>
+              </Animated.View>
             )}
           </KeyboardStickyView>
         </KeyboardGestureArea>
@@ -709,6 +712,16 @@ function getFooterState(
   convoState: ActiveConvoStates,
   hasAcceptOverride?: boolean,
 ): FooterState {
+  const isRequest =
+    convoState.convo.view.status === 'request' && !hasAcceptOverride
+
+  // For group chats, the request footer is driven purely off status: the owner
+  // is always 'accepted' so never sees it, while members the owner added are
+  // 'request' until they accept. This holds even before any messages load.
+  if (convoState.convo.kind === 'group' && isRequest) {
+    return 'request'
+  }
+
   if (convoState.items.length === 0) {
     if (convoState.isFetchingHistory) {
       return 'loading'
@@ -717,7 +730,12 @@ function getFooterState(
     }
   }
 
-  if (convoState.convo.view.status === 'request' && !hasAcceptOverride) {
+  // For direct chats, only show the request footer once there's a message. The
+  // viewer's status stays 'request' until they send their first message, so an
+  // empty direct request is one the viewer started themselves (show the
+  // composer), whereas any message present must be an incoming one from the
+  // other user (show the accept/reject footer).
+  if (isRequest) {
     return 'request'
   }
 

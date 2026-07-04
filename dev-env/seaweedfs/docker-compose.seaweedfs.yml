@@ -29,7 +29,7 @@ services:
   # 1. MASTER – The "brain". Tracks which volume server owns what.
   # ------------------------------------------------------------
   master:
-    image: chrislusf/seaweedfs:4.31
+    image: chrislusf/seaweedfs:4.37
     container_name: para-seaweed-master
     command: >
       master
@@ -61,7 +61,7 @@ services:
   # 2. VOLUME – The "muscle". Stores actual erasure-coded blocks.
   # ------------------------------------------------------------
   volume:
-    image: chrislusf/seaweedfs:4.31
+    image: chrislusf/seaweedfs:4.37
     container_name: para-seaweed-volume
     command: >
       volume
@@ -97,7 +97,7 @@ services:
   # 3. FILER – Metadata layer. Web UI on :8888.
   # ------------------------------------------------------------
   filer:
-    image: chrislusf/seaweedfs:4.31
+    image: chrislusf/seaweedfs:4.37
     container_name: para-seaweed-filer
     command: >
       filer
@@ -134,7 +134,7 @@ services:
   # 4. S3 GATEWAY – What the PDS sees. Exposes AWS S3 API on :8333.
   # ------------------------------------------------------------
   s3:
-    image: chrislusf/seaweedfs:4.31
+    image: chrislusf/seaweedfs:4.37
     container_name: para-seaweed-s3
     command: >
       s3

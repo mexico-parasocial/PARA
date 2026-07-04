@@ -13,6 +13,8 @@ import {
 import {
   type AppBskyActorDefs,
   AppBskyEmbedExternal,
+  AppBskyEmbedGallery,
+  AppBskyEmbedImages,
   AppBskyEmbedVideo,
   type AppBskyFeedDefs,
 } from '@atproto/api'
@@ -921,7 +923,7 @@ let PostFeed = ({
 
   const seenActorWithStatusRef = useRef<Set<string>>(new Set())
   const seenPostUrisRef = useRef<Set<string>>(new Set())
-  const seenStandardSiteUrisRef = useRef<Set<string>>(new Set())
+  const seenPerPostUrisRef = useRef<Set<string>>(new Set())
 
   // Helper to calculate position in feed (count only root posts, not interstitials or thread replies)
   const getPostPosition = useNonReactiveCallback(
@@ -974,6 +976,43 @@ let PostFeed = ({
             feedDescriptor: feedFeedback.feedDescriptor || feed,
             position,
           })
+
+          // Track photo embed impressions for this post
+          if (
+            post.embed &&
+            !seenPerPostUrisRef.current.has(post.uri) &&
+            (AppBskyEmbedImages.isView(post.embed) ||
+              AppBskyEmbedGallery.isView(post.embed))
+          ) {
+            seenPerPostUrisRef.current.add(post.uri)
+            const totalImages = AppBskyEmbedImages.isView(post.embed)
+              ? post.embed.images.length
+              : AppBskyEmbedGallery.isView(post.embed)
+                ? post.embed.items.length
+                : 0
+            if (totalImages > 0) {
+              ax.metric('post:photoEmbed:impression', {
+                layout: totalImages === 1 ? 'single' : 'grid',
+                totalImages,
+                postUri: post.uri,
+                postAuthorDid: post.author.did,
+                feedDescriptor: feedFeedback.feedDescriptor || feed,
+              })
+            }
+          }
+
+          // Track standard site embed impressions
+          if (
+            post.embed &&
+            AppBskyEmbedExternal.isView(post.embed) &&
+            isStandardSiteEmbed(post.embed.external)
+          ) {
+            const url = post.embed.external.uri
+            if (!seenPerPostUrisRef.current.has(url)) {
+              seenPerPostUrisRef.current.add(url)
+              ax.metric('embed:standardSite:view', {url})
+            }
+          }
         }
 
         // Live status tracking (existing code)
@@ -1009,6 +1048,43 @@ let PostFeed = ({
               feedDescriptor: feedFeedback.feedDescriptor || feed,
               position,
             })
+
+            // Track photo embed impressions for this post
+            if (
+              post.embed &&
+              !seenPerPostUrisRef.current.has(post.uri) &&
+              (AppBskyEmbedImages.isView(post.embed) ||
+                AppBskyEmbedGallery.isView(post.embed))
+            ) {
+              seenPerPostUrisRef.current.add(post.uri)
+              const totalImages = AppBskyEmbedImages.isView(post.embed)
+                ? post.embed.images.length
+                : AppBskyEmbedGallery.isView(post.embed)
+                  ? post.embed.items.length
+                  : 0
+              if (totalImages > 0) {
+                ax.metric('post:photoEmbed:impression', {
+                  layout: totalImages === 1 ? 'single' : 'grid',
+                  totalImages,
+                  postUri: post.uri,
+                  postAuthorDid: post.author.did,
+                  feedDescriptor: feedFeedback.feedDescriptor || feed,
+                })
+              }
+            }
+
+            // Track standard site embed impressions
+            if (
+              post.embed &&
+              AppBskyEmbedExternal.isView(post.embed) &&
+              isStandardSiteEmbed(post.embed.external)
+            ) {
+              const url = post.embed.external.uri
+              if (!seenPerPostUrisRef.current.has(url)) {
+                seenPerPostUrisRef.current.add(url)
+                ax.metric('embed:standardSite:view', {url})
+              }
+            }
           }
         }
       }

@@ -10,6 +10,7 @@ let lastActiveTab:
   | 'Notifications'
   | 'MyProfile'
   | 'Data'
+  | 'Messages'
   | 'Communities' = 'Home'
 
 export function useNavigationTabState() {
@@ -23,6 +24,7 @@ export function useNavigationTabState() {
         getTabState(state, 'Notifications') !== TabState.Outside,
       isAtMyProfile: getTabState(state, 'MyProfile') !== TabState.Outside,
       isAtData: getTabState(state, 'Data') !== TabState.Outside,
+      isAtMessages: getTabState(state, 'Messages') !== TabState.Outside,
       isAtCommunities: getTabState(state, 'Communities') !== TabState.Outside,
     }
 
@@ -34,6 +36,7 @@ export function useNavigationTabState() {
       if (res.isAtNotifications) return 'Notifications'
       if (res.isAtMyProfile) return 'MyProfile'
       if (res.isAtData) return 'Data'
+      if (res.isAtMessages) return 'Messages'
       if (res.isAtCommunities) return 'Communities'
       return undefined
     })()
@@ -50,6 +53,7 @@ export function useNavigationTabState() {
       !res.isAtNotifications &&
       !res.isAtMyProfile &&
       !res.isAtData &&
+      !res.isAtMessages &&
       !res.isAtCommunities
     ) {
       res.isAtHome = lastActiveTab === 'Home'
@@ -59,6 +63,7 @@ export function useNavigationTabState() {
       res.isAtNotifications = lastActiveTab === 'Notifications'
       res.isAtMyProfile = lastActiveTab === 'MyProfile'
       res.isAtData = lastActiveTab === 'Data'
+      res.isAtMessages = lastActiveTab === 'Messages'
       res.isAtCommunities = lastActiveTab === 'Communities'
     }
     return res

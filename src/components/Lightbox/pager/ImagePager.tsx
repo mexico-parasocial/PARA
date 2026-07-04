@@ -35,6 +35,7 @@ import Animated, {
 import {Image} from 'expo-image'
 import * as ScreenOrientation from 'expo-screen-orientation'
 
+import {useAnalytics} from '#/analytics'
 import {type Dimensions} from '#/lib/media/types'
 import {useTheme} from '#/alf'
 import {setSystemUITheme} from '#/alf/util/systemUI'
@@ -228,7 +229,8 @@ function ImageView({
   openProgress: SharedValue<number>
   thumbRects: SharedValue<Record<number, MeasuredDimensions | null>>
 }) {
-  const {images, index: initialImageIndex} = lightbox
+  const {images, index: initialImageIndex, metricsContext} = lightbox
+  const ax = useAnalytics()
   const isAnimated = useMemo(() => canAnimate(lightbox), [lightbox])
   const [isScaled, setIsScaled] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
@@ -377,7 +379,21 @@ function ImageView({
         scrollEnabled={!isScaled}
         initialPage={initialImageIndex}
         onPageSelected={e => {
-          setImageIndex(e.nativeEvent.position)
+          const next = e.nativeEvent.position
+          setImageIndex(prev => {
+            if (metricsContext && prev !== next) {
+              ax.metric('post:photoEmbed:lightboxSwipe', {
+                layout: metricsContext.layout,
+                fromImage: prev + 1,
+                toImage: next + 1,
+                totalImages: images.length,
+                postUri: metricsContext.postUri,
+                postAuthorDid: metricsContext.postAuthorDid,
+                feedDescriptor: metricsContext.feedDescriptor,
+              })
+            }
+            return next
+          })
           setIsScaled(false)
         }}
         onPageScrollStateChanged={e => {

@@ -291,18 +291,24 @@ export function useNotificationsHandler() {
           )
         }
       } else if (payload.reason === 'matrix-message') {
+        const matrixPayload = payload as Extract<
+          NonNullable<NotificationPayload>,
+          {reason: 'matrix-message'}
+        >
         logger.debug(`useNotificationsHandler: handling matrix message`, {
           payload,
         })
 
         if (
-          payload.recipientDid !== currentAccount?.did &&
+          matrixPayload.recipientDid !== currentAccount?.did &&
           !storedAccountSwitchPayload
         ) {
-          storePayloadForAccountSwitch(payload)
+          storePayloadForAccountSwitch(matrixPayload)
           closeAllActiveElements()
 
-          const account = accounts.find(a => a.did === payload.recipientDid)
+          const account = accounts.find(
+            a => a.did === matrixPayload.recipientDid,
+          )
           if (account) {
             onPressSwitchAccount(account, 'Notification')
           } else {
@@ -310,9 +316,14 @@ export function useNotificationsHandler() {
           }
         } else {
           closeAllActiveElements()
-          navigation.navigate('CommunityChat', {
-            communityUri: payload.communityUri,
-            communityName: payload.communityName,
+          // @ts-expect-error nested navigators aren't typed -sfn
+          navigation.navigate('MessagesTab', {
+            screen: 'CommunityChat',
+            params: {
+              communityUri: matrixPayload.communityUri,
+              communityName: matrixPayload.communityName,
+              roomId: matrixPayload.roomId,
+            },
           })
         }
       } else {

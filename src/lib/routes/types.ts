@@ -123,6 +123,7 @@ export type CommonNavigatorParams = {
   MessagesSettings: undefined
   MessagesInbox: undefined
   Messages: {pushToConversation?: string; animation?: 'push' | 'pop'}
+  CommunityChat: {communityUri: string; communityName: string; roomId?: string}
   Communities: undefined
   MyCommunities: undefined
   CreateCommunity: undefined
@@ -196,6 +197,7 @@ export type BottomTabNavigatorParams = CommonNavigatorParams & {
   NotificationsTab: {screen?: string; params?: object} | undefined
   MyProfileTab: undefined
   DataTab: undefined
+  MessagesTab: {screen?: string; params?: object} | undefined
 }
 
 export type HomeTabNavigatorParams = CommonNavigatorParams & {
@@ -212,6 +214,10 @@ export type NotificationsTabNavigatorParams = CommonNavigatorParams & {
 
 export type MyProfileTabNavigatorParams = CommonNavigatorParams & {
   MyProfile: {name: 'me'; hideBackButton: true}
+}
+
+export type MessagesTabNavigatorParams = CommonNavigatorParams & {
+  Messages: {pushToConversation?: string; animation?: 'push' | 'pop'}
 }
 
 export type DataTabNavigatorParams = CommonNavigatorParams & {

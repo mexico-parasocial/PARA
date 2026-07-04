@@ -380,6 +380,7 @@ const ThreadItemTreePostInner = memo(function ThreadItemTreePostInner({
                         embed={post.embed}
                         moderation={moderation}
                         viewContext={PostEmbedViewContext.Feed}
+                        post={post}
                       />
                     </View>
                   )}

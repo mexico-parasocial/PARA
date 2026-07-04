@@ -16,8 +16,11 @@ case "$TARGET" in
   seaweed)
     PROFILE="${SCRIPT_DIR}/storage.seaweed.local.env.example"
     ;;
+  baremetal)
+    PROFILE="${SCRIPT_DIR}/storage.baremetal.env.example"
+    ;;
   *)
-    echo "Usage: $0 r2|seaweed" >&2
+    echo "Usage: $0 r2|seaweed|baremetal" >&2
     exit 1
     ;;
 esac

@@ -1,7 +1,18 @@
-import {getM8AccessToken, refreshM8AccessToken} from '#/lib/m8/api'
+import {clearM8Session, getM8AccessToken, refreshM8AccessToken} from '#/lib/m8/api'
+import {navigate} from '#/Navigation'
 
 export const MATRIX_BRIDGE_API_URL =
   process.env.EXPO_PUBLIC_MATRIX_BRIDGE_URL || 'https://bridge.para.social'
+
+export class BridgeAuthError extends Error {
+  constructor(
+    public statusCode: 401 | 403,
+    message: string,
+  ) {
+    super(message)
+    this.name = 'BridgeAuthError'
+  }
+}
 
 export async function matrixBridgeFetch(
   path: string,
@@ -21,18 +32,25 @@ export async function matrixBridgeFetch(
     })
 
   const res = await request()
-  if (res.status !== 401) {
-    return res
+  if (res.status === 401) {
+    const refreshed = await refreshM8AccessToken()
+    if (refreshed) {
+      const newToken = await getM8AccessToken()
+      if (newToken) {
+        headers.Authorization = `Bearer ${newToken}`
+      }
+      return request()
+    }
+    await clearM8Session()
+    void navigate('Home')
+    const body = (await res.json().catch(() => ({}))) as {error?: string}
+    throw new BridgeAuthError(401, body.error || 'Sesión expirada')
   }
 
-  const refreshed = await refreshM8AccessToken()
-  if (!refreshed) {
-    return res
+  if (res.status === 403) {
+    const body = (await res.json().catch(() => ({}))) as {error?: string}
+    throw new BridgeAuthError(403, body.error || 'No tienes permiso para realizar esta acción')
   }
 
-  const newToken = await getM8AccessToken()
-  if (newToken) {
-    headers.Authorization = `Bearer ${newToken}`
-  }
-  return request()
+  return res
 }

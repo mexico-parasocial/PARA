@@ -50,11 +50,14 @@ import {
   MagnifyingGlass_Filled_Stroke2_Corner0_Rounded as MagnifyingGlassFilled,
   MagnifyingGlass_Stroke2_Corner0_Rounded as MagnifyingGlass,
 } from '#/components/icons/MagnifyingGlass'
+import {
+  Message_Stroke2_Corner0_Rounded as MessageIcon,
+  Message_Stroke2_Corner0_Rounded_Filled as MessageFilledIcon,
+} from '#/components/icons/Message'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
 import {useDemoMode} from '#/storage/hooks/demo-mode'
 import {styles} from './BottomBarStyles'
-
 
 export function BottomBar({navigation}: BottomTabBarProps) {
   const {hasSession, currentAccount} = useSession()
@@ -63,8 +66,14 @@ export function BottomBar({navigation}: BottomTabBarProps) {
   const ax = useAnalytics()
   const safeAreaInsets = useSafeAreaInsets()
   const {footerHeight} = useShellLayout()
-  const {isAtHome, isAtSearch, isAtNotifications, isAtMyProfile, isAtData} =
-    useNavigationTabState()
+  const {
+    isAtHome,
+    isAtSearch,
+    isAtNotifications,
+    isAtMyProfile,
+    isAtData,
+    isAtMessages,
+  } = useNavigationTabState()
   const numUnreadNotifications = useUnreadNotifications()
   const {numUnread: numUnreadChat} = useTotalChatUnread()
 
@@ -95,7 +104,7 @@ export function BottomBar({navigation}: BottomTabBarProps) {
         item: TAB_TO_NAV_ITEM[tab],
         surface: 'bottomBar',
       })
-    const state = navigation.getState()
+      const state = navigation.getState()
       const tabState = getTabState(state, tab)
       if (tabState === TabState.InsideAtRoot) {
         emitSoftReset()
@@ -135,6 +144,9 @@ export function BottomBar({navigation}: BottomTabBarProps) {
   }, [onPressTab])
   const onPressData = useCallback(() => {
     onPressTab('Data')
+  }, [onPressTab])
+  const onPressMessages = useCallback(() => {
+    onPressTab('Messages')
   }, [onPressTab])
 
   const onLongPressProfile = useCallback(() => {
@@ -205,6 +217,28 @@ export function BottomBar({navigation}: BottomTabBarProps) {
               accessibilityHint=""
             />
             <Btn
+              testID="bottomBarMessagesBtn"
+              icon={
+                isAtMessages ? (
+                  <MessageFilledIcon
+                    width={iconWidth}
+                    style={[styles.ctrlIcon, t.atoms.text, styles.messagesIcon]}
+                  />
+                ) : (
+                  <MessageIcon
+                    width={iconWidth}
+                    style={[styles.ctrlIcon, t.atoms.text, styles.messagesIcon]}
+                  />
+                )
+              }
+              onPress={onPressMessages}
+              accessible={true}
+              accessibilityRole="tab"
+              accessibilityLabel={_(msg`Messages`)}
+              accessibilityHint=""
+              notificationCount={numUnreadChat}
+            />
+            <Btn
               testID="bottomBarDataBtn"
               icon={
                 isAtData ? (
@@ -224,7 +258,6 @@ export function BottomBar({navigation}: BottomTabBarProps) {
               accessibilityRole="tab"
               accessibilityLabel={_(msg`Data`)}
               accessibilityHint=""
-              notificationCount={numUnreadChat}
             />
             <Btn
               testID="bottomBarNotificationsBtn"

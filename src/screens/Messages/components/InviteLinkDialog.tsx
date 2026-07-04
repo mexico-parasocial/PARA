@@ -10,7 +10,7 @@ import {useCreateJoinLink} from '#/state/queries/messages/create-join-link'
 import {useDisableJoinLink} from '#/state/queries/messages/disable-join-link'
 import {useEditJoinLink} from '#/state/queries/messages/edit-join-link'
 import {useEnableJoinLink} from '#/state/queries/messages/enable-join-link'
-import {atoms as a, useTheme, web} from '#/alf'
+import {atoms as a, native, useTheme, web} from '#/alf'
 import {
   Button,
   ButtonIcon,
@@ -322,7 +322,7 @@ export function InviteLinkDialog({
             ) : null}
           </View>
           {enabledStatus === 'enabled' ? (
-            <View style={[a.mt_lg]}>
+          <View style={[native(a.mt_lg)]}>
               {isOwner ? (
                 <EditTextButton
                   label={l`Edit link settings`}
@@ -499,7 +499,8 @@ export function InviteLinkDialog({
       onClose={() => {
         setStep(defaultStep)
         setWhoCanJoin(defaultWhoCanJoin)
-      }}>
+      }}
+      nativeOptions={{preventExpansion: true}}>
       <Dialog.Handle />
       <Dialog.ScrollableInner
         header={

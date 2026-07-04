@@ -34,7 +34,10 @@ import {ArrowRotateCounterClockwise_Stroke2_Corner0_Rounded as RetryIcon} from '
 import {BubbleSmile_Stroke2_Corner2_Rounded_Large as BubbleSmileIcon} from '#/components/icons/Bubble'
 import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfoIcon} from '#/components/icons/CircleInfo'
 import {Inbox_Stroke2_Corner2_Rounded_Large as InboxLargeIcon} from '#/components/icons/Inbox'
-import {MessagePlus_Stroke2_Corner0_Rounded as MessagePlusIcon, MessagePlus_Stroke2_Corner0_Rounded as NewChatIcon} from '#/components/icons/Message'
+import {
+  MessagePlus_Stroke2_Corner0_Rounded as MessagePlusIcon,
+  MessagePlus_Stroke2_Corner0_Rounded as NewChatIcon,
+} from '#/components/icons/Message'
 import {SettingsGear2_Stroke2_Corner0_Rounded as SettingsIcon} from '#/components/icons/SettingsGear2'
 import * as Layout from '#/components/Layout'
 import {Link} from '#/components/Link'
@@ -46,7 +49,6 @@ import {AgentSelection} from './components/AgentSelection'
 import {ChatDisabled} from './components/ChatDisabled'
 import {ChatListItem} from './components/ChatListItem'
 import {InboxRequests} from './components/InboxRequests'
-import {MatrixRoomListItem} from './components/MatrixRoomListItem'
 import {useIsWithinSplitView} from './components/splitView/context'
 
 type ChatStatus = ChatBskyActorGetStatus.OutputSchema
@@ -82,7 +84,7 @@ function renderItem({item}: {item: ListItem}) {
     case 'CONVERSATION':
       return <ChatListItem convo={item.conversation} selected={item.selected} />
     case 'MATRIX_ROOM':
-      return <MatrixRoomListItem room={item} />
+      return <ChatListItem type="matrix-room" room={item} />
   }
 }
 

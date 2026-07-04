@@ -1,15 +1,13 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {CIVIC_TREE_SOURCE_TYPES} from '#/lib/civic-tree-source-types'
+import {matrixBridgeFetch} from '#/lib/matrix/bridge'
 import {
   type GraphData,
   type GraphEdge,
   type GraphNode,
   type Stance,
 } from '#/screens/Data/deliberation-types'
-
-const BRIDGE_API_URL =
-  process.env.EXPO_PUBLIC_MATRIX_BRIDGE_URL || 'https://bridge.para.social'
 
 // Re-export so existing consumers of these types from this module keep working
 export type {GraphData, GraphEdge, GraphNode, Stance}
@@ -53,8 +51,8 @@ export function useDeliberationCardsQuery(communityUri: string | undefined) {
     queryKey: ['deliberation-cards', communityUri],
     queryFn: async () => {
       if (!communityUri) throw new Error('No community URI')
-      const res = await fetch(
-        `${BRIDGE_API_URL}/api/cards?community=${encodeURIComponent(communityUri)}`,
+      const res = await matrixBridgeFetch(
+        `/api/cards?community=${encodeURIComponent(communityUri)}`,
       )
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as {error?: string}
@@ -73,8 +71,8 @@ export function useDeliberationGraphQuery(communityUri: string | undefined) {
     queryKey: ['community-civic-tree-graph', communityUri],
     queryFn: async () => {
       if (!communityUri) throw new Error('No community URI')
-      const res = await fetch(
-        `${BRIDGE_API_URL}/api/graph?community=${encodeURIComponent(communityUri)}`,
+      const res = await matrixBridgeFetch(
+        `/api/graph?community=${encodeURIComponent(communityUri)}`,
       )
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as {error?: string}
@@ -134,9 +132,8 @@ export function useCreateCardMutation() {
   const queryClient = useQueryClient()
   return useMutation<{id: string}, Error, CreateCardInput>({
     mutationFn: async input => {
-      const res = await fetch(`${BRIDGE_API_URL}/api/cards`, {
+      const res = await matrixBridgeFetch('/api/cards', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(input),
       })
       if (!res.ok) {
@@ -171,11 +168,12 @@ export function useCommunityTreeContributionsQuery(
     queryKey: ['community-tree-contributions', communityUri, status, viewerDid],
     queryFn: async () => {
       if (!communityUri) throw new Error('No community URI')
-      const url = new URL(`${BRIDGE_API_URL}/api/community-tree/contributions`)
-      url.searchParams.set('community', communityUri)
-      url.searchParams.set('status', status)
-      if (viewerDid) url.searchParams.set('viewer', viewerDid)
-      const res = await fetch(url.toString())
+      const params = new URLSearchParams({
+        community: communityUri,
+        status,
+      })
+      if (viewerDid) params.set('viewer', viewerDid)
+      const res = await matrixBridgeFetch(`/api/community-tree/contributions?${params.toString()}`)
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as {error?: string}
         throw new Error(err.error || `Failed to fetch contributions: ${res.status}`)
@@ -198,9 +196,8 @@ export function useCreateCommunityTreeContributionMutation() {
     CreateCommunityTreeContributionInput
   >({
     mutationFn: async input => {
-      const res = await fetch(`${BRIDGE_API_URL}/api/community-tree/contributions`, {
+      const res = await matrixBridgeFetch('/api/community-tree/contributions', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(input),
       })
       if (!res.ok) {
@@ -225,11 +222,10 @@ export function useVoteCommunityTreeContributionMutation() {
     {contributionId: string; communityUri: string; voterDid: string; vote: CommunityTreeContributionVote}
   >({
     mutationFn: async input => {
-      const res = await fetch(
-        `${BRIDGE_API_URL}/api/community-tree/contributions/vote`,
+      const res = await matrixBridgeFetch(
+        '/api/community-tree/contributions/vote',
         {
           method: 'POST',
-          headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
             contributionId: input.contributionId,
             voterDid: input.voterDid,
@@ -276,9 +272,8 @@ export function useCreateRelationshipMutation() {
   const queryClient = useQueryClient()
   return useMutation<{id: string}, Error, CreateRelationshipInput>({
     mutationFn: async input => {
-      const res = await fetch(`${BRIDGE_API_URL}/api/relationships`, {
+      const res = await matrixBridgeFetch('/api/relationships', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(input),
       })
       if (!res.ok) {
@@ -313,8 +308,8 @@ export function useSuggestionsQuery(communityUri: string | undefined) {
     queryKey: ['deliberation-suggestions', communityUri],
     queryFn: async () => {
       if (!communityUri) throw new Error('No community URI')
-      const res = await fetch(
-        `${BRIDGE_API_URL}/api/suggestions?community=${encodeURIComponent(communityUri)}&status=pending`,
+      const res = await matrixBridgeFetch(
+        `/api/suggestions?community=${encodeURIComponent(communityUri)}&status=pending`,
       )
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as {error?: string}
@@ -332,9 +327,8 @@ export function useAcceptSuggestionMutation() {
   const queryClient = useQueryClient()
   return useMutation<void, Error, {id: string; authorDid: string}>({
     mutationFn: async input => {
-      const res = await fetch(`${BRIDGE_API_URL}/api/suggestions/accept`, {
+      const res = await matrixBridgeFetch('/api/suggestions/accept', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(input),
       })
       if (!res.ok) {
@@ -353,9 +347,8 @@ export function useRejectSuggestionMutation() {
   const queryClient = useQueryClient()
   return useMutation<void, Error, {id: string}>({
     mutationFn: async input => {
-      const res = await fetch(`${BRIDGE_API_URL}/api/suggestions/reject`, {
+      const res = await matrixBridgeFetch('/api/suggestions/reject', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(input),
       })
       if (!res.ok) {
@@ -407,8 +400,8 @@ export function useCardVoteQuery(cardId: string | undefined, voterDid: string | 
     queryKey: ['card-vote', cardId, voterDid],
     queryFn: async () => {
       if (!cardId || !voterDid) throw new Error('Missing cardId or voterDid')
-      const res = await fetch(
-        `${BRIDGE_API_URL}/api/votes?card=${encodeURIComponent(cardId)}&voter=${encodeURIComponent(voterDid)}`,
+      const res = await matrixBridgeFetch(
+        `/api/votes?card=${encodeURIComponent(cardId)}&voter=${encodeURIComponent(voterDid)}`,
       )
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as {error?: string}
@@ -425,9 +418,8 @@ export function useCastVoteMutation() {
   const queryClient = useQueryClient()
   return useMutation<VoteResult, Error, {cardId: string; voterDid: string; influence: number}>({
     mutationFn: async input => {
-      const res = await fetch(`${BRIDGE_API_URL}/api/vote`, {
+      const res = await matrixBridgeFetch('/api/vote', {
         method: 'POST',
-        headers: {'Content-Type': 'application/json'},
         body: JSON.stringify(input),
       })
       if (!res.ok) {
@@ -451,8 +443,8 @@ export function useDeliberationSummaryQuery(communityUri: string | undefined) {
     queryKey: ['deliberation-summary', communityUri],
     queryFn: async () => {
       if (!communityUri) throw new Error('No community URI')
-      const res = await fetch(
-        `${BRIDGE_API_URL}/api/summarize?community=${encodeURIComponent(communityUri)}`,
+      const res = await matrixBridgeFetch(
+        `/api/summarize?community=${encodeURIComponent(communityUri)}`,
       )
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as {error?: string}
@@ -494,10 +486,9 @@ export function useCommunityPulseQuery(communityUri: string | undefined, voterDi
     queryKey: ['community-pulse', communityUri, voterDid],
     queryFn: async () => {
       if (!communityUri) throw new Error('No community URI')
-      const url = new URL(`${BRIDGE_API_URL}/api/community-pulse`)
-      url.searchParams.set('community', communityUri)
-      if (voterDid) url.searchParams.set('voter', voterDid)
-      const res = await fetch(url.toString())
+      const params = new URLSearchParams({community: communityUri})
+      if (voterDid) params.set('voter', voterDid)
+      const res = await matrixBridgeFetch(`/api/community-pulse?${params.toString()}`)
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as {error?: string}
         throw new Error(err.error || `Failed to fetch pulse: ${res.status}`)

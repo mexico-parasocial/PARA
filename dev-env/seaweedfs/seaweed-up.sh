@@ -18,7 +18,7 @@ echo "════════════════════════�
 echo "  SeaweedFS Local Rehearsal Startup"
 echo "═══════════════════════════════════════════════════════════════"
 echo "Compose file: ${COMPOSE_FILE}"
-echo "Image:        chrislusf/seaweedfs:4.31"
+echo "Image:        chrislusf/seaweedfs:4.37"
 echo ""
 
 docker compose -f "${COMPOSE_FILE}" up -d --wait

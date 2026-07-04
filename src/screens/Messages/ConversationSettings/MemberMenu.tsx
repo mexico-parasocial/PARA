@@ -12,7 +12,7 @@ import {useGetConvoForMembers} from '#/state/queries/messages/get-convo-for-memb
 import {useRemoveFromGroupChat} from '#/state/queries/messages/remove-from-group'
 import {useProfileBlockMutationQueue} from '#/state/queries/profile'
 import {atoms as a, useTheme} from '#/alf'
-import {type ConvoWithDetails} from '#/components/dms/util'
+import {canBeMessaged,type ConvoWithDetails} from '#/components/dms/util'
 import {ArrowBoxLeft_Stroke2_Corner0_Rounded as ArrowBoxLeftIcon} from '#/components/icons/ArrowBoxLeft'
 import {DotGrid3x1_Stroke2_Corner0_Rounded as EllipsisIcon} from '#/components/icons/DotGrid'
 import {Message_Stroke2_Corner0_Rounded as MessageIcon} from '#/components/icons/Message'
@@ -37,7 +37,7 @@ export function MemberMenu({
 }: {
   convo: ConvoWithDetails
   profile: Shadow<bsky.profile.AnyProfileView>
-  type: 'owner' | 'standard' | 'invited'
+  type: 'owner' | 'standard'
   displayName: string
   isOwner: boolean
 }) {
@@ -127,10 +127,8 @@ export function MemberMenu({
   }
 
   const canBlockMember = type === 'owner' || type === 'standard'
-  const canRemoveMember = isOwner && type !== 'invited'
-  // TODO Need to integrate this. -dsb
-  const canUninviteMember = false
-  // const canUninviteMember = isOwner && type === 'invited'
+  const canRemoveMember = isOwner
+  const canMessageMember = canBeMessaged(profile)
 
   return (
     <>
@@ -146,7 +144,7 @@ export function MemberMenu({
                 props.onPress()
               },
             }
-            return type === 'owner' || type === 'invited' ? (
+            return type === 'owner' ? (
               <StatusBadge
                 label={type === 'owner' ? l`Admin` : l`Invited`}
                 pressableProps={triggerProps}
@@ -190,14 +188,16 @@ export function MemberMenu({
               </Menu.ItemText>
               <Menu.ItemIcon icon={PersonIcon} />
             </Menu.Item>
-            <Menu.Item
-              label={l`Message ${displayName}`}
-              onPress={handleMessageMember}>
-              <Menu.ItemIcon icon={MessageIcon} />
-              <Menu.ItemText>
-                <Trans context="action">Message</Trans>
-              </Menu.ItemText>
-            </Menu.Item>
+            {canMessageMember ? (
+              <Menu.Item
+                label={l`Message ${displayName}`}
+                onPress={handleMessageMember}>
+                <Menu.ItemIcon icon={MessageIcon} />
+                <Menu.ItemText>
+                  <Trans context="action">Message</Trans>
+                </Menu.ItemText>
+              </Menu.Item>
+            ) : null}
           </Menu.Group>
           <Menu.Divider />
           <Menu.Group>
@@ -227,18 +227,6 @@ export function MemberMenu({
                 onPress={() => removeMembers({members: [profile.did]})}>
                 <Menu.ItemText>
                   <Trans>Remove from chat</Trans>
-                </Menu.ItemText>
-                <Menu.ItemIcon icon={ArrowBoxLeftIcon} />
-              </Menu.Item>
-            ) : null}
-            {canUninviteMember ? (
-              <Menu.Item
-                label={l`Uninvite ${displayName} from this group chat`}
-                destructive
-                // TODO Need to wire up the uninvite flow. -dsb
-                onPress={() => {}}>
-                <Menu.ItemText>
-                  <Trans>Uninvite</Trans>
                 </Menu.ItemText>
                 <Menu.ItemIcon icon={ArrowBoxLeftIcon} />
               </Menu.Item>
