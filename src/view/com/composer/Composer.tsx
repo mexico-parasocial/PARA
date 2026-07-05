@@ -247,6 +247,8 @@ export const ComposePost = ({
   const setLangPrefs = useLanguagePrefsApi()
   const textInputRef = useRef<TextInputRef>(null)
   const discardPromptControl = Prompt.usePromptControl()
+  const emptyPostsPromptControl = Prompt.usePromptControl()
+  const skipEmptyConfirmedRef = useRef(false)
   // const loadDraftMedia = useLoadDraft() // Removed
   const {mutateAsync: saveDraft, isPending: _isSavingDraft} =
     useSaveDraftMutation()
@@ -836,15 +838,46 @@ export const ComposePost = ({
     !missingAltError &&
     !placeholderTagError &&
     !hasUnavailableChatInvite &&
+    thread.posts.some(post => !isEmptyPost(post)) &&
     thread.posts.every(
       post =>
-        post.shortenedGraphemeLength <= MAX_GRAPHEME_LENGTH &&
-        !isEmptyPost(post) &&
-        !(
-          post.embed.media?.type === 'video' &&
-          post.embed.media.video.status === 'error'
-        ),
+        isEmptyPost(post) ||
+        (post.shortenedGraphemeLength <= MAX_GRAPHEME_LENGTH &&
+          !(
+            post.embed.media?.type === 'video' &&
+            post.embed.media.video.status === 'error'
+          )),
     )
+
+  const getFilteredThread = useCallback((): {
+    type: 'none' | 'trailing-only' | 'non-trailing'
+    filteredThread: ThreadDraft
+  } => {
+    const nonEmptyPosts = thread.posts.filter(post => !isEmptyPost(post))
+
+    if (nonEmptyPosts.length === thread.posts.length) {
+      return {type: 'none', filteredThread: thread}
+    }
+
+    let lastNonEmptyIndex = -1
+    for (let i = thread.posts.length - 1; i >= 0; i--) {
+      if (!isEmptyPost(thread.posts[i])) {
+        lastNonEmptyIndex = i
+        break
+      }
+    }
+
+    const hasNonTrailingEmpty = thread.posts.some(
+      (post, i) => i < lastNonEmptyIndex && isEmptyPost(post),
+    )
+
+    const filteredThread: ThreadDraft = {...thread, posts: nonEmptyPosts}
+
+    return {
+      type: hasNonTrailingEmpty ? 'non-trailing' : 'trailing-only',
+      filteredThread,
+    }
+  }, [thread])
 
   const isComposerEmpty = useMemo(() => {
     return thread.posts.every(
@@ -865,8 +898,15 @@ export const ComposePost = ({
       return
     }
 
+    const {type: emptyType, filteredThread} = getFilteredThread()
+
+    if (emptyType === 'non-trailing' && !skipEmptyConfirmedRef.current) {
+      emptyPostsPromptControl.open()
+      return
+    }
+
     if (
-      thread.posts.some(
+      filteredThread.posts.some(
         post =>
           post.embed.media?.type === 'video' &&
           post.embed.media.video.asset &&
@@ -877,6 +917,7 @@ export const ComposePost = ({
       return
     }
 
+    skipEmptyConfirmedRef.current = false
     setError('')
     setIsPublishing(true)
 
@@ -886,8 +927,8 @@ export const ComposePost = ({
       logger.info(`composer: posting...`)
 
       const normalizedThread = {
-        ...thread,
-        posts: thread.posts.map((post, index) => {
+        ...filteredThread,
+        posts: filteredThread.posts.map((post, index) => {
           if (index !== 0) return post
 
           const normalizedText = syncComposerSpecialPostTypeText(
@@ -925,7 +966,7 @@ export const ComposePost = ({
 
       postUri = (
         await apilib.post(agent, queryClient, {
-          thread: filteredThread,
+          thread: normalizedThread,
           replyTo: replyTo?.uri,
           onStateChange: setPublishingStage,
           langs: currentLanguages,
@@ -989,10 +1030,10 @@ export const ComposePost = ({
               const res = await agent.app.bsky.unspecced.getPostThreadV2({
                 anchor: postUri!,
                 above: false,
-                below: normalizedThread.posts.length - 1,
+                below: filteredThread.posts.length - 1,
                 branchingFactor: 1,
               })
-              if (res.data.thread.length !== normalizedThread.posts.length) {
+              if (res.data.thread.length !== filteredThread.posts.length) {
                 throw new Error(`composer: app view is not ready`)
               }
               if (
@@ -1017,9 +1058,11 @@ export const ComposePost = ({
         })
       }
     } catch (e) {
-      logger.error(e as Error, {
+      logger.error(e instanceof Error ? e : String(e), {
         message: `Composer: create post failed`,
-        hasImages: thread.posts.some(p => p.embed.media?.type === 'images'),
+        hasImages: filteredThread.posts.some(
+          p => p.embed.media?.type === 'images',
+        ),
       })
 
       let err = cleanError(e instanceof Error ? e.message : String(e))
@@ -1039,14 +1082,14 @@ export const ComposePost = ({
     } finally {
       if (postUri) {
         let index = 0
-        for (let post of thread.posts) {
+        for (let post of filteredThread.posts) {
           logEvent('post:create', {
             imageCount:
               post.embed.media?.type === 'images'
                 ? post.embed.media.images.length
                 : 0,
             isReply: index > 0 || !!replyTo,
-            isPartOfThread: thread.posts.length > 1,
+            isPartOfThread: filteredThread.posts.length > 1,
             hasLink: !!post.embed.link,
             hasQuote: !!post.embed.quote,
             langs: fromPostLanguages(currentLanguages),
@@ -1055,11 +1098,25 @@ export const ComposePost = ({
           index++
         }
       }
-      if (thread.posts.length > 1) {
+      if (filteredThread.posts.length > 1) {
         logEvent('thread:create', {
-          postCount: thread.posts.length,
+          postCount: filteredThread.posts.length,
           isReply: !!replyTo,
         })
+      }
+      if (postUri) {
+        for (const q of linkQueries) {
+          const resolved = q.data
+          if (
+            resolved?.type === 'chat-invite' &&
+            ChatBskyGroupDefs.isJoinLinkPreviewView(resolved.view)
+          ) {
+            ax.metric('groupchat:inviteLink:shared', {
+              convoId: resolved.view.convoId,
+              method: 'post',
+            })
+          }
+        }
       }
     }
     if (postUri && !replyTo) {
@@ -1110,7 +1167,7 @@ export const ComposePost = ({
         <Toast.Outer>
           <Toast.Icon />
           <Toast.Text>
-            {thread.posts.length > 1
+            {filteredThread.posts.length > 1
               ? _(msg`Your posts were sent`)
               : replyTo
                 ? _(msg`Your reply was sent`)
@@ -1145,6 +1202,7 @@ export const ComposePost = ({
     replyTo,
     setLangPrefs,
     queryClient,
+    navigation,
     classificationPost,
     isOfficial,
     selectedFlairs,
@@ -1156,7 +1214,15 @@ export const ComposePost = ({
     cleanupPublishedDraft,
     loadedDraftCreatedAt,
     ax,
+    emptyPostsPromptControl,
+    getFilteredThread,
+    linkQueries,
   ])
+
+  const handleConfirmSkipEmpty = useCallback(() => {
+    skipEmptyConfirmedRef.current = true
+    void onPressPublish()
+  }, [onPressPublish])
 
   // Preserves the referential identity passed to each post item.
   // Avoids re-rendering all posts on each keystroke.
@@ -1452,6 +1518,16 @@ export const ComposePost = ({
             </Prompt.Content>
           </Prompt.Outer>
         )}
+
+        <Prompt.Basic
+          control={emptyPostsPromptControl}
+          title={_(msg`Skip empty posts?`)}
+          description={_(
+            msg`Empty posts in the middle of your thread will be skipped.`,
+          )}
+          confirmButtonCta={_(msg`Post anyway`)}
+          onConfirm={handleConfirmSkipEmpty}
+        />
       </KeyboardAvoidingView>
     </BottomSheetPortalProvider>
   )

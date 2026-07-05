@@ -628,8 +628,13 @@ export type Events = {
       | 'SendViaChatDialog'
       | 'ConvoSettings'
   }
+  // Group chat adoption / interactions
   'groupchat:create': {
     logContext: 'NewChatDialog'
+  }
+  'groupchat:inviteLink:shared': {
+    convoId: string
+    method: 'post' | 'dm'
   }
   'starterPack:addUser': {
     starterPack?: string
