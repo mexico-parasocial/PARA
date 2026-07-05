@@ -15,7 +15,7 @@ export enum Features {
   ComposerLanguageDetectionEnable = 'composer:language_detection:enable',
   PostGalleryEmbedEnable = 'post_gallery_embed:enable',
   LargeVideoUploads = 'large_video_uploads:enable',
-
+  NotificationsExpandedProfileCardEnable = 'notifications:expanded_profile_card:enable',
   AATest = 'aa-test',
 
   // PARA governance flags
