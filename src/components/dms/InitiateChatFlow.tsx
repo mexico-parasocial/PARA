@@ -6,7 +6,12 @@ import {
   useRef,
   useState,
 } from 'react'
-import {LayoutAnimation, type TextInput, View} from 'react-native'
+import {
+  LayoutAnimation,
+  type ListRenderItem,
+  type TextInput,
+  View,
+} from 'react-native'
 import {moderateProfile, type ModerationOpts} from '@atproto/api'
 import {Plural, Trans, useLingui} from '@lingui/react/macro'
 
@@ -303,6 +308,7 @@ export function InitiateChatFlow({
       if (follows) {
         for (const page of follows.pages) {
           for (const profile of page.follows) {
+            if (!checker(profile)) continue
             _items.push({
               type: 'profile',
               key: profile.did,
@@ -310,10 +316,6 @@ export function InitiateChatFlow({
             })
           }
         }
-
-        _items = _items.sort(item => {
-          return item.type === 'profile' && checker(item.profile) ? -1 : 1
-        })
       } else {
         _items.push(...placeholders)
       }
@@ -517,7 +519,6 @@ export function InitiateChatFlow({
               a.relative,
               a.align_center,
               a.justify_between,
-              web(a.pb_lg),
             ]}>
             {IS_NATIVE ? (
               <Button
@@ -553,7 +554,7 @@ export function InitiateChatFlow({
                 color="secondary"
                 style={[a.absolute, a.z_20, {right: -4}]}
                 onPress={() => control.close()}>
-                <ButtonIcon icon={XIcon} size="lg" />
+                <ButtonIcon icon={XIcon} size="md" />
               </Button>
             ) : showButton ? (
               <Button
@@ -724,10 +725,17 @@ export function InitiateChatFlow({
       <Dialog.InnerFlatList
         ref={listRef}
         data={items}
-        renderItem={renderItems}
+        renderItem={
+          renderItems as unknown as ListRenderItem<Record<string, unknown>>
+        }
         ListHeaderComponent={listHeader}
         stickyHeaderIndices={[0]}
-        keyExtractor={(item: Item) => item.key}
+        keyExtractor={
+          ((item: Item) => item.key) as unknown as (
+            item: Record<string, unknown>,
+            index: number,
+          ) => string
+        }
         style={[
           web([a.py_0, {height: '100vh', maxHeight: 600}, a.px_0]),
           native({height: '100%'}),

@@ -6,7 +6,12 @@ import {
   useRef,
   useState,
 } from 'react'
-import {LayoutAnimation, type TextInput, View} from 'react-native'
+import {
+  LayoutAnimation,
+  type ListRenderItem,
+  type TextInput,
+  View,
+} from 'react-native'
 import {Trans, useLingui} from '@lingui/react/macro'
 
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
@@ -208,6 +213,7 @@ export function AddMembersFlow({
       if (follows) {
         for (const page of follows.pages) {
           for (const profile of page.follows) {
+            if (!canBeAddedToGroup(profile)) continue
             _items.push({
               type: 'profile',
               key: profile.did,
@@ -215,12 +221,6 @@ export function AddMembersFlow({
             })
           }
         }
-
-        _items.sort(item => {
-          return item.type === 'profile' && canBeAddedToGroup(item.profile)
-            ? -1
-            : 1
-        })
       } else {
         for (let i = 0; i < 10; i++) {
           _items.push({type: 'placeholder', key: i + ''})
@@ -229,7 +229,7 @@ export function AddMembersFlow({
     }
 
     if (searchText === '' && _items.length > 0) {
-    _items.unshift({
+      _items.unshift({
         type: 'label',
         key: 'suggested',
         message: l`Suggested`,
@@ -486,7 +486,9 @@ export function AddMembersFlow({
       <Dialog.InnerFlatList
         ref={listRef}
         data={items}
-        renderItem={renderItems}
+        renderItem={
+          renderItems as unknown as ListRenderItem<Record<string, unknown>>
+        }
         ListHeaderComponent={listHeader}
         stickyHeaderIndices={[0]}
         ListEmptyComponent={
@@ -496,7 +498,12 @@ export function AddMembersFlow({
             </View>
           ) : null
         }
-        keyExtractor={(item: Item) => item.key}
+        keyExtractor={
+          ((item: Item) => item.key) as unknown as (
+            item: Record<string, unknown>,
+            index: number,
+          ) => string
+        }
         style={[
           web([a.py_0, {height: '100vh', maxHeight: 600}, a.px_0]),
           native({height: '100%'}),

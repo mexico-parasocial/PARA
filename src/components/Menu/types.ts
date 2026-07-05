@@ -26,7 +26,9 @@ export type ItemContextType = {
 }
 
 export type RadixPassThroughTriggerProps = {
-  ref: RefObject<HTMLButtonElement>
+  // Radix passes a button ref, but the props are spread onto react-native Pressable.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ref: RefObject<any>
   id: string
   type: 'button'
   disabled: boolean

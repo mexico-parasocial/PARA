@@ -12,7 +12,7 @@ import {useGetConvoForMembers} from '#/state/queries/messages/get-convo-for-memb
 import {useRemoveFromGroupChat} from '#/state/queries/messages/remove-from-group'
 import {useProfileBlockMutationQueue} from '#/state/queries/profile'
 import {atoms as a, useTheme} from '#/alf'
-import {canBeMessaged,type ConvoWithDetails} from '#/components/dms/util'
+import {canBeMessaged, type ConvoWithDetails} from '#/components/dms/util'
 import {ArrowBoxLeft_Stroke2_Corner0_Rounded as ArrowBoxLeftIcon} from '#/components/icons/ArrowBoxLeft'
 import {DotGrid3x1_Stroke2_Corner0_Rounded as EllipsisIcon} from '#/components/icons/DotGrid'
 import {Message_Stroke2_Corner0_Rounded as MessageIcon} from '#/components/icons/Message'
@@ -56,7 +56,7 @@ export function MemberMenu({
   })
   const {mutate: initiateConvo} = useGetConvoForMembers({
     onSuccess: ({convo}) => {
-      ax.metric('chat:open', {logContext: 'ChatsList'})
+      ax.metric('chat:open', {logContext: 'ConvoSettings'})
       navigation.navigate('MessagesConversation', {conversation: convo.id})
     },
     onError: () => {
@@ -78,12 +78,12 @@ export function MemberMenu({
     }
 
     if (convoAvailability.convo) {
-      ax.metric('chat:open', {logContext: 'ChatsList'})
+      ax.metric('chat:open', {logContext: 'ConvoSettings'})
       navigation.navigate('MessagesConversation', {
         conversation: convoAvailability.convo.id,
       })
     } else {
-      ax.metric('chat:create', {logContext: 'ChatsList'})
+      ax.metric('chat:create', {logContext: 'ConvoSettings'})
       initiateConvo([profile.did])
     }
   }

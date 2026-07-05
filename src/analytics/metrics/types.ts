@@ -614,7 +614,11 @@ export type Events = {
       | 'GroupChat'
   }
   'chat:create': {
-    logContext: 'ProfileHeader' | 'NewChatDialog' | 'SendViaChatDialog'
+    logContext:
+      | 'ProfileHeader'
+      | 'NewChatDialog'
+      | 'SendViaChatDialog'
+      | 'ConvoSettings'
   }
   'chat:open': {
     logContext:
@@ -622,6 +626,7 @@ export type Events = {
       | 'NewChatDialog'
       | 'ChatsList'
       | 'SendViaChatDialog'
+      | 'ConvoSettings'
   }
   'groupchat:create': {
     logContext: 'NewChatDialog'
