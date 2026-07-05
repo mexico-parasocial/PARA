@@ -10,6 +10,7 @@ import {
 } from '@tanstack/react-query'
 
 import {logger} from '#/logger'
+import {invalidateJoinLinkPreviewsForConvo} from '#/state/queries/join-links'
 import {useAgent} from '#/state/session'
 import {RQKEY_ROOT as CONVO_LIST_KEY} from './list-conversations'
 import {getAgentDmServiceHeaders} from './utils/dm-service'
@@ -75,6 +76,9 @@ export function useLeaveConvo(
     },
     onSuccess: data => {
       void queryClient.invalidateQueries({queryKey: [CONVO_LIST_KEY]})
+      if (convoId) {
+        void invalidateJoinLinkPreviewsForConvo(queryClient, convoId)
+      }
       onSuccess?.(data)
     },
     onError: (error, _, context) => {

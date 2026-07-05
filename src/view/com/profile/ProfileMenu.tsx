@@ -50,6 +50,7 @@ import {EditLiveDialog} from '#/components/live/EditLiveDialog'
 import {GoLiveDialog} from '#/components/live/GoLiveDialog'
 import {GoLiveDisabledDialog} from '#/components/live/GoLiveDisabledDialog'
 import * as Menu from '#/components/Menu'
+import {BlockDialog} from '#/components/moderation/BlockDialog'
 import {
   ReportDialog,
   useReportDialogControl,
@@ -113,13 +114,13 @@ let ProfileMenu = ({
   }, [currentAccount, profile])
 
   const invalidateProfileQuery = useCallback(() => {
-    queryClient.invalidateQueries({
+    void queryClient.invalidateQueries({
       queryKey: profileQueryKey(profile.did),
     })
   }, [queryClient, profile.did])
 
   const onPressShare = useCallback(() => {
-    shareUrl(toShareUrl(makeProfileLink(profile)))
+    void shareUrl(toShareUrl(makeProfileLink(profile)))
   }, [profile])
 
   const onPressAddRemoveLists = useCallback(() => {
@@ -222,11 +223,11 @@ let ProfileMenu = ({
   }, [reportDialogControl])
 
   const onPressShareATUri = useCallback(() => {
-    shareText(`at://${profile.did}`)
+    void shareText(`at://${profile.did}`)
   }, [profile.did])
 
   const onPressShareDID = useCallback(() => {
-    shareText(profile.did)
+    void shareText(profile.did)
   }, [profile.did])
 
   const onPressSearch = useCallback(() => {
@@ -318,8 +319,8 @@ let ProfileMenu = ({
                         }
                         onPress={
                           isFollowing
-                            ? onPressUnfollowAccount
-                            : onPressFollowAccount
+                            ? () => void onPressUnfollowAccount()
+                            : () => void onPressFollowAccount()
                         }>
                         <Menu.ItemText>
                           {isFollowing ? (
@@ -431,7 +432,7 @@ let ProfileMenu = ({
                               ? _(msg`Unmute account`)
                               : _(msg`Mute account`)
                           }
-                          onPress={onPressMuteAccount}>
+                          onPress={() => void onPressMuteAccount()}>
                           <Menu.ItemText>
                             {profile.viewer?.muted ? (
                               <Trans>Unmute account</Trans>
@@ -448,7 +449,7 @@ let ProfileMenu = ({
                       <Menu.Item
                         testID="profileHeaderDropdownBlockBtn"
                         label={
-                          profile.viewer
+                          profile.viewer?.blocking
                             ? _(msg`Unblock account`)
                             : _(msg`Block account`)
                         }
@@ -517,31 +518,10 @@ let ProfileMenu = ({
         }}
       />
 
-      <Prompt.Basic
+      <BlockDialog
         control={blockPromptControl}
-        title={
-          profile.viewer?.blocking
-            ? _(msg`Unblock Account?`)
-            : _(msg`Block Account?`)
-        }
-        description={
-          profile.viewer?.blocking
-            ? _(
-                msg`The account will be able to interact with you after unblocking.`,
-              )
-            : profile.associated?.labeler
-              ? _(
-                  msg`Blocking will not prevent labels from being applied on your account, but it will stop this account from replying in your threads or interacting with you.`,
-                )
-              : _(
-                  msg`Blocked accounts cannot reply in your threads, mention you, or otherwise interact with you.`,
-                )
-        }
-        onConfirm={blockAccount}
-        confirmButtonCta={
-          profile.viewer?.blocking ? _(msg`Unblock`) : _(msg`Block`)
-        }
-        confirmButtonColor={profile.viewer?.blocking ? undefined : 'negative'}
+        profile={profile}
+        onBlock={blockAccount}
       />
 
       <Prompt.Basic

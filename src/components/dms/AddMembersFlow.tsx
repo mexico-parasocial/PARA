@@ -72,6 +72,7 @@ type Item = LabelItem | ProfileItem | EmptyItem | PlaceholderItem | LoadingItem
 export type State = {
   groupChatDids: string[]
   groupChatProfiles: bsky.profile.AnyProfileView[]
+  searchText: string
 }
 
 export type Action =
@@ -85,6 +86,10 @@ export type Action =
       groupChatDids: string[]
       groupChatProfiles: bsky.profile.AnyProfileView[]
     }
+  | {
+      type: 'setSearchText'
+      searchText: string
+    }
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -93,6 +98,7 @@ function reducer(state: State, action: Action): State {
         ...state,
         groupChatDids: action.groupChatDids,
         groupChatProfiles: action.groupChatProfiles,
+        searchText: '',
       }
     }
     case 'removeDids': {
@@ -100,6 +106,12 @@ function reducer(state: State, action: Action): State {
         ...state,
         groupChatDids: action.groupChatDids,
         groupChatProfiles: action.groupChatProfiles,
+      }
+    }
+    case 'setSearchText': {
+      return {
+        ...state,
+        searchText: action.searchText,
       }
     }
   }
@@ -126,10 +138,18 @@ export function AddMembersFlow({
 
   const [headerHeight, setHeaderHeight] = useState(0)
   const [footerHeight, setFooterHeight] = useState(0)
-  const [searchText, setSearchText] = useState('')
 
   const listRef = useRef<ListMethods>(null)
   const inputRef = useRef<TextInput>(null)
+
+  const [{groupChatDids, groupChatProfiles, searchText}, dispatch] = useReducer(
+    reducer,
+    {
+      groupChatDids: [],
+      groupChatProfiles: [],
+      searchText: '',
+    },
+  )
 
   const {
     data: autocompleteResults,
@@ -155,10 +175,6 @@ export function AddMembersFlow({
     groupMemberLimit !== undefined
       ? Math.max(0, groupMemberLimit - memberListData.length)
       : undefined
-  const [{groupChatDids, groupChatProfiles}, dispatch] = useReducer(reducer, {
-    groupChatDids: [],
-    groupChatProfiles: [],
-  })
 
   const onRemoveDid = useCallback(
     (did: string) => {
@@ -409,7 +425,7 @@ export function AddMembersFlow({
               inputRef={inputRef}
               value={searchText}
               onChangeText={text => {
-                setSearchText(text)
+                dispatch({type: 'setSearchText', searchText: text})
                 listRef.current?.scrollToOffset({offset: 0, animated: false})
               }}
               onEscape={control.close}

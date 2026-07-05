@@ -1,5 +1,5 @@
 import {useState} from 'react'
-import {View} from 'react-native'
+import {type ListRenderItem, View} from 'react-native'
 import {
   ChatBskyGroupApproveJoinRequest,
   type ChatBskyGroupListJoinRequests,
@@ -369,8 +369,13 @@ function JoinRequestsList({
       <Header count={requestCount} hasMoreRequests={hasNextPage} />
       <List
         data={items}
-        keyExtractor={(item: bsky.profile.AnyProfileView) => item.did}
-        renderItem={renderItem}
+        keyExtractor={
+          ((item: bsky.profile.AnyProfileView) => item.did) as unknown as (
+            item: unknown,
+            index: number,
+          ) => string
+        }
+        renderItem={renderItem as unknown as ListRenderItem<unknown>}
         ListEmptyComponent={
           isPending ? (
             <View
@@ -476,14 +481,14 @@ function RejectButton({
 
   return (
     <Button
-      label={l`Ignore join request`}
+      label={l`Reject join request`}
       size="small"
       color="secondary"
       disabled={disabled}
       onPress={onPress}>
       <ButtonText>
-        <Trans comment="Ignore a request to join a chat" context="button">
-          Ignore
+        <Trans comment="Reject a request to join a chat" context="button">
+          Reject
         </Trans>
       </ButtonText>
     </Button>

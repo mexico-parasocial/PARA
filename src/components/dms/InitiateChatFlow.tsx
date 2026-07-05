@@ -104,6 +104,7 @@ export type State = {
   groupChatDids: string[]
   groupChatProfiles: bsky.profile.AnyProfileView[]
   groupName: string
+  searchText: string
 }
 
 export type Action =
@@ -137,6 +138,10 @@ export type Action =
       type: 'goBackFromGroupName'
       screenTitle: string
     }
+  | {
+      type: 'setSearchText'
+      searchText: string
+    }
 
 function reducer(state: State, action: Action): State {
   switch (action.type) {
@@ -155,6 +160,7 @@ function reducer(state: State, action: Action): State {
         ...state,
         groupChatDids: action.groupChatDids,
         groupChatProfiles: action.groupChatProfiles,
+        searchText: '',
       }
     }
     case 'removeDids': {
@@ -169,6 +175,7 @@ function reducer(state: State, action: Action): State {
         ...state,
         chatState: ChatState.GROUP_NAME,
         screenTitle: action.screenTitle,
+        searchText: '',
       }
     }
     case 'nameGroup': {
@@ -185,6 +192,7 @@ function reducer(state: State, action: Action): State {
         groupChatDids: [],
         groupChatProfiles: [],
         groupName: '',
+        searchText: '',
       }
     }
     case 'goBackFromGroupName': {
@@ -193,6 +201,12 @@ function reducer(state: State, action: Action): State {
         chatState: ChatState.NEW_GROUP_CHAT,
         screenTitle: action.screenTitle,
         groupName: '',
+      }
+    }
+    case 'setSearchText': {
+      return {
+        ...state,
+        searchText: action.searchText,
       }
     }
   }
@@ -223,17 +237,15 @@ export function InitiateChatFlow({
   const canCreateGroups = chatStatus?.canCreateGroups ?? true
   const groupMemberLimit = chatStatus?.groupMemberLimit
 
-  const [searchText, setSearchText] = useState('')
-
-  const {
-    data: results,
-    isError,
-    isFetching,
-  } = useActorAutocompleteQuery(searchText, true, 12)
-  const {data: follows} = useProfileFollowsQuery(currentAccount?.did)
-
   const [
-    {chatState, screenTitle, groupChatDids, groupChatProfiles, groupName},
+    {
+      chatState,
+      screenTitle,
+      groupChatDids,
+      groupChatProfiles,
+      groupName,
+      searchText,
+    },
     dispatch,
   ] = useReducer(reducer, {
     chatState: ChatState.NEW_CHAT,
@@ -241,7 +253,15 @@ export function InitiateChatFlow({
     groupChatDids: [],
     groupChatProfiles: [],
     groupName: '',
+    searchText: '',
   })
+
+  const {
+    data: results,
+    isError,
+    isFetching,
+  } = useActorAutocompleteQuery(searchText, true, 12)
+  const {data: follows} = useProfileFollowsQuery(currentAccount?.did)
 
   const newGroupChatTitle = l`New group chat`
   const groupNameTitle = l`Group name`
@@ -367,7 +387,6 @@ export function InitiateChatFlow({
       case ChatState.NEW_GROUP_CHAT:
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
         dispatch({type: 'goBackFromNewGroupChat', screenTitle: title})
-        setSearchText('')
         break
       case ChatState.GROUP_NAME:
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
@@ -388,7 +407,6 @@ export function InitiateChatFlow({
   const handlePressNext = useCallback(() => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     dispatch({type: 'startNameGroup', screenTitle: groupNameTitle})
-    setSearchText('')
   }, [groupNameTitle])
 
   const handlePressConfirm = useCallback(() => {
@@ -625,7 +643,7 @@ export function InitiateChatFlow({
                 inputRef={inputRef}
                 value={searchText}
                 onChangeText={text => {
-                  setSearchText(text)
+                  dispatch({type: 'setSearchText', searchText: text})
                   listRef.current?.scrollToOffset({offset: 0, animated: false})
                 }}
                 onEscape={control.close}

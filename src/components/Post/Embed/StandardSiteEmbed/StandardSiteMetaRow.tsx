@@ -46,6 +46,10 @@ export function StandardSiteMetaRow({
     : undefined
   const articleDomain = toNiceDomain(view.uri)
   const articlePublisher = matchStandardSitePublisherByUri(view.uri)
+  const domainHandleMatch =
+    authorProfile?.handle &&
+    (articleDomain === authorProfile.handle ||
+      articleDomain.endsWith(`.${authorProfile.handle}`))
   const DomainIcon = articlePublisher?.Icon
   const metaTextStyle = [
     a.text_xs,
@@ -55,7 +59,7 @@ export function StandardSiteMetaRow({
 
   const items: {key: string; node: ReactNode}[] = []
 
-  if (!highlightedPublisher) {
+  if (!highlightedPublisher && !domainHandleMatch) {
     items.push({
       key: 'domain',
       node: (
