@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import {TextInput, View} from 'react-native'
+import {type ListRenderItem, TextInput, View} from 'react-native'
 import {moderateProfile, type ModerationOpts} from '@atproto/api'
 import {Plural, Trans, useLingui} from '@lingui/react/macro'
 
@@ -66,11 +66,7 @@ type ErrorItem = {
 }
 
 type Item =
-  | ProfileItem
-  | ExistingChatItem
-  | EmptyItem
-  | PlaceholderItem
-  | ErrorItem
+  ProfileItem | ExistingChatItem | EmptyItem | PlaceholderItem | ErrorItem
 
 export function SearchablePeopleList({
   title,
@@ -382,10 +378,12 @@ export function SearchablePeopleList({
     <Dialog.InnerFlatList
       ref={listRef}
       data={items}
-      renderItem={renderItems}
+      renderItem={renderItems as ListRenderItem<unknown>}
       ListHeaderComponent={listHeader}
       stickyHeaderIndices={[0]}
-      keyExtractor={(item: Item) => item.key}
+      keyExtractor={
+        ((item: Item) => item.key) as (item: unknown, index: number) => string
+      }
       style={[
         web([a.py_0, {height: '100vh', maxHeight: 600}, a.px_0]),
         native({height: '100%'}),
@@ -514,11 +512,7 @@ function ExistingChatCard({
           ]}>
           <ProfileCard.Header>
             {convo.kind === 'group' ? (
-              <AvatarBubbles
-                profiles={convo.members}
-                size={40}
-                moderationOpts={moderationOpts}
-              />
+              <AvatarBubbles profiles={convo.members} size={40} />
             ) : (
               <ProfileCard.Avatar
                 profile={convo.primaryMember}

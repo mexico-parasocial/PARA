@@ -239,14 +239,12 @@ function GroupSettings({
       : []),
   ]
   items.push(
-    ...groupMembers.map(
-      (profile): Item => ({
-        type: 'CHAT_MEMBER',
-        key: profile.did,
-        profile,
-        status: primaryMember?.did === profile.did ? 'owner' : 'standard',
-      }),
-    ),
+    ...groupMembers.map((profile): Item => ({
+      type: 'CHAT_MEMBER',
+      key: profile.did,
+      profile,
+      status: primaryMember?.did === profile.did ? 'owner' : 'standard',
+    })),
   )
   const placeholderCount = Math.max(
     0,
@@ -461,10 +459,7 @@ function SettingsHeader({
       <View
         style={[a.px_xl, a.py_4xl, a.border_b, t.atoms.border_contrast_low]}>
         <View style={[a.align_center, a.justify_center]}>
-          <AvatarBubbles
-            profiles={convo.members}
-            moderationOpts={moderationOpts}
-          />
+          <AvatarBubbles profiles={convo.members} />
         </View>
         {isOwner ? (
           <Pressable
