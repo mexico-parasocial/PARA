@@ -10,7 +10,7 @@ export interface TestUser {
   did: string
   handle: string
   password: string
-  agent: BskyAgent
+  agent: AtpAgent,
 }
 
 export interface TestPDS {
@@ -139,7 +139,7 @@ export async function createServer(
 }
 
 class Mocker {
-  agent: BskyAgent
+  agent: AtpAgent
   users: Record<string, TestUser> = {}
 
   testNet: TestNetwork

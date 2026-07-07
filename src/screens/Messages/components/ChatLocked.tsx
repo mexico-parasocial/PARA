@@ -1,6 +1,6 @@
 import {Pressable} from 'react-native'
 import {Trans, useLingui} from '@lingui/react/macro'
-import {StackActions, useNavigation} from '@react-navigation/native'
+import {useNavigation} from '@react-navigation/native'
 
 import {HITSLOP_10} from '#/lib/constants'
 import {type NavigationProp} from '#/lib/routes/types'
@@ -45,8 +45,7 @@ export function ChatLocked({
 
   const {mutate: leaveConvo} = useLeaveConvo(convo.view.id, {
     onSuccess: () => {
-      // Settings > Chat > Chat list
-      navigation.dispatch(StackActions.pop(2))
+      navigation.replace('Messages', {animation: 'pop'})
     },
     onError: e => {
       logger.error('Failed to leave group chat', {message: e})

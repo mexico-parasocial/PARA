@@ -246,8 +246,8 @@ function BlockDialogInner({
       scrollIndicatorInsets={{top: headerHeight, bottom: footerHeight}}
       onEndReached={() => void onEndReached()}
       onEndReachedThreshold={0.5}
-      style={[web([{maxWidth: 420}])]}
-    />
+      style={[web([{height: '100vh', maxHeight: 600}])]}
+      webInnerStyle={[{maxWidth: 420}]}    />
   )
 }
 

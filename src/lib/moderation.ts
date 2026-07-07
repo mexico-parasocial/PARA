@@ -1,7 +1,7 @@
 import {useMemo} from 'react'
 import {
   type AppBskyLabelerDefs,
-  BskyAgent,
+AtpAgent,
   type ComAtprotoLabelDefs,
   type InterpretedLabelValueDefinition,
   LABELS,

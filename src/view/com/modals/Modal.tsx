@@ -11,7 +11,6 @@ import {IS_WEB} from '#/env'
 import {createCustomBackdrop} from '../util/BottomSheetCustomBackdrop'
 import * as DeleteAccountModal from './DeleteAccount'
 import * as ContentLanguagesSettingsModal from './lang-settings/ContentLanguagesSettings'
-import * as UserAddRemoveListsModal from './UserAddRemoveLists'
 
 const DEFAULT_SNAPPOINTS = ['90%']
 const HANDLE_HEIGHT = 24
@@ -44,10 +43,7 @@ export function ModalsContainer() {
 
   let snapPoints: (string | number)[] = DEFAULT_SNAPPOINTS
   let element
-  if (activeModal?.name === 'user-add-remove-lists') {
-    snapPoints = UserAddRemoveListsModal.snapPoints
-    element = <UserAddRemoveListsModal.Component {...activeModal} />
-  } else if (activeModal?.name === 'delete-account') {
+  if (activeModal?.name === 'delete-account') {
     snapPoints = DeleteAccountModal.snapPoints
     element = <DeleteAccountModal.Component />
   } else if (activeModal?.name === 'content-languages-settings') {

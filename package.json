@@ -1,6 +1,6 @@
 {
   "name": "para.app",
-  "version": "1.124.0",
+  "version": "1.125.0",
   "private": true,
   "engines": {
     "node": ">=24.15.0",
@@ -13,7 +13,7 @@
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "11.5.2",
+      "version": "11.7.0",
       "onFail": "warn"
     },
     "runtime": {
@@ -99,10 +99,12 @@
     "make-deploy-bundle": "bash scripts/bundleUpdate.sh",
     "generate-webpack-stats-file": "EXPO_PUBLIC_GENERATE_STATS=1 pnpm build-web",
     "open-analyzer": "EXPO_PUBLIC_OPEN_ANALYZER=1 pnpm build-web",
-    "icons:optimize": "svgo -f ./assets/icons"
+    "icons:optimize": "svgo -f ./assets/icons",
+    "prettier": "prettier --check .",
+    "update-actions": "pnpm dlx actions-up --min-age 7"
   },
   "dependencies": {
-    "@atproto/api": "0.20.11",
+    "@atproto/api": "0.20.15",
     "@atproto/syntax": "0.6.1",
     "@bitdrift/react-native": "^0.6.8",
     "@braintree/sanitize-url": "^6.0.2",
@@ -112,10 +114,10 @@
     "@bsky.app/expo-image-crop-tool": "^0.5.1",
     "@bsky.app/expo-scroll-edge-effect": "^0.1.4",
     "@bsky.app/expo-translate-text": "^0.2.9",
-    "@bsky.app/peek-menu": "^0.2.4",
+    "@bsky.app/peek-menu": "^0.3.1",
     "@bsky.app/react-native-mmkv": "2.12.5",
-    "@bsky.app/sift": "^0.3.8",
-    "@bsky.app/tapper": "^0.5.7",
+    "@bsky.app/sift": "^0.3.9",
+    "@bsky.app/tapper": "^0.6.1",
     "@bsky.app/video": "0.3.6",
     "@discord/bottom-sheet": "bluesky-social/react-native-bottom-sheet",
     "@emoji-mart/data": "^1.2.1",

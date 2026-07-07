@@ -1,7 +1,7 @@
 import {
   type AppBskyActorDefs,
   type AppBskyFeedDefs,
-  type BskyAgent,
+  type AtpAgent,
   type ComAtprotoRepoListRecords,
 } from '@atproto/api'
 
@@ -39,7 +39,7 @@ type ParaRecordValue = Record<string, unknown> & {
 }
 
 export class ParaFeedAPI implements FeedAPI {
-  agent: BskyAgent
+  agent: AtpAgent
   actor: string
   authorProfile: AppBskyActorDefs.ProfileViewDetailed | null = null
 
@@ -47,7 +47,7 @@ export class ParaFeedAPI implements FeedAPI {
     agent,
     feedParams,
   }: {
-    agent: BskyAgent
+    agent: AtpAgent,
     feedParams: {actor: string}
   }) {
     this.agent = agent
@@ -204,7 +204,7 @@ export class ParaFeedAPI implements FeedAPI {
 }
 
 export class ParaTimelineFeedAPI implements FeedAPI {
-  agent: BskyAgent
+  agent: AtpAgent
   filters: ParaTimelineFilters
   profiles = new Map<string, AppBskyActorDefs.ProfileViewDetailed>()
 
@@ -212,7 +212,7 @@ export class ParaTimelineFeedAPI implements FeedAPI {
     agent,
     filters,
   }: {
-    agent: BskyAgent
+    agent: AtpAgent,
     filters?: ParaTimelineFilters
   }) {
     this.agent = agent

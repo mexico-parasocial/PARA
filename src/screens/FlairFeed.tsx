@@ -3,7 +3,7 @@ import {type ListRenderItemInfo, View} from 'react-native'
 import {
   type AppBskyActorDefs,
   type AppBskyFeedDefs,
-  type BskyAgent,
+  type AtpAgent,
 } from '@atproto/api'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -311,7 +311,7 @@ function FlairFeedTab({
 }
 
 async function hydrateParaPosts(
-  agent: BskyAgent,
+  agent: AtpAgent,
   feed: ParaPostView[],
 ): Promise<AppBskyFeedDefs.PostView[]> {
   const profiles = new Map<string, AppBskyActorDefs.ProfileViewDetailed>()

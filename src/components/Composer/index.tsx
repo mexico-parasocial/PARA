@@ -8,7 +8,6 @@ import Animated, {
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated'
-import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import {useSift, type UseSiftReturn} from '@bsky.app/sift'
 import {
   facets,
@@ -52,6 +51,11 @@ export type SubmitRequest =
       nativeEvent: TextInputSubmitEditingEvent
     }
 
+/**
+ * Imperative API exposed via `internalApiRef` prop for parent components that
+ * need to control the composer programmatically, e.g. to clear the input or
+ * insert text at the current cursor position.
+ */
 export type ComposerInternalApi = {
   input?: ReturnType<typeof useTapper>['input']
   clear: () => void
@@ -62,6 +66,10 @@ export type ComposerInternalApi = {
 export function useComposerInternalApiRef() {
   return useRef<ComposerInternalApi>(null)
 }
+
+/*
+ * ─── Composer ─────────────────────────────────────────────────────────────────
+ */
 
 export type ComposerProps = Omit<
   AutosizedTextareaProps,
@@ -112,7 +120,10 @@ export function Composer({
   ...rest
 }: ComposerProps) {
   const {theme: t, fonts} = useAlf()
-  const insets = useSafeAreaInsets()
+
+  /*
+   * Meat and potatoes
+   */
   const tapper = useTapper({
     initialText: defaultValue ?? '',
     facets: disableEmojiFacets
@@ -127,32 +138,39 @@ export function Composer({
     offset: a.p_sm.padding,
     placement: autocompletePlacement,
     dynamicWidth: IS_WEB,
-    insets,
   })
 
+  /*
+   * Active facet state for controlling the visibility of the Autocomplete.
+   */
   const [activeFacet, setActiveFacet] = useState<TapperActiveFacet | null>(null)
+
+  /*
+   * Reanimated shared value for syncing scroll on all platforms.
+   */
   const inputScrollSharedValue = useSharedValue(0)
 
+  /*
+   * Expose imperative internal API
+   */
   useImperativeHandle(
     internalApiRef,
     () => ({
       input: tapper.input,
       clear: () => {
         tapper.inputProps.onChangeText('')
-        inputScrollSharedValue.set(0)
+        inputScrollSharedValue.value = 0
       },
       insert: tapper.insert,
       setAutocompleteAnchor: sift.refs.setAnchor,
     }),
-    [
-      inputScrollSharedValue,
-      sift.refs.setAnchor,
-      tapper.input,
-      tapper.inputProps,
-      tapper.insert,
-    ],
+    [tapper.input, tapper.insert, inputScrollSharedValue, sift.refs.setAnchor],
   )
 
+  /*
+   * Skip the initial mount to avoid an unnecessary re-render — the parent
+   * already knows the initial value since it passed `initialText`.
+   */
   const isFirstRender = useRef(true)
   useEffect(() => {
     if (isFirstRender.current) {
@@ -162,16 +180,17 @@ export function Composer({
     onChangeOuter?.(tapper.state.text)
   }, [tapper.state.text, onChangeOuter])
 
+  /*
+   * Tapper callbacks
+   */
   const callbackRefs = useRef({
     onActiveFacetOuter,
     onFacetCommittedOuter,
   })
-  useEffect(() => {
-    callbackRefs.current = {
-      onActiveFacetOuter,
-      onFacetCommittedOuter,
-    }
-  }, [onActiveFacetOuter, onFacetCommittedOuter])
+  callbackRefs.current = {
+    onActiveFacetOuter,
+    onFacetCommittedOuter,
+  }
   useEffect(() => {
     const offActiveFacet = tapper.on('activeFacet', facet => {
       setActiveFacet(facet)
@@ -188,8 +207,11 @@ export function Composer({
       offFacetCommitted()
       offAfterInsert()
     }
-  }, [tapper])
+  }, [tapper.on, tapper.input])
 
+  /*
+   * Styles
+   */
   const previewScrollStyle = useAnimatedStyle(() => ({
     transform: [{translateY: -inputScrollSharedValue.value}],
   }))
@@ -202,16 +224,35 @@ export function Composer({
         flags: {},
       },
     )
+    /**
+     * On iOS, having a lineHeight on the Text component causes the text to be
+     * vertically misaligned with the TextInput.
+     *
+     * This only seems to be an issue on iOS, and not on Android or web. It's
+     * possible that this is a bug in React Native's Text component on iOS,
+     * but in the meantime, we'll just remove the lineHeight on iOS to ensure
+     * the text is properly aligned.
+     */
     if (IS_IOS) {
       delete ts.lineHeight
     }
     return ts
-  }, [contentTextStyle, fonts, t.atoms.text])
+  }, [contentTextStyle, fonts])
 
+  /*
+   * Web keyboard handling
+   */
   const isComposing = useRef(false)
-  const onKeyPressWeb = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const onKeyPressWeb = (e: React.KeyboardEvent | any) => {
     if (IS_WEB_TOUCH_DEVICE) return
     if (isComposing.current) return
+
+    /*
+     * On Safari, the final keydown to dismiss an IME is also "Enter" with
+     * keyCode 229. Chrome/Firefox don't have this problem.
+     *
+     * @see https://github.com/bluesky-social/social-app/issues/4178
+     */
     if (e.key === 'Enter' && e.keyCode === 229) return
 
     if (e.key === 'Enter') {
@@ -224,8 +265,11 @@ export function Composer({
     }
   }
 
+  /*
+   * Sift popover positioning
+   */
   const updateAutocompletePosition = () => {
-    void sift.updatePosition()
+    sift.updatePosition()
   }
 
   const textContent = (
@@ -241,11 +285,9 @@ export function Composer({
                 key={i}
                 ref={IS_WEB ? sift.refs.setAnchor : undefined}
                 style={
-                  node.type === 'facet'
-                    ? {
-                        color: t.palette.primary_500,
-                      }
-                    : undefined
+                  node.type === 'facet' && {
+                    color: t.palette.primary_500,
+                  }
                 }>
                 {node.raw}
               </Span>
@@ -261,7 +303,13 @@ export function Composer({
         {IS_WEB && (
           <View
             pointerEvents="none"
-            style={[a.absolute, a.inset_0, a.z_10, {overflow: 'hidden'}]}>
+            style={[a.absolute, a.inset_0, a.z_10, {overflow: 'hidden'}]}
+            ref={node => {
+              if (IS_WEB && node) {
+                // @ts-ignore web only a11y
+                node.setAttribute('inert', '')
+              }
+            }}>
             <Animated.View
               style={[
                 contentPaddingStyle,
@@ -284,31 +332,31 @@ export function Composer({
             contentPaddingStyle,
             a.z_20,
             {
-              color: 'transparent',
               background: 'transparent',
             },
             web({
+              color: 'transparent',
               caretColor: textStyle.color ?? 'black',
               overscrollBehavior: 'none',
+              scrollbarWidth: 'thin',
+              scrollbarColor: `${t.palette.contrast_200} transparent`,
             }),
           ]}
           {...rest}
           {...tapper.inputProps}
           {...sift.targetProps}
           ref={mergeRefs([ref, tapper.inputProps.ref, sift.targetProps.ref])}
+          rawValue={tapper.state.text}
           onBlur={e => {
             rest.onBlur?.(e)
             setActiveFacet(null)
           }}
-          // @ts-expect-error react-native-web provides a DOM keyboard event here
           onKeyPress={IS_WEB ? onKeyPressWeb : undefined}
           onScroll={e => {
             if (IS_WEB) {
-              inputScrollSharedValue.set(
-                (e.target as unknown as HTMLTextAreaElement).scrollTop,
-              )
+              inputScrollSharedValue.value = (e.target as any).scrollTop
             } else {
-              inputScrollSharedValue.set(e.nativeEvent.contentOffset.y)
+              inputScrollSharedValue.value = e.nativeEvent.contentOffset.y
             }
           }}
           // @ts-ignore web only
@@ -326,6 +374,7 @@ export function Composer({
 
       {activeFacet && activeFacet.type !== 'url' && (
         <AutocompleteInner
+          inverted={autocompletePlacement?.startsWith('top')}
           sift={sift}
           activeFacet={activeFacet}
           onDismiss={() => setActiveFacet(null)}
@@ -335,11 +384,17 @@ export function Composer({
   )
 }
 
+/*
+ * ─── Autocomplete (private) ───────────────────────────────────────────────────
+ */
+
 function AutocompleteInner({
+  inverted,
   sift,
   activeFacet,
   onDismiss,
 }: {
+  inverted?: boolean
   sift: UseSiftReturn
   activeFacet: TapperActiveFacet
   onDismiss: () => void
@@ -351,7 +406,7 @@ function AutocompleteInner({
 
   useEffect(() => {
     if (
-      activeFacet.type === 'emoji' &&
+      activeFacet?.type === 'emoji' &&
       !!activeFacet.value.length &&
       activeFacet.raw.endsWith(':')
     ) {
@@ -360,11 +415,11 @@ function AutocompleteInner({
         onDismiss()
       }
     }
-  }, [items, activeFacet, onDismiss])
+  }, [items, activeFacet])
 
   return items && items.length ? (
     <AutocompleteBase
-      inverted={!IS_WEB}
+      inverted={inverted}
       sift={sift}
       data={items}
       render={props => {

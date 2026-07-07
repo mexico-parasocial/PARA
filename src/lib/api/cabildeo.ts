@@ -19,7 +19,7 @@ import {issueParaVoteProof} from '#/lib/api/vote-proof'
 // ─── Writes ──────────────────────────────────────────────────────────────────
 
 export async function publishCabildeo(
-  agent: BskyAgent,
+  agent: AtpAgent,
   record: Omit<CabildeoRecord, 'author' | 'createdAt'>,
 ) {
   if (!agent.session) throw new Error('Not logged in')
@@ -39,7 +39,7 @@ export async function publishCabildeo(
 }
 
 export async function publishCabildeoPosition(
-  agent: BskyAgent,
+  agent: AtpAgent,
   record: Omit<CabildeoPositionRecord, 'createdAt'>,
 ) {
   if (!agent.session) throw new Error('Not logged in')
@@ -55,7 +55,7 @@ export async function publishCabildeoPosition(
 }
 
 export async function castCabildeoVote(
-  agent: BskyAgent,
+  agent: AtpAgent,
   record: Omit<
     CabildeoVoteRecord,
     'createdAt' | 'delegatedFrom' | 'effectivePower'
@@ -82,7 +82,7 @@ export async function castCabildeoVote(
 }
 
 export async function delegateCabildeoVote(
-  agent: BskyAgent,
+  agent: AtpAgent,
   record: Omit<CabildeoDelegationRecord, 'createdAt'>,
 ) {
   if (!agent.session) throw new Error('Not logged in')
@@ -259,7 +259,7 @@ type ListDelegationCandidatesResponse = {
 const MAX_PAGINATION_PAGES = 20
 
 export async function fetchCabildeosPage(
-  agent: BskyAgent,
+  agent: AtpAgent,
   opts?: {
     community?: string
     phase?: CabildeoPhase
@@ -284,7 +284,7 @@ export async function fetchCabildeosPage(
 }
 
 export async function fetchCabildeos(
-  agent: BskyAgent,
+  agent: AtpAgent,
   opts?: {
     community?: string
     phase?: CabildeoPhase
@@ -311,7 +311,7 @@ export async function fetchCabildeos(
 }
 
 export async function fetchCabildeo(
-  agent: BskyAgent,
+  agent: AtpAgent,
   cabildeoUri: string,
 ): Promise<CabildeoReadView | null> {
   try {
@@ -332,7 +332,7 @@ export async function fetchCabildeo(
 }
 
 export async function fetchCabildeoPositionsPage(
-  agent: BskyAgent,
+  agent: AtpAgent,
   opts: {
     cabildeoUri: string
     stance?: CabildeoPositionRecord['stance']
@@ -358,7 +358,7 @@ export async function fetchCabildeoPositionsPage(
 }
 
 export async function fetchCabildeoPositions(
-  agent: BskyAgent,
+  agent: AtpAgent,
   opts: {
     cabildeoUri: string
     stance?: CabildeoPositionRecord['stance']
@@ -385,7 +385,7 @@ export async function fetchCabildeoPositions(
 }
 
 export async function fetchDelegationCandidates(
-  agent: BskyAgent,
+  agent: AtpAgent,
   opts: {
     cabildeoUri: string
     communityId?: string
@@ -411,7 +411,7 @@ export async function fetchDelegationCandidates(
 }
 
 async function requestCivic<T>(
-  agent: BskyAgent,
+  agent: AtpAgent,
   endpoint: string,
   params: Record<string, string | number | undefined>,
 ): Promise<T> {

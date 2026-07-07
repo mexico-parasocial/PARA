@@ -57,7 +57,7 @@ export async function fetchUserAlignment(agent: BskyAgent, did: string) {
 // ------------------------------------------------------------------
 
 export async function fetchCommunityAlignment(
-  agent: BskyAgent,
+  agent: AtpAgent,
   community: string,
 ) {
   const res = await agent.call('com.para.raq.getCommunityAlignment', {
@@ -71,7 +71,7 @@ export async function fetchCommunityAlignment(
 // ------------------------------------------------------------------
 
 export async function fetchProposedQuestions(
-  agent: BskyAgent,
+  agent: AtpAgent,
   _did: string,
   params?: PaginationParams & {community?: string},
 ): Promise<ServiceResponse<ParaRaqProposalView[]>> {
@@ -86,7 +86,7 @@ export async function fetchProposedQuestions(
 }
 
 export async function submitProposedQuestion(
-  agent: BskyAgent,
+  agent: AtpAgent,
   text: string,
   targetAxis?: string,
   targetCommunity?: string,
@@ -112,7 +112,7 @@ export async function submitProposedQuestion(
 // ------------------------------------------------------------------
 
 export async function fetchAxisVotes(
-  agent: BskyAgent,
+  agent: AtpAgent,
   did: string,
   params?: PaginationParams,
 ): Promise<ServiceResponse<ParaRaqAxisVoteRecord[]>> {
@@ -132,7 +132,7 @@ export async function fetchAxisVotes(
 }
 
 export async function submitAxisVote(
-  agent: BskyAgent,
+  agent: AtpAgent,
   axisId: string,
   value: number,
 ) {
@@ -158,7 +158,7 @@ export async function submitAxisVote(
 }
 
 export async function submitProposalVote(
-  agent: BskyAgent,
+  agent: AtpAgent,
   subject: string,
   value: number,
 ) {
@@ -184,7 +184,7 @@ export async function submitProposalVote(
 }
 
 export async function submitProposalAnswer(
-  agent: BskyAgent,
+  agent: AtpAgent,
   subject: string,
   value: number,
 ) {
@@ -208,7 +208,7 @@ export async function submitProposalAnswer(
 // ------------------------------------------------------------------
 
 export async function publishRaqAssessment(
-  agent: BskyAgent,
+  agent: AtpAgent,
   assessment: ParaRaqAssessmentRecord,
 ) {
   await agent.com.atproto.repo.putRecord({

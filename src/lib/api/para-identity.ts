@@ -8,7 +8,7 @@ import {
 export const PARA_IDENTITY_RKEY = 'self'
 
 export async function fetchParaIdentity(
-  agent: BskyAgent,
+  agent: AtpAgent,
   repo: string,
 ): Promise<ParaIdentityRecord | null> {
   const res = await agent.com.atproto.repo
@@ -23,7 +23,7 @@ export async function fetchParaIdentity(
 }
 
 export async function putParaIdentity(
-  agent: BskyAgent,
+  agent: AtpAgent,
   repo: string,
   record: Omit<ParaIdentityRecord, 'createdAt'> & {createdAt?: string},
 ) {

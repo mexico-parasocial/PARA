@@ -87,7 +87,7 @@ const GET_POSTS_BATCH_SIZE = 25
  * Fetch highlights with optional filtering and pagination
  */
 export async function fetchHighlights(
-  agent: BskyAgent,
+  agent: AtpAgent,
   params?: HighlightsQueryParams & {community?: string},
 ): Promise<ServiceResponse<Highlight[]>> {
   const {highlights: allViews, cursor} = await fetchHighlightViews(
@@ -105,7 +105,7 @@ export async function fetchHighlights(
  * Fetch a single highlight by ID
  */
 export async function fetchHighlightById(
-  agent: BskyAgent,
+  agent: AtpAgent,
   id: string,
 ): Promise<Highlight | null> {
   const params = new URLSearchParams()
@@ -138,7 +138,7 @@ export async function fetchHighlightById(
 }
 
 export async function fetchHighlightViews(
-  agent: BskyAgent,
+  agent: AtpAgent,
   params?: HighlightsQueryParams & {community?: string},
 ): Promise<{highlights: HighlightReadView[]; cursor?: string}> {
   const allViews: HighlightReadView[] = []
@@ -183,7 +183,7 @@ export async function toggleSaveHighlight(_id: string): Promise<void> {
 }
 
 export async function publishHighlightAnnotation(
-  agent: BskyAgent,
+  agent: AtpAgent,
   record: Omit<ParaHighlightRecord, 'createdAt'> & {createdAt?: string},
 ): Promise<CreateRecordResult> {
   if (!agent.session) {
@@ -208,7 +208,7 @@ export async function publishHighlightAnnotation(
 }
 
 export async function deleteHighlightAnnotation(
-  agent: BskyAgent,
+  agent: AtpAgent,
   highlightUri: string,
 ) {
   if (!agent.session) {
@@ -228,7 +228,7 @@ export async function deleteHighlightAnnotation(
 }
 
 export async function updateHighlightAnnotation(
-  agent: BskyAgent,
+  agent: AtpAgent,
   highlightUri: string,
   record: ParaHighlightRecord,
 ) {
@@ -250,7 +250,7 @@ export async function updateHighlightAnnotation(
 }
 
 async function requestHighlights<T>(
-  agent: BskyAgent,
+  agent: AtpAgent,
   endpoint: string,
   params: Record<string, string | undefined>,
 ): Promise<T> {
@@ -279,7 +279,7 @@ async function requestHighlights<T>(
 }
 
 async function hydrateHighlights(
-  agent: BskyAgent,
+  agent: AtpAgent,
   views: HighlightReadView[],
 ): Promise<Highlight[]> {
   const subjectUris = Array.from(

@@ -54,8 +54,8 @@ import {type ImagePickerAsset} from 'expo-image-picker'
 import {
   AppBskyUnspeccedDefs,
   type AppBskyUnspeccedGetPostThreadV2,
+  type AtpAgent,
   AtUri,
-  type BskyAgent,
   ChatBskyGroupDefs,
   RichText,
 } from '@atproto/api'
@@ -2628,7 +2628,7 @@ function useKeyboardVerticalOffset() {
 }
 
 async function whenAppViewReady(
-  agent: BskyAgent,
+  agent: AtpAgent,
   uri: string,
   fn: (res: AppBskyUnspeccedGetPostThreadV2.Response) => boolean,
 ) {

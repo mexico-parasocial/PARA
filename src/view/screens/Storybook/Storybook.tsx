@@ -86,13 +86,13 @@ export default function Storybook() {
             <Button
               color="primary_subtle"
               size="large"
-              onPress={() =>
-                requestDeviceGeolocation().then(req => {
+              onPress={() => {
+                void requestDeviceGeolocation().then(req => {
                   if (req.granted && req.location) {
                     setDeviceGeolocation(req.location)
                   }
                 })
-              }
+              }}
               label="crash">
               <ButtonText>Get GPS Location</ButtonText>
             </Button>

@@ -1,4 +1,4 @@
-import {BskyAgent} from '@atproto/api'
+import {AtpAgent} from '@atproto/api'
 
 import {ParaFeedAPI} from '../src/lib/api/feed/para'
 

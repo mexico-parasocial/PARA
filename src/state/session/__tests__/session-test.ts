@@ -1,4 +1,4 @@
-import {BskyAgent} from '@atproto/api'
+import {AtpAgent} from '@atproto/api'
 import {describe, expect, it, jest} from '@jest/globals'
 
 import {agentToSessionAccountOrThrow} from '../agent'
@@ -16,7 +16,7 @@ jest.mock('../../../ageAssurance/state', () => ({
   unsafeGetAndComputeAgeAssurance: () => ({state: {}}),
 }))
 jest.mock('#/lib/notifications/notifications', () => ({
-  unregisterPushToken(_agents: BskyAgent[]) {
+  unregisterPushToken(_agents: AtpAgent[]) {
     return Promise.resolve()
   },
 }))
@@ -37,7 +37,7 @@ describe('session', () => {
       }
     `)
 
-    const agent = new BskyAgent({service: 'https://alice.com'})
+    const agent = new AtpAgent({service: 'https://alice.com'})
     agent.sessionManager.session = {
       active: true,
       did: 'alice-did',
@@ -179,7 +179,7 @@ describe('session', () => {
       }
     `)
 
-    const agent2 = new BskyAgent({service: 'https://bob.com'})
+    const agent2 = new AtpAgent({service: 'https://bob.com'})
     agent2.sessionManager.session = {
       active: true,
       did: 'bob-did',
@@ -245,7 +245,7 @@ describe('session', () => {
       }
     `)
 
-    const agent3 = new BskyAgent({service: 'https://alice.com'})
+    const agent3 = new AtpAgent({service: 'https://alice.com'})
     agent3.sessionManager.session = {
       active: true,
       did: 'alice-did',
@@ -311,7 +311,7 @@ describe('session', () => {
       }
     `)
 
-    const agent4 = new BskyAgent({service: 'https://jay.com'})
+    const agent4 = new AtpAgent({service: 'https://jay.com'})
     agent4.sessionManager.session = {
       active: true,
       did: 'jay-did',
@@ -631,7 +631,7 @@ describe('session', () => {
       accessJwt: 'alice-access-jwt-1',
       refreshJwt: 'alice-refresh-jwt-1',
     }
-    const agent2 = new BskyAgent({service: 'https://bob.com'})
+    const agent2 = new AtpAgent({service: 'https://bob.com'})
     agent2.sessionManager.session = {
       active: true,
       did: 'bob-did',
@@ -724,7 +724,7 @@ describe('session', () => {
     expect(state.accounts[0].refreshJwt).toBe('alice-refresh-jwt-1')
     expect(state.currentAgentState.did).toBe('alice-did')
 
-    const agent2 = new BskyAgent({service: 'https://bob.com'})
+    const agent2 = new AtpAgent({service: 'https://bob.com'})
     agent2.sessionManager.session = {
       active: true,
       did: 'bob-did',
@@ -1101,7 +1101,7 @@ describe('session', () => {
       refreshJwt: 'alice-refresh-jwt-1',
     }
 
-    const agent2 = new BskyAgent({service: 'https://bob.com'})
+    const agent2 = new AtpAgent({service: 'https://bob.com'})
     agent2.sessionManager.session = {
       active: true,
       did: 'bob-did',
@@ -1300,7 +1300,7 @@ describe('session', () => {
       refreshJwt: 'alice-refresh-jwt-1',
     }
 
-    const agent2 = new BskyAgent({service: 'https://bob.com'})
+    const agent2 = new AtpAgent({service: 'https://bob.com'})
     agent2.sessionManager.session = {
       active: true,
       did: 'bob-did',
@@ -1559,7 +1559,7 @@ describe('session', () => {
       accessJwt: 'alice-access-jwt-1',
       refreshJwt: 'alice-refresh-jwt-1',
     }
-    const agent2 = new BskyAgent({service: 'https://bob.com'})
+    const agent2 = new AtpAgent({service: 'https://bob.com'})
     agent2.sessionManager.session = {
       active: true,
       did: 'bob-did',

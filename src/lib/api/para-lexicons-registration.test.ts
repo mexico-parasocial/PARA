@@ -1,4 +1,4 @@
-import {BskyAgent} from '@atproto/api'
+import {AtpAgent} from '@atproto/api'
 
 import {registerParaLexicons} from './para-lexicons-registration'
 

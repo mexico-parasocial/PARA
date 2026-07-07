@@ -47,7 +47,7 @@ const NATIONAL_PARTY_BOARDS: NonNullable<CommunityBoardListResponse['boards']> =
  * Fetch representatives with optional filtering and pagination
  */
 export async function fetchRepresentatives(
-  agent: BskyAgent,
+  agent: AtpAgent,
   params?: RepresentativesQueryParams,
 ): Promise<ServiceResponse<RepresentativeItem[]>> {
   if (USE_MOCK_DATA) {
@@ -98,7 +98,7 @@ export async function fetchRepresentatives(
  * Fetch a single representative by ID
  */
 export async function fetchRepresentativeById(
-  agent: BskyAgent,
+  agent: AtpAgent,
   id: string,
 ): Promise<RepresentativeItem | null> {
   if (USE_MOCK_DATA) {
@@ -116,7 +116,7 @@ function simulateNetworkDelay(): Promise<void> {
 }
 
 async function fetchRepresentativesFromGovernance(
-  agent: BskyAgent,
+  agent: AtpAgent,
   params?: RepresentativesQueryParams,
 ): Promise<RepresentativeItem[]> {
   const boards = dedupeBoards([
@@ -173,7 +173,7 @@ async function fetchRepresentativesFromGovernance(
 }
 
 async function fetchCommunityBoards(
-  agent: BskyAgent,
+  agent: AtpAgent,
   params?: RepresentativesQueryParams,
 ) {
   const search = new URLSearchParams()
@@ -208,7 +208,7 @@ async function fetchCommunityBoards(
 }
 
 async function fetchCommunityGovernance(
-  agent: BskyAgent,
+  agent: AtpAgent,
   board: NonNullable<CommunityBoardListResponse['boards']>[number],
 ) {
   const communityName = board.name || board.slug || board.communityId

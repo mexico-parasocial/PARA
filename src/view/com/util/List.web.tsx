@@ -26,10 +26,19 @@ import {useIsWithinSplitView} from '#/screens/Messages/components/splitView/cont
 import {useTheme, web} from '#/alf'
 import * as Layout from '#/components/Layout'
 
-export interface ListMethods {
+export type ListMethods = {
   scrollToTop: () => void
-  scrollToOffset: (args: {animated: boolean; offset: number}) => void
-  scrollToEnd: (args: {animated?: boolean}) => void
+  scrollToOffset: (options: {animated: boolean; offset: number}) => void
+  scrollToEnd: (options?: {animated?: boolean}) => void
+  // Signature kept compatible with FlatList's scrollToIndex (the native
+  // ListMethods type) so callers stay platform-agnostic. viewOffset is
+  // accepted for parity but not currently used by the web implementation.
+  scrollToIndex: (params: {
+    animated?: boolean | null
+    index: number
+    viewOffset?: number
+    viewPosition?: number
+  }) => void
 }
 export type ListProps<ItemT> = Omit<
   FlatListProps<ItemT>,
@@ -216,37 +225,57 @@ function ListImpl<ItemT>(
   }, [disableFullWindowScroll])
 
   const nativeRef = useRef<HTMLDivElement>(null)
+
+  // Registry of item index -> row DOM node. The list renders header/footer and
+  // visibility-detector siblings too, so we can't index into the container's
+  // children directly; each Row registers its own node here keyed by index.
+  const rowNodesRef = useRef<Map<number, HTMLElement>>(new Map())
+  const registerRowNode = useCallback(
+    (index: number, node: HTMLElement | null) => {
+      if (node) {
+        rowNodesRef.current.set(index, node)
+      } else {
+        rowNodesRef.current.delete(index)
+      }
+    },
+    [],
+  )
+
   useImperativeHandle(
     ref,
-    () =>
-      ({
-        scrollToTop() {
-          getScrollableNode()?.scrollTo({top: 0})
-        },
+    () => ({
+      scrollToTop() {
+        getScrollableNode()?.scrollTo({top: 0})
+      },
 
-        scrollToOffset({
-          animated,
-          offset,
-        }: {
-          animated: boolean
-          offset: number
-        }) {
-          getScrollableNode()?.scrollTo({
-            left: 0,
-            top: offset,
-            behavior: animated ? 'smooth' : 'instant',
-          })
-        },
+      scrollToOffset({animated, offset}: {animated: boolean; offset: number}) {
+        getScrollableNode()?.scrollTo({
+          left: 0,
+          top: offset,
+          behavior: animated ? 'smooth' : 'instant',
+        })
+      },
 
-        scrollToEnd({animated = true}: {animated?: boolean}) {
-          const element = getScrollableNode()
-          element?.scrollTo({
-            left: 0,
-            top: element.scrollHeight,
-            behavior: animated ? 'smooth' : 'instant',
-          })
-        },
-      }) as ListMethods,
+      scrollToEnd({animated = true} = {}) {
+        const element = getScrollableNode()
+        element?.scrollTo({
+          left: 0,
+          top: element.scrollHeight,
+          behavior: animated ? 'smooth' : 'instant',
+        })
+      },
+
+      scrollToIndex({animated = true, index}) {
+        const node = rowNodesRef.current.get(index)
+        // scrollIntoView with block: 'center' roughly matches the caller's
+        // viewPosition of 0.3 - not exact, but close enough and it respects
+        // whichever element is the scroll container (window or nativeRef).
+        node?.scrollIntoView({
+          block: 'center',
+          behavior: animated ? 'smooth' : 'instant',
+        })
+      },
+    }),
     [getScrollableNode],
   )
 
@@ -282,7 +311,7 @@ function ListImpl<ItemT>(
         | 'targetContentOffset'
         | 'contentInset'
       >,
-      null as unknown,
+      {},
     )
   })
 
@@ -344,18 +373,18 @@ function ListImpl<ItemT>(
     <View
       {...props}
       style={[
-        style,
         isWithinSplitView &&
           web({
             scrollbarWidth: 'thin',
             scrollbarColor: `${t.palette.contrast_100} transparent`,
           }),
+        style,
         disableFullWindowScroll && {
           flex: 1,
-          overflowY: 'scroll',
+          overflowY: isWithinSplitView ? 'auto' : 'scroll',
         },
       ]}
-      ref={nativeRef as unknown as React.Ref<View>}>
+      ref={nativeRef as unknown as React.RefObject<View>}>
       <Visibility
         onVisibleChange={setIsInsideVisibleTree}
         style={
@@ -372,7 +401,7 @@ function ListImpl<ItemT>(
             desktopFixedHeight && !disableFullWindowScroll
               ? styles.minHeightViewport
               : null,
-]}>
+          ]}>
           <Visibility
             root={disableFullWindowScroll ? nativeRef : null}
             onVisibleChange={handleAboveTheFoldVisibleChange}
@@ -399,6 +428,7 @@ function ListImpl<ItemT>(
                     renderItem={renderItem}
                     extraData={extraData}
                     onItemSeen={onItemSeen}
+                    registerRowNode={registerRowNode}
                   />
                 )
               })}
@@ -477,15 +507,17 @@ let Row = function RowImpl<ItemT>({
   renderItem,
   extraData: _unused,
   onItemSeen,
+  registerRowNode,
 }: {
   item: ItemT
   index: number
   renderItem:
     | null
     | undefined
-    | ((data: ListRenderItemInfo<ItemT>) => React.ReactNode)
+    | ((info: ListRenderItemInfo<ItemT>) => React.ReactNode)
   extraData: unknown
   onItemSeen: ((item: ItemT) => void) | undefined
+  registerRowNode: (index: number, node: HTMLElement | null) => void
 }): React.ReactNode {
   const rowRef = useRef(null)
   const intersectionTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(
@@ -536,6 +568,15 @@ let Row = function RowImpl<ItemT>({
     }
   }, [handleIntersection, onItemSeen])
 
+  // Register this row's DOM node so the list can scroll to it by index.
+  useEffect(() => {
+    const node: HTMLElement | null = rowRef.current
+    registerRowNode(index, node)
+    return () => {
+      registerRowNode(index, null)
+    }
+  }, [index, registerRowNode])
+
   if (!renderItem) {
     return null
   }
@@ -550,7 +591,17 @@ let Row = function RowImpl<ItemT>({
     </View>
   )
 }
-Row = memo(Row)
+Row = memo(Row) as <ItemT>(props: {
+  item: ItemT
+  index: number
+  renderItem:
+    | null
+    | undefined
+    | ((info: ListRenderItemInfo<ItemT>) => React.ReactNode)
+  extraData: unknown
+  onItemSeen: ((item: ItemT) => void) | undefined
+  registerRowNode: (index: number, node: HTMLElement | null) => void
+}) => React.ReactNode
 
 let Visibility = ({
   root,
@@ -605,7 +656,7 @@ Visibility = memo(Visibility)
 
 export const List = memo(forwardRef(ListImpl)) as <ItemT>(
   props: ListProps<ItemT> & {ref?: React.Ref<ListMethods>},
-) => React.JSX.Element
+) => React.ReactElement
 
 // https://stackoverflow.com/questions/7944460/detect-safari-browser
 

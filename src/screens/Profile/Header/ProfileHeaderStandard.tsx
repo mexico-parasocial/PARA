@@ -42,6 +42,7 @@ import {DebugFieldDisplay} from '#/components/DebugFieldDisplay'
 import {useDialogControl} from '#/components/Dialog'
 import {MessageProfileButton} from '#/components/dms/MessageProfileButton'
 import {GermContactButton} from '#/components/germ/GermContactButton'
+import {ArrowShareRight_Stroke2_Corner2_Rounded as ArrowShareRight} from '#/components/icons/ArrowShareRight'
 import {PlusLarge_Stroke2_Corner0_Rounded as Plus} from '#/components/icons/Plus'
 import {
   KnownFollowers,
@@ -53,7 +54,9 @@ import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {useSimpleVerificationState} from '#/components/verification'
 import {VerificationCheckButton} from '#/components/verification/VerificationCheckButton'
-import {IS_IOS} from '#/env'
+import {useAnalytics} from '#/analytics'
+import {IS_IOS, IS_NATIVE} from '#/env'
+import {InviteFriendsDialog} from '#/features/inviteFriends'
 import {useActorStatus} from '#/features/liveNow'
 import {EditProfileDialog} from './EditProfileDialog'
 import {ProfileHeaderHandle} from './Handle'
@@ -330,7 +333,7 @@ function ProfileCivicBadges({
         ]}>
         {compassGradient ? (
           <LinearGradient
-            colors={compassGradient.colors as unknown as readonly [string, string, ...string[]]}
+            colors={compassGradient.colors}
             start={compassGradient.start}
             end={compassGradient.end}
             style={[a.absolute, {borderRadius: 999}]}
@@ -426,7 +429,9 @@ export function HeaderStandardButtons({
     'ProfileHeader',
   )
   const [, queueUnblock] = useProfileBlockMutationQueue(profile)
+  const ax = useAnalytics()
   const editProfileControl = useDialogControl()
+  const inviteFriendsControl = useDialogControl()
   const unblockPromptControl = Prompt.usePromptControl()
   const verification = useSimpleVerificationState({profile})
   const formattedDisplayName = formatUserDisplayName({
@@ -531,7 +536,29 @@ export function HeaderStandardButtons({
               <Trans>Edit Profile</Trans>
             </ButtonText>
           </Button>
+          {/* Invite friends is a native-only share sheet (the dialog is a
+              no-op on web), so gate the entry point to avoid a dead button. */}
+          {IS_NATIVE && (
+            <Button
+              testID="profileHeaderShareButton"
+              size="small"
+              color="secondary"
+              shape="round"
+              // expand the 33pt button toward a 44pt touch target, capped
+              // horizontally at half the 4pt row gap so the target cannot
+              // overlap the neighboring buttons' own targets
+              hitSlop={{top: 6, bottom: 6, left: 2, right: 2}}
+              onPress={() => {
+                playHaptic('Light')
+                ax.metric('invite:dialog:open', {logContext: 'ProfileHeader'})
+                inviteFriendsControl.open()
+              }}
+              label={_(msg`Invite friends`)}>
+              <ButtonIcon icon={ArrowShareRight} />
+            </Button>
+          )}
           <EditProfileDialog profile={profile} control={editProfileControl} />
+          {IS_NATIVE && <InviteFriendsDialog control={inviteFriendsControl} />}
         </>
       ) : profile.viewer?.blocking ? (
         profile.viewer?.blockingByList ? null : (

@@ -1,6 +1,6 @@
 import {
+  type AtpAgent,
   AtUri,
-  type BskyAgent,
   type ComAtprotoRepoListRecords,
 } from '@atproto/api'
 import {TID} from '@atproto/common-web'
@@ -129,7 +129,7 @@ async function listRemoteFollowedElements({
   agent,
   repo,
 }: {
-  agent: BskyAgent
+  agent: AtpAgent,
   repo: string
 }) {
   const items: FollowedItem[] = []

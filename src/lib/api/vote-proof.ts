@@ -3,7 +3,7 @@ import {type BskyAgent} from '@atproto/api'
 import {type M8CivicVoteProof,postCivicVoteProof} from '#/lib/m8'
 
 export async function issueParaVoteProof(
-  agent: BskyAgent,
+  agent: AtpAgent,
   input: {
     subjectUri: string
     subjectType: M8CivicVoteProof['subjectType']

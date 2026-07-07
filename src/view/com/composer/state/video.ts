@@ -260,7 +260,7 @@ function trunc2dp(num: number) {
 export async function processVideo(
   asset: ImagePickerAsset,
   dispatch: (action: VideoAction) => void,
-  agent: BskyAgent,
+  agent: AtpAgent,
   did: string,
   signal: AbortSignal,
   i18n: I18n,

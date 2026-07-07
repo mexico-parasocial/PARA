@@ -1,4 +1,4 @@
-import {BskyAgent} from '@atproto/api'
+import {AtpAgent} from '@atproto/api'
 
 // Relative import for ts-node
 import {MOCK_REPS} from '../src/lib/mock-representatives'

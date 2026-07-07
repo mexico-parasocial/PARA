@@ -13,7 +13,7 @@ export async function getServiceAuthToken({
   lxm,
   exp,
 }: {
-  agent: BskyAgent
+  agent: AtpAgent,
   aud?: string
   lxm: string
   exp?: number

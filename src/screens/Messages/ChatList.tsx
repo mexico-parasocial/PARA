@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useMemo, useState} from 'react'
 import {type ListRenderItem, View} from 'react-native'
 import {useAnimatedRef} from 'react-native-reanimated'
-import {type ChatBskyActorGetStatus, ChatBskyConvoDefs} from '@atproto/api'
+import {type ChatBskyActorGetStatus, type ChatBskyConvoDefs} from '@atproto/api'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {useFocusEffect, useIsFocused} from '@react-navigation/native'
 import {type NativeStackScreenProps} from '@react-navigation/native-stack'
@@ -18,6 +18,7 @@ import {MESSAGE_SCREEN_POLL_INTERVAL} from '#/state/messages/convo/const'
 import {useMessagesEventBus} from '#/state/messages/events'
 import {useMatrixRoomsQuery} from '#/state/queries/matrix'
 import {useChatActorStatusQuery} from '#/state/queries/messages/get-status'
+import {useUnreadCountsQuery} from '#/state/queries/messages/get-unread-counts'
 import {useListConvosQuery} from '#/state/queries/messages/list-conversations'
 import {useSession} from '#/state/session'
 import {EmptyState} from '#/view/com/util/EmptyState'
@@ -620,7 +621,6 @@ export function Header({
 }) {
   const {t: l} = useLingui()
   const {gtMobile} = useBreakpoints()
-  const aa = useAgeAssurance()
   const requireEmailVerification = useRequireEmailVerification()
   const {isWithinSplitView} = useIsWithinSplitView()
 
@@ -629,24 +629,8 @@ export function Header({
   // on repeated clicks, so navigate instead to dedupe by route + params.
   const action = isWithinSplitView ? 'navigate' : 'push'
 
-  const {data: unreadInboxData, hasNextPage: hasMoreRequests} =
-    useListConvosQuery({
-      status: 'request',
-      readState: 'unread',
-      kind: aa.flags.groupChatDisabled ? 'direct' : 'all',
-    })
-
-  const inboxAllConvos =
-    unreadInboxData?.pages
-      .flatMap(page => page.convos)
-      .filter(
-        convo =>
-          !convo.muted &&
-          convo.members.every(member => member.handle !== 'missing.invalid') &&
-          (ChatBskyConvoDefs.isGroupConvo(convo.kind)
-            ? !aa.flags.groupChatDisabled
-            : true),
-      ) ?? []
+  const {data: unreadCounts} = useUnreadCountsQuery()
+  const requestCount = unreadCounts?.unreadRequestConvos ?? 0
 
   const openChatControl = useCallback(() => {
     newChatControl.open()
@@ -671,8 +655,7 @@ export function Header({
           </Layout.Header.Content>
           <View style={[a.flex_row, a.align_center, a.gap_sm]}>
             <InboxRequests
-              count={inboxAllConvos.length}
-              more={hasMoreRequests}
+              count={requestCount}
               variant="solid"
               action={action}
             />
@@ -706,11 +689,7 @@ export function Header({
               <Trans>Chats</Trans>
             </Layout.Header.TitleText>
           </Layout.Header.Content>
-          <InboxRequests
-            count={inboxAllConvos.length}
-            more={hasMoreRequests}
-            variant="ghost"
-          />
+          <InboxRequests count={requestCount} variant="ghost" />
           <Layout.Header.Slot>
             <Link
               to="/messages/settings"

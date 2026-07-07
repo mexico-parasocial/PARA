@@ -1,4 +1,4 @@
-import {BskyAgent} from '@atproto/api'
+import {AtpAgent} from '@atproto/api'
 
 const SERVICE = 'http://localhost:2583'
 const USER = 'alice.test'

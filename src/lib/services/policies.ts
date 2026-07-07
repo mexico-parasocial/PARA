@@ -45,7 +45,7 @@ export interface PoliciesQueryParams extends PaginationParams {
  * Fetch policies from a specific feed
  */
 export async function fetchPolicies(
-  agent: BskyAgent,
+  agent: AtpAgent,
   params: PoliciesQueryParams,
 ): Promise<ServiceResponse<PolicyItem[]>> {
   if (USE_MOCK_DATA) {
@@ -110,7 +110,7 @@ export async function fetchPolicies(
  * Fetch a single policy by ID
  */
 export async function fetchPolicyById(
-  agent: BskyAgent,
+  agent: AtpAgent,
   id: string,
 ): Promise<PolicyItem | null> {
   if (USE_MOCK_DATA) {

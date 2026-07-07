@@ -5,6 +5,7 @@
 import {type Platform} from 'react-native'
 
 import {type NotificationReason} from '#/lib/hooks/useNotificationHandler'
+import {type NotificationType} from '#/state/queries/notifications/types'
 import {type FeedDescriptor} from '#/state/queries/post-feed'
 import {type LiveEventFeedMetricContext} from '#/features/liveEvents/types'
 
@@ -52,6 +53,10 @@ export type Events = {
   'notifications:request': {
     context: 'StartOnboarding' | 'AfterOnboarding' | 'Login' | 'Home'
     status: 'granted' | 'denied' | 'undetermined'
+  }
+  'notifications:bundleExpand': {
+    notificationType: NotificationType
+    authorCount: number
   }
   'state:background': {
     secondsActive: number
@@ -506,6 +511,7 @@ export type Events = {
       | 'OnboardingSuggestedAccounts'
       | 'FindContacts'
       | 'GroupChat'
+      | 'NotificationExpandedProfileCard'
   }
   'profile:followers:view': {
     contextProfileDid: string
@@ -612,6 +618,7 @@ export type Events = {
       | 'OnboardingSuggestedAccounts'
       | 'FindContacts'
       | 'GroupChat'
+      | 'NotificationExpandedProfileCard'
   }
   'chat:create': {
     logContext:
@@ -628,6 +635,15 @@ export type Events = {
       | 'SendViaChatDialog'
       | 'ConvoSettings'
   }
+  // Message replies
+  'chat:message:reply:send': {
+    convoId: string
+    isGroup: boolean
+  }
+  'chat:message:reply:tap': {
+    convoId: string
+  }
+
   // Group chat adoption / interactions
   'groupchat:create': {
     logContext: 'NewChatDialog'

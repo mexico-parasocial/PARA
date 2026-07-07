@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import {BskyAgent} from '@atproto/api'
+import {AtpAgent} from '@atproto/api'
 
 import {
   applySeedOperations,

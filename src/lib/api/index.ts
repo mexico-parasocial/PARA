@@ -6,8 +6,8 @@ import {
   type AppBskyEmbedRecordWithMedia,
   type AppBskyEmbedVideo,
   AppBskyFeedPost,
+  type AtpAgent,
   BlobRef,
-  type BskyAgent,
   ChatBskyGroupDefs,
   type ComAtprotoLabelDefs,
   type ComAtprotoRepoApplyWrites,
@@ -107,7 +107,7 @@ interface PostOpts {
 }
 
 export async function post(
-  agent: BskyAgent,
+  agent: AtpAgent,
   queryClient: QueryClient,
   opts: PostOpts,
 ) {
@@ -312,7 +312,7 @@ async function resolveReply(agent: BskyAgent, replyTo: string) {
 }
 
 async function resolveEmbed(
-  agent: BskyAgent,
+  agent: AtpAgent,
   queryClient: QueryClient,
   draft: PostDraft,
   onStateChange: ((state: string) => void) | undefined,
@@ -370,7 +370,7 @@ async function resolveEmbed(
 }
 
 async function resolveMedia(
-  agent: BskyAgent,
+  agent: AtpAgent,
   queryClient: QueryClient,
   embedDraft: EmbedDraft,
   onStateChange: ((state: string) => void) | undefined,
@@ -513,7 +513,7 @@ async function resolveMedia(
 }
 
 async function resolveRecord(
-  agent: BskyAgent,
+  agent: AtpAgent,
   queryClient: QueryClient,
   uri: string,
 ): Promise<ComAtprotoRepoStrongRef.Main> {
