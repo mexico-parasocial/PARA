@@ -12,9 +12,13 @@ import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import {useIsFocused, useNavigation} from '@react-navigation/native'
 
+import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
 import {useWebMediaQueries} from '#/lib/hooks/useWebMediaQueries'
 import {type NavigationProp} from '#/lib/routes/types'
-import {useMemesFeedQuery} from '#/state/queries/para-memes'
+import {
+  useMemeVoteMutation,
+  useMemesFeedQuery,
+} from '#/state/queries/para-memes'
 import {useCompassFilter} from '#/state/shell/compass-filter'
 import {useMinimalShellMode} from '#/state/shell/minimal-mode'
 import {Text} from '#/view/com/util/text/Text'
@@ -53,6 +57,7 @@ export function MemesScreen({
   const t = useTheme()
   const {_} = useLingui()
   const navigation = useNavigation<NavigationProp>()
+  const {openComposer} = useOpenComposer()
   const {width} = useWindowDimensions()
   const {activeFilters} = useCompassFilter()
   const {isDesktop, isTablet} = useWebMediaQueries()
@@ -64,7 +69,29 @@ export function MemesScreen({
   const isFocused = useIsFocused()
   const {footerMode} = useMinimalShellMode()
   const [query, setQuery] = useState('')
-  const [itemVotes, setItemVotes] = useState<Record<string, 1 | -1 | 0>>({})
+  const [localVotes, setLocalVotes] = useState<Record<string, 1 | -1 | 0>>({})
+  const voteMutation = useMemeVoteMutation()
+
+  const voteForItem = useCallback(
+    (item: MediaItem): 1 | -1 | 0 => {
+      if (item.post) {
+        return item.post.viewer?.like ? 1 : 0
+      }
+      return (localVotes[item.id] as 1 | -1 | 0 | undefined) ?? 0
+    },
+    [localVotes],
+  )
+
+  const handleVoteChange = useCallback(
+    (item: MediaItem, vote: 1 | -1 | 0) => {
+      if (item.post) {
+        voteMutation.mutate({post: item.post, vote})
+      } else {
+        setLocalVotes(prev => ({...prev, [item.id]: vote}))
+      }
+    },
+    [voteMutation],
+  )
   const [focusedItemId, setFocusedItemId] = useState<string | undefined>()
   const [expandedItem, setExpandedItem] = useState<MediaItem | null>(null)
   const [showSearch, setShowSearch] = useState(false)
@@ -208,11 +235,9 @@ export function MemesScreen({
                       key={item.id}
                       item={item}
                       mode={activeMode}
-                      onVoteChange={vote =>
-                        setItemVotes(prev => ({...prev, [item.id]: vote}))
-                      }
+                      onVoteChange={vote => handleVoteChange(item, vote)}
                       onExpand={() => setExpandedItem(item)}
-                      vote={itemVotes[item.id] ?? 0}
+                      vote={voteForItem(item)}
                       width={boardWidth}
                     />
                   ))}
@@ -257,10 +282,13 @@ export function MemesScreen({
                 mode={activeMode}
                 onExpandItem={setExpandedItem}
                 onFocusChange={setFocusedItemId}
-                onVoteChange={(id, vote) =>
-                  setItemVotes(prev => ({...prev, [id]: vote}))
-                }
-                votes={itemVotes}
+                onVoteChange={(id, vote) => {
+                  const item = activeItems.find(i => i.id === id)
+                  if (item) handleVoteChange(item, vote)
+                }}
+                votes={Object.fromEntries(
+                  activeItems.map(item => [item.id, voteForItem(item)]),
+                )}
               />
             )}
           </View>
@@ -273,10 +301,18 @@ export function MemesScreen({
         onClose={() => setExpandedItem(null)}
         onVoteChange={vote => {
           if (!expandedItem) return
-          setItemVotes(prev => ({...prev, [expandedItem.id]: vote}))
+          handleVoteChange(expandedItem, vote)
         }}
-        vote={expandedItem ? (itemVotes[expandedItem.id] ?? 0) : 0}
+        vote={expandedItem ? voteForItem(expandedItem) : 0}
       />
+
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={_(msg`Create meme`)}
+        onPress={() => openComposer({logContext: 'Fab'})}
+        style={[styles.fab, t.atoms.bg, {borderColor: t.palette.contrast_200}]}>
+        <Text style={[styles.fabText, t.atoms.text]}>+</Text>
+      </Pressable>
     </Layout.Screen>
   )
 }

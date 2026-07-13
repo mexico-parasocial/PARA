@@ -6,10 +6,13 @@ import {
 } from '@atproto/api'
 import {
   useInfiniteQuery,
+  useMutation,
+  useQueryClient,
   type InfiniteData,
 } from '@tanstack/react-query'
 
 import {type MemeMediaItem} from '#/screens/Dashboard/MemesScreen/types'
+import * as Toast from '#/components/Toast'
 import {
   PERSISTED_QUERY_GCTIME,
   PERSISTED_QUERY_ROOT,
@@ -138,4 +141,34 @@ function getMemeThumbnailUri(
   }
 
   return undefined
+}
+
+export function useMemeVoteMutation() {
+  const agent = useAgent()
+  const queryClient = useQueryClient()
+
+  return useMutation<
+    void,
+    Error,
+    {post: AppBskyFeedDefs.PostView; vote: 1 | -1 | 0}
+  >({
+    mutationFn: async ({post, vote}) => {
+      const likeUri = post.viewer?.like
+      if (vote === 1) {
+        if (!likeUri) {
+          await agent.like(post.uri, post.cid)
+        }
+      } else {
+        if (likeUri) {
+          await agent.deleteLike(likeUri)
+        }
+      }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({queryKey: getQueryKey()})
+    },
+    onError: error => {
+      Toast.show(`Vote failed: ${error.message}`, {type: 'error'})
+    },
+  })
 }
