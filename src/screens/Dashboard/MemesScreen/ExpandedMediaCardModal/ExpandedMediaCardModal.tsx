@@ -1,6 +1,4 @@
 import {Modal, Pressable, View} from 'react-native'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
 
 import {useShowPartyShields} from '#/state/preferences/show-party-shields'
 import {Text} from '#/view/com/util/text/Text'
@@ -8,8 +6,12 @@ import {useTheme} from '#/alf'
 import {ArrowsDiagonalOut_Stroke2_Corner2_Rounded as ExpandIcon} from '#/components/icons/ArrowsDiagonal'
 import {Bubble_Stroke2_Corner2_Rounded as CommentIcon} from '#/components/icons/Bubble'
 import {RedditVoteButton} from '#/components/PostControls/VoteButton'
-import * as Toast from '#/components/Toast'
-import {ActionButton, MediaVisualMeta, PartyInsignia} from '../cardPrimitives'
+import {
+  ActionButton,
+  MediaVisual,
+  MediaVisualMeta,
+  PartyInsignia,
+} from '../cardPrimitives'
 import {buildSubmetaLabel} from '../helpers'
 import {styles} from '../styles'
 import {type MediaItem, type Mode} from '../types'
@@ -19,16 +21,17 @@ export function ExpandedMediaCardModal({
   mode,
   vote,
   onClose,
+  onOpenComments,
   onVoteChange,
 }: {
   item: MediaItem | null
   mode: Mode
   vote: 1 | -1 | 0
   onClose: () => void
+  onOpenComments?: () => void
   onVoteChange: (vote: 1 | -1 | 0) => void
 }) {
   const t = useTheme()
-  const {_} = useLingui()
   const showPartyShields = useShowPartyShields() ?? true
 
   if (!item) return null
@@ -53,16 +56,25 @@ export function ExpandedMediaCardModal({
         <View style={[styles.expandedModalSheet, t.atoms.bg]}>
           <View style={[styles.expandedHandle, t.atoms.bg_contrast_100]} />
 
-          <View style={[styles.expandedVisual, {backgroundColor: item.color}]}>
+          <MediaVisual
+            fallbackColor={item.color}
+            thumbUri={item.thumbUri}
+            style={styles.expandedVisual}>
             <View style={styles.cardBadgeRow}>
               <PartyInsignia party={item.party} visible={showPartyShields} />
             </View>
 
             <View style={styles.cardVisualBottom}>
-              <Text style={styles.cardTitle}>{item.title}</Text>
+              <Text
+                style={[
+                  styles.cardTitle,
+                  item.thumbUri && styles.cardTitleOnImage,
+                ]}>
+                {item.title}
+              </Text>
               <MediaVisualMeta item={item} mode={mode} />
             </View>
-          </View>
+          </MediaVisual>
 
           <View style={styles.expandedBody}>
             <Text style={[styles.cardMeta, t.atoms.text_contrast_medium]}>
@@ -86,9 +98,7 @@ export function ExpandedMediaCardModal({
                   <CommentIcon size="sm" style={t.atoms.text_contrast_medium} />
                 }
                 label={String(item.comments)}
-                onPress={() =>
-                  Toast.show(_(msg`Comments are coming soon`), {type: 'info'})
-                }
+                onPress={onOpenComments}
               />
 
               <ActionButton

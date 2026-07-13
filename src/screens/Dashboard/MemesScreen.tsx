@@ -13,6 +13,8 @@ import {Trans} from '@lingui/react/macro'
 import {useIsFocused, useNavigation} from '@react-navigation/native'
 
 import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
+import {AtUri} from '@atproto/api'
+
 import {useWebMediaQueries} from '#/lib/hooks/useWebMediaQueries'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
@@ -26,6 +28,7 @@ import {useTheme} from '#/alf'
 import {ActiveFiltersStackButton} from '#/components/CompassFilterControls'
 import {SearchInput} from '#/components/forms/SearchInput'
 import {Loader} from '#/components/Loader'
+import * as Toast from '#/components/Toast'
 import {MagnifyingGlass_Stroke2_Corner0_Rounded as SearchIcon} from '#/components/icons/MagnifyingGlass'
 import {SquareBehindSquare4_Stroke2_Corner0_Rounded as DeckIcon} from '#/components/icons/SquareBehindSquare4'
 import * as Layout from '#/components/Layout'
@@ -130,6 +133,23 @@ export function MemesScreen({
     setViewStyle(next)
     navigation.setParams({view: next})
   }
+
+  const handleOpenComments = useCallback(
+    (item: MediaItem) => {
+      if (!item.post) {
+        Toast.show(_(msg`Comments are not available for this item`), {
+          type: 'info',
+        })
+        return
+      }
+      const postUri = new AtUri(item.post.uri)
+      navigation.navigate('PostThread', {
+        name: item.post.author.did,
+        rkey: postUri.rkey,
+      })
+    },
+    [navigation, _],
+  )
 
   useEffect(() => {
     if (!isFocused) {
@@ -299,6 +319,9 @@ export function MemesScreen({
         item={expandedItem}
         mode={activeMode}
         onClose={() => setExpandedItem(null)}
+        onOpenComments={
+          expandedItem ? () => handleOpenComments(expandedItem) : undefined
+        }
         onVoteChange={vote => {
           if (!expandedItem) return
           handleVoteChange(expandedItem, vote)

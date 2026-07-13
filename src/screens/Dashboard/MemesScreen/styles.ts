@@ -419,6 +419,7 @@ export const styles = StyleSheet.create({
     borderRadius: 8,
     justifyContent: 'space-between',
     minHeight: 236,
+    overflow: 'hidden',
     padding: 18,
   },
   expandedBody: {
