@@ -1931,6 +1931,43 @@ const getTimeline = {
   },
 }
 
+const getMemes = {
+  lexicon: 1,
+  id: 'com.para.feed.getMemes',
+  defs: {
+    main: {
+      type: 'query' as const,
+      parameters: {
+        type: 'params' as const,
+        properties: {
+          limit: {
+            type: 'integer' as const,
+            minimum: 1,
+            maximum: 100,
+            default: 50,
+          },
+          cursor: {type: 'string' as const},
+          party: {type: 'string' as const, maxLength: 128},
+          community: {type: 'string' as const, maxLength: 128},
+          state: {type: 'string' as const, maxLength: 128},
+          category: {type: 'string' as const, maxLength: 128},
+          flairTag: {type: 'string' as const, maxLength: 128},
+        },
+      },
+      output: {
+        encoding: 'application/json' as const,
+        schema: {
+          type: 'object' as const,
+          properties: {
+            cursor: {type: 'string' as const},
+            feed: {type: 'array' as const, items: {type: 'unknown' as const}},
+          },
+        },
+      },
+    },
+  },
+}
+
 // ─── Actor / Profile Stats ───────────────────────────────────────────────────
 
 const getProfileStats = {
@@ -2357,6 +2394,7 @@ const ALL_PARA_LEXICONS = [
   getTopics,
   // Feed
   getAuthorFeed,
+  getMemes,
   getPostThread,
   getPosts,
   getTimeline,

@@ -13,14 +13,15 @@ import {Trans} from '@lingui/react/macro'
 import {useIsFocused, useNavigation} from '@react-navigation/native'
 
 import {useWebMediaQueries} from '#/lib/hooks/useWebMediaQueries'
-import {MEMES as MOCK_MEMES} from '#/lib/mock-data'
 import {type NavigationProp} from '#/lib/routes/types'
+import {useMemesFeedQuery} from '#/state/queries/para-memes'
 import {useCompassFilter} from '#/state/shell/compass-filter'
 import {useMinimalShellMode} from '#/state/shell/minimal-mode'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import {ActiveFiltersStackButton} from '#/components/CompassFilterControls'
 import {SearchInput} from '#/components/forms/SearchInput'
+import {Loader} from '#/components/Loader'
 import {MagnifyingGlass_Stroke2_Corner0_Rounded as SearchIcon} from '#/components/icons/MagnifyingGlass'
 import {SquareBehindSquare4_Stroke2_Corner0_Rounded as DeckIcon} from '#/components/icons/SquareBehindSquare4'
 import * as Layout from '#/components/Layout'
@@ -69,9 +70,18 @@ export function MemesScreen({
   const [showSearch, setShowSearch] = useState(false)
   const isSearchOpen = showSearch || Boolean(query)
 
+  const {
+    data,
+    isLoading,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useMemesFeedQuery()
+
   const memes = useMemo(
-    () => [...MOCK_MEMES].sort((a, b) => b.votes - a.votes),
-    [],
+    () => data?.pages.flatMap(page => page.items) ?? [],
+    [data],
   )
 
   const filteredMemes = useMemo(() => {
@@ -174,7 +184,16 @@ export function MemesScreen({
             bounces
             contentContainerStyle={styles.contentContainer}
             showsVerticalScrollIndicator>
-            {activeItems.length === 0 ? (
+            {isLoading ? (
+              <View style={styles.loadingContainer}>
+                <Loader size="xl" />
+              </View>
+            ) : error ? (
+              <EmptyState
+                description={_(msg`Could not load memes.`)}
+                title={_(msg`Something went wrong`)}
+              />
+            ) : activeItems.length === 0 ? (
               <EmptyState
                 description={_(
                   msg`Open more communities or clear search to fill this view.`,
@@ -182,21 +201,40 @@ export function MemesScreen({
                 title={_(msg`No memes match those filters`)}
               />
             ) : (
-              <View style={styles.boardGrid}>
-                {activeItems.map(item => (
-                  <MediaBoardCard
-                    key={item.id}
-                    item={item}
-                    mode={activeMode}
-                    onVoteChange={vote =>
-                      setItemVotes(prev => ({...prev, [item.id]: vote}))
-                    }
-                    onExpand={() => setExpandedItem(item)}
-                    vote={itemVotes[item.id] ?? 0}
-                    width={boardWidth}
-                  />
-                ))}
-              </View>
+              <>
+                <View style={styles.boardGrid}>
+                  {activeItems.map(item => (
+                    <MediaBoardCard
+                      key={item.id}
+                      item={item}
+                      mode={activeMode}
+                      onVoteChange={vote =>
+                        setItemVotes(prev => ({...prev, [item.id]: vote}))
+                      }
+                      onExpand={() => setExpandedItem(item)}
+                      vote={itemVotes[item.id] ?? 0}
+                      width={boardWidth}
+                    />
+                  ))}
+                </View>
+                {hasNextPage && (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel={_(msg`Load more memes`)}
+                    onPress={() => fetchNextPage()}
+                    style={[
+                      styles.loadMoreButton,
+                      t.atoms.bg_contrast_25,
+                    ]}
+                    disabled={isFetchingNextPage}>
+                    <Text style={t.atoms.text}>
+                      {isFetchingNextPage
+                        ? _(msg`Loading...`)
+                        : _(msg`Load more`)}
+                    </Text>
+                  </Pressable>
+                )}
+              </>
             )}
           </Layout.Content>
         ) : (

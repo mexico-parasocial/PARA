@@ -5,7 +5,12 @@ import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import {Bubble_Stroke2_Corner2_Rounded as CommentIcon} from '#/components/icons/Bubble'
 import {RedditVoteButton} from '#/components/PostControls/VoteButton'
-import {ActionButton, MediaVisualMeta, PartyInsignia} from '../cardPrimitives'
+import {
+  ActionButton,
+  MediaVisual,
+  MediaVisualMeta,
+  PartyInsignia,
+} from '../cardPrimitives'
 import {buildSubmetaLabel} from '../helpers'
 import {styles} from '../styles'
 import {type MediaItem, type Mode} from '../types'
@@ -41,19 +46,22 @@ export function MediaBoardCard({
         accessibilityHint="Opens this card in a larger view"
         accessibilityLabel={item.title}
         accessibilityRole="button"
-        onPress={onExpand}
-        style={[
-          styles.cardVisual,
-          {backgroundColor: item.color, minHeight: 196},
-        ]}>
-        <View style={styles.cardBadgeRow}>
-          <PartyInsignia party={item.party} visible={showPartyShields} />
-        </View>
+        onPress={onExpand}>
+        <MediaVisual
+          fallbackColor={item.color}
+          thumbUri={item.thumbUri}
+          style={[styles.cardVisual, {minHeight: 196}]}>
+          <View style={styles.cardBadgeRow}>
+            <PartyInsignia party={item.party} visible={showPartyShields} />
+          </View>
 
-        <View style={styles.cardVisualBottom}>
-          <Text style={styles.cardTitle}>{item.title}</Text>
-          <MediaVisualMeta item={item} mode={mode} />
-        </View>
+          <View style={styles.cardVisualBottom}>
+            <Text style={[styles.cardTitle, item.thumbUri && styles.cardTitleOnImage]}>
+              {item.title}
+            </Text>
+            <MediaVisualMeta item={item} mode={mode} />
+          </View>
+        </MediaVisual>
       </Pressable>
 
       <View style={[styles.cardBody, t.atoms.bg_contrast_50]}>

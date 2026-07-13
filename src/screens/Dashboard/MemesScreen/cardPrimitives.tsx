@@ -1,5 +1,6 @@
 import {type ReactNode} from 'react'
-import {Pressable, useWindowDimensions, View} from 'react-native'
+import {Image} from 'expo-image'
+import {Pressable, StyleSheet, useWindowDimensions, View} from 'react-native'
 import {Line, Polygon, Svg} from 'react-native-svg'
 
 import {getCommunityInsignia} from '#/lib/civic-insignias'
@@ -32,6 +33,35 @@ export function PartyInsignia({
       size="md"
       style={styles.partyInsignia}
     />
+  )
+}
+
+export function MediaVisual({
+  thumbUri,
+  fallbackColor,
+  children,
+  style,
+}: {
+  thumbUri?: string
+  fallbackColor: string
+  children: ReactNode
+  style?: any
+}) {
+  return (
+    <View style={[styles.mediaVisual, style, {backgroundColor: fallbackColor}]}>
+      {thumbUri ? (
+        <>
+          <Image
+            source={{uri: thumbUri}}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            cachePolicy="memory-disk"
+          />
+          <View style={styles.mediaVisualOverlay} />
+        </>
+      ) : null}
+      {children}
+    </View>
   )
 }
 
@@ -104,15 +134,30 @@ export function CommentChip({
   )
 }
 
-function MetaPill({label, icon}: {label: string; icon?: ReactNode}) {
+function MetaPill({
+  label,
+  icon,
+  onImage,
+}: {
+  label: string
+  icon?: ReactNode
+  onImage?: boolean
+}) {
   const t = useTheme()
 
   return (
-    <View style={[styles.metaPill, t.atoms.bg_contrast_25]}>
+    <View
+      style={[
+        styles.metaPill,
+        onImage ? styles.metaPillOnImage : t.atoms.bg_contrast_25,
+      ]}>
       {icon}
       <Text
         numberOfLines={1}
-        style={[styles.metaPillText, t.atoms.text_contrast_medium]}>
+        style={[
+          styles.metaPillText,
+          onImage ? styles.metaPillTextOnImage : t.atoms.text_contrast_medium,
+        ]}>
         {label}
       </Text>
     </View>
@@ -127,10 +172,11 @@ export function MediaVisualMeta({
   mode: Mode
 }) {
   const meme = item
+  const onImage = !!meme.thumbUri
   return (
     <View style={styles.metaPillRow}>
-      <MetaPill label={meme.author} />
-      <MetaPill label={meme.state} />
+      <MetaPill label={meme.author} onImage={onImage} />
+      <MetaPill label={meme.state} onImage={onImage} />
     </View>
   )
 }

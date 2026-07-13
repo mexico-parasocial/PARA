@@ -65,6 +65,17 @@ export const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 14,
   },
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 48,
+  },
+  loadMoreButton: {
+    alignItems: 'center',
+    borderRadius: 8,
+    marginTop: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
   cardShell: {
     width: '100%',
     borderRadius: 8,
@@ -78,7 +89,18 @@ export const styles = StyleSheet.create({
     borderTopLeftRadius: 8,
     borderTopRightRadius: 8,
     justifyContent: 'space-between',
+    overflow: 'hidden',
     padding: 18,
+  },
+  mediaVisual: {
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+    justifyContent: 'space-between',
+    overflow: 'hidden',
+  },
+  mediaVisualOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
   },
   cardBadgeRow: {
     alignItems: 'center',
@@ -105,6 +127,12 @@ export const styles = StyleSheet.create({
     fontWeight: '800',
     lineHeight: 32,
     width: '88%',
+  },
+  cardTitleOnImage: {
+    color: '#ffffff',
+    textShadowColor: 'rgba(0, 0, 0, 0.6)',
+    textShadowOffset: {width: 0, height: 1},
+    textShadowRadius: 3,
   },
   cardBody: {
     borderBottomLeftRadius: 8,
@@ -273,6 +301,12 @@ export const styles = StyleSheet.create({
     lineHeight: 28,
     width: '86%',
   },
+  deckTitleOnImage: {
+    color: '#ffffff',
+    textShadowColor: 'rgba(0, 0, 0, 0.6)',
+    textShadowOffset: {width: 0, height: 1},
+    textShadowRadius: 3,
+  },
   deckCommandCenter: {
     alignItems: 'flex-start',
     alignSelf: 'center',
@@ -325,9 +359,15 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
   },
+  metaPillOnImage: {
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+  },
   metaPillText: {
     fontSize: 12,
     fontWeight: '700',
+  },
+  metaPillTextOnImage: {
+    color: '#ffffff',
   },
   deckCardPressable: {
     flex: 1,
