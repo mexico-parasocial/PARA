@@ -58,12 +58,16 @@ module.exports = async function (env, argv) {
   patchSourceMapFilter(config.module.rules, /react-native-uuid/)
   // react-devtools-core maps point to webpack:// URLs source-map-loader can't parse.
   patchSourceMapFilter(config.module.rules, /react-devtools-core/)
+  // react-native-sticky-table ships sourceMappingURL comments but no source files.
+  patchSourceMapFilter(config.module.rules, /react-native-sticky-table/)
   config.resolve.alias = {
     ...(config.resolve.alias || {}),
     // react-native's internal devtools bootstrap references paths that don't exist
     // in the installed react-devtools-core version; stub it out on web.
     'react-native/Libraries/Core/setUpReactDevTools.js$':
-      path.resolve(__dirname, 'src/stubs/setUpReactDevTools.ts'),
+      path.resolve(__dirname, 'src/stubs/setUpReactDevTools.js'),
+    'react-native/Libraries/Core/setUpReactDevTools$':
+      path.resolve(__dirname, 'src/stubs/setUpReactDevTools.js'),
   }
   config.module.rules = [
     ...(config.module.rules || []),
