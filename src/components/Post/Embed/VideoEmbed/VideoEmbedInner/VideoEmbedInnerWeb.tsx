@@ -7,6 +7,8 @@ import type * as HlsTypes from 'hls.js'
 
 import {useNonReactiveCallback} from '#/lib/hooks/useNonReactiveCallback'
 import {atoms as a} from '#/alf'
+import {AltBadgeWithDialog} from '#/components/AltBadgeWithDialog'
+import {useFullscreen} from '#/components/hooks/useFullscreen'
 import * as BandwidthEstimate from './bandwidth-estimate'
 import {Controls} from './web-controls/VideoControls'
 
@@ -30,6 +32,8 @@ export function VideoEmbedInnerWeb({
   const [hlsLoading, setHlsLoading] = useState(false)
   const figId = useId()
   const {_} = useLingui()
+  const [isFullscreen] = useFullscreen(containerRef)
+  const isGif = embed.presentation === 'gif'
 
   // send error up to error boundary
   const [error, setError] = useState<Error | null>(null)
@@ -72,23 +76,14 @@ export function VideoEmbedInnerWeb({
             loop={loop}
           />
           {embed.alt && (
-            <figcaption
-              id={figId}
-              style={{
-                position: 'absolute',
-                width: 1,
-                height: 1,
-                padding: 0,
-                margin: -1,
-                overflow: 'hidden',
-                clip: 'rect(0, 0, 0, 0)',
-                whiteSpace: 'nowrap',
-                borderWidth: 0,
-              }}>
+            <figcaption id={figId} style={a.sr_only}>
               {embed.alt}
             </figcaption>
           )}
         </figure>
+        {!isFullscreen && !isGif && embed.alt && (
+          <AltBadgeWithDialog text={embed.alt} position="top-right" />
+        )}
         <Controls
           videoRef={videoRef}
           hlsRef={hlsRef}
@@ -100,7 +95,7 @@ export function VideoEmbedInnerWeb({
           onScreen={onScreen}
           fullscreenRef={containerRef}
           hasSubtitleTrack={hasSubtitleTrack}
-          isGif={embed.presentation === 'gif'}
+          isGif={isGif}
           altText={embed.alt}
           updateCuePositions={updateCuePositions}
         />
@@ -269,7 +264,7 @@ function useHLS({
     if (!videoRef.current) return
     if (!Hls) return
     if (!Hls.isSupported() || !canPlayBskyVideoCodecs()) {
-    throw new HLSUnsupportedError()
+      throw new HLSUnsupportedError()
     }
 
     const latestEstimate = BandwidthEstimate.get()

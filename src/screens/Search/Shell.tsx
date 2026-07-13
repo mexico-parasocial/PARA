@@ -19,7 +19,8 @@ import {useQueryClient} from '@tanstack/react-query'
 import {HITSLOP_10, HITSLOP_20} from '#/lib/constants'
 import {useNonReactiveCallback} from '#/lib/hooks/useNonReactiveCallback'
 import {MagnifyingGlassIcon} from '#/lib/icons'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type NavigationProp, type SearchParams} from '#/lib/routes/types'
+import {shareUrl} from '#/lib/sharing'
 import {listenSoftReset} from '#/state/events'
 import {useActorAutocompleteQuery} from '#/state/queries/actor-autocomplete'
 import {
@@ -28,26 +29,38 @@ import {
 } from '#/state/queries/profile'
 import {useSession} from '#/state/session'
 import {
-  makeSearchQuery,
-  type Params,
-  parseSearchQuery,
-} from '#/screens/Search/utils'
+  countActiveFilters,
+  countActiveParaFilters,
+  definedFilterParams,
+  filtersToLegacyParams,
+  filtersToRouteParams,
+  getActiveParaFilterNames,
+  hasActiveFilters,
+  parseHistoryEntry,
+  readSearchFilters,
+  type SearchFilters,
+  serializeHistoryEntry,
+  withoutFilterParams,
+} from '#/screens/Search/searchParams'
+import {makeSearchQuery} from '#/screens/Search/utils'
 import {atoms as a, tokens, useBreakpoints, useTheme, web} from '#/alf'
-import {Button, ButtonText} from '#/components/Button'
+import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import {SearchInput} from '#/components/forms/SearchInput'
+import {ArrowShareRight_Stroke2_Corner2_Rounded as ShareIcon} from '#/components/icons/ArrowShareRight'
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
 import {IS_WEB} from '#/env'
 import {account, useStorage} from '#/storage'
 import type * as bsky from '#/types/bsky'
+import {AdvancedSearchDialog} from './components/AdvancedSearchDialog'
 import {AutocompleteResults} from './components/AutocompleteResults'
 import {SearchHistory} from './components/SearchHistory'
 import {SearchLanguageDropdown} from './components/SearchLanguageDropdown'
 import {Explore} from './Explore'
 import {SearchResults} from './SearchResults'
 
-type TabParam = 'user' | 'profile' | 'feed' | 'latest'
+type TabParam = SearchParams['tab']
 
 // Map tab parameter to tab index
 function getTabIndex(tabParam?: TabParam) {
@@ -74,7 +87,7 @@ export function SearchScreenShell({
 }: {
   queryParam: string
   testID: string
-  fixedParams?: Params
+  fixedParams?: SearchFilters
   navButton?: 'back' | 'menu'
   inputPlaceholder?: string
   isExplore?: boolean
@@ -90,8 +103,22 @@ export function SearchScreenShell({
   const queryClient = useQueryClient()
 
   // Get tab parameter from route params
-  const tabParam = (route.params as {q?: string; tab?: TabParam})?.tab
+  const routeParams = useMemo<SearchParams>(() => {
+    return {...(route.params ?? {})}
+  }, [route.params])
+  const tabParam = routeParams.tab
   const [activeTab, setActiveTab] = useState(() => getTabIndex(tabParam))
+
+  // Structured filters come from the route params, merged with any fixed filters
+  // (e.g. the author filter in ProfileSearch).
+  const routeFilters = useMemo(
+    () => readSearchFilters(routeParams),
+    [routeParams],
+  )
+  const filters = useMemo<SearchFilters>(() => {
+    return {...routeFilters, ...fixedParams}
+  }, [routeFilters, fixedParams])
+  const filterCount = useMemo(() => countActiveFilters(filters), [filters])
 
   // Query terms
   const [searchText, setSearchText] = useState<string>(queryParam)
@@ -120,11 +147,12 @@ export function SearchScreenShell({
   })
 
   const updateSearchHistory = useCallback(
-    (item: string) => {
-      if (!item) return
+    (q: string, appliedFilters: SearchFilters) => {
+      if (!q && !hasActiveFilters(appliedFilters)) return
+      const entry = serializeHistoryEntry(q, appliedFilters)
       const newSearchHistory = [
-        item,
-        ...termHistory.filter(search => search !== item),
+        entry,
+        ...termHistory.filter(search => search !== entry),
       ].slice(0, 6)
       setTermHistory(newSearchHistory)
     },
@@ -155,11 +183,14 @@ export function SearchScreenShell({
     [accountHistory, setAccountHistory],
   )
 
-  const {params, query, queryWithParams} = useQueryManager({
-    initialQuery: queryParam,
-    fixedParams,
-  })
-  const showFilters = Boolean(queryWithParams && !showAutocomplete)
+  const query = searchText
+  // The legacy v1 path still expects a single query string with embedded
+  // operators. Build it from the raw text plus legacy filter operators.
+  const queryWithParams = useMemo(() => {
+    return makeSearchQuery(query, filtersToLegacyParams(filters))
+  }, [query, filters])
+  const hasQuery = Boolean(query || hasActiveFilters(filters))
+  const showFilters = hasQuery && !showAutocomplete
 
   // web only - measure header height for sticky positioning
   const [headerHeight, setHeaderHeight] = useState(0)
@@ -180,6 +211,31 @@ export function SearchScreenShell({
     }),
   )
 
+  const applyParams = useCallback(
+    (q: string, nextFilters: SearchFilters, tab?: TabParam) => {
+      if (IS_WEB) {
+        const base = withoutFilterParams(routeParams)
+        delete base.q
+        delete base.tab
+        const params = {
+          ...base,
+          ...(q ? {q} : {}),
+          ...definedFilterParams(nextFilters),
+          ...(tab ? {tab} : {}),
+        }
+        // @ts-expect-error route params are dynamic
+        navigation.push(route.name, params)
+      } else {
+        navigation.setParams({
+          q,
+          tab,
+          ...filtersToRouteParams(nextFilters),
+        })
+      }
+    },
+    [navigation, route.name, routeParams],
+  )
+
   const onPressClearQuery = useCallback(() => {
     scrollToTopWeb()
     updateSearchText('')
@@ -198,17 +254,12 @@ export function SearchScreenShell({
     (item: string) => {
       scrollToTopWeb()
       setShowAutocomplete(false)
-      updateSearchHistory(item)
-
-      if (IS_WEB) {
-        // @ts-expect-error route is not typesafe
-        navigation.push(route.name, {...route.params, q: item})
-      } else {
-        textInput.current?.blur()
-        navigation.setParams({q: item})
-      }
+      const entry = parseHistoryEntry(item)
+      updateSearchText(entry.q)
+      updateSearchHistory(entry.q, entry.filters)
+      applyParams(entry.q, entry.filters)
     },
-    [updateSearchHistory, navigation, route],
+    [applyParams, updateSearchHistory, updateSearchText],
   )
 
   const onPressCancelSearch = useCallback(() => {
@@ -216,34 +267,28 @@ export function SearchScreenShell({
     textInput.current?.blur()
     setShowAutocomplete(false)
     if (IS_WEB) {
-      // Empty params resets the URL to be /search rather than /search?q=
-      // Also clear the tab parameter
-      const {
-        q: _q,
-        tab: _tab,
-        ...parameters
-      } = (route.params ?? {}) as {
-        [key: string]: string
-      }
-      // @ts-expect-error route is not typesafe
-      navigation.replace(route.name, parameters)
+      const base = withoutFilterParams(routeParams)
+      delete base.q
+      delete base.tab
+      // @ts-expect-error route params are dynamic
+      navigation.replace(route.name, base)
     } else {
       updateSearchText('')
-      navigation.setParams({q: '', tab: undefined})
+      navigation.setParams({q: '', tab: undefined, ...filtersToRouteParams({})})
     }
-  }, [
-    setShowAutocomplete,
-    updateSearchText,
-    navigation,
-    route.params,
-    route.name,
-  ])
+  }, [setShowAutocomplete, updateSearchText, navigation, route.name, routeParams])
 
   const onSubmit = (source: 'typed' | 'autocomplete') => () => {
     ax.metric('search:query', {
       source,
+      filterCount,
+      paraFilterCount: countActiveParaFilters(filters),
+      paraFilters: getActiveParaFilterNames(filters),
     })
-    navigateToItem(searchTextRef.current)
+    scrollToTopWeb()
+    setShowAutocomplete(false)
+    updateSearchHistory(searchText, filters)
+    applyParams(searchText, filters)
   }
 
   const onAutocompleteResultPress = useCallback(() => {
@@ -256,10 +301,9 @@ export function SearchScreenShell({
 
   const handleHistoryItemClick = useCallback(
     (item: string) => {
-      updateSearchText(item)
       navigateToItem(item)
     },
-    [navigateToItem, updateSearchText],
+    [navigateToItem],
   )
 
   const handleProfileClick = useCallback(
@@ -275,23 +319,17 @@ export function SearchScreenShell({
 
   const onSoftReset = useCallback(() => {
     if (IS_WEB) {
-      // Empty params resets the URL to be /search rather than /search?q=
-      // Also clear the tab parameter when soft resetting
-      const {
-        q: _q,
-        tab: _tab,
-        ...parameters
-      } = (route.params ?? {}) as {
-        [key: string]: string
-      }
+      const base = withoutFilterParams(routeParams)
+      delete base.q
+      delete base.tab
       // @ts-expect-error route is not typesafe
-      navigation.replace(route.name, parameters)
+      navigation.replace(route.name, base)
     } else {
       updateSearchText('')
-      navigation.setParams({q: '', tab: undefined})
+      navigation.setParams({q: '', tab: undefined, ...filtersToRouteParams({})})
       textInput.current?.focus()
     }
-  }, [navigation, route.name, route.params, updateSearchText])
+  }, [navigation, route.name, routeParams, updateSearchText])
 
   useFocusEffect(
     useCallback(() => {
@@ -327,7 +365,69 @@ export function SearchScreenShell({
     [navigation, route],
   )
 
+  const onChangeFilters = useCallback(
+    (nextFilters: SearchFilters) => {
+      const merged = {...filters, ...nextFilters}
+      const nextFilterCount = countActiveFilters(merged)
+      if (nextFilterCount > filterCount) {
+        ax.metric('search:addFilter:press', {filterCount: nextFilterCount})
+      }
+      applyParams(searchText, merged)
+    },
+    [applyParams, ax, filterCount, filters, searchText],
+  )
+
+  const onShareLink = useCallback(() => {
+    ax.metric('search:shareLink:press', {
+      filterCount,
+      paraFilterCount: countActiveParaFilters(filters),
+      paraFilters: getActiveParaFilterNames(filters),
+    })
+    if (IS_WEB) {
+      void shareUrl(window.location.href)
+    }
+  }, [ax, filterCount, filters])
+
   const showHeader = !gtMobile || navButton !== 'menu'
+
+  const filterBar = (
+    <View style={[a.flex_row, a.align_center, a.gap_sm, a.flex_wrap]}>
+      <SearchLanguageDropdown
+        value={filters.lang ?? ''}
+        onChange={value => onChangeFilters({lang: value || undefined})}
+      />
+      <AdvancedSearchDialog
+        q={searchText}
+        filters={filters}
+        onSubmit={(q, nextFilters) => {
+          const nextFilterCount = countActiveFilters(nextFilters)
+          const nextParaFilterCount = countActiveParaFilters(nextFilters)
+          ax.metric('search:advanced:press', {
+            filterCount: nextFilterCount,
+            paraFilterCount: nextParaFilterCount,
+            paraFilters: getActiveParaFilterNames(nextFilters),
+          })
+          if (nextFilterCount > filterCount) {
+            ax.metric('search:addFilter:press', {filterCount: nextFilterCount})
+          }
+          updateSearchText(q)
+          updateSearchHistory(q, nextFilters)
+          applyParams(q, nextFilters)
+        }}
+      />
+      {IS_WEB && (
+        <Button
+          label={l`Share search link`}
+          size="small"
+          color="secondary"
+          variant="solid"
+          shape="round"
+          onPress={onShareLink}>
+          <ButtonIcon icon={ShareIcon} />
+        </Button>
+      )}
+    </View>
+  )
 
   return (
     <Layout.Screen testID={testID}>
@@ -363,10 +463,7 @@ export function SearchScreenShell({
                   </Layout.Header.TitleText>
                 </Layout.Header.Content>
                 {showFilters ? (
-                  <SearchLanguageDropdown
-                    value={params.lang}
-                    onChange={params.setLang}
-                  />
+                  <Layout.Header.Slot>{filterBar}</Layout.Header.Slot>
                 ) : (
                   <Layout.Header.Slot />
                 )}
@@ -408,20 +505,7 @@ export function SearchScreenShell({
                 )}
               </View>
 
-              {showFilters && !showHeader && (
-                <View
-                  style={[
-                    a.flex_row,
-                    a.align_center,
-                    a.justify_between,
-                    a.gap_sm,
-                  ]}>
-                  <SearchLanguageDropdown
-                    value={params.lang}
-                    onChange={params.setLang}
-                  />
-                </View>
-              )}
+              {showFilters && !showHeader && filterBar}
             </View>
           </View>
         </Layout.Center>
@@ -462,13 +546,15 @@ export function SearchScreenShell({
           flex: 1,
         }}>
         <SearchScreenInner
-          key={params.lang}
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           query={query}
           queryWithParams={queryWithParams}
+          filters={filters}
+          hasFilters={filterCount > 0}
           headerHeight={headerHeight}
           focusSearchInput={focusSearchInput}
+          onChangeFilters={onChangeFilters}
         />
       </View>
     </Layout.Screen>
@@ -480,15 +566,21 @@ let SearchScreenInner = ({
   setActiveTab,
   query,
   queryWithParams,
+  filters,
+  hasFilters,
   headerHeight,
   focusSearchInput,
+  onChangeFilters,
 }: {
   activeTab: number
   setActiveTab: React.Dispatch<React.SetStateAction<number>>
   query: string
   queryWithParams: string
+  filters: SearchFilters
+  hasFilters: boolean
   headerHeight: number
   focusSearchInput: (tab?: TabParam) => void
+  onChangeFilters: (filters: SearchFilters) => void
 }): React.ReactNode => {
   const t = useTheme()
   const {hasSession} = useSession()
@@ -502,9 +594,12 @@ let SearchScreenInner = ({
     <SearchResults
       query={query}
       queryWithParams={queryWithParams}
+      filters={filters}
+      hasFilters={hasFilters}
       activeTab={activeTab}
       headerHeight={headerHeight}
       onPageSelected={onPageSelected}
+      onChangeFilters={onChangeFilters}
       initialPage={activeTab}
     />
   ) : hasSession ? (
@@ -542,54 +637,6 @@ let SearchScreenInner = ({
   )
 }
 SearchScreenInner = memo(SearchScreenInner)
-
-function useQueryManager({
-  initialQuery,
-  fixedParams,
-}: {
-  initialQuery: string
-  fixedParams?: Params
-}) {
-  const {query, params: initialParams} = useMemo(() => {
-    return parseSearchQuery(initialQuery || '')
-  }, [initialQuery])
-  const [prevInitialQuery, setPrevInitialQuery] = useState(initialQuery)
-  const [lang, setLang] = useState(initialParams.lang || '')
-
-  if (initialQuery !== prevInitialQuery) {
-    // handle new queryParam change (from manual search entry)
-    setPrevInitialQuery(initialQuery)
-    setLang(initialParams.lang || '')
-  }
-
-  const params = useMemo(
-    () => ({
-      // default stuff
-      ...initialParams,
-      // managed stuff
-      lang,
-      ...fixedParams,
-    }),
-    [lang, initialParams, fixedParams],
-  )
-  const handlers = useMemo(
-    () => ({
-      setLang,
-    }),
-    [setLang],
-  )
-
-  return useMemo(() => {
-    return {
-      query,
-      queryWithParams: makeSearchQuery(query, params),
-      params: {
-        ...params,
-        ...handlers,
-      },
-    }
-  }, [query, params, handlers])
-}
 
 function scrollToTopWeb() {
   if (IS_WEB) {

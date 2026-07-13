@@ -19,7 +19,6 @@ import {HighlightProvider} from '#/state/highlights/HighlightContext'
 import {Provider as HomeBadgeProvider} from '#/state/home-badge'
 import {Provider as LightboxStateProvider} from '#/state/lightbox'
 import {MessagesProvider} from '#/state/messages'
-import {Provider as ModalStateProvider} from '#/state/modals'
 import {init as initPersistedState} from '#/state/persisted'
 import {Provider as PrefsStateProvider} from '#/state/preferences'
 import {Provider as LabelDefsProvider} from '#/state/preferences/label-defs'
@@ -212,7 +211,6 @@ function App() {
               <PrefsStateProvider>
                 <I18nProvider>
                   <ShellStateProvider>
-                    <ModalStateProvider>
                       <DialogStateProvider>
                         <LightboxStateProvider>
                           <PortalProvider>
@@ -226,7 +224,6 @@ function App() {
                           </PortalProvider>
                         </LightboxStateProvider>
                       </DialogStateProvider>
-                    </ModalStateProvider>
                   </ShellStateProvider>
                 </I18nProvider>
               </PrefsStateProvider>

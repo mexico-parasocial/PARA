@@ -10,12 +10,13 @@ import {
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
-import {useNavigation} from '@react-navigation/native'
+import {useIsFocused, useNavigation} from '@react-navigation/native'
 
 import {useWebMediaQueries} from '#/lib/hooks/useWebMediaQueries'
 import {MEMES as MOCK_MEMES} from '#/lib/mock-data'
 import {type NavigationProp} from '#/lib/routes/types'
 import {useCompassFilter} from '#/state/shell/compass-filter'
+import {useMinimalShellMode} from '#/state/shell/minimal-mode'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import {ActiveFiltersStackButton} from '#/components/CompassFilterControls'
@@ -23,7 +24,7 @@ import {SearchInput} from '#/components/forms/SearchInput'
 import {MagnifyingGlass_Stroke2_Corner0_Rounded as SearchIcon} from '#/components/icons/MagnifyingGlass'
 import {SquareBehindSquare4_Stroke2_Corner0_Rounded as DeckIcon} from '#/components/icons/SquareBehindSquare4'
 import * as Layout from '#/components/Layout'
-import {RedditVoteButton} from '#/components/PostControls/VoteButton'
+import {DeckCommandCenter} from './MemesScreen/cardPrimitives'
 import {ExpandedMediaCardModal} from './MemesScreen/ExpandedMediaCardModal/ExpandedMediaCardModal'
 import {
   DECK_CARD_HEIGHT,
@@ -59,6 +60,8 @@ export function MemesScreen({
   const [viewStyle, setViewStyle] = useState<ViewStyleMode>(
     route.params?.view === 'deck' ? 'deck' : 'board',
   )
+  const isFocused = useIsFocused()
+  const {footerMode} = useMinimalShellMode()
   const [query, setQuery] = useState('')
   const [itemVotes, setItemVotes] = useState<Record<string, 1 | -1 | 0>>({})
   const [focusedItemId, setFocusedItemId] = useState<string | undefined>()
@@ -90,6 +93,18 @@ export function MemesScreen({
     setViewStyle(next)
     navigation.setParams({view: next})
   }
+
+  useEffect(() => {
+    if (!isFocused) {
+      footerMode.set(0)
+      return
+    }
+    const hideFooter = viewStyle === 'deck'
+    footerMode.set(hideFooter ? 1 : 0)
+    return () => {
+      footerMode.set(0)
+    }
+  }, [isFocused, viewStyle, footerMode])
 
   return (
     <Layout.Screen testID="memesScreen">
@@ -568,29 +583,6 @@ function DeckChain({
     ],
   }
 
-  const currentRailStyle = {
-    opacity: animation.interpolate({
-      inputRange: [-1, -0.1, 0, 0.8, 1],
-      outputRange: [0, 0.2, 1, 0.45, 0],
-    }),
-    transform: [
-      {
-        translateY: animation.interpolate({
-          inputRange: [-1, 0, 1],
-          outputRange: [18, 0, 0],
-        }),
-      },
-    ],
-  }
-
-  const nextAccessoryStyle = {
-    opacity: animation.interpolate({
-      inputRange: [-1, -0.1, 0, 1],
-      outputRange: [0, 0.15, 1, 1],
-    }),
-    transform: nextStyle.transform,
-  }
-
   return (
     <View
       {...panResponder.panHandlers}
@@ -626,12 +618,7 @@ function DeckChain({
             accessibilityRole="button"
             onPress={() => setTopLayer('current')}
             style={styles.deckCardPressable}>
-            <MediaDeckCard
-              item={prev}
-              mode={mode}
-              showExpand={false}
-              showOptions={false}
-            />
+            <MediaDeckCard item={prev} mode={mode} />
           </Pressable>
         </Animated.View>
       ) : null}
@@ -644,7 +631,7 @@ function DeckChain({
             isLargeScreen && {left: 52 + deckHorizontalMargin * 0.15},
             thirdStyle,
           ]}>
-          <MediaDeckCard item={third} mode={mode} showOptions={false} />
+          <MediaDeckCard item={third} mode={mode} />
         </Animated.View>
       ) : null}
 
@@ -663,14 +650,7 @@ function DeckChain({
             accessibilityRole="button"
             onPress={() => setTopLayer('next')}
             style={styles.deckCardPressable}>
-            <MediaDeckCard
-              expandPlacement="top-left"
-              item={next}
-              mode={mode}
-              onExpand={() => onExpandItem(next)}
-              showExpand
-              showOptions
-            />
+            <MediaDeckCard item={next} mode={mode} />
           </Pressable>
         </Animated.View>
       ) : null}
@@ -683,34 +663,21 @@ function DeckChain({
           currentStyle,
           topLayer === 'next' && {zIndex: 1},
         ]}>
-        <MediaDeckCard
-          expandPlacement="bottom-right"
-          item={current}
-          mode={mode}
-          onExpand={() => onExpandItem(current)}
-          showOptions
+        <MediaDeckCard item={current} mode={mode} />
+
+        <DeckCommandCenter
+          activeItem={topLayer === 'next' ? next : current}
+          activeVote={votes[(topLayer === 'next' ? next : current).id] ?? 0}
+          onExpandActive={() =>
+            onExpandItem(topLayer === 'next' ? next : current)
+          }
+          onExpandBottom={next ? () => onExpandItem(next) : undefined}
+          onExpandTop={() => onExpandItem(current)}
+          onVoteChange={vote =>
+            onVoteChange((topLayer === 'next' ? next : current).id, vote)
+          }
         />
       </Animated.View>
-
-      <Animated.View style={[styles.deckPrimaryRail, currentRailStyle]}>
-        <DeckEngagementRail
-          align="left"
-          item={current}
-          onVoteChange={vote => onVoteChange(current.id, vote)}
-          vote={votes[current.id] ?? 0}
-        />
-      </Animated.View>
-
-      {next ? (
-        <Animated.View style={[styles.deckSecondaryRail, nextAccessoryStyle]}>
-          <DeckEngagementRail
-            align="right"
-            item={next}
-            onVoteChange={vote => onVoteChange(next.id, vote)}
-            vote={votes[next.id] ?? 0}
-          />
-        </Animated.View>
-      ) : null}
 
       {!next ? (
         <View
@@ -727,37 +694,6 @@ function DeckChain({
           </Text>
         </View>
       ) : null}
-    </View>
-  )
-}
-
-function DeckEngagementRail({
-  align,
-  item,
-  vote,
-  onVoteChange,
-}: {
-  align: 'left' | 'right'
-  item: MediaItem
-  vote: 1 | -1 | 0
-  onVoteChange: (vote: 1 | -1 | 0) => void
-}) {
-  const score = item.votes + vote
-  const voteState = vote === 1 ? 'upvote' : vote === -1 ? 'downvote' : 'none'
-
-  return (
-    <View
-      style={[
-        styles.deckEngagementRail,
-        align === 'right' && styles.deckEngagementRailRight,
-      ]}>
-      <RedditVoteButton
-        currentVote={voteState}
-        hasBeenToggled={vote !== 0}
-        onDownvote={() => onVoteChange(vote === -1 ? 0 : -1)}
-        onUpvote={() => onVoteChange(vote === 1 ? 0 : 1)}
-        score={score}
-      />
     </View>
   )
 }

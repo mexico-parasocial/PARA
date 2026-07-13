@@ -2,9 +2,23 @@ import {type NavigationState, type PartialState} from '@react-navigation/native'
 import {type NativeStackNavigationProp} from '@react-navigation/native-stack'
 
 import {type AxisResult} from '#/screens/RAQ/logic/scoring'
+import {type SearchFilters} from '#/screens/Search/searchParams'
 import {type VideoFeedSourceContext} from '#/screens/VideoFeed/types'
 
 export type {NativeStackScreenProps} from '@react-navigation/native-stack'
+
+/**
+ * The advanced-search filter params are owned by searchParams.ts (the param
+ * model, serialization, and helpers all live there). Re-export the type so the
+ * route params stay in sync with it automatically rather than being a second
+ * hand-maintained copy.
+ */
+export type SearchFilterParams = SearchFilters
+
+export type SearchParams = {
+  q?: string
+  tab?: 'user' | 'profile' | 'feed' | 'latest'
+} & SearchFilterParams
 
 export type MapRouteParams =
   | {
@@ -49,7 +63,7 @@ export type CommonNavigatorParams = {
   ProfileFollowers: {name: string}
   ProfileFollows: {name: string}
   ProfileKnownFollowers: {name: string}
-  ProfileSearch: {name: string; q?: string}
+  ProfileSearch: {name: string} & SearchParams
   ProfileList: {name: string; rkey: string}
   PostThread: {name: string; rkey: string; collection?: string}
   PostLikedBy: {name: string; rkey: string}
@@ -106,7 +120,7 @@ export type CommonNavigatorParams = {
   AboutSettings: undefined
   AppIconSettings: undefined
   FindContactsSettings: undefined
-  Search: {q?: string; tab?: 'user' | 'profile' | 'feed'}
+  Search: SearchParams
   Hashtag: {tag: string; author?: string}
   FlairFeed: {
     flairId: string
@@ -209,7 +223,7 @@ export type HomeTabNavigatorParams = CommonNavigatorParams & {
 }
 
 export type SearchTabNavigatorParams = CommonNavigatorParams & {
-  Search: {q?: string; tab?: 'user' | 'profile' | 'feed'}
+  Search: SearchParams
 }
 
 export type NotificationsTabNavigatorParams = CommonNavigatorParams & {
@@ -242,7 +256,7 @@ export type FlatNavigatorParams = CommonNavigatorParams & {
   Agora: undefined
   ProposalDetail: {proposalUri: string}
   Home: undefined
-  Search: {q?: string; tab?: 'user' | 'profile' | 'feed'}
+  Search: SearchParams
   Feeds: undefined
   PartyFeed: {partyId: string}
   Notifications: undefined
@@ -288,7 +302,7 @@ export type AllNavigatorParams = CommonNavigatorParams & {
   PolicyDetails: {item?: Record<string, unknown>; cabildeoUri?: string}
   Representatives: {category?: string; q?: string}
   SearchTab: undefined
-  Search: {q?: string; tab?: 'user' | 'profile' | 'feed'}
+  Search: SearchParams
   Feeds: undefined
   PartyFeed: {partyId: string}
   NotificationsTab: {screen?: string; params?: object} | undefined

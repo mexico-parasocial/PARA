@@ -1,6 +1,6 @@
 {
   "name": "para.app",
-  "version": "1.125.0",
+  "version": "1.126.0",
   "private": true,
   "engines": {
     "node": ">=24.15.0",
@@ -13,7 +13,7 @@
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "11.7.0",
+      "version": "11.9.0",
       "onFail": "warn"
     },
     "runtime": {
@@ -104,8 +104,8 @@
     "update-actions": "pnpm dlx actions-up --min-age 7"
   },
   "dependencies": {
-    "@atproto/api": "0.20.15",
-    "@atproto/syntax": "0.6.1",
+    "@atproto/api": "0.20.22",
+    "@atproto/syntax": "0.6.3",
     "@bitdrift/react-native": "^0.6.8",
     "@braintree/sanitize-url": "^6.0.2",
     "@bsky.app/alf": "^0.1.14",
@@ -221,6 +221,7 @@
     "lodash.shuffle": "^4.2.0",
     "lodash.throttle": "^4.1.1",
     "maplibre-gl": "^5.24.0",
+    "mediabunny": "^1.25.3",
     "multiformats": "^13.4.2",
     "nanoid": "^5.0.5",
     "normalize-url": "^8.0.0",

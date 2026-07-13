@@ -1,12 +1,15 @@
 import {useMemo} from 'react'
 import {View} from 'react-native'
-import {type AppBskyNotificationDefs} from '@atproto/api'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
 import {logger} from '#/logger'
-import {useNotificationSettingsUpdateMutation} from '#/state/queries/notifications/settings'
+import {
+  type NotificationSettingsPreference,
+  type NotificationSettingsPreferenceName,
+  useNotificationSettingsUpdateMutation,
+} from '#/state/queries/notifications/settings'
 import {atoms as a, platform, useTheme} from '#/alf'
 import * as Toggle from '#/components/forms/Toggle'
 import {Loader} from '#/components/Loader'
@@ -19,15 +22,13 @@ export function PreferenceControls({
   preference,
   allowDisableInApp = true,
 }: {
-  name: Exclude<keyof AppBskyNotificationDefs.Preferences, '$type'>
+  name: NotificationSettingsPreferenceName
   /**
    * Keep other prefs in sync with `name`. For use in the "everything else" category
    * which groups starterpack joins + verified + unverified notifications into a single toggle.
    */
-  syncOthers?: Exclude<keyof AppBskyNotificationDefs.Preferences, '$type'>[]
-  preference?:
-    | AppBskyNotificationDefs.Preference
-    | AppBskyNotificationDefs.FilterablePreference
+  syncOthers?: NotificationSettingsPreferenceName[]
+  preference?: NotificationSettingsPreference
   allowDisableInApp?: boolean
 }) {
   if (!preference)
@@ -53,11 +54,9 @@ export function Inner({
   preference,
   allowDisableInApp,
 }: {
-  name: Exclude<keyof AppBskyNotificationDefs.Preferences, '$type'>
-  syncOthers?: Exclude<keyof AppBskyNotificationDefs.Preferences, '$type'>[]
-  preference:
-    | AppBskyNotificationDefs.Preference
-    | AppBskyNotificationDefs.FilterablePreference
+  name: NotificationSettingsPreferenceName
+  syncOthers?: NotificationSettingsPreferenceName[]
+  preference: NotificationSettingsPreference
   allowDisableInApp: boolean
 }) {
   const t = useTheme()
@@ -66,7 +65,7 @@ export function Inner({
 
   const channels = useMemo(() => {
     const arr = []
-    if (preference.list) arr.push('list')
+    if ('list' in preference && preference.list) arr.push('list')
     if (preference.push) arr.push('push')
     return arr
   }, [preference])
@@ -74,15 +73,19 @@ export function Inner({
   const onChangeChannels = (change: string[]) => {
     const newPreference = {
       ...preference,
-      list: change.includes('list'),
+      ...('list' in preference ? {list: change.includes('list')} : {}),
       push: change.includes('push'),
-    } satisfies typeof preference
+    } as typeof preference
 
-    logger.metric('activityPreference:changeChannels', {
+    const metrics: {name: string; push: boolean; list?: boolean} = {
       name,
       push: newPreference.push,
-      list: newPreference.list,
-    })
+    }
+    if ('list' in newPreference) {
+      metrics.list = newPreference.list
+    }
+
+    logger.metric('activityPreference:changeChannels', metrics)
 
     mutate({
       [name]: newPreference,
@@ -131,7 +134,7 @@ export function Inner({
             </Toggle.LabelText>
             <Toggle.Platform />
           </Toggle.Item>
-          {allowDisableInApp && (
+          {allowDisableInApp && 'list' in preference && (
             <Toggle.Item
               label={_(msg`Receive in-app notifications`)}
               name="list"

@@ -8,11 +8,13 @@ import {useLingui} from '@lingui/react'
 import {HITSLOP_30} from '#/lib/constants'
 import {useAutoplayDisabled} from '#/state/preferences'
 import {atoms as a, useTheme} from '#/alf'
+import {AltBadgeWithDialog} from '#/components/AltBadgeWithDialog'
 import {useIsWithinMessage} from '#/components/dms/MessageContext'
 import {Mute_Stroke2_Corner0_Rounded as MuteIcon} from '#/components/icons/Mute'
 import {Pause_Filled_Corner0_Rounded as PauseIcon} from '#/components/icons/Pause'
 import {Play_Filled_Corner0_Rounded as PlayIcon} from '#/components/icons/Play'
 import {SpeakerVolumeFull_Stroke2_Corner0_Rounded as UnmuteIcon} from '#/components/icons/Speaker'
+import {KeepAwake} from '#/components/KeepAwake'
 import {MediaInsetBorder} from '#/components/MediaInsetBorder'
 import {useVideoMuteState} from '#/components/Post/Embed/VideoEmbed/VideoVolumeContext'
 import {GifPresentationControls} from '../GifPresentationControls'
@@ -47,12 +49,11 @@ export function VideoEmbedInnerNative({
     },
   }))
 
-  // @ts-ignore
-  const isGif = embed.presentation === 'gif'
-
   if (error) {
     throw new Error(error)
   }
+
+  const isGif = embed.presentation === 'gif'
 
   return (
     <View style={[a.flex_1, a.relative]}>
@@ -60,8 +61,6 @@ export function VideoEmbedInnerNative({
         url={embed.playlist}
         autoplay={!autoplayDisabled && !isWithinMessage}
         beginMuted={isGif || (autoplayDisabled ? false : muted)}
-        // @ts-ignore
-        repeat={isGif}
         style={[a.rounded_sm]}
         onActiveChange={e => {
           setIsActive(e.nativeEvent.isActive)
@@ -70,7 +69,9 @@ export function VideoEmbedInnerNative({
           setIsLoading(e.nativeEvent.isLoading)
         }}
         onMutedChange={e => {
-          setMuted(e.nativeEvent.isMuted)
+          if (!isGif) {
+            setMuted(e.nativeEvent.isMuted)
+          }
         }}
         onStatusChange={e => {
           setStatus(e.nativeEvent.status)
@@ -90,32 +91,40 @@ export function VideoEmbedInnerNative({
       />
       {isGif ? (
         <GifPresentationControls
-          isPlaying={isPlaying}
-          togglePlayPause={() => {
+          onPress={() => {
             videoRef.current?.togglePlayback()
           }}
+          isPlaying={isPlaying}
+          isLoading={false}
+          altText={embed.alt}
         />
       ) : (
-        <VideoControls
-          enterFullscreen={() => {
-            videoRef.current?.enterFullscreen(true)
-          }}
-          toggleMuted={() => {
-            videoRef.current?.toggleMuted()
-          }}
-          togglePlayback={() => {
-            videoRef.current?.togglePlayback()
-          }}
-          isPlaying={isPlaying}
-          timeRemaining={timeRemaining}
-        />
+        <>
+          <VideoPresentationControls
+            enterFullscreen={() => {
+              videoRef.current?.enterFullscreen(true)
+            }}
+            toggleMuted={() => {
+              videoRef.current?.toggleMuted()
+            }}
+            togglePlayback={() => {
+              videoRef.current?.togglePlayback()
+            }}
+            isPlaying={isPlaying}
+            timeRemaining={timeRemaining}
+          />
+          {embed.alt && (
+            <AltBadgeWithDialog text={embed.alt} position="top-right" />
+          )}
+        </>
       )}
       <MediaInsetBorder />
+      <KeepAwake enabled={isPlaying} />
     </View>
   )
 }
 
-function VideoControls({
+function VideoPresentationControls({
   enterFullscreen,
   toggleMuted,
   togglePlayback,

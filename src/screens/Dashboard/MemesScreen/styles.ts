@@ -1,11 +1,6 @@
 import {StyleSheet} from 'react-native'
 
-import {
-  DECK_CARD_HEIGHT,
-  DECK_SECONDARY_TOP,
-  DECK_THIRD_TOP,
-  DECK_VISUAL_HEIGHT,
-} from './helpers'
+import {DECK_CARD_HEIGHT, DECK_SECONDARY_TOP, DECK_THIRD_TOP} from './helpers'
 
 export const styles = StyleSheet.create({
   topChrome: {
@@ -24,9 +19,10 @@ export const styles = StyleSheet.create({
   },
   deckContentShell: {
     flex: 1,
-    paddingBottom: 48,
+    justifyContent: 'flex-start',
+    paddingBottom: 0,
     paddingHorizontal: 0,
-    paddingTop: 8,
+    paddingTop: 20,
   },
   headerActions: {
     alignItems: 'center',
@@ -144,8 +140,8 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
   },
   deckStage: {
-    marginTop: 2,
-    minHeight: DECK_CARD_HEIGHT + DECK_SECONDARY_TOP + 28,
+    marginTop: 8,
+    minHeight: DECK_CARD_HEIGHT + DECK_SECONDARY_TOP + 100,
     position: 'relative',
     width: '100%',
   },
@@ -242,13 +238,6 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 15,
   },
-  deckVisualInsetTopLeft: {
-    paddingLeft: 54,
-    paddingTop: 14,
-  },
-  deckVisualInsetTopRight: {
-    paddingRight: 56,
-  },
   deckVisualBottom: {
     gap: 8,
     paddingTop: 8,
@@ -284,24 +273,20 @@ export const styles = StyleSheet.create({
     lineHeight: 28,
     width: '86%',
   },
-  deckPrimaryRail: {
-    left: 8,
+  deckCommandCenter: {
+    alignItems: 'flex-start',
+    alignSelf: 'center',
     position: 'absolute',
-    top: DECK_VISUAL_HEIGHT + 58,
-    zIndex: 7,
+    top: DECK_SECONDARY_TOP - 44,
+    zIndex: 10,
   },
-  deckSecondaryRail: {
+  deckCommandCenterZone: {
+    alignItems: 'center',
+    bottom: 0,
+    flexDirection: 'row',
+    justifyContent: 'center',
     position: 'absolute',
-    right: 8,
-    top: DECK_SECONDARY_TOP + DECK_VISUAL_HEIGHT + 58,
-    zIndex: 6,
-  },
-  deckEngagementRail: {
-    alignItems: 'center',
-    gap: 10,
-  },
-  deckEngagementRailRight: {
-    alignItems: 'center',
+    top: 0,
   },
   commentChip: {
     alignItems: 'center',
@@ -343,87 +328,6 @@ export const styles = StyleSheet.create({
   metaPillText: {
     fontSize: 12,
     fontWeight: '700',
-  },
-  deckOptionsPlacement: {
-    position: 'absolute',
-    right: 12,
-    top: 12,
-    zIndex: 9,
-  },
-  deckOptionsButton: {
-    alignItems: 'center',
-    backgroundColor: 'transparent',
-    borderWidth: 0,
-    height: 38,
-    justifyContent: 'center',
-    width: 38,
-  },
-  deckOptionsDots: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 4,
-    justifyContent: 'center',
-  },
-  deckOptionsDot: {
-    borderRadius: 8,
-    height: 4,
-    width: 4,
-  },
-  deckExpandPlacement: {
-    position: 'absolute',
-    zIndex: 8,
-  },
-  deckExpandPlacementBottomRight: {
-    bottom: 0,
-    height: 52,
-    right: 0,
-    width: 52,
-  },
-  deckExpandPlacementTopLeft: {
-    height: 52,
-    left: 0,
-    top: 0,
-    width: 52,
-  },
-  deckExpandButton: {
-    alignItems: 'center',
-    borderWidth: 1,
-    justifyContent: 'center',
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  deckExpandButtonBottomRight: {
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 8,
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 0,
-    height: 50,
-    paddingLeft: 4,
-    paddingTop: 4,
-    width: 50,
-  },
-  deckExpandButtonTopLeft: {
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 8,
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 0,
-    height: 50,
-    paddingBottom: 4,
-    paddingRight: 4,
-    width: 50,
-  },
-  deckExpandSubpixelBleedBlocker: {
-    height: 24,
-    position: 'absolute',
-    width: 24,
-    zIndex: 0,
-  },
-  deckExpandInnerBody: {
-    alignItems: 'center',
-    height: '100%',
-    justifyContent: 'center',
-    width: '100%',
-    zIndex: 1,
   },
   deckCardPressable: {
     flex: 1,

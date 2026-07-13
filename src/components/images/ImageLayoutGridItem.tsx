@@ -12,7 +12,7 @@ import {useLargeAltBadgeEnabled} from '#/state/preferences/large-alt-badge'
 import {atoms as a, tokens, useTheme} from '#/alf'
 import {MediaInsetBorder} from '#/components/MediaInsetBorder'
 import {ImageContextMenu} from '#/components/Post/Embed/ImageContextMenu'
-import {PostEmbedViewContext} from '#/components/Post/Embed/types'
+import {type PostEmbedViewContext} from '#/components/Post/Embed/types'
 import {Text} from '#/components/Typography'
 
 type EventFunction = (index: number) => void
@@ -29,6 +29,7 @@ interface Props {
   onPressIn?: EventFunction
   imageStyle?: StyleProp<ImageStyle>
   viewContext?: PostEmbedViewContext
+  isWithinQuote?: boolean
   insetBorderStyle?: StyleProp<ViewStyle>
   containerRefs: AnimatedRef<any>[]
   thumbDimsRef: React.RefObject<(Dimensions | null)[]>
@@ -41,7 +42,6 @@ export function GalleryItem({
   onPress,
   onPressIn,
   onLongPress,
-  viewContext,
   insetBorderStyle,
   containerRefs,
   thumbDimsRef,
@@ -51,8 +51,6 @@ export function GalleryItem({
   const largeAltBadge = useLargeAltBadgeEnabled()
   const image = images[index]
   const hasAlt = !!image.alt
-  const hideBadges =
-    viewContext === PostEmbedViewContext.FeedEmbedRecordWithMedia
 
   const aspect =
     image.aspectRatio && image.aspectRatio.height > 0
@@ -111,26 +109,24 @@ export function GalleryItem({
           <MediaInsetBorder style={insetBorderStyle} />
         </Pressable>
       </ImageContextMenu>
-      {hasAlt && !hideBadges ? (
+      {hasAlt ? (
         <View
           accessible={false}
           style={[
             a.absolute,
             a.flex_row,
             a.align_center,
-            a.rounded_xs,
+            a.rounded_sm,
+            a.p_xs,
             t.atoms.bg_contrast_25,
             {
-              gap: 3,
-              padding: 3,
               bottom: a.p_xs.padding,
               right: a.p_xs.padding,
               opacity: 0.8,
             },
             largeAltBadge && [
               {
-                gap: 4,
-                padding: 5,
+                padding: 6,
               },
             ],
           ]}>

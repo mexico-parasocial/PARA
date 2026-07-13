@@ -21,7 +21,7 @@ import {
 } from '#/lib/m8/api'
 import {type AnonymousProfile} from '#/lib/m8/types'
 import {type CommonNavigatorParams} from '#/lib/routes/types'
-import {useModalControls} from '#/state/modals'
+
 import {useSession} from '#/state/session'
 import * as SettingsList from '#/screens/Settings/components/SettingsList'
 import {atoms as a, useTheme} from '#/alf'
@@ -52,20 +52,21 @@ import {ChangeHandleDialog} from './components/ChangeHandleDialog'
 import {ChangePasswordDialog} from './components/ChangePasswordDialog'
 import {DeactivateAccountDialog} from './components/DeactivateAccountDialog'
 import {ExportCarDialog} from './components/ExportCarDialog'
+import {DeleteAccountDialog} from './components/DeleteAccountDialog'
 
 type Props = NativeStackScreenProps<CommonNavigatorParams, 'AccountSettings'>
 export function AccountSettingsScreen({navigation}: Props) {
   const t = useTheme()
   const {_} = useLingui()
   const {currentAccount} = useSession()
-  const {openModal} = useModalControls()
+
   const emailDialogControl = useEmailDialogControl()
   const birthdayControl = useDialogControl()
   const changeHandleControl = useDialogControl()
   const changePasswordControl = useDialogControl()
   const exportCarControl = useDialogControl()
   const deactivateAccountControl = useDialogControl()
-
+  const deleteAccountControl = useDialogControl()
   const [anonymousMode, setAnonymousMode] = useState(true)
   const [anonProfile, setAnonProfile] = useState<AnonymousProfile | null>(null)
   const [loadingAnon, setLoadingAnon] = useState(false)
@@ -489,7 +490,7 @@ export function AccountSettingsScreen({navigation}: Props) {
             </SettingsList.PressableItem>
             <SettingsList.PressableItem
               label={_(msg`Delete account`)}
-              onPress={() => openModal({name: 'delete-account'})}
+              onPress={() => deleteAccountControl.open()}
               destructive>
               <SettingsList.ItemIcon icon={Trash_Stroke2_Corner2_Rounded} />
               <SettingsList.ItemText>
@@ -506,6 +507,7 @@ export function AccountSettingsScreen({navigation}: Props) {
       <ChangePasswordDialog control={changePasswordControl} />
       <ExportCarDialog control={exportCarControl} />
       <DeactivateAccountDialog control={deactivateAccountControl} />
+      <DeleteAccountDialog control={deleteAccountControl} />
     </Layout.Screen>
   )
 }

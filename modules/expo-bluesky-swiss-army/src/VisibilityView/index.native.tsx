@@ -1,43 +1,39 @@
-import {
-  type ComponentType,
-  createRef,
-  PureComponent,
-  type ReactNode,
-  type RefObject,
-} from 'react'
+import {useCallback} from 'react'
 import {type StyleProp, type ViewStyle} from 'react-native'
-import {requireNativeViewManager} from 'expo-modules-core'
+import {requireNativeModule, requireNativeViewManager} from 'expo-modules-core'
 
 import {type VisibilityViewProps} from './types'
-const NativeView: ComponentType<{
+const NativeView: React.ComponentType<{
   onChangeStatus: (e: {nativeEvent: {isActive: boolean}}) => void
-  children: ReactNode
+  children: React.ReactNode
   enabled: boolean
   style: StyleProp<ViewStyle>
 }> = requireNativeViewManager('ExpoBlueskyVisibilityView')
 
-export class VisibilityView extends PureComponent<VisibilityViewProps> {
-  ref: RefObject<unknown>
+const NativeModule = requireNativeModule('ExpoBlueskyVisibilityView')
 
-  constructor(props: VisibilityViewProps) {
-    super(props)
-    this.ref = createRef()
-    this.onChangeStatus = this.onChangeStatus.bind(this)
-  }
+export async function updateActiveViewAsync() {
+  await NativeModule.updateActiveViewAsync()
+}
 
-  onChangeStatus(e: {nativeEvent: {isActive: boolean}}) {
-    this.props.onChangeStatus(e.nativeEvent.isActive)
-  }
+export default function VisibilityView({
+  children,
+  onChangeStatus: onChangeStatusOuter,
+  enabled,
+}: VisibilityViewProps) {
+  const onChangeStatus = useCallback(
+    (e: {nativeEvent: {isActive: boolean}}) => {
+      onChangeStatusOuter(e.nativeEvent.isActive)
+    },
+    [onChangeStatusOuter],
+  )
 
-  render() {
-    return (
-      <NativeView
-        ref={this.ref}
-        enabled={this.props.enabled}
-        style={this.props.style}
-        onChangeStatus={this.onChangeStatus}>
-        {this.props.children}
-      </NativeView>
-    )
-  }
+  return (
+    <NativeView
+      onChangeStatus={onChangeStatus}
+      enabled={enabled}
+      style={{flex: 1}}>
+      {children}
+    </NativeView>
+  )
 }

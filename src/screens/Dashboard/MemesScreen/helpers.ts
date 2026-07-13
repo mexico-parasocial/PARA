@@ -1,9 +1,9 @@
 import {type Meme} from '#/lib/mock-data/types'
 import {type MediaItem} from './types'
 
-export const DECK_CARD_HEIGHT = 336
-export const DECK_VISUAL_HEIGHT = 258
-export const DECK_OVERLAP = 110
+export const DECK_CARD_HEIGHT = 425
+export const DECK_VISUAL_HEIGHT = 322
+export const DECK_OVERLAP = 36
 export const DECK_SECONDARY_TOP = DECK_CARD_HEIGHT - DECK_OVERLAP
 export const DECK_THIRD_TOP =
   DECK_SECONDARY_TOP + DECK_CARD_HEIGHT - DECK_OVERLAP

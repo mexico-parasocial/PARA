@@ -1,7 +1,6 @@
 import {useEffect} from 'react'
 import {Linking, View} from 'react-native'
 import * as Notification from 'expo-notifications'
-import {type AppBskyNotificationDefs} from '@atproto/api'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -12,21 +11,29 @@ import {
   type AllNavigatorParams,
   type NativeStackScreenProps,
 } from '#/lib/routes/types'
-import {useNotificationSettingsQuery} from '#/state/queries/notifications/settings'
+import {
+  useChatNotificationSettingsQuery,
+  useNotificationSettingsQuery,
+} from '#/state/queries/notifications/settings'
 import {atoms as a} from '#/alf'
 import {Admonition} from '#/components/Admonition'
+import * as Dialog from '#/components/Dialog'
 import {At_Stroke2_Corner2_Rounded as AtIcon} from '#/components/icons/At'
 import {BellRinging_Stroke2_Corner0_Rounded as BellRingingIcon} from '#/components/icons/BellRinging'
 import {Bubble_Stroke2_Corner2_Rounded as BubbleIcon} from '#/components/icons/Bubble'
+import {Envelope_Stroke2_Corner2_Rounded as EnvelopeIcon} from '#/components/icons/Envelope'
 import {Haptic_Stroke2_Corner2_Rounded as HapticIcon} from '#/components/icons/Haptic'
 import {Influence_Stroke_Icon as InfluenceIcon} from '#/components/icons/Influence'
+import {Message_Stroke2_Corner0_Rounded as MessageIcon} from '#/components/icons/Message'
 import {PersonPlus_Stroke2_Corner2_Rounded as PersonPlusIcon} from '#/components/icons/Person'
 import {CloseQuote_Stroke2_Corner0_Rounded as CloseQuoteIcon} from '#/components/icons/Quote'
 import {Shapes_Stroke2_Corner0_Rounded as ShapesIcon} from '#/components/icons/Shapes'
 import * as Layout from '#/components/Layout'
 import {IS_ANDROID, IS_IOS, IS_WEB} from '#/env'
 import * as SettingsList from '../components/SettingsList'
+import {ChatNotificationDialogs} from './components/ChatNotificationDialogs'
 import {ItemTextWithSubtitle} from './components/ItemTextWithSubtitle'
+import {SettingPreview} from './components/SettingPreview'
 
 const RQKEY = ['notification-permissions']
 
@@ -35,6 +42,8 @@ export function NotificationSettingsScreen({}: Props) {
   const {_} = useLingui()
   const queryClient = useQueryClient()
   const {data: settings, isError} = useNotificationSettingsQuery()
+  const {data: chatSettings, isError: chatError} =
+    useChatNotificationSettingsQuery()
 
   const {data: permissions, refetch} = useQuery({
     queryKey: RQKEY,
@@ -47,9 +56,12 @@ export function NotificationSettingsScreen({}: Props) {
   const appState = useAppState()
   useEffect(() => {
     if (appState === 'active') {
-      refetch()
+      void refetch()
     }
   }, [appState, refetch])
+
+  const chatDialogControl = Dialog.useDialogControl()
+  const chatRequestDialogControl = Dialog.useDialogControl()
 
   const onRequestPermissions = async () => {
     if (IS_WEB) return
@@ -69,10 +81,10 @@ export function NotificationSettingsScreen({}: Props) {
             ],
           )
         } catch {
-          Linking.openSettings()
+          void Linking.openSettings()
         }
       } else if (IS_IOS) {
-        Linking.openSettings()
+        void Linking.openSettings()
       }
     }
   }
@@ -94,7 +106,9 @@ export function NotificationSettingsScreen({}: Props) {
             <>
               <SettingsList.PressableItem
                 label={_(msg`Enable push notifications`)}
-                onPress={onRequestPermissions}>
+                onPress={() => {
+                  void onRequestPermissions()
+                }}>
                 <SettingsList.ItemIcon icon={HapticIcon} />
                 <SettingsList.ItemText>
                   <Trans>Enable push notifications</Trans>
@@ -209,6 +223,44 @@ export function NotificationSettingsScreen({}: Props) {
                 showSkeleton={!settings}
               />
             </SettingsList.LinkItem>
+            <SettingsList.PressableItem
+              label={_(msg`Settings for notifications for new messages`)}
+              onPress={() => {
+                chatDialogControl.open()
+              }}
+              contentContainerStyle={[a.align_start]}>
+              <SettingsList.ItemIcon icon={MessageIcon} />
+              <ItemTextWithSubtitle
+                titleText={<Trans>New messages</Trans>}
+                subtitleText={
+                  chatError ? (
+                    <Trans>Failed to load notification settings.</Trans>
+                  ) : (
+                    <SettingPreview preference={chatSettings?.chat} />
+                  )
+                }
+                showSkeleton={!chatSettings && !chatError}
+              />
+            </SettingsList.PressableItem>
+            <SettingsList.PressableItem
+              label={_(msg`Settings for notifications for new message requests`)}
+              onPress={() => {
+                chatRequestDialogControl.open()
+              }}
+              contentContainerStyle={[a.align_start]}>
+              <SettingsList.ItemIcon icon={EnvelopeIcon} />
+              <ItemTextWithSubtitle
+                titleText={<Trans>New message requests</Trans>}
+                subtitleText={
+                  chatError ? (
+                    <Trans>Failed to load notification settings.</Trans>
+                  ) : (
+                    <SettingPreview preference={chatSettings?.chatRequest} />
+                  )
+                }
+                showSkeleton={!chatSettings && !chatError}
+              />
+            </SettingsList.PressableItem>
             <SettingsList.LinkItem
               label={_(msg`Settings for notifications for everything else`)}
               to={{screen: 'MiscellaneousNotificationSettings'}}
@@ -227,49 +279,10 @@ export function NotificationSettingsScreen({}: Props) {
           </View>
         </SettingsList.Container>
       </Layout.Content>
+      <ChatNotificationDialogs
+        chatControl={chatDialogControl}
+        chatRequestControl={chatRequestDialogControl}
+      />
     </Layout.Screen>
   )
-}
-
-function SettingPreview({
-  preference,
-}: {
-  preference?:
-    | AppBskyNotificationDefs.Preference
-    | AppBskyNotificationDefs.FilterablePreference
-}) {
-  const {_} = useLingui()
-  if (!preference) {
-    return null
-  } else {
-    if ('include' in preference) {
-      if (preference.include === 'all') {
-        if (preference.list && preference.push) {
-          return _(msg`In-app, Push, Everyone`)
-        } else if (preference.list) {
-          return _(msg`In-app, Everyone`)
-        } else if (preference.push) {
-          return _(msg`Push, Everyone`)
-        }
-      } else if (preference.include === 'follows') {
-        if (preference.list && preference.push) {
-          return _(msg`In-app, Push, People you follow`)
-        } else if (preference.list) {
-          return _(msg`In-app, People you follow`)
-        } else if (preference.push) {
-          return _(msg`Push, People you follow`)
-        }
-      }
-    } else {
-      if (preference.list && preference.push) {
-        return _(msg`In-app, Push`)
-      } else if (preference.list) {
-        return _(msg`In-app`)
-      } else if (preference.push) {
-        return _(msg`Push`)
-      }
-    }
-  }
-
-  return _(msg`Off`)
 }

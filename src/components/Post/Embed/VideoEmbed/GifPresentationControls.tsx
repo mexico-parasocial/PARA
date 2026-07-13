@@ -1,40 +1,44 @@
-import {ActivityIndicator, StyleSheet, View} from 'react-native'
+import {ActivityIndicator, View} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
-import {atoms as a} from '#/alf'
+import {useLargeAltBadgeEnabled} from '#/state/preferences/large-alt-badge'
+import {atoms as a, useTheme} from '#/alf'
+import {AltBadgeWithDialog} from '#/components/AltBadgeWithDialog'
 import {Button} from '#/components/Button'
 import {Fill} from '#/components/Fill'
 import {Text} from '#/components/Typography'
 import {PlayButtonIcon} from '#/components/video/PlayButtonIcon'
-import {IS_WEB} from '#/env'
 
 export function GifPresentationControls({
+  onPress,
   isPlaying,
   isLoading,
-  togglePlayPause,
+  altText,
 }: {
+  onPress: () => void
   isPlaying: boolean
   isLoading?: boolean
-  togglePlayPause: () => void
+  altText?: string
 }) {
   const {_} = useLingui()
+  const t = useTheme()
+  const largeBadge = useLargeAltBadgeEnabled()
 
   return (
-    <View style={[a.absolute, a.inset_0, a.justify_center, a.align_center]}>
+    <>
       <Button
+        label={isPlaying ? _(msg`Pause GIF`) : _(msg`Play GIF`)}
+        accessibilityHint={_(msg`Plays or pauses the GIF`)}
         style={[
           a.absolute,
-          a.inset_0,
-          a.justify_center,
           a.align_center,
+          a.justify_center,
+          a.inset_0,
           {zIndex: 2},
         ]}
-        label={isPlaying ? _(msg`Pause GIF`) : _(msg`Play GIF`)}
-        onPress={togglePlayPause}
-        accessibilityRole="button"
-        accessibilityHint={_(msg`Plays or pauses the GIF`)}>
+        onPress={onPress}>
         {isLoading ? (
           <View style={[a.align_center, a.justify_center]}>
             <ActivityIndicator size="large" color="white" />
@@ -48,42 +52,49 @@ export function GifPresentationControls({
       {!isPlaying && (
         <Fill
           style={[
-            a.absolute,
-            a.inset_0,
+            t.name === 'light' ? t.atoms.bg_contrast_975 : t.atoms.bg,
             {
-              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              opacity: 0.2,
               zIndex: 1,
             },
           ]}
         />
       )}
-
-      {/* Badge */}
-      <View style={styles.altContainer} pointerEvents="none">
-        <Text style={styles.alt}>
-          <Trans>GIF</Trans>
-        </Text>
+      <View
+        style={[
+          a.absolute,
+          a.flex_row,
+          a.z_10,
+          {
+            bottom: a.p_xs.padding,
+            right: a.p_xs.padding,
+            gap: 3,
+          },
+          largeBadge && {
+            gap: 4,
+          },
+        ]}>
+        <View
+          accessible={false}
+          style={[
+            a.justify_center,
+            a.rounded_sm,
+            a.p_xs,
+            a.z_10,
+            t.atoms.bg_contrast_25,
+            largeBadge && {
+              padding: 6,
+            },
+            {
+              opacity: 0.8,
+            },
+          ]}>
+          <Text style={[a.font_bold, largeBadge ? a.text_xs : {fontSize: 8}]}>
+            <Trans>GIF</Trans>
+          </Text>
+        </View>
+        {altText && <AltBadgeWithDialog text={altText} />}
       </View>
-    </View>
+    </>
   )
 }
-
-const styles = StyleSheet.create({
-  altContainer: {
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    borderRadius: 6,
-    paddingHorizontal: IS_WEB ? 8 : 6,
-    paddingVertical: IS_WEB ? 6 : 3,
-    position: 'absolute',
-    // Related to margin/gap hack. This keeps the alt label in the same position
-    // on all platforms
-    right: IS_WEB ? 8 : 5,
-    bottom: IS_WEB ? 8 : 5,
-    zIndex: 2,
-  },
-  alt: {
-    color: 'white',
-    fontSize: IS_WEB ? 10 : 7,
-    fontWeight: '600',
-  },
-})

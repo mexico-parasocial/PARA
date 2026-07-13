@@ -215,6 +215,13 @@ export type ParaSearchPostsFilters = {
   communityUris?: string[]
   cabildeoUris?: string[]
   politicalCompassPositions?: string[]
+  postType?: string
+  flairs?: string[]
+  party?: string
+  verifiedPublicFigure?: boolean
+  state?: string
+  districtKey?: string
+  cabildeoPhase?: string
 }
 
 type ParaSearchPostsPage = {
@@ -229,6 +236,13 @@ const paraSearchPostsQueryKey = ({
   communityUris,
   cabildeoUris,
   politicalCompassPositions,
+  postType,
+  flairs,
+  party,
+  verifiedPublicFigure,
+  state,
+  districtKey,
+  cabildeoPhase,
 }: {
   query: string
   sort?: string
@@ -241,6 +255,13 @@ const paraSearchPostsQueryKey = ({
   communityUris?.join(',') ?? '',
   cabildeoUris?.join(',') ?? '',
   politicalCompassPositions?.join(',') ?? '',
+  postType ?? '',
+  flairs?.join(',') ?? '',
+  party ?? '',
+  verifiedPublicFigure != null ? String(verifiedPublicFigure) : '',
+  state ?? '',
+  districtKey ?? '',
+  cabildeoPhase ?? '',
 ]
 
 export function hasParaSearchFilters(filters: ParaSearchPostsFilters) {
@@ -248,7 +269,14 @@ export function hasParaSearchFilters(filters: ParaSearchPostsFilters) {
     filters.tag?.length ||
       filters.communityUris?.length ||
       filters.cabildeoUris?.length ||
-      filters.politicalCompassPositions?.length,
+      filters.politicalCompassPositions?.length ||
+      filters.postType ||
+      filters.flairs?.length ||
+      filters.party ||
+      filters.verifiedPublicFigure != null ||
+      filters.state ||
+      filters.districtKey ||
+      filters.cabildeoPhase,
   )
 }
 
@@ -260,6 +288,13 @@ export function useParaSearchPostsQuery({
   communityUris,
   cabildeoUris,
   politicalCompassPositions,
+  postType,
+  flairs,
+  party,
+  verifiedPublicFigure,
+  state,
+  districtKey,
+  cabildeoPhase,
 }: {
   query: string
   sort?: 'top' | 'latest'
@@ -286,6 +321,13 @@ export function useParaSearchPostsQuery({
       communityUris,
       cabildeoUris,
       politicalCompassPositions,
+      postType,
+      flairs,
+      party,
+      verifiedPublicFigure,
+      state,
+      districtKey,
+      cabildeoPhase,
     }),
     enabled: (enabled ?? true) && !!moderationOpts,
     initialPageParam: undefined,
@@ -300,6 +342,13 @@ export function useParaSearchPostsQuery({
         communityUris,
         cabildeoUris,
         politicalCompassPositions,
+        postType,
+        flairs,
+        party,
+        verifiedPublicFigure,
+        state,
+        districtKey,
+        cabildeoPhase,
       })
       const data = res.data as {cursor?: string; posts?: unknown[]}
       const paraPosts = (data.posts ?? []).filter(isParaPostView)

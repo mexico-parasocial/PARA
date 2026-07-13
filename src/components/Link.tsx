@@ -23,7 +23,6 @@ import {
   isExternalUrl,
   linkRequiresWarning,
 } from '#/lib/strings/url-helpers'
-import {useModalControls} from '#/state/modals'
 import {atoms as a, flatten, type TextStyleProp, web} from '#/alf'
 import {Button, type ButtonProps} from '#/components/Button'
 import {useInteractionState} from '#/components/hooks/useInteractionState'
@@ -127,7 +126,6 @@ export function useLink({
   }
 
   const isExternal = isExternalUrl(href)
-  const {closeModal} = useModalControls()
   const {linkWarningDialogControl} = useGlobalDialogsControlContext()
   const openLink = useOpenLink()
 
@@ -168,8 +166,6 @@ export function useLink({
           ) {
             openLink(href)
           } else {
-            closeModal() // close any active modals
-
             const [screen, params] = router.matchPath(href) as [
               screen: keyof AllNavigatorParams,
               params?: RouteParams,
@@ -222,7 +218,6 @@ export function useLink({
       isExternal,
       href,
       openLink,
-      closeModal,
       action,
       navigation,
       overridePresentation,

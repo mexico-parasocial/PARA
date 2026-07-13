@@ -5,7 +5,6 @@ import {type ImagePickerAsset} from 'expo-image-picker'
 
 import {clamp} from '#/lib/numbers'
 import {atoms as a, useTheme} from '#/alf'
-import {IS_WEB} from '#/env'
 import {ExternalEmbedRemoveBtn} from '../ExternalEmbedRemoveBtn'
 import {VideoTranscodeBackdrop} from './VideoTranscodeBackdrop'
 
@@ -19,8 +18,6 @@ export function VideoTranscodeProgress({
   clear: () => void
 }) {
   const t = useTheme()
-
-  if (IS_WEB) return null
 
   let aspectRatio = asset.width / asset.height
 

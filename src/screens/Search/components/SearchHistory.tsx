@@ -9,7 +9,13 @@ import {sanitizeHandle} from '#/lib/strings/handles'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
 import {UserAvatar} from '#/view/com/util/UserAvatar'
 import {BlockDrawerGesture} from '#/view/shell/BlockDrawerGesture'
-import {atoms as a} from '#/alf'
+import {
+  countActiveFilters,
+  countActiveParaFilters,
+  getActiveParaFilterNames,
+  parseHistoryEntry,
+} from '#/screens/Search/searchParams'
+import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonIcon} from '#/components/Button'
 import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/Times'
 import * as Layout from '#/components/Layout'
@@ -37,6 +43,7 @@ export function SearchHistory({
 }) {
   const ax = useAnalytics()
   const {t: l} = useLingui()
+  const t = useTheme()
   const moderationOpts = useModerationOpts()
 
   return (
@@ -88,31 +95,58 @@ export function SearchHistory({
 
         {searchHistory.length > 0 && (
           <View style={[a.px_lg, a.pt_sm]}>
-            {searchHistory.slice(0, 5).map((historyItem, index) => (
-              <View key={index} style={[a.flex_row, a.align_center]}>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => {
-                    ax.metric('search:query', {
-                      source: 'history',
-                    })
-                    onItemClick(historyItem)
-                  }}
-                  hitSlop={HITSLOP_10}
-                  style={[a.flex_1, a.py_sm]}>
-                  <Text style={[a.text_md]}>{historyItem}</Text>
-                </Pressable>
-                <Button
-                  label={l`Remove ${historyItem}`}
-                  onPress={() => onRemoveItemClick(historyItem)}
-                  size="small"
-                  variant="ghost"
-                  color="secondary"
-                  shape="round">
-                  <ButtonIcon icon={XIcon} />
-                </Button>
-              </View>
-            ))}
+            {searchHistory.slice(0, 5).map((historyItem, index) => {
+              const entry = parseHistoryEntry(historyItem)
+              const filterCount = countActiveFilters(entry.filters)
+              return (
+                <View key={index} style={[a.flex_row, a.align_center]}>
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => {
+                      ax.metric('search:query', {
+                        source: 'history',
+                        filterCount,
+                        paraFilterCount: countActiveParaFilters(entry.filters),
+                        paraFilters: getActiveParaFilterNames(entry.filters),
+                      })
+                      onItemClick(historyItem)
+                    }}
+                    hitSlop={HITSLOP_10}
+                    style={[a.flex_1, a.py_sm]}>
+                    <View style={[a.flex_row, a.align_center, a.gap_sm]}>
+                      <Text style={[a.text_md]}>{entry.q}</Text>
+                      {filterCount > 0 && (
+                        <View
+                          style={[
+                            a.rounded_full,
+                            a.px_sm,
+                            a.py_2xs,
+                            {backgroundColor: t.atoms.bg_contrast_100.backgroundColor},
+                          ]}>
+                          <Text
+                            style={[
+                              a.text_xs,
+                              a.font_bold,
+                              t.atoms.text_contrast_medium,
+                            ]}>
+                            +{filterCount}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  </Pressable>
+                  <Button
+                    label={l`Remove ${historyItem}`}
+                    onPress={() => onRemoveItemClick(historyItem)}
+                    size="small"
+                    variant="ghost"
+                    color="secondary"
+                    shape="round">
+                    <ButtonIcon icon={XIcon} />
+                  </Button>
+                </View>
+              )
+            })}
           </View>
         )}
       </View>

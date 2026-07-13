@@ -18,7 +18,7 @@ import {
   useParaSearchPostsQuery,
   useSearchPostsQuery,
 } from '#/state/queries/search-posts'
-import {ParaSearchFiltersBar} from './ParaSearchFiltersBar'
+import {useSearchPostsV2Query} from '#/state/queries/search-posts-v2'
 import {useSession} from '#/state/session'
 import {useLoggedOutViewControls} from '#/state/shell/logged-out'
 import {useCloseAllActiveElements} from '#/state/util'
@@ -27,6 +27,13 @@ import {TabBar} from '#/view/com/pager/TabBar'
 import {Post} from '#/view/com/post/Post'
 import {ProfileCardWithFollowBtn} from '#/view/com/profile/ProfileCard'
 import {List} from '#/view/com/util/List'
+import {DetectedLanguagesAdmonition} from '#/screens/Search/components/DetectedLanguagesAdmonition'
+import {
+  getActiveParaFilterNames,
+  hasPostOnlyFilters,
+  type SearchFilters,
+  searchFiltersToParaFilters,
+} from '#/screens/Search/searchParams'
 import {atoms as a, useTheme, web} from '#/alf'
 import * as FeedCard from '#/components/FeedCard'
 import * as Layout from '#/components/Layout'
@@ -36,40 +43,104 @@ import {SearchError} from '#/components/SearchError'
 import {Text} from '#/components/Typography'
 import {type Metrics, useAnalytics} from '#/analytics'
 import type * as bsky from '#/types/bsky'
+import {ParaSearchFiltersBar} from './ParaSearchFiltersBar'
 
 let SearchResults = ({
   query,
   queryWithParams,
+  filters,
+  hasFilters,
   activeTab,
   onPageSelected,
   headerHeight,
-  initialPage = 0,
-  paraFilters: paraFiltersProp,
+  initialPage: _initialPage = 0,
+  paraFilters: _paraFiltersProp,
+  onChangeFilters,
 }: {
   query: string
   queryWithParams: string
+  filters?: SearchFilters
+  hasFilters?: boolean
   activeTab: number
   onPageSelected: (page: number) => void
   headerHeight: number
   initialPage?: number
   paraFilters?: ParaSearchPostsFilters
+  onChangeFilters?: (filters: SearchFilters) => void
 }): React.ReactNode => {
   const {_} = useLingui()
-  const [paraFiltersState, setParaFilters] = useState<ParaSearchPostsFilters>({})
-  const paraFilters = paraFiltersProp ?? paraFiltersState
+  const ax = useAnalytics()
+  const paraFilters = useMemo(
+    () => searchFiltersToParaFilters(filters ?? {}),
+    [filters],
+  )
+
+  const onChangeParaFilters = useCallback(
+    (next: SearchFilters) => {
+      if (!onChangeFilters) return
+      const isClearAll = Object.keys(next).length === 0
+      if (isClearAll) {
+        onChangeFilters({
+          ...filters,
+          tag: undefined,
+          politicalCompassPositions: undefined,
+          communityUris: undefined,
+          cabildeoUris: undefined,
+          postType: undefined,
+          flairs: undefined,
+          party: undefined,
+          verifiedPublicFigure: undefined,
+          state: undefined,
+          districtKey: undefined,
+          cabildeoPhase: undefined,
+        })
+        return
+      }
+
+      const merged = {...filters, ...next}
+      const previousNames = new Set(getActiveParaFilterNames(filters ?? {}))
+      for (const name of getActiveParaFilterNames(merged)) {
+        if (!previousNames.has(name)) {
+          ax.metric('search:paraFilter:applied', {filter: name})
+        }
+      }
+      onChangeFilters(merged)
+    },
+    [filters, onChangeFilters, ax],
+  )
+
+  /*
+   * People/Feeds visibility keys off post-only filters: a `lang` filter applies
+   * to people and feeds too, so it must not hide those tabs (which would also
+   * regress the non-v2 legacy language dropdown). Other filters are post-only.
+   * PARA-specific filters (community, compass, cabildeo, area) are also
+   * post-only, so they hide People/Feeds as well.
+   */
+  const hasPostFilters =
+    hasPostOnlyFilters(filters ?? {}) || hasParaSearchFilters(paraFilters)
+  const activePage = hasPostFilters && activeTab > 1 ? 0 : activeTab
+  const tabShape = hasPostFilters ? 'filtered' : 'plain'
 
   const sections = useMemo(() => {
-    if (!queryWithParams) return []
-    const noParams = queryWithParams === query
+    if (!query && !hasFilters && !hasParaSearchFilters(paraFilters)) return []
+    /*
+     * People and Feeds tabs only make sense without post-restricting filters -
+     * those filters don't apply to actors or feeds.
+     */
+    const noFilters = !hasPostFilters
     return [
       {
         title: _(msg`Top`),
         component: (
           <SearchScreenPostResults
-            query={queryWithParams}
+            hasFilters={Boolean(hasFilters || hasParaSearchFilters(paraFilters))}
+            query={query}
+            queryWithParams={queryWithParams}
+            filters={filters}
             sort="top"
-            active={activeTab === 0}
+            active={activePage === 0}
             paraFilters={paraFilters}
+            onChangeFilters={onChangeFilters}
           />
         ),
       },
@@ -77,41 +148,56 @@ let SearchResults = ({
         title: _(msg`Latest`),
         component: (
           <SearchScreenPostResults
-            query={queryWithParams}
+            hasFilters={Boolean(hasFilters || hasParaSearchFilters(paraFilters))}
+            query={query}
+            queryWithParams={queryWithParams}
+            filters={filters}
             sort="latest"
-            active={activeTab === 1}
+            active={activePage === 1}
             paraFilters={paraFilters}
+            onChangeFilters={onChangeFilters}
           />
         ),
       },
-      noParams && {
+      noFilters && {
         title: _(msg`People`),
         component: (
-          <SearchScreenUserResults query={query} active={activeTab === 2} />
+          <SearchScreenUserResults query={query} active={activePage === 2} />
         ),
       },
-      noParams && {
+      noFilters && {
         title: _(msg`Feeds`),
         component: (
-          <SearchScreenFeedsResults query={query} active={activeTab === 3} />
+          <SearchScreenFeedsResults query={query} active={activePage === 3} />
         ),
       },
     ].filter(Boolean) as {
       title: string
       component: React.ReactNode
     }[]
-  }, [_, query, queryWithParams, activeTab, paraFilters])
+  }, [
+    _,
+    query,
+    queryWithParams,
+    filters,
+    hasFilters,
+    paraFilters,
+    hasPostFilters,
+    activePage,
+    onChangeFilters,
+  ])
 
   // There may be fewer tabs after changing the search options.
-  const selectedPage = initialPage > sections.length - 1 ? 0 : initialPage
+  const selectedPage = activePage > sections.length - 1 ? 0 : activePage
 
   return (
     <View style={[a.flex_1]}>
       <ParaSearchFiltersBar
-        filters={paraFilters}
-        onChange={setParaFilters}
+        filters={filters ?? {}}
+        onChange={onChangeParaFilters}
       />
       <Pager
+        key={tabShape}
         onPageSelected={onPageSelected}
         renderTabBar={props => (
           <Layout.Center style={[a.z_10, web([a.sticky, {top: headerHeight}])]}>
@@ -184,9 +270,10 @@ function EmptyState({
 }
 
 function NoResultsText({
+  hasFilters = false,
   query,
 }: {
-  sort?: 'top' | 'latest' | 'people' | 'feeds'
+  hasFilters?: boolean
   query: string
 }) {
   const t = useTheme()
@@ -195,26 +282,60 @@ function NoResultsText({
   return (
     <>
       <Text style={[a.text_lg, t.atoms.text_contrast_high]}>
-        <Trans>
-          No results found for "
-          <Text style={[a.text_lg, t.atoms.text, a.font_medium]}>{query}</Text>
-          ".
-        </Trans>
+        {hasFilters ? (
+          query ? (
+            <Trans>
+              No results found for "
+              <Text style={[a.text_lg, a.font_medium]}>{query}</Text>" with
+              advanced search filters applied.
+            </Trans>
+          ) : (
+            <Trans>
+              No results found for your query with advanced search filters
+              applied.
+            </Trans>
+          )
+        ) : (
+          <Trans>
+            No results found for "
+            <Text style={[a.text_lg, a.font_medium]}>{query}</Text>".
+          </Trans>
+        )}
       </Text>
       {'\n\n'}
-      <Text style={[a.text_md, a.leading_snug, t.atoms.text_contrast_high]}>
+      <Text
+        style={[
+          a.mt_lg,
+          a.text_md,
+          a.leading_snug,
+          t.atoms.text_contrast_high,
+        ]}>
+        {hasFilters ? (
+          <Trans>Try a different search term or remove some filters.</Trans>
+        ) : (
+          <Trans>Try a different search term.</Trans>
+        )}
+      </Text>
+      {'\n\n'}
+      <Text
+        style={[
+          a.mt_lg,
+          a.text_md,
+          a.leading_snug,
+          t.atoms.text_contrast_high,
+        ]}>
         <Trans context="english-only-resource">
-          Try a different search term, or{' '}
+          Learn more about{' '}
           <InlineLinkText
             label={_(
               msg({
-                message: 'read about how to use search filters',
+                message: 'Read about how to use search filters',
                 context: 'english-only-resource',
               }),
             )}
             to={urls.website.blog.searchTipsAndTricks}
             style={[a.text_md, a.leading_snug]}>
-            read about how to use search filters
+            how to use search filters
           </InlineLinkText>
           .
         </Trans>
@@ -235,15 +356,23 @@ type SearchResultSlice =
     }
 
 let SearchScreenPostResults = ({
+  hasFilters = false,
   query,
+  queryWithParams,
+  filters,
   sort,
   active,
   paraFilters,
+  onChangeFilters,
 }: {
+  hasFilters?: boolean
   query: string
+  queryWithParams: string
+  filters?: SearchFilters
   sort?: 'top' | 'latest'
   active: boolean
   paraFilters?: ParaSearchPostsFilters
+  onChangeFilters?: (filters: SearchFilters) => void
 }): React.ReactNode => {
   const ax = useAnalytics()
   const {_} = useLingui()
@@ -251,25 +380,49 @@ let SearchScreenPostResults = ({
   const [isPTR, setIsPTR] = useState(false)
   const trackPostView = usePostViewTracking('SearchResults')
 
-  const augmentedQuery = useMemo(() => {
+  const searchV2Enabled = ax.features.enabled(ax.features.SearchV2Enable)
+
+  const augmentedV2Query = useMemo(() => {
     return augmentSearchQuery(query || '', {did: currentAccount?.did})
   }, [query, currentAccount])
+  const augmentedV1Query = useMemo(() => {
+    return augmentSearchQuery(queryWithParams || '', {did: currentAccount?.did})
+  }, [queryWithParams, currentAccount])
 
   const useParaQuery = !!paraFilters && hasParaSearchFilters(paraFilters)
 
-  const bskyQuery = useSearchPostsQuery({
-    query: augmentedQuery,
+  /*
+   * Both hooks are called to keep hook order stable; `enabled` ensures only the
+   * gated one actually fetches. V2 sends structured `filters` as separate
+   * params, V1 keeps the existing single-`q` behavior. PARA filters always route
+   * to the PARA search endpoint.
+   */
+  const v1 = useSearchPostsQuery({
+    query: augmentedV1Query,
     sort,
-    enabled: active && !useParaQuery,
+    enabled: active && !searchV2Enabled && !useParaQuery,
+  })
+  const v2 = useSearchPostsV2Query({
+    query: augmentedV2Query,
+    filters,
+    sort,
+    enabled: active && searchV2Enabled && !useParaQuery,
   })
 
   const paraQuery = useParaSearchPostsQuery({
-    query: augmentedQuery,
+    query: augmentedV2Query,
     sort,
     enabled: active && useParaQuery,
     communityUris: paraFilters?.communityUris,
     cabildeoUris: paraFilters?.cabildeoUris,
     politicalCompassPositions: paraFilters?.politicalCompassPositions,
+    postType: paraFilters?.postType,
+    flairs: paraFilters?.flairs,
+    party: paraFilters?.party,
+    verifiedPublicFigure: paraFilters?.verifiedPublicFigure,
+    state: paraFilters?.state,
+    districtKey: paraFilters?.districtKey,
+    cabildeoPhase: paraFilters?.cabildeoPhase,
   })
 
   const {
@@ -281,7 +434,11 @@ let SearchScreenPostResults = ({
     fetchNextPage,
     isFetchingNextPage,
     hasNextPage,
-  } = useParaQuery ? paraQuery : bskyQuery
+  } = useParaQuery ? paraQuery : searchV2Enabled ? v2 : v1
+
+  const detectedQueryLanguages = searchV2Enabled
+    ? v2.data?.pages[0]?.detectedQueryLanguages
+    : undefined
 
   const t = useTheme()
   const onPullToRefresh = useCallback(async () => {
@@ -392,6 +549,17 @@ let SearchScreenPostResults = ({
           {posts.length ? (
             <List
               data={items}
+              ListHeaderComponent={
+                detectedQueryLanguages && filters && onChangeFilters ? (
+                  <View style={[a.px_lg, a.pt_lg]}>
+                    <DetectedLanguagesAdmonition
+                      detectedQueryLanguages={detectedQueryLanguages}
+                      filters={filters}
+                      onChangeFilters={onChangeFilters}
+                    />
+                  </View>
+                ) : null
+              }
               renderItem={({item, index}) => {
                 if (item.type === 'post') {
                   return (
@@ -419,7 +587,9 @@ let SearchScreenPostResults = ({
               }
             />
           ) : (
-            <EmptyState messageText={<NoResultsText query={query} />} />
+            <EmptyState
+              messageText={<NoResultsText hasFilters={hasFilters} query={query} />}
+            />
           )}
         </>
       ) : (

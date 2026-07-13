@@ -78,7 +78,7 @@ export function MediaBoardCard({
               <CommentIcon size="sm" style={t.atoms.text_contrast_medium} />
             }
             label={String(item.comments)}
-            onPress={() => {}}
+            onPress={onExpand}
           />
         </View>
       </View>

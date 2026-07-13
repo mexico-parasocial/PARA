@@ -8,6 +8,7 @@ import {
 } from '@atproto/api'
 import {nanoid} from 'nanoid/non-secure'
 
+import {type VideoTelemetry} from '#/lib/media/video/telemetry'
 import {type SelfLabel} from '#/lib/moderation'
 import {type ComposerFlair} from '#/lib/post-flairs'
 import {insertMentionAt} from '#/lib/strings/mention-manip'
@@ -95,6 +96,7 @@ export type PostAction =
       type: 'embed_add_video'
       asset: ImagePickerAsset
       abortController: AbortController
+      telemetry: VideoTelemetry
     }
   | {type: 'embed_remove_video'}
   | {type: 'embed_update_video'; videoAction: VideoAction}
@@ -167,6 +169,7 @@ export type ComposerAction =
     }
 
 export const MAX_IMAGES = 4
+export const LEGACY_IMAGES_EMBED_MAX = 4
 
 export function composerReducer(
   state: ComposerState,
@@ -448,7 +451,11 @@ function postReducer(state: PostDraft, action: PostAction): PostDraft {
       if (!prevMedia) {
         nextMedia = {
           type: 'video',
-          video: createVideoState(action.asset, action.abortController),
+          video: createVideoState(
+            action.asset,
+            action.abortController,
+            action.telemetry,
+          ),
         }
       }
       return {

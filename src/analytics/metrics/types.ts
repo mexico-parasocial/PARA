@@ -5,6 +5,7 @@
 import {type Platform} from 'react-native'
 
 import {type NotificationReason} from '#/lib/hooks/useNotificationHandler'
+import {type VideoCompressSkipReason} from '#/lib/media/video/types'
 import {type NotificationType} from '#/state/queries/notifications/types'
 import {type FeedDescriptor} from '#/state/queries/post-feed'
 import {type LiveEventFeedMetricContext} from '#/features/liveEvents/types'
@@ -77,7 +78,6 @@ export type Events = {
       | 'saved'
       | 'settings'
       | 'menu'
-      | 'data'
     surface: 'bottomBar' | 'drawer' | 'drawerHeader' | 'topBar' | 'leftNav'
   }
   'deepLink:referrerReceived': {
@@ -94,13 +94,6 @@ export type Events = {
   'welcomeModal:signinClicked': {}
   'welcomeModal:dismissed': {}
   'welcomeModal:presented': {}
-  'community:create:ctaShown': {}
-  'community:create:eligibilityDenied': {}
-  'community:create:ctaClicked': {}
-  'community:create:submitStarted': {}
-  'community:create:submitSucceeded': {}
-  'community:create:submitFailed': {}
-  'community:create:wizardCompleted': {}
   'signup:nextPressed': {
     activeStep: number
     phoneVerificationRequired?: boolean
@@ -181,14 +174,6 @@ export type Events = {
   'onboarding:valueProp:stepOne:nextPressed': {}
   'onboarding:valueProp:stepTwo:nextPressed': {}
   'onboarding:valueProp:skipPressed': {}
-  'onboarding:community:nextPressed': {
-    community: string
-  }
-  'onboarding:community:skipPressed': {}
-  'onboarding:compass:nextPressed': {
-    answeredCount: number
-  }
-  'onboarding:compass:skipPressed': {}
   'home:feedDisplayed': {
     feedUrl: string
     feedType: string
@@ -288,8 +273,6 @@ export type Events = {
       | 'QuotePost'
       | 'ProfileFeed'
       | 'Deeplink'
-      | 'ComposerPrompt'
-      | 'Navigation'
       | 'Other'
     isReply: boolean
     hasQuote: boolean
@@ -367,12 +350,6 @@ export type Events = {
     logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
     feedDescriptor?: string
   }
-  'post:quote': {
-    uri: string
-    authorDid: string
-    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
-    feedDescriptor?: string
-  }
   'post:unlike': {
     uri: string
     authorDid: string
@@ -380,12 +357,6 @@ export type Events = {
     feedDescriptor?: string
   }
   'post:unrepost': {
-    uri: string
-    authorDid: string
-    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
-    feedDescriptor?: string
-  }
-  'post:unquote': {
     uri: string
     authorDid: string
     logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
@@ -404,18 +375,6 @@ export type Events = {
     logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
     feedDescriptor?: string
     position?: number
-  }
-  'postSubscription:enable': {
-    uri: string
-    authorDid: string
-    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
-    feedDescriptor?: string
-  }
-  'postSubscription:disable': {
-    uri: string
-    authorDid: string
-    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
-    feedDescriptor?: string
   }
   'post:pin': {}
   'post:unpin': {}
@@ -644,14 +603,77 @@ export type Events = {
     convoId: string
   }
 
-  // Group chat adoption / interactions
+  // Group chat adoption
   'groupchat:create': {
     logContext: 'NewChatDialog'
+  }
+  'groupchat:landingPage:view': {
+    hasSession: boolean
+  }
+  'groupchat:inviteLink:redeem': {}
+
+  // Group chat user interactions
+  'groupchat:message:send': {
+    convoId: string
+    isOwner: boolean
+  }
+  'groupchat:mute': {
+    convoId: string
+  }
+  'groupchat:unmute': {
+    convoId: string
+  }
+  'groupchat:leave': {
+    convoId: string
+    isOwner: boolean
+  }
+  'groupchat:settings:view': {
+    convoId: string
+    isOwner: boolean
+  }
+  'groupchat:inviteLink:shareButton:press': {
+    convoId: string
+    method: 'post' | 'copy' | 'native'
   }
   'groupchat:inviteLink:shared': {
     convoId: string
     method: 'post' | 'dm'
   }
+
+  // Group chat owner actions
+  'groupchat:owner:editName': {
+    convoId: string
+  }
+  'groupchat:owner:lock': {
+    convoId: string
+  }
+  'groupchat:owner:unlock': {
+    convoId: string
+  }
+  'groupchat:owner:kickMember': {
+    convoId: string
+  }
+  'groupchat:owner:inviteMember': {
+    convoId: string
+  }
+  'groupchat:owner:joinRequest:accept': {
+    convoId: string
+  }
+  'groupchat:owner:joinRequest:reject': {
+    convoId: string
+  }
+  'groupchat:owner:inviteLink:create': {
+    convoId: string
+  }
+  'groupchat:owner:inviteLink:disable': {
+    convoId: string
+  }
+
+  // Group chat problems
+  'groupchat:join:memberLimitReached': {
+    convoId: string
+  }
+
   'starterPack:addUser': {
     starterPack?: string
   }
@@ -753,6 +775,9 @@ export type Events = {
 
   'search:query': {
     source: 'typed' | 'history' | 'autocomplete'
+    filterCount: number
+    paraFilterCount: number
+    paraFilters: string[]
   }
 
   'search:results:loaded': {
@@ -775,6 +800,26 @@ export type Events = {
   'search:autocomplete:press': {
     profileDid: string
     position: number
+  }
+
+  'search:advanced:press': {
+    filterCount: number
+    paraFilterCount: number
+    paraFilters: string[]
+  }
+
+  'search:shareLink:press': {
+    filterCount: number
+    paraFilterCount: number
+    paraFilters: string[]
+  }
+
+  'search:addFilter:press': {
+    filterCount: number
+  }
+
+  'search:paraFilter:applied': {
+    filter: string
   }
 
   'progressGuide:hide': {}
@@ -1080,7 +1125,7 @@ export type Events = {
   'activityPreference:changeChannels': {
     name: string
     push: boolean
-    list: boolean
+    list?: boolean
   }
   'activityPreference:changeFilter': {
     name: string
@@ -1270,5 +1315,139 @@ export type Events = {
     postUri: string
     postAuthorDid: string
     feedDescriptor?: string
+  }
+
+  /*
+   * Invite friends (profile QR share sheet)
+   */
+
+  // NUX announcement dialog was shown to the user
+  'invite:nux:presented': {}
+  // user pressed "Try it" on the NUX announcement
+  'invite:nux:tryItPressed': {}
+  // invite friends dialog opened, with the surface that triggered it
+  'invite:dialog:open': {
+    logContext:
+      | 'ProfileHeader'
+      | 'Drawer'
+      | 'FindContactsSettings'
+      | 'NuxAnnouncement'
+  }
+  // user copied the invite link to clipboard
+  'invite:action:copy': {}
+  // user invoked the native share sheet with the invite link
+  'invite:action:share': {}
+  // user saved the QR code image to their camera roll (success only)
+  'invite:action:download': {}
+  // user pressed the scan button to open the QR scanner
+  'invite:action:scan': {}
+  // user changed the QR card color theme
+  'invite:theme:change': {
+    themeKey: 'dawn' | 'sunlight' | 'day' | 'dusk' | 'twilight' | 'night'
+  }
+  // QR scanner decoded a code; result indicates whether it resolved to a profile
+  'invite:scanner:scanned': {
+    result: 'profileFound' | 'invalidQr'
+  }
+  // empty-followers banner promoting invite/find friends was shown
+  'invite:followersPromo:seen': {}
+  // user pressed the empty-followers promo banner
+  'invite:followersPromo:press': {}
+  // user dismissed the empty-followers promo banner
+  'invite:followersPromo:dismiss': {}
+
+  // === Video upload funnel (Frontend Spec section D) ===
+  // Every event carries uploadId (client-generated UUID, ties one upload
+  // session end-to-end) + engine (compression engine id, e.g.
+  // native:react-native-compressor@1.13.0). jobId is added once the server
+  // returns it. Sizes / codecs / dimensions / timings only - never content.
+  'video:upload:picked': {
+    uploadId: string
+    engine: string
+    sourceMimeType?: string
+    sourceBytes?: number
+    sourceDurationMs?: number
+    sourceWidth?: number
+    sourceHeight?: number
+  }
+  'video:upload:compressStarted': {
+    uploadId: string
+    engine: string
+    sourceBytes?: number
+  }
+  'video:upload:compressCompleted': {
+    uploadId: string
+    engine: string
+    bytesIn?: number
+    bytesOut: number
+    outputMimeType: string
+    elapsedMs: number
+  }
+  'video:upload:compressSkipped': {
+    uploadId: string
+    engine: string
+    skipReason: VideoCompressSkipReason
+    bytes: number
+    mimeType: string
+    elapsedMs: number
+  }
+  'video:upload:compressFailed': {
+    uploadId: string
+    engine: string
+    errorClass: string
+    elapsedMs: number
+  }
+  'video:upload:uploadStarted': {
+    uploadId: string
+    engine: string
+    bytes: number
+  }
+  'video:upload:uploadCompleted': {
+    uploadId: string
+    engine: string
+    jobId: string
+    bytes: number
+    elapsedMs: number
+    throughputBytesPerSec: number
+  }
+  'video:upload:uploadFailed': {
+    uploadId: string
+    engine: string
+    bytes: number
+    errorClass: string
+    elapsedMs: number
+  }
+  'video:upload:processingStarted': {
+    uploadId: string
+    engine: string
+    jobId: string
+  }
+  'video:upload:processingCompleted': {
+    uploadId: string
+    engine: string
+    jobId: string
+    elapsedMs: number
+  }
+  'video:upload:processingFailed': {
+    uploadId: string
+    engine: string
+    jobId: string
+    errorClass: string
+    elapsedMs: number
+  }
+  'video:upload:published': {
+    uploadId: string
+    engine: string
+    jobId: string
+    // wall-clock from picked to published
+    totalElapsedMs: number
+  }
+  // The event that measures the actual problem: users giving up mid-wait.
+  'video:upload:abandoned': {
+    uploadId: string
+    engine: string
+    phase: 'compress' | 'upload' | 'processing'
+    jobId?: string
+    elapsedInPhaseMs: number
   }
 }

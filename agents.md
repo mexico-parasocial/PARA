@@ -498,3 +498,46 @@ const styles = StyleSheet.create({
 4. **Reference implementation:** `RepresentativesScreen` is the canonical example.
 5. **Screens already standardized:** `RepresentativesScreen`, `MyBaseDashboard`, `MyAffiliationsScreen`.
 6. **Rationale:** `WebCenterBorders` renders vertical divider lines at `width: 602px` centered. `padding: 16` ensures content doesn't butt up against these borders and matches native card spacing.
+
+
+---
+
+## Search Filters
+
+The search screen supports two layers of filters:
+
+1. **Upstream/advanced filters** (`author`, `mentions`, `domain`, `tag`, `since`, `until`, etc.) modeled in `src/screens/Search/searchParams.ts` and sent to `app.bsky.feed.searchPosts` (v1) or `app.bsky.feed.searchPostsV2` (v2) when `SearchV2Enable` is on.
+2. **PARA-specific filters** (`postType`, `flairs`, `party`, `verifiedPublicFigure`, `state`, `districtKey`, `cabildeoPhase`, plus the array-based `tag`, `communityUris`, `cabildeoUris`, `politicalCompassPositions`) that route the query to `com.para.feed.searchPosts` as soon as any of them is active.
+
+### Where to edit
+
+- `src/screens/Search/searchParams.ts` — source of truth for route-param serialization. Use `searchFiltersToParaFilters()` and `paraFiltersToSearchFilters()` to convert between the string-based route representation and the structured `ParaSearchPostsFilters` type.
+- `src/screens/Search/ParaSearchFiltersBar.tsx` — horizontal chip bar. It is controlled by `SearchFilters` and reports changes back through `onChange(filters: SearchFilters)`.
+- `src/screens/Search/SearchResults.tsx` — derives `ParaSearchPostsFilters` from route `SearchFilters` and forwards them to `useParaSearchPostsQuery`.
+- `src/view/shell/desktop/Search.tsx` — desktop header entry point for the advanced filter dialog.
+
+### Routing / share links
+
+All PARA filters are now encoded as route params so they survive URL/share links and search history:
+
+- `tag` stays space-separated (upstream convention).
+- All other list filters (`flairs`, `communityUris`, `cabildeoUris`, `politicalCompassPositions`) are comma-separated.
+- `verifiedPublicFigure` is stored as the string `'true'`.
+
+### Feature flags
+
+- `SearchV2Enable` — toggles between Bluesky search v1 and structured v2 when no PARA filters are active.
+- `AdvancedSearchV2Enable` — gates the advanced search dialog UI (currently wired alongside the PARA chip bar).
+
+### After changing filters or strings
+
+```bash
+cd PARA
+pnpm intl:extract
+pnpm intl:compile
+pnpm test src/screens/Search/__tests__/searchParams.test.ts
+```
+
+### Backend counterpart
+
+`com.para.feed.searchPosts` lives in `WatZappa/packages/bsky/src/api/com/para/feed/searchPosts.ts` and the data-plane SQL in `WatZappa/packages/bsky/src/data-plane/server/routes/search.ts`. After any lexicon change, run `cd WatZappa && make codegen`.

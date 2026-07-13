@@ -8,14 +8,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import {
-  FlatList,
-  Pressable,
-  type StyleProp,
-  useWindowDimensions,
-  View,
-  type ViewStyle,
-} from 'react-native'
+import {FlatList, Pressable, useWindowDimensions, View} from 'react-native'
 import Animated, {
   type AnimatedRef,
   useAnimatedRef,
@@ -47,7 +40,7 @@ import {ImageContextMenu} from '#/components/Post/Embed/ImageContextMenu'
 import {PostEmbedViewContext} from '#/components/Post/Embed/types'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
-import {IS_WEB} from '#/env'
+import {IS_ANDROID, IS_WEB} from '#/env'
 
 export * from './const'
 export * from './maybeApplyGalleryOffsetStyles'
@@ -56,11 +49,14 @@ interface GalleryProps {
   images: AppBskyEmbedImages.ViewImage[]
   onPress?: (
     index: number,
-    containerRefs: AnimatedRef<View>[],
+    containerRefs: AnimatedRef<any>[],
     fetchedDims: (Dimensions | null)[],
   ) => void
   onPressIn?: (index: number) => void
   viewContext?: PostEmbedViewContext
+  isWithinQuote?: boolean
+  // Post context for the in-feed carousel swipe metric. Omit for non-post
+  // contexts (no event will be emitted).
   metricsPostContext?: {
     postUri: string
     postAuthorDid: string
@@ -84,17 +80,12 @@ export function GalleryBleed({children}: {children: React.ReactNode}) {
     throw new Error('GalleryBleed children must be a single React element')
   }
 
-  const node = children as React.ReactElement<{
-    ref?: React.Ref<unknown>
-    onLayout?: (e: {nativeEvent: {layout: {width: number}}}) => void
-    style?: StyleProp<ViewStyle>
-  }>
+  const node = children as React.ReactElement<any>
 
   return (
     <Context.Provider value={{bleedRef: ref, bleedWidth}}>
       {cloneElement(node, {
-        // eslint-disable-next-line react-hooks/refs
-        ref: mergeRefs([ref, node.props.ref]),
+        ref: mergeRefs([ref, node?.props?.ref]),
         onLayout: (e: {nativeEvent: {layout: {width: number}}}) => {
           setBleedWidth(e.nativeEvent.layout.width)
           node.props.onLayout?.(e)
@@ -114,6 +105,7 @@ export function Gallery({
   onPress,
   onPressIn,
   viewContext,
+  isWithinQuote,
   metricsPostContext,
 }: GalleryProps) {
   const {t: l} = useLingui()
@@ -122,13 +114,19 @@ export function Gallery({
   const largeAltBadge = useLargeAltBadgeEnabled()
   const bps = useBreakpoints()
   const window = useWindowDimensions()
-  const isWithinQuote =
-    viewContext === PostEmbedViewContext.FeedEmbedRecordWithMedia
   const isWithinChat = viewContext === PostEmbedViewContext.ChatMessage
-  const hideBadges = isWithinQuote
   const contentHeight = useMemo(() => {
     if (isWithinChat) {
       return 120
+    }
+    if (isWithinQuote) {
+      if (bps.gtMobile) {
+        return 220
+      } else if (bps.gtPhone) {
+        return 190
+      } else {
+        return 150
+      }
     }
     if (bps.gtMobile) {
       return 300
@@ -137,7 +135,7 @@ export function Gallery({
     } else {
       return 200
     }
-  }, [bps, isWithinChat])
+  }, [bps, isWithinChat, isWithinQuote])
 
   /*
    * Container overflow styles
@@ -171,7 +169,7 @@ export function Gallery({
   const flatListRef = useRef<FlatList>(null)
   const itemWidthsRef = useRef<Map<number, number>>(new Map())
   const itemRefsRef = useRef<Map<number, View>>(new Map())
-  const containerRefsRef = useRef<Map<number, AnimatedRef<View>>>(new Map())
+  const containerRefsRef = useRef<Map<number, AnimatedRef<any>>>(new Map())
   const thumbDimsRef = useRef<Map<number, Dimensions>>(new Map())
   const currentIndexRef = useRef(0)
 
@@ -180,8 +178,8 @@ export function Gallery({
       debounce((fromIndex: number, toIndex: number) => {
         if (!metricsPostContext) return
         ax.metric('post:photoEmbed:carouselSwipe', {
-          fromImage: fromIndex + 1,
-          toImage: toIndex + 1,
+          fromImage: fromIndex + 1, // convert to 1-based index for easier analysis
+          toImage: toIndex + 1, // convert to 1-based index for easier analysis
           totalImages: images.length,
           postUri: metricsPostContext.postUri,
           postAuthorDid: metricsPostContext.postAuthorDid,
@@ -242,7 +240,7 @@ export function Gallery({
             crop={
               viewContext === PostEmbedViewContext.ThreadHighlighted
                 ? 'none'
-                : viewContext === PostEmbedViewContext.FeedEmbedRecordWithMedia
+                : isWithinQuote
                   ? 'square'
                   : 'constrained'
             }
@@ -251,9 +249,6 @@ export function Gallery({
               onPress?.(index, [containerRef], [dims])
             }
             onPressIn={() => onPressIn?.(index)}
-            hideBadge={
-              viewContext === PostEmbedViewContext.FeedEmbedRecordWithMedia
-            }
           />
         ))}
       </View>
@@ -279,19 +274,20 @@ export function Gallery({
           aria-label={l`Image gallery, ${images.length} images`}
           horizontal
           pagingEnabled={false}
+          // Disable Android's stretch overscroll, which can leave the carousel
+          // settled just off the left edge instead of aligned to x = 0
+          overScrollMode={IS_ANDROID ? 'never' : 'auto'}
           showsHorizontalScrollIndicator={false}
           directionalLockEnabled
           nestedScrollEnabled
           alwaysBounceVertical={false}
           scrollEventThrottle={16}
           data={images}
-          keyExtractor={(item: AppBskyEmbedImages.ViewImage, index: number) =>
-            item.thumb + index
-          }
+          keyExtractor={(item, index) => item.thumb + index}
           renderItem={({item, index}) => {
             const openLightboxAtIndex = onPress
               ? () => {
-                  const refs: AnimatedRef<View>[] = []
+                  const refs: AnimatedRef<any>[] = []
                   const dims: (Dimensions | null)[] = []
                   for (let i = 0; i < images.length; i++) {
                     refs.push(containerRefsRef.current.get(i)!)
@@ -302,7 +298,6 @@ export function Gallery({
               : undefined
             return (
               <GalleryImage
-                hideBadges={hideBadges}
                 largeAltBadge={largeAltBadge}
                 image={item}
                 contentHeight={contentHeight}
@@ -353,6 +348,11 @@ export function Gallery({
               marginLeft: -insetLeft,
               width,
             },
+            // Prevent horizontal trackpad/wheel swipes from triggering the
+            // browser's back/forward overscroll-navigation gesture. Handles
+            // Chrome and Firefox; Safari is handled via the wheel listener in
+            // usePointerHandlers.web.ts since it ignores overscroll-behavior.
+            web({overscrollBehaviorX: 'contain'}),
           ]}
           contentContainerStyle={{
             gap: ITEM_GAP,
@@ -393,7 +393,6 @@ function GalleryImage({
   imageCount,
   onWidthChange,
   itemRef,
-  hideBadges,
   largeAltBadge,
   onContainerRef,
   onThumbDims,
@@ -407,9 +406,8 @@ function GalleryImage({
   imageCount: number
   onWidthChange: (index: number, width: number) => void
   itemRef: (node: View | null) => void
-  hideBadges?: boolean
   largeAltBadge?: boolean
-  onContainerRef: (index: number, ref: AnimatedRef<View>) => void
+  onContainerRef: (index: number, ref: AnimatedRef<any>) => void
   onThumbDims: (index: number, dims: Dimensions) => void
   onPress?: () => void
   onPressIn?: () => void
@@ -493,9 +491,10 @@ function GalleryImage({
                 height: e.source.height,
               })
             }}
+            useAppleWebpCodec
           />
 
-          {!hideBadges && imageCount > 1 ? (
+          {imageCount > 1 ? (
             <View
               accessible={false}
               pointerEvents="none"
@@ -527,7 +526,8 @@ function GalleryImage({
               </Text>
             </View>
           ) : null}
-          {(hasAlt || isCropped) && !hideBadges ? (
+
+          {hasAlt || isCropped ? (
             <View
               accessible={false}
               style={[
@@ -544,6 +544,7 @@ function GalleryImage({
               ]}>
               {isCropped && (
                 <View
+                  accessible={false}
                   style={[
                     a.rounded_sm,
                     a.p_xs,
@@ -563,6 +564,7 @@ function GalleryImage({
               )}
               {hasAlt && (
                 <View
+                  accessible={false}
                   style={[
                     a.justify_center,
                     a.rounded_sm,

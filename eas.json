@@ -1,6 +1,6 @@
 {
   "cli": {
-    "version": ">=18.13.1",
+    "version": ">=18",
     "promptToConfigurePushNotifications": false,
     "appVersionSource": "remote"
   },
@@ -47,23 +47,6 @@
         "EXPO_PUBLIC_ENV": "production"
       }
     },
-    "production-apk": {
-      "extends": "base",
-      "distribution": "internal",
-      "ios": {
-        "autoIncrement": false,
-        "buildArtifactPaths": ["ios/build/*"]
-      },
-      "android": {
-        "autoIncrement": false
-      },
-      "channel": "production",
-      "env": {
-        "EXPO_PUBLIC_ENV": "production",
-        "GOOGLE_MAPS_IOS_API_KEY": "AIzaSyBHs7l9k9kuAXPD4RGQ1BZWtNVq-hYeyXY",
-        "GOOGLE_MAPS_ANDROID_API_KEY": "AIzaSyBHs7l9k9kuAXPD4RGQ1BZWtNVq-hYeyXY"
-      }
-    },
     "testflight": {
       "extends": "base",
       "ios": {
@@ -80,7 +63,6 @@
     },
     "testflight-android": {
       "extends": "base",
-      "distribution": "internal",
       "ios": {
         "autoIncrement": true,
         "buildArtifactPaths": ["ios/build/*"]
@@ -98,6 +80,14 @@
     "production": {
       "ios": {
         "ascAppId": "6444370199"
+      },
+      "android": {
+        "track": "production"
+      }
+    },
+    "testflight-android": {
+      "android": {
+        "track": "internal"
       }
     }
   }

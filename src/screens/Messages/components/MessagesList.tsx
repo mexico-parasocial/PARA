@@ -57,7 +57,6 @@ import {createEmbedViewRecordFromPost} from '#/state/queries/postgate/util'
 import {useAgent, useSession} from '#/state/session'
 import {List, type ListMethods} from '#/view/com/util/List'
 import {MessageComposer} from '#/screens/Messages/components/MessageComposer'
-import {MessageInput} from '#/screens/Messages/components/MessageInput'
 import {MessageListError} from '#/screens/Messages/components/MessageListError'
 import {atoms as a, platform, tokens, useTheme, web} from '#/alf'
 import {DateDivider} from '#/components/dms/DateDivider'
@@ -685,7 +684,7 @@ export function MessagesList({
             <KeyboardStickyView
               style={[a.absolute, a.bottom_0, a.left_0, a.right_0]}
               onLayout={onInputLayout}
-              minimumOffset={bottomInset}
+              minimumOffset={IS_WEB ? 0 : bottomInset}
               offset={{
                 closed: platform({
                   ios: tokens.space.lg, // hide bottom padding when closed
@@ -705,9 +704,7 @@ export function MessagesList({
                         messageEmbed={messageEmbed}
                         setEmbed={setEmbed}
                         loading={loading}
-                        useNewComposer={ax.features.enabled(
-                          ax.features.DmsNewMessageComposerEnable,
-                        )}
+
                       />
                     )}
                   </ConversationFooter>
@@ -736,7 +733,6 @@ function Composer({
   messageEmbed,
   setEmbed,
   loading,
-  useNewComposer,
 }: {
   textInputId: string
   onSendMessage: (
@@ -746,7 +742,6 @@ function Composer({
   messageEmbed: MessageEmbedState | undefined
   setEmbed: (embedUrl: string | undefined) => void
   loading?: boolean
-  useNewComposer: boolean
 }) {
   const handleSendMessage = useNonReactiveCallback(
     (message: string, replyTo?: $Typed<ChatBskyConvoDefs.MessageView>) => {
@@ -754,31 +749,16 @@ function Composer({
     },
   )
 
-  const previews = (
-    <>
-      <MessageInputReply />
-      <MessageInputEmbed embed={messageEmbed} setEmbed={setEmbed} />
-    </>
-  )
-
-  return useNewComposer ? (
+  return (
     <MessageComposer
       textInputId={textInputId}
       onSendMessage={handleSendMessage}
       hasEmbed={!!messageEmbed}
       setEmbed={setEmbed}
       loading={loading}>
-      {previews}
+      <MessageInputReply />
+      <MessageInputEmbed embed={messageEmbed} setEmbed={setEmbed} />
     </MessageComposer>
-  ) : (
-    <MessageInput
-      textInputId={textInputId}
-      onSendMessage={handleSendMessage}
-      hasEmbed={!!messageEmbed}
-      setEmbed={setEmbed}
-      loading={loading}>
-      {previews}
-    </MessageInput>
   )
 }
 

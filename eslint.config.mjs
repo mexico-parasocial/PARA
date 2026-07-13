@@ -304,6 +304,21 @@ export default defineConfig(
   },
 
   /**
+   * Webpack config - Node.js file with loose typing
+   */
+  {
+    files: ['webpack.config.js'],
+    rules: {
+      'import-x/no-nodejs-modules': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+      '@typescript-eslint/no-unsafe-return': 'off',
+    },
+  },
+
+  /**
    * Test files configuration
    */
   {

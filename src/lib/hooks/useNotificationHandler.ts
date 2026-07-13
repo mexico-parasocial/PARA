@@ -132,13 +132,13 @@ export function useNotificationsHandler() {
     // NOTE: I don't think that it will retroactively move them into the group
     // if the channels already exist. no big deal imo -sfn
     const CHAT_GROUP = 'chat'
-    Notifications.setNotificationChannelGroupAsync(CHAT_GROUP, {
+    void Notifications.setNotificationChannelGroupAsync(CHAT_GROUP, {
       name: _(msg`Chat`),
       description: _(
         msg`You can choose whether chat notifications have sound in the chat settings within the app`,
       ),
     })
-    Notifications.setNotificationChannelAsync('chat-messages', {
+    void Notifications.setNotificationChannelAsync('chat-messages', {
       name: _(msg`Chat messages - sound`),
       groupId: CHAT_GROUP,
       importance: Notifications.AndroidImportance.MAX,
@@ -147,7 +147,7 @@ export function useNotificationsHandler() {
       vibrationPattern: [250],
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PRIVATE,
     })
-    Notifications.setNotificationChannelAsync('chat-messages-muted', {
+    void Notifications.setNotificationChannelAsync('chat-messages-muted', {
       name: _(msg`Chat messages - silent`),
       groupId: CHAT_GROUP,
       importance: Notifications.AndroidImportance.MAX,
@@ -157,63 +157,63 @@ export function useNotificationsHandler() {
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PRIVATE,
     })
 
-    Notifications.setNotificationChannelAsync(
+    void Notifications.setNotificationChannelAsync(
       'like' satisfies NotificationReason,
       {
         name: _(msg`Likes`),
         importance: Notifications.AndroidImportance.HIGH,
       },
     )
-    Notifications.setNotificationChannelAsync(
+    void Notifications.setNotificationChannelAsync(
       'repost' satisfies NotificationReason,
       {
         name: _(msg`Reposts`),
         importance: Notifications.AndroidImportance.HIGH,
       },
     )
-    Notifications.setNotificationChannelAsync(
+    void Notifications.setNotificationChannelAsync(
       'reply' satisfies NotificationReason,
       {
         name: _(msg`Replies`),
         importance: Notifications.AndroidImportance.HIGH,
       },
     )
-    Notifications.setNotificationChannelAsync(
+    void Notifications.setNotificationChannelAsync(
       'mention' satisfies NotificationReason,
       {
         name: _(msg`Mentions`),
         importance: Notifications.AndroidImportance.HIGH,
       },
     )
-    Notifications.setNotificationChannelAsync(
+    void Notifications.setNotificationChannelAsync(
       'quote' satisfies NotificationReason,
       {
         name: _(msg`Quotes`),
         importance: Notifications.AndroidImportance.HIGH,
       },
     )
-    Notifications.setNotificationChannelAsync(
+    void Notifications.setNotificationChannelAsync(
       'follow' satisfies NotificationReason,
       {
         name: _(msg`New followers`),
         importance: Notifications.AndroidImportance.HIGH,
       },
     )
-    Notifications.setNotificationChannelAsync(
+    void Notifications.setNotificationChannelAsync(
       'like-via-repost' satisfies NotificationReason,
       {
         name: _(msg`Likes of your reposts`),
         importance: Notifications.AndroidImportance.HIGH,
       },
     )
-    Notifications.setNotificationChannelAsync(
+    void Notifications.setNotificationChannelAsync(
       'repost-via-repost' satisfies NotificationReason,
       {
         name: _(msg`Reposts of your reposts`),
         importance: Notifications.AndroidImportance.HIGH,
       },
     )
-    Notifications.setNotificationChannelAsync(
+    void Notifications.setNotificationChannelAsync(
       'subscribed-post' satisfies NotificationReason,
       {
         name: _(msg`Activity from others`),
@@ -240,7 +240,7 @@ export function useNotificationsHandler() {
 
           const account = accounts.find(a => a.did === payload.recipientDid)
           if (account) {
-            onPressSwitchAccount(account, 'Notification')
+            void onPressSwitchAccount(account, 'Notification')
           } else {
             setShowLoggedOut(true)
           }
@@ -310,7 +310,7 @@ export function useNotificationsHandler() {
             a => a.did === matrixPayload.recipientDid,
           )
           if (account) {
-            onPressSwitchAccount(account, 'Notification')
+            void onPressSwitchAccount(account, 'Notification')
           } else {
             setShowLoggedOut(true)
           }
@@ -344,10 +344,10 @@ export function useNotificationsHandler() {
     }
 
     Notifications.setNotificationHandler({
-      handleNotification: async e => {
+      handleNotification: e => {
         const payload = getNotificationPayload(e)
 
-        if (!payload) return DEFAULT_HANDLER_OPTIONS
+        if (!payload) return Promise.resolve(DEFAULT_HANDLER_OPTIONS)
 
         logger.debug('useNotificationsHandler: incoming', {e, payload})
 
@@ -362,17 +362,17 @@ export function useNotificationsHandler() {
             payload.reason === 'chat-removed-from-group' ||
             payload.reason === 'chat-join-request-rejected' ||
             payload.convoId !== currentConvoId
-          return {
+          return Promise.resolve({
             shouldShowList: shouldAlert,
             shouldShowBanner: shouldAlert,
             shouldPlaySound: false,
             shouldSetBadge: false,
-          } satisfies Notifications.NotificationBehavior
+          } satisfies Notifications.NotificationBehavior)
         }
 
         // Any notification other than a chat message should invalidate the unread page
         invalidateCachedUnreadPage()
-        return DEFAULT_HANDLER_OPTIONS
+        return Promise.resolve(DEFAULT_HANDLER_OPTIONS)
       },
     })
 
@@ -402,14 +402,14 @@ export function useNotificationsHandler() {
           })
 
           invalidateCachedUnreadPage()
-          truncateAndInvalidate(queryClient, RQKEY_NOTIFS('all'))
+          void truncateAndInvalidate(queryClient, RQKEY_NOTIFS('all'))
 
           if (
             payload.reason === 'mention' ||
             payload.reason === 'quote' ||
             payload.reason === 'reply'
           ) {
-            truncateAndInvalidate(queryClient, RQKEY_NOTIFS('mentions'))
+            void truncateAndInvalidate(queryClient, RQKEY_NOTIFS('mentions'))
           }
 
           logger.debug('Notifications: handleNotification', {
@@ -418,7 +418,7 @@ export function useNotificationsHandler() {
           })
 
           handleNotification(payload)
-          Notifications.dismissAllNotificationsAsync()
+          void Notifications.dismissAllNotificationsAsync()
         } else {
           logger.error('useNotificationsHandler: received no payload', {
             identifier: e.notification.request.identifier,

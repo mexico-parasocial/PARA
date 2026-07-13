@@ -13,6 +13,7 @@ export const LabelText = TextField.LabelText
 
 const InputBase = forwardRef<HTMLInputElement, TextInputProps>(
   ({style, ...props}, ref) => {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     return unstable_createElement('input', {
       ...props,
       ref,
@@ -36,11 +37,13 @@ export function DateField({
   value,
   inputRef,
   onChangeDate,
+  onConfirm,
   label,
   isInvalid,
   testID,
   accessibilityHint,
   maximumDate,
+  minimumDate,
 }: DateFieldProps) {
   const handleOnChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,23 +52,25 @@ export function DateField({
       if (date) {
         const formatted = toSimpleDateString(date)
         onChangeDate(formatted)
+        onConfirm?.(formatted)
       }
     },
-    [onChangeDate],
+    [onChangeDate, onConfirm],
   )
 
   return (
     <TextField.Root isInvalid={isInvalid}>
       <TextField.Icon icon={CalendarDays} />
       <Input
-        value={toSimpleDateString(value)}
+        value={value === '' ? '' : toSimpleDateString(value)}
         inputRef={inputRef as Ref<TextInput>}
         label={label}
+        // @ts-expect-error not typed as <input type="date"> even though it is one
         onChange={handleOnChange}
         testID={testID}
         accessibilityHint={accessibilityHint}
-        // @ts-expect-error not typed as <input type="date"> even though it is one
         max={maximumDate ? toSimpleDateString(maximumDate) : undefined}
+        min={minimumDate ? toSimpleDateString(minimumDate) : undefined}
       />
     </TextField.Root>
   )

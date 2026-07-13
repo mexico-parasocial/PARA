@@ -1,6 +1,5 @@
 import {useRef, useState} from 'react'
 import {
-  Modal,
   ScrollView,
   type StyleProp,
   StyleSheet,
@@ -19,9 +18,12 @@ import {useCompassFilter} from '#/state/shell/compass-filter'
 import {Text} from '#/view/com/util/text/Text'
 import {BlockDrawerGesture} from '#/view/shell/BlockDrawerGesture'
 import {atoms as a, useTheme} from '#/alf'
+import {Button, ButtonText} from '#/components/Button'
 import {CommunityCard} from '#/components/CommunityCard'
+import * as Dialog from '#/components/Dialog'
 import * as Toggle from '#/components/forms/Toggle'
 import {Compass_Stroke2_Corner0_Rounded as CompassIcon} from '#/components/icons/Compass'
+import {Text as NewText} from '#/components/Typography'
 import {WebScrollControls} from '#/components/WebScrollControls'
 import {WheelPicker} from '#/components/WheelPicker'
 import {IS_WEB} from '#/env'
@@ -74,7 +76,7 @@ export function ActiveFiltersStackButton() {
   const t = useTheme()
   const navigation = useNavigation<NavigationProp>()
   const {activeFilters, removeActiveFilter} = useCompassFilter()
-  const [showFilters, setShowFilters] = useState(false)
+  const control = Dialog.useDialogControl()
   const visibleFilters = activeFilters.slice(0, FILTER_STACK_MAX)
   const remainingFilters = Math.max(
     activeFilters.length - visibleFilters.length,
@@ -90,7 +92,7 @@ export function ActiveFiltersStackButton() {
           msg`Shows active filters and lets you remove them`,
         )}
         style={styles.activeFiltersButton}
-        onPress={() => setShowFilters(true)}>
+        onPress={() => control.open()}>
         {activeFilters.length === 0 ? (
           <CompassIcon size="lg" style={t.atoms.text} />
         ) : (
@@ -143,36 +145,31 @@ export function ActiveFiltersStackButton() {
         )}
       </TouchableOpacity>
 
-      <Modal
-        visible={showFilters}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowFilters(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.activeFiltersModalContent, t.atoms.bg]}>
-            <View style={styles.modalHandle} />
-            <Text style={[styles.modalTitle, t.atoms.text]}>
+      <Dialog.Outer control={control}>
+        <Dialog.Handle />
+        <Dialog.ScrollableInner
+          label={_(msg`Active filters`)}
+          style={IS_WEB ? [{maxWidth: 600, width: '100%'}] : undefined}>
+          <View style={a.gap_md}>
+            <NewText style={[a.text_xl, a.font_bold, t.atoms.text]}>
               <Trans>Active filters</Trans>
-            </Text>
-            <Text
-              style={[
-                styles.activeFiltersSubtitle,
-                t.atoms.text_contrast_medium,
-              ]}>
+            </NewText>
+            <NewText
+              style={[a.text_sm, t.atoms.text_contrast_medium, a.text_center]}>
               <Trans>
                 Remove filters here. To add or change filters, go back to Base.
               </Trans>
-            </Text>
+            </NewText>
 
             <View style={styles.activeFiltersList}>
               {activeFilters.length === 0 ? (
-                <Text
+                <NewText
                   style={[
                     styles.activeFiltersEmpty,
                     t.atoms.text_contrast_medium,
                   ]}>
                   <Trans>No active filters</Trans>
-                </Text>
+                </NewText>
               ) : (
                 activeFilters.map((filter, index) => (
                   <View
@@ -188,9 +185,9 @@ export function ActiveFiltersStackButton() {
                           {backgroundColor: getFilterColor(filter, index)},
                         ]}
                       />
-                      <Text style={[styles.activeFilterLabel, t.atoms.text]}>
+                      <NewText style={[styles.activeFilterLabel, t.atoms.text]}>
                         {filter}
-                      </Text>
+                      </NewText>
                     </View>
                     <TouchableOpacity
                       accessibilityRole="button"
@@ -200,53 +197,51 @@ export function ActiveFiltersStackButton() {
                       )}
                       onPress={() => removeActiveFilter(filter)}
                       style={styles.removeFilterButton}>
-                      <Text
+                      <NewText
                         style={[
                           styles.removeFilterText,
                           t.atoms.text_contrast_medium,
                         ]}>
                         ×
-                      </Text>
+                      </NewText>
                     </TouchableOpacity>
                   </View>
                 ))
               )}
             </View>
 
-            <TouchableOpacity
-              accessibilityRole="button"
-              style={[
-                styles.navigateBaseButton,
-                {borderColor: t.palette.contrast_200},
-              ]}
+            <Button
+              variant="outline"
+              color="secondary"
+              size="large"
+              label={_(msg`Go to Data to edit filters`)}
               onPress={() => {
-                setShowFilters(false)
-                navigation.navigate('Data')
+                control.close(() => navigation.navigate('Data'))
               }}>
-              <Text style={[styles.navigateBaseButtonText, t.atoms.text]}>
+              <ButtonText>
                 <Trans>Go to Data to edit filters</Trans>
-              </Text>
-            </TouchableOpacity>
+              </ButtonText>
+            </Button>
 
-            <TouchableOpacity
-              accessibilityRole="button"
-              style={[
-                styles.closeButton,
-                {backgroundColor: t.palette.primary_500},
-              ]}
-              onPress={() => setShowFilters(false)}>
-              <Text style={styles.closeButtonText}>
+            <Button
+              variant="solid"
+              color="primary"
+              size="large"
+              label={_(msg`Done`)}
+              onPress={() => control.close()}>
+              <ButtonText>
                 <Trans>Done</Trans>
-              </Text>
-            </TouchableOpacity>
+              </ButtonText>
+            </Button>
           </View>
-        </View>
-      </Modal>
+        </Dialog.ScrollableInner>
+      </Dialog.Outer>
     </>
   )
 }
 
 export function CompassSettingsButton() {
+  const {_} = useLingui()
   const t = useTheme()
   const {
     viewMode,
@@ -258,7 +253,7 @@ export function CompassSettingsButton() {
     showCommunities,
     setShowCommunities,
   } = useCompassFilter()
-  const [showSettings, setShowSettings] = useState(false)
+  const control = Dialog.useDialogControl()
 
   const mexicanStates = ['None', ...MEXICAN_STATES]
 
@@ -273,39 +268,39 @@ export function CompassSettingsButton() {
         accessibilityLabel="View settings"
         accessibilityHint="Opens filter and sort options"
         style={styles.filterButton}
-        onPress={() => setShowSettings(true)}
+        onPress={() => control.open()}
         hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}>
         <CompassIcon size="lg" style={t.atoms.text} />
       </TouchableOpacity>
 
-      <Modal
-        visible={showSettings}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setShowSettings(false)}>
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContent, t.atoms.bg]}>
-            <View style={styles.modalHandle} />
+      <Dialog.Outer control={control}>
+        <Dialog.Handle />
+        <Dialog.ScrollableInner
+          label={_(msg`View settings`)}
+          style={IS_WEB ? [{maxWidth: 600, width: '100%'}] : undefined}>
+          <View style={a.gap_md}>
+            <NewText style={[a.text_xl, a.font_bold, t.atoms.text]}>
+              View settings
+            </NewText>
 
-            <Text style={[styles.modalTitle, t.atoms.text]}>View settings</Text>
-
+            {/* View Mode */}
             <View style={styles.settingsSection}>
-              <Text
+              <NewText
                 style={[
                   styles.settingsSectionTitle,
                   t.atoms.text,
                   {marginTop: 16},
                 ]}>
                 Show communities
-              </Text>
+              </NewText>
 
               <TouchableOpacity
                 accessibilityRole="button"
                 style={styles.settingsOption}
                 onPress={() => setViewMode('View official parties')}>
-                <Text style={[styles.settingsOptionText, t.atoms.text]}>
+                <NewText style={[styles.settingsOptionText, t.atoms.text]}>
                   View official parties
-                </Text>
+                </NewText>
                 <View
                   style={[
                     styles.radioButton,
@@ -322,9 +317,9 @@ export function CompassSettingsButton() {
                 accessibilityRole="button"
                 style={styles.settingsOption}
                 onPress={() => setViewMode("View by 9th's")}>
-                <Text style={[styles.settingsOptionText, t.atoms.text]}>
+                <NewText style={[styles.settingsOptionText, t.atoms.text]}>
                   View by 9th's
-                </Text>
+                </NewText>
                 <View
                   style={[
                     styles.radioButton,
@@ -337,19 +332,17 @@ export function CompassSettingsButton() {
               </TouchableOpacity>
             </View>
 
+            {/* State picker */}
             <View style={styles.settingsSection}>
-              <View
-                style={[
-                  {marginBottom: 12}, // Kept marginBottom for spacing
-                ]}>
-                <Text
+              <View style={[{marginBottom: 12}]}>
+                <NewText
                   style={[
                     styles.settingsSectionTitle,
                     t.atoms.text,
                     {marginBottom: 0},
                   ]}>
                   View by state
-                </Text>
+                </NewText>
               </View>
 
               <WheelPicker
@@ -375,16 +368,16 @@ export function CompassSettingsButton() {
                           borderColor: t.palette.contrast_200,
                         },
                       ]}>
-                      <Text style={[t.atoms.text, {fontSize: 16}]}>
+                      <NewText style={[t.atoms.text, {fontSize: 16}]}>
                         {state}
-                      </Text>
+                      </NewText>
                       <TouchableOpacity
                         accessibilityRole="button"
                         onPress={() => toggleFilter(state)}
                         style={{padding: 4}}>
-                        <Text style={{color: '#8E8E93', fontWeight: 'bold'}}>
+                        <NewText style={{color: '#8E8E93', fontWeight: 'bold'}}>
                           X
-                        </Text>
+                        </NewText>
                       </TouchableOpacity>
                     </View>
                   ))}
@@ -416,12 +409,13 @@ export function CompassSettingsButton() {
                     opacity: selectedStateFilters.length >= 2 ? 0.5 : 1,
                   }}
                   disabled={selectedStateFilters.length >= 2}>
-                  <Text style={{color: 'white', fontWeight: 'bold'}}>
+                  <NewText style={{color: 'white', fontWeight: 'bold'}}>
                     Add view
-                  </Text>
+                  </NewText>
                 </TouchableOpacity>
               </View>
 
+              {/* Hide communities toggle */}
               <View
                 style={{
                   marginTop: 14,
@@ -440,27 +434,26 @@ export function CompassSettingsButton() {
                     name="hide_communities"
                     label="Hide communities cards"
                     style={styles.settingsOption}>
-                    <Text style={[styles.settingsOptionText, t.atoms.text]}>
+                    <NewText style={[styles.settingsOptionText, t.atoms.text]}>
                       Hide communities cards
-                    </Text>
+                    </NewText>
                     <Toggle.Switch />
                   </Toggle.Item>
                 </Toggle.Group>
               </View>
             </View>
 
-            <TouchableOpacity
-              accessibilityRole="button"
-              style={[
-                styles.closeButton,
-                {backgroundColor: t.palette.primary_500},
-              ]}
-              onPress={() => setShowSettings(false)}>
-              <Text style={styles.closeButtonText}>Done</Text>
-            </TouchableOpacity>
+            <Button
+              variant="solid"
+              color="primary"
+              size="large"
+              label={_(msg`Done`)}
+              onPress={() => control.close()}>
+              <ButtonText>Done</ButtonText>
+            </Button>
           </View>
-        </View>
-      </Modal>
+        </Dialog.ScrollableInner>
+      </Dialog.Outer>
     </>
   )
 }
@@ -636,81 +629,12 @@ const styles = StyleSheet.create({
     width: 44,
     paddingHorizontal: 0,
     paddingVertical: 8,
-    marginRight: -14, // Symmetric with myBaseButton's marginLeft
+    marginRight: -14,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    ...(IS_WEB
-      ? {
-          justifyContent: 'center',
-          alignItems: 'center',
-          padding: 20,
-        }
-      : {
-          justifyContent: 'flex-end',
-        }),
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 16,
-    paddingBottom: 32,
-    maxHeight: '90%',
-    ...(IS_WEB && {
-      width: '100%',
-      maxWidth: 600,
-      alignSelf: 'center',
-      borderRadius: 20,
-      borderBottomLeftRadius: 20,
-      borderBottomRightRadius: 20,
-    }),
-  },
-
-  activeFiltersModalContent: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    padding: 16,
-    paddingBottom: 28,
-    maxHeight: '70%',
-    ...(IS_WEB && {
-      width: '100%',
-      maxWidth: 600,
-      alignSelf: 'center',
-      borderRadius: 20,
-      borderBottomLeftRadius: 20,
-      borderBottomRightRadius: 20,
-    }),
-  },
-
-  modalHandle: {
-    width: 40,
-    height: 4,
-    backgroundColor: '#CCCCCC',
-    borderRadius: 2,
-    alignSelf: 'center',
-    marginBottom: 12, // Reduced from 20
-  },
-  modalTitle: {
-    fontSize: 18, // Reduced from 20
-    fontWeight: '600',
-    marginBottom: 12, // Reduced from 20
-    textAlign: 'center',
-  },
-  settingsSection: {
-    marginBottom: 16, // Reduced from 24
-  },
-  activeFiltersSubtitle: {
-    fontSize: 14,
-    marginBottom: 12,
-    textAlign: 'center',
-  },
   activeFiltersList: {
-    marginBottom: 14,
+    marginBottom: 4,
   },
   activeFiltersEmpty: {
     fontSize: 15,
@@ -751,32 +675,24 @@ const styles = StyleSheet.create({
     lineHeight: 24,
     fontWeight: '500',
   },
-  navigateBaseButton: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingVertical: 11,
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  navigateBaseButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
+  settingsSection: {
+    marginBottom: 8,
   },
   settingsSectionTitle: {
-    fontSize: 14, // Reduced from 16
+    fontSize: 14,
     fontWeight: '600',
-    marginBottom: 8, // Reduced from 12
+    marginBottom: 8,
     color: '#333333',
   },
   settingsOption: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8, // Reduced from 12
+    paddingVertical: 8,
     paddingHorizontal: 4,
   },
   settingsOptionText: {
-    fontSize: 15, // Reduced from 16
+    fontSize: 15,
     color: '#333333',
   },
   radioButton: {
@@ -796,17 +712,6 @@ const styles = StyleSheet.create({
     height: 10,
     borderRadius: 5,
     backgroundColor: '#474652',
-  },
-  closeButton: {
-    marginTop: 12, // Reduced from 20
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
   },
   communitySection: {
     paddingBottom: 8,

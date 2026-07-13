@@ -23,7 +23,6 @@ import {cleanError} from '#/lib/strings/errors'
 import {POST_FLAIRS} from '#/lib/tags'
 import {logger} from '#/logger'
 import {type ComposerImage, createComposerImage} from '#/state/gallery'
-import {useModalControls} from '#/state/modals'
 import {toPostLanguages, useLanguagePrefs} from '#/state/preferences/languages'
 import {usePreferencesQuery} from '#/state/queries/preferences'
 import {useProfileQuery} from '#/state/queries/profile'
@@ -80,7 +79,6 @@ export function CreatePostScreen() {
   const {data: currentProfile} = useProfileQuery({did: currentDid})
   const {data: preferences} = usePreferencesQuery()
   const {isMobile} = useWebMediaQueries()
-  const {} = useModalControls() // Removed openModal
   const textInput = useRef<TextInputRef>(null)
 
   const [composerState, dispatch] = useReducer(

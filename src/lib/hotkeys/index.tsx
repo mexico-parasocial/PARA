@@ -9,7 +9,6 @@ import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
 import {useDialogStateContext} from '#/state/dialogs'
 import {emitFocusSearch} from '#/state/events'
 import {useLightbox} from '#/state/lightbox'
-import {useModals} from '#/state/modals'
 import {useSession} from '#/state/session'
 import {useIsDrawerOpen} from '#/state/shell/drawer-open'
 
@@ -37,7 +36,6 @@ function useKeyboardShortcuts() {
   const {openComposer} = useOpenComposer()
   const {openDialogs} = useDialogStateContext()
   const {activeLightbox} = useLightbox()
-  const {isModalActive} = useModals()
   const {hasSession} = useSession()
   const isDrawerOpen = useIsDrawerOpen()
   const {t: l} = useLingui()
@@ -49,7 +47,6 @@ function useKeyboardShortcuts() {
 
     return (
       openDialogs.current.size > 0 ||
-      isModalActive ||
       Boolean(activeLightbox) ||
       isDrawerOpen
     )
@@ -76,7 +73,7 @@ function useKeyboardShortcuts() {
         {requiresSession: true},
       ),
     {scopes: ['global'], description: l`Compose new post`},
-    [openComposer, hasSession, isModalActive, activeLightbox, isDrawerOpen],
+    [openComposer, hasSession, activeLightbox, isDrawerOpen],
   )
 
   useHotkeys(
@@ -88,6 +85,6 @@ function useKeyboardShortcuts() {
       description: l`Focus the search field`,
       useKey: true,
     },
-    [hasSession, isModalActive, activeLightbox, isDrawerOpen],
+    [hasSession, activeLightbox, isDrawerOpen],
   )
 }

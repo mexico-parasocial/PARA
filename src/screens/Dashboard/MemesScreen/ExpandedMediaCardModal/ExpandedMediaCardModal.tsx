@@ -1,4 +1,6 @@
 import {Modal, Pressable, View} from 'react-native'
+import {msg} from '@lingui/core/macro'
+import {useLingui} from '@lingui/react'
 
 import {useShowPartyShields} from '#/state/preferences/show-party-shields'
 import {Text} from '#/view/com/util/text/Text'
@@ -6,6 +8,7 @@ import {useTheme} from '#/alf'
 import {ArrowsDiagonalOut_Stroke2_Corner2_Rounded as ExpandIcon} from '#/components/icons/ArrowsDiagonal'
 import {Bubble_Stroke2_Corner2_Rounded as CommentIcon} from '#/components/icons/Bubble'
 import {RedditVoteButton} from '#/components/PostControls/VoteButton'
+import * as Toast from '#/components/Toast'
 import {ActionButton, MediaVisualMeta, PartyInsignia} from '../cardPrimitives'
 import {buildSubmetaLabel} from '../helpers'
 import {styles} from '../styles'
@@ -25,6 +28,7 @@ export function ExpandedMediaCardModal({
   onVoteChange: (vote: 1 | -1 | 0) => void
 }) {
   const t = useTheme()
+  const {_} = useLingui()
   const showPartyShields = useShowPartyShields() ?? true
 
   if (!item) return null
@@ -82,7 +86,9 @@ export function ExpandedMediaCardModal({
                   <CommentIcon size="sm" style={t.atoms.text_contrast_medium} />
                 }
                 label={String(item.comments)}
-                onPress={() => {}}
+                onPress={() =>
+                  Toast.show(_(msg`Comments are coming soon`), {type: 'info'})
+                }
               />
 
               <ActionButton

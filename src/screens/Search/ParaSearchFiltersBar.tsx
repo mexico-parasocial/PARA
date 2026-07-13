@@ -4,22 +4,43 @@ import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
-import {type ParaSearchPostsFilters} from '#/state/queries/search-posts'
+import {
+  paraFiltersToSearchFilters,
+  type SearchFilters,
+  searchFiltersToParaFilters,
+} from '#/screens/Search/searchParams'
 import {atoms as a, useTheme, web} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
 import {ParaFilterChip} from './components/ParaFilterChip'
+import {AdvancedParaFiltersDialog} from './dialogs/AdvancedParaFiltersDialog'
 import {CabildeoPickerDialog} from './dialogs/CabildeoPickerDialog'
 import {CommunityPickerDialog} from './dialogs/CommunityPickerDialog'
 import {CompassPickerDialog} from './dialogs/CompassPickerDialog'
 import {PolicyAreaPickerDialog} from './dialogs/PolicyAreaPickerDialog'
 
+function splitSearchFilterValue(value: string | undefined): string[] {
+  return value?.split(',').filter(Boolean) ?? []
+}
+
+function joinSearchFilterValue(values: string[]): string | undefined {
+  return values.length ? values.join(',') : undefined
+}
+
+function splitTagSearchFilterValue(value: string | undefined): string[] {
+  return value?.split(/\s+/).filter(Boolean) ?? []
+}
+
+function joinTagSearchFilterValue(values: string[]): string | undefined {
+  return values.length ? values.join(' ') : undefined
+}
+
 export function ParaSearchFiltersBar({
   filters,
   onChange,
 }: {
-  filters: ParaSearchPostsFilters
-  onChange: (next: ParaSearchPostsFilters) => void
+  filters: SearchFilters
+  onChange: (next: SearchFilters) => void
 }) {
   const {_} = useLingui()
   const t = useTheme()
@@ -28,21 +49,52 @@ export function ParaSearchFiltersBar({
   const compassControl = Dialog.useDialogControl()
   const communityControl = Dialog.useDialogControl()
   const cabildeoControl = Dialog.useDialogControl()
+  const advancedControl = Dialog.useDialogControl()
+
+  const paraFilters = useMemo(
+    () => searchFiltersToParaFilters(filters),
+    [filters],
+  )
+
+  const tagCount = splitTagSearchFilterValue(filters.tag).length
+  const compassCount = splitSearchFilterValue(
+    filters.politicalCompassPositions,
+  ).length
+  const communityCount = splitSearchFilterValue(filters.communityUris).length
+  const cabildeoCount = splitSearchFilterValue(filters.cabildeoUris).length
+
+  const advancedCount = useMemo(
+    () =>
+      (filters.postType ? 1 : 0) +
+      splitSearchFilterValue(filters.flairs).length +
+      (filters.party ? 1 : 0) +
+      (filters.verifiedPublicFigure ? 1 : 0),
+    [filters],
+  )
 
   const hasAny = useMemo(
     () =>
       Boolean(
-        filters.tag?.length ||
-          filters.communityUris?.length ||
-          filters.cabildeoUris?.length ||
-          filters.politicalCompassPositions?.length,
+        tagCount ||
+          compassCount ||
+          communityCount ||
+          cabildeoCount ||
+          filters.state ||
+          filters.districtKey ||
+          filters.cabildeoPhase ||
+          advancedCount,
       ),
-    [filters],
+    [
+      tagCount,
+      compassCount,
+      communityCount,
+      cabildeoCount,
+      filters.state,
+      filters.districtKey,
+      filters.cabildeoPhase,
+      advancedCount,
+    ],
   )
-
-  const setTag = (next: string[]) => {
-    onChange({...filters, tag: next.length ? next : undefined})
-  }
 
   return (
     <View
@@ -60,18 +112,16 @@ export function ParaSearchFiltersBar({
         contentContainerStyle={[a.gap_xs, a.align_center]}>
         <ParaFilterChip
           label={_(msg`Areas`)}
-          activeCount={filters.tag?.length ?? 0}
+          activeCount={tagCount}
           onPress={policyControl.open}
-          onClear={
-            filters.tag?.length ? () => setTag([]) : undefined
-          }
+          onClear={tagCount ? () => onChange({...filters, tag: undefined}) : undefined}
         />
         <ParaFilterChip
           label={_(msg`Compass`)}
-          activeCount={filters.politicalCompassPositions?.length ?? 0}
+          activeCount={compassCount}
           onPress={compassControl.open}
           onClear={
-            filters.politicalCompassPositions?.length
+            compassCount
               ? () =>
                   onChange({
                     ...filters,
@@ -82,21 +132,38 @@ export function ParaSearchFiltersBar({
         />
         <ParaFilterChip
           label={_(msg`Communities`)}
-          activeCount={filters.communityUris?.length ?? 0}
+          activeCount={communityCount}
           onPress={communityControl.open}
           onClear={
-            filters.communityUris?.length
+            communityCount
               ? () => onChange({...filters, communityUris: undefined})
               : undefined
           }
         />
         <ParaFilterChip
           label={_(msg`Cabildeos`)}
-          activeCount={filters.cabildeoUris?.length ?? 0}
+          activeCount={cabildeoCount}
           onPress={cabildeoControl.open}
           onClear={
-            filters.cabildeoUris?.length
+            cabildeoCount
               ? () => onChange({...filters, cabildeoUris: undefined})
+              : undefined
+          }
+        />
+        <ParaFilterChip
+          label={_(msg`More`)}
+          activeCount={advancedCount}
+          onPress={advancedControl.open}
+          onClear={
+            advancedCount
+              ? () =>
+                  onChange({
+                    ...filters,
+                    postType: undefined,
+                    flairs: undefined,
+                    party: undefined,
+                    verifiedPublicFigure: undefined,
+                  })
               : undefined
           }
         />
@@ -115,31 +182,40 @@ export function ParaSearchFiltersBar({
 
       <PolicyAreaPickerDialog
         control={policyControl}
-        selectedTags={filters.tag ?? []}
-        onConfirm={setTag}
+        selectedTags={splitTagSearchFilterValue(filters.tag)}
+        onConfirm={next =>
+          onChange({...filters, tag: joinTagSearchFilterValue(next)})
+        }
       />
       <CompassPickerDialog
         control={compassControl}
-        selected={filters.politicalCompassPositions ?? []}
+        selected={splitSearchFilterValue(filters.politicalCompassPositions)}
         onConfirm={next =>
           onChange({
             ...filters,
-            politicalCompassPositions: next.length ? next : undefined,
+            politicalCompassPositions: joinSearchFilterValue(next),
           })
         }
       />
       <CommunityPickerDialog
         control={communityControl}
-        selected={filters.communityUris ?? []}
+        selected={splitSearchFilterValue(filters.communityUris)}
         onConfirm={next =>
-          onChange({...filters, communityUris: next.length ? next : undefined})
+          onChange({...filters, communityUris: joinSearchFilterValue(next)})
         }
       />
       <CabildeoPickerDialog
         control={cabildeoControl}
-        selected={filters.cabildeoUris ?? []}
+        selected={splitSearchFilterValue(filters.cabildeoUris)}
         onConfirm={next =>
-          onChange({...filters, cabildeoUris: next.length ? next : undefined})
+          onChange({...filters, cabildeoUris: joinSearchFilterValue(next)})
+        }
+      />
+      <AdvancedParaFiltersDialog
+        control={advancedControl}
+        filters={paraFilters}
+        onConfirm={next =>
+          onChange({...filters, ...paraFiltersToSearchFilters(next)})
         }
       />
     </View>

@@ -3,10 +3,11 @@ import * as Device from 'expo-device'
 import {
   Agent as BaseAgent,
   type AppBskyActorProfile,
-type AtpAgent,
+  type AtpAgent,
   type AtprotoServiceType,
   type AtpSessionData,
   type AtpSessionEvent,
+  BskyAgent,
   type Did,
   type Un$Typed,
 } from '@atproto/api'
