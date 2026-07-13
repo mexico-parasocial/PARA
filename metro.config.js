@@ -37,6 +37,14 @@ cfg.resolver.resolveRequest = (context, moduleName, platform) => {
       platform,
     )
   }
+  // React DevTools setup is native-only and pulls in platform-specific files
+  // (ReactDevToolsSettingsManager.android.js / .ios.js) that don't exist on web.
+  if (
+    platform === 'web' &&
+    moduleName === 'react-native/Libraries/Core/setUpReactDevTools.js'
+  ) {
+    return {type: 'empty'}
+  }
   return context.resolveRequest(context, moduleName, platform)
 }
 
