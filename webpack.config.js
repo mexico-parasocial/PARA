@@ -64,10 +64,10 @@ module.exports = async function (env, argv) {
     ...(config.resolve.alias || {}),
     // react-native's internal devtools bootstrap references paths that don't exist
     // in the installed react-devtools-core version; stub it out on web.
-    'react-native/Libraries/Core/setUpReactDevTools.js$':
-      path.resolve(__dirname, 'src/stubs/setUpReactDevTools.js'),
-    'react-native/Libraries/Core/setUpReactDevTools$':
-      path.resolve(__dirname, 'src/stubs/setUpReactDevTools.js'),
+    'react-native/Libraries/Core/setUpReactDevTools': path.resolve(
+      __dirname,
+      'src/stubs/setUpReactDevTools.js',
+    ),
   }
   config.module.rules = [
     ...(config.module.rules || []),
