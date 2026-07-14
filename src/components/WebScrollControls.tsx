@@ -1,4 +1,11 @@
-import {type ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native'
+import {
+  type ScrollView,
+  StyleSheet,
+  type StyleProp,
+  TouchableOpacity,
+  View,
+  type ViewStyle,
+} from 'react-native'
 
 import {useTheme} from '#/alf'
 import {

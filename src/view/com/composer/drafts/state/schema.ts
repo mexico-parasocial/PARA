@@ -88,14 +88,18 @@ export type DraftSummary = {
     /** Whether this device is the originating device for the draft */
     isOriginatingDevice: boolean
     /** Number of posts in thread */
-    threadSize: number
-    /** Number of images */
-    images: number
-    /** Standard video attached (not GIF) */
-    video: boolean
-    /** GIF attached */
-    gif: boolean
-    /** Quote attached */
-    quote: boolean
+    postCount: number
+    /** Number of reply posts in thread */
+    replyCount: number
+    /** Whether the draft has any media */
+    hasMedia: boolean
+    /** Whether some media is missing on this device */
+    hasMissingMedia: boolean
+    /** Total number of media items */
+    mediaCount: number
+    /** Whether the draft has any quote embeds */
+    hasQuotes: boolean
+    /** Number of quote embeds */
+    quoteCount: number
   }
 }

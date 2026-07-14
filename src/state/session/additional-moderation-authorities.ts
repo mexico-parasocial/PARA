@@ -94,5 +94,5 @@ export function configureAdditionalModerationAuthorities() {
     appLabelers,
   })
 
-  BskyAgent.configure({appLabelers})
+  AtpAgent.configure({appLabelers})
 }

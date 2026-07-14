@@ -1,10 +1,11 @@
+import {POST_IMG_MAX} from '#/lib/constants'
 import {type PickerImage} from './picker.shared'
 import {type Dimensions} from './types'
 import {blobToDataUri, convertCdnPreset, getDataUriSize} from './util'
 
 export async function compressIfNeeded(
   img: PickerImage,
-  maxSize: number,
+  maxSize: number = POST_IMG_MAX.size,
 ): Promise<PickerImage> {
   if (img.size < maxSize) {
     return img
@@ -163,10 +164,14 @@ function createResizedImage(
 
 export async function saveBytesToDisk(
   filename: string,
-  bytes: Uint8Array<ArrayBuffer>,
+  bytes: Uint8Array,
   type: string,
 ) {
-  const blob = new Blob([bytes], {type})
+  /*
+   * Bytes handed to us are never SharedArrayBuffer-backed, but the broader
+   * Uint8Array parameter type matches the native variant.
+   */
+  const blob = new Blob([bytes as Uint8Array<ArrayBuffer>], {type})
   const url = URL.createObjectURL(blob)
   downloadUrl(url, filename)
   // Firefox requires a small delay

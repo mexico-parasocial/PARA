@@ -4,7 +4,7 @@
  * Handles fetching and filtering political representatives.
  */
 
-import {type BskyAgent} from '@atproto/api'
+import {type AtpAgent} from '@atproto/api'
 
 import {normalizeCommunityGovernance} from '#/lib/community-governance'
 import {type RepresentativeItem} from '#/lib/mock-data'

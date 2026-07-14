@@ -7,7 +7,7 @@ ENV DEBIAN_FRONTEND=noninteractive
 #
 # Node
 #
-ENV NODE_VERSION=24.15.0
+ENV NODE_VERSION=24.18.0
 ENV NVM_DIR=/usr/share/nvm
 
 #
@@ -65,7 +65,7 @@ RUN \. "$NVM_DIR/nvm.sh" && \
   echo "EXPO_PUBLIC_BUNDLE_IDENTIFIER=$EXPO_PUBLIC_BUNDLE_IDENTIFIER" >> .env && \
   echo "EXPO_PUBLIC_BUNDLE_DATE=$(date -u +"%y%m%d%H")" >> .env && \
   echo "EXPO_PUBLIC_SENTRY_DSN=$EXPO_PUBLIC_SENTRY_DSN" >> .env && \
-  npm install --global pnpm && \
+  npm install --global pnpm@11.11.0 && \
   pnpm install && \
   pnpm intl:build 2>&1 | tee i18n.log && \
   if grep -q "invalid syntax" "i18n.log"; then echo "\n\nFound compilation errors!\n\n" && exit 1; else echo "\n\nNo compile errors!\n\n"; fi && \

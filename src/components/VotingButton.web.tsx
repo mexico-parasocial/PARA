@@ -95,10 +95,7 @@ export function VotingButton({
   }
 
   const animatedStyle = useAnimatedStyle(() => {
-    const base: {
-      transform: any
-      cursor?: 'grabbing' | 'grab'
-    } = {
+    const base: any = {
       transform: [{translateY: translateY.value}, {scale: scale.value}],
     }
     if (Platform.OS === 'web') {
@@ -184,10 +181,11 @@ export function VotingButton({
               backgroundColor: t.palette.contrast_25 + '30',
               borderColor: t.palette.contrast_50 + '40',
             },
-            Platform.OS === 'web' && {
-              userSelect: 'none',
-              touchAction: 'none',
-            },
+            Platform.OS === 'web' &&
+              ({
+                userSelect: 'none',
+                touchAction: 'none',
+              } as any),
           ]}>
           <Pressable
             accessibilityRole="button"

@@ -19,7 +19,7 @@ export interface Highlight {
   authorName: string
   avatarUrl: string
   postPreview: string
-  color: string | string[]
+  color: string | readonly string[]
   community: string
   state: string
   party?: string // Political party affiliation (e.g., 'Morena', 'PAN', 'PRI')

@@ -1,4 +1,4 @@
-import {type AppBskyFeedDefs, AtUri, type BskyAgent} from '@atproto/api'
+import {type AppBskyFeedDefs, type AtpAgent,AtUri} from '@atproto/api'
 
 import {
   PARA_HIGHLIGHT_COLLECTION,
@@ -22,7 +22,7 @@ export interface Highlight {
   authorName: string
   avatarUrl: string
   postPreview: string
-  color: string | string[]
+  color: string | string[] | readonly string[]
   community: string
   state: string
   party?: string

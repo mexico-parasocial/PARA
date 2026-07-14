@@ -86,9 +86,10 @@ export function setJoinLinkPreviewRequestedForCode(
   queryClient.setQueriesData<ChatBskyGroupGetJoinLinkPreviews.OutputSchema>(
     {
       predicate: query => {
-        const [root, args] = query.queryKey as Partial<
-          StructuredQueryKey<{codes?: string[]}>
-        >
+        const [root, args] = query.queryKey as [
+          string,
+          {codes?: string[]},
+        ]
         return (
           root === joinLinkPreviewQueryKeyRoot &&
           Array.isArray(args?.codes) &&

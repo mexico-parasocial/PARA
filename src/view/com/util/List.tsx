@@ -19,7 +19,9 @@ import {FlatList_INTERNAL} from './Views'
 export type ListMethods = FlatList_INTERNAL
 // This is a generic type; we could update ~30 call sites but this approach is consistent with RN internals. -dsb
  
-export type ListProps<ItemT = unknown> = Omit<
+// This is a generic type; we could update ~30 call sites but this approach is consistent with RN internals. -dsb
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type ListProps<ItemT = any> = Omit<
   FlatListPropsWithLayout<ItemT>,
   | 'onMomentumScrollBegin' // Use ScrollContext instead.
   | 'onMomentumScrollEnd' // Use ScrollContext instead.

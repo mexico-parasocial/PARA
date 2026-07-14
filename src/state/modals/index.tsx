@@ -26,7 +26,7 @@ export type Modal =
   | DeleteAccountModal
 
   // Curation
-  ContentLanguagesSettingsModal
+  | ContentLanguagesSettingsModal
 
 const ModalContext = createContext<{
   isModalActive: boolean

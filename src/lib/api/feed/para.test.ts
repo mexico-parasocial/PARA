@@ -1,4 +1,4 @@
-import {type BskyAgent} from '@atproto/api'
+import {type AtpAgent} from '@atproto/api'
 
 import {
   buildParaTimelineFilterParams,
@@ -24,7 +24,7 @@ describe('ParaTimelineFeedAPI', () => {
 
   it('calls com.para.feed.getTimeline with no filter params by default', async () => {
     const agent = createAgent()
-    const api = new ParaTimelineFeedAPI({agent: agent as unknown as BskyAgent})
+    const api = new ParaTimelineFeedAPI({agent: agent as unknown as AtpAgent})
 
     await api.fetch({cursor: undefined, limit: 30})
 
@@ -37,7 +37,7 @@ describe('ParaTimelineFeedAPI', () => {
   it('passes party and community filter params to getTimeline', async () => {
     const agent = createAgent()
     const api = new ParaTimelineFeedAPI({
-      agent: agent as unknown as BskyAgent,
+      agent: agent as unknown as AtpAgent,
       filters: {party: 'PAN', community: 'Center Right'},
     })
 
@@ -66,7 +66,7 @@ describe('ParaTimelineFeedAPI', () => {
         },
       ],
     })
-    const api = new ParaTimelineFeedAPI({agent: agent as unknown as BskyAgent})
+    const api = new ParaTimelineFeedAPI({agent: agent as unknown as AtpAgent})
 
     const result = await api.fetch({cursor: undefined, limit: 30})
 
@@ -106,7 +106,7 @@ describe('ParaTimelineFeedAPI', () => {
         feed: [bskyPost],
       },
     })
-    const api = new ParaTimelineFeedAPI({agent: agent as unknown as BskyAgent})
+    const api = new ParaTimelineFeedAPI({agent: agent as unknown as AtpAgent})
 
     const result = await api.fetch({cursor: 'cursor-1', limit: 30})
 

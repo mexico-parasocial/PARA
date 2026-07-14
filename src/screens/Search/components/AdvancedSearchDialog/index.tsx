@@ -426,7 +426,12 @@ function DialogInner({
             <TextField.LabelText>
               <Trans>This exact phrase</Trans>
             </TextField.LabelText>
-            <ClearableInput defaultValue={setExactPhrase} />
+            <ClearableInput
+              label={l`This exact phrase`}
+              defaultValue={exactPhrase}
+              onChangeText={setExactPhrase}
+              onSubmitEditing={handlePressSearch}
+            />
           </View>
         </View>
 

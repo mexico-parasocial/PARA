@@ -1,4 +1,4 @@
-import {BskyAgent, RichText} from '@atproto/api'
+import {AtpAgent, RichText} from '@atproto/api'
 
 // We need to use relative imports because ts-node with paths can be tricky without extra config
 // Assuming this script is run from project root: ts-node scripts/seed_highlights.ts
@@ -11,7 +11,7 @@ const PASSWORD = process.env.HIGHLIGHT_SEED_PASSWORD || 'hunter2'
 const HIGHLIGHT_COLLECTION = 'com.para.highlight.annotation'
 
 async function main() {
-  const agent = new BskyAgent({service: SERVICE})
+  const agent = new AtpAgent({service: SERVICE})
 
   console.log(`Connecting to ${SERVICE}...`)
   try {

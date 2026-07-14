@@ -18,7 +18,13 @@ export function VerificationCheck({
     fonts: {scaleMultiplier: alfScaleMultiplier},
   } = useAlf()
   const baseWidth =
-    typeof width === 'number' ? width : size ? sizes[size] : undefined
+    typeof width === 'number'
+      ? width
+      : typeof size === 'number'
+        ? size
+        : size
+          ? sizes[size]
+          : undefined
   const scaledWidth =
     baseWidth !== undefined
       ? baseWidth * nativeScaleMultiplier * alfScaleMultiplier

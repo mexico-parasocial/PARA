@@ -30,6 +30,7 @@ import {
 import {useDebouncedValue} from '#/lib/hooks/useDebouncedValue'
 import {PARTY_FEED_PROFILES} from '#/lib/party-feeds'
 import {type NavigationProp} from '#/lib/routes/types'
+import {type ComposerFlair} from '#/lib/post-flairs'
 import {POST_FLAIRS, type PostFlair} from '#/lib/tags'
 import {
   clearRecentCommunities,
@@ -609,14 +610,16 @@ export function CommunitiesScreen() {
 
                 <FlairSelectionList
                   selectedFlairs={
-                    selectedParticipationFilter
-                      ? Object.values(POST_FLAIRS).filter(
-                          flair =>
-                            flair.id === selectedParticipationFilter.flairId,
-                        )
-                      : []
+                    (
+                      selectedParticipationFilter
+                        ? Object.values(POST_FLAIRS).filter(
+                            flair =>
+                              flair.id === selectedParticipationFilter.flairId,
+                          )
+                        : []
+                    ) as ComposerFlair[]
                   }
-                  setSelectedFlairs={(flairs: PostFlair[]) => {
+                  setSelectedFlairs={(flairs: ComposerFlair[]) => {
                     if (flairs.length > 0) {
                       const flair = flairs[0]
                       setParticipationType(
@@ -674,7 +677,7 @@ export function CommunitiesScreen() {
 }
 
 function buildParticipationFilter(
-  flair: PostFlair,
+  flair: ComposerFlair,
 ): SelectedParticipationFilter {
   return {
     kind: flair.id.startsWith('policy_') ? 'policy' : 'matter',

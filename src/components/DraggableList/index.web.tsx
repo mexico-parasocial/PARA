@@ -1,5 +1,7 @@
 import {useState} from 'react'
 import {View} from 'react-native'
+import type Animated from 'react-native-reanimated'
+import {type AnimatedRef, type SharedValue} from 'react-native-reanimated'
 
 import {useTheme} from '#/alf'
 import {DotGrid2x3_Stroke2_Corner0_Rounded as GripIcon} from '#/components/icons/DotGrid'
@@ -18,6 +20,10 @@ interface SortableListProps<T> {
   onDragEnd?: () => void
   /** Fixed row height used for position math. */
   itemHeight: number
+  /** Ref to the parent Animated.ScrollView for auto-scroll. Ignored on web. */
+  scrollRef?: AnimatedRef<Animated.ScrollView>
+  /** Scroll offset shared value from useScrollViewOffset. Ignored on web. */
+  scrollOffset?: SharedValue<number>
 }
 
 export function SortableList<T>({
@@ -131,7 +137,7 @@ export function SortableList<T>({
             <GripIcon
               size="lg"
               fill={t.atoms.text_contrast_medium.color}
-              style={{pointerEvents: 'none'} as React.CSSProperties}
+              style={{pointerEvents: 'none'} as any}
             />
           </div>
         )
@@ -157,7 +163,7 @@ export function SortableList<T>({
                   : dragState
                     ? 'transform 200ms ease'
                     : 'none',
-              } as React.CSSProperties,
+              } as any,
             ]}>
             {renderItem(item, dragHandle)}
           </View>

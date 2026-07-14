@@ -5,6 +5,7 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 
+import {useAnalytics} from '#/analytics'
 import {getDeviceName} from '#/lib/deviceName'
 import {isNetworkError} from '#/lib/strings/errors'
 import {useAgent} from '#/state/session'
@@ -21,6 +22,7 @@ const DRAFTS_QUERY_KEY = ['drafts']
  */
 export function useDraftsQuery() {
   const agent = useAgent()
+  const analytics = useAnalytics()
 
   return useInfiniteQuery({
     queryKey: DRAFTS_QUERY_KEY,
@@ -31,11 +33,7 @@ export function useDraftsQuery() {
       return {
         cursor: res.data.cursor,
         drafts: res.data.drafts.map(view =>
-          draftViewToSummary(
-            view,
-            path => storage.mediaExists(path),
-            getDeviceName(),
-          ),
+          draftViewToSummary({view, analytics}),
         ),
       }
     },

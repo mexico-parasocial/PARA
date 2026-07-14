@@ -1,5 +1,6 @@
 import {createContext, useContext} from 'react'
 
+import {useModerationOpts} from '#/state/preferences/moderation-opts'
 import {useSession} from '#/state/session'
 import * as Dialog from '#/components/Dialog'
 import {type ConvoWithDetails} from '#/components/dms/util'
@@ -37,12 +38,21 @@ function GroupInviteLinkDialogProvider({
 }) {
   const {currentAccount} = useSession()
   const control = Dialog.useDialogControl()
+  const moderationOpts = useModerationOpts()
   const isOwner = convo.primaryMember?.did === currentAccount?.did
 
   return (
     <Context.Provider value={control}>
       {children}
-      <InviteLinkDialog convo={convo} control={control} isOwner={isOwner} />
+      {convo.primaryMember && moderationOpts && (
+        <InviteLinkDialog
+          convo={convo}
+          control={control}
+          owner={convo.primaryMember}
+          isOwner={isOwner}
+          moderationOpts={moderationOpts}
+        />
+      )}
     </Context.Provider>
   )
 }

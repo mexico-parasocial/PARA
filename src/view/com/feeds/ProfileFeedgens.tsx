@@ -6,7 +6,6 @@ import {
   useState,
 } from 'react'
 import {
-  findNodeHandle,
   type ListRenderItemInfo,
   type StyleProp,
   useWindowDimensions,
@@ -27,6 +26,7 @@ import {useSession} from '#/state/session'
 import {EmptyState} from '#/view/com/util/EmptyState'
 import {ErrorMessage} from '#/view/com/util/error/ErrorMessage'
 import {List, type ListRef} from '#/view/com/util/List'
+import {findListNativeTag} from '#/view/com/util/listNativeTag'
 import {FeedLoadingPlaceholder} from '#/view/com/util/LoadingPlaceholder'
 import {LoadMoreRetryBtn} from '#/view/com/util/LoadMoreRetryBtn'
 import {atoms as a, ios, useTheme} from '#/alf'
@@ -35,10 +35,21 @@ import {HashtagWide_Stroke1_Corner0_Rounded as HashtagWideIcon} from '#/componen
 import {ListFooter} from '#/components/Lists'
 import {IS_IOS, IS_NATIVE, IS_WEB} from '#/env'
 
-const LOADING = {_reactKey: '__loading__'}
-const EMPTY = {_reactKey: '__empty__'}
-const ERROR_ITEM = {_reactKey: '__error__'}
-const LOAD_MORE_ERROR_ITEM = {_reactKey: '__load_more_error__'}
+const LOADING = {_reactKey: '__loading__' as const}
+const EMPTY = {_reactKey: '__empty__' as const}
+const ERROR_ITEM = {_reactKey: '__error__' as const}
+const LOAD_MORE_ERROR_ITEM = {_reactKey: '__load_more_error__' as const}
+
+type Item =
+  | AppBskyFeedDefs.GeneratorView
+  | typeof LOADING
+  | typeof EMPTY
+  | typeof ERROR_ITEM
+  | typeof LOAD_MORE_ERROR_ITEM
+
+function isGeneratorView(item: Item): item is AppBskyFeedDefs.GeneratorView {
+  return !('_reactKey' in item)
+}
 
 interface SectionRef {
   scrollToTop: () => void
@@ -86,14 +97,8 @@ export function ProfileFeedgens({
   const {currentAccount} = useSession()
   const isSelf = currentAccount?.did === did
 
-  const items = useMemo(() => {
-    let items: (
-      | AppBskyFeedDefs.GeneratorView
-      | typeof LOADING
-      | typeof EMPTY
-      | typeof ERROR_ITEM
-      | typeof LOAD_MORE_ERROR_ITEM
-    )[] = []
+  const items = useMemo<Item[]>(() => {
+    let items: Item[] = []
     if (isError && isEmpty) {
       items = items.concat([ERROR_ITEM])
     }
@@ -102,7 +107,7 @@ export function ProfileFeedgens({
     } else if (isEmpty) {
       items = items.concat([EMPTY])
     } else if (data?.pages) {
-      for (const page of data?.pages) {
+      for (const page of data.pages) {
         items = items.concat(page.feeds)
       }
     } else if (isError && !isEmpty) {
@@ -159,13 +164,7 @@ export function ProfileFeedgens({
     ({
       item,
       index,
-    }: ListRenderItemInfo<
-      | AppBskyFeedDefs.GeneratorView
-      | typeof LOADING
-      | typeof EMPTY
-      | typeof ERROR_ITEM
-      | typeof LOAD_MORE_ERROR_ITEM
-    >) => {
+    }: ListRenderItemInfo<Item>) => {
       if (item === EMPTY) {
         return (
           <EmptyState
@@ -206,7 +205,7 @@ export function ProfileFeedgens({
       } else if (item === LOADING) {
         return <FeedLoadingPlaceholder />
       }
-      if (preferences) {
+      if (preferences && isGeneratorView(item)) {
         return (
           <View
             style={[
@@ -235,7 +234,7 @@ export function ProfileFeedgens({
 
   useEffect(() => {
     if (IS_IOS && enabled && scrollElRef.current) {
-      const nativeTag = findNodeHandle(scrollElRef.current)
+      const nativeTag = findListNativeTag(scrollElRef.current)
       setScrollViewTag(nativeTag)
     }
   }, [enabled, scrollElRef, setScrollViewTag])
@@ -282,13 +281,6 @@ export function ProfileFeedgens({
   )
 }
 
-function keyExtractor(
-  item:
-    | AppBskyFeedDefs.GeneratorView
-    | typeof LOADING
-    | typeof EMPTY
-    | typeof ERROR_ITEM
-    | typeof LOAD_MORE_ERROR_ITEM,
-) {
-  return item._reactKey || (item as AppBskyFeedDefs.GeneratorView).uri
+function keyExtractor(item: Item) {
+  return '_reactKey' in item ? item._reactKey : item.uri
 }

@@ -150,7 +150,7 @@ function InnerApp() {
     <Alf theme={theme}>
       <ThemeProvider theme={theme}>
         <ContextMenuProvider>
-          <Splash isReady={isReady && hasCheckedReferrer} theme={theme}>
+          <Splash isReady={isReady && hasCheckedReferrer}>
             <VideoVolumeProvider>
               <Fragment
                 // Resets the entire tree below when it changes:

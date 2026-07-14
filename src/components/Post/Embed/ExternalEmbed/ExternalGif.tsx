@@ -54,7 +54,11 @@ export function ExternalGif({
       event.preventDefault()
 
       // Show consent if this is the first load
-      if (externalEmbedsPrefs?.[params.source] === undefined) {
+      if (
+        (externalEmbedsPrefs as Record<string, 'hide' | 'show' | undefined>)?.[
+          params.source
+        ] === undefined
+      ) {
         consentDialogControl.open()
         return
       }

@@ -27,7 +27,7 @@ const logger = Logger.create(Logger.Context.DMsAgent)
 export class MessagesEventBus {
   private id: string
 
-  private agent: BskyAgent
+  private agent: AtpAgent
   private dmServiceHeaders: ReturnType<typeof getDmServiceHeadersForServiceUrl>
   private emitter = new EventEmitter<{event: [MessagesEventBusEvent]}>()
 
@@ -297,7 +297,7 @@ export class MessagesEventBus {
       this.dispatch({
         event: MessagesEventBusDispatchEvent.Error,
         payload: {
-          exception: e,
+          exception: e instanceof Error ? e : new Error(String(e)),
           code: MessagesEventBusErrorCode.InitFailed,
           retry: () => {
             this.dispatch({event: MessagesEventBusDispatchEvent.Resume})
@@ -414,7 +414,7 @@ export class MessagesEventBus {
       this.dispatch({
         event: MessagesEventBusDispatchEvent.Error,
         payload: {
-          exception: e,
+          exception: e instanceof Error ? e : new Error(String(e)),
           code: MessagesEventBusErrorCode.PollFailed,
           retry: () => {
             this.dispatch({event: MessagesEventBusDispatchEvent.Resume})

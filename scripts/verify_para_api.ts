@@ -3,7 +3,7 @@ import {AtpAgent} from '@atproto/api'
 import {ParaFeedAPI} from '../src/lib/api/feed/para'
 
 async function main() {
-  const agent = new BskyAgent({service: 'http://localhost:2583'})
+  const agent = new AtpAgent({service: 'http://localhost:2583'})
 
   try {
     await agent.login({

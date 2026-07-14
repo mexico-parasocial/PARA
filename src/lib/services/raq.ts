@@ -4,7 +4,7 @@
  * Real API integration — no mock data.
  */
 
-import {type BskyAgent} from '@atproto/api'
+import {type AtpAgent} from '@atproto/api'
 
 import {
   PARA_RAQ_ASSESSMENT_COLLECTION,
@@ -35,7 +35,7 @@ export async function fetchRAQAxes() {
 // Open Question (creates a standard Bluesky post with #?OpenQuestion tag)
 // ------------------------------------------------------------------
 
-export async function submitOpenQuestion(agent: BskyAgent, text: string) {
+export async function submitOpenQuestion(agent: AtpAgent, text: string) {
   await agent.post({
     text,
     tags: ['?OpenQuestion'],
@@ -47,7 +47,7 @@ export async function submitOpenQuestion(agent: BskyAgent, text: string) {
 // User Alignment
 // ------------------------------------------------------------------
 
-export async function fetchUserAlignment(agent: BskyAgent, did: string) {
+export async function fetchUserAlignment(agent: AtpAgent, did: string) {
   const res = await agent.call('com.para.raq.getUserAlignment', {did})
   return res.data.assessment
 }

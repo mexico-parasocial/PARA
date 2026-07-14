@@ -1014,7 +1014,7 @@ export function Explore({
   )
 }
 
-function keyExtractor(item: FeedPreviewItem) {
+function keyExtractor(item: ExploreScreenItems) {
   return item.key
 }
 

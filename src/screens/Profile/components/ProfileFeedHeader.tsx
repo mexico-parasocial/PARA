@@ -45,6 +45,7 @@ import {
   ReportDialog,
   useReportDialogControl,
 } from '#/components/moderation/ReportDialog'
+import {useAnalytics} from '#/analytics'
 import {RichText} from '#/components/RichText'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
@@ -427,7 +428,7 @@ function DialogInner({
     const url = toShareUrl(info.route.href)
     void shareUrl(url)
     logger.metric('feed:share', {feedUrl: info.uri})
-  }, [ax, info, playHaptic])
+  }, [info, playHaptic])
 
   const onPressReport = useCallback(() => {
     reportDialogControl.open()
@@ -476,7 +477,7 @@ function DialogInner({
         </Button>
       </View>
 
-      <RichText value={rt} style={[a.text_md]} />
+      <RichText value={info.description} style={[a.text_md]} />
 
       <View style={[a.flex_row, a.gap_sm, a.align_center]}>
         {typeof likeCount === 'number' && (

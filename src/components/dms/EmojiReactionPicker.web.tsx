@@ -25,7 +25,7 @@ export function EmojiReactionPicker({
   if (!children)
     throw new Error('EmojiReactionPicker requires the children prop on web')
 
-  const {t: l} = useLingui()
+  const {i18n, t: l} = useLingui()
 
   return (
     <EmojiPicker.Root onEmojiSelect={emoji => onEmojiSelect(emoji.native)}>
@@ -44,6 +44,7 @@ function MenuInner({
   message: ChatBskyConvoDefs.MessageView
   onEmojiSelect: (emoji: string) => void
 }) {
+  const {i18n} = useLingui()
   const t = useTheme()
   const {control} = Menu.useMenuContext()
   const {currentAccount} = useSession()
@@ -127,7 +128,7 @@ function MenuInner({
           <Pressable
             accessibilityRole="button"
             role="button"
-            aria-label={_(msg`Open emoji picker`)}
+            aria-label={i18n._(msg`Open emoji picker`)}
             onPress={() => setExpanded(true)}
             style={flatten([
               a.rounded_full,

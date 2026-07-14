@@ -1,0 +1,79 @@
+services:
+  master:
+    image: chrislusf/seaweedfs:4.37
+    command: >
+      master
+      -ip=master
+      -port=9333
+      -mdir=/data
+      -defaultReplication=000
+      -metricsPort=9324
+    ports:
+      - "19333:9333"
+      - "19324:9324"
+    volumes:
+      - seaweed_master:/data
+
+  volume:
+    image: chrislusf/seaweedfs:4.37
+    command: >
+      volume
+      -mserver=master:9333
+      -ip=volume
+      -port=8080
+      -dir=/data
+      -max=100
+      -metricsPort=9325
+    ports:
+      - "18080:8080"
+      - "19325:9325"
+    volumes:
+      - seaweed_volume:/data
+    depends_on:
+      - master
+
+  filer:
+    image: chrislusf/seaweedfs:4.37
+    command: >
+      filer
+      -master=master:9333
+      -ip=filer
+      -port=8888
+      -metricsPort=9326
+    ports:
+      - "18890:8888"
+      - "19326:9326"
+      - "18889:18888"
+    volumes:
+      - seaweed_filer:/data
+    depends_on:
+      - master
+      - volume
+
+  s3:
+    image: chrislusf/seaweedfs:4.37
+    command: >
+      s3
+      -filer=filer:8888
+      -ip.bind=0.0.0.0
+      -port=8333
+      -metricsPort=9327
+      -config=/etc/seaweedfs/s3-config.json
+    ports:
+      - "18333:8333"
+      - "19327:9327"
+    volumes:
+      - /Users/mlv/Desktop/TH1/PARA/dev-env/seaweedfs/s3-config.json:/etc/seaweedfs/s3-config.json:ro
+    depends_on:
+      - filer
+
+volumes:
+  seaweed_master:
+    external: true
+    name: seaweedfs_restore_20260713_231605_seaweed_master
+  seaweed_volume:
+    external: true
+    name: seaweedfs_restore_20260713_231605_seaweed_volume
+  seaweed_filer:
+    external: true
+    name: seaweedfs_restore_20260713_231605_seaweed_filer

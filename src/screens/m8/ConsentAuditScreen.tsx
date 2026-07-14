@@ -250,7 +250,7 @@ function GrantCard({
   onRevoke: () => void
 }) {
   const t = useTheme()
-  const {} = useLingui()
+  const {_} = useLingui()
 
   return (
     <View style={[styles.card, t.atoms.bg_contrast_25, { borderColor: t.palette.contrast_100 }]}>
@@ -331,7 +331,7 @@ function LedgerEntryCard({ entry }: { entry: LedgerEntry }) {
         <Text style={[styles.timelineTarget, t.atoms.text_contrast_medium]}>
           {entry.targetId}
         </Text>
-        {entry.detail.reason && (
+        {!!entry.detail.reason && (
           <Text style={[styles.timelineDetail, t.atoms.text_contrast_medium]}>
             Reason: {String(entry.detail.reason)}
           </Text>

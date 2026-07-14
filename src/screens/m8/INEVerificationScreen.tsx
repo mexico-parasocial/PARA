@@ -84,9 +84,9 @@ export default function INEVerificationScreen() {
     setStep('verify')
     try {
       const result = await postIneCredential({ extracted, verification })
-      await AsyncStorage.setItem('para_ine_verified', 'true')
-      await AsyncStorage.setItem('para_ine_verified_at', new Date().toISOString())
-      await AsyncStorage.setItem('para_verified_human', 'true')
+      await Storage.setItemAsync('para_ine_verified', 'true')
+      await Storage.setItemAsync('para_ine_verified_at', new Date().toISOString())
+      await Storage.setItemAsync('para_verified_human', 'true')
 
       // Store ZKP witness securely for client-side proving
       await Storage.setItemAsync('para_zkp_birthYear', String(result.birthYear))

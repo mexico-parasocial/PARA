@@ -197,7 +197,11 @@ export function ExternalPlayer({
       // Prevent this from propagating upward on web
       event.preventDefault()
 
-      if (externalEmbedsPrefs?.[params.source] === undefined) {
+      if (
+        (externalEmbedsPrefs as Record<string, 'hide' | 'show' | undefined>)?.[
+          params.source
+        ] === undefined
+      ) {
         consentDialogControl.open()
         return
       }

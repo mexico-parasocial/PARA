@@ -1,4 +1,4 @@
-import {AtUri, BskyAgent} from '@atproto/api'
+import {AtUri, AtpAgent} from '@atproto/api'
 
 const SERVICE = process.env.PARA_PDS_URL || 'http://localhost:2583'
 const PASSWORD = process.env.PARA_TEST_PASSWORD || 'hunter2'
@@ -258,7 +258,7 @@ async function createPost(agent, post) {
 }
 
 async function login(account) {
-  const agent = new BskyAgent({service: SERVICE})
+  const agent = new AtpAgent({service: SERVICE})
   await agent.login({
     identifier: account.handle,
     password: account.password,

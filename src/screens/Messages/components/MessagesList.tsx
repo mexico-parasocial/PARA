@@ -17,7 +17,6 @@ import Animated, {
   runOnJS,
   type ScrollEvent,
   type SharedValue,
-  useAnimatedRef,
   useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
@@ -149,7 +148,7 @@ export function MessagesList({
   const t = useTheme()
 
   const textInputId = 'chat-input-' + useId()
-  const flatListRef = useAnimatedRef<ListMethods>()
+  const flatListRef = useRef<ListMethods | null>(null)
 
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(
     () => new Set(),
@@ -737,6 +736,7 @@ function Composer({
   textInputId: string
   onSendMessage: (
     message: string,
+    embedState?: MessageEmbedState,
     replyTo?: $Typed<ChatBskyConvoDefs.MessageView>,
   ) => Promise<void>
   messageEmbed: MessageEmbedState | undefined
@@ -744,8 +744,12 @@ function Composer({
   loading?: boolean
 }) {
   const handleSendMessage = useNonReactiveCallback(
-    (message: string, replyTo?: $Typed<ChatBskyConvoDefs.MessageView>) => {
-      void onSendMessage(message, replyTo)
+    (
+      message: string,
+      _embed?: MessageEmbedState,
+      replyTo?: $Typed<ChatBskyConvoDefs.MessageView>,
+    ) => {
+      void onSendMessage(message, _embed, replyTo)
     },
   )
 
@@ -753,7 +757,7 @@ function Composer({
     <MessageComposer
       textInputId={textInputId}
       onSendMessage={handleSendMessage}
-      hasEmbed={!!messageEmbed}
+      messageEmbed={messageEmbed}
       setEmbed={setEmbed}
       loading={loading}>
       <MessageInputReply />

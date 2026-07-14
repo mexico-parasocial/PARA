@@ -49,7 +49,7 @@ export async function getPostgateRecord({
          * throwing an error. NB: This will also catch reference errors, such as
          * a typo in the URI.
          */
-        if (e.message.includes(`Could not locate record:`)) {
+        if ((e as Error).message.includes(`Could not locate record:`)) {
           return false
         }
         return true

@@ -36,11 +36,12 @@ export interface PagerWithHeaderProps {
   renderHeader?: ({
     setMinimumHeight,
   }: {
-    setMinimumHeight: () => void
+    setMinimumHeight: (height: number) => void
   }) => JSX.Element
   initialPage?: number
   onPageSelected?: (index: number) => void
   onCurrentPageSelected?: (index: number) => void
+  allowHeaderOverScroll?: boolean // Ignored on web.
 }
 export const PagerWithHeader = forwardRef<PagerRef, PagerWithHeaderProps>(
   function PageWithHeaderImpl(
@@ -134,7 +135,7 @@ let PagerTabBar = ({
   renderHeader?: ({
     setMinimumHeight,
   }: {
-    setMinimumHeight: () => void
+    setMinimumHeight: (height: number) => void
   }) => JSX.Element
   isHeaderReady: boolean
   onCurrentPageSelected?: (index: number) => void

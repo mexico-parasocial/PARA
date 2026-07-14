@@ -9,7 +9,9 @@ export function useOpenComposer() {
   const requireEmailVerification = useRequireEmailVerification()
   return useMemo(() => {
     return {
-      openComposer: requireEmailVerification(openComposer, {
+      openComposer: requireEmailVerification(
+        openComposer as (...args: unknown[]) => unknown,
+        {
         instructions: [
           <Trans key="pre-compose">
             Before creating a post or replying, you must first verify your

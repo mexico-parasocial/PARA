@@ -1,4 +1,4 @@
-import {type BskyAgent} from '@atproto/api'
+import {type AtpAgent} from '@atproto/api'
 
 import {
   type DiscourseSnapshot,
@@ -7,7 +7,7 @@ import {
 } from './para-lexicons'
 
 export class DiscourseAPI {
-  constructor(public agent: BskyAgent) {}
+  constructor(public agent: AtpAgent) {}
 
   async getSnapshot(params: {
     community?: string

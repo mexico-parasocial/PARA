@@ -830,17 +830,18 @@ export function ButtonIcon({
      * Copied here from icons/common.tsx so we can tweak if we need to, but
      * also so that we can calculate transforms.
      */
-    const iconSize = {
-      '2xs': 8,
-      xs: 12,
-      sm: 16,
-      md: 18,
-      lg: 24,
-      xl: 28,
-      '2xl': 32,
-      '3xl': 40,
-      '4xl': 48,
-    }[iconSizeShorthand]
+    const iconSize =
+      {
+        '2xs': 8,
+        xs: 12,
+        sm: 16,
+        md: 18,
+        lg: 24,
+        xl: 28,
+        '2xl': 32,
+        '3xl': 40,
+        '4xl': 48,
+      }[iconSizeShorthand] ?? 16
 
     /*
      * Goal here is to match rendered text size so that different size icons

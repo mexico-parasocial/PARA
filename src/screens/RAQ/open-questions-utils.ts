@@ -37,7 +37,13 @@ export function mapStarterOpenQuestions(
   questions: OpenQuestion[],
 ): OpenQuestionListItem[] {
   return questions.map(question => ({
-    ...question,
+    id: question.id,
+    text: question.text,
+    author: {
+      handle: question.author.handle,
+      avatar: question.author.avatar || '',
+    },
+    replyCount: question.replyCount,
     timestamp: new Date().toISOString(),
     isStarterPrompt: true,
   }))

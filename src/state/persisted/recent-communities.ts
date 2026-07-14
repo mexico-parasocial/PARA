@@ -63,7 +63,7 @@ export function createLocalRecentCommunity({
     : identifier
   const displayName =
     communityName?.trim() || formatCommunityLabel(displayIdentifier)
-  const slug = stripCommunityPrefix(identifier)
+  const slug = stripCommunityPrefix(identifier) || identifier
   const uri = `local:community:${normalizeRecentCommunityKey(displayIdentifier)}`
 
   return {

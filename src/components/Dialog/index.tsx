@@ -291,7 +291,7 @@ export const ScrollableInner = forwardRef<ScrollView, DialogInnerProps>(
 
 export const InnerFlatList = forwardRef<
   ListMethods,
-  ListProps<Record<string, unknown>> & {
+  ListProps & {
     webInnerStyle?: StyleProp<ViewStyle>
     webInnerContentContainerStyle?: StyleProp<ViewStyle>
     footer?: React.ReactNode
@@ -322,7 +322,6 @@ export const InnerFlatList = forwardRef<
       onScroll={onScroll}
       onEndDrag={onScroll}
       onMomentumEnd={onScroll}>
-      {/* @ts-expect-error upstream List prop typing mismatch */}
       <List
         keyboardShouldPersistTaps="handled"
         contentInsetAdjustmentBehavior={

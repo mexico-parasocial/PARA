@@ -8,7 +8,6 @@ import {type ComposerFlair, isPolicyFlair} from '#/lib/post-flairs'
 import {
   FLAIR_GROUPS,
   POST_TYPES,
-  type PostFlair,
   type PostType,
 } from '#/lib/tags'
 import {atoms as a, useTheme, web} from '#/alf'
@@ -165,7 +164,7 @@ function DialogInner({
     }
   }
 
-  const toggleFlair = (flair: PostFlair) => {
+  const toggleFlair = (flair: ComposerFlair) => {
     const isSelected = selectedFlairs.some(f => f.id === flair.id)
     const isPolicy = isPolicyFlair(flair)
     if (isSelected) {
@@ -212,9 +211,9 @@ function DialogInner({
                 ) : (
                   <FlairItem
                     key={item.id}
-                    flair={item as PostFlair}
+                    flair={item as ComposerFlair}
                     isSelected={selectedFlairs.some(f => f.id === item.id)}
-                    onPress={() => toggleFlair(item as PostFlair)}
+                    onPress={() => toggleFlair(item as ComposerFlair)}
                   />
                 ),
               )
@@ -413,7 +412,7 @@ function FlairSelector({
   toggleFlair,
 }: {
   selectedFlairs: ComposerFlair[]
-  toggleFlair: (flair: PostFlair) => void
+  toggleFlair: (flair: ComposerFlair) => void
 }) {
   const {_} = useLingui()
   const t = useTheme()
@@ -519,7 +518,7 @@ function FlairSelector({
       {/* Flair List */}
       <View style={[a.gap_xs]}>
         {currentList.length > 0 ? (
-          currentList.map((flair: PostFlair) => (
+          currentList.map(flair => (
             <FlairItem
               key={flair.id}
               flair={flair}
@@ -542,7 +541,7 @@ function FlairItem({
   isSelected,
   onPress,
 }: {
-  flair: PostFlair
+  flair: ComposerFlair
   isSelected: boolean
   onPress: () => void
 }) {

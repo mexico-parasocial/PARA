@@ -84,7 +84,7 @@ export function FindContactsSettingsScreen({}: Props) {
           !data.syncStatus ? (
             <Intro />
           ) : (
-            <SyncStatus info={data.syncStatus} refetchStatus={refetch} />
+            <SyncStatus info={data.syncStatus} refetchStatus={async () => { await refetch() }} />
           )
         ) : error ? (
           <ErrorScreen

@@ -1,7 +1,6 @@
 import {useCallback, useState} from 'react'
 import {Alert, View} from 'react-native'
-// eslint-disable-next-line import-x/no-unresolved
-import {msg} from '@lingui/macro'
+import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -272,7 +271,7 @@ export function AccountSettingsScreen({navigation}: Props) {
                   return
                 }
 
-                ;(navigation as Record<string, unknown>).navigate('INEVerification')
+                navigation.navigate('INEVerification' as never)
               }}>
               <SettingsList.ItemIcon icon={ShieldIcon} />
               <SettingsList.ItemText>

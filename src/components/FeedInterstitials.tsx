@@ -19,10 +19,13 @@ import {useModerationOpts} from '#/state/preferences/moderation-opts'
 import {useGetPopularFeedsQuery} from '#/state/queries/feed'
 import {type FeedDescriptor} from '#/state/queries/post-feed'
 import {
-  type SuggestedFollowsByActorQueryData,
   suggestedFollowsByActorQueryKey,
   useSuggestedFollowsByActorQuery,
 } from '#/state/queries/suggested-follows'
+
+type SuggestedFollowsByActorQueryData = ReturnType<
+  typeof useSuggestedFollowsByActorQuery
+>['data']
 import {useGetSuggestedUsersForDiscoverQuery} from '#/state/queries/trending/useGetSuggestedUsersForDiscoverQuery'
 import {useSession} from '#/state/session'
 import {BlockDrawerGesture} from '#/view/shell/BlockDrawerGesture'

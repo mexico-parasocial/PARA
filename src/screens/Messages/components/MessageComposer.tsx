@@ -342,7 +342,7 @@ function SubmitButton({
   )
 }
 
-function ComposerContainer({children}: {children: React.ReactNode}) {
+export function ComposerContainer({children}: {children: React.ReactNode}) {
   const {bottom: bottomInset} = useSafeAreaInsets()
   const {progress} = useReanimatedKeyboardAnimation()
   const t = useTheme()

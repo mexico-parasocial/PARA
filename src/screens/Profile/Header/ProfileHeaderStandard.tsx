@@ -28,6 +28,7 @@ import {useAnonymousMode} from '#/lib/m8/hooks/useAnonymousMode'
 import {formatUserDisplayName} from '#/lib/strings/profile-names'
 import {logger} from '#/logger'
 import {type Shadow, useProfileShadow} from '#/state/cache/profile-shadow'
+import * as bsky from '#/types/bsky'
 import {
   useProfileBlockMutationQueue,
   useProfileFollowMutationQueue,
@@ -288,7 +289,7 @@ function ProfileCivicBadges({
           a.py_xs,
           {backgroundColor: `${t.palette.primary_500}15`},
         ]}>
-        <VerificationCheckButton profile={profile} size="sm" />
+        <VerificationCheckButton profile={profile as Shadow<bsky.profile.AnyProfileView>} size="sm" />
         <Text style={[a.text_sm, a.font_bold, {color: t.palette.primary_500}]}>
           <Trans>Verified Citizen</Trans>
         </Text>

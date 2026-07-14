@@ -60,7 +60,7 @@ export function ModeratorDashboardScreen() {
   const reportedMembers =
     memberList?.members.filter(m =>
       m.badges.some(
-        (b: unknown) =>
+        (b) =>
           b.visibleInChat &&
           (b.type === 'reported' ||
             b.type === 'contentious' ||
@@ -190,8 +190,8 @@ export function ModeratorDashboardScreen() {
                     </Text>
                     <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
                       {member.badges
-                        .filter((b: unknown) => b.visibleInChat)
-                        .map((b: unknown) => `${b.icon} ${b.label}`)
+                        .filter((b) => b.visibleInChat)
+                        .map((b) => `${b.icon} ${b.label}`)
                         .join(' · ')}
                     </Text>
                   </View>

@@ -46,12 +46,12 @@ export function DraftItem({
     !draft.meta.isOriginatingDevice && !!draft.hasMissingMedia
   const mediaIsMissing =
     draft.meta.isOriginatingDevice && !!draft.hasMissingMedia
-  const additionalPosts = Math.max(draft.meta.threadSize - 1, 0)
+  const additionalPosts = Math.max(draft.meta.postCount - 1, 0)
   const hasMetadata =
     additionalPosts > 0 ||
     mediaExistsOnOtherDevice ||
     mediaIsMissing ||
-    draft.meta.quote
+    draft.meta.hasQuotes
 
   const isUnknownDevice = useMemo(() => {
     switch (draft.draft.deviceName) {
@@ -149,7 +149,7 @@ export function DraftItem({
                     text={_(msg`Missing media`)}
                   />
                 )}
-                {draft.meta.quote && (
+                {draft.meta.hasQuotes && (
                   <DraftMetadataTag
                     icon={CloseQuoteIcon}
                     text={_(msg`Quote post`)}

@@ -26,7 +26,7 @@ export function useCoarseLocation() {
     queryKey: ['geolocation', 'coarse'],
     queryFn: async () => {
       const {status} = await Location.requestForegroundPermissionsAsync()
-      if (!status.granted) {
+      if (status !== 'granted') {
         throw new Error('Location permission denied')
       }
 
@@ -46,7 +46,7 @@ export function useCoarseLocation() {
       return {
         latitude: pos.coords.latitude,
         longitude: pos.coords.longitude,
-        accuracy: pos.coords.accuracy,
+        accuracy: pos.coords.accuracy ?? undefined,
         timestamp: pos.timestamp,
         countryCode: normalized?.countryCode,
         regionCode: normalized?.regionCode,

@@ -140,7 +140,7 @@ export const LoginForm = ({
       setHasCheckedForStarterPack(true)
       requestNotificationsPermission('Login')
     } catch (e: unknown) {
-      const errMsg = e.toString()
+      const errMsg = String(e)
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
       setIsProcessing(false)
       if (

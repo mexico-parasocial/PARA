@@ -121,7 +121,6 @@ export function InviteScannerScreen() {
 
   return (
     <Layout.Screen
-      minimalShell
       noInsetTop
       style={{backgroundColor: t.palette.black}}>
       <CameraView

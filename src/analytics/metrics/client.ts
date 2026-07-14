@@ -81,7 +81,7 @@ export class MetricsClient<M extends Record<string, unknown>> {
             referrer: '',
             name: String(e.event),
             data: {
-              ...e.payload,
+              ...(e.payload as Record<string, unknown>),
               ...e.metadata,
               time: e.time,
             },

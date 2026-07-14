@@ -494,9 +494,7 @@ export function SeeHighlightDetailsScreen({route}: Props) {
                   style={[
                     styles.relatedDot,
                     {
-                      backgroundColor: Array.isArray(item.color)
-                        ? item.color[0]
-                        : item.color,
+                      backgroundColor: getPrimaryColor(item.color),
                     },
                   ]}
                 />

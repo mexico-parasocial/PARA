@@ -27,30 +27,46 @@ export function replaceEqualDeep(a: unknown, b: unknown): unknown {
     return a.getTime() === b.getTime() ? a : b
   }
 
-  const array = isPlainArray(a) && isPlainArray(b)
-
-  if (array || (isPlainObject(a) && isPlainObject(b))) {
-    const aItems = array ? a : Object.keys(a)
-    const aSize = aItems.length
-    const bItems = array ? b : Object.keys(b)
-    const bSize = bItems.length
-    const copy: Record<string, unknown> = array ? [] : {}
+  if (isPlainArray(a) && isPlainArray(b)) {
+    const aSize = a.length
+    const bSize = b.length
+    const copy: unknown[] = []
 
     let equalItems = 0
 
     for (let i = 0; i < bSize; i++) {
-      const key = array ? i : bItems[i]
+      copy[i] = replaceEqualDeep(a[i], b[i])
+      if (copy[i] === a[i] && a[i] !== undefined) {
+        equalItems++
+      }
+    }
+
+    return aSize === bSize && equalItems === aSize ? a : copy
+  }
+
+  if (isPlainObject(a) && isPlainObject(b)) {
+    const aObj = a as Record<string | number, unknown>
+    const bObj = b as Record<string | number, unknown>
+    const aItems = Object.keys(aObj)
+    const aSize = aItems.length
+    const bItems = Object.keys(bObj)
+    const bSize = bItems.length
+    const copy: Record<string | number, unknown> = {}
+
+    let equalItems = 0
+
+    for (let i = 0; i < bSize; i++) {
+      const key = bItems[i]
       if (
-        !array &&
-        a[key] === undefined &&
-        b[key] === undefined &&
+        aObj[key] === undefined &&
+        bObj[key] === undefined &&
         aItems.includes(key)
       ) {
         copy[key] = undefined
         equalItems++
       } else {
-        copy[key] = replaceEqualDeep(a[key], b[key])
-        if (copy[key] === a[key] && a[key] !== undefined) {
+        copy[key] = replaceEqualDeep(aObj[key], bObj[key])
+        if (copy[key] === aObj[key] && aObj[key] !== undefined) {
           equalItems++
         }
       }
@@ -62,30 +78,31 @@ export function replaceEqualDeep(a: unknown, b: unknown): unknown {
   return b
 }
 
-export function isPlainArray(value: unknown) {
+export function isPlainArray(value: unknown): value is unknown[] {
   return Array.isArray(value) && value.length === Object.keys(value).length
 }
 
 // Copied from: https://github.com/jonschlinkert/is-plain-object
-export function isPlainObject(o: unknown): o is object {
+export function isPlainObject(o: unknown): o is Record<string | number, unknown> {
   if (!hasObjectPrototype(o)) {
     return false
   }
 
   // If has no constructor
-  const ctor = o.constructor
+  const obj = o as Record<string | number, unknown>
+  const ctor = obj.constructor
   if (ctor === undefined) {
     return true
   }
 
   // If has modified prototype
-  const prot = ctor.prototype
-  if (!hasObjectPrototype(prot)) {
+  const prot = (ctor as {prototype?: unknown}).prototype
+  if (!prot || !hasObjectPrototype(prot)) {
     return false
   }
 
   // If constructor does not have an Object-specific method
-  if (!prot.hasOwnProperty('isPrototypeOf')) {
+  if (!Object.prototype.hasOwnProperty.call(prot, 'isPrototypeOf')) {
     return false
   }
 

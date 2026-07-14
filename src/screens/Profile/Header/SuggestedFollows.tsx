@@ -3,10 +3,13 @@ import {useQueryClient} from '@tanstack/react-query'
 
 import {AccordionAnimation} from '#/lib/custom-animations/AccordionAnimation'
 import {
-  type SuggestedFollowsByActorQueryData,
   suggestedFollowsByActorQueryKey,
   useSuggestedFollowsByActorQuery,
 } from '#/state/queries/suggested-follows'
+
+type SuggestedFollowsByActorQueryData = ReturnType<
+  typeof useSuggestedFollowsByActorQuery
+>['data']
 import {ProfileGrid} from '#/components/FeedInterstitials'
 import {IS_ANDROID} from '#/env'
 import type * as bsky from '#/types/bsky'

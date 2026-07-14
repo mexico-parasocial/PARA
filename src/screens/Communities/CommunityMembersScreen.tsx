@@ -9,6 +9,7 @@ import {
 import {useRoute} from '@react-navigation/native'
 
 import {
+  type MemberListItem,
   useChatMemberListQuery,
   useUpdateUserChatPreferencesMutation,
   useUserChatPreferencesQuery,
@@ -179,16 +180,7 @@ function MemberRow({
   showBadges,
   onPress,
 }: {
-  member: {
-    did: string
-    matrixUserId?: string
-    badges: unknown[]
-    participation?: {
-      messageCount: number
-      votesCast: number
-    }
-    lastActiveAt?: string
-  }
+  member: MemberListItem
   communityUri: string
   showBadges: boolean
   onPress: () => void
@@ -196,12 +188,12 @@ function MemberRow({
   const t = useTheme()
 
   const riskBadge = member.badges.find(
-    (b: unknown) =>
+    (b) =>
       b.visibleInChat &&
       (b.severity === 'warning' || b.severity === 'critical'),
   )
   const contextBadge = member.badges.find(
-    (b: unknown) => b.visibleInChat && b.severity === 'info',
+    (b) => b.visibleInChat && b.severity === 'info',
   )
 
   return (
@@ -251,10 +243,10 @@ function MemberRow({
       </View>
 
       {/* Positive badges count */}
-      {member.badges.filter((b: unknown) => !b.visibleInChat).length > 0 && (
+      {member.badges.filter((b) => !b.visibleInChat).length > 0 && (
         <View style={styles.badgePill}>
           <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-            {member.badges.filter((b: unknown) => !b.visibleInChat).length} 🏅
+            {member.badges.filter((b) => !b.visibleInChat).length} 🏅
           </Text>
         </View>
       )}

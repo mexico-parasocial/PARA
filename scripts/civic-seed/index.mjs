@@ -163,7 +163,7 @@ function safeJsonParse(value) {
 }
 
 async function ensureActorSession({service, actor, createAccounts, verbose}) {
-  const agent = new BskyAgent({service})
+  const agent = new AtpAgent({service})
   const identifier = actor.identifier || actor.handle
 
   try {

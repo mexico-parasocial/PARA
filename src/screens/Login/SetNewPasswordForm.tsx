@@ -71,7 +71,7 @@ export const SetNewPasswordForm = ({
       onPasswordSet()
       logEvent('signin:passwordResetSuccess', {})
     } catch (e: unknown) {
-      const errMsg = e.toString()
+      const errMsg = String(e)
       logger.warn('Failed to set new password', {error: e})
       logEvent('signin:passwordResetFailure', {})
       setIsProcessing(false)

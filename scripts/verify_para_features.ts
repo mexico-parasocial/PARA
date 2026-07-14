@@ -7,7 +7,7 @@ const PARA_COLLECTION = 'com.para.post'
 
 async function main() {
   console.log('--- Verifying Para Privacy Features ---')
-  const agent = new BskyAgent({service: SERVICE})
+  const agent = new AtpAgent({service: SERVICE})
 
   // 1. Login
   try {

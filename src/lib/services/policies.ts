@@ -4,7 +4,7 @@
  * Handles fetching policy and matter records from live civic debates.
  */
 
-import {type BskyAgent} from '@atproto/api'
+import {type AtpAgent} from '@atproto/api'
 
 import {fetchCabildeos} from '#/lib/api/cabildeo'
 import {mapCabildeosToView} from '#/lib/cabildeo-client'

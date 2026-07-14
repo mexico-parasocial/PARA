@@ -219,7 +219,7 @@ function DialogInner({profile}: {profile: bsky.profile.AnyProfileView}) {
           </View>
         )}
 
-        {goLiveError && (
+        {!!goLiveError && (
           <Admonition type="error">{cleanError(goLiveError)}</Admonition>
         )}
 

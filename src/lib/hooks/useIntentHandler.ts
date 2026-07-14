@@ -34,7 +34,7 @@ export function useIntentHandler() {
         await WebBrowser.dismissBrowser().catch(() => {})
       }
 
-      const referrerInfo = Referrer.getReferrerInfo()
+      const referrerInfo = await Referrer.getReferrerInfo()
       if (referrerInfo && referrerInfo.hostname !== 'bsky.app') {
         logger.metric('deepLink:referrerReceived', {
           to: url,

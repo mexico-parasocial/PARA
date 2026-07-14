@@ -1,3 +1,4 @@
+import {type AppBskyFeedDefs} from '@atproto/api'
 import {describe, expect, jest, test} from '@jest/globals'
 
 jest.mock('./feed/home', () => ({

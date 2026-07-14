@@ -21,12 +21,14 @@ export function parseReportSubject(
       return {
         type: 'convoMessage',
         ...subject,
+        nsid: 'chat.bsky.convo',
       }
     }
     return {
       type: 'convo',
       convoId: subject.convoId,
       did: subject.did,
+      nsid: 'chat.bsky.convo',
     }
   }
 

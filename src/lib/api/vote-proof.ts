@@ -1,4 +1,4 @@
-import {type BskyAgent} from '@atproto/api'
+import {type AtpAgent} from '@atproto/api'
 
 import {type M8CivicVoteProof,postCivicVoteProof} from '#/lib/m8'
 

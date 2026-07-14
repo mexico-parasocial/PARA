@@ -25,7 +25,7 @@ const AGREE = '#22C55E'
 
 export function VotingButtonHorizontal({
   initialVote = 0,
-  _onVoteChange,
+  onVoteChange: _onVoteChange,
 }: VotingButtonHorizontalProps) {
   const t = useTheme()
   const currentVote = initialVote
@@ -45,12 +45,7 @@ export function VotingButtonHorizontal({
       [-1, 0, 1],
       [DISAGREE + '50', t.palette.contrast_100, AGREE + '50'],
     )
-    const base: {
-      transform: any
-      backgroundColor: string
-      borderColor: string
-      cursor?: 'grabbing' | 'grab'
-    } = {
+    const base: any = {
       transform: [{translateX: translationX.value}, {scale: scale.value}],
       backgroundColor: bg,
       borderColor: border,
@@ -150,10 +145,10 @@ export function VotingButtonHorizontal({
           style={[
             styles.control,
             controlStyle,
-            Platform.OS === 'web' && {
+            Platform.OS === 'web' && ({
               userSelect: 'none',
               touchAction: 'none',
-            },
+            } as any),
           ]}>
           <View style={styles.textWrapper}>
             <Animated.Text style={[styles.voteText, voteTextStyle]}>

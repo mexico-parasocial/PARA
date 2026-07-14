@@ -36,7 +36,7 @@ const Context = createContext<ContextType | null>(null)
 Context.displayName = 'SelectContext'
 
 const ValueTextContext = createContext<
-  [string | undefined, React.Dispatch<React.SetStateAction<string | undefined>>]
+  [unknown, React.Dispatch<React.SetStateAction<unknown>>]
 >([undefined, () => {}])
 ValueTextContext.displayName = 'ValueTextContext'
 
@@ -50,7 +50,7 @@ function useSelectContext() {
 
 export function Root({children, value, onValueChange, disabled}: RootProps) {
   const control = Dialog.useDialogControl()
-  const valueTextCtx = useState<string | undefined>()
+  const valueTextCtx = useState<unknown>()
 
   const ctx = useMemo(
     () => ({
@@ -120,7 +120,9 @@ export function ValueText({
   const [value] = useContext(ValueTextContext)
   const t = useTheme()
 
-  let text = value && children(value)
+  let text: React.ReactNode = value
+    ? children(value as {label: string})
+    : null
   if (!text) text = placeholder
 
   return (
@@ -136,7 +138,7 @@ export function Icon({}: IconProps) {
 
 export function Content<T>({
   items,
-  valueExtractor = defaultItemValueExtractor,
+  valueExtractor = defaultItemValueExtractor as (item: T) => string,
   ...props
 }: ContentProps<T>) {
   const {control, ...context} = useSelectContext()

@@ -26,7 +26,7 @@ function getInitialTheme(): ThemeName {
   return 'light'
 }
 
-export function Splash() {
+export function Splash({isReady: _isReady}: {isReady?: boolean} = {}) {
   const themeName = useMemo(() => getInitialTheme(), [])
   const t = themes[themeName]
 

@@ -4,7 +4,7 @@ import {registerParaLexicons} from './para-lexicons-registration'
 
 describe('registerParaLexicons', () => {
   it('registers timeline party and community params', () => {
-    const agent = new BskyAgent({service: 'https://example.com'})
+    const agent = new AtpAgent({service: 'https://example.com'})
 
     registerParaLexicons(agent)
 
@@ -21,7 +21,7 @@ describe('registerParaLexicons', () => {
   })
 
   it('overwrites stale locally registered timeline params', () => {
-    const agent = new BskyAgent({service: 'https://example.com'})
+    const agent = new AtpAgent({service: 'https://example.com'})
     agent.lex.add({
       lexicon: 1,
       id: 'com.para.feed.getTimeline',
@@ -56,7 +56,7 @@ describe('registerParaLexicons', () => {
   })
 
   it('registers collection procedures used by the civic tree', () => {
-    const agent = new BskyAgent({service: 'https://example.com'})
+    const agent = new AtpAgent({service: 'https://example.com'})
 
     registerParaLexicons(agent)
 
@@ -83,7 +83,7 @@ describe('registerParaLexicons', () => {
   })
 
   it('registers collection items for mixed civic tree cards', () => {
-    const agent = new BskyAgent({service: 'https://example.com'})
+    const agent = new AtpAgent({service: 'https://example.com'})
 
     registerParaLexicons(agent)
 
@@ -125,7 +125,7 @@ describe('registerParaLexicons', () => {
   })
 
   it('registers community join with the backend communityUri payload', () => {
-    const agent = new BskyAgent({service: 'https://example.com'})
+    const agent = new AtpAgent({service: 'https://example.com'})
 
     registerParaLexicons(agent)
 
@@ -155,7 +155,7 @@ describe('registerParaLexicons', () => {
   })
 
   it('registers Community Civic Tree v2 records and XRPC methods', () => {
-    const agent = new BskyAgent({service: 'https://example.com'})
+    const agent = new AtpAgent({service: 'https://example.com'})
 
     registerParaLexicons(agent)
 
@@ -198,7 +198,7 @@ describe('registerParaLexicons', () => {
   })
 
   it('registers highlight queries with backend parameter names', () => {
-    const agent = new BskyAgent({service: 'https://example.com'})
+    const agent = new AtpAgent({service: 'https://example.com'})
 
     registerParaLexicons(agent)
 

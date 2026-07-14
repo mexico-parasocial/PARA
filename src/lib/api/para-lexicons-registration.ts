@@ -1,4 +1,4 @@
-import {type BskyAgent} from '@atproto/api'
+import {type AtpAgent} from '@atproto/api'
 
 /**
  * Para Lexicon Registration
@@ -2420,7 +2420,7 @@ const ALL_PARA_LEXICONS = [
  * Register all PARA custom lexicons on the given agent so that
  * agent.call('com.para.*', ...) works at runtime.
  */
-export function registerParaLexicons(agent: BskyAgent) {
+export function registerParaLexicons(agent: AtpAgent) {
   for (const lex of ALL_PARA_LEXICONS) {
     try {
       if (agent.lex.get(lex.id)) {

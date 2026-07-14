@@ -24,10 +24,17 @@ export type AutocompleteEmoji = {
   emoji: Emoji
 }
 
+export type AutocompleteSearch = {
+  key: string
+  type: 'search'
+  value: string
+}
+
 export type AutocompleteItem =
   | AutocompleteProfile
   | AutocompleteTag
   | AutocompleteEmoji
+  | AutocompleteSearch
 
 export type AutocompleteItemType = AutocompleteItem['type']
 

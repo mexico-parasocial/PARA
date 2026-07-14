@@ -59,7 +59,7 @@ export const ForgotPasswordForm = ({
       await agent.com.atproto.server.requestPasswordReset({email})
       onEmailSent()
     } catch (e: unknown) {
-      const errMsg = e.toString()
+      const errMsg = String(e)
       logger.warn('Failed to request password reset', {error: e})
       setIsProcessing(false)
       if (isNetworkError(e)) {

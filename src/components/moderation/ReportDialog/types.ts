@@ -74,12 +74,19 @@ export type ParsedReportSubject =
       did: string
       nsid: string
     }
-  | ({
+  | {
       type: 'convoMessage'
-    } & ReportSubjectConvoMessage)
-  | ({
+      view: 'convo' | 'message'
+      convoId: string
+      message: ChatBskyConvoDefs.MessageView
+      nsid: string
+    }
+  | {
       type: 'convo'
-    } & ReportSubjectConvo)
+      convoId: string
+      did: string
+      nsid: string
+    }
 
 export type ReportDialogProps = {
   control: Dialog.DialogOuterProps['control']

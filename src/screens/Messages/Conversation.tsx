@@ -81,7 +81,6 @@ export function MessagesConversationScreenInner({route}: Props) {
 
   return (
     <Layout.Screen
-      minimalShell
       testID="convoScreen"
       noInsetTop={IS_LIQUID_GLASS}
       style={web([{minHeight: 0}, a.flex_1])}>
@@ -238,7 +237,6 @@ function InnerReady({
       <MessagesListBlockedFooter
         recipient={primaryMember}
         convoId={convo.view.id}
-        isGroup={convo.kind === 'group'}
         moderation={primaryMemberModeration}
       />
     )

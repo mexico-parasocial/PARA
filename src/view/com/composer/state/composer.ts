@@ -41,6 +41,11 @@ type ImagesMedia = {
   images: ComposerImage[]
 }
 
+type GalleryMedia = {
+  type: 'gallery'
+  images: ComposerImage[]
+}
+
 type VideoMedia = {
   type: 'video'
   video: VideoState
@@ -62,7 +67,7 @@ type Link = {
 export type EmbedDraft = {
   // We'll always submit quote and actual media (images, video, gifs) chosen by the user.
   quote: Link | undefined
-  media: ImagesMedia | VideoMedia | GifMedia | undefined
+  media: ImagesMedia | GalleryMedia | VideoMedia | GifMedia | undefined
   // This field may end up ignored if we have more important things to display than a link card:
   link: Link | undefined
 }

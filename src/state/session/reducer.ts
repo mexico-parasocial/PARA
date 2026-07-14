@@ -10,7 +10,7 @@ import {createTemporaryAgentsAndResume} from './util'
 
 // A hack so that the reducer can't read anything from the agent.
 // From the reducer's point of view, it should be a completely opaque object.
-type OpaqueBskyAgent = {
+type OpaqueAtpAgent = {
   readonly service: URL
   readonly api: unknown
   readonly app: unknown
@@ -18,7 +18,7 @@ type OpaqueBskyAgent = {
 }
 
 type AgentState = {
-  readonly agent: OpaqueBskyAgent
+  readonly agent: OpaqueAtpAgent
   readonly did: string | undefined
 }
 
@@ -31,14 +31,14 @@ export type State = {
 export type Action =
   | {
       type: 'received-agent-event'
-      agent: OpaqueBskyAgent
+      agent: OpaqueAtpAgent
       accountDid: string
       refreshedAccount: SessionAccount | undefined
       sessionEvent: AtpSessionEvent
     }
   | {
       type: 'switched-to-account'
-      newAgent: OpaqueBskyAgent
+      newAgent: OpaqueAtpAgent
       newAccount: SessionAccount
     }
   | {

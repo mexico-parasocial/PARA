@@ -15,7 +15,7 @@ interface Props {
 
 interface State {
   hasError: boolean
-  error: Error
+  error: Error | undefined
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -35,12 +35,12 @@ export class ErrorBoundary extends Component<Props, State> {
   public render() {
     if (this.state.hasError) {
       if (this.props.renderError) {
-        return this.props.renderError(this.state.error)
+        return this.props.renderError(this.state.error!)
       }
 
       return (
         <CenteredView style={[{height: '100%', flex: 1}, this.props.style]}>
-          <TranslatedErrorScreen details={this.state.error.toString()} />
+          <TranslatedErrorScreen details={this.state.error!.toString()} />
         </CenteredView>
       )
     }

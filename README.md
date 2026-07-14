@@ -32,7 +32,7 @@ pnpm android
 
 ## Requirements
 
-- Node.js >= 24.15.0 (see `.nvmrc`)
+- Node.js >= 24.18.0 (see `.nvmrc`)
 - pnpm >= 11.1.1 (enforced via `packageManager` in `package.json`)
 - Java 17 (Zulu) — for Android builds
 - Xcode — for iOS builds

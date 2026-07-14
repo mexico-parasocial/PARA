@@ -395,7 +395,12 @@ function generateDistricts(): ElectoralDistrict[] {
         currentDeputy: deputyName,
         deputyParty,
         accent: partyAccent(dominantParty),
-        centroid: boundaryData?.centroid,
+        centroid: boundaryData?.centroid
+          ? {
+              latitude: boundaryData.centroid.lat,
+              longitude: boundaryData.centroid.lng,
+            }
+          : undefined,
         boundary: boundaryData?.boundary,
       })
 

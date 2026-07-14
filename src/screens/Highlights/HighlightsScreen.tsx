@@ -41,6 +41,7 @@ import {
   buildHighlightCardViews,
   filterHighlightCards,
   getHighlightsForScope,
+  getPrimaryColor,
   getSignalSummaries,
   type HighlightCardView,
   type HighlightScope,
@@ -428,9 +429,7 @@ function HighlightCard({
   onSave: () => void
 }) {
   const t = useTheme()
-  const primaryColor = Array.isArray(highlight.color)
-    ? highlight.color[0]
-    : highlight.color
+  const primaryColor = getPrimaryColor(highlight.color)
 
   return (
     <Pressable

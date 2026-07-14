@@ -226,7 +226,7 @@ export async function post(
 
     // Prepare a ref to the current post for the next post in the thread.
     const ref = {
-      cid: await computeCid(record),
+      cid: await computeCid(record as AppBskyFeedPost.Record),
       uri,
     }
     replyPromise = {
@@ -259,7 +259,7 @@ export async function post(
   return {uris}
 }
 
-async function resolveRT(agent: BskyAgent, richtext: RichText) {
+async function resolveRT(agent: AtpAgent, richtext: RichText) {
   const trimmedText = richtext.text
     // Trim leading whitespace-only lines (but don't break ASCII art).
     .replace(/^(\s*\n)+/, '')
@@ -279,7 +279,7 @@ export class ReplyDeletedError extends Error {
   }
 }
 
-async function resolveReply(agent: BskyAgent, replyTo: string) {
+async function resolveReply(agent: AtpAgent, replyTo: string) {
   const {data} = await agent.app.bsky.feed.getPosts({
     uris: [replyTo],
   })
@@ -595,7 +595,7 @@ function prepareForHashing(v: unknown): unknown {
   return v
 }
 
-function isPlainObject(v: unknown): boolean {
+function isPlainObject(v: unknown): v is Record<string, unknown> {
   if (typeof v !== 'object' || v === null) {
     return false
   }

@@ -269,30 +269,32 @@ of Node.js requires NODE_MODULE_VERSION 127.
 
 ### Current pinning
 
-- `.nvmrc` → `22`
-- `engines.node` → `>=22.1.0`
-- User's nvm default → `24.15.0` (so the shell auto-switches to 22
-  when `cd`-ing into WatZappa, but any `pnpm install` run from a
-  different directory builds for the wrong version)
+- `PARA/.nvmrc` → `24.18.0`
+- `WatZappa/.nvmrc` → `24.18.0`
+- Root `.nvmrc` → `24`
+- `engines.node` → `>=22` (WatZappa) / `>=24.18.0` (PARA)
+- All subprojects should be installed with Node 24.18.0 so native
+  modules like `better-sqlite3` compile against the same ABI.
 
 ### Safeguards in place (WatZappa/package.json)
 
 - **`preinstall`** — bails out with a clear error if `node --version`
-  is below 22. Run `nvm use 22` and retry.
+  is below 22. Run `nvm use` and retry.
 - **`postinstall`** — runs `pnpm rebuild better-sqlite3` so the binary
   always matches the Node version that just ran the install, no matter
   what state `node_modules` was in before.
 
 ### The rule going forward
 
-- **Always `cd /Users/mlv/Desktop/TH1/WatZappa` before `pnpm install`.**
-  The `load-nvmrc` hook in `~/.zshrc` will auto-switch to Node 22.
-  Then run install. Don't run install from a parent directory or from
-  the PARA folder — you'll build against the wrong Node.
+- **Always `cd` into the subproject before `pnpm install`.**
+  The `load-nvmrc` hook in `~/.zshrc` will auto-switch to the version
+  declared in that directory's `.nvmrc` (24.18.0 for PARA and WatZappa).
+  Don't run install from a parent directory — you'll build against the
+  wrong Node.
 - If you ever see the `NODE_MODULE_VERSION` mismatch again, the fix is:
   ```bash
   cd /Users/mlv/Desktop/TH1/WatZappa
-  nvm use 22
+  nvm use
   pnpm rebuild better-sqlite3
   ```
   Don't `pnpm install --force` unless the rebuild fails — it's slower
@@ -317,34 +319,51 @@ decision is made.
 
 ---
 
-## 2026-06-01: pnpm 10 patch migration (mirror bsky upstream)
+## 2026-07-13: pnpm 11.11.0 alignment and web dev build fix
 
-- **Decision:** Migrated from `patch-package` to pnpm-native `patchedDependencies`.
-- **Reasoning:** Bsky upstream removed all `patchedDependencies` AND `patch-package`
-  because pnpm 10 changed the patch filename convention (`package@version.patch`
-  → `package+version.patch`) and enforces stricter version matching. Pnpm 10 also
-  ignores `patchedDependencies` in `pnpm-workspace.yaml` — it must live in
-  `package.json` under `pnpm.patchedDependencies`.
+- **pnpm version:** Both `WatZappa/` and `PARA/` now declare
+  `packageManager: "pnpm@11.11.0"`, matching the upstream atproto workspace.
+  Run `corepack enable pnpm` so the corepack shim is used instead of any
+  Homebrew/global pnpm binary.
+- **PARA web dev build (`pnpm web`):** Webpack now stubs out
+  `react-native/Libraries/Core/setUpReactDevTools.js` via a
+  `NormalModuleReplacementPlugin`, because the real module imports a private
+  `ReactDevToolsSettingsManager` path that does not exist in the installed
+  `react-devtools-core` version. The dev server and `expo export:web --dev`
+  compile successfully (with pre-existing non-fatal warnings).
+- **PARA patch config:** Removed a stray duplicate `react-native` patch entry
+  from `pnpm-workspace.yaml` so the workspace `patchedDependencies` matches
+  `pnpm-lock.yaml` under pnpm 11.
+
+---
+
+## 2026-06-01: pnpm patch configuration (pnpm 11.11.0)
+
+- **Decision:** Use pnpm-native `patchedDependencies` managed in
+  `pnpm-workspace.yaml`.
+- **Reasoning:** The repo uses pnpm 11.11.0 (mirroring the upstream atproto
+  workspace). In pnpm 11 the `patchedDependencies` setting belongs in
+  `pnpm-workspace.yaml`; the `pnpm.patchedDependencies` field in `package.json`
+  is ignored. Patch filenames in this repo use the `package+version.patch`
+  convention.
 - **Changes made:**
-  - All 18 patch files renamed from `@` to `+` filename convention
-  - `pnpm.patchedDependencies` block moved from `pnpm-workspace.yaml` to
-    `package.json`
-  - Three packages with `^`/`~` ranges were unresolved to newer versions that
-    no longer match the patches, so they are pinned via `overrides` in
-    `pnpm-workspace.yaml`:
+  - Kept the 18 patch files using the `+` filename convention.
+  - `patchedDependencies` block lives in `pnpm-workspace.yaml` (not
+    `package.json`).
+  - Removed a duplicate `react-native: patches/react-native.patch` entry so the
+    workspace config matches the lockfile (`react-native@0.81.5`).
+  - Three packages with `^`/`~` ranges are pinned via `overrides` in
+    `pnpm-workspace.yaml` so their patches keep matching:
     - `expo-updates: 29.0.17` (was `~29.0.17`)
     - `react-native-drawer-layout: 4.2.3` (was `^4.2.3`)
     - `react-native-keyboard-controller: 1.21.8` (was `^1.21.8`)
-  - `patch-package` removed from `postinstall` and `devDependencies`
-    (pnpm-native patching replaces it; running both causes double-apply errors)
-  - `scripts/apply-nested-patches.js` kept (handles nested deps like
-    `dev-env/node_modules/@atproto/dev-env`)
-- **Pre-existing issue (not caused by this migration):**
-  `apply-nested-patches.js` warns about a missing `@atproto+dev-env+0.4.7.patch`
-  — the user is now on dev-env `0.5.5` and the nested patch was never updated.
-  This is a no-op (the script logs a warning and returns).
-- **Backup:** `patches/` directory was backed up to
-  `/tmp/para-patches-backup-20260601-190022/` before any rename.
+  - `patch-package` is not used; pnpm-native patching runs automatically.
+  - `scripts/apply-nested-patches.js` is still run from `postinstall` (handles
+    nested deps like `dev-env/node_modules/@atproto/dev-env`).
+- **Pre-existing issue:** `apply-nested-patches.js` warns about a missing
+  `@atproto+dev-env+0.4.7.patch` — the installed dev-env version no longer
+  matches the hard-coded patch name. This is a no-op (the script logs a warning
+  and returns).
 
 ## 2026-06-02: Restored missing `src/components/Pills.tsx` (fixes QuoteEmbed crash)
 

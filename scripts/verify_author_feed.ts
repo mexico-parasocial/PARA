@@ -5,7 +5,7 @@ const USER = 'alice.test'
 const PASS = 'hunter2'
 
 async function main() {
-  const agent = new BskyAgent({service: SERVICE})
+  const agent = new AtpAgent({service: SERVICE})
 
   try {
     await agent.login({identifier: USER, password: PASS})

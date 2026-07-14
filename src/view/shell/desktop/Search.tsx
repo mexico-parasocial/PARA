@@ -82,14 +82,19 @@ export function DesktopSearch() {
   }
 
   const onSelect = (item: AutocompleteItem) => {
-    if (item.type === 'profile') {
+    const autocompleteItem = item as AutocompleteItem &
+      (
+        | {type: 'profile'; profile: {handle: string}}
+        | {type: 'search'; value: string}
+      )
+    if (autocompleteItem.type === 'profile') {
       onClearText()
       sift.elements.input.blur()
-      navigation.navigate('Profile', {name: item.profile.handle})
-    } else if (item.type === 'search') {
+      navigation.navigate('Profile', {name: autocompleteItem.profile.handle})
+    } else if (autocompleteItem.type === 'search') {
       onClearText()
       sift.elements.input.blur()
-      navigation.navigate('Search', {q: item.value})
+      navigation.navigate('Search', {q: autocompleteItem.value})
     }
   }
 
@@ -109,6 +114,7 @@ export function DesktopSearch() {
           />
         </View>
         <AdvancedSearchDialog
+          disabled={false}
           q={query}
           filters={routeFilters}
           onSubmit={(q, nextFilters) => {

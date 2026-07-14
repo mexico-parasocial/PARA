@@ -48,11 +48,13 @@ export function Outer({
   testID,
   nativeOptions,
   webOptions,
+  onClose,
 }: React.PropsWithChildren<{
   control: Dialog.DialogControlProps
   testID?: string
   nativeOptions?: Omit<BottomSheetViewProps, 'children'>
   webOptions?: Record<string, unknown>
+  onClose?: () => void
 }>) {
   const titleId = useId()
   const descriptionId = useId()
@@ -67,7 +69,8 @@ export function Outer({
       control={control}
       testID={testID}
       webOptions={webOptions || {alignCenter: true}}
-      nativeOptions={{preventExpansion: true, ...nativeOptions}}>
+      nativeOptions={{preventExpansion: true, ...nativeOptions}}
+      onClose={onClose}>
       <Dialog.Handle />
       <Context.Provider value={context}>{children}</Context.Provider>
     </Dialog.Outer>

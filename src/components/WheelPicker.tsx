@@ -1,5 +1,7 @@
 import {useEffect, useRef, useState} from 'react'
 import {
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
   ScrollView,
   StyleSheet,
   Text,
@@ -7,6 +9,7 @@ import {
   View,
 } from 'react-native'
 
+import {type Theme} from '#/alf'
 import {WebScrollControls} from '#/components/WebScrollControls'
 
 export const ITEM_HEIGHT = 44

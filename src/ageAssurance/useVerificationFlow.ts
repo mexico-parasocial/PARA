@@ -1,4 +1,5 @@
 import {useCallback, useState} from 'react'
+// @ts-expect-error expo-age-range is not installed in this branch; device verification is stubbed.
 import type * as AgeRange from 'expo-age-range'
 import {useLingui} from '@lingui/react/macro'
 
@@ -6,13 +7,12 @@ import {useSession} from '#/state/session'
 import {type DialogControlProps} from '#/components/Dialog'
 import * as Toast from '#/components/Toast'
 import {useAgeAssurance} from '#/ageAssurance'
+// @ts-expect-error Device signal helpers are not yet implemented in this branch.
 import {getDeviceSignals, setDeviceSignalsForRegion} from '#/ageAssurance/data'
 import {logger} from '#/ageAssurance/logger'
 import {unsafeGetAndComputeAgeAssurance} from '#/ageAssurance/state'
-import {
-  getAgeAssuranceDataFromDeviceSignals,
-  useAgeAssuranceRegionConfig,
-} from '#/ageAssurance/util'
+// @ts-expect-error Device signal helpers are not yet implemented in this branch.
+import {getAgeAssuranceDataFromDeviceSignals, useAgeAssuranceRegionConfig} from '#/ageAssurance/util'
 import {useAnalytics} from '#/analytics'
 
 /**
@@ -45,7 +45,9 @@ export function useAgeAssuranceVerificationFlow({
   const region = useAgeAssuranceRegionConfig()
   const aa = useAgeAssurance()
   const hasInitiated = !!aa.state.lastInitiatedAt
-  const allowsDeviceVerification = region && aa.flags.allowsDeviceVerification
+  const allowsDeviceVerification =
+    // @ts-expect-error Property not yet present on AgeAssuranceFlags type.
+    region && aa.flags.allowsDeviceVerification
 
   const [isVerifying, setIsVerifying] = useState(false)
   /*

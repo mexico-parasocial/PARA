@@ -65,7 +65,7 @@ export function WizardEditListDialog({
   >) =>
     state.currentStep === 'Profiles' ? (
       <WizardProfileCard
-        profile={item}
+        profile={item as AppBskyActorDefs.ProfileViewDetailed}
         btnType="remove"
         state={state}
         dispatch={dispatch}
@@ -73,7 +73,7 @@ export function WizardEditListDialog({
       />
     ) : (
       <WizardFeedCard
-        generator={item}
+        generator={item as AppBskyFeedDefs.GeneratorView}
         btnType="remove"
         state={state}
         dispatch={dispatch}

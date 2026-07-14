@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useMemo, useState} from 'react'
+import {type ComponentType, useCallback, useEffect, useMemo, useState} from 'react'
 import {
   ActivityIndicator,
   StyleSheet,
@@ -6,8 +6,8 @@ import {
   View,
 } from 'react-native'
 import {WebView} from 'react-native-webview'
-import * as FileSystem from 'expo-file-system'
 import {Asset} from 'expo-asset'
+import * as FileSystem from 'expo-file-system'
 import {useNavigation, useRoute} from '@react-navigation/native'
 
 import {getDefaultChatIdentityMode} from '#/lib/chat/identity'
@@ -22,6 +22,11 @@ import {
 import {useAgent} from '#/state/session'
 import {atoms as a, useTheme} from '#/alf'
 import {ChatIdentityPill} from '#/components/chat/ChatIdentityPill'
+import {type Props as SVGIconProps} from '#/components/icons/common'
+import {Group3_Stroke2_Corner0_Rounded as MembersIcon} from '#/components/icons/Group'
+import {Megaphone_Stroke2_Corner0_Rounded as ProposalIcon} from '#/components/icons/Megaphone'
+import {Newspaper_Stroke2_Corner2_Rounded as EvidenceIcon} from '#/components/icons/Newspaper'
+import {Sparkle_Stroke2_Corner0_Rounded as SummarizeIcon} from '#/components/icons/Sparkle'
 import * as Layout from '#/components/Layout'
 import {SorteoBadge} from '#/components/SorteoBadge'
 import {Text} from '#/components/Typography'
@@ -78,6 +83,7 @@ export function CommunityChatScreen() {
   const isLoading = spaceLoading || tokenLoading
 
   const [sdkBundle, setSdkBundle] = useState<string | undefined>()
+  const [showOnboarding, setShowOnboarding] = useState(true)
 
   useEffect(() => {
     let cancelled = false
@@ -253,6 +259,16 @@ export function CommunityChatScreen() {
           </View>
         )}
       </View>
+      {showOnboarding && (
+        <OnboardingBanner
+          onDismiss={() => setShowOnboarding(false)}
+          roomLabel={
+            routeRoomId && routeRoomId !== spaceData?.spaceId
+              ? 'cámara de debate'
+              : 'sala principal'
+          }
+        />
+      )}
       <View
         style={[
           styles.actionBar,
@@ -264,21 +280,25 @@ export function CommunityChatScreen() {
         <ChatActionButton
           label="Resumir"
           hint="Abre el agente para resumir el debate"
+          icon={SummarizeIcon}
           onPress={openAgentAssistant}
         />
         <ChatActionButton
           label="Propuesta"
           hint="Crea un cabildeo desde esta conversación"
+          icon={ProposalIcon}
           onPress={openCreateCabildeo}
         />
         <ChatActionButton
           label="Evidencia"
           hint="Abre el agente para extraer evidencia"
+          icon={EvidenceIcon}
           onPress={openAgentAssistant}
         />
         <ChatActionButton
           label="Miembros"
           hint="Muestra miembros y badges cívicos"
+          icon={MembersIcon}
           onPress={() =>
             navigation.navigate('CommunityMembers', {
               communityUri,
@@ -308,10 +328,12 @@ export function CommunityChatScreen() {
 function ChatActionButton({
   label,
   hint,
+  icon: Icon,
   onPress,
 }: {
   label: string
   hint: string
+  icon: ComponentType<SVGIconProps>
   onPress: () => void
 }) {
   const t = useTheme()
@@ -323,8 +345,51 @@ function ChatActionButton({
       accessibilityHint={hint}
       onPress={onPress}
       style={styles.actionButton}>
-      <Text style={[a.text_xs, a.font_semi_bold, t.atoms.text]}>{label}</Text>
+      <Icon size="sm" style={{color: t.palette.primary_500}} />
+      <Text style={[a.text_xs, a.font_semi_bold, t.atoms.text, a.mt_xs]}>
+        {label}
+      </Text>
     </TouchableOpacity>
+  )
+}
+
+function OnboardingBanner({
+  onDismiss,
+  roomLabel,
+}: {
+  onDismiss: () => void
+  roomLabel: string
+}) {
+  const t = useTheme()
+
+  return (
+    <View
+      style={[
+        styles.onboardingBanner,
+        {
+          backgroundColor: t.palette.primary_500 + '12',
+          borderBottomColor: t.palette.primary_500 + '24',
+        },
+      ]}>
+      <View style={[a.flex_1, a.gap_xs]}>
+        <Text style={[a.text_sm, a.font_bold, {color: t.palette.primary_600}]}>
+          Deliberación cívica
+        </Text>
+        <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
+          Esta es la {roomLabel}. Los mensajes aquí son parte de la
+          conversación de la comunidad. Usa los botones de arriba para resumir,
+          proponer o recopilar evidencia.
+        </Text>
+      </View>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityLabel="Cerrar"
+        accessibilityHint="Oculta este mensaje de bienvenida"
+        onPress={onDismiss}
+        style={styles.dismissBtn}>
+        <Text style={{color: t.palette.primary_500}}>✕</Text>
+      </TouchableOpacity>
+    </View>
   )
 }
 
@@ -378,9 +443,22 @@ const styles = StyleSheet.create({
   actionButton: {
     flex: 1,
     alignItems: 'center',
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 8,
+    borderRadius: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 10,
     backgroundColor: 'rgba(128,128,128,0.08)',
+    gap: 3,
+  },
+  onboardingBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  dismissBtn: {
+    padding: 4,
+    borderRadius: 8,
   },
 })

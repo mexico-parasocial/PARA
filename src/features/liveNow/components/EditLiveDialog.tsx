@@ -185,10 +185,10 @@ function DialogInner({
           <LinkPreview linkMeta={linkMeta} loading={linkMetaLoading} />
         </View>
 
-        {goLiveError && (
+        {!!goLiveError && (
           <Admonition type="error">{cleanError(goLiveError)}</Admonition>
         )}
-        {removeLiveStatusError && (
+        {!!removeLiveStatusError && (
           <Admonition type="error">
             {cleanError(removeLiveStatusError)}
           </Admonition>

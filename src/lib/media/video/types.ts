@@ -8,6 +8,20 @@ export type VideoCompressSkipReason =
   | 'no-webcodecs'
   | 'compress-error-fallback'
 
+export type ProbedMetadata = {
+  mimeType: string
+  codec: string
+  width: number
+  height: number
+  duration: number
+  bitrate: number
+  fileSize: number
+  hasAudio: boolean
+  frameRate: number
+  rotation: number
+  isHDR: boolean
+}
+
 export type CompressedVideo = {
   uri: string
   mimeType: string

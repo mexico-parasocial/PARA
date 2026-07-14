@@ -88,7 +88,7 @@ export function Deactivated() {
           break
       }
 
-      logger.error(e, {
+      logger.error(e as Error | string, {
         message: 'Failed to activate account',
       })
     } finally {

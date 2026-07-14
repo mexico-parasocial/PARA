@@ -8,7 +8,7 @@ import {
   useState,
   useSyncExternalStore,
 } from 'react'
-import {type AtpSessionEvent, type BskyAgent} from '@atproto/api'
+import {type AtpAgent,type AtpSessionEvent} from '@atproto/api'
 
 import {isLikelyLocalServiceUrl} from '#/lib/constants'
 import * as persisted from '#/state/persisted'
@@ -20,7 +20,7 @@ import {IS_WEB} from '#/env'
 import {emitSessionDropped} from '../events'
 import {
   agentToSessionAccount,
-  type BskyAppAgent,
+  type AtpAppAgent,
   createAgentAndCreateAccount,
   createAgentAndLogin,
   createAgentAndResume,
@@ -49,7 +49,7 @@ const StateContext = createContext<SessionStateContext>({
 })
 StateContext.displayName = 'SessionStateContext'
 
-const AgentContext = createContext<BskyAgent | null>(null)
+const AgentContext = createContext<AtpAgent | null>(null)
 AgentContext.displayName = 'SessionAgentContext'
 
 const ApiContext = createContext<SessionApiContext>({
@@ -125,7 +125,7 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
   const onboardingDispatch = useOnboardingDispatch()
 
   const onAgentSessionChange = useCallback(
-    (agent: BskyAgent, accountDid: string, sessionEvent: AtpSessionEvent) => {
+    (agent: AtpAgent, accountDid: string, sessionEvent: AtpSessionEvent) => {
       const refreshedAccount = agentToSessionAccount(agent) // Mutable, so snapshot it right away.
       if (sessionEvent === 'expired' || sessionEvent === 'create-failed') {
         emitSessionDropped()
@@ -318,7 +318,7 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
   const partialRefreshSession = useCallback<
     SessionApiContext['partialRefreshSession']
   >(async () => {
-    const agent = state.currentAgentState.agent as BskyAppAgent
+    const agent = state.currentAgentState.agent as AtpAppAgent
     const signal = cancelPendingTask()
     const {data} = await agent.com.atproto.server.getSession()
     if (signal.aborted) return
@@ -372,7 +372,7 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
            */
           void resumeSession(syncedAccount)
         } else {
-          const agent = state.currentAgentState.agent as BskyAgent
+          const agent = state.currentAgentState.agent as AtpAgent
           const prevSession = agent.session
           agent.sessionManager.session = sessionAccountToSession(syncedAccount)
           addSessionDebugLog({
@@ -422,7 +422,7 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
   // eslint-disable-next-line react-hooks/immutability
   if (__DEV__ && IS_WEB) window.agent = state.currentAgentState.agent
 
-  const agent = state.currentAgentState.agent as BskyAppAgent
+  const agent = state.currentAgentState.agent as AtpAppAgent
   const currentAgentRef = useRef(agent)
   useEffect(() => {
     if (currentAgentRef.current !== agent) {
@@ -492,7 +492,7 @@ export function useRequireAuth() {
   )
 }
 
-export function useAgent(): BskyAgent {
+export function useAgent(): AtpAgent {
   const agent = useContext(AgentContext)
   if (!agent) {
     throw Error('useAgent() must be below <SessionProvider>.')

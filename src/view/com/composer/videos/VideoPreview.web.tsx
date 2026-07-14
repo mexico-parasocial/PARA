@@ -15,10 +15,12 @@ export function VideoPreview({
   asset,
   video,
   clear,
+  isActivePost,
 }: {
   asset: ImagePickerAsset
   video: CompressedVideo
   clear: () => void
+  isActivePost?: boolean
 }) {
   const {_} = useLingui()
   // TODO: figure out how to pause a GIF for reduced motion

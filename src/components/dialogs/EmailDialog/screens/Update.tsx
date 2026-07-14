@@ -266,7 +266,9 @@ export function Update(_props: ScreenProps<ScreenID.Update>) {
               />
               {state.mutationStatus !== 'success' && (
                 <ResendEmailText
-                  onPress={requestEmailUpdate}
+                  onPress={async () => {
+                    await requestEmailUpdate()
+                  }}
                   style={[a.pt_sm]}
                 />
               )}

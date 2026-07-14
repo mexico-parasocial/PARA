@@ -196,7 +196,7 @@ function usePagerHandlers(
   },
   dependencies: unknown[],
 ) {
-  const {doDependenciesDiffer} = useHandler(handlers, dependencies)
+  const {doDependenciesDiffer} = useHandler(handlers as any, dependencies)
   const subscribeForEvents = [
     'onPageScroll',
     'onPageScrollStateChanged',

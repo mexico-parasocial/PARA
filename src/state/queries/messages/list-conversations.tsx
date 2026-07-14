@@ -15,6 +15,7 @@ import {
 import throttle from 'lodash.throttle'
 
 import {DM_SERVICE_HEADERS} from '#/lib/constants'
+import {isChatServiceUnavailableError} from '#/lib/strings/errors'
 import {useCurrentConvoId} from '#/state/messages/current-convo-id'
 import {useMessagesEventBus} from '#/state/messages/events'
 import {invalidateJoinLinkPreviewsForConvo} from '#/state/queries/join-links'
@@ -125,18 +126,25 @@ export function useListConvosQuery({
     enabled,
     queryKey: RQKEY(status ?? 'all', readState, kind, lockStatus, limit),
     queryFn: async ({pageParam}) => {
-      const {data} = await agent.chat.bsky.convo.listConvos(
-        {
-          limit,
-          cursor: pageParam,
-          readState: readState === 'unread' ? 'unread' : undefined,
-          kind: kind === 'all' ? undefined : kind,
-          lockStatus,
-          status,
-        },
-        {headers: DM_SERVICE_HEADERS},
-      )
-      return data
+      try {
+        const {data} = await agent.chat.bsky.convo.listConvos(
+          {
+            limit,
+            cursor: pageParam,
+            readState: readState === 'unread' ? 'unread' : undefined,
+            kind: kind === 'all' ? undefined : kind,
+            lockStatus,
+            status,
+          },
+          {headers: DM_SERVICE_HEADERS},
+        )
+        return data
+      } catch (e) {
+        if (isChatServiceUnavailableError(e)) {
+          return {convos: [], cursor: undefined}
+        }
+        throw e
+      }
     },
     initialPageParam: undefined as RQPageParam,
     getNextPageParam: lastPage => lastPage.cursor,

@@ -47,7 +47,7 @@ interface Props extends React.ComponentProps<typeof TouchableOpacity> {
   hoverStyle?: StyleProp<ViewStyle>
   noFeedback?: boolean
   asAnchor?: boolean
-  dataSet?: Record<string, string | undefined>
+  dataSet?: Record<string, string | number | undefined>
   anchorNoUnderline?: boolean
   navigationAction?: 'push' | 'replace' | 'navigate'
   onPointerEnter?: () => void
@@ -101,9 +101,20 @@ export const Link = memo(function Link({
     {name: 'activate', label: title},
   ]
 
-  const dataSet = anchorNoUnderline
-    ? {...dataSetProp, noUnderline: 1}
-    : dataSetProp
+  const dataSet = useMemo(() => {
+    const out: Record<string, string | number> = {}
+    if (dataSetProp) {
+      for (const [key, value] of Object.entries(dataSetProp)) {
+        if (value !== undefined) {
+          out[key] = value
+        }
+      }
+    }
+    if (anchorNoUnderline) {
+      out.noUnderline = 1
+    }
+    return out
+  }, [dataSetProp, anchorNoUnderline])
 
   if (noFeedback) {
     return (
@@ -197,9 +208,20 @@ export const TextLink = memo(function TextLink({
     console.error('Unable to detect mismatching label')
   }
 
-  const dataSet = anchorNoUnderline
-    ? {...dataSetProp, noUnderline: 1}
-    : dataSetProp
+  const dataSet = useMemo(() => {
+    const out: Record<string, string | number> = {}
+    if (dataSetProp) {
+      for (const [key, value] of Object.entries(dataSetProp)) {
+        if (value !== undefined) {
+          out[key] = value
+        }
+      }
+    }
+    if (anchorNoUnderline) {
+      out.noUnderline = 1
+    }
+    return out
+  }, [dataSetProp, anchorNoUnderline])
 
   const onPress = useCallback(
     (e?: Event) => {

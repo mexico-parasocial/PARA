@@ -263,7 +263,6 @@ export function StepSuggestedAccounts() {
                 position={index}
                 category={selectedInterest}
                 onSeen={onProfileSeen}
-                recSource={!useFullExperience ? 'Search' : undefined}
                 recId={suggestedUsersRecId}
               />
             ))}

@@ -90,17 +90,15 @@ export class Storage<Scopes extends unknown[], Schema> {
   }
 }
 
-type StorageSchema<T extends Storage<unknown[], unknown>> =
-  T extends Storage<unknown[], infer U> ? U : never
-type StorageScopes<T extends Storage<unknown[], unknown>> =
-  T extends Storage<infer S, unknown> ? S : never
+type StorageSchema<T> = T extends Storage<any, infer U> ? U : never
+type StorageScopes<T> = T extends Storage<infer S, any> ? S : never
 
 /**
  * Hook to use a storage instance. Acts like a useState hook, but persists the
  * value in storage.
  */
 export function useStorage<
-  Store extends Storage<unknown[], unknown>,
+  Store extends Storage<any, any>,
   Key extends keyof StorageSchema<Store>,
 >(
   storage: Store,

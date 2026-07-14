@@ -2,6 +2,7 @@ import {useState} from 'react'
 import {LogBox, Pressable, TextInput, View} from 'react-native'
 import {useQueryClient} from '@tanstack/react-query'
 
+import {type AtprotoProxy} from '@atproto/api'
 import {BLUESKY_PROXY_HEADER} from '#/lib/constants'
 import {useAgent, useSessionApi} from '#/state/session'
 import {useLoggedOutViewControls} from '#/state/shell/logged-out'
@@ -62,7 +63,7 @@ export function TestCtrls() {
         onSubmitEditing={() => {
           const header = `${proxyHeader}#bsky_appview`
           BLUESKY_PROXY_HEADER.set(header)
-          agent.configureProxy(header)
+          agent.configureProxy(header as AtprotoProxy)
         }}
         style={BTN}
       />

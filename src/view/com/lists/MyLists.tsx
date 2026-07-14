@@ -24,9 +24,15 @@ import {Text} from '#/components/Typography'
 import {ErrorMessage} from '../util/error/ErrorMessage'
 import {List} from '../util/List'
 
-const LOADING = {_reactKey: '__loading__'}
-const EMPTY = {_reactKey: '__empty__'}
-const ERROR_ITEM = {_reactKey: '__error__'}
+const LOADING = {_reactKey: '__loading__' as const}
+const EMPTY = {_reactKey: '__empty__' as const}
+const ERROR_ITEM = {_reactKey: '__error__' as const}
+
+type Item = GraphDefs.ListView | typeof LOADING | typeof EMPTY | typeof ERROR_ITEM
+
+function isListView(item: Item): item is GraphDefs.ListView {
+  return !('_reactKey' in item)
+}
 
 export function MyLists({
   filter,
@@ -50,13 +56,8 @@ export function MyLists({
     useMyListsQuery(filter)
   const isEmpty = !isFetching && !data?.length
 
-  const items = useMemo(() => {
-    let items: (
-      | GraphDefs.ListView
-      | typeof LOADING
-      | typeof EMPTY
-      | typeof ERROR_ITEM
-    )[] = []
+  const items = useMemo<Item[]>(() => {
+    let items: Item[] = []
     if (isError && isEmpty) {
       items = items.concat([ERROR_ITEM])
     }
@@ -65,7 +66,7 @@ export function MyLists({
     } else if (isEmpty) {
       items = items.concat([EMPTY])
     } else {
-      items = items.concat(data)
+      items = items.concat(data ?? [])
     }
     return items
   }, [isError, isEmpty, isFetched, isFetching, moderationOpts, data])
@@ -108,11 +109,7 @@ export function MyLists({
       item,
       index,
     }: {
-      item:
-        | GraphDefs.ListView
-        | typeof LOADING
-        | typeof EMPTY
-        | typeof ERROR_ITEM
+      item: Item
       index: number
     }) => {
       if (item === EMPTY) {
@@ -159,19 +156,22 @@ export function MyLists({
           </View>
         )
       }
-      return renderItem ? (
-        renderItem(item, index)
-      ) : (
-        <View
-          style={[
-            index !== 0 && a.border_t,
-            t.atoms.border_contrast_low,
-            a.px_lg,
-            a.py_lg,
-          ]}>
-          <ListCard.Default view={item} />
-        </View>
-      )
+      if (isListView(item)) {
+        return renderItem ? (
+          renderItem(item, index)
+        ) : (
+          <View
+            style={[
+              index !== 0 && a.border_t,
+              t.atoms.border_contrast_low,
+              a.px_lg,
+              a.py_lg,
+            ]}>
+            <ListCard.Default view={item} />
+          </View>
+        )
+      }
+      return null
     },
     [t, renderItem, error, onRefresh, emptyText],
   )
@@ -183,7 +183,7 @@ export function MyLists({
           <RNFlatList
             testID={testID ? `${testID}-flatlist` : undefined}
             data={items}
-            keyExtractor={item => (item.uri ? item.uri : item._reactKey)}
+            keyExtractor={item => ('uri' in item ? item.uri : item._reactKey)}
             renderItem={renderItemInner}
             refreshControl={
               <RefreshControl
@@ -206,7 +206,7 @@ export function MyLists({
           <List
             testID={testID ? `${testID}-flatlist` : undefined}
             data={items}
-            keyExtractor={item => (item.uri ? item.uri : item._reactKey)}
+            keyExtractor={item => ('uri' in item ? item.uri : item._reactKey)}
             renderItem={renderItemInner}
             refreshing={isPTRing}
             onRefresh={onRefresh}

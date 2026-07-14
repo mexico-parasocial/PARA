@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Node.js 24.15+ and pnpm installed
+- Node.js 24.18+ and pnpm installed
 - An [Expo account](https://expo.dev/signup) (free — 30 Android builds/month)
 - EAS CLI: `pnpm add -g eas-cli` (or use `pnpm dlx eas-cli` without installing)
 

@@ -78,6 +78,10 @@ export type Events = {
       | 'saved'
       | 'settings'
       | 'menu'
+      | 'data'
+      | 'communities'
+      | 'compass'
+      | 'explore'
     surface: 'bottomBar' | 'drawer' | 'drawerHeader' | 'topBar' | 'leftNav'
   }
   'deepLink:referrerReceived': {
@@ -273,6 +277,8 @@ export type Events = {
       | 'QuotePost'
       | 'ProfileFeed'
       | 'Deeplink'
+      | 'ComposerPrompt'
+      | 'Navigation'
       | 'Other'
     isReply: boolean
     hasQuote: boolean
@@ -362,6 +368,18 @@ export type Events = {
     logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
     feedDescriptor?: string
   }
+  'post:quote': {
+    uri: string
+    authorDid: string
+    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
+    feedDescriptor?: string
+  }
+  'post:unquote': {
+    uri: string
+    authorDid: string
+    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
+    feedDescriptor?: string
+  }
   'post:mute': {
     uri: string
     authorDid: string
@@ -441,6 +459,7 @@ export type Events = {
       | 'Hashtag'
       | 'Topic'
       | 'PostQuotes'
+      | 'FlairFeed'
     feedDescriptor?: string
     position?: number
   }
@@ -808,6 +827,15 @@ export type Events = {
     paraFilters: string[]
   }
 
+  'search:paraFilter:select': {
+    field: string
+    value: string
+  }
+
+  'search:paraFilter:clear': {
+    field: string
+  }
+
   'search:shareLink:press': {
     filterCount: number
     paraFilterCount: number
@@ -816,6 +844,8 @@ export type Events = {
 
   'search:addFilter:press': {
     filterCount: number
+    field: string
+    mode: string
   }
 
   'search:paraFilter:applied': {
@@ -1122,6 +1152,27 @@ export type Events = {
     setting: 'posts' | 'posts_and_replies'
   }
   'activitySubscription:disable': {}
+
+  'postSubscription:enable': {
+    uri: string
+    authorDid: string
+    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
+    feedDescriptor?: string
+  }
+  'postSubscription:disable': {
+    uri: string
+    authorDid: string
+    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
+    feedDescriptor?: string
+  }
+
+  'community:create:ctaShown': {}
+  'community:create:eligibilityDenied': {}
+  'community:create:ctaClicked': {}
+  'community:create:submitStarted': {}
+  'community:create:submitSucceeded': {}
+  'community:create:submitFailed': {}
+  'community:create:wizardCompleted': {}
   'activityPreference:changeChannels': {
     name: string
     push: boolean
@@ -1415,6 +1466,7 @@ export type Events = {
     engine: string
     bytes: number
     errorClass: string
+    errorMessage: string
     elapsedMs: number
   }
   'video:upload:processingStarted': {

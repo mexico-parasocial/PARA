@@ -68,7 +68,22 @@ module.exports = async function (env, argv) {
       __dirname,
       'src/stubs/setUpReactDevTools.js',
     ),
+    'react-native/Libraries/Core/setUpReactDevTools.js': path.resolve(
+      __dirname,
+      'src/stubs/setUpReactDevTools.js',
+    ),
   }
+
+  // The entry point imports the devtools bootstrap via a relative require, so
+  // webpack's alias (which only matches bare specifiers) misses it. Use a
+  // module replacement that matches the resolved file path instead.
+  const {NormalModuleReplacementPlugin} = require('webpack')
+  config.plugins.push(
+    new NormalModuleReplacementPlugin(
+      /react-native[/\\]Libraries[/\\]Core[/\\]setUpReactDevTools\.js$/,
+      path.resolve(__dirname, 'src/stubs/setUpReactDevTools.js'),
+    ),
+  )
   config.module.rules = [
     ...(config.module.rules || []),
     reactNativeWebWebviewConfiguration,

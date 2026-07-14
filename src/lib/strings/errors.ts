@@ -5,6 +5,7 @@ export function cleanError(str: unknown): string {
   if (!str) {
     return ''
   }
+  // eslint-disable-next-line @typescript-eslint/no-base-to-string
   const strValue = typeof str === 'string' ? str : String(str)
   if (isNetworkError(strValue)) {
     return t`Unable to connect. Please check your internet connection and try again.`
@@ -73,4 +74,21 @@ export function isErrorMaybeAppPasswordPermissions(e: unknown) {
 export function isCancelledError(e: unknown) {
   const str = String(e).toLowerCase()
   return str.includes('cancel')
+}
+
+/**
+ * Detects when the Bluesky chat service cannot authenticate the request,
+ * usually because the app is pointing at a chat proxy DID that cannot
+ * resolve the user's PDS issuer. This lets the UI degrade gracefully
+ * (empty DM list, no badges) while preserving Matrix community chat.
+ */
+export function isChatServiceUnavailableError(e: unknown) {
+  const str = String(e).toLowerCase()
+  return (
+    str.includes('could not resolve iss did') ||
+    str.includes('could not resolve issuer did') ||
+    str.includes('invalid issuer') ||
+    str.includes('chat proxy') ||
+    str.includes('unknown service')
+  )
 }

@@ -62,7 +62,7 @@ function DeactivateAccountDialogInner({
           break
       }
 
-      logger.error(e, {
+      logger.error(e as Error | string, {
         message: 'Failed to deactivate account',
       })
     } finally {

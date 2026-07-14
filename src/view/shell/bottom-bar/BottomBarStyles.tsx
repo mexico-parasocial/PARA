@@ -72,4 +72,13 @@ export const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 100,
   },
+  profileIconSquare: {
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  onProfileSquare: {
+    borderWidth: 1,
+    borderRadius: 8,
+  },
 })

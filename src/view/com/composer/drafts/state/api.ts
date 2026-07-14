@@ -432,6 +432,7 @@ export function draftViewToSummary({
       images: images.length > 0 ? images : undefined,
       video: videos[0], // Only one video per post
       gif,
+      richtext: new RichText({text: post.text || ''}),
     }
   })
 
@@ -445,6 +446,12 @@ export function draftViewToSummary({
     updatedAt: view.updatedAt,
     draft: view.draft,
     posts,
+    previewText: posts[0]?.text.slice(0, 100) ?? '',
+    isReply: false,
+    hasMedia: meta.hasMedia,
+    hasMissingMedia: meta.hasMissingMedia,
+    mediaCount: meta.mediaCount,
+    postCount: meta.postCount,
     meta,
   }
 }

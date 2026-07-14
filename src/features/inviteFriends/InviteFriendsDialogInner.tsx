@@ -112,7 +112,7 @@ export function InviteFriendsDialogInner({
     // Close dialog first, then navigate (control.close callback per CLAUDE.md
     // Dialog footgun rule — prevents race with the navigation push).
     control.close(() => {
-      navigation.navigate('InviteScanner')
+      navigation.navigate('InviteScanner' as never)
     })
   }
 

@@ -152,7 +152,7 @@ export function Icon({style}: IconProps) {
 export function Content<T>({
   items,
   renderItem,
-  valueExtractor = defaultItemValueExtractor,
+  valueExtractor = defaultItemValueExtractor as (item: T) => string,
 }: ContentProps<T>) {
   const t = useTheme()
   const selectedValue = useContext(SelectedValueContext)

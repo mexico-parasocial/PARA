@@ -241,6 +241,11 @@ function getSignalScore(highlight: Highlight) {
   )
 }
 
-function getPrimaryColor(color: string | string[]) {
-  return Array.isArray(color) ? color[0] : color || '#6B7280'
+export function getPrimaryColor(
+  color: string | string[] | readonly string[],
+): string {
+  if (typeof color === 'string') {
+    return color || '#6B7280'
+  }
+  return color[0] || '#6B7280'
 }

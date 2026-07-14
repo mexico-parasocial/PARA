@@ -1,5 +1,5 @@
 import {Fragment, useMemo} from 'react'
-import {Text as RNText} from 'react-native'
+import {type ImageSourcePropType, Text as RNText} from 'react-native'
 import {Image} from 'expo-image'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -67,12 +67,15 @@ export function InternationalPhoneCodeSelect({
     <Select.Root value={value} onValueChange={onChange as (v: string) => void}>
       <Select.Trigger label={_(msg`Select telephone code`)}>
         <Select.ValueText placeholder="+..." webOverrideValue={selected}>
-          {selected => (
-            <>
-              <Flag {...selected} />
-              {selected.code}
-            </>
-          )}
+          {selected => {
+            const item = selected as (typeof items)[number]
+            return (
+              <>
+                <Flag {...item} />
+                {item.code}
+              </>
+            )
+          }}
         </Select.ValueText>
         <Select.Icon />
       </Select.Trigger>

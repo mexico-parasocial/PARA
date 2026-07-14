@@ -1,3 +1,6 @@
+import {type FlatList} from 'react-native'
+import {type AppBskyEmbedImages} from '@atproto/api'
+
 export function usePointerHandlers(_args: {
   flatListRef: React.RefObject<FlatList<AppBskyEmbedImages.ViewImage> | null>
   itemWidthsRef: React.RefObject<Map<number, number>>

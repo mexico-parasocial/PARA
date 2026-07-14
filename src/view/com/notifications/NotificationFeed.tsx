@@ -14,6 +14,7 @@ import {cleanError} from '#/lib/strings/errors'
 import {s} from '#/lib/styles'
 import {logger} from '#/logger'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
+import {type FeedNotification} from '#/state/queries/notifications/types'
 import {useNotificationFeedQuery} from '#/state/queries/notifications/feed'
 import {EmptyState} from '#/view/com/util/EmptyState'
 import {ErrorMessage} from '#/view/com/util/error/ErrorMessage'
@@ -142,7 +143,7 @@ export function NotificationFeed({
       return (
         <NotificationFeedItem
           highlightUnread={filter === 'all'}
-          item={item}
+          item={item as FeedNotification}
           moderationOpts={moderationOpts!}
           hideTopBorder={index === 0}
         />
@@ -175,7 +176,7 @@ export function NotificationFeed({
         testID="notifsFeed"
         ref={scrollElRef}
         data={items}
-        keyExtractor={item => item._reactKey}
+        keyExtractor={item => (item as {_reactKey: string})._reactKey}
         renderItem={renderItem}
         ListHeaderComponent={ListHeaderComponent}
         ListFooterComponent={FeedFooter}
@@ -185,13 +186,14 @@ export function NotificationFeed({
         onEndReachedThreshold={2}
         onScrolledDownChange={onScrolledDownChange}
         onItemSeen={item => {
+          const notif = item as FeedNotification
           if (
-            (item.type === 'reply' ||
-              item.type === 'mention' ||
-              item.type === 'quote') &&
-            item.subject
+            (notif.type === 'reply' ||
+              notif.type === 'mention' ||
+              notif.type === 'quote') &&
+            notif.subject
           ) {
-            trackPostView(item.subject)
+            trackPostView(notif.subject)
           }
         }}
         contentContainerStyle={s.contentContainer}

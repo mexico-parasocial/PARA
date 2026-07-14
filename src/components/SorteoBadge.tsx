@@ -1,5 +1,7 @@
 import {useCallback, useState} from 'react'
 import {Modal, StyleSheet, TouchableOpacity, View} from 'react-native'
+import {msg} from '@lingui/core/macro'
+import {useLingui} from '@lingui/react'
 
 import {useSortitionProofQuery} from '#/state/queries/matrix'
 import {useSession} from '#/state/session'
@@ -11,6 +13,7 @@ import {Warning_Stroke2_Corner0_Rounded as WarningIcon} from '#/components/icons
 import {Text} from '#/components/Typography'
 
 export function SorteoBadge({communityUri}: {communityUri: string}) {
+  const {_} = useLingui()
   const t = useTheme()
   const {currentAccount} = useSession()
   const [showModal, setShowModal] = useState(false)
@@ -38,19 +41,19 @@ export function SorteoBadge({communityUri}: {communityUri: string}) {
           {
             backgroundColor: isDrand
               ? t.palette.positive_975
-              : t.palette.warning_975,
+              : t.palette.negative_975,
           },
         ]}>
         {isDrand ? (
           <CheckIcon size="xs" style={{color: t.palette.positive_500}} />
         ) : (
-          <WarningIcon size="xs" style={{color: t.palette.warning_500}} />
+          <WarningIcon size="xs" style={{color: t.palette.negative_500}} />
         )}
         <Text
           style={{
             fontSize: 12,
             fontWeight: 'bold',
-            color: isDrand ? t.palette.positive_500 : t.palette.warning_500,
+            color: isDrand ? t.palette.positive_500 : t.palette.negative_500,
             marginLeft: 4,
           }}>
           {isDrand ? 'Sorteo verificable' : 'Sorteo por fallback'}
@@ -136,6 +139,7 @@ export function SorteoBadge({communityUri}: {communityUri: string}) {
 
             <View style={styles.modalFooter}>
               <Button
+                label={_(msg`Close`)}
                 variant="solid"
                 color="primary"
                 size="small"

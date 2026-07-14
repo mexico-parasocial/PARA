@@ -56,10 +56,10 @@ function ImageLayoutGridInner(props: ImageLayoutGridInnerProps) {
   const gap = props.gap
   const count = props.images.length
 
-  const containerRef1 = useAnimatedRef()
-  const containerRef2 = useAnimatedRef()
-  const containerRef3 = useAnimatedRef()
-  const containerRef4 = useAnimatedRef()
+  const containerRef1 = useAnimatedRef<View>()
+  const containerRef2 = useAnimatedRef<View>()
+  const containerRef3 = useAnimatedRef<View>()
+  const containerRef4 = useAnimatedRef<View>()
   const thumbDimsRef = useRef<(Dimensions | null)[]>([])
 
   switch (count) {

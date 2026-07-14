@@ -367,7 +367,7 @@ function PagerItem({
   onScrollWorklet: (e: NativeScrollEvent) => void
   renderTab: ((props: PagerWithHeaderChildParams) => JSX.Element) | null
 }) {
-  const scrollElRef = useAnimatedRef()
+  const scrollElRef = useAnimatedRef<ScrollView | ListMethods>()
 
   useEffect(() => {
     registerRef(scrollElRef, index)

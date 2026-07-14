@@ -96,7 +96,7 @@ export function useCommunityGovernanceMutation({
         repo: currentAccount.did,
         collection: PARA_COMMUNITY_GOVERNANCE_COLLECTION,
         rkey: communityGovernanceRkey(communityName),
-        record: createCommunityGovernanceRecord(next) as Record<
+        record: createCommunityGovernanceRecord(next) as unknown as Record<
           string,
           unknown
         >,

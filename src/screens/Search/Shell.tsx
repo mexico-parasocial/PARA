@@ -32,6 +32,7 @@ import {
   countActiveFilters,
   countActiveParaFilters,
   definedFilterParams,
+  FILTER_PARAM_KEYS,
   filtersToLegacyParams,
   filtersToRouteParams,
   getActiveParaFilterNames,
@@ -61,6 +62,13 @@ import {Explore} from './Explore'
 import {SearchResults} from './SearchResults'
 
 type TabParam = SearchParams['tab']
+
+function getAddedFilterFieldAndMode(prev: SearchFilters, next: SearchFilters) {
+  const field =
+    FILTER_PARAM_KEYS.find(key => !prev[key] && next[key]) || 'unknown'
+  const mode = String(field).startsWith('exclude') ? 'exclude' : 'include'
+  return {field, mode}
+}
 
 // Map tab parameter to tab index
 function getTabIndex(tabParam?: TabParam) {
@@ -370,7 +378,12 @@ export function SearchScreenShell({
       const merged = {...filters, ...nextFilters}
       const nextFilterCount = countActiveFilters(merged)
       if (nextFilterCount > filterCount) {
-        ax.metric('search:addFilter:press', {filterCount: nextFilterCount})
+        const {field, mode} = getAddedFilterFieldAndMode(filters, merged)
+        ax.metric('search:addFilter:press', {
+          filterCount: nextFilterCount,
+          field,
+          mode,
+        })
       }
       applyParams(searchText, merged)
     },
@@ -397,6 +410,7 @@ export function SearchScreenShell({
         onChange={value => onChangeFilters({lang: value || undefined})}
       />
       <AdvancedSearchDialog
+        disabled={false}
         q={searchText}
         filters={filters}
         onSubmit={(q, nextFilters) => {
@@ -408,7 +422,12 @@ export function SearchScreenShell({
             paraFilters: getActiveParaFilterNames(nextFilters),
           })
           if (nextFilterCount > filterCount) {
-            ax.metric('search:addFilter:press', {filterCount: nextFilterCount})
+            const {field, mode} = getAddedFilterFieldAndMode(filters, nextFilters)
+            ax.metric('search:addFilter:press', {
+              filterCount: nextFilterCount,
+              field,
+              mode,
+            })
           }
           updateSearchText(q)
           updateSearchHistory(q, nextFilters)

@@ -1,5 +1,12 @@
 import {useState} from 'react'
-import {LayoutAnimation, StyleSheet, TouchableOpacity, View} from 'react-native'
+import {
+  LayoutAnimation,
+  StyleSheet,
+  type StyleProp,
+  TouchableOpacity,
+  View,
+  type ViewStyle,
+} from 'react-native'
 
 import {useGlobalFilter} from '#/state/shell/global-filter'
 import {atoms as a, useTheme} from '#/alf'

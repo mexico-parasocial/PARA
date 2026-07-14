@@ -113,7 +113,9 @@ export function useLink({
     return typeof to === 'string'
       ? convertBskyAppUrlIfNeeded(sanitizeUrl(to))
       : to.screen
-        ? router.matchName(to.screen)?.build(to.params)
+        ? router.matchName(to.screen)?.build(
+            to.params as Record<string, string | number | undefined>,
+          )
         : to.href
           ? convertBskyAppUrlIfNeeded(sanitizeUrl(to.href))
           : undefined

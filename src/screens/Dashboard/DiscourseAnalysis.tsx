@@ -28,6 +28,7 @@ import {ChainLink_Stroke2_Corner0_Rounded as ChainLinkIcon} from '#/components/i
 import {Sparkle_Stroke2_Corner0_Rounded as SparkleIcon} from '#/components/icons/Sparkle'
 import {Trending2_Stroke2_Corner2_Rounded as TrendingIcon} from '#/components/icons/Trending'
 import * as Layout from '#/components/Layout'
+import {type IconWithSvgMeta} from '#/components/icons/TEMPLATE'
 import {IS_WEB} from '#/env'
 import {ArgumentStructureChart} from './components/ArgumentStructureChart'
 import {BridgeOpportunities} from './components/BridgeOpportunities'
@@ -47,7 +48,7 @@ const MetricCard = ({
   value: string
   subLabel?: string
   description?: string
-  icon?: React.ComponentType<{size?: string; style?: unknown}>
+  icon?: IconWithSvgMeta
 }) => {
   const t = useTheme()
   return (
@@ -78,7 +79,7 @@ const SectionHeader = ({
   icon: Icon,
 }: {
   title: string
-  icon?: React.ComponentType<{size?: string; style?: unknown}>
+  icon?: IconWithSvgMeta
 }) => {
   const t = useTheme()
   return (

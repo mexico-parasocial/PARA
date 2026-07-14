@@ -3,11 +3,10 @@ import * as Device from 'expo-device'
 import {
   Agent as BaseAgent,
   type AppBskyActorProfile,
-  type AtpAgent,
+  AtpAgent,
   type AtprotoServiceType,
   type AtpSessionData,
   type AtpSessionEvent,
-  BskyAgent,
   type Did,
   type Un$Typed,
 } from '@atproto/api'
@@ -55,7 +54,7 @@ export type ProxyHeaderValue = `${Did}#${AtprotoServiceType}`
 export function createPublicAgent() {
   configureModerationForGuest() // Side effect but only relevant for tests
 
-  const agent = new BskyAppAgent({service: PUBLIC_BSKY_SERVICE})
+  const agent = new AtpAppAgent({service: PUBLIC_BSKY_SERVICE})
   agent.configureProxy(getBskyProxyHeaderForServiceUrl(PUBLIC_BSKY_SERVICE))
   return agent
 }
@@ -93,7 +92,7 @@ export async function createAgentAndResume(
   if (isLikelyLocalServiceUrl(serviceUrl)) {
     serviceUrl = normalizeLocalServiceUrl(serviceUrl)
   }
-  const agent = new BskyAppAgent({service: serviceUrl})
+  const agent = new AtpAppAgent({service: serviceUrl})
   if (isLikelyLocalServiceUrl(serviceUrl)) {
     agent.sessionManager.pdsUrl = new URL(serviceUrl)
   } else if (storedAccount.pdsUrl && !isLegacyLocalBskyAccount) {
@@ -142,7 +141,7 @@ export async function createAgentAndLogin(
   const serviceUrl = isLikelyLocalServiceUrl(service)
     ? normalizeLocalServiceUrl(service)
     : service
-  const agent = new BskyAppAgent({service: serviceUrl})
+  const agent = new AtpAppAgent({service: serviceUrl})
   await agent.login({
     identifier,
     password,
@@ -195,7 +194,7 @@ export async function createAgentAndCreateAccount(
   const serviceUrl = isLikelyLocalServiceUrl(service)
     ? normalizeLocalServiceUrl(service)
     : service
-  const agent = new BskyAppAgent({service: serviceUrl})
+  const agent = new AtpAppAgent({service: serviceUrl})
   await agent.createAccount({
     email,
     password,
@@ -340,7 +339,7 @@ export async function createAgentAndCreateAccount(
   })
 }
 
-export function agentToSessionAccountOrThrow(agent: BskyAgent): SessionAccount {
+export function agentToSessionAccountOrThrow(agent: AtpAgent): SessionAccount {
   const account = agentToSessionAccount(agent)
   if (!account) {
     throw Error('Expected an active session')
@@ -375,7 +374,7 @@ export function sessionAccountToSession(
   account: SessionAccount,
 ): AtpSessionData {
   return {
-    // Sorted in the same property order as when returned by BskyAgent (alphabetical).
+    // Sorted in the same property order as when returned by AtpAgent (alphabetical).
     accessJwt: account.accessJwt ?? '',
     did: account.did,
     email: account.email,
@@ -408,7 +407,7 @@ export class Agent extends BaseAgent {
 // Ideally, we wouldn't be doing this. However, since there is so much logic that requires making calls to the PDS right now, it
 // feels safer to just let those run as-is and set the header afterward.
 let realFetch = globalThis.fetch
-class BskyAppAgent extends BskyAgent {
+class AtpAppAgent extends AtpAgent {
   persistSessionHandler: ((event: AtpSessionEvent) => void) | undefined =
     undefined
 
@@ -494,4 +493,4 @@ class BskyAppAgent extends BskyAgent {
   }
 }
 
-export type {BskyAppAgent}
+export type {AtpAppAgent}

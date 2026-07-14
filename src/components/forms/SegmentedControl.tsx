@@ -6,7 +6,12 @@ import {
   useMemo,
   useState,
 } from 'react'
-import {type StyleProp, View, type ViewStyle} from 'react-native'
+import {
+  type GestureResponderEvent,
+  type StyleProp,
+  View,
+  type ViewStyle,
+} from 'react-native'
 import Animated, {Easing, LinearTransition} from 'react-native-reanimated'
 
 import {useHaptics} from '#/lib/haptics'

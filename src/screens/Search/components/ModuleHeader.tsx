@@ -82,7 +82,7 @@ export function Icon({
   icon: Comp,
   size = 'lg',
 }: Pick<React.ComponentProps<typeof ButtonIcon>, 'icon' | 'size'>) {
-  const iconSize = iconSizes[size]
+  const iconSize = typeof size === 'number' ? size : iconSizes[size]
 
   return (
     <View style={[a.z_20, {width: iconSize, height: iconSize, marginLeft: -2}]}>

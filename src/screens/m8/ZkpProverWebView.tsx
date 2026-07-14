@@ -1,4 +1,4 @@
-import {useRef, useState} from 'react'
+import {useState} from 'react'
 import {ActivityIndicator, StyleSheet, TouchableOpacity,View} from 'react-native'
 import {WebView, type WebViewMessageEvent} from 'react-native-webview'
 
@@ -25,7 +25,6 @@ export default function ZkpProverWebView({
   const t = useTheme()
   const [status, setStatus] = useState('Loading prover...')
   const [loading, setLoading] = useState(true)
-  const webViewRef = useRef<WebView>(null)
 
   const handleMessage = (event: WebViewMessageEvent) => {
     try {
@@ -64,7 +63,6 @@ export default function ZkpProverWebView({
       )}
 
       <WebView
-        ref={webViewRef}
         source={{uri: proverUrl}}
         onMessage={handleMessage}
         onLoadStart={() => setLoading(true)}

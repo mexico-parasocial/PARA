@@ -3,7 +3,6 @@ import {Pressable, View} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
-import type Hls from 'hls.js'
 
 import {clamp} from '#/lib/numbers'
 import {
@@ -33,6 +32,7 @@ import {TimeIndicator} from '../TimeIndicator'
 import {ControlButton} from './ControlButton'
 import {Scrubber} from './Scrubber'
 import {formatTime, useVideoElement} from './utils'
+import {type ControlsProps} from './VideoControls.shared'
 import {VolumeControl} from './VolumeControl'
 
 export function Controls({
@@ -47,23 +47,9 @@ export function Controls({
   hlsLoading,
   hasSubtitleTrack,
   isGif,
-  altText: _altText,
+  altText,
   updateCuePositions,
-}: {
-  videoRef: React.RefObject<HTMLVideoElement | null>
-  hlsRef: React.RefObject<Hls | undefined | null>
-  active: boolean
-  setActive: () => void
-  focused: boolean
-  setFocused: (focused: boolean) => void
-  onScreen: boolean
-  fullscreenRef: React.RefObject<HTMLDivElement | null>
-  hlsLoading: boolean
-  hasSubtitleTrack: boolean
-  isGif: boolean
-  altText?: string
-  updateCuePositions: (controlsVisible?: boolean) => void
-}) {
+}: ControlsProps) {
   const {
     play,
     pause,
@@ -308,7 +294,7 @@ export function Controls({
       <GifPresentationControls
         isPlaying={playing}
         isLoading={showSpinner}
-        togglePlayPause={onPressPlayPause}
+        onPress={onPressPlayPause}
       />
     )
   }

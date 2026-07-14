@@ -24,8 +24,8 @@ export type AccurateLocation = {
  * On web, falls back to Balanced accuracy.
  */
 export async function fetchAccurateLocation(): Promise<AccurateLocation> {
-  const {status} = await Location.requestForegroundPermissionsAsync()
-  if (!status.granted) {
+  const permission = await Location.requestForegroundPermissionsAsync()
+  if (!permission.granted) {
     throw new Error('Location permission denied')
   }
 
@@ -38,7 +38,7 @@ export async function fetchAccurateLocation(): Promise<AccurateLocation> {
   return {
     latitude: pos.coords.latitude,
     longitude: pos.coords.longitude,
-    positionalAccuracy: pos.coords.accuracy,
+    positionalAccuracy: pos.coords.accuracy ?? undefined,
     timestamp: pos.timestamp,
   }
 }

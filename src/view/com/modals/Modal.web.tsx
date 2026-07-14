@@ -45,9 +45,9 @@ function Modal({modal: _modal}: {modal: ModalIface}) {
   }
 
   let element
-  if (modal.name === 'delete-account') {
+  if (_modal.name === 'delete-account') {
     element = <DeleteAccountModal.Component />
-  } else if (modal.name === 'content-languages-settings') {
+  } else if (_modal.name === 'content-languages-settings') {
     element = <ContentLanguagesSettingsModal.Component />
   } else {
     return null

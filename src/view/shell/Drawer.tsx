@@ -371,12 +371,12 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
 
   const onPressMyBase = useCallback(() => {
     setDrawerOpen(false)
-    navigation.navigate('DataTab', {screen: 'MyBase'})
+    navigation.navigate('DataTab', {screen: 'MyBase'} as never)
   }, [navigation, setDrawerOpen])
 
   const onPressCivicTree = useCallback(() => {
     setDrawerOpen(false)
-    navigation.navigate('DataTab', {screen: 'CivicTree'})
+    navigation.navigate('DataTab', {screen: 'CivicTree'} as never)
   }, [navigation, setDrawerOpen])
 
   const onPressIdentityHub = useCallback(() => {

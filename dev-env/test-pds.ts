@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import net from 'node:net'
 import path from 'node:path'
 
-import {AtUri, BskyAgent} from '@atproto/api'
+import {AtUri, AtpAgent} from '@atproto/api'
 import {type TestBsky, TestNetwork} from '@atproto/dev-env'
 
 export interface TestUser {
@@ -98,7 +98,7 @@ export async function createServer(
 
   // DISABLED - looks like dev-env added this and now it conflicts
   // add the test mod authority
-  // const agent = new BskyAgent({service: pdsUrl})
+  // const agent = new AtpAgent({service: pdsUrl})
   // const res = await agent.com.atproto.server.createAccount({
   //   email: 'mod-authority@test.com',
   //   handle: 'mod-authority.test',
@@ -150,7 +150,7 @@ class Mocker {
     this.testNet = testNet
     this.service = service
     this.pic = pic
-    this.agent = new BskyAgent({service})
+    this.agent = new AtpAgent({service})
   }
 
   get pds() {
@@ -178,7 +178,7 @@ class Mocker {
   }
 
   async createUser(name: string) {
-    const agent = new BskyAgent({service: this.service})
+    const agent = new AtpAgent({service: this.service})
 
     const inviteRes = await agent.com.atproto.server.createInviteCode(
       {useCount: 1},
@@ -355,7 +355,7 @@ class Mocker {
   }
 
   async createInvite(forAccount: string) {
-    const agent = new BskyAgent({service: this.service})
+    const agent = new AtpAgent({service: this.service})
     await agent.com.atproto.server.createInviteCode(
       {useCount: 1, forAccount},
       {

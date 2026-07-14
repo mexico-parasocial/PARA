@@ -55,19 +55,21 @@ export function Autocomplete({
         data={data}
         onSelect={onSelect}
         onDismiss={onDismiss}
-        style={[
-          a.overflow_hidden,
-          a.rounded_md,
-          a.border,
-          t.atoms.border_contrast_low,
-          t.atoms.bg,
-          a.w_full,
-          IS_WEB
-            ? {
-                maxWidth: 300,
-              }
-            : {},
-        ]}
+        {...({
+          style: [
+            a.overflow_hidden,
+            a.rounded_md,
+            a.border,
+            t.atoms.border_contrast_low,
+            t.atoms.bg,
+            a.w_full,
+            IS_WEB
+              ? {
+                  maxWidth: 300,
+                }
+              : {},
+          ],
+        } as any)}
         render={render}
       />
     </Portal>

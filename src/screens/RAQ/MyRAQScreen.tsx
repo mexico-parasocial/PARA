@@ -86,7 +86,10 @@ export function MyRAQScreen() {
   const averageScore = useMemo(() => {
     if (!results?.length) return progressPercent
     return Math.round(
-      results.reduce((sum, result) => sum + result.score, 0) / results.length,
+      results.reduce(
+        (sum: number, result: {score: number}) => sum + result.score,
+        0,
+      ) / results.length,
     )
   }, [progressPercent, results])
   const communityLabel =

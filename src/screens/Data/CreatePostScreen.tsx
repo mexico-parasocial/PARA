@@ -201,7 +201,7 @@ export function CreatePostScreen() {
 
       navigation.goBack()
     } catch (e: unknown) {
-      logger.error(e, {message: `CreatePostScreen: create post failed`})
+      logger.error(e as Error | string, {message: `CreatePostScreen: create post failed`})
       const cleanErr = cleanError((e as Error)?.message || String(e)) // Renamed from 'err' to 'cleanErr' for clarity
       setError(cleanErr)
       setIsPublishing(false)

@@ -346,7 +346,7 @@ export function useCommunityConstitutionQuery(
 
 // ─── Chat Moderation Badges ───
 
-interface ChatBadge {
+export interface ChatBadge {
   type: string
   label: string
   icon: string
@@ -401,7 +401,7 @@ export function useChatBadgesQuery(
   })
 }
 
-interface MemberListItem {
+export interface MemberListItem {
   did: string
   matrixUserId?: string
   badges: ChatBadge[]

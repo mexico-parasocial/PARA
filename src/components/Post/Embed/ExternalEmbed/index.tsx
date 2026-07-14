@@ -45,7 +45,10 @@ export const ExternalEmbed = ({
     const params = parseEmbedPlayerFromUrl(link.uri)
 
     if (!params) return
-    const canShow = externalEmbedPrefs?.[params.source] !== 'hide'
+    const canShow =
+      (externalEmbedPrefs as Record<string, 'hide' | 'show' | undefined>)?.[
+        params.source
+      ] !== 'hide'
     if (canShow || exemptExternalEmbedSources.has(params.source)) {
     return params
     }

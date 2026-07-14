@@ -60,7 +60,7 @@ import {
   RichText,
 } from '@atproto/api'
 import {msg, plural} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
+import {useLingui} from '@lingui/react/macro'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 import {useQueries, useQueryClient} from '@tanstack/react-query'
@@ -240,7 +240,7 @@ export const ComposePost = ({
   const queryClient = useQueryClient()
   const currentDid = currentAccount!.did
   const {closeComposer} = useComposerControls()
-  const {_, i18n} = useLingui()
+  const {i18n, t: l} = useLingui()
   const ax = useAnalytics()
   const _t = useTheme()
   const requireAltTextEnabled = useRequireAltTextEnabled()
@@ -481,7 +481,6 @@ export const ComposePost = ({
       )
     },
     [i18n, agent, currentDid, composerDispatch, ax.metric],
-    [l, i18n, agent, currentDid, composerDispatch, ax.metric],
   )
 
   const onInitVideo = useNonReactiveCallback(() => {
@@ -658,7 +657,7 @@ export const ComposePost = ({
         })
       }
     },
-    [l, i18n, agent, currentDid, composerDispatch, ax.metric],
+    [i18n, agent, currentDid, composerDispatch, ax.metric],
   )
 
   const handleSelectDraft = useCallback(
@@ -761,13 +760,13 @@ export const ComposePost = ({
         textLength: posts[0].richtext.text.length,
       })
 
-      Toast.show(_(msg`Draft saved`))
+      Toast.show(i18n._(msg`Draft saved`))
       onClose()
     } catch (e) {
-      Toast.show(_(msg`Failed to save draft`), {type: 'error'})
+      Toast.show(i18n._(msg`Failed to save draft`), {type: 'error'})
       logger.error('Failed to save draft', {error: e})
     }
-  }, [composerState, saveDraft, composerDispatch, onClose, _, ax])
+  }, [composerState, saveDraft, composerDispatch, onClose, ax])
 
   // Handle discard action - fires metric and closes composer
   const handleDiscard = useCallback(() => {
@@ -852,17 +851,17 @@ export const ComposePost = ({
       const media = thread.posts[i].embed.media
       if (media) {
         if (media.type === 'images' && media.images.some(img => !img.alt)) {
-          return _(msg`One or more images is missing alt text.`)
+          return i18n._(msg`One or more images is missing alt text.`)
         }
         if (media.type === 'gif' && !media.alt) {
-          return _(msg`One or more GIFs is missing alt text.`)
+          return i18n._(msg`One or more GIFs is missing alt text.`)
         }
         if (
           media.type === 'video' &&
           media.video.status !== 'error' &&
           !media.video.altText
         ) {
-          return _(msg`One or more videos is missing alt text.`)
+          return i18n._(msg`One or more videos is missing alt text.`)
         }
       }
     }
@@ -875,7 +874,7 @@ export const ComposePost = ({
         /(^|\s)\|\|#Policy($|\s)/i.test(text) ||
         /(^|\s)\|#Matter($|\s)/i.test(text)
       ) {
-        return _(
+        return i18n._(
           msg`Por favor, selecciona una insignia específica en lugar de usar etiquetas genéricas (#Policy / #Matter).`,
         )
       }
@@ -1146,11 +1145,11 @@ export const ComposePost = ({
         e instanceof apilib.ReplyDeletedError ||
         err.includes('not locate record')
       ) {
-        err = _(
+        err = i18n._(
           msg`We're sorry! The post you are replying to has been deleted.`,
         )
       } else if (e instanceof EmbeddingDisabledError) {
-        err = _(msg`This post's author has disabled quote posts.`)
+        err = i18n._(msg`This post's author has disabled quote posts.`)
       }
       setError(err)
       setIsPublishing(false)
@@ -1244,14 +1243,14 @@ export const ComposePost = ({
           <Toast.Icon />
           <Toast.Text>
             {filteredThread.posts.length > 1
-              ? _(msg`Your posts were sent`)
+              ? i18n._(msg`Your posts were sent`)
               : replyTo
-                ? _(msg`Your reply was sent`)
-                : _(msg`Your post was sent`)}
+                ? i18n._(msg`Your reply was sent`)
+                : i18n._(msg`Your post was sent`)}
           </Toast.Text>
           {postUri && (
             <Toast.Action
-              label={_(msg`View post`)}
+              label={i18n._(msg`View post`)}
               onPress={() => {
                 const {host: name, rkey} = new AtUri(postUri)
                 navigation.navigate('PostThread', {name, rkey})
@@ -1266,7 +1265,6 @@ export const ComposePost = ({
       )
     }, 500)
   }, [
-    _,
     agent,
     canPost,
     isPublishing,
@@ -1545,9 +1543,9 @@ export const ComposePost = ({
         {replyTo ? (
           <Prompt.Basic
             control={discardPromptControl}
-            title={_(msg`Discard draft?`)}
+            title={i18n._(msg`Discard draft?`)}
             description=""
-            confirmButtonCta={_(msg`Discard`)}
+            confirmButtonCta={i18n._(msg`Discard`)}
             confirmButtonColor="negative"
             onConfirm={handleDiscard}
           />
@@ -1577,15 +1575,15 @@ export const ComposePost = ({
                 <Prompt.Action
                   cta={
                     composerState.draftId
-                      ? _(msg`Save changes`)
-                      : _(msg`Save draft`)
+                      ? i18n._(msg`Save changes`)
+                      : i18n._(msg`Save draft`)
                   }
                   // eslint-disable-next-line @typescript-eslint/no-misused-promises
                   onPress={handleSaveDraft}
                   color="primary"
                 />
                 <Prompt.Action
-                  cta={_(msg`Discard`)}
+                  cta={i18n._(msg`Discard`)}
                   onPress={handleDiscard}
                   color="negative_subtle"
                 />
@@ -1597,11 +1595,11 @@ export const ComposePost = ({
 
         <Prompt.Basic
           control={emptyPostsPromptControl}
-          title={_(msg`Skip empty posts?`)}
-          description={_(
+          title={i18n._(msg`Skip empty posts?`)}
+          description={i18n._(
             msg`Empty posts in the middle of your thread will be skipped.`,
           )}
-          confirmButtonCta={_(msg`Post anyway`)}
+          confirmButtonCta={i18n._(msg`Post anyway`)}
           onConfirm={handleConfirmSkipEmpty}
         />
       </KeyboardAvoidingView>
@@ -1655,7 +1653,7 @@ let ComposerPost = memo(function ComposerPost({
 }) {
   const {currentAccount} = useSession()
   const currentDid = currentAccount!.did
-  const {_} = useLingui()
+  const {i18n} = useLingui()
   const {data: currentProfile} = useProfileQuery({did: currentDid})
   const {isEnabled: isAnonymous} = useAnonymousMode()
   const t = useTheme()
@@ -1664,9 +1662,9 @@ let ComposerPost = memo(function ComposerPost({
   const forceMinHeight = IS_WEB && isTextOnly && isActive
   const selectTextInputPlaceholder = isReply
     ? isFirstPost
-      ? _(msg`Write your reply`)
-      : _(msg`Add another post`)
-    : _(msg`What's up?`)
+      ? i18n._(msg`Write your reply`)
+      : i18n._(msg`Add another post`)
+    : i18n._(msg`What's up?`)
   const discardPromptControl = Prompt.usePromptControl()
 
   const dispatchPost = useCallback(
@@ -1706,7 +1704,7 @@ let ComposerPost = memo(function ComposerPost({
         if (IS_NATIVE) return // web only
         const [mimeType] = uri.slice('data:'.length).split(';')
         if (!SUPPORTED_MIME_TYPES.includes(mimeType as SupportedMimeTypes)) {
-          Toast.show(_(msg`Unsupported video type: ${mimeType}`), {
+          Toast.show(i18n._(msg`Unsupported video type: ${mimeType}`), {
             type: 'error',
           })
           return
@@ -1721,7 +1719,7 @@ let ComposerPost = memo(function ComposerPost({
         onImageAdd([res])
       }
     },
-    [post.id, onSelectVideo, onImageAdd, _],
+    [post.id, onSelectVideo, onImageAdd],
   )
 
   useHideKeyboardOnBackground()
@@ -1787,8 +1785,8 @@ let ComposerPost = memo(function ComposerPost({
           onError={onError}
           onPressPublish={onPublish}
           accessible={true}
-          accessibilityLabel={_(msg`Write post`)}
-          accessibilityHint={_(
+          accessibilityLabel={i18n._(msg`Write post`)}
+          accessibilityHint={i18n._(
             msg`Compose posts up to ${plural(MAX_GRAPHEME_LENGTH || 0, {
               other: '# characters',
             })} in length`,
@@ -1799,7 +1797,7 @@ let ComposerPost = memo(function ComposerPost({
       {canRemovePost && isActive && (
         <>
           <Button
-            label={_(msg`Delete post`)}
+            label={i18n._(msg`Delete post`)}
             size="small"
             color="secondary"
             variant="ghost"
@@ -1824,15 +1822,15 @@ let ComposerPost = memo(function ComposerPost({
           </Button>
           <Prompt.Basic
             control={discardPromptControl}
-            title={_(msg`Discard post?`)}
-            description={_(msg`Are you sure you'd like to discard this post?`)}
+            title={i18n._(msg`Discard post?`)}
+            description={i18n._(msg`Are you sure you'd like to discard this post?`)}
             onConfirm={() => {
               dispatch({
                 type: 'remove_post',
                 postId: post.id,
               })
             }}
-            confirmButtonCta={_(msg`Discard`)}
+            confirmButtonCta={i18n._(msg`Discard`)}
             confirmButtonColor="negative"
           />
         </>
@@ -1876,7 +1874,7 @@ function ComposerTopBar({
 }) {
   const pal = usePalette('default')
   const t = useTheme()
-  const {_} = useLingui()
+  const {i18n} = useLingui()
   return (
     <Animated.View
       style={topBarAnimatedStyle}
@@ -1889,14 +1887,14 @@ function ComposerTopBar({
           IS_LIQUID_GLASS ? [a.px_lg, a.pt_lg, a.pb_md] : [a.p_sm],
         ]}>
         <Button
-          label={_(msg`Cancel`)}
+          label={i18n._(msg`Cancel`)}
           variant="ghost"
           color="primary"
           shape="default"
           size="small"
           style={[a.rounded_full, a.py_sm, {paddingLeft: 7, paddingRight: 7}]}
           onPress={onCancel}
-          accessibilityHint={_(
+          accessibilityHint={i18n._(
             msg`Closes post composer and discards post draft`,
           )}>
           <ButtonText style={[a.text_md]} maxFontSizeMultiplier={2}>
@@ -1918,14 +1916,14 @@ function ComposerTopBar({
             label={
               isReply
                 ? isThread
-                  ? _(
+                  ? i18n._(
                       msg({
                         message: 'Publish replies',
                         comment:
                           'Accessibility label for button to publish multiple replies in a thread',
                       }),
                     )
-                  : _(
+                  : i18n._(
                       msg({
                         message: 'Publish reply',
                         comment:
@@ -1933,14 +1931,14 @@ function ComposerTopBar({
                       }),
                     )
                 : isThread
-                  ? _(
+                  ? i18n._(
                       msg({
                         message: 'Publish posts',
                         comment:
                           'Accessibility label for button to publish multiple posts in a thread',
                       }),
                     )
-                  : _(
+                  : i18n._(
                       msg({
                         message: 'Publish post',
                         comment:
@@ -2129,7 +2127,7 @@ function ComposerPills({
   setPostType: (type: PostType | null) => void
 }) {
   const t = useTheme()
-  const {_} = useLingui()
+  const {i18n} = useLingui()
 
   const scrollRef = useRef<ScrollView>(null)
   const [scrollState, setScrollState] = useState({left: false, right: false})
@@ -2195,7 +2193,7 @@ function ComposerPills({
       <View style={[a.flex_row, a.p_sm, a.relative, a.align_center]}>
         {IS_WEB && scrollState.left && (
           <Button
-            label={_(msg`Scroll left`)}
+            label={i18n._(msg`Scroll left`)}
             size="tiny"
             variant="ghost"
             shape="round"
@@ -2261,8 +2259,8 @@ function ComposerPills({
               <Pressable
                 onPress={() => setIsOfficial(!isOfficial)}
                 accessibilityRole="button"
-                accessibilityLabel={_(msg`Toggle official status`)}
-                accessibilityHint={_(
+                accessibilityLabel={i18n._(msg`Toggle official status`)}
+                accessibilityHint={i18n._(
                   msg`Toggles whether this post is official`,
                 )}
                 style={({pressed}) => [
@@ -2326,7 +2324,7 @@ function ComposerPills({
         </ScrollView>
         {IS_WEB && scrollState.right && (
           <Button
-            label={_(msg`Scroll right`)}
+            label={i18n._(msg`Scroll right`)}
             size="tiny"
             variant="ghost"
             shape="round"
@@ -2383,7 +2381,7 @@ function ComposerFooter({
   }, [openGallery])
 
   const t = useTheme()
-  const {_} = useLingui()
+  const {i18n} = useLingui()
 
   const {gtPhone} = useBreakpoints()
   /*
@@ -2510,7 +2508,7 @@ function ComposerFooter({
               <SelectGifBtn onSelectGif={onSelectGif} disabled={!!media} />
               {IS_WEB && gtPhone ? (
                 <EmojiPicker.Root nextFocusRef={textInputRef}>
-                  <EmojiPicker.Trigger label={_(msg`Open emoji picker`)}>
+                  <EmojiPicker.Trigger label={i18n._(msg`Open emoji picker`)}>
                     {({props}) => (
                       <Button
                         style={a.p_sm}
@@ -2533,7 +2531,7 @@ function ComposerFooter({
       <View style={[a.flex_row, a.align_center, a.justify_between]}>
         {showAddButton && (
           <Button
-            label={_(msg`Add another post to thread`)}
+            label={i18n._(msg`Add another post to thread`)}
             onPress={onAddPost}
             style={[a.p_sm]}
             variant="ghost"
@@ -2820,7 +2818,7 @@ function ErrorBanner({
   clearVideo: () => void
 }) {
   const t = useTheme()
-  const {_} = useLingui()
+  const {i18n} = useLingui()
 
   const videoError =
     videoState.status === 'error' ? videoState.error : undefined
@@ -2855,7 +2853,7 @@ function ErrorBanner({
             {error}
           </NewText>
           <Button
-            label={_(msg`Dismiss error`)}
+            label={i18n._(msg`Dismiss error`)}
             size="tiny"
             color="secondary"
             variant="ghost"
@@ -2902,7 +2900,7 @@ function ToolbarWrapper({
 
 function VideoUploadToolbar({state}: {state: VideoState}) {
   const t = useTheme()
-  const {_} = useLingui()
+  const {i18n} = useLingui()
   const progress = state.progress
   const shouldRotate =
     state.status === 'processing' && (progress === 0 || progress === 1)
@@ -2931,23 +2929,23 @@ function VideoUploadToolbar({state}: {state: VideoState}) {
 
   switch (state.status) {
     case 'compressing':
-      text = _(msg`Compressing video...`)
+      text = i18n._(msg`Compressing video...`)
       break
     case 'uploading':
       text =
         state.video.mimeType === 'image/gif'
-          ? _(msg`Uploading GIF...`)
-          : _(msg`Uploading video...`)
+          ? i18n._(msg`Uploading GIF...`)
+          : i18n._(msg`Uploading video...`)
       break
     case 'processing':
-      text = _(msg`Processing video...`)
+      text = i18n._(msg`Processing video...`)
       break
     case 'error':
-      text = _(msg`Error`)
+      text = i18n._(msg`Error`)
       wheelProgress = 100
       break
     case 'done':
-      text = _(msg`Video uploaded`)
+      text = i18n._(msg`Video uploaded`)
       break
   }
 

@@ -118,7 +118,7 @@ function MessagesSplitViewLayoutInner({
           <ChatList
             newChatControl={newChatControl}
             selectedChat={selectedChat}
-            schatStatus={chatStatus}
+            chatStatus={chatStatus}
           />
           <NewChat onNewChat={onNewChat} control={newChatControl} />
         </View>

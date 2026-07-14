@@ -7,7 +7,7 @@ const SERVICE = 'http://localhost:2583'
 const DEFAULT_PASSWORD = 'password'
 
 async function main() {
-  const agent = new BskyAgent({service: SERVICE})
+  const agent = new AtpAgent({service: SERVICE})
 
   console.log(`Connecting to ${SERVICE}...`)
   console.log(`Seeding ${MOCK_REPS.length} representative accounts...`)
@@ -36,7 +36,7 @@ async function main() {
       console.log(`  -> Created! DID: ${account.did}`)
 
       // 2. Login as new user to set profile
-      const userAgent = new BskyAgent({service: SERVICE})
+      const userAgent = new AtpAgent({service: SERVICE})
       await userAgent.login({identifier: handle, password: DEFAULT_PASSWORD})
 
       // 3. Set Profile
@@ -62,7 +62,7 @@ async function main() {
         // Potentially update profile even if exists?
         // We'd need to login.
         try {
-          const userAgent = new BskyAgent({service: SERVICE})
+          const userAgent = new AtpAgent({service: SERVICE})
           await userAgent.login({
             identifier: handle,
             password: DEFAULT_PASSWORD,

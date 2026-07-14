@@ -85,7 +85,9 @@ function PrefSelector({
   label: string
 }) {
   const setExternalEmbedPref = useSetExternalEmbedPref()
-  const sources = useExternalEmbedsPrefs()
+  const sources = useExternalEmbedsPrefs() as
+    | Record<EmbedPlayerSource, 'show' | 'hide' | undefined>
+    | undefined
 
   return (
     <Toggle.Item

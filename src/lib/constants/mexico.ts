@@ -1,3 +1,9 @@
+export type RegionConfig = {
+  countryName: string
+  countryCode: string
+  regions: Array<{value: string; label: string}>
+}
+
 export const MEXICAN_STATES = [
   'All',
   'Aguascalientes',
@@ -54,6 +60,15 @@ export function normalizeMexicoStateName(stateName: string): string {
   }
 
   return normalized
+}
+
+export const MEXICO_REGION_CONFIG: RegionConfig = {
+  countryName: 'Mexico',
+  countryCode: 'MX',
+  regions: MEXICAN_STATES.filter(state => state !== 'All').map(state => ({
+    value: normalizeMexicoStateName(state),
+    label: state,
+  })),
 }
 
 export const MOCK_MUNICIPALITIES: Record<string, string[]> = {

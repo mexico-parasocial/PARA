@@ -116,7 +116,7 @@ function InnerWrapper({embed}: Props) {
             <GifPresentationControls
               isPlaying={false}
               isLoading={showSpinner}
-              togglePlayPause={() => {
+              onPress={() => {
                 ref.current?.togglePlayback()
               }}
             />

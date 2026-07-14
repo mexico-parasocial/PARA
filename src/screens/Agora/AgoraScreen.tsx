@@ -833,8 +833,7 @@ function LobbyingSection({
         <Dialog.Handle />
           <Dialog.ScrollableInner
             accessibilityDescribedBy="lobbying-info"
-            accessibilityHint={_(msg`Shows information about lobbying.`)}
-            accessibilityLabel={_(msg`Lobbying Information`)}>
+            accessibilityLabelledBy="lobbying-info">
           <View style={a.gap_md}>
             <Text style={[a.text_2xl, a.font_bold, t.atoms.text]}>
               <Trans>Lobbying</Trans>

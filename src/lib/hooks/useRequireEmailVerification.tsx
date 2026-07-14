@@ -38,7 +38,7 @@ export function useRequireEmailVerification() {
           })
           return undefined as ReturnType<T>
         } else {
-          return cb(...args)
+          return cb(...args) as ReturnType<T>
         }
       }
     },

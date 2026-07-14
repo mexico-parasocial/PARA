@@ -3,8 +3,9 @@ import {useEffect, useState} from 'react'
 import {useSession} from '#/state/session'
 import {useLoggedOutView} from '#/state/shell/logged-out'
 import {IS_WEB} from '#/env'
+import {type WelcomeModalControl} from './useWelcomeModal.shared'
 
-export function useWelcomeModal() {
+export function useWelcomeModal(): WelcomeModalControl {
   const {hasSession} = useSession()
   const {showLoggedOut} = useLoggedOutView()
   const [isOpen, setIsOpen] = useState(false)
