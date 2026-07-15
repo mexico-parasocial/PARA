@@ -51,7 +51,7 @@ export function useHighlights(postUri: string) {
         postUri,
         start: item.start,
         end: item.end,
-        color: item.color as HighlightColor,
+        color: item.color,
         tag: item.tag,
         isPublic: true,
         text: item.text,

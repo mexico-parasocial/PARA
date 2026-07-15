@@ -348,29 +348,32 @@ export function DistrictProfileScreen({navigation, route}: Props) {
                     Total votes cast
                   </Text>
                   <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
-                    {districtCabildeos.reduce(
-                      (sum, c) => sum + (c.voteTotals?.total || 0),
-                      0,
-                    ).toLocaleString()}
+                    {districtCabildeos
+                      .reduce((sum, c) => sum + (c.voteTotals?.total || 0), 0)
+                      .toLocaleString()}
+                  </Text>
+                </View>
+                <View style={[a.flex_row, a.align_center, a.justify_between]}>
+                  <Text style={[a.text_sm, t.atoms.text]}>Positions taken</Text>
+                  <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
+                    {districtCabildeos
+                      .reduce(
+                        (sum, c) => sum + (c.positionCounts?.total || 0),
+                        0,
+                      )
+                      .toLocaleString()}
                   </Text>
                 </View>
                 <View style={[a.flex_row, a.align_center, a.justify_between]}>
                   <Text style={[a.text_sm, t.atoms.text]}>
-                    Positions taken
+                    Active cabildeos
                   </Text>
                   <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
-                    {districtCabildeos.reduce(
-                      (sum, c) => sum + (c.positionCounts?.total || 0),
-                      0,
-                    ).toLocaleString()}
-                  </Text>
-                </View>
-                <View style={[a.flex_row, a.align_center, a.justify_between]}>
-                  <Text style={[a.text_sm, t.atoms.text]}>Active cabildeos</Text>
-                  <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
-                    {districtCabildeos.filter(
-                      c => c.phase === 'voting' || c.phase === 'deliberating',
-                    ).length}
+                    {
+                      districtCabildeos.filter(
+                        c => c.phase === 'voting' || c.phase === 'deliberating',
+                      ).length
+                    }
                   </Text>
                 </View>
               </View>
@@ -414,7 +417,7 @@ export function DistrictProfileScreen({navigation, route}: Props) {
                 label={_(msg`Overview view`)}
                 type="radio"
                 value={overviewView}
-                onChange={v => setOverviewView(v as typeof overviewView)}>
+                onChange={v => setOverviewView(v)}>
                 <SegmentedControl.Item value="party" label={_(msg`Party`)}>
                   <SegmentedControl.ItemText>
                     <Trans>Party</Trans>
@@ -455,11 +458,7 @@ export function DistrictProfileScreen({navigation, route}: Props) {
                   DISTRIBUCIÓN PARTIDISTA
                 </Text>
                 <Text
-                  style={[
-                    a.text_2xs,
-                    t.atoms.text_contrast_medium,
-                    a.mb_md,
-                  ]}>
+                  style={[a.text_2xs, t.atoms.text_contrast_medium, a.mb_md]}>
                   <Trans>
                     Placeholder preview — will be computed from PARA civic
                     engagement data when district-level party affiliation
@@ -556,8 +555,7 @@ export function DistrictProfileScreen({navigation, route}: Props) {
                       ]}>
                       APROBACIÓN ESTATAL
                     </Text>
-                    <Text
-                      style={[a.text_lg, a.font_bold, t.atoms.text]}>
+                    <Text style={[a.text_lg, a.font_bold, t.atoms.text]}>
                       {stateDemographics.approval}
                     </Text>
                   </View>
@@ -572,8 +570,7 @@ export function DistrictProfileScreen({navigation, route}: Props) {
                       ]}>
                       ACTIVOS
                     </Text>
-                    <Text
-                      style={[a.text_lg, a.font_bold, t.atoms.text]}>
+                    <Text style={[a.text_lg, a.font_bold, t.atoms.text]}>
                       {stateDemographics.active}
                     </Text>
                   </View>
@@ -592,7 +589,10 @@ export function DistrictProfileScreen({navigation, route}: Props) {
                       style={[
                         a.text_lg,
                         a.font_bold,
-                        {color: getPartyColors(stateDemographics.dominantParty).fg},
+                        {
+                          color: getPartyColors(stateDemographics.dominantParty)
+                            .fg,
+                        },
                       ]}>
                       {stateDemographics.dominantParty}
                     </Text>
@@ -932,5 +932,3 @@ function CabildeoPreviewCard({
   }
   return content
 }
-
-

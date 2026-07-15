@@ -25,7 +25,7 @@ export function EmojiReactionPicker({
   if (!children)
     throw new Error('EmojiReactionPicker requires the children prop on web')
 
-  const {i18n, t: l} = useLingui()
+  const {t: l} = useLingui()
 
   return (
     <EmojiPicker.Root onEmojiSelect={emoji => onEmojiSelect(emoji.native)}>
@@ -83,7 +83,7 @@ function MenuInner({
           evt.preventDefault()
         }
       }}>
-<View style={[a.flex_row, a.gap_xs]}>
+      <View style={[a.flex_row, a.gap_xs]}>
         {['❤️', '👍', '😆', '👀', '😢'].map(emoji => {
           const alreadyReacted = hasAlreadyReacted(
             message,

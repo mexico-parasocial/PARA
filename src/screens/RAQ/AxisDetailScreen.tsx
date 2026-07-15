@@ -2,7 +2,7 @@ import {StyleSheet, View} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
-import {RouteProp, useRoute} from '@react-navigation/native'
+import {type RouteProp, useRoute} from '@react-navigation/native'
 
 import {RAQ_AXES_BY_ID} from '#/lib/mock-data'
 import {type CommonNavigatorParams} from '#/lib/routes/types'
@@ -45,13 +45,15 @@ export default function AxisDetailScreen() {
       <Layout.Content contentContainerStyle={styles.container}>
         <View style={[styles.headerCard, t.atoms.bg_contrast_25]}>
           <View style={styles.polarityRow}>
-            <Text style={[styles.polarityLabel, {color: t.palette.primary_500}]}>
+            <Text
+              style={[styles.polarityLabel, {color: t.palette.primary_500}]}>
               {axis.labelLow}
             </Text>
             <Text style={[styles.polarityArrow, t.atoms.text_contrast_medium]}>
               ↔
             </Text>
-            <Text style={[styles.polarityLabel, {color: t.palette.primary_500}]}>
+            <Text
+              style={[styles.polarityLabel, {color: t.palette.primary_500}]}>
               {axis.labelHigh}
             </Text>
           </View>

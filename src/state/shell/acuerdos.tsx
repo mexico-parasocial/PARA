@@ -20,11 +20,7 @@ const LOCKS_KEY = 'para_acuerdo_locks'
 const WATERMARK_KEY = 'para_acuerdo_watermark'
 
 export type AcuerdoPhase =
-  | 'forming'
-  | 'active'
-  | 'locked'
-  | 'resolved'
-  | 'cancelled'
+  'forming' | 'active' | 'locked' | 'resolved' | 'cancelled'
 
 export type AcuerdoView = AcuerdoRecord & {
   uri: string
@@ -330,7 +326,7 @@ export function AcuerdoProvider({children}: {children: React.ReactNode}) {
           allUrisToCancel.includes(a.uri)
             ? {
                 ...a,
-                phase: 'cancelled' as AcuerdoPhase,
+                phase: 'cancelled',
                 description: `${a.description}\n\n[Cancelled: ${reason}]`,
               }
             : a,

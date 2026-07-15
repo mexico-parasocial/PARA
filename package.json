@@ -70,7 +70,8 @@
     "seed:civic:reset": "node ./scripts/civic-seed/index.mjs reset",
     "seed:civic:test": "node --test ./scripts/civic-seed/lib.test.mjs",
     "seed:civic:dm-smoke": "node ./scripts/civic-seed/dm-smoke.mjs",
-    "lint": "eslint --cache --quiet src modules",
+    "lint": "oxlint --quiet src modules",
+    "lint:fix": "oxlint --fix src modules",
     "lint-native": "swiftlint ./modules && ktlint ./modules",
     "lint-native:fix": "swiftlint --fix ./modules && ktlint --format ./modules",
     "typecheck": "pnpm run typecheck:ios && pnpm run typecheck:android && pnpm run typecheck:web",
@@ -280,7 +281,6 @@
     "@babel/preset-env": "^7.26.0",
     "@babel/runtime": "^7.26.0",
     "@crowdin/cli": "^4.14.1",
-    "@eslint/js": "^9.39.2",
     "@lingui/babel-plugin-lingui-macro": "^5.9.2",
     "@lingui/cli": "^5.9.2",
     "@pmmmwh/react-refresh-webpack-plugin": "^0.5.15",
@@ -295,8 +295,6 @@
     "@types/psl": "^1.1.1",
     "@types/react": "^19.1.12",
     "@types/react-dom": "^19.1.9",
-    "@typescript-eslint/eslint-plugin": "^8.63.0",
-    "@typescript-eslint/parser": "^8.63.0",
     "@typescript/native-preview": "^7.0.0-dev.20260428.1",
     "babel-jest": "^29.7.0",
     "babel-plugin-module-resolver": "^5.0.2",
@@ -304,19 +302,12 @@
     "babel-preset-expo": "~54.0.10",
     "eas-cli": "19.0.5",
     "eas-cli-local-build-plugin": "^18.13.1",
-    "eslint": "^9.39.2",
-    "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-bsky-internal": "link:./eslint",
-    "eslint-plugin-import-x": "^4.16.1",
-    "eslint-plugin-lingui": "^0.11.0",
-    "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-compiler": "^19.1.0-rc.2",
-    "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-native": "^5.0.0",
     "eslint-plugin-react-native-a11y": "^3.5.1",
     "eslint-plugin-simple-import-sort": "^12.1.1",
     "file-loader": "6.2.0",
-    "globals": "^17.0.0",
     "husky": "^9.1.7",
     "is-ci": "^3.0.1",
     "jest": "^29.7.0",
@@ -324,13 +315,14 @@
     "jest-junit": "^16.0.0",
     "lint-staged": "^13.2.3",
     "matrix-js-sdk": "^41.8.0",
+    "oxlint": "^1.73.0",
+    "oxlint-tsgolint": "^0.24.0",
     "prettier": "^3.8.3",
     "react-native-dotenv": "^3.4.11",
     "react-refresh": "^0.14.0",
     "svgo": "^3.3.2",
     "ts-plugin-sort-import-suggestions": "^1.0.4",
     "typescript": "^6.0.2",
-    "typescript-eslint": "^8.57.2",
     "webpack-bundle-analyzer": "^4.10.1"
   },
   "jest": {
@@ -395,7 +387,7 @@
   },
   "lint-staged": {
     "*{.js,.jsx,.ts,.tsx}": [
-      "eslint --cache --fix"
+      "oxlint --fix"
     ],
     "*{.js,.jsx,.ts,.tsx,.css}": [
       "prettier --cache --write --ignore-unknown"

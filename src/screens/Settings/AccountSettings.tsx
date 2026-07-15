@@ -20,7 +20,6 @@ import {
 } from '#/lib/m8/api'
 import {type AnonymousProfile} from '#/lib/m8/types'
 import {type CommonNavigatorParams} from '#/lib/routes/types'
-
 import {useSession} from '#/state/session'
 import * as SettingsList from '#/screens/Settings/components/SettingsList'
 import {atoms as a, useTheme} from '#/alf'
@@ -50,8 +49,8 @@ import {Text} from '#/components/Typography'
 import {ChangeHandleDialog} from './components/ChangeHandleDialog'
 import {ChangePasswordDialog} from './components/ChangePasswordDialog'
 import {DeactivateAccountDialog} from './components/DeactivateAccountDialog'
-import {ExportCarDialog} from './components/ExportCarDialog'
 import {DeleteAccountDialog} from './components/DeleteAccountDialog'
+import {ExportCarDialog} from './components/ExportCarDialog'
 
 type Props = NativeStackScreenProps<CommonNavigatorParams, 'AccountSettings'>
 export function AccountSettingsScreen({navigation}: Props) {
@@ -115,7 +114,7 @@ export function AccountSettingsScreen({navigation}: Props) {
   const toggleRevealGlobalKarma = async (value: boolean) => {
     try {
       setLoadingKarma(true)
-      await putKarmaRevelation({ revealGlobal: value })
+      await putKarmaRevelation({revealGlobal: value})
       setRevealGlobalKarma(value)
       Toast.show(
         value
@@ -138,7 +137,9 @@ export function AccountSettingsScreen({navigation}: Props) {
         // Reveal identity: disable anonymous mode
         Alert.alert(
           _(msg`Reveal Your Identity?`),
-          _(msg`By enabling Public Figure mode, your real name and profile will be visible to everyone. This cannot be undone without re-verifying your identity.`),
+          _(
+            msg`By enabling Public Figure mode, your real name and profile will be visible to everyone. This cannot be undone without re-verifying your identity.`,
+          ),
           [
             {text: _(msg`Cancel`), style: 'cancel'},
             {
@@ -150,7 +151,11 @@ export function AccountSettingsScreen({navigation}: Props) {
                   await setStoredAnonymousProfile(null)
                   setAnonProfile(null)
                   setAnonymousMode(false)
-                  Toast.show(_(msg`Public Figure mode enabled. Your identity is now public.`))
+                  Toast.show(
+                    _(
+                      msg`Public Figure mode enabled. Your identity is now public.`,
+                    ),
+                  )
                 } catch (e) {
                   Toast.show(_(msg`Failed to reveal identity`))
                 } finally {
@@ -166,7 +171,9 @@ export function AccountSettingsScreen({navigation}: Props) {
         if (isVerified !== 'true') {
           Alert.alert(
             _(msg`Restricted`),
-            _(msg`You must verify your identity (INE) before returning to anonymous mode.`),
+            _(
+              msg`You must verify your identity (INE) before returning to anonymous mode.`,
+            ),
           )
           setLoadingAnon(false)
           return
@@ -263,9 +270,8 @@ export function AccountSettingsScreen({navigation}: Props) {
             <SettingsList.PressableItem
               label={_(msg`Verify Identity (INE)`)}
               onPress={async () => {
-                const isVerified = await AsyncStorage.getItem(
-                  'para_ine_verified',
-                )
+                const isVerified =
+                  await AsyncStorage.getItem('para_ine_verified')
                 if (isVerified === 'true') {
                   Toast.show(_(msg`Your identity is already verified.`))
                   return
@@ -293,8 +299,8 @@ export function AccountSettingsScreen({navigation}: Props) {
                   ]}>
                   <Trans>
                     You are anonymous by default. Verified citizens appear as
-                    anonymous personas in communities unless they choose to reveal
-                    their identity as a public figure.
+                    anonymous personas in communities unless they choose to
+                    reveal their identity as a public figure.
                   </Trans>
                 </Text>
               </View>
@@ -311,13 +317,7 @@ export function AccountSettingsScreen({navigation}: Props) {
                 <Toggle.Platform />
               </Toggle.Item>
               {anonymousMode && anonProfile && (
-                <View
-                  style={[
-                    a.flex_row,
-                    a.align_center,
-                    a.gap_sm,
-                    a.py_xs,
-                  ]}>
+                <View style={[a.flex_row, a.align_center, a.gap_sm, a.py_xs]}>
                   <Text
                     style={[
                       a.text_sm,
@@ -332,13 +332,7 @@ export function AccountSettingsScreen({navigation}: Props) {
                 </View>
               )}
               {!anonymousMode && (
-                <View
-                  style={[
-                    a.flex_row,
-                    a.align_center,
-                    a.gap_sm,
-                    a.py_xs,
-                  ]}>
+                <View style={[a.flex_row, a.align_center, a.gap_sm, a.py_xs]}>
                   <Text
                     style={[
                       a.text_sm,
@@ -372,13 +366,7 @@ export function AccountSettingsScreen({navigation}: Props) {
                   </Trans>
                 </Text>
               </View>
-              <View
-                style={[
-                  a.flex_row,
-                  a.align_center,
-                  a.gap_sm,
-                  a.py_xs,
-                ]}>
+              <View style={[a.flex_row, a.align_center, a.gap_sm, a.py_xs]}>
                 <Text
                   style={[
                     a.text_sm,

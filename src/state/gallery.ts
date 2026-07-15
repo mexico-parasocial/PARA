@@ -53,8 +53,7 @@ type ComposerImageWithTransformation = ComposerImageBase & {
 }
 
 export type ComposerImage =
-  | ComposerImageWithoutTransformation
-  | ComposerImageWithTransformation
+  ComposerImageWithoutTransformation | ComposerImageWithTransformation
 
 let _imageCacheDirectory: string
 
@@ -207,7 +206,6 @@ export async function compressImage(img: ComposerImage): Promise<PickerImage> {
 
   let attempts = 0
   let maxDimension = 4000
-  let maxBytes = 2000000
 
   let minQualityPercentage = 0
   let maxQualityPercentage = 101 // exclusive

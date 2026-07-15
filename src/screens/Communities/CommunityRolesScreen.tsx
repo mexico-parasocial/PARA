@@ -13,7 +13,6 @@ import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation, useRoute} from '@react-navigation/native'
 
-import {type CommunityGovernanceApplicant} from '#/lib/api/para-lexicons'
 import {getCommunityInsignia} from '#/lib/civic-insignias'
 import {
   canManageGovernance,
@@ -700,7 +699,6 @@ export function CommunityRolesScreen() {
                   <Text style={[a.text_sm, a.mt_sm, t.atoms.text]}>
                     {rep.mandate}
                   </Text>
-
                 </TouchableOpacity>
               ))}
             </View>

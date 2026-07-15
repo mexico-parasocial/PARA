@@ -12,7 +12,6 @@ type SuggestedFollowsByActorQueryData = ReturnType<
 >['data']
 import {ProfileGrid} from '#/components/FeedInterstitials'
 import {IS_ANDROID} from '#/env'
-import type * as bsky from '#/types/bsky'
 
 export function ProfileHeaderSuggestedFollows({
   isExpanded,

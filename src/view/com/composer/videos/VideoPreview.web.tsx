@@ -15,7 +15,7 @@ export function VideoPreview({
   asset,
   video,
   clear,
-  isActivePost,
+  isActivePost: _isActivePost,
 }: {
   asset: ImagePickerAsset
   video: CompressedVideo

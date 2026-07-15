@@ -64,11 +64,7 @@ import {Header, Screen} from '#/components/Layout'
 import {Loader} from '#/components/Loader'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
-import {
-  type CoarseLocation,
-  useCoarseLocation,
-  useDeviceGeolocationApi,
-} from '#/geolocation'
+import {useCoarseLocation, useDeviceGeolocationApi} from '#/geolocation'
 import {
   BigCitiesDataOverlay,
   DistrictsDataOverlay,
@@ -1353,7 +1349,7 @@ export function MapScreenImpl({
           onPress={() => {
             lastTapRef.current = Date.now()
             navigation.navigate('CabildeoDetail', {
-              cabildeoUri: cabildeo.uri!,
+              cabildeoUri: cabildeo.uri,
             })
           }}>
           <View style={styles.civicMarkerWrap}>
@@ -1381,11 +1377,7 @@ export function MapScreenImpl({
                   {cab.title}
                 </Text>
                 <Text
-                  style={[
-                    a.text_xs,
-                    t.atoms.text_contrast_medium,
-                    a.mt_xs,
-                  ]}>
+                  style={[a.text_xs, t.atoms.text_contrast_medium, a.mt_xs]}>
                   {cab.phase} · {cab.voteTotals.total} votes
                 </Text>
               </View>
@@ -1470,7 +1462,7 @@ export function MapScreenImpl({
   const mapViewElement =
     MapViewComponent && PolygonComponent ? (
       <MapViewComponent
-        ref={mapRef as never}
+        ref={mapRef}
         style={StyleSheet.absoluteFill}
         initialRegion={INITIAL_REGION}
         provider={web('google')}

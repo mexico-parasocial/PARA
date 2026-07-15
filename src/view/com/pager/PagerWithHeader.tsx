@@ -385,9 +385,7 @@ function PagerItem({
       {renderTab({
         headerHeight,
         isFocused,
-        scrollElRef: scrollElRef as React.MutableRefObject<
-          ListMethods | ScrollView | null
-        >,
+        scrollElRef: scrollElRef,
       })}
     </ScrollProvider>
   )

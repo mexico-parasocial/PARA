@@ -267,7 +267,7 @@ export function DocumentsScreen({
           type="file"
           style={{display: 'none'}}
           onChange={e => {
-            const file = (e.target as HTMLInputElement).files?.[0]
+            const file = e.target.files?.[0]
             if (file) {
               const newDoc: DocItem = {
                 id: `upload-${Date.now()}`,

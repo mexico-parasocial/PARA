@@ -109,7 +109,7 @@ export function useAutocomplete({
         key: `search-${q}`,
         type: 'search' as const,
         value: q,
-      } as AutocompleteItem)
+      })
     }
 
     return results

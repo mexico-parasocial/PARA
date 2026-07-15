@@ -2,14 +2,17 @@ import {StyleSheet, TouchableOpacity, View} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
-import {RouteProp, useNavigation, useRoute} from '@react-navigation/native'
+import {type RouteProp, useNavigation, useRoute} from '@react-navigation/native'
 
 import {
   COMMUNITY_AXES,
   OPEN_QUESTIONS,
   PROPOSED_QUESTIONS,
 } from '#/lib/mock-data'
-import {CommonNavigatorParams, type NavigationProp} from '#/lib/routes/types'
+import {
+  type CommonNavigatorParams,
+  type NavigationProp,
+} from '#/lib/routes/types'
 import {useVoteOnProposedQuestionMutation} from '#/state/mutations/raq'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'

@@ -45,7 +45,6 @@ import {
   ReportDialog,
   useReportDialogControl,
 } from '#/components/moderation/ReportDialog'
-import {useAnalytics} from '#/analytics'
 import {RichText} from '#/components/RichText'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
@@ -316,9 +315,7 @@ export function ProfileFeedHeader({info}: {info: FeedSourceFeedInfo}) {
                     <Menu.Item
                       disabled={isFeedStateChangePending}
                       label={
-                        isSaved
-                          ? l`Remove from my feeds`
-                          : l`Save to my feeds`
+                        isSaved ? l`Remove from my feeds` : l`Save to my feeds`
                       }
                       onPress={onToggleSaved}>
                       <Menu.ItemText>

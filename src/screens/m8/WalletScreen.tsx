@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import {useCallback, useEffect, useState} from 'react'
 import {
   Alert,
   AppState,
@@ -17,12 +17,12 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated'
-import { useLingui } from '@lingui/react'
+import {useLingui} from '@lingui/react'
 
-import { getGrants, type ProofBrokerGrant } from '#/lib/m8'
-import { authenticateBiometric } from '#/lib/m8/biometric'
-import { useTheme } from '#/alf'
-import { Text } from '#/components/Typography'
+import {getGrants, type ProofBrokerGrant} from '#/lib/m8'
+import {authenticateBiometric} from '#/lib/m8/biometric'
+import {useTheme} from '#/alf'
+import {Text} from '#/components/Typography'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -60,7 +60,7 @@ interface PresentationBundle {
 const secureStorage = {
   getCredentials: async (): Promise<StoredCredential[]> => {
     try {
-      const { grants } = await getGrants()
+      const {grants} = await getGrants()
       return grants.map(grantToCredential)
     } catch (err) {
       console.warn('[m8] Failed to load credentials:', err)
@@ -78,7 +78,8 @@ function grantToCredential(grant: ProofBrokerGrant): StoredCredential {
   for (const c of grant.requestedClaims) {
     if (c.type === 'is_age_eligible') claims.ageOver18 = true
     if (c.type === 'has_para_verification') claims.citizenship = 'MX'
-    if (c.type === 'is_verified_public_figure') claims.verifiedPublicFigure = true
+    if (c.type === 'is_verified_public_figure')
+      claims.verifiedPublicFigure = true
   }
   return {
     id: grant.id,
@@ -86,7 +87,7 @@ function grantToCredential(grant: ProofBrokerGrant): StoredCredential {
     issuedAt: grant.issuedAt ?? grant.requestedAt,
     expiresAt: grant.expiresAt ?? '2031-01-01T00:00:00Z',
     claims,
-    proof: { type: 'Ed25519', jws: grant.proofArtifactIds[0] ?? 'mock' },
+    proof: {type: 'Ed25519', jws: grant.proofArtifactIds[0] ?? 'mock'},
     revocationHash: `sha256:${grant.id}`,
     deviceBinding: 'device:m8:session',
   }
@@ -97,35 +98,37 @@ function grantToCredential(grant: ProofBrokerGrant): StoredCredential {
 export default function WalletScreen() {
   const t = useTheme()
   const [credentials, setCredentials] = useState<StoredCredential[]>([])
-  const [selectedCredential, setSelectedCredential] = useState<StoredCredential | null>(null)
+  const [selectedCredential, setSelectedCredential] =
+    useState<StoredCredential | null>(null)
   const [isLocked, setIsLocked] = useState(true)
-  const [presentationBundle, setPresentationBundle] = useState<PresentationBundle | null>(null)
+  const [presentationBundle, setPresentationBundle] =
+    useState<PresentationBundle | null>(null)
   const [showConsent, setShowConsent] = useState(false)
 
   // Scan line animation
   const scanLineY = useSharedValue(0)
   const scanLineStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: scanLineY.value }],
+    transform: [{translateY: scanLineY.value}],
     opacity: 0.6,
   }))
 
   // Card press animation
   const cardScale = useSharedValue(1)
   const cardAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: cardScale.value }],
+    transform: [{scale: cardScale.value}],
   }))
 
   useEffect(() => {
     scanLineY.value = withSequence(
-      withTiming(0, { duration: 0 }),
-      withTiming(180, { duration: 2500 }),
-      withTiming(0, { duration: 2500 })
+      withTiming(0, {duration: 0}),
+      withTiming(180, {duration: 2500}),
+      withTiming(0, {duration: 2500}),
     )
     const interval = setInterval(() => {
       scanLineY.value = withSequence(
-        withTiming(0, { duration: 0 }),
-        withTiming(180, { duration: 2500 }),
-        withTiming(0, { duration: 2500 })
+        withTiming(0, {duration: 0}),
+        withTiming(180, {duration: 2500}),
+        withTiming(0, {duration: 2500}),
       )
     }, 5000)
     return () => clearInterval(interval)
@@ -180,13 +183,13 @@ export default function WalletScreen() {
         encryptedPayload: `encrypted:${selectedCredential.proof.jws.slice(0, 20)}...`,
         nonce: `nonce:${Math.random().toString(36).slice(2)}`,
         expiresAt: Date.now() + 5 * 60 * 1000, // 5 min
-        revealedClaims: selectedClaims as string[],
+        revealedClaims: selectedClaims,
       }
 
       setPresentationBundle(bundle)
       Vibration.vibrate([0, 100, 50, 100])
     },
-    [selectedCredential]
+    [selectedCredential],
   )
 
   // ─── Locked State ─────────────────────────────────────────────────────────
@@ -205,7 +208,10 @@ export default function WalletScreen() {
             accessibilityLabel="Unlock wallet"
             accessibilityHint="Click to authenticate and unlock your wallet"
             onPress={unlock}
-            style={[styles.unlockBtn, { backgroundColor: t.palette.primary_500 }]}>
+            style={[
+              styles.unlockBtn,
+              {backgroundColor: t.palette.primary_500},
+            ]}>
             <Text style={styles.unlockBtnText}>Unlock with Biometrics</Text>
           </TouchableOpacity>
         </View>
@@ -259,7 +265,9 @@ export default function WalletScreen() {
         </Text>
       </View>
 
-      <ScrollView style={styles.list} contentContainerStyle={styles.listContent}>
+      <ScrollView
+        style={styles.list}
+        contentContainerStyle={styles.listContent}>
         {credentials.map(cred => (
           <TouchableOpacity
             key={cred.id}
@@ -267,26 +275,65 @@ export default function WalletScreen() {
             accessibilityLabel={`Credential from ${cred.issuerDid}`}
             accessibilityHint="Double tap to view credential details"
             onPress={() => setSelectedCredential(cred)}
-            style={[styles.card, t.atoms.bg_contrast_25, { borderColor: t.palette.contrast_100 }]}>
+            style={[
+              styles.card,
+              t.atoms.bg_contrast_25,
+              {borderColor: t.palette.contrast_100},
+            ]}>
             <Animated.View style={[styles.cardInner, cardAnimatedStyle]}>
               <View style={styles.cardHeader}>
-                <View style={[styles.issuerBadge, { backgroundColor: t.palette.primary_500 + '20' }]}>
-                  <Text style={[styles.issuerBadgeText, { color: t.palette.primary_500 }]}>INE</Text>
+                <View
+                  style={[
+                    styles.issuerBadge,
+                    {backgroundColor: t.palette.primary_500 + '20'},
+                  ]}>
+                  <Text
+                    style={[
+                      styles.issuerBadgeText,
+                      {color: t.palette.primary_500},
+                    ]}>
+                    INE
+                  </Text>
                 </View>
-                <Text style={[styles.cardStatus, { color: t.palette.primary_500 }]}>Active</Text>
+                <Text
+                  style={[styles.cardStatus, {color: t.palette.primary_500}]}>
+                  Active
+                </Text>
               </View>
 
-              <Text style={[styles.cardTitle, t.atoms.text]}>Mexican Citizen Credential</Text>
+              <Text style={[styles.cardTitle, t.atoms.text]}>
+                Mexican Citizen Credential
+              </Text>
 
               <View style={styles.claimsRow}>
                 {cred.claims.ageOver18 && (
-                  <View style={[styles.claimChip, { backgroundColor: t.palette.primary_500 + '15' }]}>
-                    <Text style={[styles.claimChipText, { color: t.palette.primary_500 }]}>18+</Text>
+                  <View
+                    style={[
+                      styles.claimChip,
+                      {backgroundColor: t.palette.primary_500 + '15'},
+                    ]}>
+                    <Text
+                      style={[
+                        styles.claimChipText,
+                        {color: t.palette.primary_500},
+                      ]}>
+                      18+
+                    </Text>
                   </View>
                 )}
                 {cred.claims.citizenship === 'MX' && (
-                  <View style={[styles.claimChip, { backgroundColor: t.palette.primary_500 + '15' }]}>
-                    <Text style={[styles.claimChipText, { color: t.palette.primary_500 }]}>🇲🇽 MX</Text>
+                  <View
+                    style={[
+                      styles.claimChip,
+                      {backgroundColor: t.palette.primary_500 + '15'},
+                    ]}>
+                    <Text
+                      style={[
+                        styles.claimChipText,
+                        {color: t.palette.primary_500},
+                      ]}>
+                      🇲🇽 MX
+                    </Text>
                   </View>
                 )}
               </View>
@@ -296,7 +343,13 @@ export default function WalletScreen() {
               </Text>
             </Animated.View>
 
-            <Animated.View style={[styles.scanLine, scanLineStyle, { backgroundColor: t.palette.primary_500 }]} />
+            <Animated.View
+              style={[
+                styles.scanLine,
+                scanLineStyle,
+                {backgroundColor: t.palette.primary_500},
+              ]}
+            />
           </TouchableOpacity>
         ))}
 
@@ -304,8 +357,10 @@ export default function WalletScreen() {
           accessibilityRole="button"
           accessibilityLabel="Add new credential"
           accessibilityHint="Click to add a new credential to your wallet"
-          style={[styles.addCard, { borderColor: t.palette.contrast_100 }]}>
-          <Text style={[styles.addCardText, t.atoms.text_contrast_medium]}>+ Add Credential</Text>
+          style={[styles.addCard, {borderColor: t.palette.contrast_100}]}>
+          <Text style={[styles.addCardText, t.atoms.text_contrast_medium]}>
+            + Add Credential
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -329,52 +384,80 @@ function CredentialDetail({
   return (
     <View style={[styles.container, t.atoms.bg]}>
       <View style={styles.detailHeader}>
-        <TouchableOpacity accessibilityRole="button" onPress={onBack} style={styles.backBtn}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          onPress={onBack}
+          style={styles.backBtn}>
           <Text style={[styles.backBtnText, t.atoms.text]}>←</Text>
         </TouchableOpacity>
-        <Text style={[styles.detailTitle, t.atoms.text]}>Credential Detail</Text>
+        <Text style={[styles.detailTitle, t.atoms.text]}>
+          Credential Detail
+        </Text>
       </View>
 
       <ScrollView style={styles.detailContent}>
-        <View style={[styles.detailCard, t.atoms.bg_contrast_25, { borderColor: t.palette.contrast_100 }]}>
+        <View
+          style={[
+            styles.detailCard,
+            t.atoms.bg_contrast_25,
+            {borderColor: t.palette.contrast_100},
+          ]}>
           <View style={styles.detailSection}>
-            <Text style={[styles.detailLabel, t.atoms.text_contrast_medium]}>Issuer</Text>
-            <Text style={[styles.detailValue, t.atoms.text]}>{credential.issuerDid}</Text>
+            <Text style={[styles.detailLabel, t.atoms.text_contrast_medium]}>
+              Issuer
+            </Text>
+            <Text style={[styles.detailValue, t.atoms.text]}>
+              {credential.issuerDid}
+            </Text>
           </View>
 
           <View style={styles.detailSection}>
-            <Text style={[styles.detailLabel, t.atoms.text_contrast_medium]}>Issued</Text>
+            <Text style={[styles.detailLabel, t.atoms.text_contrast_medium]}>
+              Issued
+            </Text>
             <Text style={[styles.detailValue, t.atoms.text]}>
               {new Date(credential.issuedAt).toLocaleDateString()}
             </Text>
           </View>
 
           <View style={styles.detailSection}>
-            <Text style={[styles.detailLabel, t.atoms.text_contrast_medium]}>Expires</Text>
+            <Text style={[styles.detailLabel, t.atoms.text_contrast_medium]}>
+              Expires
+            </Text>
             <Text style={[styles.detailValue, t.atoms.text]}>
               {new Date(credential.expiresAt).toLocaleDateString()}
             </Text>
           </View>
 
           <View style={styles.detailSection}>
-            <Text style={[styles.detailLabel, t.atoms.text_contrast_medium]}>Claims</Text>
+            <Text style={[styles.detailLabel, t.atoms.text_contrast_medium]}>
+              Claims
+            </Text>
             {Object.entries(credential.claims).map(([key, value]) => (
               <View key={key} style={styles.claimRow}>
-                <Text style={[styles.claimKey, t.atoms.text_contrast_medium]}>{key}</Text>
-                <Text style={[styles.claimValue, t.atoms.text]}>{value?.toString()}</Text>
+                <Text style={[styles.claimKey, t.atoms.text_contrast_medium]}>
+                  {key}
+                </Text>
+                <Text style={[styles.claimValue, t.atoms.text]}>
+                  {value?.toString()}
+                </Text>
               </View>
             ))}
           </View>
 
           <View style={styles.detailSection}>
-            <Text style={[styles.detailLabel, t.atoms.text_contrast_medium]}>Proof</Text>
+            <Text style={[styles.detailLabel, t.atoms.text_contrast_medium]}>
+              Proof
+            </Text>
             <Text style={[styles.proofValue, t.atoms.text_contrast_medium]}>
               {credential.proof.type}: {credential.proof.jws.slice(0, 20)}...
             </Text>
           </View>
 
           <View style={styles.detailSection}>
-            <Text style={[styles.detailLabel, t.atoms.text_contrast_medium]}>Device Binding</Text>
+            <Text style={[styles.detailLabel, t.atoms.text_contrast_medium]}>
+              Device Binding
+            </Text>
             <Text style={[styles.proofValue, t.atoms.text_contrast_medium]}>
               {credential.deviceBinding}
             </Text>
@@ -386,7 +469,7 @@ function CredentialDetail({
           accessibilityLabel="Present credential"
           accessibilityHint="Click to start presenting this credential to a verifier"
           onPress={onPresent}
-          style={[styles.presentBtn, { backgroundColor: t.palette.primary_500 }]}>
+          style={[styles.presentBtn, {backgroundColor: t.palette.primary_500}]}>
           <Text style={styles.presentBtnText}>Present Credential</Text>
         </TouchableOpacity>
 
@@ -399,7 +482,7 @@ function CredentialDetail({
               'Delete Credential',
               'This will permanently remove the credential from your device.',
               [
-                { text: 'Cancel', style: 'cancel' },
+                {text: 'Cancel', style: 'cancel'},
                 {
                   text: 'Delete',
                   style: 'destructive',
@@ -408,11 +491,11 @@ function CredentialDetail({
                     onBack()
                   },
                 },
-              ]
+              ],
             )
           }}
           style={styles.deleteBtn}>
-          <Text style={[styles.deleteBtnText, { color: t.palette.contrast_500 }]}>
+          <Text style={[styles.deleteBtnText, {color: t.palette.contrast_500}]}>
             Delete Credential
           </Text>
         </TouchableOpacity>
@@ -434,44 +517,67 @@ function ConsentScreen({
 }) {
   const t = useTheme()
   const {} = useLingui()
-  const [selectedClaims, setSelectedClaims] = useState<(keyof StoredCredential['claims'])[]>([
-    'ageOver18',
-    'citizenship',
-  ])
+  const [selectedClaims, setSelectedClaims] = useState<
+    (keyof StoredCredential['claims'])[]
+  >(['ageOver18', 'citizenship'])
 
   const toggleClaim = (claim: keyof StoredCredential['claims']) => {
     setSelectedClaims(prev =>
-      prev.includes(claim) ? prev.filter(c => c !== claim) : [...prev, claim]
+      prev.includes(claim) ? prev.filter(c => c !== claim) : [...prev, claim],
     )
   }
 
   return (
     <View style={[styles.container, t.atoms.bg]}>
       <View style={styles.consentHeader}>
-        <TouchableOpacity accessibilityRole="button" onPress={onCancel} style={styles.backBtn}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          onPress={onCancel}
+          style={styles.backBtn}>
           <Text style={[styles.backBtnText, t.atoms.text]}>✕</Text>
         </TouchableOpacity>
-        <Text style={[styles.consentTitle, t.atoms.text]}>Select Claims to Share</Text>
+        <Text style={[styles.consentTitle, t.atoms.text]}>
+          Select Claims to Share
+        </Text>
       </View>
 
       <ScrollView style={styles.consentContent}>
         <Text style={[styles.consentSubtitle, t.atoms.text_contrast_medium]}>
-          Choose which verified claims to reveal to the verifier. You control your data.
+          Choose which verified claims to reveal to the verifier. You control
+          your data.
         </Text>
 
-        <View style={[styles.consentCard, t.atoms.bg_contrast_25, { borderColor: t.palette.contrast_100 }]}>
+        <View
+          style={[
+            styles.consentCard,
+            t.atoms.bg_contrast_25,
+            {borderColor: t.palette.contrast_100},
+          ]}>
           {Object.entries(credential.claims).map(([key, value]) => {
-            const isSelected = selectedClaims.includes(key as keyof StoredCredential['claims'])
+            const isSelected = selectedClaims.includes(
+              key as keyof StoredCredential['claims'],
+            )
             return (
               <TouchableOpacity
                 key={key}
                 accessibilityRole="checkbox"
-                accessibilityState={{ checked: isSelected }}
-                onPress={() => toggleClaim(key as keyof StoredCredential['claims'])}
-                style={[styles.claimToggle, { borderBottomColor: t.palette.contrast_100 }]}>
+                accessibilityState={{checked: isSelected}}
+                onPress={() =>
+                  toggleClaim(key as keyof StoredCredential['claims'])
+                }
+                style={[
+                  styles.claimToggle,
+                  {borderBottomColor: t.palette.contrast_100},
+                ]}>
                 <View style={styles.claimToggleLeft}>
-                  <Text style={[styles.claimToggleKey, t.atoms.text]}>{key}</Text>
-                  <Text style={[styles.claimToggleValue, t.atoms.text_contrast_medium]}>
+                  <Text style={[styles.claimToggleKey, t.atoms.text]}>
+                    {key}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.claimToggleValue,
+                      t.atoms.text_contrast_medium,
+                    ]}>
                     {String(value)}
                   </Text>
                 </View>
@@ -479,7 +585,9 @@ function ConsentScreen({
                   style={[
                     styles.claimToggleCheck,
                     {
-                      backgroundColor: isSelected ? t.palette.primary_500 : t.palette.contrast_100,
+                      backgroundColor: isSelected
+                        ? t.palette.primary_500
+                        : t.palette.contrast_100,
                     },
                   ]}>
                   {isSelected && <Text style={styles.checkMark}>✓</Text>}
@@ -489,8 +597,13 @@ function ConsentScreen({
           })}
         </View>
 
-        <View style={[styles.securityBadge, { backgroundColor: t.palette.primary_500 + '15' }]}>
-          <Text style={[styles.securityBadgeText, { color: t.palette.primary_500 }]}>
+        <View
+          style={[
+            styles.securityBadge,
+            {backgroundColor: t.palette.primary_500 + '15'},
+          ]}>
+          <Text
+            style={[styles.securityBadgeText, {color: t.palette.primary_500}]}>
             🔒 End-to-end encrypted
           </Text>
         </View>
@@ -500,7 +613,7 @@ function ConsentScreen({
           accessibilityLabel="Confirm and generate QR"
           accessibilityHint="Click to confirm your selection and generate the presentation QR code"
           onPress={() => onConfirm(selectedClaims)}
-          style={[styles.confirmBtn, { backgroundColor: t.palette.primary_500 }]}>
+          style={[styles.confirmBtn, {backgroundColor: t.palette.primary_500}]}>
           <Text style={styles.confirmBtnText}>Generate QR Code</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -541,28 +654,41 @@ function PresentationQRView({
   return (
     <View style={[styles.container, t.atoms.bg]}>
       <View style={styles.qrHeader}>
-        <TouchableOpacity accessibilityRole="button" onPress={onClose} style={styles.backBtn}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          onPress={onClose}
+          style={styles.backBtn}>
           <Text style={[styles.backBtnText, t.atoms.text]}>✕</Text>
         </TouchableOpacity>
         <Text style={[styles.qrTitle, t.atoms.text]}>Scan to Verify</Text>
       </View>
 
       <View style={styles.qrContent}>
-        <View style={[styles.qrCard, t.atoms.bg_contrast_25, { borderColor: t.palette.contrast_100 }]}>
+        <View
+          style={[
+            styles.qrCard,
+            t.atoms.bg_contrast_25,
+            {borderColor: t.palette.contrast_100},
+          ]}>
           <QRCode
             value={JSON.stringify(bundle)}
             size={220}
             color={t.palette.contrast_500}
-            backgroundColor={t.atoms.bg.backgroundColor as string}
+            backgroundColor={t.atoms.bg.backgroundColor}
           />
         </View>
 
         <Text style={[styles.qrSubtitle, t.atoms.text_contrast_medium]}>
-          Show this QR to the verifier. It contains your selected claims encrypted with a one-time nonce.
+          Show this QR to the verifier. It contains your selected claims
+          encrypted with a one-time nonce.
         </Text>
 
-        <View style={[styles.countdownBadge, { backgroundColor: t.palette.primary_500 + '15' }]}>
-          <Text style={[styles.countdownText, { color: t.palette.primary_500 }]}>
+        <View
+          style={[
+            styles.countdownBadge,
+            {backgroundColor: t.palette.primary_500 + '15'},
+          ]}>
+          <Text style={[styles.countdownText, {color: t.palette.primary_500}]}>
             ⏱️ Expires in {mins}:{secs.toString().padStart(2, '0')}
           </Text>
         </View>
@@ -570,8 +696,19 @@ function PresentationQRView({
         <View style={styles.revealedClaims}>
           <Text style={[styles.revealedTitle, t.atoms.text]}>Revealing:</Text>
           {bundle.revealedClaims.map(claim => (
-            <View key={claim} style={[styles.revealedChip, { backgroundColor: t.palette.primary_500 + '15' }]}>
-              <Text style={[styles.revealedChipText, { color: t.palette.primary_500 }]}>{claim}</Text>
+            <View
+              key={claim}
+              style={[
+                styles.revealedChip,
+                {backgroundColor: t.palette.primary_500 + '15'},
+              ]}>
+              <Text
+                style={[
+                  styles.revealedChipText,
+                  {color: t.palette.primary_500},
+                ]}>
+                {claim}
+              </Text>
             </View>
           ))}
         </View>

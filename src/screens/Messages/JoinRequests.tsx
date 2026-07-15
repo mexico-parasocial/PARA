@@ -1,5 +1,5 @@
 import {useState} from 'react'
-import {type ListRenderItem, View} from 'react-native'
+import {View} from 'react-native'
 import {
   ChatBskyGroupApproveJoinRequest,
   type ChatBskyGroupListJoinRequests,
@@ -369,13 +369,8 @@ function JoinRequestsList({
       <Header count={requestCount} hasMoreRequests={hasNextPage} />
       <List
         data={items}
-        keyExtractor={
-          ((item: bsky.profile.AnyProfileView) => item.did) as unknown as (
-            item: unknown,
-            index: number,
-          ) => string
-        }
-        renderItem={renderItem as unknown as ListRenderItem<unknown>}
+        keyExtractor={(item: bsky.profile.AnyProfileView) => item.did}
+        renderItem={renderItem}
         ListEmptyComponent={
           isPending ? (
             <View

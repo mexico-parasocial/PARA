@@ -5,11 +5,7 @@ import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
 import {type ComposerFlair, isPolicyFlair} from '#/lib/post-flairs'
-import {
-  FLAIR_GROUPS,
-  POST_TYPES,
-  type PostType,
-} from '#/lib/tags'
+import {FLAIR_GROUPS, POST_TYPES, type PostType} from '#/lib/tags'
 import {atoms as a, useTheme, web} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
@@ -206,14 +202,14 @@ function DialogInner({
                     key={item.id}
                     postType={item as PostType}
                     isSelected={postType?.id === item.id}
-                    onPress={() => handleSelectPostType(item as PostType)}
+                    onPress={() => handleSelectPostType(item)}
                   />
                 ) : (
                   <FlairItem
                     key={item.id}
                     flair={item as ComposerFlair}
                     isSelected={selectedFlairs.some(f => f.id === item.id)}
-                    onPress={() => toggleFlair(item as ComposerFlair)}
+                    onPress={() => toggleFlair(item)}
                   />
                 ),
               )

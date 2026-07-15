@@ -381,7 +381,7 @@ let FeedItemInner = ({
             onBeforePress={onOpenAuthor}
             live={live}
           />
-          {isPolicyPostRecord(record as PostBadgeRecord) && (
+          {isPolicyPostRecord(record) && (
             <>
               <View
                 style={[

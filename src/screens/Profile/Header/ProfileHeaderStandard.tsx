@@ -28,7 +28,6 @@ import {useAnonymousMode} from '#/lib/m8/hooks/useAnonymousMode'
 import {formatUserDisplayName} from '#/lib/strings/profile-names'
 import {logger} from '#/logger'
 import {type Shadow, useProfileShadow} from '#/state/cache/profile-shadow'
-import * as bsky from '#/types/bsky'
 import {
   useProfileBlockMutationQueue,
   useProfileFollowMutationQueue,
@@ -59,6 +58,7 @@ import {useAnalytics} from '#/analytics'
 import {IS_IOS, IS_NATIVE} from '#/env'
 import {InviteFriendsDialog} from '#/features/inviteFriends'
 import {useActorStatus} from '#/features/liveNow'
+import type * as bsky from '#/types/bsky'
 import {EditProfileDialog} from './EditProfileDialog'
 import {ProfileHeaderHandle} from './Handle'
 import {ProfileHeaderMetrics} from './Metrics'
@@ -175,7 +175,9 @@ let ProfileHeaderStandard = ({
                     ? anonProfile?.displayName
                     : profile.displayName,
                   handle: profile.handle,
-                  isFigure: isCurrentUserAnonymous ? false : verification.isVerified,
+                  isFigure: isCurrentUserAnonymous
+                    ? false
+                    : verification.isVerified,
                   isAnonymous: isCurrentUserAnonymous,
                   moderation: moderation.ui('displayName'),
                 })}
@@ -265,13 +267,17 @@ function ProfileCivicBadges({
 
   // Extract party insignia from display name or description if available
   const {insignia} = useMemo(
-    () => extractPartyInsignia(profile.displayName || profile.description || ''),
+    () =>
+      extractPartyInsignia(profile.displayName || profile.description || ''),
     [profile.displayName, profile.description],
   )
 
-  const compassPos = paraIdentity?.compassPosition as CompassPositionId | undefined
+  const compassPos = paraIdentity?.compassPosition as
+    CompassPositionId | undefined
   const compassColor = compassPos ? COMPASS_COLORS[compassPos] : undefined
-  const compassGradient = compassPos ? COMPASS_CROSS_GRADIENTS[compassPos] : undefined
+  const compassGradient = compassPos
+    ? COMPASS_CROSS_GRADIENTS[compassPos]
+    : undefined
 
   const badges: React.ReactNode[] = []
 
@@ -289,7 +295,10 @@ function ProfileCivicBadges({
           a.py_xs,
           {backgroundColor: `${t.palette.primary_500}15`},
         ]}>
-        <VerificationCheckButton profile={profile as Shadow<bsky.profile.AnyProfileView>} size="sm" />
+        <VerificationCheckButton
+          profile={profile as Shadow<bsky.profile.AnyProfileView>}
+          size="sm"
+        />
         <Text style={[a.text_sm, a.font_bold, {color: t.palette.primary_500}]}>
           <Trans>Verified Citizen</Trans>
         </Text>
@@ -340,7 +349,12 @@ function ProfileCivicBadges({
             style={[a.absolute, {borderRadius: 999}]}
           />
         ) : (
-          <View style={[a.absolute, {backgroundColor: `${compassColor}25`, borderRadius: 999}]} />
+          <View
+            style={[
+              a.absolute,
+              {backgroundColor: `${compassColor}25`, borderRadius: 999},
+            ]}
+          />
         )}
         <Text style={[a.text_sm, a.font_bold, {color: compassColor}]}>
           {compassPos.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
@@ -400,9 +414,7 @@ function ProfileCivicBadges({
   if (badges.length === 0) return null
 
   return (
-    <View style={[a.flex_row, a.flex_wrap, a.gap_sm, a.pt_2xs]}>
-      {badges}
-    </View>
+    <View style={[a.flex_row, a.flex_wrap, a.gap_sm, a.pt_2xs]}>{badges}</View>
   )
 }
 
@@ -643,7 +655,6 @@ function getAssociatedGerm(
   profile: AppBskyActorDefs.ProfileViewDetailed,
 ): GermAssociatedProfile {
   const associated = profile.associated as
-    | {germ?: GermAssociatedProfile}
-    | undefined
+    {germ?: GermAssociatedProfile} | undefined
   return associated?.germ ?? null
 }

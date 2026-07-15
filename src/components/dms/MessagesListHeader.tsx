@@ -152,7 +152,7 @@ function ProfileHeaderReady({
 
 function GroupHeaderReady({
   convo,
-  moderationOpts,
+  moderationOpts: _moderationOpts,
 }: {
   convo: Extract<ConvoWithDetails, {kind: 'group'}>
   moderationOpts: ModerationOpts

@@ -2,22 +2,22 @@ import {
   AppBskyEmbedImages,
   AppBskyEmbedRecordWithMedia,
   AppBskyEmbedVideo,
-  AppBskyFeedDefs,
+  type AppBskyFeedDefs,
 } from '@atproto/api'
 import {
+  type InfiniteData,
   useInfiniteQuery,
   useMutation,
   useQueryClient,
-  type InfiniteData,
 } from '@tanstack/react-query'
 
-import {type MemeMediaItem} from '#/screens/Dashboard/MemesScreen/types'
-import * as Toast from '#/components/Toast'
 import {
   PERSISTED_QUERY_GCTIME,
   PERSISTED_QUERY_ROOT,
 } from '#/state/queries/index'
 import {useAgent} from '#/state/session'
+import {type MemeMediaItem} from '#/screens/Dashboard/MemesScreen/types'
+import * as Toast from '#/components/Toast'
 
 const STALE_TIME = 60 * 1000 // 1 minute
 const RQKEY_ROOT = 'para-memes'

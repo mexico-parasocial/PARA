@@ -153,7 +153,6 @@ function DrawerLayout({children}: {children: React.ReactNode}) {
   const activeOffsetXWhenOpen: [number, number] = IS_ANDROID
     ? [-12, 12]
     : [-1, 1]
-  const activeOffsetXWhenClosed = IS_ANDROID ? 12 : 5
 
   const renderDrawerContent = useCallback(() => <DrawerContent />, [])
   const onOpenDrawer = useCallback(

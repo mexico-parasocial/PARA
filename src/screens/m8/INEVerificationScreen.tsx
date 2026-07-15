@@ -15,7 +15,7 @@ import {
   postIneVerify,
   postRevokeCredential,
 } from '#/lib/m8/api'
-import type {IneExtractedData, IneVerificationResult} from '#/lib/m8/types'
+import {type IneExtractedData, type IneVerificationResult} from '#/lib/m8/types'
 import {type NavigationProp} from '#/lib/routes/types'
 import * as Storage from '#/lib/storage'
 import {Text} from '#/view/com/util/text/Text'
@@ -24,14 +24,22 @@ import * as Layout from '#/components/Layout'
 
 type Step = 'intro' | 'upload' | 'selfie' | 'review' | 'verify' | 'success'
 
-const STEPS: Step[] = ['intro', 'upload', 'selfie', 'review', 'verify', 'success']
+const STEPS: Step[] = [
+  'intro',
+  'upload',
+  'selfie',
+  'review',
+  'verify',
+  'success',
+]
 
 export default function INEVerificationScreen() {
   const t = useTheme()
   const navigation = useNavigation<NavigationProp>()
   const [step, setStep] = useState<Step>('intro')
   const [extracted, setExtracted] = useState<IneExtractedData | null>(null)
-  const [verification, setVerification] = useState<IneVerificationResult | null>(null)
+  const [verification, setVerification] =
+    useState<IneVerificationResult | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [ocrConfidence, setOcrConfidence] = useState(0)
@@ -83,23 +91,34 @@ export default function INEVerificationScreen() {
     setError(null)
     setStep('verify')
     try {
-      const result = await postIneCredential({ extracted, verification })
+      const result = await postIneCredential({extracted, verification})
       await Storage.setItemAsync('para_ine_verified', 'true')
-      await Storage.setItemAsync('para_ine_verified_at', new Date().toISOString())
+      await Storage.setItemAsync(
+        'para_ine_verified_at',
+        new Date().toISOString(),
+      )
       await Storage.setItemAsync('para_verified_human', 'true')
 
       // Store ZKP witness securely for client-side proving
       await Storage.setItemAsync('para_zkp_birthYear', String(result.birthYear))
       await Storage.setItemAsync('para_zkp_salt', String(result.salt))
       await Storage.setItemAsync('para_zkp_commitment', result.commitment)
-      await Storage.setItemAsync('para_zkp_revocationHash', result.revocationHash)
+      await Storage.setItemAsync(
+        'para_zkp_revocationHash',
+        result.revocationHash,
+      )
 
       // Anonymous by default: store profile locally
-      await Storage.setItemAsync('para_anonymous_profile', JSON.stringify(result.anonymousProfile))
+      await Storage.setItemAsync(
+        'para_anonymous_profile',
+        JSON.stringify(result.anonymousProfile),
+      )
 
       setStep('success')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to issue credential')
+      setError(
+        err instanceof Error ? err.message : 'Failed to issue credential',
+      )
       setStep('review')
     } finally {
       setLoading(false)
@@ -174,10 +193,16 @@ export default function INEVerificationScreen() {
           style: 'destructive',
           onPress: async () => {
             try {
-              await postRevokeCredential({revocationHash, reason: 'User requested'})
+              await postRevokeCredential({
+                revocationHash,
+                reason: 'User requested',
+              })
               Alert.alert('Revoked', 'Your credential has been revoked.')
             } catch (err) {
-              Alert.alert('Error', err instanceof Error ? err.message : 'Revocation failed')
+              Alert.alert(
+                'Error',
+                err instanceof Error ? err.message : 'Revocation failed',
+              )
             }
           },
         },
@@ -187,12 +212,18 @@ export default function INEVerificationScreen() {
 
   const stepLabel = (s: Step) => {
     switch (s) {
-      case 'intro': return 'Start'
-      case 'upload': return 'INE'
-      case 'selfie': return 'Selfie'
-      case 'review': return 'Review'
-      case 'verify': return 'Verify'
-      case 'success': return 'Done'
+      case 'intro':
+        return 'Start'
+      case 'upload':
+        return 'INE'
+      case 'selfie':
+        return 'Selfie'
+      case 'review':
+        return 'Review'
+      case 'verify':
+        return 'Verify'
+      case 'success':
+        return 'Done'
     }
   }
 
@@ -263,8 +294,8 @@ export default function INEVerificationScreen() {
                 Verify your identity with INE
               </Text>
               <Text style={[styles.body, t.atoms.text_contrast_medium]}>
-                This process verifies your Mexican citizenship and age using your
-                voter ID card (INE). The verification results in a signed
+                This process verifies your Mexican citizenship and age using
+                your voter ID card (INE). The verification results in a signed
                 credential stored in your wallet — no raw personal data is kept.
               </Text>
 
@@ -273,10 +304,12 @@ export default function INEVerificationScreen() {
                   styles.privacyCard,
                   {backgroundColor: t.palette.primary_50},
                 ]}>
-                <Text style={[styles.privacyTitle, {color: t.palette.primary_700}]}>
+                <Text
+                  style={[styles.privacyTitle, {color: t.palette.primary_700}]}>
                   Privacy promise
                 </Text>
-                <Text style={[styles.privacyBody, {color: t.palette.primary_600}]}>
+                <Text
+                  style={[styles.privacyBody, {color: t.palette.primary_600}]}>
                   Your INE photo and selfie are processed for verification only.
                   The raw data is never stored. Only derived claims (age,
                   citizenship, district) are kept in your credential wallet.
@@ -298,12 +331,10 @@ export default function INEVerificationScreen() {
           {/* Step 2: Upload INE */}
           {step === 'upload' && (
             <View style={styles.card}>
-              <Text style={[styles.title, t.atoms.text]}>
-                Upload your INE
-              </Text>
+              <Text style={[styles.title, t.atoms.text]}>Upload your INE</Text>
               <Text style={[styles.body, t.atoms.text_contrast_medium]}>
-                Tap below to simulate uploading the front of your INE card.
-                In production, this would open your camera or photo library.
+                Tap below to simulate uploading the front of your INE card. In
+                production, this would open your camera or photo library.
               </Text>
 
               <TouchableOpacity
@@ -323,10 +354,18 @@ export default function INEVerificationScreen() {
                   <ActivityIndicator color={t.palette.primary_500} />
                 ) : (
                   <>
-                    <Text style={[styles.uploadIcon, {color: t.palette.primary_500}]}>
+                    <Text
+                      style={[
+                        styles.uploadIcon,
+                        {color: t.palette.primary_500},
+                      ]}>
                       📷
                     </Text>
-                    <Text style={[styles.uploadText, {color: t.palette.primary_600}]}>
+                    <Text
+                      style={[
+                        styles.uploadText,
+                        {color: t.palette.primary_600},
+                      ]}>
                       Tap to simulate INE upload
                     </Text>
                   </>
@@ -338,12 +377,10 @@ export default function INEVerificationScreen() {
           {/* Step 3: Selfie */}
           {step === 'selfie' && (
             <View style={styles.card}>
-              <Text style={[styles.title, t.atoms.text]}>
-                Capture a selfie
-              </Text>
+              <Text style={[styles.title, t.atoms.text]}>Capture a selfie</Text>
               <Text style={[styles.body, t.atoms.text_contrast_medium]}>
-                We need a live photo to match against your INE. Position your face
-                within the oval and tap to capture.
+                We need a live photo to match against your INE. Position your
+                face within the oval and tap to capture.
               </Text>
 
               <View
@@ -375,9 +412,7 @@ export default function INEVerificationScreen() {
                 {loading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
-                  <Text style={styles.primaryButtonText}>
-                    Capture selfie
-                  </Text>
+                  <Text style={styles.primaryButtonText}>Capture selfie</Text>
                 )}
               </TouchableOpacity>
             </View>
@@ -434,27 +469,41 @@ export default function INEVerificationScreen() {
                         ? t.palette.positive_400
                         : t.palette.negative_400,
                     }}>
-                    Face match: {Math.round(verification.faceMatch.score * 100)}%
+                    Face match: {Math.round(verification.faceMatch.score * 100)}
+                    %
                   </Text>
                 </View>
               </View>
 
               <DataRow label="Full name" value={extracted.fullName} />
-              <DataRow label="CURP" value={`${extracted.curp.slice(0, 4)}****${extracted.curp.slice(-4)}`} sensitive />
+              <DataRow
+                label="CURP"
+                value={`${extracted.curp.slice(0, 4)}****${extracted.curp.slice(-4)}`}
+                sensitive
+              />
               <DataRow label="Voter ID" value={extracted.voterId} />
               <DataRow label="Birth date" value={extracted.birthDate} />
-              <DataRow label="Gender" value={extracted.gender === 'M' ? 'Male' : 'Female'} />
+              <DataRow
+                label="Gender"
+                value={extracted.gender === 'M' ? 'Male' : 'Female'}
+              />
               <DataRow label="State" value={extracted.address.state} />
               <DataRow label="City" value={extracted.address.city} />
-              <DataRow label="Address" value={`${extracted.address.street}, ${extracted.address.neighborhood}`} />
-              <DataRow label="Postal code" value={extracted.address.postalCode} />
-              <DataRow label="Expiry year" value={String(extracted.expiryYear)} />
+              <DataRow
+                label="Address"
+                value={`${extracted.address.street}, ${extracted.address.neighborhood}`}
+              />
+              <DataRow
+                label="Postal code"
+                value={extracted.address.postalCode}
+              />
+              <DataRow
+                label="Expiry year"
+                value={String(extracted.expiryYear)}
+              />
 
               <Text
-                style={[
-                  styles.disclaimer,
-                  {color: t.palette.contrast_400},
-                ]}>
+                style={[styles.disclaimer, {color: t.palette.contrast_400}]}>
                 The raw data above is displayed for your review only. After
                 confirmation, only derived claims (age, citizenship, district)
                 are stored in your credential.
@@ -482,9 +531,7 @@ export default function INEVerificationScreen() {
           {/* Step 5: Verify (progress) */}
           {step === 'verify' && (
             <View style={styles.card}>
-              <Text style={[styles.title, t.atoms.text]}>
-                Verifying...
-              </Text>
+              <Text style={[styles.title, t.atoms.text]}>Verifying...</Text>
 
               <View style={styles.checkList}>
                 <CheckItem
@@ -509,7 +556,8 @@ export default function INEVerificationScreen() {
           {/* Step 6: Success */}
           {step === 'success' && extracted && verification && (
             <View style={styles.card}>
-              <Text style={[styles.successEmoji, {color: t.palette.positive_400}]}>
+              <Text
+                style={[styles.successEmoji, {color: t.palette.positive_400}]}>
                 ✅
               </Text>
               <Text style={[styles.title, t.atoms.text]}>
@@ -521,14 +569,26 @@ export default function INEVerificationScreen() {
                   styles.credentialCard,
                   {backgroundColor: t.palette.primary_50},
                 ]}>
-                <Text style={[styles.credentialTitle, {color: t.palette.primary_700}]}>
+                <Text
+                  style={[
+                    styles.credentialTitle,
+                    {color: t.palette.primary_700},
+                  ]}>
                   Issued credential claims
                 </Text>
                 <CredentialClaim label="Age ≥ 18" value="true" theme={t} />
                 <CredentialClaim label="Age ≥ 21" value="true" theme={t} />
                 <CredentialClaim label="Citizenship" value="MX" theme={t} />
-                <CredentialClaim label="District hash" value="sha256:****" theme={t} />
-                <CredentialClaim label="CURP hash" value="sha256:****" theme={t} />
+                <CredentialClaim
+                  label="District hash"
+                  value="sha256:****"
+                  theme={t}
+                />
+                <CredentialClaim
+                  label="CURP hash"
+                  value="sha256:****"
+                  theme={t}
+                />
               </View>
 
               <View
@@ -536,17 +596,22 @@ export default function INEVerificationScreen() {
                   styles.credentialCard,
                   {backgroundColor: t.palette.primary_500, marginTop: 12},
                 ]}>
-                <Text style={[styles.credentialTitle, {color: t.palette.white}]}>
+                <Text
+                  style={[styles.credentialTitle, {color: t.palette.white}]}>
                   Anonymous Persona
                 </Text>
-                <Text style={[styles.body, {color: t.palette.white, textAlign: 'center'}]}>
+                <Text
+                  style={[
+                    styles.body,
+                    {color: t.palette.white, textAlign: 'center'},
+                  ]}>
                   You are now posting as your verified anonymous citizen.
                 </Text>
               </View>
 
               <Text style={[styles.body, t.atoms.text_contrast_medium]}>
-                Your credential has been stored in your wallet and your anonymous
-                persona is active across all PARA communities.
+                Your credential has been stored in your wallet and your
+                anonymous persona is active across all PARA communities.
               </Text>
 
               <TouchableOpacity
@@ -564,9 +629,17 @@ export default function INEVerificationScreen() {
                 onPress={handleRevoke}
                 style={[
                   styles.primaryButton,
-                  {backgroundColor: 'transparent', borderWidth: 1, borderColor: t.palette.negative_400},
+                  {
+                    backgroundColor: 'transparent',
+                    borderWidth: 1,
+                    borderColor: t.palette.negative_400,
+                  },
                 ]}>
-                <Text style={[styles.primaryButtonText, {color: t.palette.negative_400}]}>
+                <Text
+                  style={[
+                    styles.primaryButtonText,
+                    {color: t.palette.negative_400},
+                  ]}>
                   Revoke Credential
                 </Text>
               </TouchableOpacity>

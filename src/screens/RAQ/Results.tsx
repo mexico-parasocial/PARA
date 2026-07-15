@@ -21,7 +21,7 @@ import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import * as Layout from '#/components/Layout'
-import type {AxisResult} from './logic/scoring'
+import {type AxisResult} from './logic/scoring'
 import {
   calculateCompassXY,
   calculateIdeology,
@@ -68,7 +68,9 @@ export default function RAQResultsScreen({route}: Props) {
   const [showCountdown, setShowCountdown] = useState(false)
   const [countdown, setCountdown] = useState(5)
   const [isPublishing, setIsPublishing] = useState(false)
-  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  )
   const publishTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const cancelRef = useRef(false)
   const {_} = useLingui()
@@ -242,8 +244,7 @@ export default function RAQResultsScreen({route}: Props) {
               styles.ninthBadge,
               {
                 backgroundColor:
-                  (NINTHS_COLORS as Record<string, string>)[ninthMatch] ||
-                  t.palette.primary_500,
+                  NINTHS_COLORS[ninthMatch] || t.palette.primary_500,
               },
             ]}>
             <Text style={styles.ninthBadgeText}>{ninthMatch}</Text>
@@ -427,7 +428,6 @@ export default function RAQResultsScreen({route}: Props) {
                   </SvgText>
                 )
               })}
-
             </G>
           </Svg>
         </View>
@@ -485,7 +485,12 @@ export default function RAQResultsScreen({route}: Props) {
                     )}
                   </View>
                   {/* Center marker */}
-                  <View style={[styles.centerBarMarker, {backgroundColor: t.palette.contrast_300}]} />
+                  <View
+                    style={[
+                      styles.centerBarMarker,
+                      {backgroundColor: t.palette.contrast_300},
+                    ]}
+                  />
                   {/* Right half */}
                   <View style={styles.centerBarHalf}>
                     {res.score > 50 && (
@@ -537,7 +542,8 @@ export default function RAQResultsScreen({route}: Props) {
         </View>
 
         {/* Publish Button */}
-        <View style={[styles.publishSection, {paddingBottom: insets.bottom + 20}]}>
+        <View
+          style={[styles.publishSection, {paddingBottom: insets.bottom + 20}]}>
           <Button
             label={_(msg`Publish to Profile`)}
             onPress={handlePublish}
@@ -574,8 +580,12 @@ export default function RAQResultsScreen({route}: Props) {
                 {countdown}
               </Text>
             </View>
-            <TouchableOpacity accessibilityRole="button"
-              style={[styles.cancelButton, {borderColor: t.palette.contrast_200}]}
+            <TouchableOpacity
+              accessibilityRole="button"
+              style={[
+                styles.cancelButton,
+                {borderColor: t.palette.contrast_200},
+              ]}
               onPress={handleCancelPublish}>
               <Text style={[styles.cancelButtonText, t.atoms.text]}>
                 <Trans>Cancel</Trans>

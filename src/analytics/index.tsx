@@ -77,7 +77,7 @@ function createLogger(
     warn: logger.warn.bind(logger),
     error: logger.error.bind(logger),
     useChild: (context: Exclude<Logger['context'], undefined>) => {
-      return useMemo(() => createLogger(context, metadata), [context, metadata])
+      return useMemo(() => createLogger(context, metadata), [context])
     },
     Context: Logger.Context,
   }

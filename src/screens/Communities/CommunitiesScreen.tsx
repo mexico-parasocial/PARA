@@ -29,9 +29,9 @@ import {
 } from '#/lib/compass/compassColors'
 import {useDebouncedValue} from '#/lib/hooks/useDebouncedValue'
 import {PARTY_FEED_PROFILES} from '#/lib/party-feeds'
-import {type NavigationProp} from '#/lib/routes/types'
 import {type ComposerFlair} from '#/lib/post-flairs'
-import {POST_FLAIRS, type PostFlair} from '#/lib/tags'
+import {type NavigationProp} from '#/lib/routes/types'
+import {POST_FLAIRS} from '#/lib/tags'
 import {
   clearRecentCommunities,
   type RecentCommunityView,
@@ -267,11 +267,7 @@ export function CommunitiesScreen() {
                       styles.clearButton,
                       {backgroundColor: t.palette.primary_500},
                     ]}>
-                    <Text
-                      style={[
-                        styles.clearButtonText,
-                        {color: '#fff'},
-                      ]}>
+                    <Text style={[styles.clearButtonText, {color: '#fff'}]}>
                       <Trans>Clear</Trans>
                     </Text>
                   </TouchableOpacity>
@@ -610,14 +606,12 @@ export function CommunitiesScreen() {
 
                 <FlairSelectionList
                   selectedFlairs={
-                    (
-                      selectedParticipationFilter
-                        ? Object.values(POST_FLAIRS).filter(
-                            flair =>
-                              flair.id === selectedParticipationFilter.flairId,
-                          )
-                        : []
-                    ) as ComposerFlair[]
+                    selectedParticipationFilter
+                      ? Object.values(POST_FLAIRS).filter(
+                          flair =>
+                            flair.id === selectedParticipationFilter.flairId,
+                        )
+                      : []
                   }
                   setSelectedFlairs={(flairs: ComposerFlair[]) => {
                     if (flairs.length > 0) {
@@ -751,13 +745,7 @@ function LiveCommunityCard({
       <View style={styles.liveBoardHeader}>
         {gradient ? (
           <LinearGradient
-            colors={
-              gradient.colors as unknown as readonly [
-                string,
-                string,
-                ...string[],
-              ]
-            }
+            colors={gradient.colors}
             start={gradient.start}
             end={gradient.end}
             style={[styles.liveBoardAvatar, {overflow: 'hidden'}]}>

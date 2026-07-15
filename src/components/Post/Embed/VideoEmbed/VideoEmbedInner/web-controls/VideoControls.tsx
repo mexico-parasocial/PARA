@@ -47,7 +47,7 @@ export function Controls({
   hlsLoading,
   hasSubtitleTrack,
   isGif,
-  altText,
+  altText: _altText,
   updateCuePositions,
 }: ControlsProps) {
   const {

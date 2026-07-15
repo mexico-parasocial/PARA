@@ -109,5 +109,5 @@ function toThreadItem(
       hiddenByThreadgate: false,
       mutedByViewer: false,
     },
-  } as UsePostThreadQueryResult['thread'][number]
+  }
 }

@@ -45,8 +45,8 @@ export function replaceEqualDeep(a: unknown, b: unknown): unknown {
   }
 
   if (isPlainObject(a) && isPlainObject(b)) {
-    const aObj = a as Record<string | number, unknown>
-    const bObj = b as Record<string | number, unknown>
+    const aObj = a
+    const bObj = b
     const aItems = Object.keys(aObj)
     const aSize = aItems.length
     const bItems = Object.keys(bObj)
@@ -83,7 +83,9 @@ export function isPlainArray(value: unknown): value is unknown[] {
 }
 
 // Copied from: https://github.com/jonschlinkert/is-plain-object
-export function isPlainObject(o: unknown): o is Record<string | number, unknown> {
+export function isPlainObject(
+  o: unknown,
+): o is Record<string | number, unknown> {
   if (!hasObjectPrototype(o)) {
     return false
   }

@@ -1,6 +1,6 @@
 import {useMemo} from 'react'
 
-import {FeedTuner, FeedViewPostsSlice} from '#/lib/api/feed-manip'
+import {FeedTuner, type FeedViewPostsSlice} from '#/lib/api/feed-manip'
 import {type FeedDescriptor} from '../queries/post-feed'
 import {usePreferencesQuery} from '../queries/preferences'
 import {useSession} from '../session'

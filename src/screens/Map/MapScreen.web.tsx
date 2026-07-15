@@ -54,7 +54,10 @@ const MapLibreAdapter = forwardRef<MapViewRef, MapViewProps>(
 
     // MapLibre handles polygons, civic points, city markers, and district
     // polygons imperatively via GeoJSON layers, so we extract the plain data.
-    const polygons = useMemo(() => props.polygonsData || [], [props.polygonsData])
+    const polygons = useMemo(
+      () => props.polygonsData || [],
+      [props.polygonsData],
+    )
     const civicPoints = useMemo(
       () => props.civicPointsData || [],
       [props.civicPointsData],
@@ -127,17 +130,17 @@ export function MapScreen(props: Props) {
       {...props}
       MapViewComponent={
         isMapLibre
-          ? (MapLibreAdapter as unknown as ComponentType<MapViewProps>)
+          ? MapLibreAdapter
           : (MapView as unknown as ComponentType<MapViewProps>)
       }
       MarkerComponent={
         isMapLibre
-          ? (MapLibreMarkerStub as unknown as ComponentType<MarkerProps>)
+          ? MapLibreMarkerStub
           : (Marker as unknown as ComponentType<MarkerProps>)
       }
       PolygonComponent={
         isMapLibre
-          ? (MapLibrePolygonStub as unknown as ComponentType<PolygonProps>)
+          ? MapLibrePolygonStub
           : (Polygon as unknown as ComponentType<PolygonProps>)
       }
       DesktopLayout={MapSplitPaneLayout}

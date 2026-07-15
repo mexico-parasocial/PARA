@@ -1,7 +1,7 @@
 import {
   type ScrollView,
-  StyleSheet,
   type StyleProp,
+  StyleSheet,
   TouchableOpacity,
   View,
   type ViewStyle,

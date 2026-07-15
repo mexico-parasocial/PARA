@@ -25,7 +25,7 @@ import * as Dialog from '#/components/Dialog'
 import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfo} from '#/components/icons/CircleInfo'
 import * as Toast from '#/components/Toast'
 import {Text as NewText} from '#/components/Typography'
-import {IS_ANDROID, IS_WEB} from '#/env'
+import {IS_WEB} from '#/env'
 import {resetToTab} from '#/Navigation'
 
 export function DeleteAccountDialog({
@@ -169,10 +169,7 @@ function DeleteAccountDialogInner({
                   msg`Sends email with confirmation code for account deletion`,
                 )}>
                 <LinearGradient
-                  colors={[
-                    gradients.blueLight.start,
-                    gradients.blueLight.end,
-                  ]}
+                  colors={[gradients.blueLight.start, gradients.blueLight.end]}
                   start={{x: 0, y: 0}}
                   end={{x: 1, y: 1}}
                   style={[styles.btn]}>
@@ -218,8 +215,8 @@ function DeleteAccountDialogInner({
 
               <NewText style={[a.leading_snug, a.flex_1]}>
                 <Trans>
-                  You can also temporarily deactivate your account instead,
-                  and reactivate it at any time.
+                  You can also temporarily deactivate your account instead, and
+                  reactivate it at any time.
                 </Trans>
               </NewText>
             </View>
@@ -232,8 +229,8 @@ function DeleteAccountDialogInner({
             style={[pal.text, styles.description]}
             nativeID="confirmationCode">
             <Trans>
-              Check your inbox for an email with the confirmation code to
-              enter below:
+              Check your inbox for an email with the confirmation code to enter
+              below:
             </Trans>
           </Text>
           <TextInput

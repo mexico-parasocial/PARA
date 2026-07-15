@@ -23,16 +23,32 @@ export function MyRAQScreen() {
   const {affiliations} = usePoliticalAffiliation()
 
   // Fetch published alignment from server
-  const {
-    data: serverAlignment,
-    isLoading: _alignmentLoading,
-  } = useUserAlignment(currentAccount?.did)
+  const {data: serverAlignment, isLoading: _alignmentLoading} =
+    useUserAlignment(currentAccount?.did)
 
-  const answers = persisted.get('raqAnswers') as Record<string, number> | undefined
-  const rawResults = persisted.get('raqResults') as Array<
-    | {id: string; title: string; score: number; label: string; labelLow?: string; labelHigh?: string; rawScore?: number}
-    | {axisId: string; axisTitle: string; score: number; label: string; labelLow: string; labelHigh: string; rawScore: number}
-  > | undefined
+  const answers = persisted.get('raqAnswers')
+  const rawResults = persisted.get('raqResults') as
+    | Array<
+        | {
+            id: string
+            title: string
+            score: number
+            label: string
+            labelLow?: string
+            labelHigh?: string
+            rawScore?: number
+          }
+        | {
+            axisId: string
+            axisTitle: string
+            score: number
+            label: string
+            labelLow: string
+            labelHigh: string
+            rawScore: number
+          }
+      >
+    | undefined
 
   // Normalize old format (axisId/axisTitle) to new format (id/title)
   const localResults = useMemo(() => {
@@ -43,7 +59,8 @@ export function MyRAQScreen() {
       score: r.score,
       label: r.label,
       labelLow: 'labelLow' in r && r.labelLow !== undefined ? r.labelLow : '',
-      labelHigh: 'labelHigh' in r && r.labelHigh !== undefined ? r.labelHigh : '',
+      labelHigh:
+        'labelHigh' in r && r.labelHigh !== undefined ? r.labelHigh : '',
       rawScore: 'rawScore' in r && r.rawScore !== undefined ? r.rawScore : 0,
     }))
   }, [rawResults])
@@ -128,10 +145,7 @@ export function MyRAQScreen() {
                 size="xl"
                 style={[styles.iconBackMark, {color: t.palette.primary_500}]}
               />
-              <QuestionIcon
-                size="lg"
-                style={{color: t.palette.primary_500}}
-              />
+              <QuestionIcon size="lg" style={{color: t.palette.primary_500}} />
             </View>
             <Text style={[styles.cardTitle, t.atoms.text]}>
               Assessment Status
@@ -158,14 +172,18 @@ export function MyRAQScreen() {
             </Text>
 
             <Button
-              label={answeredCount > 0 ? 'Continue Assessment' : 'Start Assessment'}
+              label={
+                answeredCount > 0 ? 'Continue Assessment' : 'Start Assessment'
+              }
               onPress={() => navigation.navigate('RAQAssessment')}
               size="large"
               variant="solid"
               color="primary"
               style={styles.ctaButton}>
               <ButtonText>
-                {answeredCount > 0 ? 'Resume RAQ Assessment' : 'Start RAQ Assessment'}
+                {answeredCount > 0
+                  ? 'Resume RAQ Assessment'
+                  : 'Start RAQ Assessment'}
               </ButtonText>
             </Button>
           </View>
@@ -183,11 +201,16 @@ export function MyRAQScreen() {
                     OFFICIAL AXES
                   </Text>
                   {serverAlignment && (
-                    <View style={[styles.publishedBadge, {backgroundColor: t.palette.primary_500}]}>
+                    <View
+                      style={[
+                        styles.publishedBadge,
+                        {backgroundColor: t.palette.primary_500},
+                      ]}>
                       <Text style={styles.publishedBadgeText}>Published</Text>
                     </View>
                   )}
-                  <Text style={[styles.resultDate, t.atoms.text_contrast_medium]}>
+                  <Text
+                    style={[styles.resultDate, t.atoms.text_contrast_medium]}>
                     {new Date().toLocaleDateString('en-US', {
                       month: 'short',
                       day: 'numeric',
@@ -222,7 +245,9 @@ export function MyRAQScreen() {
             </Text>
             <View style={styles.participationRow}>
               <View style={[styles.participationItem, t.atoms.bg_contrast_25]}>
-                <Text style={[styles.pCount, t.atoms.text]}>{answeredCount}</Text>
+                <Text style={[styles.pCount, t.atoms.text]}>
+                  {answeredCount}
+                </Text>
                 <Text style={[styles.pLabel, t.atoms.text_contrast_medium]}>
                   Answered
                 </Text>
@@ -238,7 +263,10 @@ export function MyRAQScreen() {
             <View style={styles.comparisonRow}>
               <View style={[styles.comparisonItem, t.atoms.bg_contrast_25]}>
                 <Text
-                  style={[styles.comparisonValue, {color: t.palette.primary_500}]}>
+                  style={[
+                    styles.comparisonValue,
+                    {color: t.palette.primary_500},
+                  ]}>
                   {communityMatch}%
                 </Text>
                 <Text style={[styles.comparisonLabel, t.atoms.text]}>
@@ -247,7 +275,10 @@ export function MyRAQScreen() {
               </View>
               <View style={[styles.comparisonItem, t.atoms.bg_contrast_25]}>
                 <Text
-                  style={[styles.comparisonValue, {color: t.palette.primary_500}]}>
+                  style={[
+                    styles.comparisonValue,
+                    {color: t.palette.primary_500},
+                  ]}>
                   {regionalDelta >= 0 ? '+' : ''}
                   {regionalDelta}
                 </Text>

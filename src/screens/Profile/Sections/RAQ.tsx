@@ -36,7 +36,7 @@ export const ProfileRAQSection = forwardRef<SectionRef, Props>(
     const t = useTheme()
     const {_} = useLingui()
 
-    const answers = persisted.get('raqAnswers') as Record<string, number> | undefined
+    const answers = persisted.get('raqAnswers')
 
     const history = useMemo<ProfileRaqItem[]>(() => {
       if (!answers) return []
@@ -91,7 +91,7 @@ export const ProfileRAQSection = forwardRef<SectionRef, Props>(
       <List
         ref={scrollElRef}
         data={history as unknown[]}
-        renderItem={renderItem as unknown as (info: {item: unknown; index: number}) => React.ReactElement}
+        renderItem={renderItem}
         keyExtractor={(item: unknown) => (item as ProfileRaqItem).id}
         headerOffset={headerHeight}
         ListEmptyComponent={

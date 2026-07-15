@@ -60,7 +60,7 @@ export function mapCabildeosToView(
       optionSummary: [],
       positionCounts: EMPTY_POSITION_COUNTS,
       voteTotals: EMPTY_VOTE_TOTALS,
-    } as CabildeoView
+    }
   })
 }
 

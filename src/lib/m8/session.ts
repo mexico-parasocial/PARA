@@ -1,7 +1,14 @@
-import { clearM8Session,getCurrentSession, postSessionStart, restoreM8Session } from './api'
-import type { M8SessionStartResponse, ProofBrokerSession } from './types'
+import {
+  clearM8Session,
+  getCurrentSession,
+  postSessionStart,
+  restoreM8Session,
+} from './api'
+import {type M8SessionStartResponse, type ProofBrokerSession} from './types'
 
-export async function startM8Session(identifier: string): Promise<M8SessionStartResponse> {
+export async function startM8Session(
+  identifier: string,
+): Promise<M8SessionStartResponse> {
   return postSessionStart(identifier)
 }
 

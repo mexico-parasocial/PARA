@@ -3,16 +3,13 @@ import {RefreshControl, ScrollView, TouchableOpacity, View} from 'react-native'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation, useRoute} from '@react-navigation/native'
 
-import {
-  type CommunityGovernanceOfficialRepresentative,
-  type CommunityGovernancePerson,
-} from '#/lib/api/para-lexicons'
+import {type CommunityGovernanceOfficialRepresentative} from '#/lib/api/para-lexicons'
 import {getCommunityInsignia} from '#/lib/civic-insignias'
 import {type CommunityGovernanceView} from '#/lib/community-governance'
 import {usePalette} from '#/lib/hooks/usePalette'
 import {COMMUNITY_AGENT_PROFILE} from '#/lib/mock-data/community-agent'
 import {getPartyFeedProfile, PARTY_FEED_PROFILES} from '#/lib/party-feeds'
-import {getPostBadges, type PostBadgeRecord} from '#/lib/post-flairs'
+import {getPostBadges} from '#/lib/post-flairs'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
   formatCommunityName,
@@ -301,7 +298,9 @@ export function CommunityProfileScreen() {
   const [joinOverride, setJoinOverride] = useState<boolean | null>(null)
   const [isPTR, setIsPTR] = useState(false)
   const isJoined = joinOverride ?? board?.viewerMembershipState === 'active'
-  const {data: unreadData} = useUnreadCountQuery({enabled: !!agent.session?.did})
+  const {data: unreadData} = useUnreadCountQuery({
+    enabled: !!agent.session?.did,
+  })
   const unreadCount = unreadData?.unread ?? 0
   const acceptInviteMutation = useAcceptDraftInviteMutation()
   const joinMutation = useJoinCommunityMutation()
@@ -348,7 +347,7 @@ export function CommunityProfileScreen() {
 
     for (const post of posts) {
       visiblePosters.add(post.author.did)
-      const badges = getPostBadges(post.record as PostBadgeRecord)
+      const badges = getPostBadges(post.record)
       if (
         badges.some(
           badge =>

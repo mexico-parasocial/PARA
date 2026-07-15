@@ -1,5 +1,5 @@
 import {useState} from 'react'
-import {type ListRenderItem, View} from 'react-native'
+import {View} from 'react-native'
 import {
   type ChatBskyConvoDefs,
   ChatBskyConvoLeaveConvo,
@@ -223,10 +223,8 @@ function BlockDialogInner({
 
   return (
     <Dialog.InnerFlatList
-      data={items as unknown as Record<string, unknown>[]}
-      renderItem={
-        renderItems as unknown as ListRenderItem<Record<string, unknown>>
-      }
+      data={items}
+      renderItem={renderItems}
       ListHeaderComponent={listHeader}
       stickyHeaderIndices={[0]}
       ListFooterComponent={
@@ -247,7 +245,8 @@ function BlockDialogInner({
       onEndReached={() => void onEndReached()}
       onEndReachedThreshold={0.5}
       style={[web([{height: '100vh', maxHeight: 600}])]}
-      webInnerStyle={[{maxWidth: 420}]}    />
+      webInnerStyle={[{maxWidth: 420}]}
+    />
   )
 }
 

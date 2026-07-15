@@ -1,8 +1,8 @@
 import {TouchableOpacity, View} from 'react-native'
 
-import type {
-  CommunityGovernanceOfficialRepresentative,
-  CommunityGovernancePerson,
+import {
+  type CommunityGovernanceOfficialRepresentative,
+  type CommunityGovernancePerson,
 } from '#/lib/api/para-lexicons'
 import {type UsePaletteValue} from '#/lib/hooks/usePalette'
 import {Text} from '#/view/com/util/text/Text'
@@ -25,9 +25,7 @@ export function RepresentativeCard({
   pal,
 }: {
   featuredRepresentative:
-    | CommunityGovernanceOfficialRepresentative
-    | CommunityGovernancePerson
-    | null
+    CommunityGovernanceOfficialRepresentative | CommunityGovernancePerson | null
   agentDisplayName: string
   agentRoleLabel: string
   agentGovernanceRole: string

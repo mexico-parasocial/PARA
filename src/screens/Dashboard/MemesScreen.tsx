@@ -7,19 +7,18 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native'
+import {AtUri} from '@atproto/api'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import {useIsFocused, useNavigation} from '@react-navigation/native'
 
 import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
-import {AtUri} from '@atproto/api'
-
 import {useWebMediaQueries} from '#/lib/hooks/useWebMediaQueries'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
-  useMemeVoteMutation,
   useMemesFeedQuery,
+  useMemeVoteMutation,
 } from '#/state/queries/para-memes'
 import {useCompassFilter} from '#/state/shell/compass-filter'
 import {useMinimalShellMode} from '#/state/shell/minimal-mode'
@@ -27,11 +26,11 @@ import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import {ActiveFiltersStackButton} from '#/components/CompassFilterControls'
 import {SearchInput} from '#/components/forms/SearchInput'
-import {Loader} from '#/components/Loader'
-import * as Toast from '#/components/Toast'
 import {MagnifyingGlass_Stroke2_Corner0_Rounded as SearchIcon} from '#/components/icons/MagnifyingGlass'
 import {SquareBehindSquare4_Stroke2_Corner0_Rounded as DeckIcon} from '#/components/icons/SquareBehindSquare4'
 import * as Layout from '#/components/Layout'
+import {Loader} from '#/components/Loader'
+import * as Toast from '#/components/Toast'
 import {DeckCommandCenter} from './MemesScreen/cardPrimitives'
 import {ExpandedMediaCardModal} from './MemesScreen/ExpandedMediaCardModal/ExpandedMediaCardModal'
 import {
@@ -80,7 +79,7 @@ export function MemesScreen({
       if (item.post) {
         return item.post.viewer?.like ? 1 : 0
       }
-      return (localVotes[item.id] as 1 | -1 | 0 | undefined) ?? 0
+      return localVotes[item.id] ?? 0
     },
     [localVotes],
   )
@@ -266,11 +265,9 @@ export function MemesScreen({
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel={_(msg`Load more memes`)}
+                    accessibilityHint={_(msg`Loads more memes`)}
                     onPress={() => fetchNextPage()}
-                    style={[
-                      styles.loadMoreButton,
-                      t.atoms.bg_contrast_25,
-                    ]}
+                    style={[styles.loadMoreButton, t.atoms.bg_contrast_25]}
                     disabled={isFetchingNextPage}>
                     <Text style={t.atoms.text}>
                       {isFetchingNextPage
@@ -332,6 +329,7 @@ export function MemesScreen({
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={_(msg`Create meme`)}
+        accessibilityHint={_(msg`Opens the meme composer`)}
         onPress={() => openComposer({logContext: 'Fab'})}
         style={[styles.fab, t.atoms.bg, {borderColor: t.palette.contrast_200}]}>
         <Text style={[styles.fabText, t.atoms.text]}>+</Text>

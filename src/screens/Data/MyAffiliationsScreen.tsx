@@ -188,7 +188,7 @@ function VoteAnalysis({navigation}: {navigation: NavigationProp}) {
           <TouchableOpacity
             accessibilityRole="button"
             onPress={() => {
-              ;(navigation as NavigationProp).navigate('SeeVotes' as never)
+              navigation.navigate('SeeVotes' as never)
             }}>
             <Text
               style={[
@@ -350,277 +350,277 @@ export function MyAffiliationsScreen() {
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.contentContainer}>
-        {/* Compass Preview */}
-        <View
-          style={[
-            a.p_lg,
-            a.rounded_xl,
-            t.atoms.bg_contrast_25,
-            {borderWidth: 1, borderColor: t.palette.contrast_100},
-          ]}>
-          <Text style={[a.text_md, a.font_bold, t.atoms.text, a.mb_md]}>
-            <Trans>Your position on the compass</Trans>
-          </Text>
-          <View style={[a.align_center, a.mb_md]}>
-            <CompassMini
-              affiliations={pendingAffiliations}
-              onPress={handleExploreCompass}
-              size={140}
-              compact
-            />
-          </View>
-          <Button
-            variant="solid"
-            color="primary"
-            size="small"
-            label={_(msg`Find my position in compass`)}
-            onPress={handleExploreCompass}
-            style={[a.w_full, a.gap_sm]}>
-            <CompassIcon size="sm" fill={t.palette.white} />
-            <ButtonText>
-              <Trans>Find my position in compass</Trans>
-            </ButtonText>
-          </Button>
-        </View>
-
-        {/* Current Position Detail */}
-        {currentNinth && (
+          {/* Compass Preview */}
           <View
             style={[
               a.p_lg,
               a.rounded_xl,
-              {backgroundColor: t.palette.primary_500 + '10'},
-              {borderWidth: 1, borderColor: t.palette.primary_500 + '30'},
+              t.atoms.bg_contrast_25,
+              {borderWidth: 1, borderColor: t.palette.contrast_100},
             ]}>
-            <View style={[a.flex_row, a.align_center, a.gap_sm, a.mb_sm]}>
-              <View
-                style={{
-                  width: 12,
-                  height: 12,
-                  borderRadius: 6,
-                  backgroundColor: currentNinth.color,
-                }}
+            <Text style={[a.text_md, a.font_bold, t.atoms.text, a.mb_md]}>
+              <Trans>Your position on the compass</Trans>
+            </Text>
+            <View style={[a.align_center, a.mb_md]}>
+              <CompassMini
+                affiliations={pendingAffiliations}
+                onPress={handleExploreCompass}
+                size={140}
+                compact
               />
-              <Text style={[a.text_md, a.font_bold, t.atoms.text]}>
-                {currentNinth.name}
-              </Text>
-              <View style={{flex: 1}} />
-              {isNinthManual ? (
-                <View
-                  style={[
-                    a.px_sm,
-                    a.py_xs,
-                    a.rounded_md,
-                    {backgroundColor: t.palette.primary_500 + '15'},
-                  ]}>
-                  <Text
-                    style={[
-                      a.text_xs,
-                      a.font_bold,
-                      {color: t.palette.primary_500},
-                    ]}>
-                    <Trans>Manual</Trans>
-                  </Text>
-                </View>
-              ) : currentParty ? (
-                <View
-                  style={[
-                    a.px_sm,
-                    a.py_xs,
-                    a.rounded_md,
-                    {backgroundColor: partyProfile?.color + '15'},
-                  ]}>
-                  <Text
-                    style={[
-                      a.text_xs,
-                      a.font_bold,
-                      {color: partyProfile?.color},
-                    ]}>
-                    <Trans>Suggested by</Trans> {currentParty.name}
-                  </Text>
-                </View>
-              ) : null}
-              <TouchableOpacity
-                accessibilityRole="button"
-                onPress={handleRemoveNinth}
-                style={[a.p_xs, a.rounded_full, t.atoms.bg_contrast_100]}>
-                <XIcon size="xs" style={t.atoms.text_contrast_medium} />
-              </TouchableOpacity>
             </View>
-            {partyProfile && (
-              <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-                <Trans>Most aligned with</Trans>{' '}
-                <Text style={[a.font_bold, {color: partyProfile.color}]}>
-                  {partyProfile.name}
-                </Text>{' '}
-                — {partyProfile.totalMembers.toLocaleString()} members, avg
-                influence {partyProfile.avgInfluence}
-              </Text>
-            )}
+            <Button
+              variant="solid"
+              color="primary"
+              size="small"
+              label={_(msg`Find my position in compass`)}
+              onPress={handleExploreCompass}
+              style={[a.w_full, a.gap_sm]}>
+              <CompassIcon size="sm" fill={t.palette.white} />
+              <ButtonText>
+                <Trans>Find my position in compass</Trans>
+              </ButtonText>
+            </Button>
           </View>
-        )}
 
-        {/* Party Section */}
-        <View
-          style={[
-            a.p_lg,
-            a.rounded_xl,
-            t.atoms.bg_contrast_25,
-            a.border,
-            t.atoms.border_contrast_low,
-          ]}>
-          <Text style={[a.text_md, a.font_bold, t.atoms.text, a.mb_md]}>
-            <Trans>Political Party</Trans>
-          </Text>
-          <View style={[a.gap_md]}>
-            {POLITICAL_AFFILIATION_OPTIONS.party.map(party => {
-              const isSelected = pendingAffiliations.some(
-                a => a.id === party.id,
-              )
-              const profile = PARTY_COMPASS_PROFILE_BY_ID[party.id]
-              return (
-                <TouchableOpacity
-                  key={party.id}
-                  accessibilityRole="button"
-                  accessibilityState={{selected: isSelected}}
-                  onPress={() => handleToggleParty(party)}
-                  style={[
-                    a.p_md,
-                    a.rounded_md,
-                    a.flex_row,
-                    a.align_center,
-                    a.gap_md,
-                    {
-                      backgroundColor: isSelected
-                        ? party.color + '15'
-                        : t.atoms.bg.backgroundColor,
-                      borderWidth: 1,
-                      borderColor: isSelected
-                        ? party.color + '60'
-                        : t.palette.contrast_100,
-                    },
-                  ]}>
+          {/* Current Position Detail */}
+          {currentNinth && (
+            <View
+              style={[
+                a.p_lg,
+                a.rounded_xl,
+                {backgroundColor: t.palette.primary_500 + '10'},
+                {borderWidth: 1, borderColor: t.palette.primary_500 + '30'},
+              ]}>
+              <View style={[a.flex_row, a.align_center, a.gap_sm, a.mb_sm]}>
+                <View
+                  style={{
+                    width: 12,
+                    height: 12,
+                    borderRadius: 6,
+                    backgroundColor: currentNinth.color,
+                  }}
+                />
+                <Text style={[a.text_md, a.font_bold, t.atoms.text]}>
+                  {currentNinth.name}
+                </Text>
+                <View style={{flex: 1}} />
+                {isNinthManual ? (
                   <View
-                    style={{
-                      width: 16,
-                      height: 16,
-                      borderRadius: 8,
-                      backgroundColor: party.color,
-                    }}
-                  />
-                  <View style={[a.flex_1]}>
-                    <Text style={[a.font_bold, a.text_sm, t.atoms.text]}>
-                      {party.name}
-                    </Text>
-                    {profile && (
-                      <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-                        {profile.totalMembers.toLocaleString()} members •{' '}
-                        {profile.descriptors.slice(0, 2).join(', ')}
-                      </Text>
-                    )}
-                  </View>
-                  {isSelected && (
-                    <View
+                    style={[
+                      a.px_sm,
+                      a.py_xs,
+                      a.rounded_md,
+                      {backgroundColor: t.palette.primary_500 + '15'},
+                    ]}>
+                    <Text
                       style={[
-                        a.p_xs,
-                        a.rounded_full,
-                        {backgroundColor: party.color},
+                        a.text_xs,
+                        a.font_bold,
+                        {color: t.palette.primary_500},
                       ]}>
-                      <Text style={{color: '#fff', fontSize: 10}}>✓</Text>
-                    </View>
-                  )}
+                      <Trans>Manual</Trans>
+                    </Text>
+                  </View>
+                ) : currentParty ? (
+                  <View
+                    style={[
+                      a.px_sm,
+                      a.py_xs,
+                      a.rounded_md,
+                      {backgroundColor: partyProfile?.color + '15'},
+                    ]}>
+                    <Text
+                      style={[
+                        a.text_xs,
+                        a.font_bold,
+                        {color: partyProfile?.color},
+                      ]}>
+                      <Trans>Suggested by</Trans> {currentParty.name}
+                    </Text>
+                  </View>
+                ) : null}
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={handleRemoveNinth}
+                  style={[a.p_xs, a.rounded_full, t.atoms.bg_contrast_100]}>
+                  <XIcon size="xs" style={t.atoms.text_contrast_medium} />
                 </TouchableOpacity>
-              )
-            })}
-          </View>
-        </View>
-
-        {/* 9th Position Section — 3×3 grid matching the compass layout */}
-        <View
-          style={[
-            a.p_lg,
-            a.rounded_xl,
-            t.atoms.bg_contrast_25,
-            a.border,
-            t.atoms.border_contrast_low,
-          ]}>
-          <Text style={[a.text_md, a.font_bold, t.atoms.text, a.mb_md]}>
-            <Trans>Compass Position (9ths)</Trans>
-          </Text>
-          <View style={[a.gap_md]}>
-            {[0, 1, 2].map(rowIdx => (
-              <View key={rowIdx} style={[a.flex_row, a.gap_md]}>
-                {POLITICAL_AFFILIATION_OPTIONS.ninth
-                  .slice(rowIdx * 3, rowIdx * 3 + 3)
-                  .map(ninth => {
-                    const isSelected = pendingAffiliations.some(
-                      a => a.id === ninth.id,
-                    )
-                    return (
-                      <TouchableOpacity
-                        key={ninth.id}
-                        accessibilityRole="button"
-                        accessibilityState={{selected: isSelected}}
-                        onPress={() => handleSetNinth(ninth)}
-                        style={[
-                          styles.ninthPill,
-                          a.flex_1,
-                          {
-                            backgroundColor: isSelected
-                              ? ninth.color + '25'
-                              : t.atoms.bg.backgroundColor,
-                            borderColor: isSelected
-                              ? ninth.color + '60'
-                              : t.palette.contrast_100,
-                            borderWidth: 1,
-                          },
-                        ]}>
-                        <View
-                          style={[
-                            styles.ninthDot,
-                            {backgroundColor: ninth.color},
-                          ]}
-                        />
-                        <Text
-                          style={[
-                            a.text_xs,
-                            a.font_bold,
-                            t.atoms.text,
-                            a.flex_1,
-                          ]}
-                          numberOfLines={2}>
-                          {ninth.name}
-                        </Text>
-                        {isSelected && (
-                          <Text style={{color: ninth.color, fontSize: 10}}>
-                            ✓
-                          </Text>
-                        )}
-                      </TouchableOpacity>
-                    )
-                  })}
               </View>
-            ))}
+              {partyProfile && (
+                <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
+                  <Trans>Most aligned with</Trans>{' '}
+                  <Text style={[a.font_bold, {color: partyProfile.color}]}>
+                    {partyProfile.name}
+                  </Text>{' '}
+                  — {partyProfile.totalMembers.toLocaleString()} members, avg
+                  influence {partyProfile.avgInfluence}
+                </Text>
+              )}
+            </View>
+          )}
+
+          {/* Party Section */}
+          <View
+            style={[
+              a.p_lg,
+              a.rounded_xl,
+              t.atoms.bg_contrast_25,
+              a.border,
+              t.atoms.border_contrast_low,
+            ]}>
+            <Text style={[a.text_md, a.font_bold, t.atoms.text, a.mb_md]}>
+              <Trans>Political Party</Trans>
+            </Text>
+            <View style={[a.gap_md]}>
+              {POLITICAL_AFFILIATION_OPTIONS.party.map(party => {
+                const isSelected = pendingAffiliations.some(
+                  a => a.id === party.id,
+                )
+                const profile = PARTY_COMPASS_PROFILE_BY_ID[party.id]
+                return (
+                  <TouchableOpacity
+                    key={party.id}
+                    accessibilityRole="button"
+                    accessibilityState={{selected: isSelected}}
+                    onPress={() => handleToggleParty(party)}
+                    style={[
+                      a.p_md,
+                      a.rounded_md,
+                      a.flex_row,
+                      a.align_center,
+                      a.gap_md,
+                      {
+                        backgroundColor: isSelected
+                          ? party.color + '15'
+                          : t.atoms.bg.backgroundColor,
+                        borderWidth: 1,
+                        borderColor: isSelected
+                          ? party.color + '60'
+                          : t.palette.contrast_100,
+                      },
+                    ]}>
+                    <View
+                      style={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: 8,
+                        backgroundColor: party.color,
+                      }}
+                    />
+                    <View style={[a.flex_1]}>
+                      <Text style={[a.font_bold, a.text_sm, t.atoms.text]}>
+                        {party.name}
+                      </Text>
+                      {profile && (
+                        <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
+                          {profile.totalMembers.toLocaleString()} members •{' '}
+                          {profile.descriptors.slice(0, 2).join(', ')}
+                        </Text>
+                      )}
+                    </View>
+                    {isSelected && (
+                      <View
+                        style={[
+                          a.p_xs,
+                          a.rounded_full,
+                          {backgroundColor: party.color},
+                        ]}>
+                        <Text style={{color: '#fff', fontSize: 10}}>✓</Text>
+                      </View>
+                    )}
+                  </TouchableOpacity>
+                )
+              })}
+            </View>
           </View>
-        </View>
 
-        {/* Vote Analysis */}
-        <VoteAnalysis navigation={navigation} />
+          {/* 9th Position Section — 3×3 grid matching the compass layout */}
+          <View
+            style={[
+              a.p_lg,
+              a.rounded_xl,
+              t.atoms.bg_contrast_25,
+              a.border,
+              t.atoms.border_contrast_low,
+            ]}>
+            <Text style={[a.text_md, a.font_bold, t.atoms.text, a.mb_md]}>
+              <Trans>Compass Position (9ths)</Trans>
+            </Text>
+            <View style={[a.gap_md]}>
+              {[0, 1, 2].map(rowIdx => (
+                <View key={rowIdx} style={[a.flex_row, a.gap_md]}>
+                  {POLITICAL_AFFILIATION_OPTIONS.ninth
+                    .slice(rowIdx * 3, rowIdx * 3 + 3)
+                    .map(ninth => {
+                      const isSelected = pendingAffiliations.some(
+                        a => a.id === ninth.id,
+                      )
+                      return (
+                        <TouchableOpacity
+                          key={ninth.id}
+                          accessibilityRole="button"
+                          accessibilityState={{selected: isSelected}}
+                          onPress={() => handleSetNinth(ninth)}
+                          style={[
+                            styles.ninthPill,
+                            a.flex_1,
+                            {
+                              backgroundColor: isSelected
+                                ? ninth.color + '25'
+                                : t.atoms.bg.backgroundColor,
+                              borderColor: isSelected
+                                ? ninth.color + '60'
+                                : t.palette.contrast_100,
+                              borderWidth: 1,
+                            },
+                          ]}>
+                          <View
+                            style={[
+                              styles.ninthDot,
+                              {backgroundColor: ninth.color},
+                            ]}
+                          />
+                          <Text
+                            style={[
+                              a.text_xs,
+                              a.font_bold,
+                              t.atoms.text,
+                              a.flex_1,
+                            ]}
+                            numberOfLines={2}>
+                            {ninth.name}
+                          </Text>
+                          {isSelected && (
+                            <Text style={{color: ninth.color, fontSize: 10}}>
+                              ✓
+                            </Text>
+                          )}
+                        </TouchableOpacity>
+                      )
+                    })}
+                </View>
+              ))}
+            </View>
+          </View>
 
-        {/* Tip */}
-        <View
-          style={[
-            a.p_md,
-            a.rounded_md,
-            {backgroundColor: t.palette.primary_500 + '08'},
-          ]}>
-          <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-            <Trans>
-              Tap the compass above to explore where parties cluster and find
-              your position visually.
-            </Trans>
-          </Text>
-        </View>
+          {/* Vote Analysis */}
+          <VoteAnalysis navigation={navigation} />
+
+          {/* Tip */}
+          <View
+            style={[
+              a.p_md,
+              a.rounded_md,
+              {backgroundColor: t.palette.primary_500 + '08'},
+            ]}>
+            <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
+              <Trans>
+                Tap the compass above to explore where parties cluster and find
+                your position visually.
+              </Trans>
+            </Text>
+          </View>
         </ScrollView>
       </Layout.Center>
     </Screen>

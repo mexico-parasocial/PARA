@@ -1,4 +1,4 @@
-import {type ElementType, type ReactNode, useMemo, useState} from 'react'
+import {type ReactNode, useMemo, useState} from 'react'
 import {type ColorValue, Dimensions, StyleSheet, View} from 'react-native'
 import {Gesture, GestureDetector} from 'react-native-gesture-handler'
 import Animated, {

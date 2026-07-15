@@ -6,12 +6,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import {
-  LayoutAnimation,
-  type ListRenderItem,
-  type TextInput,
-  View,
-} from 'react-native'
+import {LayoutAnimation, type TextInput, View} from 'react-native'
 import {moderateProfile, type ModerationOpts} from '@atproto/api'
 import {Plural, Trans, useLingui} from '@lingui/react/macro'
 
@@ -745,17 +740,10 @@ export function InitiateChatFlow({
       <Dialog.InnerFlatList
         ref={listRef}
         data={items}
-        renderItem={
-          renderItems as unknown as ListRenderItem<Record<string, unknown>>
-        }
+        renderItem={renderItems}
         ListHeaderComponent={listHeader}
         stickyHeaderIndices={[0]}
-        keyExtractor={
-          ((item: Item) => item.key) as unknown as (
-            item: Record<string, unknown>,
-            index: number,
-          ) => string
-        }
+        keyExtractor={(item: Item) => item.key}
         style={[
           web([a.py_0, {height: '100vh', maxHeight: 600}, a.px_0]),
           native({height: '100%'}),

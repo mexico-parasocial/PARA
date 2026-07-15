@@ -2,10 +2,10 @@ import {useCallback} from 'react'
 import {AppBskyDraftCreateDraft, type AppBskyDraftDefs} from '@atproto/api'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
-import {useAnalytics} from '#/analytics'
 import {isNetworkError} from '#/lib/strings/errors'
 import {useAgent} from '#/state/session'
 import {type ComposerState} from '#/view/com/composer/state/composer'
+import {useAnalytics} from '#/analytics'
 import {
   composerStateToDraft,
   draftToComposerPosts,
@@ -31,9 +31,7 @@ export function useDrafts() {
       // Ensure media cache is populated before checking which media exists
       await storage.ensureMediaCachePopulated()
       const res = await agent.app.bsky.draft.getDrafts({})
-      return res.data.drafts.map(view =>
-        draftViewToSummary({view, analytics}),
-      )
+      return res.data.drafts.map(view => draftViewToSummary({view, analytics}))
     },
   })
 }

@@ -1,9 +1,9 @@
 import {useMemo, useState} from 'react'
 import {StyleSheet, TouchableOpacity, View} from 'react-native'
 import {Trans} from '@lingui/react/macro'
-import {RouteProp, useRoute} from '@react-navigation/native'
+import {type RouteProp, useRoute} from '@react-navigation/native'
 
-import {CommonNavigatorParams} from '#/lib/routes/types'
+import {type CommonNavigatorParams} from '#/lib/routes/types'
 import {
   type CommunityMemberView,
   useCommunityMembersQuery,

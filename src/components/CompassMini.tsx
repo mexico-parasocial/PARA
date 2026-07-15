@@ -89,13 +89,7 @@ export function CompassMini({
                 {/* Base background — always normal size */}
                 {gradient ? (
                   <LinearGradient
-                    colors={
-                      gradient.colors as unknown as readonly [
-                        string,
-                        string,
-                        ...string[],
-                      ]
-                    }
+                    colors={gradient.colors}
                     start={gradient.start}
                     end={gradient.end}
                     style={StyleSheet.absoluteFill}

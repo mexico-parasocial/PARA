@@ -5,11 +5,11 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 
-import {useAnalytics} from '#/analytics'
 import {getDeviceName} from '#/lib/deviceName'
 import {isNetworkError} from '#/lib/strings/errors'
 import {useAgent} from '#/state/session'
 import {type ComposerState} from '#/view/com/composer/state/composer'
+import {useAnalytics} from '#/analytics'
 import {composerStateToDraft, draftViewToSummary} from './api'
 import {logger} from './logger'
 import {deleteDraftMetadata, saveDraftMetadata} from './metadata'

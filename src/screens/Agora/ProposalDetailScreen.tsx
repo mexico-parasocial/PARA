@@ -428,7 +428,8 @@ function StatementCard({
             },
           }
           return (
-            <Pressable accessibilityRole="button"
+            <Pressable
+              accessibilityRole="button"
               key={vote}
               onPress={() => onVote(statement.uri, vote)}
               style={[
@@ -651,7 +652,8 @@ function AuditAccordion({proposal}: {proposal: Proposal}) {
         t.atoms.bg,
         t.atoms.border_contrast_low,
       ]}>
-      <Pressable accessibilityRole="button"
+      <Pressable
+        accessibilityRole="button"
         onPress={() => setExpanded(!expanded)}
         style={[a.flex_row, a.align_center, a.justify_between, a.p_md]}>
         <Text style={[a.font_semi_bold, a.text_sm, t.atoms.text]}>
@@ -867,7 +869,7 @@ export function ProposalDetailScreen({route}: Props) {
             label={_(msg`Proposal tabs`)}
             type="tabs"
             value={activeTab}
-            onChange={v => setActiveTab(v as DetailTab)}>
+            onChange={v => setActiveTab(v)}>
             <SegmentedControl.Item value="vote" label={tabLabel('vote')}>
               <SegmentedControl.ItemText>
                 {tabLabel('vote')}
@@ -917,7 +919,9 @@ export function ProposalDetailScreen({route}: Props) {
                     showLabel
                   />
                   <Text style={[a.text_center, a.text_sm, t.atoms.text]}>
-                    {_(msg`You voted ${(proposal.yourSignal! > 0 ? '+' : '') + String(proposal.yourSignal)} with ${String(proposal.yourUnits ?? 0)} intensity units`)}
+                    {_(
+                      msg`You voted ${(proposal.yourSignal! > 0 ? '+' : '') + String(proposal.yourSignal)} with ${String(proposal.yourUnits ?? 0)} intensity units`,
+                    )}
                   </Text>
                   <Text
                     style={[
@@ -1012,7 +1016,9 @@ export function ProposalDetailScreen({route}: Props) {
                     },
                   ]}>
                   <Text style={[a.text_sm, t.atoms.text]}>
-                    {_(msg`Your vote is delegated to ${activeDelegations[0].delegate} for ${activeDelegations[0].scope}`)}
+                    {_(
+                      msg`Your vote is delegated to ${activeDelegations[0].delegate} for ${activeDelegations[0].scope}`,
+                    )}
                   </Text>
                   <View style={[a.mt_sm]}>
                     <Button
@@ -1041,7 +1047,8 @@ export function ProposalDetailScreen({route}: Props) {
                   {MOCK_DELIBERATIONS.length} <Trans>Statements</Trans>
                 </Text>
                 <View style={[a.flex_row, a.gap_xs]}>
-                  <Pressable accessibilityRole="button"
+                  <Pressable
+                    accessibilityRole="button"
                     onPress={() => setDeliberationSort('consensus')}
                     style={[
                       a.px_sm,
@@ -1064,7 +1071,8 @@ export function ProposalDetailScreen({route}: Props) {
                       <Trans>Consensus</Trans>
                     </Text>
                   </Pressable>
-                  <Pressable accessibilityRole="button"
+                  <Pressable
+                    accessibilityRole="button"
                     onPress={() => setDeliberationSort('recent')}
                     style={[
                       a.px_sm,

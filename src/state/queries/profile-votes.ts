@@ -52,11 +52,10 @@ async function fetchProfileVotes({
   return res.data.records.map(record => {
     const value = record.value as Record<string, unknown>
     const subject = String(value?.subject ?? '')
-    const signal =
-      typeof value?.signal === 'number' ? (value.signal as number) : undefined
+    const signal = typeof value?.signal === 'number' ? value.signal : undefined
     const selectedOption =
       typeof value?.selectedOption === 'number'
-        ? (value.selectedOption as number)
+        ? value.selectedOption
         : undefined
 
     let vote = 'Vote'

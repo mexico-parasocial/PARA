@@ -1,7 +1,7 @@
 import {type ReactNode} from 'react'
-import {Image} from 'expo-image'
 import {Pressable, StyleSheet, useWindowDimensions, View} from 'react-native'
 import {Line, Polygon, Svg} from 'react-native-svg'
+import {Image} from 'expo-image'
 
 import {getCommunityInsignia} from '#/lib/civic-insignias'
 import {Text} from '#/view/com/util/text/Text'
@@ -56,6 +56,7 @@ export function MediaVisual({
             style={StyleSheet.absoluteFill}
             contentFit="cover"
             cachePolicy="memory-disk"
+            accessibilityIgnoresInvertColors
           />
           <View style={styles.mediaVisualOverlay} />
         </>
