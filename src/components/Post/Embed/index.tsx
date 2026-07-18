@@ -317,7 +317,11 @@ export function QuoteEmbed({
         timestamp={quote.indexedAt}
       />
       {moderation ? (
-        <PostAlerts modui={moderation.ui('contentView')} style={[a.py_xs]} />
+        <PostAlerts
+          post={quote}
+          modui={moderation.ui('contentView')}
+          style={[a.py_xs]}
+        />
       ) : null}
       {richText ? (
         <RichText

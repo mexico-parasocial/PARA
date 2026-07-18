@@ -16,6 +16,9 @@ module.exports = function (api) {
       ],
     ],
     plugins: [
+      // Required by pre-bundled node_modules that contain class static blocks
+      // (e.g. @formatjs/intl-displaynames/polyfill-force.js).
+      '@babel/plugin-transform-class-static-block',
       '@lingui/babel-plugin-lingui-macro',
       ['babel-plugin-react-compiler', {target: '19'}],
       [

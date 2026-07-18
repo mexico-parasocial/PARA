@@ -10,8 +10,12 @@ const ratio = 1
 
 export function Logomark({
   fill,
+  allowVariants,
   ...rest
-}: {fill?: PathProps['fill']} & SvgProps) {
+}: {
+  fill?: PathProps['fill']
+  allowVariants?: boolean
+} & SvgProps) {
   const pal = usePalette('default')
 
   // @ts-ignore it's fiiiiine

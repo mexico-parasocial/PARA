@@ -1,14 +1,16 @@
 import {memo, useCallback, useMemo, useState} from 'react'
 import {ActivityIndicator, View} from 'react-native'
 import {type AppBskyFeedDefs} from '@atproto/api'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
-import {Trans} from '@lingui/react/macro'
+import {Trans, useLingui} from '@lingui/react/macro'
 
 import {urls} from '#/lib/constants'
 import {usePostViewTracking} from '#/lib/hooks/usePostViewTracking'
 import {useCallOnce} from '#/lib/once'
-import {cleanError} from '#/lib/strings/errors'
+import {
+  cleanError,
+  isNetworkError,
+  shouldRetryError,
+} from '#/lib/strings/errors'
 import {augmentSearchQuery} from '#/lib/strings/helpers'
 import {useActorSearch} from '#/state/queries/actor-search'
 import {usePopularFeedsSearch} from '#/state/queries/feed'
@@ -16,7 +18,6 @@ import {
   hasParaSearchFilters,
   type ParaSearchPostsFilters,
   useParaSearchPostsQuery,
-  useSearchPostsQuery,
 } from '#/state/queries/search-posts'
 import {useSearchPostsV2Query} from '#/state/queries/search-posts-v2'
 import {useSession} from '#/state/session'
@@ -47,7 +48,6 @@ import {ParaSearchFiltersBar} from './ParaSearchFiltersBar'
 
 let SearchResults = ({
   query,
-  queryWithParams,
   filters,
   hasFilters,
   activeTab,
@@ -58,7 +58,6 @@ let SearchResults = ({
   onChangeFilters,
 }: {
   query: string
-  queryWithParams: string
   filters?: SearchFilters
   hasFilters?: boolean
   activeTab: number
@@ -68,7 +67,7 @@ let SearchResults = ({
   paraFilters?: ParaSearchPostsFilters
   onChangeFilters?: (filters: SearchFilters) => void
 }): React.ReactNode => {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const ax = useAnalytics()
   const paraFilters = useMemo(
     () => searchFiltersToParaFilters(filters ?? {}),
@@ -130,12 +129,11 @@ let SearchResults = ({
     const noFilters = !hasPostFilters
     return [
       {
-        title: _(msg`Top`),
+        title: l`Top`,
         component: (
           <SearchScreenPostResults
             hasFilters={Boolean(hasFilters || hasParaSearchFilters(paraFilters))}
             query={query}
-            queryWithParams={queryWithParams}
             filters={filters}
             sort="top"
             active={activePage === 0}
@@ -145,12 +143,11 @@ let SearchResults = ({
         ),
       },
       {
-        title: _(msg`Latest`),
+        title: l`Latest`,
         component: (
           <SearchScreenPostResults
             hasFilters={Boolean(hasFilters || hasParaSearchFilters(paraFilters))}
             query={query}
-            queryWithParams={queryWithParams}
             filters={filters}
             sort="latest"
             active={activePage === 1}
@@ -160,13 +157,13 @@ let SearchResults = ({
         ),
       },
       noFilters && {
-        title: _(msg`People`),
+        title: l`People`,
         component: (
           <SearchScreenUserResults query={query} active={activePage === 2} />
         ),
       },
       noFilters && {
-        title: _(msg`Feeds`),
+        title: l`Feeds`,
         component: (
           <SearchScreenFeedsResults query={query} active={activePage === 3} />
         ),
@@ -176,9 +173,8 @@ let SearchResults = ({
       component: React.ReactNode
     }[]
   }, [
-    _,
+    l,
     query,
-    queryWithParams,
     filters,
     hasFilters,
     paraFilters,
@@ -277,7 +273,7 @@ function NoResultsText({
   query: string
 }) {
   const t = useTheme()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
 
   return (
     <>
@@ -327,15 +323,13 @@ function NoResultsText({
         <Trans context="english-only-resource">
           Learn more about{' '}
           <InlineLinkText
-            label={_(
-              msg({
-                message: 'Read about how to use search filters',
-                context: 'english-only-resource',
-              }),
-            )}
+            label={l({
+              message: 'Read about how to use advanced search filters',
+              context: 'english-only-resource',
+            })}
             to={urls.website.blog.searchTipsAndTricks}
             style={[a.text_md, a.leading_snug]}>
-            how to use search filters
+            how to use advanced search
           </InlineLinkText>
           .
         </Trans>
@@ -358,7 +352,6 @@ type SearchResultSlice =
 let SearchScreenPostResults = ({
   hasFilters = false,
   query,
-  queryWithParams,
   filters,
   sort,
   active,
@@ -367,7 +360,6 @@ let SearchScreenPostResults = ({
 }: {
   hasFilters?: boolean
   query: string
-  queryWithParams: string
   filters?: SearchFilters
   sort?: 'top' | 'latest'
   active: boolean
@@ -375,38 +367,26 @@ let SearchScreenPostResults = ({
   onChangeFilters?: (filters: SearchFilters) => void
 }): React.ReactNode => {
   const ax = useAnalytics()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const {currentAccount, hasSession} = useSession()
   const [isPTR, setIsPTR] = useState(false)
   const trackPostView = usePostViewTracking('SearchResults')
 
-  const searchV2Enabled = ax.features.enabled(ax.features.SearchV2Enable)
-
   const augmentedV2Query = useMemo(() => {
     return augmentSearchQuery(query || '', {did: currentAccount?.did})
   }, [query, currentAccount])
-  const augmentedV1Query = useMemo(() => {
-    return augmentSearchQuery(queryWithParams || '', {did: currentAccount?.did})
-  }, [queryWithParams, currentAccount])
 
   const useParaQuery = !!paraFilters && hasParaSearchFilters(paraFilters)
 
   /*
-   * Both hooks are called to keep hook order stable; `enabled` ensures only the
-   * gated one actually fetches. V2 sends structured `filters` as separate
-   * params, V1 keeps the existing single-`q` behavior. PARA filters always route
-   * to the PARA search endpoint.
+   * PARA-specific filters route to the PARA search endpoint; otherwise use the
+   * upstream v2 endpoint.
    */
-  const v1 = useSearchPostsQuery({
-    query: augmentedV1Query,
-    sort,
-    enabled: active && !searchV2Enabled && !useParaQuery,
-  })
   const v2 = useSearchPostsV2Query({
     query: augmentedV2Query,
     filters,
     sort,
-    enabled: active && searchV2Enabled && !useParaQuery,
+    enabled: active && !useParaQuery,
   })
 
   const paraQuery = useParaSearchPostsQuery({
@@ -434,11 +414,9 @@ let SearchScreenPostResults = ({
     fetchNextPage,
     isFetchingNextPage,
     hasNextPage,
-  } = useParaQuery ? paraQuery : searchV2Enabled ? v2 : v1
+  } = useParaQuery ? paraQuery : v2
 
-  const detectedQueryLanguages = searchV2Enabled
-    ? v2.data?.pages[0]?.detectedQueryLanguages
-    : undefined
+  const detectedQueryLanguages = v2.data?.pages[0]?.detectedQueryLanguages
 
   const t = useTheme()
   const onPullToRefresh = useCallback(async () => {
@@ -448,7 +426,7 @@ let SearchScreenPostResults = ({
   }, [setIsPTR, refetch])
   const onEndReached = useCallback(() => {
     if (isFetching || !hasNextPage || error) return
-    fetchNextPage()
+    void fetchNextPage()
   }, [isFetching, error, hasNextPage, fetchNextPage])
 
   const posts = useMemo(() => {
@@ -508,18 +486,18 @@ let SearchScreenPostResults = ({
   if (!hasSession) {
     return (
       <SearchError
-        title={_(msg`Search is currently unavailable when logged out`)}>
+        title={l`Search is currently unavailable when logged out`}>
         <Text style={[a.text_md, a.text_center, a.leading_snug]}>
           <Trans>
             <InlineLinkText
-              label={_(msg`Sign in`)}
+              label={l`Sign in`}
               to={'#'}
               onPress={showSignIn}>
               Sign in
             </InlineLinkText>
             <Text style={t.atoms.text_contrast_medium}> or </Text>
             <InlineLinkText
-              label={_(msg`Create an account`)}
+              label={l`Create an account`}
               to={'#'}
               onPress={showCreateAccount}>
               create an account
@@ -537,9 +515,11 @@ let SearchScreenPostResults = ({
 
   return error ? (
     <EmptyState
-      messageText={_(
-        msg`We're sorry, but your search could not be completed. Please try again in a few minutes.`,
-      )}
+      messageText={
+        shouldRetryError(error) || isNetworkError(error)
+          ? l`We’re sorry, but your search could not be completed. Please try again in a few minutes.`
+          : l`We’re sorry, but your search could not be completed.`
+      }
       error={cleanError(error)}
     />
   ) : (
@@ -571,7 +551,7 @@ let SearchScreenPostResults = ({
               }}
               keyExtractor={item => item.key}
               refreshing={isPTR}
-              onRefresh={onPullToRefresh}
+              onRefresh={() => void onPullToRefresh()}
               onEndReached={onEndReached}
               onItemSeen={item => {
                 if (item.type === 'post') {
@@ -631,7 +611,7 @@ let SearchScreenUserResults = ({
   active: boolean
 }): React.ReactNode => {
   const ax = useAnalytics()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const {hasSession} = useSession()
   const [isPTR, setIsPTR] = useState(false)
 
@@ -677,9 +657,7 @@ let SearchScreenUserResults = ({
   if (error) {
     return (
       <EmptyState
-        messageText={_(
-          msg`We're sorry, but your search could not be completed. Please try again in a few minutes.`,
-        )}
+        messageText={l`We're sorry, but your search could not be completed. Please try again in a few minutes.`}
         error={error.toString()}
       />
     )

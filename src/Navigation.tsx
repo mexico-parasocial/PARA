@@ -1,4 +1,4 @@
-import {type JSX, useCallback, useRef} from 'react'
+import {type ComponentType, type JSX, useCallback, useRef} from 'react'
 import * as Linking from 'expo-linking'
 import * as Notifications from 'expo-notifications'
 import {i18n, type MessageDescriptor} from '@lingui/core'
@@ -113,7 +113,6 @@ import {CompassScreen} from '#/screens/Data/CompassScreen'
 import {CreatePostScreen} from '#/screens/Data/CreatePostScreen'
 import {DataScreen} from '#/screens/Data/DataScreen'
 import {MyAffiliationsScreen} from '#/screens/Data/MyAffiliationsScreen'
-// Lazy loaded below
 import {MyBaseScreen} from '#/screens/Data/MyBaseScreen'
 import {SharedPreferencesTesterScreen} from '#/screens/E2E/SharedPreferencesTesterScreen'
 import {PartyFeedScreen} from '#/screens/Feeds/PartyFeed'
@@ -206,7 +205,6 @@ import {IS_LIQUID_GLASS, IS_NATIVE, IS_WEB} from '#/env'
 import {router} from '#/routes'
 import {Referrer} from '../modules/expo-bluesky-swiss-army'
 import {renderMessagesSplitViewLayout} from './screens/Messages/components/splitView/MessagesSplitViewLayout'
-
 const navigationRef = createNavigationContainerRef<AllNavigatorParams>()
 
 const HomeTab = createNativeStackNavigatorWithAuth<HomeTabNavigatorParams>()
@@ -502,9 +500,12 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
       />
       <Stack.Screen
         name="SeeVotes"
-        getComponent={() =>
-          require('#/screens/Data/SeeVotesScreen').SeeVotesScreen
-        }
+        getComponent={() => {
+          const {SeeVotesScreen} = require('#/screens/Data/SeeVotesScreen') as {
+            SeeVotesScreen: ComponentType
+          }
+          return SeeVotesScreen
+        }}
         options={{
           title: title(msg`Votes History`),
           requireAuth: true,
@@ -512,9 +513,12 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
       />
       <Stack.Screen
         name="SeeInfluence"
-        getComponent={() =>
-          require('#/screens/Data/SeeInfluenceScreen').SeeInfluenceScreen
-        }
+        getComponent={() => {
+          const {SeeInfluenceScreen} = require(
+            '#/screens/Data/SeeInfluenceScreen'
+          ) as {SeeInfluenceScreen: ComponentType}
+          return SeeInfluenceScreen
+        }}
         options={{
           title: title(msg`Influence Score`),
           requireAuth: true,
@@ -522,9 +526,12 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
       />
       <Stack.Screen
         name="SeePosts"
-        getComponent={() =>
-          require('#/screens/Data/SeePostsScreen').SeePostsScreen
-        }
+        getComponent={() => {
+          const {SeePostsScreen} = require('#/screens/Data/SeePostsScreen') as {
+            SeePostsScreen: ComponentType
+          }
+          return SeePostsScreen
+        }}
         options={{
           title: title(msg`Posts`),
           requireAuth: true,
@@ -864,22 +871,32 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
       />
       <Stack.Screen
         name="SeeHighlightDetails"
-        getComponent={() =>
-          require('#/screens/Highlights/SeeHighlightDetailsScreen')
-            .SeeHighlightDetailsScreen
-        }
+        getComponent={() => {
+          const {SeeHighlightDetailsScreen} = require(
+            '#/screens/Highlights/SeeHighlightDetailsScreen'
+          ) as {SeeHighlightDetailsScreen: ComponentType}
+          return SeeHighlightDetailsScreen
+        }}
         options={{title: title(msg`Highlight Details`)}}
       />
       <Stack.Screen
         name="Map"
-        getComponent={() => require('#/screens/Map/MapScreen').MapScreen}
+        getComponent={() => {
+          const {MapScreen} = require('#/screens/Map/MapScreen') as {
+            MapScreen: ComponentType
+          }
+          return MapScreen
+        }}
         options={{title: title(msg`Map`)}}
       />
       <Stack.Screen
         name="DistrictProfile"
-        getComponent={() =>
-          require('#/screens/Map/DistrictProfileScreen').DistrictProfileScreen
-        }
+        getComponent={() => {
+          const {DistrictProfileScreen} = require(
+            '#/screens/Map/DistrictProfileScreen'
+          ) as {DistrictProfileScreen: ComponentType}
+          return DistrictProfileScreen
+        }}
         options={{title: title(msg`District Profile`)}}
       />
       <Stack.Screen

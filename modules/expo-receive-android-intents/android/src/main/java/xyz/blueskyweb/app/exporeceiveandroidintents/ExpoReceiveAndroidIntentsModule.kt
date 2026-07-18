@@ -15,6 +15,7 @@ import java.io.FileOutputStream
 import java.net.URLEncoder
 
 private const val TAG = "ExpoReceiveAndroidIntents"
+private const val MAX_IMAGES = 10
 
 enum class AttachmentType {
   IMAGE,
@@ -22,18 +23,13 @@ enum class AttachmentType {
 }
 
 class ExpoReceiveAndroidIntentsModule : Module() {
-  override fun definition() =
-    ModuleDefinition {
-      Name("ExpoReceiveAndroidIntents")
+  override fun definition() = ModuleDefinition {
+    Name("ExpoReceiveAndroidIntents")
 
-      OnCreate {
-        handleIntent(appContext.currentActivity?.intent)
-      }
+    OnCreate { handleIntent(appContext.currentActivity?.intent) }
 
-      OnNewIntent {
-        handleIntent(it)
-      }
-    }
+    OnNewIntent { handleIntent(it) }
+  }
 
   private fun handleIntent(intent: Intent?) {
     if (appContext.currentActivity == null) return
@@ -44,13 +40,13 @@ class ExpoReceiveAndroidIntentsModule : Module() {
       }
 
       val type =
-        if (it.type.toString().startsWith("image/")) {
-          AttachmentType.IMAGE
-        } else if (it.type.toString().startsWith("video/")) {
-          AttachmentType.VIDEO
-        } else {
-          return
-        }
+              if (it.type.toString().startsWith("image/")) {
+                AttachmentType.IMAGE
+              } else if (it.type.toString().startsWith("video/")) {
+                AttachmentType.VIDEO
+              } else {
+                return
+              }
 
       if (it.action == Intent.ACTION_SEND) {
         handleAttachmentIntent(it, type)
@@ -71,15 +67,15 @@ class ExpoReceiveAndroidIntentsModule : Module() {
   }
 
   private fun handleAttachmentIntent(
-    intent: Intent,
-    type: AttachmentType,
+          intent: Intent,
+          type: AttachmentType,
   ) {
     val uri =
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
-      } else {
-        intent.getParcelableExtra(Intent.EXTRA_STREAM)
-      }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+              intent.getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+            } else {
+              intent.getParcelableExtra(Intent.EXTRA_STREAM)
+            }
 
     val text = intent.getStringExtra(Intent.EXTRA_TEXT)
 
@@ -92,21 +88,19 @@ class ExpoReceiveAndroidIntentsModule : Module() {
   }
 
   private fun handleAttachmentsIntent(
-    intent: Intent,
-    type: AttachmentType,
+          intent: Intent,
+          type: AttachmentType,
   ) {
     val uris =
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        intent
-          .getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri::class.java)
-          ?.filterIsInstance<Uri>()
-          ?.take(4)
-      } else {
-        intent
-          .getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)
-          ?.filterIsInstance<Uri>()
-          ?.take(4)
-      }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+              intent.getParcelableArrayListExtra(Intent.EXTRA_STREAM, Uri::class.java)
+                      ?.filterIsInstance<Uri>()
+                      ?.take(MAX_IMAGES)
+            } else {
+              intent.getParcelableArrayListExtra<Uri>(Intent.EXTRA_STREAM)
+                      ?.filterIsInstance<Uri>()
+                      ?.take(MAX_IMAGES)
+            }
 
     val text = intent.getStringExtra(Intent.EXTRA_TEXT)
 
@@ -119,16 +113,16 @@ class ExpoReceiveAndroidIntentsModule : Module() {
   }
 
   private fun handleImageIntents(
-    uris: List<Uri>,
-    text: String?,
+          uris: List<Uri>,
+          text: String?,
   ) {
     // Some URIs we receive may be unreadable (revoked permission, deleted file,
     // a provider that rejects the read). Skip those rather than crashing the
     // whole app, since this runs synchronously on the module init path.
     val allParams =
-      uris
-        .mapNotNull { uri -> getImageInfo(uri) }
-        .joinToString(",") { info -> buildUriData(info) }
+            uris.mapNotNull { uri -> getImageInfo(uri) }.joinToString(",") { info ->
+              buildUriData(info)
+            }
 
     if (allParams.isEmpty()) return
 
@@ -145,8 +139,8 @@ class ExpoReceiveAndroidIntentsModule : Module() {
   }
 
   private fun handleVideoIntents(
-    uris: List<Uri>,
-    text: String?,
+          uris: List<Uri>,
+          text: String?,
   ) {
     val uri = uris[0]
     // If there is no extension for the file, substringAfterLast returns the original string - not
@@ -165,11 +159,11 @@ class ExpoReceiveAndroidIntentsModule : Module() {
     try {
       FileOutputStream(file).use { out ->
         val input =
-          appContext.currentActivity?.contentResolver?.openInputStream(uri)
-            ?: run {
-              file.delete()
-              return
-            }
+                appContext.currentActivity?.contentResolver?.openInputStream(uri)
+                        ?: run {
+                          file.delete()
+                          return
+                        }
         input.use { it.copyTo(out) }
       }
     } catch (e: Exception) {
@@ -179,14 +173,16 @@ class ExpoReceiveAndroidIntentsModule : Module() {
     }
 
     val info =
-      getVideoInfo(uri) ?: run {
-        file.delete()
-        return
-      }
+            getVideoInfo(uri)
+                    ?: run {
+                      file.delete()
+                      return
+                    }
 
     val encodedText = text?.let { URLEncoder.encode(it, "UTF-8") }
 
-    var composeIntent = "bluesky://intent/compose?videoUri=${URLEncoder.encode(file.path, "UTF-8")}|${info["width"]}|${info["height"]}"
+    var composeIntent =
+            "bluesky://intent/compose?videoUri=${URLEncoder.encode(file.path, "UTF-8")}|${info["width"]}|${info["height"]}"
     encodedText?.let { composeIntent += "&text=$it" }
 
     composeIntent.toUri().let {
@@ -197,14 +193,14 @@ class ExpoReceiveAndroidIntentsModule : Module() {
 
   private fun getImageInfo(uri: Uri): Map<String, Any>? {
     val bitmap =
-      try {
-        MediaStore.Images.Media.getBitmap(appContext.currentActivity?.contentResolver, uri)
-      } catch (e: Exception) {
-        // The URI may be unreadable (revoked permission, deleted file, or a
-        // provider that rejects the read). Skip this image rather than crash.
-        Log.w(TAG, "Failed to read shared image", e)
-        return null
-      } ?: return null
+            try {
+              MediaStore.Images.Media.getBitmap(appContext.currentActivity?.contentResolver, uri)
+            } catch (e: Exception) {
+              // The URI may be unreadable (revoked permission, deleted file, or a
+              // provider that rejects the read). Skip this image rather than crash.
+              Log.w(TAG, "Failed to read shared image", e)
+              return null
+            } ?: return null
     // We have to save this so that we can access it later when uploading the image.
     // createTempFile will automatically place a unique string between "img" and "temp.jpeg"
     val file = createFile("jpeg")
@@ -220,9 +216,9 @@ class ExpoReceiveAndroidIntentsModule : Module() {
     }
 
     return mapOf(
-      "width" to bitmap.width,
-      "height" to bitmap.height,
-      "path" to file.path.toString(),
+            "width" to bitmap.width,
+            "height" to bitmap.height,
+            "path" to file.path.toString(),
     )
   }
 
@@ -232,8 +228,14 @@ class ExpoReceiveAndroidIntentsModule : Module() {
     val height: Int?
     try {
       retriever.setDataSource(appContext.currentActivity, uri)
-      width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toIntOrNull()
-      height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toIntOrNull()
+      width =
+              retriever
+                      .extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
+                      ?.toIntOrNull()
+      height =
+              retriever
+                      .extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
+                      ?.toIntOrNull()
     } catch (e: Exception) {
       // The URI may be unreadable or not a valid media source. Skip rather than crash.
       Log.w(TAG, "Failed to read shared video metadata", e)
@@ -247,13 +249,14 @@ class ExpoReceiveAndroidIntentsModule : Module() {
     }
 
     return mapOf(
-      "width" to width,
-      "height" to height,
-      "path" to uri.path.toString(),
+            "width" to width,
+            "height" to height,
+            "path" to uri.path.toString(),
     )
   }
 
-  private fun createFile(extension: String): File = File.createTempFile(extension, "temp.$extension", appContext.currentActivity?.cacheDir)
+  private fun createFile(extension: String): File =
+          File.createTempFile(extension, "temp.$extension", appContext.currentActivity?.cacheDir)
 
   // We will pas the width and height to the app here, since getting measurements
   // on the RN side is a bit more involved, and we already have them here anyway.

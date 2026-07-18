@@ -240,9 +240,9 @@ export function BottomBarWeb() {
                 },
               ]}>
               <View style={[a.flex_row, a.align_center, {gap: 6}]}>
-                <Logomark width={28} fill="#474652" />
+                <Logomark allowVariants={false} width={28} fill="#474652" />
                 <View style={{paddingTop: 2}}>
-                  <Logotype width={80} fill={t.atoms.text.color} />
+                  <Logotype allowVariants={false} width={80} fill={t.atoms.text.color} />
                 </View>
               </View>
 

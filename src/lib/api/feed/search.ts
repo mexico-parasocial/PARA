@@ -1,7 +1,7 @@
 import {
   type Agent,
   type AppBskyFeedDefs,
-  type AppBskyFeedSearchPosts,
+  type AppBskyFeedSearchPostsV2,
 } from '@atproto/api'
 
 import {logger} from '#/logger'
@@ -9,7 +9,7 @@ import {type FeedAPI, type FeedAPIResponse} from './types'
 
 export class SearchPostsFeedAPI implements FeedAPI {
   agent: Agent
-  params: AppBskyFeedSearchPosts.QueryParams
+  params: AppBskyFeedSearchPostsV2.QueryParams
   peek: AppBskyFeedDefs.FeedViewPost | null = null
 
   constructor({
@@ -17,7 +17,7 @@ export class SearchPostsFeedAPI implements FeedAPI {
     feedParams,
   }: {
     agent: Agent
-    feedParams: AppBskyFeedSearchPosts.QueryParams
+    feedParams: AppBskyFeedSearchPostsV2.QueryParams
   }) {
     this.agent = agent
     this.params = feedParams
@@ -36,10 +36,10 @@ export class SearchPostsFeedAPI implements FeedAPI {
     limit: number
   }): Promise<FeedAPIResponse> {
     try {
-      const res = await this.agent.app.bsky.feed.searchPosts({
-        q: this.params.q || '',
-        tag: this.params.tag,
-        sort: this.params.sort || 'latest',
+      const res = await this.agent.app.bsky.feed.searchPostsV2({
+        query: this.params.query || '',
+        hashtags: this.params.hashtags,
+        sort: this.params.sort === 'latest' ? 'recent' : this.params.sort,
         limit: Math.min(limit, 100),
         cursor,
       })

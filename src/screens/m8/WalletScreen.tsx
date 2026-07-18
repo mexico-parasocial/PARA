@@ -19,7 +19,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import {useLingui} from '@lingui/react'
 
-import {getGrants, type ProofBrokerGrant} from '#/lib/m8'
+import {getGrants, postGrantRevoke, type ProofBrokerGrant} from '#/lib/m8'
 import {authenticateBiometric} from '#/lib/m8/biometric'
 import {useTheme} from '#/alf'
 import {Text} from '#/components/Typography'
@@ -67,9 +67,9 @@ const secureStorage = {
       return []
     }
   },
-  deleteCredential: async (_id: string): Promise<void> => {
-    // TODO: revoke grant via m8 API
-    console.log('Deleting credential', _id)
+  deleteCredential: async (id: string): Promise<void> => {
+    // Credential ids are grant ids (see grantToCredential).
+    await postGrantRevoke(id, 'Revoked from wallet')
   },
 }
 
@@ -250,6 +250,10 @@ export default function WalletScreen() {
         credential={selectedCredential}
         onBack={() => setSelectedCredential(null)}
         onPresent={handlePresent}
+        onDeleted={async () => {
+          await loadCredentials()
+          setSelectedCredential(null)
+        }}
       />
     )
   }
@@ -373,10 +377,12 @@ function CredentialDetail({
   credential,
   onBack,
   onPresent,
+  onDeleted,
 }: {
   credential: StoredCredential
   onBack: () => void
   onPresent: () => void
+  onDeleted: () => Promise<void>
 }) {
   const t = useTheme()
   const {} = useLingui()
@@ -487,8 +493,15 @@ function CredentialDetail({
                   text: 'Delete',
                   style: 'destructive',
                   onPress: () => {
-                    secureStorage.deleteCredential(credential.id)
-                    onBack()
+                    void (async () => {
+                      try {
+                        await secureStorage.deleteCredential(credential.id)
+                      } catch (err) {
+                        console.warn('[m8] Failed to revoke credential:', err)
+                      } finally {
+                        await onDeleted()
+                      }
+                    })()
                   },
                 },
               ],

@@ -14,8 +14,8 @@ export type SearchFilters = {
   url?: string
   tag?: string
   /**
-   * Exclude variants of the list fields above. v2-only; v1 has no structured
-   * exclude operators so these are dropped on the legacy path.
+   * Exclude variants of the list fields above. These are only supported by the
+   * structured v2 endpoint and are dropped when building a plain query string.
    */
   excludeAuthor?: string
   excludeMentions?: string
@@ -174,20 +174,6 @@ export function hasPostOnlyFilters(filters: SearchFilters): boolean {
   return POST_ONLY_FILTER_KEYS.some(key => filters[key])
 }
 
-/**
- * Filter keys that the legacy v1 `app.bsky.feed.searchPosts` endpoint cannot
- * accept as structured params. If any of these are active, the search must route
- * to v2 (or PARA's own search endpoint) to avoid silently dropping filters.
- * v1 only honors `q`, `sort`, `tag`, `cursor`, and `limit`.
- */
-const V2_REQUIRED_FILTER_KEYS = FILTER_PARAM_KEYS.filter(
-  key => key !== 'tag' && key !== 'lang',
-)
-
-export function requiresSearchV2(filters: SearchFilters): boolean {
-  return V2_REQUIRED_FILTER_KEYS.some(key => filters[key])
-}
-
 const PARA_FILTER_KEYS = [
   'postType',
   'flairs',
@@ -337,31 +323,10 @@ export function withoutFilterParams(
 }
 
 /**
- * Converts structured filters back into the legacy free-text operators used by
- * search v1. UI-only filters are intentionally dropped because the old path
- * could not apply them.
- */
-export function filtersToLegacyParams(
-  filters: SearchFilters,
-): Record<string, string> {
-  const params: Record<string, string> = {}
-  if (filters.author) params.from = filters.author
-  if (filters.mentions) params.mentions = filters.mentions
-  if (filters.domain) params.domain = filters.domain
-  if (filters.url) params.url = filters.url
-  if (filters.tag) params.tag = filters.tag
-  if (filters.lang) params.lang = filters.lang
-  if (filters.since) params.since = filters.since
-  if (filters.until) params.until = filters.until
-  return params
-}
-
-/**
  * Maps each multi-value SearchFilters key to its `app.bsky.feed.searchPostsV2`
- * param name. Search v1 only honored the first value for the singular lexicon
- * params (author/domain/url); v2 accepts every value and renames them to the
- * plural forms here. `tag` becomes `hashtags`; `mentions` keeps its name. The
- * exclude* keys map to v2's matching exclude* params.
+ * param name. The v2 endpoint accepts every value and renames them to the plural
+ * forms here. `tag` becomes `hashtags`; `mentions` keeps its name. The exclude*
+ * keys map to v2's matching exclude* params.
  */
 const MULTI_VALUE_KEY_MAP = {
   author: 'authors',
@@ -380,8 +345,8 @@ const MULTI_VALUE_KEY_MAP = {
  * Converts filters into structured params for `app.bsky.feed.searchPostsV2`.
  * Output property names match the v2 lexicon. List fields are split into arrays
  * of values; scalar fields (language/since/until) pass through. The
- * boolean/replies filters (media/video/following/replies) are v2-only - v1 had
- * no equivalent and dropped them.
+ * boolean/replies filters (media/video/following/replies) are only supported by
+ * the structured v2 endpoint.
  */
 export function filtersToApiParams(filters: SearchFilters): {
   authors?: string[]

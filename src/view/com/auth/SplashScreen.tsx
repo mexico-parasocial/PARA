@@ -67,6 +67,7 @@ export const SplashScreen = ({
         <View
           style={[a.justify_center, a.align_center, {gap: 6, paddingTop: 46}]}>
           <Logotype
+            allowVariants={false}
             width={122}
             fill={styles.logoFill}
             variant="strong"

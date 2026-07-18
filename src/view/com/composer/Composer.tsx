@@ -60,8 +60,7 @@ import {
   RichText,
 } from '@atproto/api'
 import {msg, plural} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react/macro'
-import {Trans} from '@lingui/react/macro'
+import {Trans, useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 import {useQueries, useQueryClient} from '@tanstack/react-query'
 
@@ -84,6 +83,11 @@ import {
 import {useIsKeyboardVisible} from '#/lib/hooks/useIsKeyboardVisible'
 import {useNonReactiveCallback} from '#/lib/hooks/useNonReactiveCallback'
 import {usePalette} from '#/lib/hooks/usePalette'
+import {
+  type AnonymousIdentityCard,
+  getAnonymousIdentities,
+  postAnonymousPost,
+} from '#/lib/m8'
 import {useAnonymousMode} from '#/lib/m8/hooks/useAnonymousMode'
 import {createVideoTelemetry} from '#/lib/media/video/telemetry'
 import {mimeToExt} from '#/lib/media/video/util'
@@ -144,6 +148,11 @@ import {VideoPreview} from '#/view/com/composer/videos/VideoPreview'
 import {VideoTranscodeProgress} from '#/view/com/composer/videos/VideoTranscodeProgress'
 import {Text} from '#/view/com/util/text/Text'
 import {UserAvatar} from '#/view/com/util/UserAvatar'
+import {IdentityContextSwitcher} from '#/screens/m8/components/IdentityContextSwitcher'
+import {
+  type IdentityContext,
+  type IdentityContextId,
+} from '#/screens/m8/types'
 import {atoms as a, native, useBreakpoints, useTheme, web} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import * as EmojiPicker from '#/components/EmojiPicker'
@@ -258,6 +267,114 @@ export const ComposePost = ({
   const {data: preferences} = usePreferencesQuery()
   const navigation = useNavigation<NavigationProp>()
   const {activeFilters} = useCompassFilter()
+
+  // m8 identity context: post as public profile, default anonymous account,
+  // or an isolated anonymous identity (unlinked to the main anon account).
+  const {isEnabled: isAnonymousMode, profile: anonProfile} = useAnonymousMode()
+  const [identityCards, setIdentityCards] = useState<AnonymousIdentityCard[]>(
+    [],
+  )
+  const [identityContextId, setIdentityContextId] =
+    useState<IdentityContextId>('public')
+
+  useEffect(() => {
+    if (!isAnonymousMode) {
+      setIdentityCards([])
+      setIdentityContextId('public')
+      return
+    }
+    let cancelled = false
+    getAnonymousIdentities()
+      .then(({identities}) => {
+        if (!cancelled) {
+          setIdentityCards(identities.filter(card => card.status === 'active'))
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setIdentityCards([])
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [isAnonymousMode])
+
+  // The default anonymous profile is folded into the identities list by the
+  // broker as `anon-identity-<profileId>`; fall back to display-name match.
+  const defaultAnonCard = useMemo(() => {
+    if (!anonProfile) return undefined
+    const foldedId = `anon-identity-${anonProfile.id}`
+    return (
+      identityCards.find(card => card.id === foldedId) ??
+      identityCards.find(card => card.displayName === anonProfile.displayName)
+    )
+  }, [identityCards, anonProfile])
+
+  const isolatedAnonCard = useMemo(
+    () => identityCards.find(card => card.id !== defaultAnonCard?.id),
+    [identityCards, defaultAnonCard],
+  )
+
+  const identityContexts = useMemo<IdentityContext[]>(() => {
+    if (!isAnonymousMode || !anonProfile) return []
+    return [
+      {
+        id: 'public',
+        label: i18n._(msg`Public`),
+        handle: currentAccount?.handle ?? '',
+        displayName: currentAccount?.handle ?? '',
+        isActive: identityContextId === 'public',
+        isAvailable: true,
+        description: i18n._(msg`Post as your public profile`),
+      },
+      {
+        id: 'anonymous',
+        label: i18n._(msg`Anonymous`),
+        handle: '',
+        displayName: anonProfile.displayName,
+        avatarSeed: anonProfile.avatarSeed,
+        isActive: identityContextId === 'anonymous',
+        isAvailable: defaultAnonCard !== undefined,
+        description: i18n._(msg`Post as your default anonymous account`),
+      },
+      {
+        id: 'isolated',
+        label: i18n._(msg`Isolated`),
+        handle: '',
+        displayName:
+          isolatedAnonCard?.displayName ??
+          i18n._(msg`No isolated identity yet`),
+        avatarSeed: isolatedAnonCard?.avatarSeed,
+        isActive: identityContextId === 'isolated',
+        isAvailable: isolatedAnonCard !== undefined,
+        description: i18n._(
+          msg`Post as an isolated identity, unlinked from your main anonymous account`,
+        ),
+      },
+    ]
+  }, [
+    i18n,
+    isAnonymousMode,
+    anonProfile,
+    currentAccount,
+    identityContextId,
+    defaultAnonCard,
+    isolatedAnonCard,
+  ])
+
+  const onSelectIdentityContext = useCallback(
+    (id: IdentityContextId) => {
+      const ctx = identityContexts.find(c => c.id === id)
+      if (!ctx?.isAvailable) return
+      setIdentityContextId(id)
+    },
+    [identityContexts],
+  )
+
+  const selectedAnonIdentityId = useMemo(() => {
+    if (identityContextId === 'anonymous') return defaultAnonCard?.id ?? null
+    if (identityContextId === 'isolated') return isolatedAnonCard?.id ?? null
+    return null
+  }, [identityContextId, defaultAnonCard, isolatedAnonCard])
   const {affiliation} = usePoliticalAffiliation()
 
   const [isKeyboardVisible] = useIsKeyboardVisible({iosUseWillEvents: true})
@@ -1039,6 +1156,26 @@ export const ComposePost = ({
         })
       ).uris[0]
 
+      // Link the post to the selected m8 anonymous identity so PARA surfaces
+      // can render it under the pseudonym. The atproto post itself is always
+      // written by the user's DID — the anonymous layer is m8-side
+      // pseudonymous bookkeeping, so a linking failure must not fail the
+      // publish, but the user should know.
+      if (postUri && selectedAnonIdentityId) {
+        try {
+          await postAnonymousPost({
+            postUri,
+            identityId: selectedAnonIdentityId,
+          })
+        } catch (e) {
+          logger.warn('composer: anonymous post linking failed', {error: e})
+          Toast.show(
+            i18n._(msg`Post published, but anonymous linking failed.`),
+            {type: 'warning'},
+          )
+        }
+      }
+
       // Fire published event for every video that made it into the post.
       // The status guard upstream ensures each video.telemetry is present and
       // processing has completed by this point.
@@ -1157,7 +1294,7 @@ export const ComposePost = ({
     } finally {
       if (postUri) {
         let index = 0
-        for (let post of filteredThread.posts) {
+        for (const post of filteredThread.posts) {
           logEvent('post:create', {
             imageCount:
               post.embed.media?.type === 'images'
@@ -1308,7 +1445,7 @@ export const ComposePost = ({
     if (publishOnUpload) {
       let erroredVideos = 0
       let uploadingVideos = 0
-      for (let post of thread.posts) {
+      for (const post of thread.posts) {
         if (post.embed.media?.type === 'video') {
           const video = post.embed.media.video
           if (video.status === 'error') {
@@ -1530,6 +1667,9 @@ export const ComposePost = ({
                   onClearVideo={clearVideo}
                   onPublish={onComposerPostPublish}
                   onError={setError}
+                  identityContexts={identityContexts}
+                  identityContextId={identityContextId}
+                  onSelectIdentityContext={onSelectIdentityContext}
                 />
                 {isWebFooterSticky && post.id === activePost.id && (
                   <View style={styles.stickyFooterWeb}>{footer}</View>
@@ -1607,7 +1747,7 @@ export const ComposePost = ({
   )
 }
 
-let ComposerPost = memo(function ComposerPost({
+const ComposerPost = memo(function ComposerPost({
   post,
   dispatch,
   textInputRef,
@@ -1627,6 +1767,9 @@ let ComposerPost = memo(function ComposerPost({
   onSelectVideo,
   onError,
   onPublish,
+  identityContexts,
+  identityContextId,
+  onSelectIdentityContext,
 }: {
   post: PostDraft
   dispatch: (action: ComposerAction) => void
@@ -1650,13 +1793,14 @@ let ComposerPost = memo(function ComposerPost({
   ) => void | Promise<void>
   onError: (error: string) => void
   onPublish: (richtext: RichText) => void
+  identityContexts: IdentityContext[]
+  identityContextId: IdentityContextId
+  onSelectIdentityContext: (id: IdentityContextId) => void
 }) {
   const {currentAccount} = useSession()
   const currentDid = currentAccount!.did
   const {i18n} = useLingui()
   const {data: currentProfile} = useProfileQuery({did: currentDid})
-  const {isEnabled: isAnonymous} = useAnonymousMode()
-  const t = useTheme()
   const richtext = post.richtext
   const isTextOnly = !post.embed.link && !post.embed.quote && !post.embed.media
   const forceMinHeight = IS_WEB && isTextOnly && isActive
@@ -1740,20 +1884,6 @@ let ComposerPost = memo(function ComposerPost({
             size={42}
             type={currentProfile?.associated?.labeler ? 'labeler' : 'user'}
           />
-          {isAnonymous && (
-            <View
-              style={[
-                a.mt_2xs,
-                a.rounded_md,
-                a.px_xs,
-                a.py_2xs,
-                {backgroundColor: t.palette.primary_500},
-              ]}>
-              <Text style={[a.text_2xs, {color: t.palette.white}]}>
-                <Trans>Anónimo · Verificado</Trans>
-              </Text>
-            </View>
-          )}
         </View>
         <ComposerTextInput
           ref={textInputRef}
@@ -1794,6 +1924,16 @@ let ComposerPost = memo(function ComposerPost({
         />
       </View>
 
+      {isFirstPost && identityContexts.length > 0 && (
+        <View style={[a.mt_sm]}>
+          <IdentityContextSwitcher
+            contexts={identityContexts}
+            selectedId={identityContextId}
+            onSelect={onSelectIdentityContext}
+          />
+        </View>
+      )}
+
       {canRemovePost && isActive && (
         <>
           <Button
@@ -1823,7 +1963,9 @@ let ComposerPost = memo(function ComposerPost({
           <Prompt.Basic
             control={discardPromptControl}
             title={i18n._(msg`Discard post?`)}
-            description={i18n._(msg`Are you sure you'd like to discard this post?`)}
+            description={i18n._(
+              msg`Are you sure you'd like to discard this post?`,
+            )}
             onConfirm={() => {
               dispatch({
                 type: 'remove_post',
@@ -2135,9 +2277,7 @@ function ComposerPills({
   const checkScroll = useCallback(() => {
     if (scrollRef.current) {
       const node = scrollRef.current.getScrollableNode() as
-        | HTMLElement
-        | null
-        | undefined
+        HTMLElement | null | undefined
       if (node) {
         setScrollState({
           left: node.scrollLeft > 1,
@@ -2167,9 +2307,7 @@ function ComposerPills({
     (direction: 'left' | 'right') => {
       if (scrollRef.current) {
         const node = scrollRef.current.getScrollableNode() as
-          | HTMLElement
-          | null
-          | undefined
+          HTMLElement | null | undefined
         if (node) {
           const amount = direction === 'left' ? -200 : 200
           node.scrollBy({left: amount, behavior: 'smooth'})

@@ -3,7 +3,6 @@ import {Alert, View} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import {useFocusEffect} from '@react-navigation/native'
 import {type NativeStackScreenProps} from '@react-navigation/native-stack'
 
@@ -13,6 +12,7 @@ import {
 } from '#/lib/m8/anonymous'
 import {
   getKarmaMe,
+  getKarmaProfile,
   getMe,
   postAnonymousDisable,
   postAnonymousEnable,
@@ -20,6 +20,7 @@ import {
 } from '#/lib/m8/api'
 import {type AnonymousProfile} from '#/lib/m8/types'
 import {type CommonNavigatorParams} from '#/lib/routes/types'
+import * as Storage from '#/lib/storage'
 import {useSession} from '#/state/session'
 import * as SettingsList from '#/screens/Settings/components/SettingsList'
 import {atoms as a, useTheme} from '#/alf'
@@ -106,6 +107,8 @@ export function AccountSettingsScreen({navigation}: Props) {
     try {
       const karma = await getKarmaMe()
       setKarmaGlobal(karma.global)
+      const profile = await getKarmaProfile(karma.profileId)
+      setRevealGlobalKarma(profile.revealed.global)
     } catch (e) {
       console.error('Failed to load karma', e)
     }
@@ -114,7 +117,7 @@ export function AccountSettingsScreen({navigation}: Props) {
   const toggleRevealGlobalKarma = async (value: boolean) => {
     try {
       setLoadingKarma(true)
-      await putKarmaRevelation({revealGlobal: value})
+      await putKarmaRevelation({ revealGlobal: value })
       setRevealGlobalKarma(value)
       Toast.show(
         value
@@ -137,9 +140,7 @@ export function AccountSettingsScreen({navigation}: Props) {
         // Reveal identity: disable anonymous mode
         Alert.alert(
           _(msg`Reveal Your Identity?`),
-          _(
-            msg`By enabling Public Figure mode, your real name and profile will be visible to everyone. This cannot be undone without re-verifying your identity.`,
-          ),
+          _(msg`By enabling Public Figure mode, your real name and profile will be visible to everyone. This cannot be undone without re-verifying your identity.`),
           [
             {text: _(msg`Cancel`), style: 'cancel'},
             {
@@ -151,11 +152,7 @@ export function AccountSettingsScreen({navigation}: Props) {
                   await setStoredAnonymousProfile(null)
                   setAnonProfile(null)
                   setAnonymousMode(false)
-                  Toast.show(
-                    _(
-                      msg`Public Figure mode enabled. Your identity is now public.`,
-                    ),
-                  )
+                  Toast.show(_(msg`Public Figure mode enabled. Your identity is now public.`))
                 } catch (e) {
                   Toast.show(_(msg`Failed to reveal identity`))
                 } finally {
@@ -167,13 +164,11 @@ export function AccountSettingsScreen({navigation}: Props) {
         )
       } else {
         // Return to anonymous mode
-        const isVerified = await AsyncStorage.getItem('para_ine_verified')
+        const isVerified = await Storage.getItemAsync('para_ine_verified')
         if (isVerified !== 'true') {
           Alert.alert(
             _(msg`Restricted`),
-            _(
-              msg`You must verify your identity (INE) before returning to anonymous mode.`,
-            ),
+            _(msg`You must verify your identity (INE) before returning to anonymous mode.`),
           )
           setLoadingAnon(false)
           return
@@ -270,8 +265,9 @@ export function AccountSettingsScreen({navigation}: Props) {
             <SettingsList.PressableItem
               label={_(msg`Verify Identity (INE)`)}
               onPress={async () => {
-                const isVerified =
-                  await AsyncStorage.getItem('para_ine_verified')
+                const isVerified = await Storage.getItemAsync(
+                  'para_ine_verified',
+                )
                 if (isVerified === 'true') {
                   Toast.show(_(msg`Your identity is already verified.`))
                   return
@@ -282,6 +278,15 @@ export function AccountSettingsScreen({navigation}: Props) {
               <SettingsList.ItemIcon icon={ShieldIcon} />
               <SettingsList.ItemText>
                 <Trans>Verify Identity (INE)</Trans>
+              </SettingsList.ItemText>
+              <SettingsList.Chevron />
+            </SettingsList.PressableItem>
+            <SettingsList.PressableItem
+              label={_(msg`Identity Wallet (m8)`)}
+              onPress={() => navigation.navigate('IdentityHub' as never)}>
+              <SettingsList.ItemIcon icon={LockIcon} />
+              <SettingsList.ItemText>
+                <Trans>Identity Wallet (m8)</Trans>
               </SettingsList.ItemText>
               <SettingsList.Chevron />
             </SettingsList.PressableItem>
@@ -299,8 +304,8 @@ export function AccountSettingsScreen({navigation}: Props) {
                   ]}>
                   <Trans>
                     You are anonymous by default. Verified citizens appear as
-                    anonymous personas in communities unless they choose to
-                    reveal their identity as a public figure.
+                    anonymous personas in communities unless they choose to reveal
+                    their identity as a public figure.
                   </Trans>
                 </Text>
               </View>
@@ -317,7 +322,13 @@ export function AccountSettingsScreen({navigation}: Props) {
                 <Toggle.Platform />
               </Toggle.Item>
               {anonymousMode && anonProfile && (
-                <View style={[a.flex_row, a.align_center, a.gap_sm, a.py_xs]}>
+                <View
+                  style={[
+                    a.flex_row,
+                    a.align_center,
+                    a.gap_sm,
+                    a.py_xs,
+                  ]}>
                   <Text
                     style={[
                       a.text_sm,
@@ -332,7 +343,13 @@ export function AccountSettingsScreen({navigation}: Props) {
                 </View>
               )}
               {!anonymousMode && (
-                <View style={[a.flex_row, a.align_center, a.gap_sm, a.py_xs]}>
+                <View
+                  style={[
+                    a.flex_row,
+                    a.align_center,
+                    a.gap_sm,
+                    a.py_xs,
+                  ]}>
                   <Text
                     style={[
                       a.text_sm,
@@ -366,7 +383,13 @@ export function AccountSettingsScreen({navigation}: Props) {
                   </Trans>
                 </Text>
               </View>
-              <View style={[a.flex_row, a.align_center, a.gap_sm, a.py_xs]}>
+              <View
+                style={[
+                  a.flex_row,
+                  a.align_center,
+                  a.gap_sm,
+                  a.py_xs,
+                ]}>
                 <Text
                   style={[
                     a.text_sm,
@@ -396,7 +419,7 @@ export function AccountSettingsScreen({navigation}: Props) {
             <SettingsList.PressableItem
               label={_(msg`Profile Visibility`)}
               onPress={async () => {
-                const isVerified = await AsyncStorage.getItem(
+                const isVerified = await Storage.getItemAsync(
                   'para_verified_human',
                 )
                 if (isVerified !== 'true') {

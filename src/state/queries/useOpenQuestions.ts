@@ -51,10 +51,10 @@ export function useOpenQuestions() {
       const searchQuery = getOpenQuestionSearchQuery()
 
       try {
-        const result = await agent.api.app.bsky.feed.searchPosts({
-          q: searchQuery,
+        const result = await agent.api.app.bsky.feed.searchPostsV2({
+          query: searchQuery,
           limit: 50,
-          sort: 'latest',
+          sort: 'recent',
         })
 
         return result.data.posts || []

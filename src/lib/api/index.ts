@@ -15,7 +15,6 @@ import {
   RichText,
 } from '@atproto/api'
 import {TID} from '@atproto/common-web'
-import * as dcbor from '@ipld/dag-cbor'
 import {t} from '@lingui/core/macro'
 import {type QueryClient} from '@tanstack/react-query'
 import {sha256} from 'js-sha256'
@@ -133,7 +132,7 @@ export async function post(
   const writes: $Typed<ComAtprotoRepoApplyWrites.Create>[] = []
   const uris: string[] = []
 
-  let now = new Date()
+  const now = new Date()
   let tid: TID | undefined
 
   for (let i = 0; i < thread.posts.length; i++) {
@@ -536,6 +535,12 @@ const mf_sha256 = Hasher.from({
 })
 
 async function computeCid(record: AppBskyFeedPost.Record): Promise<string> {
+  /*
+   * Lazily loaded since it's only needed when posting a thread, and its
+   * `cborg` dependency is ~190KB that would otherwise be in the initial
+   * web bundle.
+   */
+  const dcbor = await import('@ipld/dag-cbor')
   // IMPORTANT: `prepareObject` prepares the record to be hashed by removing
   // fields with undefined value, and converting BlobRef instances to the
   // right IPLD representation.

@@ -1,10 +1,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
+// Jest has no native SecureStore module — fall back to AsyncStorage in tests.
+const IS_TEST = process.env.NODE_ENV === 'test'
+
 let SecureStore: typeof import('expo-secure-store') | null = null
-try {
-  SecureStore = require('expo-secure-store')
-} catch {
-  // expo-secure-store native module not available (Expo Go, dev, etc.)
+if (!IS_TEST) {
+  try {
+    SecureStore = require('expo-secure-store')
+  } catch {
+    // expo-secure-store native module not available (Expo Go, dev, etc.)
+  }
 }
 
 export async function setItemAsync(key: string, value: string): Promise<void> {

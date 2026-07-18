@@ -34,7 +34,6 @@ import {atoms as a, useTheme} from '#/alf'
 import {DebugFieldDisplay} from '#/components/DebugFieldDisplay'
 import {useInteractionState} from '#/components/hooks/useInteractionState'
 import {Trash_Stroke2_Corner0_Rounded as TrashIcon} from '#/components/icons/Trash'
-import {LabelsOnMyPost} from '#/components/moderation/LabelsOnMe'
 import {PostAlerts} from '#/components/moderation/PostAlerts'
 import {PostHider} from '#/components/moderation/PostHider'
 import {type AppModerationCause} from '#/components/Pills'
@@ -304,13 +303,13 @@ const ThreadItemPostInner = memo(function ThreadItemPostInner({
                 style={[a.pb_xs]}
                 postFlairs={postBadges}
               />
-              <LabelsOnMyPost post={post} style={[a.pb_xs]} />
               {postBadges.length ? (
                 <View style={[a.pb_xs]}>
                   <PostFlairStrip badges={postBadges} showHeader />
                 </View>
               ) : null}
               <PostAlerts
+                post={post}
                 modui={moderation.ui('contentList')}
                 style={[a.pb_2xs]}
                 additionalCauses={additionalPostAlerts}

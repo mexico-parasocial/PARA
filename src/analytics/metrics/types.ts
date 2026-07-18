@@ -600,10 +600,7 @@ export type Events = {
   }
   'chat:create': {
     logContext:
-      | 'ProfileHeader'
-      | 'NewChatDialog'
-      | 'SendViaChatDialog'
-      | 'ConvoSettings'
+      'ProfileHeader' | 'NewChatDialog' | 'SendViaChatDialog' | 'ConvoSettings'
   }
   'chat:open': {
     logContext:
@@ -1379,10 +1376,7 @@ export type Events = {
   // invite friends dialog opened, with the surface that triggered it
   'invite:dialog:open': {
     logContext:
-      | 'ProfileHeader'
-      | 'Drawer'
-      | 'FindContactsSettings'
-      | 'NuxAnnouncement'
+      'ProfileHeader' | 'Drawer' | 'FindContactsSettings' | 'NuxAnnouncement'
   }
   // user copied the invite link to clipboard
   'invite:action:copy': {}
@@ -1502,4 +1496,6 @@ export type Events = {
     jobId?: string
     elapsedInPhaseMs: number
   }
+
+  'post:likedBy:click': {}
 }

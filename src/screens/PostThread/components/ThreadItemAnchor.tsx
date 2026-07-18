@@ -20,7 +20,7 @@ import {useActorStatus} from '#/lib/actor-status'
 import {useNonReactiveCallback} from '#/lib/hooks/useNonReactiveCallback'
 import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
 import {useTranslate} from '#/lib/hooks/useTranslate'
-import {getPostBadges, type PostBadgeRecord} from '#/lib/post-flairs'
+import { getPostBadges,type PostBadgeRecord} from '#/lib/post-flairs'
 import {makeProfileLink} from '#/lib/routes/links'
 import {sanitizeDisplayName} from '#/lib/strings/display-names'
 import {sanitizeHandle} from '#/lib/strings/handles'
@@ -42,6 +42,7 @@ import {type OnPostSuccessData} from '#/state/shell/composer'
 import {useMergedThreadgateHiddenReplies} from '#/state/threadgate-hidden-replies'
 import {type PostSource} from '#/state/unstable-post-source'
 import {PreviewableUserAvatar} from '#/view/com/util/UserAvatar'
+import {LikesStat} from '#/screens/PostThread/components/LikesStat'
 import {ThreadItemAnchorFollowButton} from '#/screens/PostThread/components/ThreadItemAnchorFollowButton'
 import {
   LINEAR_AVI_WIDTH,
@@ -57,7 +58,6 @@ import {CalendarClock_Stroke2_Corner0_Rounded as CalendarClockIcon} from '#/comp
 import {Trash_Stroke2_Corner0_Rounded as TrashIcon} from '#/components/icons/Trash'
 import {InlineLinkText, Link} from '#/components/Link'
 import {ContentHider} from '#/components/moderation/ContentHider'
-import {LabelsOnMyPost} from '#/components/moderation/LabelsOnMe'
 import {PostAlerts} from '#/components/moderation/PostAlerts'
 import {type AppModerationCause} from '#/components/Pills'
 import {Embed, PostEmbedViewContext} from '#/components/Post/Embed'
@@ -219,10 +219,6 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
   const authorHref = makeProfileLink(post.author)
   const isThreadAuthor = getThreadAuthor(post, record) === currentAccount?.did
 
-  const likesHref = useMemo(() => {
-    const urip = new AtUri(post.uri)
-    return makeProfileLink(post.author, 'post', urip.rkey, 'liked-by')
-  }, [post.uri, post.author])
   const highlightsHref = useMemo(() => {
     const urip = new AtUri(post.uri)
     return makeProfileLink(post.author, 'post', urip.rkey, 'highlights')
@@ -404,7 +400,6 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
           </View>
         </View>
         <View style={[a.pb_sm]}>
-          <LabelsOnMyPost post={post} style={[a.pb_sm]} />
           {postBadges.length ? (
             <View style={[a.pb_sm]}>
               <PostFlairStrip badges={postBadges} showHeader />
@@ -415,8 +410,9 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
             ignoreMute
             childContainerStyle={[a.pt_sm]}>
             <PostAlerts
+              post={post}
               modui={moderation.ui('contentView')}
-              size="lg"
+              view="expanded"
               includeMute
               style={[a.pb_sm]}
               additionalCauses={additionalPostAlerts}
@@ -473,20 +469,7 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
                 t.atoms.border_contrast_low,
               ]}>
               {paraSummaryMetrics.votes !== 0 ? (
-                <Link to={likesHref} label={_(msg`Votes on this post`)}>
-                  <Text
-                    testID="votesCount-expanded"
-                    style={[a.text_md, t.atoms.text_contrast_medium]}>
-                    <Text style={[a.text_md, a.font_semi_bold, t.atoms.text]}>
-                      {formatPostStatCount(paraSummaryMetrics.votes)}
-                    </Text>{' '}
-                    <Plural
-                      value={paraSummaryMetrics.votes}
-                      one="vote"
-                      other="votes"
-                    />
-                  </Text>
-                </Link>
+                <LikesStat post={post} />
               ) : null}
               {paraSummaryMetrics.comments !== 0 ? (
                 <Text

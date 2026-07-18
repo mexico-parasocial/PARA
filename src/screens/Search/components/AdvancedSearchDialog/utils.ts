@@ -54,9 +54,8 @@ export const PARA_ENTITY_FIELDS = new Set<FilterField>([
 ])
 
 /**
- * Whether a filter includes or excludes matching posts. Exclude is a v2-only
- * capability; it serializes into the exclude* sibling params and is dropped on
- * the search v1 path.
+ * Whether a filter includes or excludes matching posts. Exclude is only
+ * supported by the structured v2 endpoint.
  */
 export type FilterMode = 'include' | 'exclude'
 

@@ -530,8 +530,8 @@ function createApi({
     return new SearchPostsFeedAPI({
       agent,
       feedParams: {
-        q: '',
-        tag: tags,
+        query: '',
+        hashtags: tags,
         sort: 'latest',
       },
     })

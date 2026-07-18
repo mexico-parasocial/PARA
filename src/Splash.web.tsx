@@ -42,9 +42,9 @@ export function Splash({isReady: _isReady}: {isReady?: boolean} = {}) {
       <View style={[a.align_center, {top: -40}]}>
         {/* Logo lockup — same as desktop/web nav */}
         <View style={[a.flex_row, a.align_center, {gap: 6}, a.mb_xl]}>
-          <Logomark width={40} fill={t.palette.primary_500} />
+          <Logomark allowVariants={false} width={40} fill={t.palette.primary_500} />
           <View style={{paddingTop: 2}}>
-            <Logotype width={100} fill={t.atoms.text.color} variant="strong" />
+            <Logotype allowVariants={false} width={100} fill={t.atoms.text.color} variant="strong" />
           </View>
         </View>
 

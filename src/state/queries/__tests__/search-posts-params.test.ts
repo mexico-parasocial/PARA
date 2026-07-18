@@ -30,6 +30,23 @@ describe('extractSearchPostsParams', () => {
     expect(result.area).toEqual(['salud', 'educacion'])
   })
 
+  it('strips a leading @ from from:, mentions:, and to: handle values', () => {
+    expect(extractSearchPostsParams('cats from:@alice.bsky.social')).toEqual({
+      q: 'cats',
+      author: 'alice.bsky.social',
+    })
+    expect(
+      extractSearchPostsParams('cats mentions:@alice.bsky.social'),
+    ).toEqual({
+      q: 'cats',
+      mentions: 'alice.bsky.social',
+    })
+    expect(extractSearchPostsParams('cats to:@alice.bsky.social')).toEqual({
+      q: 'cats',
+      mentions: 'alice.bsky.social',
+    })
+  })
+
   it('leaves unsupported operators in q', () => {
     const result = extractSearchPostsParams('media:true replies:none foo')
     expect(result.q).toBe('media:true replies:none foo')

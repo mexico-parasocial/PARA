@@ -105,7 +105,7 @@ export function HomeHeaderLayoutMobile({
                         }),
                   },
                 ]}>
-                <Logomark width={51} fill="#474652" />
+                <Logomark allowVariants={false} width={51} fill="#474652" />
               </View>
 
               {/* Ultra-Tight Text-Adjusted Diamond (Rombo) */}
@@ -162,7 +162,7 @@ export function HomeHeaderLayoutMobile({
                           shadowOffset: {width: 0, height: 2},
                         }),
                   }}>
-                  <Logotype width={106} fill={t.atoms.text.color} />
+                  <Logotype allowVariants={false} width={106} fill={t.atoms.text.color} />
                 </View>
               </View>
             </View>

@@ -445,15 +445,19 @@ export type M8Tokens = {
 
 export type M8SessionStartResponse = {
   attempt: {
-    sessionId: string
-    did: string
-    handle: string
-    authorizationServer: string
+    attemptId?: string
+    sessionId?: string
+    identifier?: string
+    did?: string
+    handle?: string
+    authorizationServer?: string
     authUrl: string
     phaseLabel: string
     startedAt: string
-    resolvedAt: string
+    expiresAt?: string
+    resolvedAt?: string
   }
-  session: ProofBrokerSession
-  tokens: M8Tokens
+  session: ProofBrokerSession | null
+  tokens: M8Tokens | null
+  oauthUrl?: string | null
 }

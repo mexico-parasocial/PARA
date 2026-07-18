@@ -78,7 +78,7 @@ function HomeHeaderLayoutDesktopAndTablet({
                     filter: 'drop-shadow(0px 2px 5px rgba(0, 0, 0, 0.05))',
                   },
                 ]}>
-                <Logomark width={69} fill="#474652" />
+                <Logomark allowVariants={false} width={69} fill="#474652" />
               </View>
 
               {/* Ultra-Tight Text-Adjusted Diamond (Rombo) */}
@@ -129,7 +129,7 @@ function HomeHeaderLayoutDesktopAndTablet({
                     // @ts-ignore Web-only drop shadow to correctly trace SVG paths
                     filter: 'drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.2))',
                   }}>
-                  <Logotype width={106} fill={t.atoms.text.color} />
+                  <Logotype allowVariants={false} width={106} fill={t.atoms.text.color} />
                 </View>
               </View>
             </View>

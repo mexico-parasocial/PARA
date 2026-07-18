@@ -13,10 +13,12 @@ const WORDMARK = 'PARA'
 export function Logotype({
   fill,
   variant,
+  allowVariants,
   ...rest
 }: {
   fill?: PathProps['fill']
   variant?: 'default' | 'strong'
+  allowVariants?: boolean
 } & SvgProps) {
   useCinzelFont()
   const pal = usePalette('default')

@@ -1,5 +1,5 @@
 import { Platform } from 'react-native'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import * as Storage from '#/lib/storage'
 
 import {
   type AnonymousGermConnection,
@@ -11,6 +11,7 @@ import {
   type IneExtractedData,
   type IneVerificationResult,
   type M8CivicVoteProof,
+  type M8IdentityCredential,
   type M8IdentityRequest,
   type M8IdentityVerificationResult,
   type M8PajareoEntry,
@@ -33,16 +34,18 @@ const M8_BROKER_URL =
 const API_BASE = `${M8_BROKER_URL}/v1`
 
 export async function getM8AccessToken(): Promise<string | null> {
-  return AsyncStorage.getItem('m8_access_token')
+  return Storage.getItemAsync('m8_access_token')
 }
 
 async function setTokens(accessToken: string, refreshToken: string) {
-  await AsyncStorage.setItem('m8_access_token', accessToken)
-  await AsyncStorage.setItem('m8_refresh_token', refreshToken)
+  await Storage.setItemAsync('m8_access_token', accessToken)
+  await Storage.setItemAsync('m8_refresh_token', refreshToken)
 }
 
 async function clearTokens() {
-  await AsyncStorage.multiRemove(['m8_access_token', 'm8_refresh_token', 'm8_session_id'])
+  await Storage.deleteItemAsync('m8_access_token')
+  await Storage.deleteItemAsync('m8_refresh_token')
+  await Storage.deleteItemAsync('m8_session_id')
 }
 
 export async function m8Fetch(path: string, options: RequestInit = {}): Promise<Response> {
@@ -69,7 +72,7 @@ export async function m8Fetch(path: string, options: RequestInit = {}): Promise<
 }
 
 export async function refreshM8AccessToken(): Promise<boolean> {
-  const refreshToken = await AsyncStorage.getItem('m8_refresh_token')
+  const refreshToken = await Storage.getItemAsync('m8_refresh_token')
   if (!refreshToken) return false
 
   try {
@@ -80,7 +83,7 @@ export async function refreshM8AccessToken(): Promise<boolean> {
     })
     if (!res.ok) return false
     const body = (await res.json()) as { accessToken: string; expiresIn: number }
-    await AsyncStorage.setItem('m8_access_token', body.accessToken)
+    await Storage.setItemAsync('m8_access_token', body.accessToken)
     return true
   } catch {
     return false
@@ -97,8 +100,14 @@ export async function postSessionStart(identifier: string): Promise<M8SessionSta
     throw new Error(err.error ?? `Session start failed (${res.status})`)
   }
   const body = (await res.json()) as M8SessionStartResponse
-  await setTokens(body.tokens.accessToken, body.tokens.refreshToken)
-  await AsyncStorage.setItem('m8_session_id', body.attempt.sessionId)
+  // 202 OAuth-gated attempts carry `tokens: null`; only the dev-bootstrap
+  // path returns a token bundle immediately.
+  if (body.tokens) {
+    await setTokens(body.tokens.accessToken, body.tokens.refreshToken)
+    if (body.attempt.sessionId) {
+      await Storage.setItemAsync('m8_session_id', body.attempt.sessionId)
+    }
+  }
   return body
 }
 
@@ -305,14 +314,15 @@ export async function postIneVerify(payload: {
 export async function postIneCredential(payload: {
   extracted: IneExtractedData
   verification: IneVerificationResult
+  ageProofs: {
+    over18: {proof: unknown; publicSignals: string[]}
+    over21?: {proof: unknown; publicSignals: string[]}
+  }
 }): Promise<{
-  credential: { claims: Record<string, unknown>; issuedAt: string; expiresAt: string }
+  credential: M8IdentityCredential
   proofArtifactId: string
   verificationId: string
-  salt: number
-  birthYear: number
   commitment: string
-  revocationHash: string
   anonymousProfile: AnonymousProfile
 }> {
   const res = await m8Fetch('/identity/ine/credential', {
@@ -324,13 +334,10 @@ export async function postIneCredential(payload: {
     throw new Error(err.error ?? `INE credential failed (${res.status})`)
   }
   return (await res.json()) as {
-    credential: { claims: Record<string, unknown>; issuedAt: string; expiresAt: string }
+    credential: M8IdentityCredential
     proofArtifactId: string
     verificationId: string
-    salt: number
-    birthYear: number
     commitment: string
-    revocationHash: string
     anonymousProfile: AnonymousProfile
   }
 }
@@ -663,7 +670,10 @@ export function getZkpProverUrl(params: {
   if (params.communityId !== undefined) {
     search.append('communityId', String(params.communityId))
   }
-  return `${API_BASE}/identity/ine/zkp-prover.html?${search.toString()}`
+  // Witness material (birthYear, salt) travels in the URL fragment so it is
+  // never sent to the server or written to access logs; the prover page
+  // reads location.hash.
+  return `${API_BASE}/identity/ine/zkp-prover.html#${search.toString()}`
 }
 
 export async function postZkpNullifier(payload: {

@@ -85,6 +85,7 @@ export const SplashScreen = ({
             <View style={[a.justify_center, a.align_center]}>
               <View style={[a.pb_sm, a.pt_5xl]}>
                 <Logotype
+                  allowVariants={false}
                   width={172}
                   fill={t.atoms.text.color}
                   variant="strong"

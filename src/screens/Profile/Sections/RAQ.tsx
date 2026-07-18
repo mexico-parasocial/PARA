@@ -1,5 +1,5 @@
 import {forwardRef, useEffect, useImperativeHandle, useMemo} from 'react'
-import {findNodeHandle, View} from 'react-native'
+import {findNodeHandle, type ListRenderItem,View} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 
@@ -74,18 +74,21 @@ export const ProfileRAQSection = forwardRef<SectionRef, Props>(
       }
     }, [isFocused, scrollElRef, setScrollViewTag])
 
-    const renderItem = ({item}: {item: ProfileRaqItem}) => (
-      <View style={[a.p_md, a.border_b, t.atoms.border_contrast_low]}>
-        <Text style={[a.text_md, a.font_bold]}>{item.question}</Text>
-        <View style={[a.flex_row, a.justify_between, a.mt_xs]}>
-          <Text style={[t.atoms.text_contrast_medium]}>
-            Answer:{' '}
-            <Text style={[a.font_bold, t.atoms.text]}>{item.answer}</Text>
-          </Text>
-          <Text style={[t.atoms.text_contrast_low]}>{item.score}</Text>
+    const renderItem: ListRenderItem<unknown> = ({item}) => {
+      const raqItem = item as ProfileRaqItem
+      return (
+        <View style={[a.p_md, a.border_b, t.atoms.border_contrast_low]}>
+          <Text style={[a.text_md, a.font_bold]}>{raqItem.question}</Text>
+          <View style={[a.flex_row, a.justify_between, a.mt_xs]}>
+            <Text style={[t.atoms.text_contrast_medium]}>
+              Answer:{' '}
+              <Text style={[a.font_bold, t.atoms.text]}>{raqItem.answer}</Text>
+            </Text>
+            <Text style={[t.atoms.text_contrast_low]}>{raqItem.score}</Text>
+          </View>
         </View>
-      </View>
-    )
+      )
+    }
 
     return (
       <List

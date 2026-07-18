@@ -91,7 +91,28 @@ export default function INEVerificationScreen() {
     setError(null)
     setStep('verify')
     try {
-      const result = await postIneCredential({extracted, verification})
+      // The credential endpoint requires a client-generated ZK age proof.
+      // Proof generation (prover WebView) lands in a later build; until then
+      // fail with an honest message instead of a server rejection.
+      const proofJson = await Storage.getItemAsync('para_zkp_proof')
+      const publicSignalsJson = await Storage.getItemAsync(
+        'para_zkp_publicSignals',
+      )
+      if (!proofJson || !publicSignalsJson) {
+        throw new Error(
+          'ZK age proof not available: proof generation is not enabled in this build yet.',
+        )
+      }
+      const result = await postIneCredential({
+        extracted,
+        verification,
+        ageProofs: {
+          over18: {
+            proof: JSON.parse(proofJson),
+            publicSignals: JSON.parse(publicSignalsJson) as string[],
+          },
+        },
+      })
       await Storage.setItemAsync('para_ine_verified', 'true')
       await Storage.setItemAsync(
         'para_ine_verified_at',
@@ -99,13 +120,13 @@ export default function INEVerificationScreen() {
       )
       await Storage.setItemAsync('para_verified_human', 'true')
 
-      // Store ZKP witness securely for client-side proving
-      await Storage.setItemAsync('para_zkp_birthYear', String(result.birthYear))
-      await Storage.setItemAsync('para_zkp_salt', String(result.salt))
+      // The server never sees the witness (birthYear/salt) — it is generated
+      // and stored client-side by the prover flow. Persist only what the
+      // server actually returns.
       await Storage.setItemAsync('para_zkp_commitment', result.commitment)
       await Storage.setItemAsync(
         'para_zkp_revocationHash',
-        result.revocationHash,
+        result.credential.revocationHash,
       )
 
       // Anonymous by default: store profile locally

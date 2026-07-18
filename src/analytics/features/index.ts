@@ -1,15 +1,20 @@
 import {MMKV} from '@bsky.app/react-native-mmkv'
 import {setPolyfills} from '@growthbook/growthbook'
 import {GrowthBook} from '@growthbook/growthbook-react'
+import {type I18n} from '@lingui/core'
+import {msg} from '@lingui/core/macro'
 
 import {Logger} from '#/logger'
-import {getNavigationMetadata, type Metadata} from '#/analytics/metadata'
+import {Features} from '#/analytics/features/types'
+import {getNavigationMetadata,type Metadata} from '#/analytics/metadata'
 import * as env from '#/env'
 
 export {Features} from '#/analytics/features/types'
 
-const logger = Logger.create(Logger.Context.GrowthBook)
+const logger = Logger.create(Logger.Context.Growthbook)
 const CACHE = new MMKV({id: 'bsky_features_cache'})
+
+const BETA_USER_ATTRIBUTE = 'isBetaUser'
 
 setPolyfills({
   localStorage: {
@@ -21,21 +26,6 @@ setPolyfills({
     },
   },
 })
-
-function isGrowthBookLoggingEnabled() {
-  if (env.LOG_LEVEL === 'debug') {
-    return true
-  }
-
-  return env.LOG_DEBUG.split(',').some(filter => {
-    const normalized = filter.trim()
-    if (!normalized) return false
-
-    return new RegExp(
-      normalized.replace(/[^\w:*-]/g, '').replace(/\*/g, '.*'),
-    ).test(Logger.Context.GrowthBook)
-  })
-}
 
 /**
  * We vary the amount of time we wait for GrowthBook to fetch feature
@@ -59,15 +49,14 @@ export const features = new GrowthBook({
  * that case, we may see a flash of uncustomized content until the
  * initialization completes.
  */
-export const init = (async () => {
-  const res = await features.init({timeout: TIMEOUT_INIT})
-  if (!res.success && isGrowthBookLoggingEnabled()) {
+export const init = features.init({timeout: TIMEOUT_INIT}).then(res => {
+  if (!res.success) {
     logger.warn('GrowthBook initialization failed or timed out', {
       source: res.source,
       safeMessage: res.error?.toString(),
     })
   }
-})()
+})
 
 /**
  * Refresh feature gates from GrowthBook. Updates attributes based on the
@@ -80,6 +69,89 @@ export async function refresh({strategy}: {strategy: FeatureFetchStrategy}) {
         ? TIMEOUT_PREFER_LOW_LATENCY
         : TIMEOUT_PREFER_FRESH_GATES,
   })
+}
+
+export function getFeatures() {
+  return features.getFeatures()
+}
+
+export function getFeatureDescription(feature: Features, i18n: I18n) {
+  switch (feature) {
+    case Features.PostThreadKnownLikersEnable:
+      return {
+        key: feature,
+        name: i18n._(
+          msg({
+            message: 'Social proofing on posts',
+            comment: 'Name for a feature flag',
+          }),
+        ),
+        description: i18n._(
+          msg({
+            message: 'Spot posts your friends and follows have liked.',
+            comment: 'Description of a feature flag (Social proofing on posts)',
+          }),
+        ),
+      }
+    default:
+      return null
+  }
+}
+
+/**
+ * Walks a GrowthBook condition tree to determine whether it targets the given
+ * attribute. Conditions can nest via the logical operators `$and`, `$or`,
+ * `$nor` (arrays of sub-conditions) and `$not` (a single sub-condition), so a
+ * flat scan of the top-level keys would miss e.g.
+ * `{$and: [{isBetaUser: true}, ...]}`. Dot-notation access (e.g.
+ * `isBetaUser.foo`) counts as targeting the attribute as well.
+ */
+function conditionTargetsAttribute(
+  condition: unknown,
+  attribute: string,
+): boolean {
+  if (!condition || typeof condition !== 'object') return false
+
+  for (const [key, value] of Object.entries(condition)) {
+    if (key === attribute || key.startsWith(`${attribute}.`)) return true
+
+    if (key === '$and' || key === '$or' || key === '$nor') {
+      if (
+        Array.isArray(value) &&
+        value.some(sub => conditionTargetsAttribute(sub, attribute))
+      ) {
+        return true
+      }
+    } else if (key === '$not') {
+      if (conditionTargetsAttribute(value, attribute)) return true
+    }
+  }
+
+  return false
+}
+
+export function getTargetedFeatures(i18n: I18n) {
+  const allFeatures = features.getFeatures()
+  const targetedFeatures: {key: Features; name: string; description: string}[] =
+    []
+  for (const [featureKey, feature] of Object.entries(allFeatures)) {
+    // Check if the feature contains any rules
+    if (!feature.rules) continue
+
+    // Determine if any rule targets the beta user attribute
+    const hasTargeting = feature.rules.some(rule =>
+      conditionTargetsAttribute(rule.condition, BETA_USER_ATTRIBUTE),
+    )
+
+    if (hasTargeting) {
+      const featureName = getFeatureDescription(featureKey as Features, i18n)
+      if (featureName) {
+        targetedFeatures.push(featureName)
+      }
+    }
+  }
+
+  return targetedFeatures
 }
 
 /**
@@ -106,5 +178,6 @@ export function setAttributes({
     appLanguage: preferences?.appLanguage,
     contentLanguages: preferences?.contentLanguages,
     currentScreen: getNavigationMetadata()?.currentScreen,
+    isBetaUser: base.isBetaUser,
   })
 }

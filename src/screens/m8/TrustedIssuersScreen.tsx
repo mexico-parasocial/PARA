@@ -7,10 +7,13 @@ import {
   View,
 } from 'react-native'
 import { useLingui } from '@lingui/react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import { m8Fetch } from '#/lib/m8/api'
 import { useTheme } from '#/alf'
 import { Text } from '#/components/Typography'
+
+const SETTINGS_STORAGE_KEY = 'm8_trusted_issuers_settings'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -68,8 +71,27 @@ export default function TrustedIssuersScreen() {
     blockedDids: [],
     requireCountry: ['MX'],
   })
+  const [settingsHydrated, setSettingsHydrated] = useState(false)
   const [issuers, setIssuers] = useState<IssuerInfo[]>([])
   const [expandedIssuer, setExpandedIssuer] = useState<string | null>(null)
+
+  // Hydrate persisted trust settings once, then persist every change.
+  useEffect(() => {
+    AsyncStorage.getItem(SETTINGS_STORAGE_KEY)
+      .then(raw => {
+        if (raw) {
+          setSettings(JSON.parse(raw) as TrustSettings)
+        }
+      })
+      .catch(() => {})
+      .finally(() => setSettingsHydrated(true))
+  }, [])
+
+  useEffect(() => {
+    if (settingsHydrated) {
+      void AsyncStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings))
+    }
+  }, [settings, settingsHydrated])
 
   useEffect(() => {
     let cancelled = false

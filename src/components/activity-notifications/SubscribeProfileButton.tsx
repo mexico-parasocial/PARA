@@ -1,8 +1,6 @@
 import {useCallback, useEffect, useState} from 'react'
 import {type ModerationOpts} from '@atproto/api'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
-import {Trans} from '@lingui/react/macro'
+import {Trans, useLingui} from '@lingui/react/macro'
 
 import {useRequireEmailVerification} from '#/lib/hooks/useRequireEmailVerification'
 import {createSanitizedDisplayName} from '#/lib/moderation/create-sanitized-display-name'
@@ -25,7 +23,7 @@ export function SubscribeProfileButton({
   moderationOpts: ModerationOpts
   disableHint?: boolean
 }) {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const requireEmailVerification = useRequireEmailVerification()
   const subscribeDialogControl = useDialogControl()
   const [activitySubscriptionsNudged, setActivitySubscriptionsNudged] =
@@ -84,7 +82,7 @@ export function SubscribeProfileButton({
             size="small"
             color={tooltipVisible ? 'primary_subtle' : 'secondary'}
             shape="round"
-            label={_(msg`Get notified when ${name} posts`)}
+            label={l`Get notified when ${name} posts`}
             onPress={wrappedOnPress}>
             <ButtonIcon icon={Icon} size="md" />
           </Button>
@@ -95,7 +93,6 @@ export function SubscribeProfileButton({
           </Text>
         </Tooltip.TextBubble>
       </Tooltip.Outer>
-
       <SubscribeProfileDialog
         control={subscribeDialogControl}
         profile={profile}

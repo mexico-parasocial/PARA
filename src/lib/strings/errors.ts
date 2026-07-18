@@ -1,19 +1,19 @@
 import {XRPCError} from '@atproto/api'
 import {t} from '@lingui/core/macro'
 
-export function cleanError(str: unknown): string {
-  if (!str) {
+export function cleanError(e: unknown): string {
+  if (!e) {
     return ''
   }
-  // eslint-disable-next-line @typescript-eslint/no-base-to-string
-  const strValue = typeof str === 'string' ? str : String(str)
-  if (isNetworkError(strValue)) {
+  // oxlint-disable-next-line typescript/no-base-to-string
+  const str = typeof e === 'string' ? e : e.toString()
+  if (isNetworkError(str)) {
     return t`Unable to connect. Please check your internet connection and try again.`
   }
   if (
-    strValue.includes('Upstream Failure') ||
-    strValue.includes('NotEnoughResources') ||
-    strValue.includes('pipethrough network error')
+    str.includes('Upstream Failure') ||
+    str.includes('NotEnoughResources') ||
+    str.includes('pipethrough network error')
   ) {
     return t`The server appears to be experiencing issues. Please try again in a few moments.`
   }
@@ -21,21 +21,30 @@ export function cleanError(str: unknown): string {
    * @see https://github.com/bluesky-social/atproto/blob/255cfcebb54332a7129af768a93004e22c6858e3/packages/pds/src/actor-store/preference/transactor.ts#L24
    */
   if (
-    strValue.includes('Do not have authorization to set preferences') &&
-    strValue.includes('app.bsky.actor.defs#personalDetailsPref')
+    str.includes('Do not have authorization to set preferences') &&
+    str.includes('app.bsky.actor.defs#personalDetailsPref')
   ) {
     return t`You cannot update your birthdate while using an app password. Please sign in with your main password to update your birthdate.`
   }
-  if (
-    strValue.includes('Bad token scope') ||
-    strValue.includes('Bad token method')
-  ) {
+  if (str.includes('Bad token scope') || str.includes('Bad token method')) {
     return t`This feature is not available while using an App Password. Please sign in with your main password.`
   }
-  if (strValue.startsWith('Error: ')) {
-    return strValue.slice('Error: '.length)
+  if (str.includes('Account has been suspended')) {
+    return t`Account has been suspended`
   }
-  return strValue
+  if (str.includes('Account is deactivated')) {
+    return t`Account is deactivated`
+  }
+  if (str.includes('Profile not found')) {
+    return t`Profile not found`
+  }
+  if (str.includes('Unable to resolve handle')) {
+    return t`Unable to resolve handle`
+  }
+  if (str.startsWith('Error: ')) {
+    return str.slice('Error: '.length)
+  }
+  return str
 }
 
 const NETWORK_ERRORS = [
@@ -44,6 +53,7 @@ const NETWORK_ERRORS = [
   'Failed to fetch',
   'Load failed',
   'Upstream service unreachable',
+  'NetworkError when attempting to fetch resource',
 ]
 
 export function isNetworkError(e: unknown) {
@@ -67,28 +77,17 @@ export function isErrorMaybeAppPasswordPermissions(e: unknown) {
 /**
  * Intended to capture "User cancelled" or "Crop cancelled" errors
  * that we often get from expo modules such @bsky.app/expo-image-crop-tool
+ *
  * The exact name has changed in the past so let's just see if the string
  * contains "cancel"
  */
-
 export function isCancelledError(e: unknown) {
   const str = String(e).toLowerCase()
   return str.includes('cancel')
 }
 
-/**
- * Detects when the Bluesky chat service cannot authenticate the request,
- * usually because the app is pointing at a chat proxy DID that cannot
- * resolve the user's PDS issuer. This lets the UI degrade gracefully
- * (empty DM list, no badges) while preserving Matrix community chat.
- */
-export function isChatServiceUnavailableError(e: unknown) {
-  const str = String(e).toLowerCase()
-  return (
-    str.includes('could not resolve iss did') ||
-    str.includes('could not resolve issuer did') ||
-    str.includes('invalid issuer') ||
-    str.includes('chat proxy') ||
-    str.includes('unknown service')
-  )
+// TODO Replace this with error.shouldRetry() when available. -dsb
+const RETRYABLE_ERRORS = [408, 425, 429, 500, 502, 503, 504, 522, 524]
+export function shouldRetryError(e: unknown) {
+  return e instanceof XRPCError && RETRYABLE_ERRORS.includes(e.status)
 }

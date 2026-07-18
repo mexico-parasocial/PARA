@@ -4,13 +4,10 @@ import {
   countActiveFilters,
   definedFilterParams,
   filtersToApiParams,
-  filtersToLegacyParams,
   hasPostOnlyFilters,
   paraFiltersToSearchFilters,
   parseHistoryEntry,
   readSearchFilters,
-  requiresSearchV2,
-  type SearchFilters,
   searchFiltersToParaFilters,
   serializeHistoryEntry,
   withoutFilterParams,
@@ -99,42 +96,6 @@ describe(`searchParams`, () => {
       expect(hasPostOnlyFilters({state: 'Jalisco'})).toBe(true)
       expect(hasPostOnlyFilters({districtKey: 'guadalajara-1'})).toBe(true)
       expect(hasPostOnlyFilters({cabildeoPhase: 'voting'})).toBe(true)
-    })
-  })
-
-  describe(`requiresSearchV2`, () => {
-    it(`returns false for simple v1-compatible filters`, () => {
-      expect(requiresSearchV2({})).toBe(false)
-      expect(requiresSearchV2({q: 'hello'} as SearchFilters)).toBe(false)
-      expect(requiresSearchV2({tag: 'cats'})).toBe(false)
-      expect(requiresSearchV2({lang: 'en'})).toBe(false)
-      expect(requiresSearchV2({tag: 'cats', lang: 'en'})).toBe(false)
-    })
-
-    it(`returns true for structured upstream filters that v1 ignores`, () => {
-      expect(requiresSearchV2({author: 'alice'})).toBe(true)
-      expect(requiresSearchV2({mentions: 'bob'})).toBe(true)
-      expect(requiresSearchV2({domain: 'bsky.app'})).toBe(true)
-      expect(requiresSearchV2({url: 'bsky.app/post'})).toBe(true)
-      expect(requiresSearchV2({since: '2024-01-01'})).toBe(true)
-      expect(requiresSearchV2({until: '2024-12-31'})).toBe(true)
-      expect(requiresSearchV2({replies: 'none'})).toBe(true)
-      expect(requiresSearchV2({media: 'true'})).toBe(true)
-      expect(requiresSearchV2({video: 'true'})).toBe(true)
-      expect(requiresSearchV2({following: 'true'})).toBe(true)
-    })
-
-    it(`returns true for exclude-mode filters`, () => {
-      expect(requiresSearchV2({excludeAuthor: 'alice'})).toBe(true)
-      expect(requiresSearchV2({excludeMentions: 'bob'})).toBe(true)
-      expect(requiresSearchV2({excludeDomain: 'spam.app'})).toBe(true)
-      expect(requiresSearchV2({excludeUrl: 'spam.app/post'})).toBe(true)
-      expect(requiresSearchV2({excludeTag: 'spam'})).toBe(true)
-    })
-
-    it(`returns true when v1-compatible and v2-required filters are combined`, () => {
-      expect(requiresSearchV2({tag: 'cats', author: 'alice'})).toBe(true)
-      expect(requiresSearchV2({lang: 'en', since: '2024-01-01'})).toBe(true)
     })
   })
 
@@ -277,46 +238,6 @@ describe(`searchParams`, () => {
           politicalCompassPositions: 'auth-left',
         }),
       ).toEqual({q: 'cats'})
-    })
-  })
-
-  describe(`filtersToLegacyParams`, () => {
-    it(`drops PARA filters from legacy v1 operators`, () => {
-      expect(
-        filtersToLegacyParams({
-          author: 'alice',
-          postType: 'policy',
-          state: 'Jalisco',
-          cabildeoPhase: 'voting',
-        }),
-      ).toEqual({
-        from: 'alice',
-      })
-    })
-
-    it(`maps filters to v1 operators`, () => {
-      expect(
-        filtersToLegacyParams({
-          author: 'alice',
-          mentions: 'bob',
-          domain: 'bsky.app',
-          url: 'example.com',
-          tag: 'cats',
-          lang: 'en',
-          since: '2024-01-01',
-          until: '2024-12-31',
-          media: 'true',
-        }),
-      ).toEqual({
-        from: 'alice',
-        mentions: 'bob',
-        domain: 'bsky.app',
-        url: 'example.com',
-        tag: 'cats',
-        lang: 'en',
-        since: '2024-01-01',
-        until: '2024-12-31',
-      })
     })
   })
 

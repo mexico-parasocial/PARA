@@ -9,6 +9,7 @@ export type BaseMetadata = {
   bundleDate: number
   referrerSrc: string
   referrerUrl: string
+  isBetaUser?: boolean
 }
 
 export type GeolocationMetadata = Geolocation

@@ -7,10 +7,6 @@ cfg.resolver.sourceExts = process.env.RN_SRC_EXT
   ? process.env.RN_SRC_EXT.split(',').concat(cfg.resolver.sourceExts)
   : cfg.resolver.sourceExts
 
-if (cfg.resolver.resolveRequest) {
-  throw Error('Update this override because it is conflicting now.')
-}
-
 if (process.env.BSKY_PROFILE) {
   cfg.cacheVersion += ':PROFILE'
 }
@@ -19,6 +15,10 @@ cfg.resolver.assetExts = [...cfg.resolver.assetExts, 'woff2']
 // Watchman is blocked from this Desktop workspace on some macOS setups.
 // Fall back to Metro's Node crawler so `expo start` stays usable.
 cfg.resolver.useWatchman = false
+
+// @sentry/react-native >= 6 installs its own resolveRequest; chain it for the
+// default case instead of replacing it.
+const sentryResolveRequest = cfg.resolver.resolveRequest
 
 cfg.resolver.resolveRequest = (context, moduleName, platform) => {
   if (process.env.BSKY_PROFILE) {
@@ -44,6 +44,9 @@ cfg.resolver.resolveRequest = (context, moduleName, platform) => {
     moduleName === 'react-native/Libraries/Core/setUpReactDevTools.js'
   ) {
     return {type: 'empty'}
+  }
+  if (sentryResolveRequest) {
+    return sentryResolveRequest(context, moduleName, platform)
   }
   return context.resolveRequest(context, moduleName, platform)
 }

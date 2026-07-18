@@ -10,6 +10,7 @@ import {ShieldCheck_Stroke2_Corner0_Rounded as ShieldCheckIcon} from '#/componen
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'
 import AnonymousIdentitiesScreen from './AnonymousIdentitiesScreen'
+import {M8SessionBanner} from './components/M8SessionBanner'
 import ConsentAuditScreen from './ConsentAuditScreen'
 import TrustedIssuersScreen from './TrustedIssuersScreen'
 import VerifyDashboardScreen from './VerifyDashboardScreen'
@@ -55,6 +56,7 @@ export default function IdentityHubScreen() {
 
   return (
     <Layout.Screen>
+      <M8SessionBanner />
       {/* Tab Bar */}
       <View
         style={[

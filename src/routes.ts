@@ -44,6 +44,7 @@ export const router = new Router({
   PreferencesExternalEmbeds: '/settings/external-embeds',
   AccessibilitySettings: '/settings/accessibility',
   AppearanceSettings: '/settings/appearance',
+  BetaFeaturesSettings: '/settings/beta-features',
   SavedFeeds: '/settings/saved-feeds',
   AccountSettings: '/settings/account',
   ProfileVisibility: '/settings/profile-visibility',

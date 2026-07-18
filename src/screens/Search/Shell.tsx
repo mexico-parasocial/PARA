@@ -33,7 +33,6 @@ import {
   countActiveParaFilters,
   definedFilterParams,
   FILTER_PARAM_KEYS,
-  filtersToLegacyParams,
   filtersToRouteParams,
   getActiveParaFilterNames,
   hasActiveFilters,
@@ -43,7 +42,6 @@ import {
   serializeHistoryEntry,
   withoutFilterParams,
 } from '#/screens/Search/searchParams'
-import {makeSearchQuery} from '#/screens/Search/utils'
 import {atoms as a, tokens, useBreakpoints, useTheme, web} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import {SearchInput} from '#/components/forms/SearchInput'
@@ -192,11 +190,6 @@ export function SearchScreenShell({
   )
 
   const query = searchText
-  // The legacy v1 path still expects a single query string with embedded
-  // operators. Build it from the raw text plus legacy filter operators.
-  const queryWithParams = useMemo(() => {
-    return makeSearchQuery(query, filtersToLegacyParams(filters))
-  }, [query, filters])
   const hasQuery = Boolean(query || hasActiveFilters(filters))
   const showFilters = hasQuery && !showAutocomplete
 
@@ -568,7 +561,6 @@ export function SearchScreenShell({
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           query={query}
-          queryWithParams={queryWithParams}
           filters={filters}
           hasFilters={filterCount > 0}
           headerHeight={headerHeight}
@@ -584,7 +576,6 @@ let SearchScreenInner = ({
   activeTab,
   setActiveTab,
   query,
-  queryWithParams,
   filters,
   hasFilters,
   headerHeight,
@@ -594,7 +585,6 @@ let SearchScreenInner = ({
   activeTab: number
   setActiveTab: React.Dispatch<React.SetStateAction<number>>
   query: string
-  queryWithParams: string
   filters: SearchFilters
   hasFilters: boolean
   headerHeight: number
@@ -609,10 +599,9 @@ let SearchScreenInner = ({
     setActiveTab(index)
   }
 
-  return queryWithParams ? (
+  return query || hasFilters ? (
     <SearchResults
       query={query}
-      queryWithParams={queryWithParams}
       filters={filters}
       hasFilters={hasFilters}
       activeTab={activeTab}

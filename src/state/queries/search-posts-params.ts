@@ -1,7 +1,7 @@
 /*
- * Pure helpers for lifting structured `app.bsky.feed.searchPosts` params out of
- * a free-text query. Kept free of React Native imports so it can be unit
- * tested in isolation (the search-posts query hook re-exports these).
+ * Pure helpers for lifting structured `app.bsky.feed.searchPostsV2` params out
+ * of a free-text query. Kept free of React Native imports so it can be unit
+ * tested in isolation (the search-posts-v2 query hook re-exports these).
  */
 
 import {type AppBskyFeedSearchPostsV2} from '@atproto/api'
@@ -12,6 +12,17 @@ import {
 } from '#/screens/Search/searchParams'
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}/
+
+/**
+ * Strips a leading `@` from a handle so `from:@alice.bsky.social` and
+ * `from:alice.bsky.social` both resolve to the same author. Mirrors the marker
+ * stripping the advanced-search dialog applies to handles entered in its
+ * filter fields (see `serializeAdvancedSearch`), which otherwise 400s the
+ * appview.
+ */
+function stripHandleMarker(value: string): string {
+  return value.startsWith('@') ? value.slice(1) : value
+}
 
 export type ExtractedSearchParams = {
   q: string
@@ -89,7 +100,7 @@ export function tokenizeQuery(raw: string): string[] {
 }
 
 /**
- * Lifts the operators that `app.bsky.feed.searchPosts` accepts as structured
+ * Lifts the operators that `app.bsky.feed.searchPostsV2` accepts as structured
  * params out of the free-text query, so the backend filters on them directly.
  * Recognized operators are stripped from `q`; everything else (free text,
  * quoted phrases, OR groups, negations, and unsupported operators like
@@ -127,12 +138,12 @@ export function extractSearchPostsParams(query: string): ExtractedSearchParams {
          * query text verbatim rather than lifting it into a structured param.
          */
         if (value === 'me') remaining.push(token)
-        else result.author ??= value
+        else result.author ??= stripHandleMarker(value)
         break
       case 'mentions':
       case 'to':
         if (value === 'me') remaining.push(token)
-        else result.mentions ??= value
+        else result.mentions ??= stripHandleMarker(value)
         break
       case 'domain':
         result.domain ??= value

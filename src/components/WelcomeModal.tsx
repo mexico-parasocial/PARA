@@ -103,8 +103,8 @@ export function WelcomeModal({control}: WelcomeModalProps) {
                   a.p_0,
                 ]}>
                 <View style={[a.flex_row, a.align_center, a.gap_xs]}>
-                  <Logomark width={24} fill="#474652" />
-                  <Logotype width={94} fill="#354358" />
+                  <Logomark allowVariants={false} width={24} fill="#474652" />
+                  <Logotype allowVariants={false} width={94} fill="#354358" />
                 </View>
               </View>
               <View
