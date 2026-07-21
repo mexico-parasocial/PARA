@@ -64,7 +64,11 @@ import {Header, Screen} from '#/components/Layout'
 import {Loader} from '#/components/Loader'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
-import {useCoarseLocation, useDeviceGeolocationApi} from '#/geolocation'
+import {
+  type CoarseLocation,
+  useCoarseLocation,
+  useDeviceGeolocationApi,
+} from '#/geolocation'
 import {
   BigCitiesDataOverlay,
   DistrictsDataOverlay,
@@ -908,7 +912,7 @@ export function MapScreenImpl({
 
     try {
       const {data, error} = await refetchCoarseLocation()
-      const location = data as CoarseLocation | undefined
+      const location = data
 
       if (error || !location) {
         Toast.show(
