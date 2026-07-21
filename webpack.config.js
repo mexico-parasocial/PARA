@@ -43,6 +43,10 @@ function patchSourceMapFilter(rules, pathPattern) {
 }
 
 module.exports = async function (env, argv) {
+  env.babel = {
+    dangerouslyAddModulePathsToTranspile: ['@bsky.app/expo', '@atproto/api'],
+  }
+  let config = await createExpoWebpackConfigAsync(env, argv)
   /*
    * Expo only registers its own internal config as a cache build dependency,
    * so changes to this file (e.g. aliases) don't invalidate the persistent
@@ -55,10 +59,6 @@ module.exports = async function (env, argv) {
       __filename,
     ]
   }
-  env.babel = {
-    dangerouslyAddModulePathsToTranspile: ['@bsky.app/expo', '@atproto/api'],
-  }
-  let config = await createExpoWebpackConfigAsync(env, argv)
   config = withAlias(config, {
     'react-native$': 'react-native-web',
     'react-native-webview': 'react-native-web-webview',
