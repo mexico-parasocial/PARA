@@ -1,30 +1,49 @@
-import {useMemo, useRef, useState} from 'react'
-import {Pressable, ScrollView, StyleSheet, View} from 'react-native'
-import * as DocumentPicker from 'expo-document-picker'
-import {msg} from '@lingui/core/macro'
+import {useMemo, useState} from 'react'
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native'
+import {msg, plural} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
-import {DOCUMENTS as MOCK_DOCS} from '#/lib/mock-data'
-import {type Document as DocItem} from '#/lib/mock-data/types'
-import {useCompassFilter} from '#/state/shell/compass-filter'
+import {type CommunityBriefingPackStatus} from '#/lib/api/para-lexicons'
+import {
+  type PartyLobbyingBriefingPackView,
+  useBriefingPacksListQuery,
+} from '#/state/queries/briefing-packs'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
-import {ActiveFiltersStackButton} from '#/components/CompassFilterControls'
+import {EmptyStateError} from '#/components/EmptyStates'
 import {SearchInput} from '#/components/forms/SearchInput'
 import {CalendarDays_Stroke2_Corner0_Rounded as CalendarIcon} from '#/components/icons/CalendarDays'
 import {MagnifyingGlass_Stroke2_Corner0_Rounded as SearchIcon} from '#/components/icons/MagnifyingGlass'
 import {PageText_Stroke2_Corner0_Rounded as DocIcon} from '#/components/icons/PageText'
-import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/Plus'
 import * as Layout from '#/components/Layout'
-import * as Toast from '#/components/Toast'
-import {IS_WEB} from '#/env'
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-const CATEGORIES = ['All', 'Official', 'Policy Drafts', 'Campaign'] as const
-type Category = (typeof CATEGORIES)[number]
+const TABS = ['All', 'Published', 'Drafts', 'Archived'] as const
+type Tab = (typeof TABS)[number]
+
+const TAB_TO_STATUS: Record<
+  Exclude<Tab, 'All'>,
+  CommunityBriefingPackStatus
+> = {
+  Published: 'published',
+  Drafts: 'draft',
+  Archived: 'archived',
+}
+
+const STATUS_COLORS: Record<CommunityBriefingPackStatus, string> = {
+  published: '#16A34A',
+  draft: '#D97706',
+  archived: '#6B7280',
+}
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -35,34 +54,30 @@ function matchesSearch(values: Array<string | undefined>, query: string) {
   return values.some(value => value?.toLowerCase().includes(normalized))
 }
 
-function matchesCompassFilter(
-  item: Pick<DocItem, 'community' | 'party' | 'state'>,
-  activeFilters: string[],
-) {
-  if (!activeFilters.length) return true
-  return activeFilters.some(filter => {
-    return (
-      item.community === filter ||
-      item.party === filter ||
-      item.state === filter
-    )
-  })
-}
-
 function formatDateLabel(value: string) {
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return ''
   return new Intl.DateTimeFormat(undefined, {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
-  }).format(new Date(`${value}T12:00:00`))
+  }).format(date)
 }
 
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i]
+/** Derive a display label from a community at-uri (last path segment). */
+function communityLabel(communityUri: string): string {
+  const rkey = communityUri.split('/').filter(Boolean).pop()
+  return rkey ?? communityUri
+}
+
+/** Map the legacy route param (`category`) onto the status tabs. */
+function initialTab(param: string | undefined): Tab {
+  if (!param) return 'All'
+  const normalized = param.trim().toLowerCase()
+  if (normalized === 'published') return 'Published'
+  if (normalized === 'draft' || normalized === 'drafts') return 'Drafts'
+  if (normalized === 'archived') return 'Archived'
+  return 'All'
 }
 
 // ---------------------------------------------------------------------------
@@ -75,51 +90,50 @@ export function DocumentsScreen({
 }) {
   const t = useTheme()
   const {_} = useLingui()
-  const {activeFilters} = useCompassFilter()
 
-  const [activeCategory, setActiveCategory] = useState<Category>(() => {
-    const initial = route.params?.category
-    if (initial && CATEGORIES.includes(initial as Category)) {
-      return initial as Category
-    }
-    return 'All'
-  })
+  const [activeTab, setActiveTab] = useState<Tab>(() =>
+    initialTab(route.params?.category),
+  )
   const [query, setQuery] = useState('')
   const [showSearch, setShowSearch] = useState(false)
   const isSearchOpen = showSearch || Boolean(query)
-  const [uploadedDocs, setUploadedDocs] = useState<DocItem[]>([])
-  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
-  const documents = useMemo(
-    () =>
-      [...uploadedDocs, ...MOCK_DOCS].sort(
-        (a, b) => Date.parse(b.date) - Date.parse(a.date),
-      ),
-    [uploadedDocs],
-  )
+  // NOTE: the compass filter is intentionally not offered here — the backend
+  // listBriefingPacks handler currently returns `party: ''` for every pack,
+  // so compass filtering would silently hide everything.
+  const {data, isPending, isError, refetch} = useBriefingPacksListQuery({})
+  const packs = useMemo(() => data?.packs ?? [], [data])
 
-  const filteredDocuments = useMemo(() => {
-    return documents.filter(item => {
-      const categoryMatch =
-        activeCategory === 'All' || item.category === activeCategory
-      return (
-        categoryMatch &&
-        matchesCompassFilter(item, activeFilters) &&
-        matchesSearch(
-          [item.title, item.category, item.community, item.party, item.state],
-          query,
-        )
-      )
-    })
-  }, [activeCategory, activeFilters, documents, query])
-
-  const categoryCountMap = useMemo(() => {
-    const map: Record<string, number> = {All: documents.length}
-    for (const doc of documents) {
-      map[doc.category] = (map[doc.category] || 0) + 1
+  const tabCountMap = useMemo(() => {
+    const map: Record<Tab, number> = {
+      All: packs.length,
+      Published: 0,
+      Drafts: 0,
+      Archived: 0,
+    }
+    for (const pack of packs) {
+      if (pack.status === 'published') map.Published += 1
+      else if (pack.status === 'draft') map.Drafts += 1
+      else if (pack.status === 'archived') map.Archived += 1
     }
     return map
-  }, [documents])
+  }, [packs])
+
+  const filteredPacks = useMemo(() => {
+    const status = activeTab === 'All' ? undefined : TAB_TO_STATUS[activeTab]
+    return packs.filter(pack => {
+      if (status && pack.status !== status) return false
+      return matchesSearch(
+        [
+          pack.title,
+          pack.summary,
+          pack.party,
+          communityLabel(pack.communityUri),
+        ],
+        query,
+      )
+    })
+  }, [activeTab, packs, query])
 
   return (
     <Layout.Screen testID="documentsScreen">
@@ -133,7 +147,9 @@ export function DocumentsScreen({
                   value={query}
                   onChangeText={setQuery}
                   onClearText={() => setQuery('')}
-                  placeholder={_(msg`Search documents, communities, or states`)}
+                  placeholder={_(
+                    msg`Search documents, parties, or communities`,
+                  )}
                 />
               </View>
             </Layout.Header.Content>
@@ -161,15 +177,10 @@ export function DocumentsScreen({
               style={styles.headerSearchButton}>
               <SearchIcon size="lg" style={t.atoms.text} />
             </Pressable>
-            <UploadButton
-              onUpload={doc => setUploadedDocs(prev => [doc, ...prev])}
-              fileInputRef={fileInputRef}
-            />
-            <ActiveFiltersStackButton />
           </View>
         </Layout.Header.Outer>
 
-        {/* Category Tabs */}
+        {/* Status Tabs */}
         <Layout.Center
           style={[
             t.atoms.border_contrast_low,
@@ -180,16 +191,16 @@ export function DocumentsScreen({
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.categoryScroll}
             style={styles.categoryBar}>
-            {CATEGORIES.map(cat => {
-              const isActive = cat === activeCategory
+            {TABS.map(tab => {
+              const isActive = tab === activeTab
               return (
                 <Pressable
-                  key={cat}
+                  key={tab}
                   accessibilityRole="button"
-                  accessibilityLabel={cat}
-                  accessibilityHint={_(msg`Selects this document category`)}
+                  accessibilityLabel={tab}
+                  accessibilityHint={_(msg`Filters documents by this status`)}
                   accessibilityState={{selected: isActive}}
-                  onPress={() => setActiveCategory(cat)}
+                  onPress={() => setActiveTab(tab)}
                   style={[
                     styles.categoryChip,
                     isActive && {
@@ -207,7 +218,7 @@ export function DocumentsScreen({
                       styles.categoryChipText,
                       isActive ? {color: '#fff'} : t.atoms.text_contrast_medium,
                     ]}>
-                    {cat}
+                    {tab}
                   </Text>
                   <View
                     style={[
@@ -228,7 +239,7 @@ export function DocumentsScreen({
                           ? {color: '#fff'}
                           : t.atoms.text_contrast_medium,
                       ]}>
-                      {categoryCountMap[cat] ?? 0}
+                      {tabCountMap[tab]}
                     </Text>
                   </View>
                 </Pressable>
@@ -248,58 +259,38 @@ export function DocumentsScreen({
         <Layout.Center style={styles.summaryBar}>
           <DocIcon size="sm" style={t.atoms.text_contrast_medium} />
           <Text style={[styles.summaryText, t.atoms.text]}>
-            {filteredDocuments.length === 1
-              ? '1 document'
-              : `${filteredDocuments.length} documents`}
+            {plural(filteredPacks.length, {
+              one: '# document',
+              other: '# documents',
+            })}
           </Text>
           <Text style={[styles.summarySubtext, t.atoms.text_contrast_medium]}>
-            {activeCategory === 'All'
-              ? 'across all categories'
-              : `in ${activeCategory}`}
+            {activeTab === 'All'
+              ? _(msg`across all statuses`)
+              : _(msg`in ${activeTab}`)}
           </Text>
         </Layout.Center>
       </View>
-
-      {/* Hidden file input for web */}
-      {IS_WEB && (
-        <input
-          ref={fileInputRef}
-          type="file"
-          style={{display: 'none'}}
-          onChange={e => {
-            const file = e.target.files?.[0]
-            if (file) {
-              const newDoc: DocItem = {
-                id: `upload-${Date.now()}`,
-                type: 'Doc',
-                title: file.name,
-                category: 'Official',
-                size: formatFileSize(file.size),
-                color: '#6366F1',
-                party: 'Independent',
-                state: 'National',
-                community: 'General',
-                date: new Date().toISOString().split('T')[0],
-                votes: 0,
-                comments: 0,
-              }
-              setUploadedDocs(prev => [newDoc, ...prev])
-              Toast.show(`Documento subido: ${file.name}`)
-            }
-            // Reset input so the same file can be selected again
-            if (fileInputRef.current) {
-              fileInputRef.current.value = ''
-            }
-          }}
-        />
-      )}
 
       {/* Document List */}
       <Layout.Content
         bounces
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator>
-        {filteredDocuments.length === 0 ? (
+        {isPending ? (
+          <View style={styles.centerState}>
+            <ActivityIndicator size="large" color={t.palette.primary_500} />
+          </View>
+        ) : isError ? (
+          <EmptyStateError
+            message={_(
+              msg`Documents could not be loaded. Check your connection and try again.`,
+            )}
+            onRetry={() => {
+              void refetch()
+            }}
+          />
+        ) : filteredPacks.length === 0 ? (
           <View
             style={[
               styles.emptyState,
@@ -308,17 +299,19 @@ export function DocumentsScreen({
             ]}>
             <DocIcon size="xl" style={t.atoms.text_contrast_low} />
             <Text style={[styles.emptyTitle, t.atoms.text]}>
-              No documents found
+              <Trans>No documents found</Trans>
             </Text>
             <Text
               style={[styles.emptyDescription, t.atoms.text_contrast_medium]}>
-              Try changing the category or clearing your search filters.
+              <Trans>
+                Try changing the status filter or clearing your search.
+              </Trans>
             </Text>
           </View>
         ) : (
           <View style={styles.documentList}>
-            {filteredDocuments.map(doc => (
-              <DocumentCard key={doc.id} doc={doc} />
+            {filteredPacks.map(pack => (
+              <DocumentCard key={pack.uri} pack={pack} />
             ))}
           </View>
         )}
@@ -330,14 +323,16 @@ export function DocumentsScreen({
 // ---------------------------------------------------------------------------
 // DocumentCard
 // ---------------------------------------------------------------------------
-function DocumentCard({doc}: {doc: DocItem}) {
+function DocumentCard({pack}: {pack: PartyLobbyingBriefingPackView}) {
   const t = useTheme()
+  const {_} = useLingui()
+  const statusColor = STATUS_COLORS[pack.status] ?? t.palette.primary_500
 
   return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={doc.title}
-      accessibilityHint="Opens this document"
+    <View
+      accessible
+      accessibilityLabel={pack.title}
+      accessibilityHint={_(msg`Briefing pack, status ${pack.status}`)}
       style={[
         styles.docCard,
         t.atoms.bg,
@@ -349,8 +344,8 @@ function DocumentCard({doc}: {doc: DocItem}) {
               : 'rgba(15,23,42,0.08)',
         },
       ]}>
-      {/* Color Accent Strip */}
-      <View style={[styles.docAccentStrip, {backgroundColor: doc.color}]}>
+      {/* Status Accent Strip */}
+      <View style={[styles.docAccentStrip, {backgroundColor: statusColor}]}>
         <DocIcon size="md" style={{color: '#fff'}} />
       </View>
 
@@ -367,144 +362,53 @@ function DocumentCard({doc}: {doc: DocItem}) {
                     : 'rgba(15,23,42,0.05)',
               },
             ]}>
-            <Text
-              style={[styles.docCategoryText, t.atoms.text_contrast_medium]}>
-              {doc.category}
+            <Text style={[styles.docCategoryText, {color: statusColor}]}>
+              {pack.status}
             </Text>
           </View>
-          <Text style={[styles.docSize, t.atoms.text_contrast_medium]}>
-            {doc.size}
+          <Text style={[styles.docPackType, t.atoms.text_contrast_medium]}>
+            {_(msg`Lobbying pack`)}
           </Text>
         </View>
 
         <Text style={[styles.docTitle, t.atoms.text]} numberOfLines={2}>
-          {doc.title}
+          {pack.title}
         </Text>
 
+        {pack.summary ? (
+          <Text
+            style={[styles.docSummary, t.atoms.text_contrast_medium]}
+            numberOfLines={2}>
+            {pack.summary}
+          </Text>
+        ) : null}
+
         <View style={styles.docMetaRow}>
-          <View style={styles.docMetaItem}>
-            <View style={[styles.docPartyDot, {backgroundColor: doc.color}]} />
-            <Text style={[styles.docMetaText, t.atoms.text_contrast_medium]}>
-              {doc.party}
-            </Text>
-          </View>
-          <Text style={[styles.docMetaDot, t.atoms.text_contrast_low]}>·</Text>
           <Text style={[styles.docMetaText, t.atoms.text_contrast_medium]}>
-            {doc.state}
+            {communityLabel(pack.communityUri)}
           </Text>
-          <Text style={[styles.docMetaDot, t.atoms.text_contrast_low]}>·</Text>
-          <Text style={[styles.docMetaText, t.atoms.text_contrast_medium]}>
-            {doc.community}
-          </Text>
+          {pack.party ? (
+            <>
+              <Text style={[styles.docMetaDot, t.atoms.text_contrast_low]}>
+                ·
+              </Text>
+              <Text style={[styles.docMetaText, t.atoms.text_contrast_medium]}>
+                {pack.party}
+              </Text>
+            </>
+          ) : null}
         </View>
 
         <View style={styles.docBottomRow}>
           <View style={styles.docDateRow}>
             <CalendarIcon size="xs" style={t.atoms.text_contrast_low} />
             <Text style={[styles.docDateText, t.atoms.text_contrast_medium]}>
-              {formatDateLabel(doc.date)}
+              {formatDateLabel(pack.createdAt)}
             </Text>
-          </View>
-
-          <View style={styles.docStatsRow}>
-            <View style={styles.docStatItem}>
-              <Text
-                style={[styles.docStatValue, {color: t.palette.primary_500}]}>
-                {doc.votes}
-              </Text>
-              <Text style={[styles.docStatLabel, t.atoms.text_contrast_medium]}>
-                votes
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.docStatDivider,
-                {backgroundColor: t.palette.contrast_100},
-              ]}
-            />
-            <View style={styles.docStatItem}>
-              <Text style={[styles.docStatValue, t.atoms.text_contrast_medium]}>
-                {doc.comments}
-              </Text>
-              <Text style={[styles.docStatLabel, t.atoms.text_contrast_medium]}>
-                comments
-              </Text>
-            </View>
           </View>
         </View>
       </View>
-    </Pressable>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// UploadButton
-// ---------------------------------------------------------------------------
-function UploadButton({
-  onUpload,
-  fileInputRef,
-}: {
-  onUpload: (doc: DocItem) => void
-  fileInputRef: React.RefObject<HTMLInputElement | null>
-}) {
-  const t = useTheme()
-  const {_} = useLingui()
-
-  const handlePress = async () => {
-    if (IS_WEB && fileInputRef.current) {
-      fileInputRef.current.click()
-      return
-    }
-
-    try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: '*/*',
-        copyToCacheDirectory: false,
-      })
-
-      if (result.canceled) return
-
-      const asset = result.assets[0]
-      if (!asset) return
-
-      const newDoc: DocItem = {
-        id: `upload-${Date.now()}`,
-        type: 'Doc',
-        title: asset.name,
-        category: 'Official',
-        size: formatFileSize(asset.size ?? 0),
-        color: '#6366F1',
-        party: 'Independent',
-        state: 'National',
-        community: 'General',
-        date: new Date().toISOString().split('T')[0],
-        votes: 0,
-        comments: 0,
-      }
-
-      onUpload(newDoc)
-      Toast.show(`Documento subido: ${asset.name}`)
-    } catch (e) {
-      Toast.show('Error al seleccionar documento')
-      console.error(e)
-    }
-  }
-
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel="Subir documento"
-      accessibilityHint={_(msg`Upload a new document`)}
-      onPress={handlePress}
-      style={[
-        styles.headerSearchButton,
-        {
-          backgroundColor: t.palette.primary_500,
-          borderRadius: 10,
-        },
-      ]}>
-      <PlusIcon size="md" style={{color: '#fff'}} />
-    </Pressable>
+    </View>
   )
 }
 
@@ -583,6 +487,10 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
     paddingTop: 8,
   },
+  centerState: {
+    alignItems: 'center',
+    paddingVertical: 64,
+  },
   documentList: {
     gap: 12,
   },
@@ -622,7 +530,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
     textTransform: 'uppercase',
   },
-  docSize: {
+  docPackType: {
     fontSize: 12,
     fontWeight: '600',
   },
@@ -632,21 +540,15 @@ const styles = StyleSheet.create({
     letterSpacing: -0.2,
     lineHeight: 21,
   },
+  docSummary: {
+    fontSize: 13,
+    lineHeight: 18,
+  },
   docMetaRow: {
     alignItems: 'center',
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 4,
-  },
-  docMetaItem: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 4,
-  },
-  docPartyDot: {
-    borderRadius: 4,
-    height: 8,
-    width: 8,
   },
   docMetaText: {
     fontSize: 12,
@@ -669,28 +571,6 @@ const styles = StyleSheet.create({
   docDateText: {
     fontSize: 12,
     fontWeight: '500',
-  },
-  docStatsRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 10,
-  },
-  docStatItem: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 3,
-  },
-  docStatValue: {
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  docStatLabel: {
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  docStatDivider: {
-    height: 14,
-    width: 1,
   },
   emptyState: {
     alignItems: 'center',

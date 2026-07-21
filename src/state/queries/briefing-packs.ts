@@ -65,10 +65,43 @@ export function usePartyLobbyingBriefingPacksQuery(input: {
       }
     },
     enabled: Boolean(
-      input.communityUri || input.party || input.cabildeoUri || input.civicTreeCardId,
+      input.communityUri ||
+      input.party ||
+      input.cabildeoUri ||
+      input.civicTreeCardId,
     ),
     staleTime: 1000 * 60,
     retry: false,
+  })
+}
+
+export type BriefingPacksListResponse = {
+  packs: PartyLobbyingBriefingPackView[]
+  cursor?: string
+}
+
+/**
+ * Global briefing-pack listing for the viewer (Dashboard → Documents).
+ * Unlike usePartyLobbyingBriefingPacksQuery this is always enabled and does
+ * NOT swallow errors — loading/error states are surfaced to the screen.
+ */
+export function useBriefingPacksListQuery(input: {
+  status?: CommunityBriefingPackStatus
+  limit?: number
+}) {
+  const agent = useAgent()
+  const limit = input.limit ?? 100
+  return useQuery<BriefingPacksListResponse>({
+    queryKey: ['briefing-packs', 'list', input.status ?? '', limit],
+    queryFn: async () => {
+      const res = await agent.call('com.para.community.listBriefingPacks', {
+        status: input.status,
+        limit,
+      })
+      const data = res.data as Partial<BriefingPacksListResponse>
+      return {packs: data.packs ?? [], cursor: data.cursor}
+    },
+    staleTime: 1000 * 30,
   })
 }
 
