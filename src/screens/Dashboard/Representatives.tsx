@@ -33,13 +33,23 @@ import {Verified_Stroke2_Corner2_Rounded as VerifiedIcon} from '#/components/ico
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'
 
-const CATEGORIES = [
-  'All',
+// Canonical display order for known offices; categories are derived from the
+// fetched data so a filter is never offered when it would render empty.
+const CATEGORY_ORDER = [
+  'Presidenta de Mexico',
   'President',
   'Governor',
+  'Gobernador constitucional',
+  'Jefa de Gobierno',
+  'Senador de la Republica',
+  'Senadora de la Republica',
   'Senator',
+  'Diputado Federal',
+  'Diputada Federal',
   'Federal Deputy',
+  'Presidente nacional',
   'Leader',
+  'Secretary',
   'Spokesperson',
   'Treasurer',
   'City Council',
@@ -64,6 +74,8 @@ export function RepresentativesScreen({route}: Props) {
   const [viewMode, setViewMode] = useState<ViewMode>('all')
   const {activeFilters} = useCompassFilter()
 
+  // Always fetch the full roster; category filtering happens client-side so
+  // the category pills can be derived from whatever data actually exists.
   const {
     data,
     isLoading,
@@ -73,14 +85,29 @@ export function RepresentativesScreen({route}: Props) {
     fetchNextPage,
     isFetchingNextPage,
   } = useRepresentativesQuery({
-    category: selectedCategory,
+    category: 'All',
     query: searchQuery,
   })
 
-  const reps = data?.pages.flatMap(page => page.items) || []
+  const reps = useMemo(
+    () => data?.pages.flatMap(page => page.items) || [],
+    [data],
+  )
+
+  const availableCategories = useMemo(() => {
+    const present = new Set(reps.map(rep => rep.category))
+    const ordered = CATEGORY_ORDER.filter(category => present.has(category))
+    const extras = [...present]
+      .filter(category => !CATEGORY_ORDER.includes(category))
+      .sort((a, b) => a.localeCompare(b))
+    return ['All', ...ordered, ...extras]
+  }, [reps])
 
   const filteredReps = useMemo(() => {
     let result = reps.filter(rep => {
+      if (selectedCategory !== 'All' && rep.category !== selectedCategory) {
+        return false
+      }
       if (activeFilters.length > 0) {
         const matchesFilter = activeFilters.some(
           filter => filter === rep.affiliate || filter === rep.state,
@@ -99,7 +126,7 @@ export function RepresentativesScreen({route}: Props) {
     })
 
     return result
-  }, [activeFilters, reps, sortMode, viewMode])
+  }, [activeFilters, reps, selectedCategory, sortMode, viewMode])
 
   const featuredReps = filteredReps.slice(0, 3)
 
@@ -154,7 +181,7 @@ export function RepresentativesScreen({route}: Props) {
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.categoryList}>
-            {CATEGORIES.map(category => (
+            {availableCategories.map(category => (
               <FilterPill
                 key={category}
                 label={category}
@@ -197,7 +224,9 @@ export function RepresentativesScreen({route}: Props) {
           {error && (
             <EmptyStateError
               message={_(msg`Couldn't load representatives. Tap to retry.`)}
-              onRetry={refetch}
+              onRetry={() => {
+                void refetch()
+              }}
             />
           )}
 

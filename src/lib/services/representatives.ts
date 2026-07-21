@@ -41,6 +41,8 @@ const NATIONAL_PARTY_BOARDS: NonNullable<CommunityBoardListResponse['boards']> =
     {communityId: 'party-pt', name: 'p/PT', slug: 'pt'},
     {communityId: 'party-mc', name: 'p/MC', slug: 'mc'},
     {communityId: 'party-morena', name: 'p/Morena', slug: 'morena'},
+    {communityId: 'federal-executive', name: 'g/Federal', slug: 'federal'},
+    {communityId: 'federal-congress', name: 'g/Congress', slug: 'congress'},
   ]
 
 /**
@@ -108,7 +110,9 @@ export async function fetchRepresentativeById(
   }
 
   const representatives = await fetchRepresentativesFromGovernance(agent)
-  return representatives.map(normalizeRepresentative).find(r => r.id === id) || null
+  return (
+    representatives.map(normalizeRepresentative).find(r => r.id === id) || null
+  )
 }
 
 function simulateNetworkDelay(): Promise<void> {
@@ -140,32 +144,34 @@ async function fetchRepresentativesFromGovernance(
       const handle = normalizeActorHandle(official.handle || official.did)
       if (!handle) return
 
-      representatives.push(normalizeRepresentative({
-        id:
-          official.did ||
-          `${governance.slug || board.slug || board.communityId}-${handle}-${index}`,
-        did: official.did,
-        name:
-          official.displayName ||
-          official.handle ||
-          official.did ||
-          official.office,
-        handle,
-        category: official.office,
-        affiliate: governance.community || board.name || 'Community',
-        state,
-        municipality: governance.slug || board.slug || 'Community',
-        avatarColor: colorForString(
-          official.did || official.handle || official.displayName || handle,
-        ),
-        type: 'Community',
-        avatar: official.avatar,
-        description: official.mandate,
-        status: official.did ? 'verified' : 'unclaimed',
-        office: official.office,
-        jurisdiction: state,
-        source: 'Gobernanza comunitaria PARA',
-      }))
+      representatives.push(
+        normalizeRepresentative({
+          id:
+            official.did ||
+            `${governance.slug || board.slug || board.communityId}-${handle}-${index}`,
+          did: official.did,
+          name:
+            official.displayName ||
+            official.handle ||
+            official.did ||
+            official.office,
+          handle,
+          category: official.office,
+          affiliate: governance.community || board.name || 'Community',
+          state,
+          municipality: governance.slug || board.slug || 'Community',
+          avatarColor: colorForString(
+            official.did || official.handle || official.displayName || handle,
+          ),
+          type: 'Community',
+          avatar: official.avatar,
+          description: official.mandate,
+          status: official.did ? 'verified' : 'unclaimed',
+          office: official.office,
+          jurisdiction: state,
+          source: 'Gobernanza comunitaria PARA',
+        }),
+      )
     })
   }
 
