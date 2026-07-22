@@ -9,9 +9,9 @@ export type M8IdentityElementId =
   | 'verified_public_figure'
 
 export type M8IdentityStorageIntent =
-  | { mode: 'will-not-store' }
-  | { mode: 'may-store'; days: number }
-  | { mode: 'may-store-until-revoked' }
+  | {mode: 'will-not-store'}
+  | {mode: 'may-store'; days: number}
+  | {mode: 'may-store-until-revoked'}
 
 export type M8IdentityRequestedElement = {
   id: M8IdentityElementId
@@ -34,7 +34,9 @@ export type M8IdentityRequest = {
   usedAt: string | null
 }
 
-export type M8IdentityCredentialClaims = Partial<Record<M8IdentityElementId, string | boolean>>
+export type M8IdentityCredentialClaims = Partial<
+  Record<M8IdentityElementId, string | boolean>
+>
 
 export type M8IdentityCredential = {
   id: string
@@ -147,7 +149,8 @@ export type ProofBrokerSurfaceId = 'public' | 'civic' | 'dating'
 
 export type ProofBrokerDisclosureMode = 'proof-only' | 'signed-claim' | 'raw'
 
-export type ProofBrokerGrantStatus = 'pending' | 'approved' | 'revoked' | 'expired'
+export type ProofBrokerGrantStatus =
+  'pending' | 'approved' | 'revoked' | 'expired'
 
 export type ProofBrokerClaimType =
   | 'is_verified_public_figure'
@@ -174,7 +177,11 @@ export type ProofBrokerGrant = {
   appName: string
   appKind: ProofBrokerAppKind
   surface: ProofBrokerSurfaceId
-  requestedClaims: Array<{ type: ProofBrokerClaimType; disclosure: ProofBrokerDisclosureMode; requestedValue?: string }>
+  requestedClaims: Array<{
+    type: ProofBrokerClaimType
+    disclosure: ProofBrokerDisclosureMode
+    requestedValue?: string
+  }>
   proofMode: ProofBrokerDisclosureMode
   status: ProofBrokerGrantStatus
   reason: string
@@ -320,6 +327,8 @@ export type AnonymousIdentityCard = {
   surface: ProofBrokerSurfaceId
   communityUri: string | null
   status: 'active' | 'archived'
+  burnAfter: 'none' | 'post'
+  tier: 'main' | 'burner'
   deviceTrust: DeviceTrustSummary
   proofBadges: PublicProofBadge[]
   posts: AnonymousIdentityPost[]
@@ -342,22 +351,13 @@ export type AnonymousPublicContact =
       senderRequirement?: 'none' | 'para-verified'
     }
 
-export type M8PajareoEntryType =
-  | 'firma'
-  | 'pregunta'
-  | 'señal'
-  | 'testimonio'
+export type M8PajareoEntryType = 'firma' | 'pregunta' | 'señal' | 'testimonio'
 
 export type M8PajareoSubjectKind =
-  | 'person'
-  | 'institution'
-  | 'person_in_institution'
+  'person' | 'institution' | 'person_in_institution'
 
 export type M8PajareoJurisdictionLevel =
-  | 'zone'
-  | 'state'
-  | 'nation'
-  | 'representative_area'
+  'zone' | 'state' | 'nation' | 'representative_area'
 
 export type M8PajareoSubject = {
   kind: M8PajareoSubjectKind

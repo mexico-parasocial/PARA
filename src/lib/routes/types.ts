@@ -281,6 +281,7 @@ export type FlatNavigatorParams = CommonNavigatorParams & {
   ConsentAudit: undefined
   IdentityHub: undefined
   INEVerification: undefined
+  AnonymousVoice: {profileId: string}
   MyAffiliations: undefined
   Memes: {view?: 'board' | 'deck'}
   Documents: {category?: string}
@@ -318,6 +319,7 @@ export type AllNavigatorParams = CommonNavigatorParams & {
   ConsentAudit: undefined
   IdentityHub: undefined
   INEVerification: undefined
+  AnonymousVoice: {profileId: string}
   MyAffiliations: undefined
   CreatePost: undefined
   CommunityProfile: {communityId: string; communityName?: string}

@@ -1,6 +1,6 @@
-import { Platform } from 'react-native'
-import * as Storage from '#/lib/storage'
+import {Platform} from 'react-native'
 
+import * as Storage from '#/lib/storage'
 import {
   type AnonymousGermConnection,
   type AnonymousIdentityCard,
@@ -48,15 +48,18 @@ async function clearTokens() {
   await Storage.deleteItemAsync('m8_session_id')
 }
 
-export async function m8Fetch(path: string, options: RequestInit = {}): Promise<Response> {
+export async function m8Fetch(
+  path: string,
+  options: RequestInit = {},
+): Promise<Response> {
   const token = await getM8AccessToken()
   const headers: Record<string, string> = {
     'content-type': 'application/json',
-    ...(token ? { authorization: `Bearer ${token}` } : {}),
+    ...(token ? {authorization: `Bearer ${token}`} : {}),
     ...(options.headers as Record<string, string>),
   }
 
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers })
+  const res = await fetch(`${API_BASE}${path}`, {...options, headers})
 
   if (res.status === 401) {
     // Attempt refresh
@@ -64,7 +67,7 @@ export async function m8Fetch(path: string, options: RequestInit = {}): Promise<
     if (refreshed) {
       const newToken = await getM8AccessToken()
       headers.authorization = `Bearer ${newToken}`
-      return fetch(`${API_BASE}${path}`, { ...options, headers })
+      return fetch(`${API_BASE}${path}`, {...options, headers})
     }
   }
 
@@ -78,11 +81,11 @@ export async function refreshM8AccessToken(): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/sessions/refresh`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ refreshToken }),
+      headers: {'content-type': 'application/json'},
+      body: JSON.stringify({refreshToken}),
     })
     if (!res.ok) return false
-    const body = (await res.json()) as { accessToken: string; expiresIn: number }
+    const body = (await res.json()) as {accessToken: string; expiresIn: number}
     await Storage.setItemAsync('m8_access_token', body.accessToken)
     return true
   } catch {
@@ -90,13 +93,15 @@ export async function refreshM8AccessToken(): Promise<boolean> {
   }
 }
 
-export async function postSessionStart(identifier: string): Promise<M8SessionStartResponse> {
+export async function postSessionStart(
+  identifier: string,
+): Promise<M8SessionStartResponse> {
   const res = await m8Fetch('/sessions/start', {
     method: 'POST',
-    body: JSON.stringify({ identifier }),
+    body: JSON.stringify({identifier}),
   })
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string }
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Session start failed (${res.status})`)
   }
   const body = (await res.json()) as M8SessionStartResponse
@@ -117,7 +122,7 @@ export async function getMe(): Promise<{
 }> {
   const res = await m8Fetch('/sessions/me')
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string }
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Get session failed (${res.status})`)
   }
   const body = (await res.json()) as {
@@ -151,53 +156,93 @@ export async function postGrantRequest(payload: {
   appName: string
   appKind: string
   surface: string
-  requestedClaims: Array<{ type: string; disclosure: string; requestedValue?: string }>
+  requestedClaims: Array<{
+    type: string
+    disclosure: string
+    requestedValue?: string
+  }>
   proofMode: string
   reason: string
   expiresAt?: string | null
-}): Promise<{ session: ProofBrokerSession; grant: ProofBrokerGrant; proofs: ProofBrokerProofArtifact[] }> {
+}): Promise<{
+  session: ProofBrokerSession
+  grant: ProofBrokerGrant
+  proofs: ProofBrokerProofArtifact[]
+}> {
   const res = await m8Fetch('/grants', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string }
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Grant request failed (${res.status})`)
   }
-  return (await res.json()) as { session: ProofBrokerSession; grant: ProofBrokerGrant; proofs: ProofBrokerProofArtifact[] }
+  return (await res.json()) as {
+    session: ProofBrokerSession
+    grant: ProofBrokerGrant
+    proofs: ProofBrokerProofArtifact[]
+  }
 }
 
-export async function postGrantApprove(grantId: string, reviewNote?: string): Promise<{ session: ProofBrokerSession; grant: ProofBrokerGrant; proofs: ProofBrokerProofArtifact[] }> {
+export async function postGrantApprove(
+  grantId: string,
+  reviewNote?: string,
+): Promise<{
+  session: ProofBrokerSession
+  grant: ProofBrokerGrant
+  proofs: ProofBrokerProofArtifact[]
+}> {
   const res = await m8Fetch(`/grants/${grantId}/approve`, {
     method: 'POST',
-    body: JSON.stringify({ grantId, reviewNote }),
+    body: JSON.stringify({grantId, reviewNote}),
   })
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string }
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Grant approve failed (${res.status})`)
   }
-  return (await res.json()) as { session: ProofBrokerSession; grant: ProofBrokerGrant; proofs: ProofBrokerProofArtifact[] }
+  return (await res.json()) as {
+    session: ProofBrokerSession
+    grant: ProofBrokerGrant
+    proofs: ProofBrokerProofArtifact[]
+  }
 }
 
-export async function postGrantRevoke(grantId: string, reason?: string): Promise<{ session: ProofBrokerSession; grant: ProofBrokerGrant; proofs: ProofBrokerProofArtifact[] }> {
+export async function postGrantRevoke(
+  grantId: string,
+  reason?: string,
+): Promise<{
+  session: ProofBrokerSession
+  grant: ProofBrokerGrant
+  proofs: ProofBrokerProofArtifact[]
+}> {
   const res = await m8Fetch(`/grants/${grantId}/revoke`, {
     method: 'POST',
-    body: JSON.stringify({ grantId, reason }),
+    body: JSON.stringify({grantId, reason}),
   })
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string }
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Grant revoke failed (${res.status})`)
   }
-  return (await res.json()) as { session: ProofBrokerSession; grant: ProofBrokerGrant; proofs: ProofBrokerProofArtifact[] }
+  return (await res.json()) as {
+    session: ProofBrokerSession
+    grant: ProofBrokerGrant
+    proofs: ProofBrokerProofArtifact[]
+  }
 }
 
-export async function getGrants(): Promise<{ grants: ProofBrokerGrant[]; proofs: ProofBrokerProofArtifact[] }> {
+export async function getGrants(): Promise<{
+  grants: ProofBrokerGrant[]
+  proofs: ProofBrokerProofArtifact[]
+}> {
   const res = await m8Fetch('/grants')
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string }
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Get grants failed (${res.status})`)
   }
-  return (await res.json()) as { grants: ProofBrokerGrant[]; proofs: ProofBrokerProofArtifact[] }
+  return (await res.json()) as {
+    grants: ProofBrokerGrant[]
+    proofs: ProofBrokerProofArtifact[]
+  }
 }
 
 export async function postIdentityRequest(payload: {
@@ -205,7 +250,11 @@ export async function postIdentityRequest(payload: {
   audienceAppName: string
   purpose: string
   merchantIdentifier?: string
-  requestedElements: Array<{ id: string; intentToStore: unknown; required: boolean }>
+  requestedElements: Array<{
+    id: string
+    intentToStore: unknown
+    required: boolean
+  }>
   expiresInSeconds?: number
 }): Promise<M8IdentityRequest> {
   const res = await m8Fetch('/identity/request', {
@@ -213,31 +262,38 @@ export async function postIdentityRequest(payload: {
     body: JSON.stringify(payload),
   })
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string }
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Identity request failed (${res.status})`)
   }
   return (await res.json()) as M8IdentityRequest
 }
 
-export async function postIdentityPresent(requestId: string, subjectDid: string, selectedElementIds?: string[]): Promise<M8WalletPresentation> {
+export async function postIdentityPresent(
+  requestId: string,
+  subjectDid: string,
+  selectedElementIds?: string[],
+): Promise<M8WalletPresentation> {
   const res = await m8Fetch('/identity/present', {
     method: 'POST',
-    body: JSON.stringify({ requestId, subjectDid, selectedElementIds }),
+    body: JSON.stringify({requestId, subjectDid, selectedElementIds}),
   })
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string }
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Identity present failed (${res.status})`)
   }
   return (await res.json()) as M8WalletPresentation
 }
 
-export async function postIdentityVerify(requestId: string, presentation: M8WalletPresentation): Promise<M8IdentityVerificationResult> {
+export async function postIdentityVerify(
+  requestId: string,
+  presentation: M8WalletPresentation,
+): Promise<M8IdentityVerificationResult> {
   const res = await m8Fetch('/identity/verify', {
     method: 'POST',
-    body: JSON.stringify({ requestId, presentation }),
+    body: JSON.stringify({requestId, presentation}),
   })
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string }
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Identity verify failed (${res.status})`)
   }
   return (await res.json()) as M8IdentityVerificationResult
@@ -253,17 +309,19 @@ export async function postCivicVoteProof(payload: {
     body: JSON.stringify(payload),
   })
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string }
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Civic vote proof failed (${res.status})`)
   }
-  const body = (await res.json()) as { proof: M8CivicVoteProof }
+  const body = (await res.json()) as {proof: M8CivicVoteProof}
   return body.proof
 }
 
-export async function getParaProviderStatus(): Promise<ProofBrokerSession['paraStatus']> {
+export async function getParaProviderStatus(): Promise<
+  ProofBrokerSession['paraStatus']
+> {
   const res = await m8Fetch('/providers/para/status')
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string }
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Provider status failed (${res.status})`)
   }
   return (await res.json()) as ProofBrokerSession['paraStatus']
@@ -284,7 +342,7 @@ export async function postIneAnalyze(payload: {
     body: JSON.stringify(payload),
   })
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string }
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `INE analyze failed (${res.status})`)
   }
   return (await res.json()) as {
@@ -305,7 +363,7 @@ export async function postIneVerify(payload: {
     body: JSON.stringify(payload),
   })
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string }
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `INE verify failed (${res.status})`)
   }
   return (await res.json()) as IneVerificationResult
@@ -330,7 +388,7 @@ export async function postIneCredential(payload: {
     body: JSON.stringify(payload),
   })
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string }
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `INE credential failed (${res.status})`)
   }
   return (await res.json()) as {
@@ -345,12 +403,16 @@ export async function postIneCredential(payload: {
 export async function postZkpVerify(payload: {
   proof: unknown
   publicSignals: string[]
-}): Promise<{ valid: boolean; commitment?: string; reason?: string }> {
+}): Promise<{valid: boolean; commitment?: string; reason?: string}> {
   const res = await m8Fetch('/identity/ine/zkp-verify', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
-  const body = (await res.json().catch(() => ({}))) as { valid: boolean; commitment?: string; reason?: string }
+  const body = (await res.json().catch(() => ({}))) as {
+    valid: boolean
+    commitment?: string
+    reason?: string
+  }
   if (!res.ok && !body.reason) {
     throw new Error(`ZKP verification failed (${res.status})`)
   }
@@ -360,24 +422,27 @@ export async function postZkpVerify(payload: {
 export async function postRevokeCredential(payload: {
   revocationHash: string
   reason?: string
-}): Promise<{ revoked: boolean; revokedAt?: string }> {
+}): Promise<{revoked: boolean; revokedAt?: string}> {
   const res = await m8Fetch('/identity/revoke', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string }
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Revocation failed (${res.status})`)
   }
-  return (await res.json()) as { revoked: boolean; revokedAt?: string }
+  return (await res.json()) as {revoked: boolean; revokedAt?: string}
 }
 
-export async function getCrl(): Promise<{ revokedHashes: string[]; updatedAt: string }> {
+export async function getCrl(): Promise<{
+  revokedHashes: string[]
+  updatedAt: string
+}> {
   const res = await m8Fetch('/identity/crl')
   if (!res.ok) {
     throw new Error(`CRL fetch failed (${res.status})`)
   }
-  return (await res.json()) as { revokedHashes: string[]; updatedAt: string }
+  return (await res.json()) as {revokedHashes: string[]; updatedAt: string}
 }
 
 export async function postAnonymousEnable(): Promise<{
@@ -392,7 +457,7 @@ export async function postAnonymousEnable(): Promise<{
     method: 'POST',
   })
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string }
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Enable anonymous mode failed (${res.status})`)
   }
   return (await res.json()) as {
@@ -405,18 +470,22 @@ export async function postAnonymousEnable(): Promise<{
   }
 }
 
-export async function postAnonymousDisable(): Promise<{ disabled: boolean }> {
+export async function postAnonymousDisable(): Promise<{disabled: boolean}> {
   const res = await m8Fetch('/sessions/anonymous/disable', {
     method: 'POST',
   })
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string }
-    throw new Error(err.error ?? `Disable anonymous mode failed (${res.status})`)
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
+    throw new Error(
+      err.error ?? `Disable anonymous mode failed (${res.status})`,
+    )
   }
-  return (await res.json()) as { disabled: boolean }
+  return (await res.json()) as {disabled: boolean}
 }
 
-export async function getAnonymousIdentities(): Promise<{identities: AnonymousIdentityCard[]}> {
+export async function getAnonymousIdentities(): Promise<{
+  identities: AnonymousIdentityCard[]
+}> {
   const res = await m8Fetch('/anonymous/identities')
   if (!res.ok) {
     const err = (await res.json().catch(() => ({}))) as {error?: string}
@@ -429,6 +498,7 @@ export async function postAnonymousIdentity(payload: {
   displayName?: string
   surface?: string
   communityUri?: string | null
+  burnAfter?: 'none' | 'post'
 }): Promise<{identity: AnonymousIdentityCard}> {
   const res = await m8Fetch('/anonymous/identities', {
     method: 'POST',
@@ -436,7 +506,9 @@ export async function postAnonymousIdentity(payload: {
   })
   if (!res.ok) {
     const err = (await res.json().catch(() => ({}))) as {error?: string}
-    throw new Error(err.error ?? `Create anonymous identity failed (${res.status})`)
+    throw new Error(
+      err.error ?? `Create anonymous identity failed (${res.status})`,
+    )
   }
   return (await res.json()) as {identity: AnonymousIdentityCard}
 }
@@ -445,13 +517,18 @@ export async function patchAnonymousIdentity(
   identityId: string,
   payload: {displayName?: string; status?: 'active' | 'archived'},
 ): Promise<{identity: AnonymousIdentityCard}> {
-  const res = await m8Fetch(`/anonymous/identities/${encodeURIComponent(identityId)}`, {
-    method: 'PATCH',
-    body: JSON.stringify(payload),
-  })
+  const res = await m8Fetch(
+    `/anonymous/identities/${encodeURIComponent(identityId)}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    },
+  )
   if (!res.ok) {
     const err = (await res.json().catch(() => ({}))) as {error?: string}
-    throw new Error(err.error ?? `Update anonymous identity failed (${res.status})`)
+    throw new Error(
+      err.error ?? `Update anonymous identity failed (${res.status})`,
+    )
   }
   return (await res.json()) as {identity: AnonymousIdentityCard}
 }
@@ -490,13 +567,18 @@ export async function patchAnonymousPostStats(
     threadCount?: number
   },
 ): Promise<{post: AnonymousIdentityPost}> {
-  const res = await m8Fetch(`/anonymous/posts/${encodeURIComponent(postId)}/stats`, {
-    method: 'PATCH',
-    body: JSON.stringify(stats),
-  })
+  const res = await m8Fetch(
+    `/anonymous/posts/${encodeURIComponent(postId)}/stats`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(stats),
+    },
+  )
   if (!res.ok) {
     const err = (await res.json().catch(() => ({}))) as {error?: string}
-    throw new Error(err.error ?? `Update anonymous post stats failed (${res.status})`)
+    throw new Error(
+      err.error ?? `Update anonymous post stats failed (${res.status})`,
+    )
   }
   return (await res.json()) as {post: AnonymousIdentityPost}
 }
@@ -505,13 +587,18 @@ export async function patchAnonymousPostDmPolicy(
   postId: string,
   dmPolicy: 'off' | 'requests',
 ): Promise<{post: AnonymousIdentityPost}> {
-  const res = await m8Fetch(`/anonymous/posts/${encodeURIComponent(postId)}/dm-policy`, {
-    method: 'PATCH',
-    body: JSON.stringify({dmPolicy}),
-  })
+  const res = await m8Fetch(
+    `/anonymous/posts/${encodeURIComponent(postId)}/dm-policy`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({dmPolicy}),
+    },
+  )
   if (!res.ok) {
     const err = (await res.json().catch(() => ({}))) as {error?: string}
-    throw new Error(err.error ?? `Update private reply policy failed (${res.status})`)
+    throw new Error(
+      err.error ?? `Update private reply policy failed (${res.status})`,
+    )
   }
   return (await res.json()) as {post: AnonymousIdentityPost}
 }
@@ -524,10 +611,13 @@ export async function postAnonymousGermLink(
     mode?: 'germ-card-link' | 'm8-relay-pending-germ'
   },
 ): Promise<{germ: AnonymousGermConnection}> {
-  const res = await m8Fetch(`/anonymous/identities/${encodeURIComponent(identityId)}/germ/link`, {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
+  const res = await m8Fetch(
+    `/anonymous/identities/${encodeURIComponent(identityId)}/germ/link`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+  )
   if (!res.ok) {
     const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Link Germ contact failed (${res.status})`)
@@ -535,10 +625,15 @@ export async function postAnonymousGermLink(
   return (await res.json()) as {germ: AnonymousGermConnection}
 }
 
-export async function postAnonymousGermUnlink(identityId: string): Promise<{germ: AnonymousGermConnection | null}> {
-  const res = await m8Fetch(`/anonymous/identities/${encodeURIComponent(identityId)}/germ/unlink`, {
-    method: 'POST',
-  })
+export async function postAnonymousGermUnlink(
+  identityId: string,
+): Promise<{germ: AnonymousGermConnection | null}> {
+  const res = await m8Fetch(
+    `/anonymous/identities/${encodeURIComponent(identityId)}/germ/unlink`,
+    {
+      method: 'POST',
+    },
+  )
   if (!res.ok) {
     const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Unlink Germ contact failed (${res.status})`)
@@ -546,8 +641,12 @@ export async function postAnonymousGermUnlink(identityId: string): Promise<{germ
   return (await res.json()) as {germ: AnonymousGermConnection | null}
 }
 
-export async function getAnonymousPublicContact(postUri: string): Promise<AnonymousPublicContact> {
-  const res = await m8Fetch(`/anonymous/public-contact?postUri=${encodeURIComponent(postUri)}`)
+export async function getAnonymousPublicContact(
+  postUri: string,
+): Promise<AnonymousPublicContact> {
+  const res = await m8Fetch(
+    `/anonymous/public-contact?postUri=${encodeURIComponent(postUri)}`,
+  )
   if (!res.ok) {
     const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Anonymous contact failed (${res.status})`)
@@ -555,10 +654,66 @@ export async function getAnonymousPublicContact(postUri: string): Promise<Anonym
   return (await res.json()) as AnonymousPublicContact
 }
 
+export type AnonymousVoiceProfile = {
+  profile: AnonymousProfile
+  followerCount: number
+  following: boolean
+}
+
+export async function getAnonymousVoiceProfile(
+  profileId: string,
+): Promise<AnonymousVoiceProfile> {
+  const res = await m8Fetch(
+    `/anonymous/profiles/${encodeURIComponent(profileId)}`,
+  )
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
+    throw new Error(err.error ?? `Voice profile failed (${res.status})`)
+  }
+  return (await res.json()) as AnonymousVoiceProfile
+}
+
+export async function postAnonymousFollow(
+  profileId: string,
+): Promise<AnonymousVoiceProfile> {
+  const res = await m8Fetch(
+    `/anonymous/profiles/${encodeURIComponent(profileId)}/follow`,
+    {
+      method: 'POST',
+    },
+  )
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as {
+      error?: string
+      code?: string
+    }
+    throw new Error(err.error ?? `Follow failed (${res.status})`)
+  }
+  return (await res.json()) as AnonymousVoiceProfile
+}
+
+export async function deleteAnonymousFollow(
+  profileId: string,
+): Promise<AnonymousVoiceProfile> {
+  const res = await m8Fetch(
+    `/anonymous/profiles/${encodeURIComponent(profileId)}/follow`,
+    {
+      method: 'DELETE',
+    },
+  )
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
+    throw new Error(err.error ?? `Unfollow failed (${res.status})`)
+  }
+  return (await res.json()) as AnonymousVoiceProfile
+}
+
 export async function getPajareoRepresentative(
   representativeId: string,
 ): Promise<M8PajareoFeed> {
-  const res = await m8Fetch(`/pajareo/representatives/${encodeURIComponent(representativeId)}`)
+  const res = await m8Fetch(
+    `/pajareo/representatives/${encodeURIComponent(representativeId)}`,
+  )
   if (!res.ok) {
     const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Pajareo feed failed (${res.status})`)
@@ -569,7 +724,9 @@ export async function getPajareoRepresentative(
 export async function getPajareoRepresentativeMe(
   representativeId: string,
 ): Promise<M8PajareoFeed> {
-  const res = await m8Fetch(`/pajareo/representatives/${encodeURIComponent(representativeId)}/me`)
+  const res = await m8Fetch(
+    `/pajareo/representatives/${encodeURIComponent(representativeId)}/me`,
+  )
   if (!res.ok) {
     const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Pajareo viewer feed failed (${res.status})`)
@@ -586,10 +743,13 @@ export async function postPajareoEntry(
     jurisdiction?: M8PajareoJurisdiction
   },
 ): Promise<{entry: M8PajareoEntry}> {
-  const res = await m8Fetch(`/pajareo/representatives/${encodeURIComponent(representativeId)}/entries`, {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
+  const res = await m8Fetch(
+    `/pajareo/representatives/${encodeURIComponent(representativeId)}/entries`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+  )
   if (!res.ok) {
     const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Create Pajareo entry failed (${res.status})`)
@@ -603,13 +763,18 @@ export async function postPajareoResponse(
     body: string
   },
 ): Promise<{response: M8PajareoResponse}> {
-  const res = await m8Fetch(`/pajareo/entries/${encodeURIComponent(entryId)}/responses`, {
-    method: 'POST',
-    body: JSON.stringify(payload),
-  })
+  const res = await m8Fetch(
+    `/pajareo/entries/${encodeURIComponent(entryId)}/responses`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+  )
   if (!res.ok) {
     const err = (await res.json().catch(() => ({}))) as {error?: string}
-    throw new Error(err.error ?? `Create Pajareo response failed (${res.status})`)
+    throw new Error(
+      err.error ?? `Create Pajareo response failed (${res.status})`,
+    )
   }
   return (await res.json()) as {response: M8PajareoResponse}
 }
@@ -617,9 +782,12 @@ export async function postPajareoResponse(
 export async function postPajareoSupport(
   entryId: string,
 ): Promise<{entry: M8PajareoEntry}> {
-  const res = await m8Fetch(`/pajareo/entries/${encodeURIComponent(entryId)}/support`, {
-    method: 'POST',
-  })
+  const res = await m8Fetch(
+    `/pajareo/entries/${encodeURIComponent(entryId)}/support`,
+    {
+      method: 'POST',
+    },
+  )
   if (!res.ok) {
     const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Support Pajareo entry failed (${res.status})`)
@@ -631,10 +799,13 @@ export async function postPajareoReport(
   entryId: string,
   reason?: string,
 ): Promise<{entry: M8PajareoEntry}> {
-  const res = await m8Fetch(`/pajareo/entries/${encodeURIComponent(entryId)}/report`, {
-    method: 'POST',
-    body: JSON.stringify({reason}),
-  })
+  const res = await m8Fetch(
+    `/pajareo/entries/${encodeURIComponent(entryId)}/report`,
+    {
+      method: 'POST',
+      body: JSON.stringify({reason}),
+    },
+  )
   if (!res.ok) {
     const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Report Pajareo entry failed (${res.status})`)
@@ -642,7 +813,9 @@ export async function postPajareoReport(
   return (await res.json()) as {entry: M8PajareoEntry}
 }
 
-export async function getDeviceTrustMe(): Promise<{deviceTrust: DeviceTrustSummary}> {
+export async function getDeviceTrustMe(): Promise<{
+  deviceTrust: DeviceTrustSummary
+}> {
   const res = await m8Fetch('/device-trust/me')
   if (!res.ok) {
     const err = (await res.json().catch(() => ({}))) as {error?: string}
@@ -680,7 +853,12 @@ export async function postZkpNullifier(payload: {
   proof: unknown
   publicSignals: string[]
   communityId: string
-}): Promise<{ valid: boolean; commitment?: string; nullifier?: string; reason?: string }> {
+}): Promise<{
+  valid: boolean
+  commitment?: string
+  nullifier?: string
+  reason?: string
+}> {
   const res = await m8Fetch('/identity/ine/zkp-nullifier', {
     method: 'POST',
     body: JSON.stringify(payload),
@@ -702,16 +880,16 @@ export async function postKarmaEarn(payload: {
   communityId?: string
   points?: number
   detail?: Record<string, unknown>
-}): Promise<{ earned: boolean; id: string; points: number }> {
+}): Promise<{earned: boolean; id: string; points: number}> {
   const res = await m8Fetch('/karma/earn', {
     method: 'POST',
     body: JSON.stringify(payload),
   })
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string }
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `Karma earn failed (${res.status})`)
   }
-  return (await res.json()) as { earned: boolean; id: string; points: number }
+  return (await res.json()) as {earned: boolean; id: string; points: number}
 }
 
 export async function getKarmaMe(): Promise<{
@@ -737,7 +915,7 @@ export async function getKarmaProfile(profileId: string): Promise<{
   global: number | null
   byCommunity: Record<string, number>
   actions: Record<string, number>
-  revealed: { global: boolean; communities: string[] }
+  revealed: {global: boolean; communities: string[]}
 }> {
   const res = await m8Fetch(`/karma/${profileId}`)
   if (!res.ok) {
@@ -748,21 +926,23 @@ export async function getKarmaProfile(profileId: string): Promise<{
     global: number | null
     byCommunity: Record<string, number>
     actions: Record<string, number>
-    revealed: { global: boolean; communities: string[] }
+    revealed: {global: boolean; communities: string[]}
   }
 }
 
 export async function putKarmaRevelation(payload: {
   revealGlobal?: boolean
   revealCommunities?: string[]
-}): Promise<{ updated: boolean }> {
+}): Promise<{updated: boolean}> {
   const res = await m8Fetch('/karma/revelation', {
     method: 'PUT',
     body: JSON.stringify(payload),
   })
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as { error?: string }
-    throw new Error(err.error ?? `Karma revelation update failed (${res.status})`)
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
+    throw new Error(
+      err.error ?? `Karma revelation update failed (${res.status})`,
+    )
   }
-  return (await res.json()) as { updated: boolean }
+  return (await res.json()) as {updated: boolean}
 }

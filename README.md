@@ -82,6 +82,10 @@ const t = useTheme()
 
 No ad-hoc `StyleSheet.create` unless absolutely necessary for animations.
 
+### Sensitive Storage
+
+Sensitive values (m8 broker tokens, anonymous profile, INE/ZKP witness material) go through `#/lib/storage` (Keychain/Keystore via `expo-secure-store`, AsyncStorage fallback in dev/tests). Non-sensitive prefs stay in AsyncStorage.
+
 ### Web Layout Standard
 
 Center-column screens follow this pattern:

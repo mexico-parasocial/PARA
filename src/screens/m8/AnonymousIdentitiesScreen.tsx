@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import {useNavigation} from '@react-navigation/native'
 
 import {getDefaultChatIdentityMode} from '#/lib/chat/identity'
 import {buildAnonymousGermContactButton} from '#/lib/germ/messageMe'
@@ -19,7 +20,9 @@ import {
   postAnonymousGermUnlink,
   postAnonymousIdentity,
 } from '#/lib/m8/api'
+import {useAnonymousMode} from '#/lib/m8/hooks/useAnonymousMode'
 import {type AnonymousIdentityCard} from '#/lib/m8/types'
+import {type NavigationProp} from '#/lib/routes/types'
 import {useTheme} from '#/alf'
 import {ChatIdentityPill} from '#/components/chat/ChatIdentityPill'
 import {GermContactButton} from '#/components/germ/GermContactButton'
@@ -27,11 +30,18 @@ import {Text} from '#/components/Typography'
 
 export default function AnonymousIdentitiesScreen() {
   const t = useTheme()
+  const navigation = useNavigation<NavigationProp>()
+  const {profile: anonProfile} = useAnonymousMode()
   const [identities, setIdentities] = useState<AnonymousIdentityCard[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [contactUrls, setContactUrls] = useState<Record<string, string>>({})
+
+  // Tier split (server-assigned): the folded default profile is the
+  // followable "main voice"; everything else is an unlinkable burner voice.
+  const mainVoice = identities.find(i => i.tier === 'main')
+  const burnerVoices = identities.filter(i => i.tier !== 'main')
 
   const load = useCallback(async () => {
     const data = await getAnonymousIdentities()
@@ -42,7 +52,9 @@ export default function AnonymousIdentitiesScreen() {
     let cancelled = false
     // eslint-disable-next-line react-hooks/set-state-in-effect
     load()
-      .catch(err => console.warn('[m8] Failed to load anonymous identities:', err))
+      .catch(err =>
+        console.warn('[m8] Failed to load anonymous identities:', err),
+      )
       .finally(() => {
         if (!cancelled) setLoading(false)
       })
@@ -72,6 +84,18 @@ export default function AnonymousIdentitiesScreen() {
     }
   }, [load])
 
+  const createOnePostVoice = useCallback(async () => {
+    try {
+      setBusyId('new-burn')
+      await postAnonymousIdentity({surface: 'civic', burnAfter: 'post'})
+      await load()
+    } catch (err) {
+      Alert.alert('Could not create one-post voice', getMessage(err))
+    } finally {
+      setBusyId(null)
+    }
+  }, [load])
+
   const archiveIdentity = useCallback(
     async (identity: AnonymousIdentityCard) => {
       try {
@@ -91,7 +115,10 @@ export default function AnonymousIdentitiesScreen() {
     async (identity: AnonymousIdentityCard) => {
       const contactUrl = contactUrls[identity.id]?.trim()
       if (!contactUrl) {
-        Alert.alert('Germ card link required', 'Paste a Germ burner-card or contact URL first.')
+        Alert.alert(
+          'Germ card link required',
+          'Paste a Germ burner-card or contact URL first.',
+        )
         return
       }
       try {
@@ -130,7 +157,10 @@ export default function AnonymousIdentitiesScreen() {
       try {
         setBusyId(identity.id)
         for (const post of identity.posts) {
-          await patchAnonymousPostDmPolicy(post.id, enabled ? 'requests' : 'off')
+          await patchAnonymousPostDmPolicy(
+            post.id,
+            enabled ? 'requests' : 'off',
+          )
         }
         await load()
       } catch (err) {
@@ -150,7 +180,9 @@ export default function AnonymousIdentitiesScreen() {
   if (loading) {
     return (
       <View style={[styles.container, t.atoms.bg]}>
-        <Text style={[styles.headerTitle, t.atoms.text]}>Anonymous identities</Text>
+        <Text style={[styles.headerTitle, t.atoms.text]}>
+          Anonymous identities
+        </Text>
         <Text style={[styles.muted, t.atoms.text_contrast_medium]}>
           Loading your cards...
         </Text>
@@ -172,58 +204,136 @@ export default function AnonymousIdentitiesScreen() {
         contentContainerStyle={styles.content}>
         <View style={styles.headerRow}>
           <View>
-            <Text style={[styles.headerTitle, t.atoms.text]}>Anonymous identities</Text>
+            <Text style={[styles.headerTitle, t.atoms.text]}>
+              Anonymous identities
+            </Text>
             <Text style={[styles.muted, t.atoms.text_contrast_medium]}>
               {activeCount} active cards
             </Text>
           </View>
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel="Create anonymous identity card"
-            accessibilityHint="Creates a new anonymous identity card"
-            disabled={busyId !== null}
-            onPress={() => {
-              void createIdentity()
-            }}
-            style={[styles.primaryButton, {backgroundColor: t.palette.primary_500}]}>
-            <Text style={styles.primaryButtonText}>New card</Text>
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Create one-post voice"
+              accessibilityHint="Creates a burner voice that rotates after each post"
+              disabled={busyId !== null}
+              onPress={() => {
+                void createOnePostVoice()
+              }}
+              style={[
+                styles.secondaryButton,
+                {borderColor: t.palette.contrast_200},
+              ]}>
+              <Text style={[styles.secondaryButtonText, t.atoms.text]}>
+                One-post voice
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel="Create anonymous identity card"
+              accessibilityHint="Creates a new anonymous identity card"
+              disabled={busyId !== null}
+              onPress={() => {
+                void createIdentity()
+              }}
+              style={[
+                styles.primaryButton,
+                {backgroundColor: t.palette.primary_500},
+              ]}>
+              <Text style={styles.primaryButtonText}>New card</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         {identities.length === 0 ? (
-          <View style={[styles.emptyState, t.atoms.bg_contrast_25, {borderColor: t.palette.contrast_100}]}>
-            <Text style={[styles.cardTitle, t.atoms.text]}>No anonymous cards yet</Text>
+          <View
+            style={[
+              styles.emptyState,
+              t.atoms.bg_contrast_25,
+              {borderColor: t.palette.contrast_100},
+            ]}>
+            <Text style={[styles.cardTitle, t.atoms.text]}>
+              No anonymous cards yet
+            </Text>
             <Text style={[styles.muted, t.atoms.text_contrast_medium]}>
-              Cards appear here when m8 links anonymous activity to a durable persona.
+              Cards appear here when m8 links anonymous activity to a durable
+              persona.
             </Text>
           </View>
         ) : (
-          identities.map(identity => (
-            <IdentityCard
-              key={identity.id}
-              identity={identity}
-              contactUrl={contactUrls[identity.id] ?? ''}
-              busy={busyId === identity.id}
-              onContactUrlChange={value =>
-                setContactUrls(prev => ({...prev, [identity.id]: value}))
-              }
-              onArchive={() => {
-                void archiveIdentity(identity)
-              }}
-              onLinkGerm={() => {
-                void linkGerm(identity)
-              }}
-              onUnlinkGerm={() => {
-                void unlinkGerm(identity)
-              }}
-              onEnableReplies={() => {
-                void toggleReplies(identity, true)
-              }}
-              onDisableReplies={() => {
-                void toggleReplies(identity, false)
-              }}
-            />
-          ))
+          <>
+            {mainVoice && anonProfile ? (
+              <View style={styles.section}>
+                <Text
+                  style={[styles.sectionTitle, t.atoms.text_contrast_medium]}>
+                  Main voice · followable
+                </Text>
+                <IdentityCard
+                  identity={mainVoice}
+                  tier="main"
+                  contactUrl={contactUrls[mainVoice.id] ?? ''}
+                  busy={busyId === mainVoice.id}
+                  onOpenVoice={() =>
+                    navigation.navigate('AnonymousVoice', {
+                      profileId: anonProfile.id,
+                    })
+                  }
+                  onContactUrlChange={value =>
+                    setContactUrls(prev => ({...prev, [mainVoice.id]: value}))
+                  }
+                  onArchive={() => {}}
+                  onLinkGerm={() => {
+                    void linkGerm(mainVoice)
+                  }}
+                  onUnlinkGerm={() => {
+                    void unlinkGerm(mainVoice)
+                  }}
+                  onEnableReplies={() => {
+                    void toggleReplies(mainVoice, true)
+                  }}
+                  onDisableReplies={() => {
+                    void toggleReplies(mainVoice, false)
+                  }}
+                />
+              </View>
+            ) : null}
+
+            {burnerVoices.length > 0 ? (
+              <View style={styles.section}>
+                <Text
+                  style={[styles.sectionTitle, t.atoms.text_contrast_medium]}>
+                  Burner voices · unlinkable, never followable
+                </Text>
+                {burnerVoices.map(identity => (
+                  <IdentityCard
+                    key={identity.id}
+                    identity={identity}
+                    tier="burner"
+                    contactUrl={contactUrls[identity.id] ?? ''}
+                    busy={busyId === identity.id}
+                    onContactUrlChange={value =>
+                      setContactUrls(prev => ({...prev, [identity.id]: value}))
+                    }
+                    onArchive={() => {
+                      void archiveIdentity(identity)
+                    }}
+                    onLinkGerm={() => {
+                      void linkGerm(identity)
+                    }}
+                    onUnlinkGerm={() => {
+                      void unlinkGerm(identity)
+                    }}
+                    onEnableReplies={() => {
+                      void toggleReplies(identity, true)
+                    }}
+                    onDisableReplies={() => {
+                      void toggleReplies(identity, false)
+                    }}
+                  />
+                ))}
+              </View>
+            ) : null}
+          </>
         )}
       </ScrollView>
     </View>
@@ -232,8 +342,10 @@ export default function AnonymousIdentitiesScreen() {
 
 function IdentityCard({
   identity,
+  tier,
   contactUrl,
   busy,
+  onOpenVoice,
   onContactUrlChange,
   onArchive,
   onLinkGerm,
@@ -242,8 +354,10 @@ function IdentityCard({
   onDisableReplies,
 }: {
   identity: AnonymousIdentityCard
+  tier: 'main' | 'burner'
   contactUrl: string
   busy: boolean
+  onOpenVoice?: () => void
   onContactUrlChange: (value: string) => void
   onArchive: () => void
   onLinkGerm: () => void
@@ -252,7 +366,9 @@ function IdentityCard({
   onDisableReplies: () => void
 }) {
   const t = useTheme()
-  const repliesEnabled = identity.posts.some(post => post.dmPolicy === 'requests')
+  const repliesEnabled = identity.posts.some(
+    post => post.dmPolicy === 'requests',
+  )
   const isolatedIdentityMode = getDefaultChatIdentityMode('isolated_post')
   const germContact = buildAnonymousGermContactButton(
     identity.germ?.status === 'active' && repliesEnabled
@@ -271,38 +387,91 @@ function IdentityCard({
     identity.posts.length > 0
 
   return (
-    <View style={[styles.card, t.atoms.bg_contrast_25, {borderColor: t.palette.contrast_100}]}>
+    <View
+      style={[
+        styles.card,
+        t.atoms.bg_contrast_25,
+        {borderColor: t.palette.contrast_100},
+      ]}>
       <View style={styles.cardHeader}>
-        <View style={[styles.avatar, {backgroundColor: colorFromSeed(identity.avatarSeed)}]}>
-          <Text style={styles.avatarText}>{identity.displayName.slice(0, 1).toUpperCase()}</Text>
+        <View
+          style={[
+            styles.avatar,
+            {backgroundColor: colorFromSeed(identity.avatarSeed)},
+          ]}>
+          <Text style={styles.avatarText}>
+            {identity.displayName.slice(0, 1).toUpperCase()}
+          </Text>
         </View>
         <View style={styles.cardTitleWrap}>
           <Text style={[styles.cardTitle, t.atoms.text]} numberOfLines={1}>
             {identity.displayName}
           </Text>
-          <Text style={[styles.muted, t.atoms.text_contrast_medium]} numberOfLines={1}>
+          <Text
+            style={[styles.muted, t.atoms.text_contrast_medium]}
+            numberOfLines={1}>
             {identity.surface} · {identity.status}
+            {identity.burnAfter === 'post' ? ' · burns after each post' : ''}
           </Text>
         </View>
         <StatusBadge
-          label={identity.deviceTrust.status === 'trusted' ? 'Trusted device' : 'Limited'}
-          tone={identity.deviceTrust.status === 'trusted' ? 'positive' : 'neutral'}
+          label={tier === 'main' ? 'Main voice' : 'Burner'}
+          tone={tier === 'main' ? 'positive' : 'neutral'}
+        />
+        <StatusBadge
+          label={
+            identity.deviceTrust.status === 'trusted'
+              ? 'Trusted device'
+              : 'Limited'
+          }
+          tone={
+            identity.deviceTrust.status === 'trusted' ? 'positive' : 'neutral'
+          }
         />
       </View>
+
+      {tier === 'main' && onOpenVoice ? (
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Open voice profile"
+          accessibilityHint="Shows followers and karma for your main voice"
+          onPress={onOpenVoice}
+          style={[
+            styles.voiceLink,
+            {
+              borderColor: t.palette.primary_500 + '40',
+              backgroundColor: t.palette.primary_500 + '10',
+            },
+          ]}>
+          <Text style={[styles.voiceLinkText, {color: t.palette.primary_500}]}>
+            Open voice profile · followers & karma →
+          </Text>
+        </TouchableOpacity>
+      ) : null}
 
       <ChatIdentityPill mode={isolatedIdentityMode} />
 
       <View style={styles.metaGrid}>
         <Metric label="Posts" value={String(identity.posts.length)} />
         <Metric label="Proofs" value={String(identity.proofBadges.length)} />
-        <Metric label="Germ" value={identity.germ?.status === 'active' ? 'Linked' : 'Off'} />
+        <Metric
+          label="Germ"
+          value={identity.germ?.status === 'active' ? 'Linked' : 'Off'}
+        />
       </View>
 
       {identity.proofBadges.length > 0 && (
         <View style={styles.chips}>
           {identity.proofBadges.map(badge => (
-            <View key={`${identity.id}-${badge.claimType}`} style={[styles.chip, {backgroundColor: t.palette.primary_500 + '18'}]}>
-              <Text style={[styles.chipText, {color: t.palette.primary_500}]}>{badge.label}</Text>
+            <View
+              key={`${identity.id}-${badge.claimType}`}
+              style={[
+                styles.chip,
+                {backgroundColor: t.palette.primary_500 + '18'},
+              ]}>
+              <Text style={[styles.chipText, {color: t.palette.primary_500}]}>
+                {badge.label}
+              </Text>
             </View>
           ))}
         </View>
@@ -321,7 +490,9 @@ function IdentityCard({
                   {post.postUri}
                 </Text>
                 <StatusBadge
-                  label={post.dmPolicy === 'requests' ? 'Replies on' : 'Replies off'}
+                  label={
+                    post.dmPolicy === 'requests' ? 'Replies on' : 'Replies off'
+                  }
                   tone={post.dmPolicy === 'requests' ? 'positive' : 'neutral'}
                 />
               </View>
@@ -354,7 +525,8 @@ function IdentityCard({
             ]}
           />
           <Text style={[styles.muted, t.atoms.text_contrast_medium]}>
-            m8 stores this as an opaque Germ contact link and blocks links that expose your real DID.
+            m8 stores this as an opaque Germ contact link and blocks links that
+            expose your real DID.
           </Text>
         </View>
       )}
@@ -364,16 +536,36 @@ function IdentityCard({
           <GermContactButton url={germContact.url} label="Open Germ" />
         )}
         {identity.germ?.status === 'active' ? (
-          <ActionButton label="Unlink Germ" disabled={busy} onPress={onUnlinkGerm} />
+          <ActionButton
+            label="Unlink Germ"
+            disabled={busy}
+            onPress={onUnlinkGerm}
+          />
         ) : (
-          <ActionButton label="Link Germ" disabled={busy || identity.status !== 'active'} onPress={onLinkGerm} />
+          <ActionButton
+            label="Link Germ"
+            disabled={busy || identity.status !== 'active'}
+            onPress={onLinkGerm}
+          />
         )}
         {repliesEnabled ? (
-          <ActionButton label="Disable replies" disabled={busy} onPress={onDisableReplies} />
+          <ActionButton
+            label="Disable replies"
+            disabled={busy}
+            onPress={onDisableReplies}
+          />
         ) : (
-          <ActionButton label="Enable replies" disabled={busy || !canEnableReplies} onPress={onEnableReplies} />
+          <ActionButton
+            label="Enable replies"
+            disabled={busy || !canEnableReplies}
+            onPress={onEnableReplies}
+          />
         )}
-        <ActionButton label="Archive" disabled={busy || identity.status === 'archived'} onPress={onArchive} />
+        <ActionButton
+          label="Archive"
+          disabled={busy || identity.status === 'archived'}
+          onPress={onArchive}
+        />
       </View>
     </View>
   )
@@ -384,7 +576,9 @@ function Metric({label, value}: {label: string; value: string}) {
   return (
     <View style={styles.metric}>
       <Text style={[styles.metricValue, t.atoms.text]}>{value}</Text>
-      <Text style={[styles.metricLabel, t.atoms.text_contrast_medium]}>{label}</Text>
+      <Text style={[styles.metricLabel, t.atoms.text_contrast_medium]}>
+        {label}
+      </Text>
     </View>
   )
 }
@@ -393,15 +587,26 @@ function PostStat({label, value}: {label: string; value: number}) {
   const t = useTheme()
   return (
     <View style={[styles.postStat, {borderColor: t.palette.contrast_100}]}>
-      <Text style={[styles.postStatValue, t.atoms.text]}>{formatCount(value)}</Text>
-      <Text style={[styles.postStatLabel, t.atoms.text_contrast_medium]}>{label}</Text>
+      <Text style={[styles.postStatValue, t.atoms.text]}>
+        {formatCount(value)}
+      </Text>
+      <Text style={[styles.postStatLabel, t.atoms.text_contrast_medium]}>
+        {label}
+      </Text>
     </View>
   )
 }
 
-function StatusBadge({label, tone}: {label: string; tone: 'positive' | 'neutral'}) {
+function StatusBadge({
+  label,
+  tone,
+}: {
+  label: string
+  tone: 'positive' | 'neutral'
+}) {
   const t = useTheme()
-  const color = tone === 'positive' ? t.palette.positive_400 : t.palette.contrast_500
+  const color =
+    tone === 'positive' ? t.palette.positive_400 : t.palette.contrast_500
   return (
     <View style={[styles.badge, {backgroundColor: color + '18'}]}>
       <Text style={[styles.badgeText, {color}]} numberOfLines={1}>
@@ -442,7 +647,9 @@ function ActionButton({
 
 function colorFromSeed(seed: string) {
   const colors = ['#176B87', '#3D7068', '#8A5A44', '#5C6F68', '#7A4E7D']
-  const index = seed.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) % colors.length
+  const index =
+    seed.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0) %
+    colors.length
   return colors[index]
 }
 
@@ -623,6 +830,42 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
   },
   actionButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  section: {
+    gap: 10,
+    marginTop: 8,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  secondaryButton: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    justifyContent: 'center',
+  },
+  secondaryButtonText: {
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  voiceLink: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginTop: 10,
+  },
+  voiceLinkText: {
     fontSize: 13,
     fontWeight: '700',
   },

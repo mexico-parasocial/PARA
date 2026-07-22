@@ -121,6 +121,7 @@ import FlairFeedScreen from '#/screens/FlairFeed'
 import HashtagScreen from '#/screens/Hashtag'
 import {HighlightsScreen} from '#/screens/Highlights/HighlightsScreen'
 import {LogScreen} from '#/screens/Log'
+import AnonymousVoiceScreen from '#/screens/m8/AnonymousVoiceScreen'
 import ConsentAuditScreen from '#/screens/m8/ConsentAuditScreen'
 import IdentityHubScreen from '#/screens/m8/IdentityHubScreen'
 import INEVerificationScreen from '#/screens/m8/INEVerificationScreen'
@@ -514,9 +515,10 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
       <Stack.Screen
         name="SeeInfluence"
         getComponent={() => {
-          const {SeeInfluenceScreen} = require(
-            '#/screens/Data/SeeInfluenceScreen'
-          ) as {SeeInfluenceScreen: ComponentType}
+          const {SeeInfluenceScreen} =
+            require('#/screens/Data/SeeInfluenceScreen') as {
+              SeeInfluenceScreen: ComponentType
+            }
           return SeeInfluenceScreen
         }}
         options={{
@@ -872,9 +874,10 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
       <Stack.Screen
         name="SeeHighlightDetails"
         getComponent={() => {
-          const {SeeHighlightDetailsScreen} = require(
-            '#/screens/Highlights/SeeHighlightDetailsScreen'
-          ) as {SeeHighlightDetailsScreen: ComponentType}
+          const {SeeHighlightDetailsScreen} =
+            require('#/screens/Highlights/SeeHighlightDetailsScreen') as {
+              SeeHighlightDetailsScreen: ComponentType
+            }
           return SeeHighlightDetailsScreen
         }}
         options={{title: title(msg`Highlight Details`)}}
@@ -892,9 +895,10 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
       <Stack.Screen
         name="DistrictProfile"
         getComponent={() => {
-          const {DistrictProfileScreen} = require(
-            '#/screens/Map/DistrictProfileScreen'
-          ) as {DistrictProfileScreen: ComponentType}
+          const {DistrictProfileScreen} =
+            require('#/screens/Map/DistrictProfileScreen') as {
+              DistrictProfileScreen: ComponentType
+            }
           return DistrictProfileScreen
         }}
         options={{title: title(msg`District Profile`)}}
@@ -988,6 +992,11 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
         name="INEVerification"
         getComponent={() => INEVerificationScreen}
         options={{title: title(msg`INE Verification`), requireAuth: true}}
+      />
+      <Stack.Screen
+        name="AnonymousVoice"
+        getComponent={() => AnonymousVoiceScreen}
+        options={{title: title(msg`Anonymous Voice`), requireAuth: true}}
       />
     </>
   )
