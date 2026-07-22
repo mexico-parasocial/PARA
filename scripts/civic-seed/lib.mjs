@@ -21,6 +21,7 @@ const TID_COLLECTIONS = new Set([
   'com.para.civic.delegation',
   'com.para.civic.position',
   'com.para.civic.vote',
+  'com.para.community.briefingPack',
 ])
 
 export function defaultManifestPath() {
@@ -184,7 +185,12 @@ export function buildActorInputs(manifest, credentials) {
 
 export function buildSeedOperations({manifest, actorsByAlias}) {
   const operations = []
-  const cabildeoUriByAlias = buildCabildeoUriMap(manifest, actorsByAlias)
+  // Cabildeo rkeys are generated as TIDs at build time (the PDS enforces TID
+  // keys for this collection) so that cabildeoUriByAlias matches the rkeys
+  // actually written — previously the map used manifest rkeys while
+  // normalizeTidOperations rewrote them at apply time, breaking every
+  // vote/position/delegation/briefing-pack reference.
+  const cabildeoUriByAlias = {}
 
   for (const actor of manifest.actors || []) {
     if (!actor.identity) continue
@@ -247,14 +253,20 @@ export function buildSeedOperations({manifest, actorsByAlias}) {
     })
   }
 
+  const cabildeoTidCounters = new Map()
   for (const entry of manifest.cabildeos || []) {
     const actor = getActor(actorsByAlias, entry.actor, 'cabildeo actor')
+    const rkey = cabildeoRecordRkey(entry, actor.did, cabildeoTidCounters)
+    if (entry.alias) {
+      cabildeoUriByAlias[entry.alias] =
+        `at://${actor.did}/com.para.civic.cabildeo/${rkey}`
+    }
     operations.push({
       group: 'cabildeo',
       actorAlias: entry.actor,
       did: actor.did,
       collection: 'com.para.civic.cabildeo',
-      rkey: entry.rkey,
+      rkey,
       record: buildCabildeoRecord(entry),
     })
   }
@@ -292,6 +304,18 @@ export function buildSeedOperations({manifest, actorsByAlias}) {
       collection: 'com.para.civic.vote',
       rkey: entry.rkey,
       record: buildVoteRecord(entry, actorsByAlias, cabildeoUriByAlias),
+    })
+  }
+
+  for (const entry of manifest.briefingPacks || []) {
+    const actor = getActor(actorsByAlias, entry.actor, 'briefing pack actor')
+    operations.push({
+      group: 'briefing-packs',
+      actorAlias: entry.actor,
+      did: actor.did,
+      collection: 'com.para.community.briefingPack',
+      rkey: entry.rkey,
+      record: buildBriefingPackRecord(entry, actor, cabildeoUriByAlias),
     })
   }
 
@@ -978,6 +1002,7 @@ function buildCabildeoRecord(entry) {
     flairs: entry.flairs,
     region: entry.region,
     geoRestricted: entry.geoRestricted,
+    geo: entry.geo,
     options: entry.options,
     minQuorum: entry.minQuorum,
     phase: entry.phase,
@@ -1021,6 +1046,26 @@ function buildDelegationRecord(entry, actorsByAlias, cabildeoUriByAlias) {
     scopeFlairs: entry.scopeFlairs,
     reason: entry.reason,
     createdAt: entry.createdAt,
+  })
+}
+
+function buildBriefingPackRecord(entry, actor, cabildeoUriByAlias) {
+  return compactObject({
+    $type: 'com.para.community.briefingPack',
+    packType: 'party_lobbying',
+    communityUri: `at://${actor.did}/com.para.community.board/${entry.communitySlug}`,
+    party: entry.party,
+    title: entry.title,
+    summary: entry.summary,
+    cabildeoUris: (entry.cabildeoAliases || []).map(alias =>
+      resolveCabildeoUri(alias, cabildeoUriByAlias),
+    ),
+    civicTreeCardIds: entry.civicTreeCardIds || [],
+    evidenceUris: entry.evidenceUris || [],
+    status: entry.status || 'published',
+    createdBy: actor.did,
+    createdAt: entry.createdAt,
+    updatedAt: entry.updatedAt || entry.createdAt,
   })
 }
 
@@ -1144,14 +1189,24 @@ function buildRepostRecord(entry) {
   })
 }
 
-function buildCabildeoUriMap(manifest, actorsByAlias) {
-  const map = {}
-  for (const cabildeo of manifest.cabildeos || []) {
-    const actor = getActor(actorsByAlias, cabildeo.actor, 'cabildeo uri actor')
-    map[cabildeo.alias] =
-      `at://${actor.did}/com.para.civic.cabildeo/${cabildeo.rkey}`
+/**
+ * Deterministic rkey for a cabildeo entry. Mirrors normalizeTidOperations'
+ * algorithm (same counter semantics per did+collection+createdAt) so re-runs
+ * reproduce the exact rkeys written by previous applies — upserts, never
+ * duplicates — while making the rkey available at build time for URI refs.
+ */
+function cabildeoRecordRkey(entry, did, counters) {
+  if (entry.rkey && isValidTid(entry.rkey)) {
+    return entry.rkey
   }
-  return map
+  const parsed = Date.parse(entry.createdAt || '')
+  const baseMicros = Number.isFinite(parsed)
+    ? parsed * 1000
+    : Date.parse('2026-01-01T00:00:00.000Z') * 1000
+  const counterKey = `${did}:com.para.civic.cabildeo:${baseMicros}`
+  const offset = counters.get(counterKey) || 0
+  counters.set(counterKey, offset + 1)
+  return TID.fromTime(baseMicros + offset, 0).toString()
 }
 
 function resolveCabildeoUri(alias, cabildeoUriByAlias) {

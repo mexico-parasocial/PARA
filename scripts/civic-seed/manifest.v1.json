@@ -361,6 +361,201 @@
         "verifiedAt": "2026-04-17T12:50:00.000Z",
         "proofBlob": "ine-direction://morena/carolina-rangel-gracida"
       }
+    },
+    {
+      "alias": "fed_exec_sheinbaum",
+      "handle": "claudia-sheinbaum.test",
+      "email": "claudia-sheinbaum@test.com",
+      "password": "hunter2",
+      "displayName": "Claudia Sheinbaum Pardo",
+      "description": "Presidenta constitucional de los Estados Unidos Mexicanos (2024-2030).",
+      "roles": ["official"],
+      "identity": {
+        "createdAt": "2026-07-20T09:00:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-07-20T12:00:00.000Z",
+        "proofBlob": "ine-executive://federal/claudia-sheinbaum-pardo"
+      }
+    },
+    {
+      "alias": "gov_jalisco_lemus",
+      "handle": "pablo-lemus.test",
+      "email": "pablo-lemus@test.com",
+      "password": "hunter2",
+      "displayName": "Pablo Lemus Navarro",
+      "description": "Gobernador constitucional de Jalisco (2024-2030), Movimiento Ciudadano.",
+      "roles": ["official"],
+      "identity": {
+        "createdAt": "2026-07-20T09:00:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-07-20T12:00:00.000Z",
+        "proofBlob": "ine-gubernatorial://jalisco/pablo-lemus-navarro"
+      }
+    },
+    {
+      "alias": "gov_cdmx_brugada",
+      "handle": "clara-brugada.test",
+      "email": "clara-brugada@test.com",
+      "password": "hunter2",
+      "displayName": "Clara Brugada Molina",
+      "description": "Jefa de Gobierno de la Ciudad de Mexico (2024-2030), Morena.",
+      "roles": ["official"],
+      "identity": {
+        "createdAt": "2026-07-20T09:00:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-07-20T12:00:00.000Z",
+        "proofBlob": "ine-gubernatorial://cdmx/clara-brugada-molina"
+      }
+    },
+    {
+      "alias": "gov_nuevoleon_samuel",
+      "handle": "samuel-garcia.test",
+      "email": "samuel-garcia@test.com",
+      "password": "hunter2",
+      "displayName": "Samuel Garcia Sepulveda",
+      "description": "Gobernador constitucional de Nuevo Leon (2024-2030), Movimiento Ciudadano.",
+      "roles": ["official"],
+      "identity": {
+        "createdAt": "2026-07-20T09:00:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-07-20T12:00:00.000Z",
+        "proofBlob": "ine-gubernatorial://nuevo-leon/samuel-garcia-sepulveda"
+      }
+    },
+    {
+      "alias": "sen_norona",
+      "handle": "fernandez-norona.test",
+      "email": "fernandez-norona@test.com",
+      "password": "hunter2",
+      "displayName": "Gerardo Fernandez Norona",
+      "description": "Senador de la Republica por Morena, LXVI Legislatura.",
+      "roles": ["official"],
+      "identity": {
+        "createdAt": "2026-07-20T09:00:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-07-20T12:00:00.000Z",
+        "proofBlob": "ine-congress://senado/gerardo-fernandez-norona"
+      }
+    },
+    {
+      "alias": "sen_adan_augusto",
+      "handle": "adan-augusto.test",
+      "email": "adan-augusto@test.com",
+      "password": "hunter2",
+      "displayName": "Adan Augusto Lopez Hernandez",
+      "description": "Senador de la Republica y coordinador de Morena en el Senado, LXVI Legislatura.",
+      "roles": ["official"],
+      "identity": {
+        "createdAt": "2026-07-20T09:00:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-07-20T12:00:00.000Z",
+        "proofBlob": "ine-congress://senado/adan-augusto-lopez-hernandez"
+      }
+    },
+    {
+      "alias": "sen_ricardo_anaya",
+      "handle": "ricardo-anaya.test",
+      "email": "ricardo-anaya@test.com",
+      "password": "hunter2",
+      "displayName": "Ricardo Anaya Cortes",
+      "description": "Senador de la Republica por Accion Nacional, LXVI Legislatura.",
+      "roles": ["official"],
+      "identity": {
+        "createdAt": "2026-07-20T09:00:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-07-20T12:00:00.000Z",
+        "proofBlob": "ine-congress://senado/ricardo-anaya-cortes"
+      }
+    },
+    {
+      "alias": "sen_lilly_tellez",
+      "handle": "lilly-tellez.test",
+      "email": "lilly-tellez@test.com",
+      "password": "hunter2",
+      "displayName": "Lilly Tellez",
+      "description": "Senadora de la Republica por Accion Nacional, LXVI Legislatura.",
+      "roles": ["official"],
+      "identity": {
+        "createdAt": "2026-07-20T09:00:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-07-20T12:00:00.000Z",
+        "proofBlob": "ine-congress://senado/lilly-tellez"
+      }
+    },
+    {
+      "alias": "sen_clemente_castaneda",
+      "handle": "clemente-castaneda.test",
+      "email": "clemente-castaneda@test.com",
+      "password": "hunter2",
+      "displayName": "Clemente Castaneda Hoeflich",
+      "description": "Senador de la Republica y coordinador de Movimiento Ciudadano en el Senado, LXVI Legislatura.",
+      "roles": ["official"],
+      "identity": {
+        "createdAt": "2026-07-20T09:00:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-07-20T12:00:00.000Z",
+        "proofBlob": "ine-congress://senado/clemente-castaneda-hoeflich"
+      }
+    },
+    {
+      "alias": "dep_santiago_creel",
+      "handle": "santiago-creel.test",
+      "email": "santiago-creel@test.com",
+      "password": "hunter2",
+      "displayName": "Santiago Creel Miranda",
+      "description": "Diputado federal por Accion Nacional, LXVI Legislatura.",
+      "roles": ["official"],
+      "identity": {
+        "createdAt": "2026-07-20T09:00:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-07-20T12:00:00.000Z",
+        "proofBlob": "ine-congress://diputados/santiago-creel-miranda"
+      }
+    },
+    {
+      "alias": "dep_ruben_moreira",
+      "handle": "ruben-moreira.test",
+      "email": "ruben-moreira@test.com",
+      "password": "hunter2",
+      "displayName": "Ruben Moreira Valdez",
+      "description": "Diputado federal por el PRI, LXVI Legislatura.",
+      "roles": ["official"],
+      "identity": {
+        "createdAt": "2026-07-20T09:00:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-07-20T12:00:00.000Z",
+        "proofBlob": "ine-congress://diputados/ruben-moreira-valdez"
+      }
+    },
+    {
+      "alias": "dep_reginaldo_sandoval",
+      "handle": "reginaldo-sandoval.test",
+      "email": "reginaldo-sandoval@test.com",
+      "password": "hunter2",
+      "displayName": "Reginaldo Sandoval Flores",
+      "description": "Diputado federal por el Partido del Trabajo, LXVI Legislatura.",
+      "roles": ["official"],
+      "identity": {
+        "createdAt": "2026-07-20T09:00:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-07-20T12:00:00.000Z",
+        "proofBlob": "ine-congress://diputados/reginaldo-sandoval-flores"
+      }
+    },
+    {
+      "alias": "dep_noemi_luna",
+      "handle": "noemi-luna.test",
+      "email": "noemi-luna@test.com",
+      "password": "hunter2",
+      "displayName": "Noemi Berenice Luna Ayala",
+      "description": "Diputada federal por Accion Nacional, LXVI Legislatura.",
+      "roles": ["official"],
+      "identity": {
+        "createdAt": "2026-07-20T09:00:00.000Z",
+        "isVerifiedPublicFigure": true,
+        "verifiedAt": "2026-07-20T12:00:00.000Z",
+        "proofBlob": "ine-congress://diputados/noemi-berenice-luna-ayala"
+      }
     }
   ],
   "follows": [
@@ -593,6 +788,84 @@
       "subject": "party_morena_secretary",
       "rkey": "seed-verify-party-morena-secretary",
       "createdAt": "2026-04-17T12:50:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "fed_exec_sheinbaum",
+      "rkey": "seed-verify-fed-exec-sheinbaum",
+      "createdAt": "2026-07-20T12:00:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "gov_jalisco_lemus",
+      "rkey": "seed-verify-gov-jalisco-lemus",
+      "createdAt": "2026-07-20T12:00:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "gov_cdmx_brugada",
+      "rkey": "seed-verify-gov-cdmx-brugada",
+      "createdAt": "2026-07-20T12:00:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "gov_nuevoleon_samuel",
+      "rkey": "seed-verify-gov-nuevoleon-samuel",
+      "createdAt": "2026-07-20T12:00:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "sen_norona",
+      "rkey": "seed-verify-sen-norona",
+      "createdAt": "2026-07-20T12:00:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "sen_adan_augusto",
+      "rkey": "seed-verify-sen-adan-augusto",
+      "createdAt": "2026-07-20T12:00:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "sen_ricardo_anaya",
+      "rkey": "seed-verify-sen-ricardo-anaya",
+      "createdAt": "2026-07-20T12:00:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "sen_lilly_tellez",
+      "rkey": "seed-verify-sen-lilly-tellez",
+      "createdAt": "2026-07-20T12:00:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "sen_clemente_castaneda",
+      "rkey": "seed-verify-sen-clemente-castaneda",
+      "createdAt": "2026-07-20T12:00:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "dep_santiago_creel",
+      "rkey": "seed-verify-dep-santiago-creel",
+      "createdAt": "2026-07-20T12:00:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "dep_ruben_moreira",
+      "rkey": "seed-verify-dep-ruben-moreira",
+      "createdAt": "2026-07-20T12:00:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "dep_reginaldo_sandoval",
+      "rkey": "seed-verify-dep-reginaldo-sandoval",
+      "createdAt": "2026-07-20T12:00:00.000Z"
+    },
+    {
+      "issuer": "para_verifier_mx",
+      "subject": "dep_noemi_luna",
+      "rkey": "seed-verify-dep-noemi-luna",
+      "createdAt": "2026-07-20T12:00:00.000Z"
     }
   ],
   "communities": [
@@ -605,9 +878,141 @@
     {"id": "party-pvem", "name": "p/PVEM", "slug": "pvem"},
     {"id": "party-pt", "name": "p/PT", "slug": "pt"},
     {"id": "party-mc", "name": "p/MC", "slug": "mc"},
-    {"id": "party-morena", "name": "p/Morena", "slug": "morena"}
+    {"id": "party-morena", "name": "p/Morena", "slug": "morena"},
+    {"id": "federal-executive", "name": "g/Federal", "slug": "federal"},
+    {"id": "federal-congress", "name": "g/Congress", "slug": "congress"}
   ],
   "governanceRecords": [
+    {
+      "actor": "para_verifier_mx",
+      "rkey": "federal",
+      "community": "g/Federal",
+      "communityId": "federal-executive",
+      "slug": "federal",
+      "createdAt": "2026-07-20T09:00:00.000Z",
+      "updatedAt": "2026-07-20T12:00:00.000Z",
+      "moderators": [
+        {
+          "actor": "para_verifier_mx",
+          "role": "Federal governance publisher",
+          "badge": "PARA Trust",
+          "capabilities": [
+            "publish_governance_updates",
+            "set_official_representatives"
+          ]
+        }
+      ],
+      "officials": [
+        {
+          "actor": "fed_exec_sheinbaum",
+          "office": "Presidenta de Mexico",
+          "mandate": "Constitutional president of the United Mexican States for the 2024-2030 term."
+        }
+      ],
+      "deputies": [],
+      "metadata": {
+        "termLengthDays": 2190,
+        "reviewCadence": "Refresh from federal executive transitions",
+        "escalationPath": "Federal executive record > PARA trust desk > governance update",
+        "publicContact": "www.gob.mx",
+        "lastPublishedAt": "2026-07-20T12:00:00.000Z",
+        "state": "National"
+      },
+      "editHistory": [
+        {
+          "id": "seed-federal-exec-2026",
+          "action": "set_official_representatives",
+          "actor": "para_verifier_mx",
+          "createdAt": "2026-07-20T12:00:00.000Z",
+          "summary": "Seeded federal executive official record."
+        }
+      ]
+    },
+    {
+      "actor": "para_verifier_mx",
+      "rkey": "congress",
+      "community": "g/Congress",
+      "communityId": "federal-congress",
+      "slug": "congress",
+      "createdAt": "2026-07-20T09:00:00.000Z",
+      "updatedAt": "2026-07-20T12:00:00.000Z",
+      "moderators": [
+        {
+          "actor": "para_verifier_mx",
+          "role": "Congress governance publisher",
+          "badge": "PARA Trust",
+          "capabilities": [
+            "publish_governance_updates",
+            "set_official_representatives"
+          ]
+        }
+      ],
+      "officials": [
+        {
+          "actor": "sen_norona",
+          "office": "Senador de la Republica",
+          "mandate": "Senator for Morena, LXVI Legislature (2024-2030)."
+        },
+        {
+          "actor": "sen_adan_augusto",
+          "office": "Senador de la Republica",
+          "mandate": "Senator and Morena's Senate coordinator, LXVI Legislature (2024-2030)."
+        },
+        {
+          "actor": "sen_ricardo_anaya",
+          "office": "Senador de la Republica",
+          "mandate": "Senator for Accion Nacional, LXVI Legislature (2024-2030)."
+        },
+        {
+          "actor": "sen_lilly_tellez",
+          "office": "Senadora de la Republica",
+          "mandate": "Senator for Accion Nacional, LXVI Legislature (2024-2030)."
+        },
+        {
+          "actor": "sen_clemente_castaneda",
+          "office": "Senador de la Republica",
+          "mandate": "Senator and Movimiento Ciudadano's Senate coordinator, LXVI Legislature (2024-2030)."
+        },
+        {
+          "actor": "dep_santiago_creel",
+          "office": "Diputado Federal",
+          "mandate": "Federal deputy for Accion Nacional, LXVI Legislature (2024-2027)."
+        },
+        {
+          "actor": "dep_ruben_moreira",
+          "office": "Diputado Federal",
+          "mandate": "Federal deputy for the PRI, LXVI Legislature (2024-2027)."
+        },
+        {
+          "actor": "dep_reginaldo_sandoval",
+          "office": "Diputado Federal",
+          "mandate": "Federal deputy for the Partido del Trabajo, LXVI Legislature (2024-2027)."
+        },
+        {
+          "actor": "dep_noemi_luna",
+          "office": "Diputada Federal",
+          "mandate": "Federal deputy for Accion Nacional, LXVI Legislature (2024-2027)."
+        }
+      ],
+      "deputies": [],
+      "metadata": {
+        "termLengthDays": 1095,
+        "reviewCadence": "Refresh after each legislature renewal",
+        "escalationPath": "Congress roster > PARA trust desk > governance update",
+        "publicContact": "www.diputados.gob.mx",
+        "lastPublishedAt": "2026-07-20T12:00:00.000Z",
+        "state": "National"
+      },
+      "editHistory": [
+        {
+          "id": "seed-congress-lxvi-2026",
+          "action": "set_official_representatives",
+          "actor": "para_verifier_mx",
+          "createdAt": "2026-07-20T12:00:00.000Z",
+          "summary": "Seeded LXVI Legislature senators and federal deputies."
+        }
+      ]
+    },
     {
       "actor": "party_pan_president",
       "rkey": "pan",
@@ -921,9 +1326,9 @@
       ],
       "officials": [
         {
-          "actor": "official_jalisco",
-          "office": "Official representative",
-          "mandate": "Coordinates public policy statements and civic updates."
+          "actor": "gov_jalisco_lemus",
+          "office": "Gobernador constitucional",
+          "mandate": "Constitutional governor of Jalisco for the 2024-2030 term, elected for Movimiento Ciudadano."
         }
       ],
       "deputies": [
@@ -993,9 +1398,9 @@
       ],
       "officials": [
         {
-          "actor": "official_cdmx",
-          "office": "Mobility official",
-          "mandate": "Leads transport-related deliberation and implementation updates."
+          "actor": "gov_cdmx_brugada",
+          "office": "Jefa de Gobierno",
+          "mandate": "Head of Government of Mexico City for the 2024-2030 term, elected for Morena."
         }
       ],
       "deputies": [
@@ -1136,9 +1541,9 @@
       ],
       "officials": [
         {
-          "actor": "official_cdmx",
-          "office": "Regional coordinator",
-          "mandate": "Coordinates metro-area policy alignment and updates."
+          "actor": "gov_nuevoleon_samuel",
+          "office": "Gobernador constitucional",
+          "mandate": "Constitutional governor of Nuevo Leon for the 2024-2030 term, elected for Movimiento Ciudadano."
         }
       ],
       "deputies": [
@@ -1185,9 +1590,156 @@
       ]
     }
   ],
+  "briefingPacks": [
+    {
+      "actor": "party_pan_president",
+      "rkey": "seed-pack-pan-logistics",
+      "communitySlug": "pan",
+      "party": "PAN",
+      "title": "Infraestructura y logistica nacional: posicion PAN",
+      "summary": "Panorama de la bancada del PAN sobre el corredor logistico Jalisco-CDMX: criterios de carga ferroviaria, seguridad vial y costos por tonelada.",
+      "cabildeoAliases": ["jalisco-cdmx-logistics-voting"],
+      "status": "published",
+      "createdAt": "2026-04-20T10:00:00.000Z",
+      "updatedAt": "2026-04-22T10:00:00.000Z"
+    },
+    {
+      "actor": "party_pri_president",
+      "rkey": "seed-pack-pri-housing",
+      "communitySlug": "pri",
+      "party": "PRI",
+      "title": "Vivienda y desarrollo urbano: posicion PRI",
+      "summary": "Sintesis del PRI sobre renta protegida y vivienda vertical en CDMX y Nuevo Leon, con enfasis en plusvalia y derechos de inquilinos.",
+      "cabildeoAliases": ["cdmx-jalisco-housing-open", "nl-housing-mega"],
+      "status": "published",
+      "createdAt": "2026-04-21T10:00:00.000Z",
+      "updatedAt": "2026-04-23T10:00:00.000Z"
+    },
+    {
+      "actor": "party_pvem_executive_secretary",
+      "rkey": "seed-pack-pvem-water",
+      "communitySlug": "pvem",
+      "party": "PVEM",
+      "title": "Agua y gobernanza ambiental: posicion PVEM",
+      "summary": "Posicion del PVEM sobre gobernanza del agua en Jalisco y respuesta a inundaciones en Oaxaca: medicion, tarifas y participacion vecinal.",
+      "cabildeoAliases": ["jalisco-cdmx-water-governance-deliberating", "oaxaca-flood-response-voting"],
+      "status": "published",
+      "createdAt": "2026-04-22T10:00:00.000Z",
+      "updatedAt": "2026-04-24T10:00:00.000Z"
+    },
+    {
+      "actor": "party_pt_coordinator",
+      "rkey": "seed-pack-pt-mobility",
+      "communitySlug": "pt",
+      "party": "PT",
+      "title": "Movilidad y aire limpio: posicion PT",
+      "summary": "El PT propone priorizar transporte publico electrico y monitoreo de aire en tiempo real para el corredor CDMX-Jalisco.",
+      "cabildeoAliases": ["cdmx-jalisco-air-mobility-voting", "cdmx-transit-deliberating"],
+      "status": "published",
+      "createdAt": "2026-04-23T10:00:00.000Z",
+      "updatedAt": "2026-04-25T10:00:00.000Z"
+    },
+    {
+      "actor": "party_mc_coordinator",
+      "rkey": "seed-pack-mc-mining",
+      "communitySlug": "mc",
+      "party": "MC",
+      "title": "Mineria responsable en Oaxaca: posicion MC",
+      "summary": "Movimiento Ciudadano plantea consulta comunitaria vinculante y regalias transparentes para nuevas concesiones mineras en Oaxaca.",
+      "cabildeoAliases": ["oaxaca-mining-resolved-tie"],
+      "status": "published",
+      "createdAt": "2026-04-24T10:00:00.000Z",
+      "updatedAt": "2026-04-26T10:00:00.000Z"
+    },
+    {
+      "actor": "party_morena_president",
+      "rkey": "seed-pack-morena-budget",
+      "communitySlug": "morena",
+      "party": "Morena",
+      "title": "Presupuesto participativo Jalisco: posicion Morena",
+      "summary": "Morena respalda el presupuesto participativo con bolsa minima para agua potable y rendicion trimestral de avances por colonia.",
+      "cabildeoAliases": ["jalisco-budget-open", "jalisco-water-voting"],
+      "status": "published",
+      "createdAt": "2026-04-25T10:00:00.000Z",
+      "updatedAt": "2026-04-27T10:00:00.000Z"
+    },
+    {
+      "actor": "gov_jalisco_lemus",
+      "rkey": "seed-pack-jalisco-water",
+      "communitySlug": "jalisco",
+      "party": "MC",
+      "title": "Paquete hidrico Jalisco: informe de gobierno",
+      "summary": "Informe oficial del Gobierno de Jalisco sobre la gobernanza del agua: inversiones programadas, fuentes de abasto y metas por municipio.",
+      "cabildeoAliases": ["jalisco-cdmx-water-governance-deliberating", "jalisco-water-voting"],
+      "status": "published",
+      "createdAt": "2026-05-03T10:00:00.000Z",
+      "updatedAt": "2026-05-05T10:00:00.000Z"
+    },
+    {
+      "actor": "gov_cdmx_brugada",
+      "rkey": "seed-pack-cdmx-mobility",
+      "communitySlug": "cdmx",
+      "party": "Morena",
+      "title": "Movilidad CDMX: informe de gobierno",
+      "summary": "Informe del Gobierno de la Ciudad de Mexico sobre el programa integral de movilidad: lineas en expansion, calidad del aire y presupuesto 2026.",
+      "cabildeoAliases": ["cdmx-jalisco-air-mobility-voting", "cdmx-transit-deliberating"],
+      "status": "published",
+      "createdAt": "2026-05-04T10:00:00.000Z",
+      "updatedAt": "2026-05-06T10:00:00.000Z"
+    },
+    {
+      "actor": "gov_nuevoleon_samuel",
+      "rkey": "seed-pack-nl-housing",
+      "communitySlug": "nuevoleon",
+      "party": "MC",
+      "title": "Vivienda Nuevo Leon: informe de gobierno",
+      "summary": "Informe del Gobierno de Nuevo Leon sobre el programa de vivienda: metas anuales, esquemas de cofinanciamiento y desarrollo en el area metropolitana.",
+      "cabildeoAliases": ["nl-housing-mega"],
+      "status": "published",
+      "createdAt": "2026-05-05T10:00:00.000Z",
+      "updatedAt": "2026-05-07T10:00:00.000Z"
+    },
+    {
+      "actor": "party_pan_president",
+      "rkey": "seed-pack-pan-security-draft",
+      "communitySlug": "pan",
+      "party": "PAN",
+      "title": "Borrador: agenda de seguridad patrimonial",
+      "summary": "Documento de trabajo interno del PAN sobre seguridad patrimonial: delitos patrimoniales, policia municipal y certificacion de mandos. Pendiente de validacion por la bancada.",
+      "cabildeoAliases": [],
+      "status": "draft",
+      "createdAt": "2026-07-14T10:00:00.000Z",
+      "updatedAt": "2026-07-18T10:00:00.000Z"
+    },
+    {
+      "actor": "gov_cdmx_brugada",
+      "rkey": "seed-pack-cdmx-air-draft",
+      "communitySlug": "cdmx",
+      "party": "Morena",
+      "title": "Borrador: calidad del aire 2027",
+      "summary": "Anteproyecto del Gobierno de la Ciudad de Mexico para el programa de calidad del aire 2027: contingencias, verificacion vehicular y corredores verdes.",
+      "cabildeoAliases": ["cdmx-air-quality-draft"],
+      "status": "draft",
+      "createdAt": "2026-07-15T10:00:00.000Z",
+      "updatedAt": "2026-07-19T10:00:00.000Z"
+    },
+    {
+      "actor": "para_verifier_mx",
+      "rkey": "seed-pack-verifier-2025-archive",
+      "communitySlug": "federal",
+      "party": "PARA",
+      "title": "Archivo: informe de verificacion de figuras publicas 2025",
+      "summary": "Informe archivado del escritorio de confianza de PARA con el proceso y criterios de verificacion de figuras publicas aplicados durante 2025.",
+      "cabildeoAliases": [],
+      "status": "archived",
+      "createdAt": "2025-12-01T10:00:00.000Z",
+      "updatedAt": "2026-01-15T10:00:00.000Z"
+    }
+  ],
   "cabildeos": [
     {
       "alias": "jalisco-cdmx-logistics-voting",
+      "geo": {"latE7": 206597000, "lngE7": -1033496000},
       "actor": "official_jalisco",
       "rkey": "seed-cabildeo-jalisco-cdmx-logistics-voting",
       "title": "Corredor logistico Jalisco-CDMX: carga ferroviaria o autopista inteligente",
@@ -1218,6 +1770,7 @@
     },
     {
       "alias": "cdmx-jalisco-housing-open",
+      "geo": {"latE7": 194326000, "lngE7": -991332000},
       "actor": "official_cdmx",
       "rkey": "seed-cabildeo-cdmx-jalisco-housing-open",
       "title": "CDMX vivienda cerca del transporte: renta protegida o incentivos a densificacion",
@@ -1248,6 +1801,7 @@
     },
     {
       "alias": "jalisco-cdmx-water-governance-deliberating",
+      "geo": {"latE7": 206697000, "lngE7": -1033596000},
       "actor": "mod_jalisco",
       "rkey": "seed-cabildeo-jalisco-cdmx-water-governance-deliberating",
       "title": "Gobernanza del agua Jalisco-CDMX: organismo mixto o coordinacion por cuenca",
@@ -1278,6 +1832,7 @@
     },
     {
       "alias": "cdmx-jalisco-air-mobility-voting",
+      "geo": {"latE7": 194426000, "lngE7": -991432000},
       "actor": "mod_cdmx",
       "rkey": "seed-cabildeo-cdmx-jalisco-air-mobility-voting",
       "title": "Corredores limpios CDMX-Jalisco: electrificacion del transporte pesado o regulacion por emisiones",
@@ -1308,6 +1863,7 @@
     },
     {
       "alias": "jalisco-water-voting",
+      "geo": {"latE7": 206497000, "lngE7": -1033396000},
       "actor": "mod_jalisco",
       "rkey": "seed-cabildeo-jalisco-water-voting",
       "title": "Jalisco agua: desalinizacion vs conservacion integral",
@@ -1338,6 +1894,7 @@
     },
     {
       "alias": "jalisco-budget-open",
+      "geo": {"latE7": 206647000, "lngE7": -1033446000},
       "actor": "official_jalisco",
       "rkey": "seed-cabildeo-jalisco-budget-open",
       "title": "Presupuesto participativo 2027 para infraestructura barrial",
@@ -1363,6 +1920,7 @@
     },
     {
       "alias": "cdmx-transit-deliberating",
+      "geo": {"latE7": 194276000, "lngE7": -991282000},
       "actor": "mod_cdmx",
       "rkey": "seed-cabildeo-cdmx-transit-deliberating",
       "title": "CDMX movilidad: BRT metropolitano o ampliacion de metro",
@@ -1392,6 +1950,7 @@
     },
     {
       "alias": "cdmx-air-quality-draft",
+      "geo": {"latE7": 194376000, "lngE7": -991382000},
       "actor": "official_cdmx",
       "rkey": "seed-cabildeo-cdmx-air-quality-draft",
       "title": "Plan integral de aire limpio para corredor oriente metropolitano 2026-2032",
@@ -1414,6 +1973,7 @@
     },
     {
       "alias": "oaxaca-mining-resolved-tie",
+      "geo": {"latE7": 170732000, "lngE7": -967266000},
       "actor": "mod_oaxaca",
       "rkey": "seed-cabildeo-oaxaca-mining-resolved-tie",
       "title": "Oaxaca mineria en territorios indigenas: consulta vinculante",
@@ -1438,6 +1998,7 @@
     },
     {
       "alias": "oaxaca-flood-response-voting",
+      "geo": {"latE7": 170832000, "lngE7": -967166000},
       "actor": "active_participant_2",
       "rkey": "seed-cabildeo-oaxaca-flood-response-voting",
       "title": "Respuesta a inundaciones 2026: brigadas locales o mando central",
@@ -1461,6 +2022,7 @@
     },
     {
       "alias": "nl-housing-mega",
+      "geo": {"latE7": 256866000, "lngE7": -1003161000},
       "actor": "mod_nuevoleon",
       "rkey": "seed-cabildeo-nuevoleon-housing-mega",
       "title": "Nuevo Leon vivienda y densificacion metropolitana 2030",
@@ -1489,6 +2051,7 @@
     },
     {
       "alias": "nl-culture-fund-no-votes",
+      "geo": {"latE7": 256766000, "lngE7": -1003061000},
       "actor": "official_cdmx",
       "rkey": "seed-cabildeo-nuevoleon-culture-fund-no-votes",
       "title": "Fondo cultural metropolitano 2026",
