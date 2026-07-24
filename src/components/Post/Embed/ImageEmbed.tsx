@@ -42,7 +42,7 @@ export function ImageEmbed({
 
   // Captured from AutoSizedImage so the peek-commit handler can reuse the same
   // ref + dims that a tap would — keeps the lightbox's return animation intact.
-  const singleContainerRef = useRef<AnimatedRef<View> | null>(null)
+  const singleContainerRef = useRef<AnimatedRef<React.Component> | null>(null)
   const singleDimsRef = useRef<Dimensions | null>(null)
 
   if (images.length > 0) {
@@ -54,7 +54,7 @@ export function ImageEmbed({
     }))
     const onPress = (
       index: number,
-      refs: AnimatedRef<View>[],
+      refs: AnimatedRef<React.Component>[],
       fetchedDims: (Dimensions | null)[],
     ) => {
       if (postContext) {

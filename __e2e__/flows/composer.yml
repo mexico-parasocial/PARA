@@ -7,96 +7,112 @@ appId: xyz.blueskyweb.app
 - runFlow:
     file: ../setupApp.yml
 - tapOn:
-    id: 'e2eSignInAlice'
+    id: "e2eSignInAlice"
 - extendedWaitUntil:
     visible:
-      id: 'viewHeaderHomeFeedPrefsBtn'
+      id: "viewHeaderHomeFeedPrefsBtn"
 
 - assertVisible:
-    id: 'composeFAB'
+    id: "composeFAB"
 - tapOn:
-    id: 'composeFAB'
-- inputText: 'Post text only'
+    id: "composeFAB"
+- inputText: "Post text only"
 - tapOn:
-    id: 'composerPublishBtn'
+    id: "composerPublishBtn"
 - assertVisible:
-    id: 'composeFAB'
+    id: "composeFAB"
 - tapOn:
-    id: 'composeFAB'
-- inputText: 'Post with an image'
+    id: "composeFAB"
+- inputText: "Post with an image"
 - tapOn:
-    id: 'openMediaBtn'
+    id: "openMediaBtn"
 - extendedWaitUntil:
     visible:
-      id: 'selectedPhotosView'
+      id: "selectedPhotosView"
 - tapOn:
-    id: 'composerPublishBtn'
+    id: "composerPublishBtn"
 - assertVisible:
-    id: 'composeFAB'
+    id: "composeFAB"
 - tapOn:
-    id: 'composeFAB'
-- inputText: 'Post with a https://example.com link card'
+    id: "composeFAB"
+- inputText: "Post with a https://example.com link card"
 - tapOn:
-    id: 'composerPublishBtn'
+    id: "composerPublishBtn"
 - assertVisible:
-    id: 'composeFAB'
+    id: "composeFAB"
 - tapOn:
-    id: 'e2eRefreshHome'
+    id: "e2eRefreshHome"
 - tapOn:
-    id: 'replyBtn'
-- inputText: 'Reply text only'
-- tapOn:
-    id: 'composerPublishBtn'
-- assertVisible:
-    id: 'composeFAB'
-- tapOn:
-    id: 'replyBtn'
-- inputText: 'Reply with an image'
-- tapOn:
-    id: 'openMediaBtn'
+    id: "replyBtn"
+# Wait for the composer to fully open before typing. Tapping replyBtn right
+# after the previous publish can race the closing composer on Android.
 - extendedWaitUntil:
     visible:
-      id: 'selectedPhotosView'
+      id: "composerPublishBtn"
+    timeout: 10000
+- inputText: "Reply text only"
 - tapOn:
-    id: 'composerPublishBtn'
+    id: "composerPublishBtn"
 - assertVisible:
-    id: 'composeFAB'
+    id: "composeFAB"
 - tapOn:
-    id: 'replyBtn'
-- inputText: 'Reply with a https://example.com link card'
-- tapOn:
-    id: 'composerPublishBtn'
-- assertVisible:
-    id: 'composeFAB'
-- tapOn:
-    id: 'highlightBtn'
-- tapOn:
-    id: 'quoteBtn'
-- inputText: 'QP text only'
-- tapOn:
-    id: 'composerPublishBtn'
-- assertVisible:
-    id: 'composeFAB'
-- tapOn:
-    id: 'highlightBtn'
-- tapOn:
-    id: 'quoteBtn'
-- inputText: 'QP with an image'
-- tapOn:
-    id: 'openMediaBtn'
+    id: "replyBtn"
+# Wait for the composer to fully open before typing.
 - extendedWaitUntil:
     visible:
-      id: 'selectedPhotosView'
+      id: "composerPublishBtn"
+    timeout: 10000
+- inputText: "Reply with an image"
 - tapOn:
-    id: 'composerPublishBtn'
+    id: "openMediaBtn"
+- extendedWaitUntil:
+    visible:
+      id: "selectedPhotosView"
+- tapOn:
+    id: "composerPublishBtn"
 - assertVisible:
-    id: 'composeFAB'
+    id: "composeFAB"
 - tapOn:
-    id: 'highlightBtn'
+    id: "replyBtn"
+# Wait for the composer to fully open before typing.
+- extendedWaitUntil:
+    visible:
+      id: "composerPublishBtn"
+    timeout: 10000
+- inputText: "Reply with a https://example.com link card"
 - tapOn:
-    id: 'quoteBtn'
-- inputText: 'QP with a https://example.com link card'
-- tapOn:
-    id: 'composerPublishBtn'
+    id: "composerPublishBtn"
 - assertVisible:
-    id: 'composeFAB'
+    id: "composeFAB"
+- tapOn:
+    id: "repostBtn"
+- tapOn:
+    id: "quoteBtn"
+- inputText: "QP text only"
+- tapOn:
+    id: "composerPublishBtn"
+- assertVisible:
+    id: "composeFAB"
+- tapOn:
+    id: "repostBtn"
+- tapOn:
+    id: "quoteBtn"
+- inputText: "QP with an image"
+- tapOn:
+    id: "openMediaBtn"
+- extendedWaitUntil:
+    visible:
+      id: "selectedPhotosView"
+- tapOn:
+    id: "composerPublishBtn"
+- assertVisible:
+    id: "composeFAB"
+- tapOn:
+    id: "repostBtn"
+- tapOn:
+    id: "quoteBtn"
+- inputText: "QP with a https://example.com link card"
+- tapOn:
+    id: "composerPublishBtn"
+- assertVisible:
+    id: "composeFAB"

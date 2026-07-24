@@ -29,7 +29,7 @@ import {SearchLanguageDropdown} from '../SearchLanguageDropdown'
 import {ClearableDateField, DEFAULT_DATE} from './ClearableDateField'
 import {ClearableInput} from './ClearableInput'
 import {FilterBlock} from './FilterBlock'
-import {FollowingDropdown} from './FollowingDropdown'
+import {FromDropdown} from './FromDropdown'
 import {MediaDropdown} from './MediaDropdown'
 import {ParaGeographySection} from './ParaGeographySection'
 import {ParaPostMetaSection} from './ParaPostMetaSection'
@@ -37,7 +37,7 @@ import {RepliesDropdown} from './RepliesDropdown'
 import {
   type AdvancedFilter,
   type FilterField,
-  type FollowingFilter,
+  type FromFilter,
   makeFilter,
   type MediaFilter,
   parseAdvancedSearch,
@@ -136,7 +136,7 @@ function DialogInner({
 
   const [media, setMedia] = useState<MediaFilter>(parsed.media)
   const [replies, setReplies] = useState<RepliesFilter>(parsed.replies)
-  const [following, setFollowing] = useState<FollowingFilter>(parsed.following)
+  const [following, setFollowing] = useState<FromFilter>(parsed.following)
 
   /*
    * The date picker requires a valid date, so these always hold one. The
@@ -528,7 +528,9 @@ function DialogInner({
                 t.atoms.text_contrast_medium,
                 a.mb_sm,
               ]}>
-              <Trans>Include</Trans>
+              <Trans comment="Include search results with or without replies">
+                Include
+              </Trans>
             </Text>
             <View style={[a.flex_row]}>
               <RepliesDropdown value={replies} onChange={setReplies} />
@@ -542,10 +544,12 @@ function DialogInner({
                 t.atoms.text_contrast_medium,
                 a.mb_sm,
               ]}>
-              <Trans>From</Trans>
+              <Trans comment="Filter search results by a specific post author">
+                From
+              </Trans>
             </Text>
             <View style={[a.flex_row]}>
-              <FollowingDropdown value={following} onChange={setFollowing} />
+              <FromDropdown value={following} onChange={setFollowing} />
             </View>
           </View>
         </View>

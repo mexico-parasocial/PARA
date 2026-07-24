@@ -2,14 +2,13 @@ import {useCallback, useEffect, useMemo, useState} from 'react'
 import {StyleSheet, View} from 'react-native'
 import {useAnimatedRef} from 'react-native-reanimated'
 import {AppBskyFeedDefs} from '@atproto/api'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
+import {useLingui} from '@lingui/react/macro'
 import {Trans} from '@lingui/react/macro'
 import {useIsFocused, useNavigation} from '@react-navigation/native'
 import {type NativeStackScreenProps} from '@react-navigation/native-stack'
 import {useQueryClient} from '@tanstack/react-query'
 
-import {VIDEO_FEED_URIS} from '#/lib/constants'
+import {TRENDING_DID, TRENDING_HANDLE, VIDEO_FEED_URIS} from '#/lib/constants'
 import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
 import {usePalette} from '#/lib/hooks/usePalette'
 import {useSetTitle} from '#/lib/hooks/useSetTitle'
@@ -62,7 +61,7 @@ export function ProfileFeedScreen(props: Props) {
       }
     : undefined
   const pal = usePalette('default')
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const navigation = useNavigation<NavigationProp>()
 
   const uri = useMemo(
@@ -94,8 +93,8 @@ export function ProfileFeedScreen(props: Props) {
             <View style={{flexDirection: 'row'}}>
               <Button
                 type="default"
-                accessibilityLabel={_(msg`Go back`)}
-                accessibilityHint={_(msg`Returns to previous page`)}
+                accessibilityLabel={l`Go back`}
+                accessibilityHint={l`Returns to previous page`}
                 onPress={onPressBack}
                 style={{flexShrink: 1}}>
                 <Text type="button" style={pal.text}>
@@ -162,7 +161,7 @@ export function ProfileFeedScreenInner({
   feedInfo: FeedSourceFeedInfo
   feedParams: FeedParams | undefined
 }) {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const {hasSession} = useSession()
   const {openComposer} = useOpenComposer()
   const isScreenFocused = useIsFocused()
@@ -199,10 +198,10 @@ export function ProfileFeedScreenInner({
       <EmptyState
         icon={HashtagWideIcon}
         iconSize="2xl"
-        message={_(msg`This feed is empty.`)}
+        message={l`This feed is empty.`}
       />
     )
-  }, [_])
+  }, [l])
 
   const isVideoFeed = useMemo(() => {
     const isBskyVideoFeed = VIDEO_FEED_URIS.includes(feedInfo.uri)
@@ -212,13 +211,17 @@ export function ProfileFeedScreenInner({
     return IS_NATIVE && _isVideoFeed
   }, [feedInfo])
 
+  const isTrending =
+    feedInfo.creatorDid.toLowerCase() === TRENDING_DID ||
+    feedInfo.creatorHandle.toLowerCase() === TRENDING_HANDLE
+
   return (
     <>
-      <ProfileFeedHeader info={feedInfo} />
-
+      <ProfileFeedHeader info={feedInfo} isTrending={isTrending} />
       <FeedFeedbackProvider value={feedFeedback}>
         <PostFeed
           enabled
+          description={isTrending ? feedInfo.description : undefined}
           feed={feed}
           feedParams={feedParams}
           pollInterval={60e3}
@@ -230,22 +233,20 @@ export function ProfileFeedScreenInner({
           isVideoFeed={isVideoFeed}
         />
       </FeedFeedbackProvider>
-
       {(isScrolledDown || hasNew) && (
         <LoadLatestBtn
           onPress={onScrollToTop}
-          label={_(msg`Load new posts`)}
+          label={l`Load new posts`}
           showIndicator={hasNew}
         />
       )}
-
       {hasSession && (
         <FAB
           testID="composeFAB"
           onPress={() => openComposer({logContext: 'Fab'})}
           icon={<EditBigIcon size="lg" fill={t.palette.white} />}
           accessibilityRole="button"
-          accessibilityLabel={_(msg`New post`)}
+          accessibilityLabel={l`New post`}
           accessibilityHint=""
         />
       )}

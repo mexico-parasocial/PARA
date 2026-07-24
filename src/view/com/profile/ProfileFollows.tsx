@@ -1,7 +1,6 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {type AppBskyActorDefs as ActorDefs} from '@atproto/api'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
+import {useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {useInitialNumToRender} from '#/lib/hooks/useInitialNumToRender'
@@ -14,6 +13,7 @@ import {useSession} from '#/state/session'
 import {FindContactsBannerNUX} from '#/components/contacts/FindContactsBannerNUX'
 import {PeopleRemove2_Stroke1_Corner0_Rounded as PeopleRemoveIcon} from '#/components/icons/PeopleRemove2'
 import {ListFooter, ListMaybePlaceholder} from '#/components/Lists'
+import {useAnalytics} from '#/analytics'
 import {IS_WEB} from '#/env'
 import {List} from '../util/List'
 import {ProfileCardWithFollowBtn} from './ProfileCard'
@@ -43,16 +43,20 @@ function keyExtractor(item: ActorDefs.ProfileView) {
 }
 
 export function ProfileFollows({name}: {name: string}) {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
+  const ax = useAnalytics()
   const initialNumToRender = useInitialNumToRender()
   const {currentAccount} = useSession()
   const navigation = useNavigation<NavigationProp>()
+
+  const isSortEnabled = ax.features.enabled(ax.features.FollowSortEnable)
 
   const onPressFindAccounts = useCallback(() => {
     if (IS_WEB) {
       navigation.navigate('Search', {})
     } else {
       navigation.navigate('SearchTab')
+      navigation.popToTop()
     }
   }, [navigation])
 
@@ -62,6 +66,8 @@ export function ProfileFollows({name}: {name: string}) {
     isLoading: isDidLoading,
     error: resolveError,
   } = useResolveDidQuery(name)
+  const isMe = resolvedDid === currentAccount?.did
+  const sort = isMe ? 'latest' : 'top'
   const {
     data,
     isLoading: isFollowsLoading,
@@ -70,10 +76,11 @@ export function ProfileFollows({name}: {name: string}) {
     fetchNextPage,
     error,
     refetch,
-  } = useProfileFollowsQuery(resolvedDid)
+  } = useProfileFollowsQuery(resolvedDid, {
+    sort,
+  })
 
   const isError = !!resolveError || !!error
-  const isMe = resolvedDid === currentAccount?.did
 
   const follows = useMemo(() => {
     if (data?.pages) {
@@ -99,14 +106,22 @@ export function ProfileFollows({name}: {name: string}) {
       currentPageCount >= 3 &&
       currentPageCount > paginationTrackingRef.current.page
     ) {
-      logger.metric('profile:following:paginate', {
+      ax.metric('profile:following:paginate', {
         contextProfileDid: resolvedDid,
         itemCount: follows.length,
         page: currentPageCount,
+        sort: isSortEnabled ? sort : undefined,
       })
     }
     paginationTrackingRef.current.page = currentPageCount
-  }, [data?.pages?.length, resolvedDid, follows.length])
+  }, [
+    ax,
+    data?.pages?.length,
+    resolvedDid,
+    follows.length,
+    sort,
+    isSortEnabled,
+  ])
 
   const onRefresh = useCallback(async () => {
     setIsPTRing(true)
@@ -136,12 +151,13 @@ export function ProfileFollows({name}: {name: string}) {
   // track pageview
   useEffect(() => {
     if (resolvedDid) {
-      logger.metric('profile:following:view', {
+      ax.metric('profile:following:view', {
         contextProfileDid: resolvedDid,
         isOwnProfile: isMe,
+        sort: isSortEnabled ? sort : undefined,
       })
     }
-  }, [resolvedDid, isMe])
+  }, [ax, resolvedDid, isMe, sort, isSortEnabled])
 
   // track seen items
   const seenItemsRef = useRef<Set<string>>(new Set())
@@ -158,17 +174,14 @@ export function ProfileFollows({name}: {name: string}) {
       if (position === 0) {
         return
       }
-      logger.metric(
-        'profileCard:seen',
-        {
-          profileDid: item.did,
-          position,
-          ...(resolvedDid !== undefined && {contextProfileDid: resolvedDid}),
-        },
-        {statsig: false},
-      )
+      ax.metric('profileCard:seen', {
+        profileDid: item.did,
+        position,
+        ...(resolvedDid !== undefined && {contextProfileDid: resolvedDid}),
+        sort: isSortEnabled ? sort : undefined,
+      })
     },
-    [follows, resolvedDid],
+    [ax, follows, resolvedDid, sort, isSortEnabled],
   )
 
   if (follows.length < 1) {
@@ -179,8 +192,8 @@ export function ProfileFollows({name}: {name: string}) {
         emptyType="results"
         emptyMessage={
           isMe
-            ? _(msg`You are not following anyone yet`)
-            : _(msg`This user isn't following anyone.`)
+            ? l`You are not following anyone yet`
+            : l`This user isn't following anyone.`
         }
         errorMessage={cleanError(resolveError || error)}
         onRetry={isError ? refetch : undefined}
@@ -188,8 +201,8 @@ export function ProfileFollows({name}: {name: string}) {
         useEmptyState={true}
         emptyStateIcon={PeopleRemoveIcon}
         emptyStateButton={{
-          label: _(msg`See suggested accounts`),
-          text: _(msg`See suggested accounts`),
+          label: l`See suggested accounts`,
+          text: l`See suggested accounts`,
           onPress: onPressFindAccounts,
           size: 'tiny',
           color: 'primary',
@@ -204,8 +217,8 @@ export function ProfileFollows({name}: {name: string}) {
       renderItem={renderItemWithContext}
       keyExtractor={keyExtractor}
       refreshing={isPTRing}
-      onRefresh={onRefresh}
-      onEndReached={onEndReached}
+      onRefresh={() => void onRefresh()}
+      onEndReached={() => void onEndReached()}
       onEndReachedThreshold={4}
       onItemSeen={onItemSeen}
       ListHeaderComponent={<FindContactsBannerNUX />}

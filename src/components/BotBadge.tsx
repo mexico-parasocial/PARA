@@ -1,4 +1,4 @@
-import {View} from 'react-native'
+import {type Insets, View} from 'react-native'
 import {type ComAtprotoLabelDefs} from '@atproto/api'
 import {useLingui} from '@lingui/react/macro'
 
@@ -43,9 +43,11 @@ export function BotBadge({
 export function BotBadgeButton({
   profile,
   width,
+  hitSlop,
 }: {
   profile: bsky.profile.AnyProfileView
   width: number
+  hitSlop: Insets
 }) {
   const t = useTheme()
 
@@ -60,7 +62,7 @@ export function BotBadgeButton({
     <>
       <Button
         label={l`Automated account`}
-        hitSlop={20}
+        hitSlop={hitSlop}
         onPress={evt => {
           evt.preventDefault()
 

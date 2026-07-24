@@ -78,10 +78,6 @@ export type Events = {
       | 'saved'
       | 'settings'
       | 'menu'
-      | 'data'
-      | 'communities'
-      | 'compass'
-      | 'explore'
     surface: 'bottomBar' | 'drawer' | 'drawerHeader' | 'topBar' | 'leftNav'
   }
   'deepLink:referrerReceived': {
@@ -277,8 +273,6 @@ export type Events = {
       | 'QuotePost'
       | 'ProfileFeed'
       | 'Deeplink'
-      | 'ComposerPrompt'
-      | 'Navigation'
       | 'Other'
     isReply: boolean
     hasQuote: boolean
@@ -368,18 +362,6 @@ export type Events = {
     logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
     feedDescriptor?: string
   }
-  'post:quote': {
-    uri: string
-    authorDid: string
-    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
-    feedDescriptor?: string
-  }
-  'post:unquote': {
-    uri: string
-    authorDid: string
-    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
-    feedDescriptor?: string
-  }
   'post:mute': {
     uri: string
     authorDid: string
@@ -459,7 +441,6 @@ export type Events = {
       | 'Hashtag'
       | 'Topic'
       | 'PostQuotes'
-      | 'FlairFeed'
     feedDescriptor?: string
     position?: number
   }
@@ -494,25 +475,30 @@ export type Events = {
   'profile:followers:view': {
     contextProfileDid: string
     isOwnProfile: boolean
+    sort?: 'latest' | 'top'
   }
   'profile:followers:paginate': {
     contextProfileDid: string
     itemCount: number
     page: number
+    sort?: 'latest' | 'top'
   }
   'profile:following:view': {
     contextProfileDid: string
     isOwnProfile: boolean
+    sort?: 'latest' | 'top'
   }
   'profile:following:paginate': {
     contextProfileDid: string
     itemCount: number
     page: number
+    sort?: 'latest' | 'top'
   }
   'profileCard:seen': {
     contextProfileDid?: string
     profileDid: string
     position?: number
+    sort?: 'latest' | 'top'
   }
   'profile:mute': {}
   'profile:unmute': {}
@@ -529,7 +515,7 @@ export type Events = {
       | 'ProgressGuide'
     location: 'Card' | 'Profile' | 'FollowAll'
     recSource?: 'Search'
-    recId?: number | string
+    recId?: string
     position: number
     suggestedDid: string
     category: string | null
@@ -542,7 +528,7 @@ export type Events = {
       | 'ProfileHeader'
       | 'Onboarding'
       | 'SeeMoreSuggestedUsers'
-    recId?: number | string
+    recId?: string
     position: number
     suggestedDid: string
     category: string | null
@@ -557,7 +543,7 @@ export type Events = {
       | 'SeeMoreSuggestedUsers'
       | 'ProgressGuide'
     recSource?: 'Search'
-    recId?: number | string
+    recId?: string
     position: number
     suggestedDid: string
     category: string | null
@@ -569,11 +555,11 @@ export type Events = {
       | 'ProfileInterstitial'
       | 'ProfileHeader'
       | 'Onboarding'
-    recId?: number | string
+    recId?: string
   }
   'suggestedUser:dismiss': {
     logContext: 'DiscoverInterstitial' | 'ProfileInterstitial' | 'ProfileHeader'
-    recId?: number | string
+    recId?: string
     position: number
     suggestedDid: string
   }
@@ -600,7 +586,10 @@ export type Events = {
   }
   'chat:create': {
     logContext:
-      'ProfileHeader' | 'NewChatDialog' | 'SendViaChatDialog' | 'ConvoSettings'
+      | 'ProfileHeader'
+      | 'NewChatDialog'
+      | 'SendViaChatDialog'
+      | 'ConvoSettings'
   }
   'chat:open': {
     logContext:
@@ -621,7 +610,7 @@ export type Events = {
 
   // Group chat adoption
   'groupchat:create': {
-    logContext: 'NewChatDialog'
+    logContext: 'NewChatDialog' | 'SendViaChatDialog'
   }
   'groupchat:landingPage:view': {
     hasSession: boolean
@@ -759,9 +748,7 @@ export type Events = {
   }
   'trendingTopic:click': {
     context: 'sidebar' | 'interstitial' | 'explore'
-  }
-  'recommendedTopic:click': {
-    context: 'explore'
+    recId?: string
   }
   'trendingVideos:show': {
     context: 'settings'
@@ -792,18 +779,16 @@ export type Events = {
   'search:query': {
     source: 'typed' | 'history' | 'autocomplete'
     filterCount: number
-    paraFilterCount: number
-    paraFilters: string[]
   }
 
   'search:results:loaded': {
-    tab: 'top' | 'latest' | 'people' | 'feeds'
+    tab: 'top' | 'latest' | 'people' | 'feeds' | 'starterPacks'
     initialCount: number
   }
 
   'search:result:press': {
-    tab?: 'top' | 'latest' | 'people' | 'feeds'
-    resultType: 'post' | 'profile' | 'feed'
+    tab?: 'top' | 'latest' | 'people' | 'feeds' | 'starterPacks'
+    resultType: 'post' | 'profile' | 'feed' | 'starterPack'
     position: number
     uri: string
   }
@@ -820,33 +805,14 @@ export type Events = {
 
   'search:advanced:press': {
     filterCount: number
-    paraFilterCount: number
-    paraFilters: string[]
-  }
-
-  'search:paraFilter:select': {
-    field: string
-    value: string
-  }
-
-  'search:paraFilter:clear': {
-    field: string
   }
 
   'search:shareLink:press': {
     filterCount: number
-    paraFilterCount: number
-    paraFilters: string[]
   }
 
   'search:addFilter:press': {
     filterCount: number
-    field: string
-    mode: string
-  }
-
-  'search:paraFilter:applied': {
-    filter: string
   }
 
   'progressGuide:hide': {}
@@ -1149,27 +1115,6 @@ export type Events = {
     setting: 'posts' | 'posts_and_replies'
   }
   'activitySubscription:disable': {}
-
-  'postSubscription:enable': {
-    uri: string
-    authorDid: string
-    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
-    feedDescriptor?: string
-  }
-  'postSubscription:disable': {
-    uri: string
-    authorDid: string
-    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
-    feedDescriptor?: string
-  }
-
-  'community:create:ctaShown': {}
-  'community:create:eligibilityDenied': {}
-  'community:create:ctaClicked': {}
-  'community:create:submitStarted': {}
-  'community:create:submitSucceeded': {}
-  'community:create:submitFailed': {}
-  'community:create:wizardCompleted': {}
   'activityPreference:changeChannels': {
     name: string
     push: boolean
@@ -1376,7 +1321,10 @@ export type Events = {
   // invite friends dialog opened, with the surface that triggered it
   'invite:dialog:open': {
     logContext:
-      'ProfileHeader' | 'Drawer' | 'FindContactsSettings' | 'NuxAnnouncement'
+      | 'ProfileHeader'
+      | 'Drawer'
+      | 'FindContactsSettings'
+      | 'NuxAnnouncement'
   }
   // user copied the invite link to clipboard
   'invite:action:copy': {}
@@ -1401,6 +1349,26 @@ export type Events = {
   // user dismissed the empty-followers promo banner
   'invite:followersPromo:dismiss': {}
 
+  /**
+   * Fired when a video fails terminally during playback: unreachable (404),
+   * undecodable, or the client lacks the required codecs. Complements the
+   * Sentry-only video.playback spans with a countable, unsampled event.
+   */
+  'video:playback:failed': {
+    surface: 'feed' | 'immersiveFeed'
+    presentation: 'video' | 'gif'
+    /**
+     * Coarse failure bucket: VideoNotFoundError, HLSUnsupportedError, an
+     * hls.js error details code (e.g. bufferAppendError), or PlayerError on
+     * native.
+     */
+    errorClass: string
+    /** Truncated to 256 chars */
+    errorMessage: string
+    /** HLS playlist URL, identifies the exact video for server-side lookup */
+    playlist: string
+  }
+
   // === Video upload funnel (Frontend Spec section D) ===
   // Every event carries uploadId (client-generated UUID, ties one upload
   // session end-to-end) + engine (compression engine id, e.g.
@@ -1419,6 +1387,25 @@ export type Events = {
     uploadId: string
     engine: string
     sourceBytes?: number
+  }
+  // Native-only. Raw container metadata returned by the new module's probe()
+  // (bitrate, codec, HDR, frame rate, rotation, etc.). Fires once per upload
+  // between compressStarted and the compressSkipped/compressCompleted decision.
+  // The web (mediabunny) and legacy rn-compressor engines do not surface this.
+  'video:upload:probed': {
+    uploadId: string
+    engine: string
+    mimeType: string
+    codec: string
+    width: number
+    height: number
+    duration: number
+    bitrate: number
+    fileSize: number
+    hasAudio: boolean
+    frameRate: number
+    rotation: number
+    isHDR: boolean
   }
   'video:upload:compressCompleted': {
     uploadId: string
@@ -1440,6 +1427,8 @@ export type Events = {
     uploadId: string
     engine: string
     errorClass: string
+    /** Truncated to 256 chars */
+    errorMessage: string
     elapsedMs: number
   }
   'video:upload:uploadStarted': {
@@ -1460,7 +1449,6 @@ export type Events = {
     engine: string
     bytes: number
     errorClass: string
-    errorMessage: string
     elapsedMs: number
   }
   'video:upload:processingStarted': {

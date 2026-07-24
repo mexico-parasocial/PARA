@@ -1,6 +1,6 @@
 import {memo, useCallback, useMemo, useState} from 'react'
 import {ActivityIndicator, View} from 'react-native'
-import {type AppBskyFeedDefs} from '@atproto/api'
+import {type AppBskyFeedDefs, type AppBskyGraphDefs} from '@atproto/api'
 import {Trans, useLingui} from '@lingui/react/macro'
 
 import {urls} from '#/lib/constants'
@@ -20,6 +20,7 @@ import {
   useParaSearchPostsQuery,
 } from '#/state/queries/search-posts'
 import {useSearchPostsV2Query} from '#/state/queries/search-posts-v2'
+import {useStarterPackSearch} from '#/state/queries/starter-pack-search'
 import {useSession} from '#/state/session'
 import {useLoggedOutViewControls} from '#/state/shell/logged-out'
 import {useCloseAllActiveElements} from '#/state/util'
@@ -28,6 +29,7 @@ import {TabBar} from '#/view/com/pager/TabBar'
 import {Post} from '#/view/com/post/Post'
 import {ProfileCardWithFollowBtn} from '#/view/com/profile/ProfileCard'
 import {List} from '#/view/com/util/List'
+import {StarterPackCard} from '#/screens/Search/components/StarterPackCard'
 import {DetectedLanguagesAdmonition} from '#/screens/Search/components/DetectedLanguagesAdmonition'
 import {
   getActiveParaFilterNames,
@@ -50,6 +52,7 @@ let SearchResults = ({
   query,
   filters,
   hasFilters,
+  fromMe,
   activeTab,
   onPageSelected,
   headerHeight,
@@ -59,7 +62,8 @@ let SearchResults = ({
 }: {
   query: string
   filters?: SearchFilters
-  hasFilters?: boolean
+  hasFilters: boolean
+  fromMe: boolean
   activeTab: number
   onPageSelected: (page: number) => void
   headerHeight: number
@@ -72,6 +76,10 @@ let SearchResults = ({
   const paraFilters = useMemo(
     () => searchFiltersToParaFilters(filters ?? {}),
     [filters],
+  )
+
+  const isStarterPacksEnabled = ax.features.enabled(
+    ax.features.SearchStarterPacksV2Enable,
   )
 
   const onChangeParaFilters = useCallback(
@@ -116,7 +124,7 @@ let SearchResults = ({
    * post-only, so they hide People/Feeds as well.
    */
   const hasPostFilters =
-    hasPostOnlyFilters(filters ?? {}) || hasParaSearchFilters(paraFilters)
+    hasPostOnlyFilters(filters ?? {}) || hasParaSearchFilters(paraFilters) || fromMe
   const activePage = hasPostFilters && activeTab > 1 ? 0 : activeTab
   const tabShape = hasPostFilters ? 'filtered' : 'plain'
 
@@ -168,6 +176,16 @@ let SearchResults = ({
           <SearchScreenFeedsResults query={query} active={activePage === 3} />
         ),
       },
+      noFilters &&
+        isStarterPacksEnabled && {
+          title: l`Starter packs`,
+          component: (
+            <SearchScreenStarterPackResults
+              query={query}
+              active={activePage === 4}
+            />
+          ),
+        },
     ].filter(Boolean) as {
       title: string
       component: React.ReactNode
@@ -181,6 +199,7 @@ let SearchResults = ({
     hasPostFilters,
     activePage,
     onChangeFilters,
+    isStarterPacksEnabled,
   ])
 
   // There may be fewer tabs after changing the search options.
@@ -788,4 +807,125 @@ function SearchFeedCard({
   }, [ax, position, view.uri])
 
   return <FeedCard.Default view={view} onPress={handleOnPress} />
+}
+
+
+let SearchScreenStarterPackResults = ({
+  query,
+  active,
+}: {
+  query: string
+  active: boolean
+}): React.ReactNode => {
+  const ax = useAnalytics()
+  const {t: l} = useLingui()
+  const [isPTR, setIsPTR] = useState(false)
+
+  const {
+    isFetched,
+    data: results,
+    isFetching,
+    error,
+    refetch,
+    fetchNextPage,
+    isFetchingNextPage,
+    hasNextPage,
+  } = useStarterPackSearch({
+    query,
+    enabled: active,
+  })
+
+  const onPullToRefresh = useCallback(async () => {
+    setIsPTR(true)
+    await refetch()
+    setIsPTR(false)
+  }, [setIsPTR, refetch])
+  const onEndReached = useCallback(() => {
+    if (isFetching || !hasNextPage || error) return
+    void fetchNextPage()
+  }, [isFetching, error, hasNextPage, fetchNextPage])
+  const starterPacks = useMemo(() => {
+    return results?.pages.flatMap(page => page.starterPacks) || []
+  }, [results])
+
+  const fireTracking = useCallOnce(() => {
+    ax.metric('search:results:loaded', {
+      tab: 'starterPacks',
+      initialCount: starterPacks.length,
+    })
+  })
+  if (isFetched) {
+    fireTracking()
+  }
+
+  if (error) {
+    return (
+      <EmptyState
+        messageText={
+          shouldRetryError(error) || isNetworkError(error)
+            ? l`We’re sorry, but your search could not be completed. Please try again in a few minutes.`
+            : l`We’re sorry, but your search could not be completed.`
+        }
+        error={cleanError(error)}
+      />
+    )
+  }
+
+  return isFetched ? (
+    <>
+      {starterPacks.length ? (
+        <List
+          data={starterPacks}
+          renderItem={({
+            item,
+            index,
+          }: {
+            item: AppBskyGraphDefs.StarterPackView
+            index: number
+          }) => (
+            <View style={[a.px_lg, a.pb_lg, index === 0 && a.pt_lg]}>
+              <SearchStarterPack position={index} view={item} />
+            </View>
+          )}
+          keyExtractor={(item: AppBskyGraphDefs.StarterPackView) => item.uri}
+          refreshing={isPTR}
+          onRefresh={() => void onPullToRefresh()}
+          onEndReached={onEndReached}
+          desktopFixedHeight
+          ListFooterComponent={
+            <ListFooter
+              hasNextPage={hasNextPage}
+              isFetchingNextPage={isFetchingNextPage}
+            />
+          }
+        />
+      ) : (
+        <EmptyState messageText={<NoResultsText query={query} />} />
+      )}
+    </>
+  ) : (
+    <Loader />
+  )
+}
+SearchScreenStarterPackResults = memo(SearchScreenStarterPackResults)
+
+function SearchStarterPack({
+  position,
+  view,
+}: {
+  position: number
+  view: AppBskyGraphDefs.StarterPackView
+}) {
+  const ax = useAnalytics()
+
+  const handleOnPress = () => {
+    ax.metric('search:result:press', {
+      tab: 'starterPacks',
+      resultType: 'starterPack',
+      position,
+      uri: view.uri,
+    })
+  }
+
+  return <StarterPackCard view={view} onPress={handleOnPress} />
 }

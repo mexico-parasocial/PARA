@@ -184,6 +184,7 @@ export function NewChat({
             title={l`New chat`}
             onSelectChat={onCreateChat}
             onSelectGroupChat={onCreateGroupChat}
+            sortByMessageDeclaration
             startInGroupChat={startInGroupChat}
           />
         ) : (

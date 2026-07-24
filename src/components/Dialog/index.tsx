@@ -157,7 +157,8 @@ export function Outer({
     [open, close],
   )
 
-  const isHeightConstrained = nativeOptions?.maxHeight != null
+  const isHeightConstrained =
+    nativeOptions?.maxHeight != null || nativeOptions?.fullHeight === true
 
   const context = useMemo(
     () => ({
@@ -194,24 +195,8 @@ export function Outer({
 /**
  * @deprecated use `Dialog.ScrollableInner` instead
  */
-export function Inner({children, style, header}: DialogInnerProps) {
-  const insets = useSafeAreaInsets()
-  return (
-    <>
-      {header}
-      <View
-        style={[
-          a.pt_2xl,
-          a.px_xl,
-          IS_LIQUID_GLASS
-            ? a.pb_2xl
-            : {paddingBottom: insets.bottom + insets.top},
-          style,
-        ]}>
-        {children}
-      </View>
-    </>
-  )
+export function Inner(props: DialogInnerProps) {
+  return <ScrollableInner {...props} />
 }
 
 export const ScrollableInner = forwardRef<ScrollView, DialogInnerProps>(

@@ -52,8 +52,18 @@ have already been deployed for this release, incremement the branch name e.g.
 Cherry pick in the commits that need to be deployed on top of the most recent
 release or OTA.
 
-### 5. Manually set build numbers
+### 5. Pull translations
 
+Since translators may have added new strings, and positions within the code may
+have shifted, it's typically best to pull the latest translations.
+
+Run this and commit the result as the last commit on the OTA branch.
+
+```sh
+pnpm intl:release
+```
+
+### 6. Manually set build numbers
 Log in to the EAS CLI with `eas login` and manually set the build numbers to the
 values you found in **Step 1**.
 

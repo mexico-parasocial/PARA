@@ -56,6 +56,7 @@ export const router = new Router({
   AboutSettings: '/settings/about',
   AppIconSettings: '/settings/app-icon',
   NotificationSettings: '/settings/notifications',
+  ActivityNotificationSettings: '/settings/notifications/activity',
   ReplyNotificationSettings: '/settings/notifications/replies',
   MentionNotificationSettings: '/settings/notifications/mentions',
   QuoteNotificationSettings: '/settings/notifications/quotes',

@@ -6,11 +6,13 @@ import {
   type ViewStyle,
 } from 'react-native'
 import {type ModerationUI} from '@atproto/api'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
-import {Trans} from '@lingui/react/macro'
+import {Trans, useLingui} from '@lingui/react/macro'
 
-import {ADULT_CONTENT_LABELS, isJustAMute} from '#/lib/moderation'
+import {
+  ADULT_CONTENT_LABELS,
+  type AdultSelfLabel,
+  isJustAMute,
+} from '#/lib/moderation'
 import {useGlobalLabelStrings} from '#/lib/moderation/useGlobalLabelStrings'
 import {getDefinition, getLabelStrings} from '#/lib/moderation/useLabelInfo'
 import {useModerationCauseDescription} from '#/lib/moderation/useModerationCauseDescription'
@@ -74,7 +76,7 @@ function ContentHiderActive({
   children?: React.ReactNode
 }) {
   const t = useTheme()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const {gtMobile} = useBreakpoints()
   const [override, setOverride] = useState(false)
   const control = useModerationDetailsDialogControl()
@@ -84,7 +86,6 @@ function ContentHiderActive({
   const blur = modui?.blurs[0]
   const desc = useModerationCauseDescription(blur)
 
-  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const labelName = useMemo(() => {
     if (!modui?.blurs || !blur) {
       return undefined
@@ -94,7 +95,7 @@ function ContentHiderActive({
       (blur.type === 'label' && blur.source.type !== 'user')
     ) {
       if (desc.isSubjectAccount) {
-        return _(msg`${desc.name} (Account)`)
+        return l`${desc.name} (Account)`
       } else {
         return desc.name
       }
@@ -109,7 +110,7 @@ function ContentHiderActive({
         if (cause.source.type !== 'user') {
           return false
         }
-        if (ADULT_CONTENT_LABELS.includes(cause.label.val)) {
+        if (ADULT_CONTENT_LABELS.includes(cause.label.val as AdultSelfLabel)) {
           if (hasAdultContentLabel) {
             return false
           }
@@ -125,7 +126,7 @@ function ContentHiderActive({
 
         const def = cause.labelDef || getDefinition(labelDefs, cause.label)
         if (def.identifier === 'porn' || def.identifier === 'sexual') {
-          return _(msg`Adult Content`)
+          return l`Adult Content`
         }
         return getLabelStrings(i18n.locale, globalLabelStrings, def).name
       })
@@ -135,8 +136,8 @@ function ContentHiderActive({
     }
     return [...new Set(selfBlurNames)].join(', ')
   }, [
-    _,
-    modui?.blurs,
+    l,
+    modui.blurs,
     blur,
     desc.name,
     desc.isSubjectAccount,
@@ -148,7 +149,6 @@ function ContentHiderActive({
   return (
     <View testID={testID} style={[a.overflow_hidden, style]}>
       <ModerationDetailsDialog control={control} modcause={blur} />
-
       <Button
         onPress={e => {
           e.preventDefault()
@@ -163,10 +163,10 @@ function ContentHiderActive({
         label={desc.name}
         accessibilityHint={
           modui.noOverride
-            ? _(msg`Learn more about the moderation applied to this content`)
+            ? l`Learn more about the moderation applied to this content`
             : override
-              ? _(msg`Hides the content`)
-              : _(msg`Shows the content`)
+              ? l`Hides the content`
+              : l`Shows the content`
         }>
         {state => (
           <View
@@ -220,7 +220,6 @@ function ContentHiderActive({
           </View>
         )}
       </Button>
-
       {desc.source && blur.type === 'label' && !override && (
         <Button
           onPress={e => {
@@ -228,9 +227,7 @@ function ContentHiderActive({
             e.stopPropagation()
             control.open()
           }}
-          label={_(
-            msg`Learn more about the moderation applied to this content`,
-          )}
+          label={l`Learn more about the moderation applied to this content`}
           style={[a.pt_sm]}>
           {state => (
             <Text
@@ -249,7 +246,7 @@ function ContentHiderActive({
               )}{' '}
               <Text
                 style={[
-                  {color: t.palette.primary_500},
+                  t.atoms.text_link,
                   a.text_sm,
                   state.hovered && [web({textDecoration: 'underline'})],
                 ]}>
@@ -259,7 +256,6 @@ function ContentHiderActive({
           )}
         </Button>
       )}
-
       {override && <View style={childContainerStyle}>{children}</View>}
     </View>
   )

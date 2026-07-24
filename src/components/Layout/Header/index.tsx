@@ -4,7 +4,6 @@ import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {useNavigation} from '@react-navigation/native'
 
-import {HITSLOP_30} from '#/lib/constants'
 import {type NavigationProp} from '#/lib/routes/types'
 import {useSetDrawerOpen} from '#/state/shell'
 import {useIsWithinSplitView} from '#/screens/Messages/components/splitView/context'
@@ -31,6 +30,8 @@ import {ScrollbarOffsetContext} from '#/components/Layout/context'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
 import {IS_IOS} from '#/env'
+
+const HEADER_BUTTON_HITSLOP = {top: 30, bottom: 10, left: 30, right: 30}
 
 export function Outer({
   children,
@@ -139,7 +140,7 @@ export function BackButton({
         color="secondary"
         shape="round"
         onPress={onPressBack}
-        hitSlop={HITSLOP_30}
+        hitSlop={HEADER_BUTTON_HITSLOP}
         style={[
           {marginLeft: -BUTTON_VISUAL_ALIGNMENT_OFFSET},
           a.bg_transparent,
@@ -173,7 +174,7 @@ export function MenuButton() {
           color="secondary"
           shape="square"
           onPress={onPress}
-          hitSlop={HITSLOP_30}
+          hitSlop={HEADER_BUTTON_HITSLOP}
           style={[
             {marginLeft: -BUTTON_VISUAL_ALIGNMENT_OFFSET},
             a.bg_transparent,

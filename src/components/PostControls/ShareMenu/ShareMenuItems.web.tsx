@@ -1,8 +1,6 @@
 import {memo, useMemo} from 'react'
 import {AtUri} from '@atproto/api'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
-import {Trans} from '@lingui/react/macro'
+import {Trans, useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {makeProfileLink} from '#/lib/routes/links'
@@ -34,7 +32,7 @@ let ShareMenuItems = ({
 }: ShareMenuItemsProps): React.ReactNode => {
   const {hasSession} = useSession()
   const {gtMobile} = useBreakpoints()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const navigation = useNavigation<NavigationProp>()
   const embedPostControl = useDialogControl()
   const sendViaChatControl = useDialogControl()
@@ -59,7 +57,7 @@ let ShareMenuItems = ({
   const onCopyLink = () => {
     logger.metric('share:press:copyLink', {}, {statsig: true})
     const url = toShareUrl(href)
-    shareUrl(url)
+    void shareUrl(url)
     onShareProp()
   }
 
@@ -74,17 +72,17 @@ let ShareMenuItems = ({
   const canEmbed = IS_WEB && gtMobile && !hideInPWI
 
   const onShareATURI = () => {
-    shareText(postUri)
+    void shareText(postUri)
   }
 
   const onShareAuthorDID = () => {
-    shareText(postAuthor.did)
+    void shareText(postAuthor.did)
   }
 
   const copyLinkItem = (
     <Menu.Item
       testID="postDropdownShareBtn"
-      label={_(msg`Copy link to post`)}
+      label={l`Copy link to post`}
       onPress={onCopyLink}>
       <Menu.ItemText>
         <Trans>Copy link to post</Trans>
@@ -101,13 +99,13 @@ let ShareMenuItems = ({
         {hasSession && aa.state.access === aa.Access.Full && (
           <Menu.Item
             testID="postDropdownSendViaDMBtn"
-            label={_(msg`Send via direct message`)}
+            label={l`Send via chat`}
             onPress={() => {
               logger.metric('share:press:openDmSearch', {}, {statsig: true})
               sendViaChatControl.open()
             }}>
             <Menu.ItemText>
-              <Trans>Send via direct message</Trans>
+              <Trans>Send via chat</Trans>
             </Menu.ItemText>
             <Menu.ItemIcon icon={Send} position="right" />
           </Menu.Item>
@@ -116,12 +114,12 @@ let ShareMenuItems = ({
         {canEmbed && (
           <Menu.Item
             testID="postDropdownEmbedBtn"
-            label={_(msg`Embed post`)}
+            label={l`Embed post`}
             onPress={() => {
               logger.metric('share:press:embed', {}, {statsig: true})
               embedPostControl.open()
             }}>
-            <Menu.ItemText>{_(msg`Embed post`)}</Menu.ItemText>
+            <Menu.ItemText>{l`Embed post`}</Menu.ItemText>
             <Menu.ItemIcon icon={CodeBracketsIcon} position="right" />
           </Menu.Item>
         )}
@@ -141,7 +139,7 @@ let ShareMenuItems = ({
             <Menu.Divider />
             <Menu.Item
               testID="postAtUriShareBtn"
-              label={_(msg`Copy post at:// URI`)}
+              label={l`Copy post at:// URI`}
               onPress={onShareATURI}>
               <Menu.ItemText>
                 <Trans>Copy post at:// URI</Trans>
@@ -150,7 +148,7 @@ let ShareMenuItems = ({
             </Menu.Item>
             <Menu.Item
               testID="postAuthorDIDShareBtn"
-              label={_(msg`Copy author DID`)}
+              label={l`Copy author DID`}
               onPress={onShareAuthorDID}>
               <Menu.ItemText>
                 <Trans>Copy author DID</Trans>
@@ -160,7 +158,6 @@ let ShareMenuItems = ({
           </>
         )}
       </Menu.Outer>
-
       {canEmbed && (
         <EmbedDialog
           control={embedPostControl}
@@ -171,7 +168,6 @@ let ShareMenuItems = ({
           timestamp={timestamp}
         />
       )}
-
       <SendViaChatDialog
         control={sendViaChatControl}
         onSelectChat={onSelectChatToShareTo}

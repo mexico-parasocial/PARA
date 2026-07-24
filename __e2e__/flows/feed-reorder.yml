@@ -3,92 +3,116 @@ appId: xyz.blueskyweb.app
 - runScript:
     file: ../setupServer.js
     env:
-      SERVER_PATH: ?users&follows&posts&feeds
+      SERVER_PATH: ?users
 - runFlow:
     file: ../setupApp.yml
 - tapOn:
-    id: 'e2eSignInAlice'
-
-# Pin alice's feed
+    id: "e2eSignInAlice"
 - extendedWaitUntil:
-    visible: 'Open drawer menu'
-- tapOn: 'Open drawer menu'
-- tapOn:
-    id: 'profileCardButton'
-- tapOn:
-    id: 'profilePager-selector-5'
-- tapOn: 'alice-favs'
-- tapOn: 'Pin to Home'
-- tapOn:
-    id: 'bottomBarHomeBtn'
-- assertNotVisible: 'Feeds ✨'
-- assertVisible:
-    id: 'homeScreenFeedTabs-selector-0'
-    text: 'Following'
-- assertVisible:
-    id: 'homeScreenFeedTabs-selector-1'
-    text: 'alice-favs'
+    visible:
+      id: "viewHeaderHomeFeedPrefsBtn"
 
-# Set alice-favs first
-- tapOn: 'Open drawer menu'
-- tapOn:
-    id: 'menuItemButton-Feeds'
-- tapOn:
-    id: 'editFeedsBtn'
-- swipe:
-    label: 'Drag feed down'
-    from:
-      id: 'feed-drag-handle'
-    direction: 'DOWN'
-    duration: 1000
-- tapOn:
-    label: 'Save button'
-    id: 'saveChangesBtn'
-- tapOn: 'Go back'
 - assertVisible:
-    id: 'homeScreenFeedTabs-selector-0'
-    text: 'alice-favs'
+    id: "composeFAB"
+- tapOn:
+    id: "composeFAB"
+- inputText: "Post text only"
+- tapOn:
+    id: "composerPublishBtn"
 - assertVisible:
-    id: 'homeScreenFeedTabs-selector-1'
-    text: 'Following'
-
-# Set following first
-- tapOn: 'Open drawer menu'
+    id: "composeFAB"
 - tapOn:
-    id: 'menuItemButton-Feeds'
+    id: "composeFAB"
+- inputText: "Post with an image"
 - tapOn:
-    id: 'editFeedsBtn'
-- swipe:
-    label: 'Drag feed down'
-    from:
-      id: 'feed-drag-handle'
-    direction: 'DOWN'
-    duration: 1000
+    id: "openMediaBtn"
+- extendedWaitUntil:
+    visible:
+      id: "selectedPhotosView"
 - tapOn:
-    label: 'Save button'
-    id: 'saveChangesBtn'
-- tapOn: 'Go back'
+    id: "composerPublishBtn"
 - assertVisible:
-    id: 'homeScreenFeedTabs-selector-0'
-    text: 'Following'
+    id: "composeFAB"
+- tapOn:
+    id: "composeFAB"
+- inputText: "Post with a https://example.com link card"
+- tapOn:
+    id: "composerPublishBtn"
 - assertVisible:
-    id: 'homeScreenFeedTabs-selector-1'
-    text: 'alice-favs'
-
-# Remove following
-- tapOn: 'Open drawer menu'
+    id: "composeFAB"
 - tapOn:
-    id: 'menuItemButton-Feeds'
+    id: "e2eRefreshHome"
 - tapOn:
-    id: 'editFeedsBtn'
+    id: "replyBtn"
+# Wait for the composer to fully open before typing. Tapping replyBtn right
+# after the previous publish can race the closing composer on Android.
+- extendedWaitUntil:
+    visible:
+      id: "composerPublishBtn"
+    timeout: 10000
+- inputText: "Reply text only"
 - tapOn:
-    label: 'Tap on unpin'
-    id: 'feed-timeline-togglePin'
-- tapOn:
-    label: 'Save button'
-    id: 'saveChangesBtn'
-- tapOn: 'Go back'
+    id: "composerPublishBtn"
 - assertVisible:
-    id: 'homeScreenFeedTabs-selector-0'
-    text: 'alice-favs'
-- assertNotVisible: 'Following'
+    id: "composeFAB"
+- tapOn:
+    id: "replyBtn"
+# Wait for the composer to fully open before typing.
+- extendedWaitUntil:
+    visible:
+      id: "composerPublishBtn"
+    timeout: 10000
+- inputText: "Reply with an image"
+- tapOn:
+    id: "openMediaBtn"
+- extendedWaitUntil:
+    visible:
+      id: "selectedPhotosView"
+- tapOn:
+    id: "composerPublishBtn"
+- assertVisible:
+    id: "composeFAB"
+- tapOn:
+    id: "replyBtn"
+# Wait for the composer to fully open before typing.
+- extendedWaitUntil:
+    visible:
+      id: "composerPublishBtn"
+    timeout: 10000
+- inputText: "Reply with a https://example.com link card"
+- tapOn:
+    id: "composerPublishBtn"
+- assertVisible:
+    id: "composeFAB"
+- tapOn:
+    id: "repostBtn"
+- tapOn:
+    id: "quoteBtn"
+- inputText: "QP text only"
+- tapOn:
+    id: "composerPublishBtn"
+- assertVisible:
+    id: "composeFAB"
+- tapOn:
+    id: "repostBtn"
+- tapOn:
+    id: "quoteBtn"
+- inputText: "QP with an image"
+- tapOn:
+    id: "openMediaBtn"
+- extendedWaitUntil:
+    visible:
+      id: "selectedPhotosView"
+- tapOn:
+    id: "composerPublishBtn"
+- assertVisible:
+    id: "composeFAB"
+- tapOn:
+    id: "repostBtn"
+- tapOn:
+    id: "quoteBtn"
+- inputText: "QP with a https://example.com link card"
+- tapOn:
+    id: "composerPublishBtn"
+- assertVisible:
+    id: "composeFAB"

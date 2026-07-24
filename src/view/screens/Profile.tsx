@@ -2,6 +2,7 @@ import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {StyleSheet} from 'react-native'
 import {withSpring} from 'react-native-reanimated'
 import {SafeAreaView} from 'react-native-safe-area-context'
+import {ScrollForwarderView} from 'react-native-scroll-forwarder'
 import {
   type AppBskyActorDefs,
   moderateProfile,

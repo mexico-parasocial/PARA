@@ -8,24 +8,14 @@ import Animated, {
   LinearTransition,
 } from 'react-native-reanimated'
 import {type AppBskyFeedDefs} from '@atproto/api'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
-import {Trans} from '@lingui/react/macro'
+import {Trans, useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
-import {useQueryClient} from '@tanstack/react-query'
 
 import {type NavigationProp} from '#/lib/routes/types'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
 import {useGetPopularFeedsQuery} from '#/state/queries/feed'
 import {type FeedDescriptor} from '#/state/queries/post-feed'
-import {
-  suggestedFollowsByActorQueryKey,
-  useSuggestedFollowsByActorQuery,
-} from '#/state/queries/suggested-follows'
-
-type SuggestedFollowsByActorQueryData = ReturnType<
-  typeof useSuggestedFollowsByActorQuery
->['data']
+import {useSuggestedFollowsByActorWithDismiss} from '#/state/queries/suggested-follows'
 import {useGetSuggestedUsersForDiscoverQuery} from '#/state/queries/trending/useGetSuggestedUsersForDiscoverQuery'
 import {useSession} from '#/state/session'
 import {BlockDrawerGesture} from '#/view/shell/BlockDrawerGesture'
@@ -45,12 +35,12 @@ import {Hashtag_Stroke2_Corner0_Rounded as Hashtag} from '#/components/icons/Has
 import {TimesLarge_Stroke2_Corner0_Rounded as X} from '#/components/icons/Times'
 import {InlineLinkText} from '#/components/Link'
 import * as ProfileCard from '#/components/ProfileCard'
+import {ProgressGuideList} from '#/components/ProgressGuide/List'
 import {Text} from '#/components/Typography'
 import {type Metrics, useAnalytics} from '#/analytics'
 import {IS_IOS} from '#/env'
 import type * as bsky from '#/types/bsky'
 import {FollowDialogWithoutGuide} from './ProgressGuide/FollowDialog'
-import {ProgressGuideList} from './ProgressGuide/List'
 
 const DISMISS_ANIMATION_DURATION = 200
 
@@ -132,44 +122,14 @@ export function SuggestedFollows({feed}: {feed: FeedDescriptor}) {
 }
 
 export function SuggestedFollowsProfile({did}: {did: string}) {
-  const {
-    isLoading: isSuggestionsLoading,
-    data,
-    error,
-  } = useSuggestedFollowsByActorQuery({
-    did,
-  })
-  const queryClient = useQueryClient()
-
-  const onDismiss = useCallback(
-    (dismissedDid: string) => {
-      queryClient.setQueryData(
-        suggestedFollowsByActorQueryKey(did),
-        (previous: SuggestedFollowsByActorQueryData | undefined) => {
-          if (!previous) return previous
-          return {
-            ...previous,
-            suggestions: previous.suggestions.filter(
-              s => s.did !== dismissedDid,
-            ),
-          }
-        },
-      )
-    },
-    [did, queryClient],
-  )
-
-  const profiles = useMemo(() => {
-    return (data?.suggestions ?? []).map(profile => ({
-      actor: profile,
-      recId: data?.recId,
-    }))
-  }, [data?.suggestions, data?.recId])
+  const {profiles, recId, onDismiss, isLoading, error} =
+    useSuggestedFollowsByActorWithDismiss({did})
 
   return (
     <ProfileGrid
-      isSuggestionsLoading={isSuggestionsLoading}
+      isSuggestionsLoading={isLoading}
       profiles={profiles}
+      recId={recId}
       error={error}
       viewContext="profile"
       onDismiss={onDismiss}
@@ -207,6 +167,7 @@ export function SuggestedFollowsHome() {
 
   return (
     <ProfileGrid
+      recId={data?.recId}
       isSuggestionsLoading={isLoading}
       profiles={filteredProfiles}
       totalProfileCount={allProfiles.length}
@@ -221,6 +182,7 @@ export function ProfileGrid({
   isSuggestionsLoading,
   error,
   profiles,
+  recId,
   totalProfileCount,
   viewContext = 'feed',
   onDismiss,
@@ -229,6 +191,7 @@ export function ProfileGrid({
 }: {
   isSuggestionsLoading: boolean
   profiles: {actor: bsky.profile.AnyProfileView; recId?: string}[]
+  recId?: string
   totalProfileCount?: number
   error: Error | null
   viewContext: 'profile' | 'profileHeader' | 'feed'
@@ -238,7 +201,7 @@ export function ProfileGrid({
 }) {
   const t = useTheme()
   const ax = useAnalytics()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const moderationOpts = useModerationOpts()
   const {gtMobile} = useBreakpoints()
   const followDialogControl = useDialogControl()
@@ -279,7 +242,7 @@ export function ProfileGrid({
         })
       }
     })
-  }, [ax, isLoading, error, profiles, maxLength, logContext])
+  }, [isLoading, error, profiles, maxLength, ax, logContext])
 
   // For profile header, fire when isVisible becomes true
   useEffect(() => {
@@ -383,7 +346,7 @@ export function ProfileGrid({
                   <ProfileCard.Outer>
                     {onDismiss && (
                       <Button
-                        label={_(msg`Dismiss this suggestion`)}
+                        label={l`Dismiss this suggestion`}
                         onPress={e => {
                           e.preventDefault()
                           onDismiss(profile.actor.did)
@@ -455,7 +418,7 @@ export function ProfileGrid({
                       onFollow={() => {
                         ax.metric('suggestedUser:follow', {
                           logContext,
-                          location: 'Card',
+                          location: 'Profile',
                           recId: profile.recId,
                           position: index,
                           suggestedDid: profile.actor.did,
@@ -505,26 +468,32 @@ export function ProfileGrid({
         <Text style={[a.text_sm, a.font_semi_bold, t.atoms.text]}>
           <Trans>Suggested for you</Trans>
         </Text>
-        {!isProfileHeaderContext && (
-          <Button
-            label={_(msg`See more suggested profiles`)}
-            color="secondary"
-            size="small"
-            onPress={() => {
-              followDialogControl.open()
-              ax.metric('suggestedUser:seeMore', {
-                logContext: isFeedContext ? 'Explore' : 'ProfileInterstitial',
-              })
-            }}>
-            <ButtonText>
+        <Button
+          label={l`See more suggested profiles`}
+          onPress={() => {
+            followDialogControl.open()
+            ax.metric('suggestedUser:seeMore', {
+              logContext,
+              recId,
+            })
+          }}>
+          {({hovered}) => (
+            <Text
+              style={[
+                a.text_sm,
+                t.atoms.text_link,
+                hovered &&
+                  web({
+                    textDecorationLine: 'underline',
+                    textDecorationColor: t.atoms.text_link.color,
+                  }),
+              ]}>
               <Trans>See more</Trans>
-            </ButtonText>
-          </Button>
-        )}
+            </Text>
+          )}
+        </Button>
       </View>
-
       <FollowDialogWithoutGuide control={followDialogControl} />
-
       <LayoutAnimationConfig skipExiting skipEntering>
         {gtMobile ? (
           <View style={[a.p_lg, a.pt_md]}>
@@ -542,16 +511,14 @@ export function ProfileGrid({
               decelerationRate="fast">
               {content}
 
-              {!isProfileHeaderContext && (
-                <SeeMoreSuggestedProfilesCard
-                  onPress={() => {
-                    followDialogControl.open()
-                    ax.metric('suggestedUser:seeMore', {
-                      logContext: 'Explore',
-                    })
-                  }}
-                />
-              )}
+              <SeeMoreSuggestedProfilesCard
+                onPress={() => {
+                  followDialogControl.open()
+                  ax.metric('suggestedUser:seeMore', {
+                    logContext,
+                  })
+                }}
+              />
             </ScrollView>
           </BlockDrawerGesture>
         )}
@@ -561,11 +528,11 @@ export function ProfileGrid({
 }
 
 function SeeMoreSuggestedProfilesCard({onPress}: {onPress: () => void}) {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
 
   return (
     <Button
-      label={_(msg`Browse more accounts`)}
+      label={l`Browse more accounts`}
       onPress={onPress}
       style={[
         a.flex_col,
@@ -589,7 +556,7 @@ const numFeedsToDisplay = 3
 export function SuggestedFeeds() {
   const t = useTheme()
   const ax = useAnalytics()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const {data, isLoading, error} = useGetPopularFeedsQuery({
     limit: numFeedsToDisplay,
   })
@@ -676,7 +643,7 @@ export function SuggestedFeeds() {
               a.gap_md,
             ]}>
             <InlineLinkText
-              label={_(msg`Browse more suggestions`)}
+              label={l`Browse more suggestions`}
               to="/search"
               style={[t.atoms.text_contrast_medium]}>
               <Trans>Browse more suggestions</Trans>
@@ -695,7 +662,7 @@ export function SuggestedFeeds() {
               {content}
 
               <Button
-                label={_(msg`Browse more feeds on the Explore page`)}
+                label={l`Browse more feeds on the Explore page`}
                 onPress={() => {
                   navigation.navigate('SearchTab')
                 }}

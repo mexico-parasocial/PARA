@@ -4,6 +4,7 @@ import {
   countActiveFilters,
   definedFilterParams,
   filtersToApiParams,
+  hasActiveFilters,
   hasPostOnlyFilters,
   paraFiltersToSearchFilters,
   parseHistoryEntry,
@@ -100,7 +101,8 @@ describe(`searchParams`, () => {
   })
 
   describe(`countActiveFilters`, () => {
-    it(`counts each set key once`, () => {
+    it(`counts each structured filter key once`, () => {
+      expect(countActiveFilters({from: 'me'})).toBe(1)
       expect(
         countActiveFilters({
           author: 'alice bob',
@@ -158,6 +160,14 @@ describe(`searchParams`, () => {
       expect(parseHistoryEntry(entry)).toEqual({q: 'cats', filters})
     })
 
+    it(`round-trips a promoted Me-only search`, () => {
+      const stored = serializeHistoryEntry('', {from: 'me'})
+      expect(parseHistoryEntry(stored)).toEqual({
+        q: '',
+        filters: {from: 'me'},
+      })
+    })
+
     it(`round-trips PARA filters in history`, () => {
       const filters = {
         state: 'Jalisco',
@@ -177,6 +187,14 @@ describe(`searchParams`, () => {
         q: '{not json',
         filters: {},
       })
+    })
+  })
+
+  describe(`hasActiveFilters`, () => {
+    it(`includes the structured Me author filter`, () => {
+      expect(hasActiveFilters({})).toBe(false)
+      expect(hasActiveFilters({from: 'me'})).toBe(true)
+      expect(hasActiveFilters({author: 'alice'})).toBe(true)
     })
   })
 

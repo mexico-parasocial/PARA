@@ -2,11 +2,9 @@ import {View} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 
-import {useTrendingSettings} from '#/state/preferences/trending'
 import {atoms as a, useLayoutBreakpoints} from '#/alf'
 import {Button} from '#/components/Button'
 import {DotGrid_Stroke2_Corner0_Rounded as EllipsisIcon} from '#/components/icons/DotGrid'
-import {TrendingInterstitial} from '#/components/interstitials/Trending'
 import {LiveEventFeedCardWide} from '#/features/liveEvents/components/LiveEventFeedCardWide'
 import {
   LiveEventFeedOptionsMenu,
@@ -18,16 +16,10 @@ import {type LiveEventFeed} from '#/features/liveEvents/types'
 export function DiscoverFeedLiveEventFeedsAndTrendingBanner() {
   const events = useUserPreferencedLiveEvents()
   const {rightNavVisible} = useLayoutBreakpoints()
-  const {trendingDisabled} = useTrendingSettings()
 
   if (!events.feeds.length) {
-    if (!rightNavVisible && !trendingDisabled) {
-      // only show trending on mobile when live event banner is not shown
-      return <TrendingInterstitial />
-    } else {
-      // no feed, no trending
-      return null
-    }
+    // no feed
+    return null
   }
 
   // On desktop, we show in the sidebar

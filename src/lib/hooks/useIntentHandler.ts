@@ -5,7 +5,9 @@ import * as WebBrowser from 'expo-web-browser'
 
 import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
 import {parseLinkingUrl} from '#/lib/parseLinkingUrl'
+import {getChatInviteCodeFromUrl} from '#/lib/strings/url-helpers'
 import {logger} from '#/logger'
+import {usePrefetchJoinLinkPreviews} from '#/state/queries/join-links'
 import {useSession} from '#/state/session'
 import {useCloseAllActiveElements} from '#/state/util'
 import {useIntentDialogs} from '#/components/intents/IntentDialogs'
@@ -24,6 +26,7 @@ export function useIntentHandler() {
   const incomingUrl = Linking.useLinkingURL()
   const composeIntent = useComposeIntent()
   const verifyEmailIntent = useVerifyEmailIntent()
+  const groupChatJoinIntent = useGroupChatJoinIntent()
   const {currentAccount} = useSession()
   const {tryApplyUpdate} = useApplyPullRequestOTAUpdate()
 
@@ -44,6 +47,13 @@ export function useIntentHandler() {
       }
 
       const urlp = parseLinkingUrl(url)
+
+      const chatInviteCode = getChatInviteCodeFromUrl(urlp.pathname)
+      if (chatInviteCode) {
+        groupChatJoinIntent(chatInviteCode)
+        return
+      }
+
       const [, intent, intentType] = urlp.pathname.split('/')
 
       // On native, our links look like bluesky://intent/SomeIntent, so we have to check the hostname for the
@@ -98,6 +108,7 @@ export function useIntentHandler() {
     incomingUrl,
     composeIntent,
     verifyEmailIntent,
+    groupChatJoinIntent,
     currentAccount,
     tryApplyUpdate,
   ])
@@ -158,6 +169,29 @@ export function useComposeIntent() {
       }, 500)
     },
     [hasSession, closeAllActiveElements, openComposer],
+  )
+}
+
+export function useGroupChatJoinIntent() {
+  const closeAllActiveElements = useCloseAllActiveElements()
+  const {hasSession} = useSession()
+  const {groupChatJoinDialogControl: control, setGroupChatJoinState: setState} =
+    useIntentDialogs()
+  const prefetchJoinLinkPreviews = usePrefetchJoinLinkPreviews()
+
+  return useCallback(
+    (code: string, _uri?: string) => {
+      closeAllActiveElements()
+      setState({code})
+      const prefetch = prefetchJoinLinkPreviews({codes: [code], hasSession})
+      void Promise.race([
+        prefetch,
+        new Promise(res => setTimeout(res, 200)),
+      ]).finally(() => {
+        control.open()
+      })
+    },
+    [closeAllActiveElements, hasSession, control, setState, prefetchJoinLinkPreviews],
   )
 }
 

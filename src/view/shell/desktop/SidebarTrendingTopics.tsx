@@ -1,21 +1,20 @@
-import {useCallback} from 'react'
 import {View} from 'react-native'
 import {Trans, useLingui} from '@lingui/react/macro'
 
-import {logger} from '#/logger'
 import {
   useTrendingSettings,
   useTrendingSettingsApi,
 } from '#/state/preferences/trending'
-import {useTrendingTopics} from '#/state/queries/trending/useTrendingTopics'
+import {useGetTrendsQuery} from '#/state/queries/trending/useGetTrendsQuery'
 import {useTrendingConfig} from '#/state/service-config'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonIcon} from '#/components/Button'
-import {DotGrid_Stroke2_Corner0_Rounded as Ellipsis} from '#/components/icons/DotGrid'
+import {DotGrid3x1_Stroke2_Corner0_Rounded as Ellipsis} from '#/components/icons/DotGrid'
 import {Trending3_Stroke2_Corner1_Rounded as TrendingIcon} from '#/components/icons/Trending'
 import * as Prompt from '#/components/Prompt'
 import {TrendingTopicLink} from '#/components/TrendingTopics'
 import {Text} from '#/components/Typography'
+import {useAnalytics} from '#/analytics'
 
 const TRENDING_LIMIT = 5
 
@@ -28,15 +27,22 @@ export function SidebarTrendingTopics() {
 function Inner() {
   const t = useTheme()
   const {t: l} = useLingui()
+  const ax = useAnalytics()
   const trendingPrompt = Prompt.usePromptControl()
   const {setTrendingDisabled} = useTrendingSettingsApi()
-  const {data: trending, error, isLoading} = useTrendingTopics()
-  const noTopics = !isLoading && !error && !trending?.topics?.length
+  const {
+    data: trending,
+    error,
+    isLoading,
+  } = useGetTrendsQuery({
+    refetchOnWindowFocus: true,
+  })
+  const noTopics = !isLoading && !error && !trending?.trends?.length
 
-  const onConfirmHide = useCallback(() => {
-    logger.metric('trendingTopics:hide', {context: 'sidebar'})
+  const onConfirmHide = () => {
+    ax.metric('trendingTopics:hide', {context: 'sidebar'})
     setTrendingDisabled(true)
-  }, [setTrendingDisabled])
+  }
 
   return error || noTopics ? null : (
     <>
@@ -82,20 +88,22 @@ function Inner() {
                   />
                 </View>
               ))
-          ) : !trending?.topics ? null : (
+          ) : !trending?.trends ? null : (
             <>
-              {trending.topics.slice(0, TRENDING_LIMIT).map((topic, i) => (
+              {trending.trends.slice(0, TRENDING_LIMIT).map((topic, i) => (
                 <TrendingTopicLink
                   key={topic.link}
                   topic={topic}
                   onPress={() => {
-                    logger.metric('trendingTopic:click', {context: 'sidebar'})
+                    ax.metric('trendingTopic:click', {
+                      context: 'sidebar',
+                      recId: trending.recId,
+                    })
                   }}>
                   {({hovered}) => (
                     <View style={[a.flex_1, a.flex_row, a.gap_xs]}>
                       <Text
                         style={[
-                          a.flex_1,
                           a.text_sm,
                           a.leading_snug,
                           t.atoms.text_contrast_low,
@@ -105,6 +113,7 @@ function Inner() {
                       </Text>
                       <Text
                         style={[
+                          a.flex_1,
                           a.text_sm,
                           a.leading_snug,
                           hovered
