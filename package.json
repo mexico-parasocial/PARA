@@ -13,7 +13,7 @@
   "devEngines": {
     "packageManager": {
       "name": "pnpm",
-      "version": "11.13.1",
+      "version": "11.21.0",
       "onFail": "error"
     },
     "runtime": {
@@ -22,7 +22,7 @@
       "onFail": "download"
     }
   },
-  "packageManager": "pnpm@11.13.1",
+  "packageManager": "pnpm@11.21.0",
   "expo": {
     "autolinking": {
       "android": {
