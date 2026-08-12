@@ -6,7 +6,7 @@ import {msg} from '@lingui/core/macro'
 
 import {Logger} from '#/logger'
 import {Features} from '#/analytics/features/types'
-import {getNavigationMetadata,type Metadata} from '#/analytics/metadata'
+import {getNavigationMetadata, type Metadata} from '#/analytics/metadata'
 import * as env from '#/env'
 
 export {Features} from '#/analytics/features/types'
@@ -77,6 +77,22 @@ export function getFeatures() {
 
 export function getFeatureDescription(feature: Features, i18n: I18n) {
   switch (feature) {
+    case Features.VideoAllow10MinuteEnable:
+      return {
+        key: feature,
+        name: i18n._(
+          msg({
+            message: 'Longer videos',
+            comment: 'Name for a feature flag (longer videos)',
+          }),
+        ),
+        description: i18n._(
+          msg({
+            message: 'Enable 10-minute video uploads.',
+            comment: 'Description of a feature flag (10-minute video uploads)',
+          }),
+        ),
+      }
     case Features.PostThreadKnownLikersEnable:
       return {
         key: feature,
