@@ -20,9 +20,9 @@ import * as SplashScreen from 'expo-splash-screen'
 import {Logomark} from '#/view/icons/Logomark'
 import {useTheme} from '#/alf'
 // @ts-ignore
-import splashImagePointer from '../assets/splash/splash-mobile.png'
+import splashImagePointer from '../assets/illustrations/illustration-mobile.png'
 // @ts-ignore
-import darkSplashImagePointer from '../assets/splash/splash-mobile-dark.png'
+import darkSplashImagePointer from '../assets/illustrations/illustration-mobile-dark.png'
 const splashImageUri = RNImage.resolveAssetSource(splashImagePointer).uri
 const darkSplashImageUri = RNImage.resolveAssetSource(
   darkSplashImagePointer,
