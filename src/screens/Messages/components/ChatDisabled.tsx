@@ -1,12 +1,13 @@
 import {useCallback, useState} from 'react'
 import {type StyleProp, View, type ViewStyle} from 'react-native'
 import {ToolsOzoneReportDefs} from '@atproto/api'
+import {type DidString} from '@atproto/syntax'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {useMutation} from '@tanstack/react-query'
 
-import {BLUESKY_MOD_SERVICE_HEADERS} from '#/lib/constants'
+import {MOD_PROXY_SERVICE} from '#/lib/constants'
 import {logger} from '#/logger'
-import {useAgent, useSession} from '#/state/session'
+import {useAppviewClient, useSession} from '#/state/session'
 import {atoms as a, useBreakpoints, useTheme} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
@@ -14,6 +15,7 @@ import {Warning_Stroke2_Corner0_Rounded as WarningIcon} from '#/components/icons
 import {Loader} from '#/components/Loader'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
+import {com} from '#/lexicons'
 
 export function ChatDisabled({
   shape = 'pill',
@@ -22,10 +24,10 @@ export function ChatDisabled({
   shape?: 'pill' | 'banner'
   style?: StyleProp<ViewStyle>
 }) {
-const t = useTheme()
+  const t = useTheme()
   return (
     <View style={[shape === 'pill' && a.p_md, style]}>
-    <View
+      <View
         style={[
           a.align_center,
           a.justify_center,
@@ -34,7 +36,7 @@ const t = useTheme()
           shape === 'pill' && {borderRadius: 40},
         ]}>
         <WarningIcon fill={t.atoms.text.color} size="lg" style={[a.mb_xs]} />
-<Text
+        <Text
           style={[
             a.mb_xs,
             a.text_center,
@@ -78,7 +80,7 @@ function AppealDialog() {
         <ButtonText>
           <Trans>Appeal this decision</Trans>
         </ButtonText>
-        </Button>
+      </Button>
       <Dialog.Outer control={control}>
         <Dialog.Handle />
         <DialogInner />
@@ -92,26 +94,25 @@ function DialogInner() {
   const control = Dialog.useDialogContext()
   const [details, setDetails] = useState('')
   const {gtMobile} = useBreakpoints()
-  const agent = useAgent()
+  const client = useAppviewClient()
   const {currentAccount} = useSession()
 
   const {mutate, isPending} = useMutation({
     mutationFn: async () => {
       if (!currentAccount)
         throw new Error('No current account, should be unreachable')
-      await agent.createModerationReport(
+      await client.call(
+        com.atproto.moderation.createReport,
         {
           reasonType: ToolsOzoneReportDefs.REASONAPPEAL,
           subject: {
             $type: 'com.atproto.admin.defs#repoRef',
-            did: currentAccount.did,
+            // the persisted account did is already resolved
+            did: currentAccount.did as DidString,
           },
           reason: details,
         },
-        {
-          encoding: 'application/json',
-          headers: BLUESKY_MOD_SERVICE_HEADERS,
-        },
+        {service: MOD_PROXY_SERVICE},
       )
     },
     onError: err => {
