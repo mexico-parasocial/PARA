@@ -50,7 +50,7 @@ export const ExternalEmbed = ({
         params.source
       ] !== 'hide'
     if (canShow || exemptExternalEmbedSources.has(params.source)) {
-    return params
+      return params
     }
   }, [link.uri, externalEmbedPrefs])
   const hasMedia = Boolean(imageUri || embedPlayerParams)
@@ -94,7 +94,7 @@ export const ExternalEmbed = ({
       shouldProxy={true}
       onPress={onPress}
       onLongPress={onShareExternal}>
-      {({hovered}) => (
+      {({hovered, pressed}) => (
         <View
           style={[
             a.transition_color,
@@ -103,6 +103,7 @@ export const ExternalEmbed = ({
             a.overflow_hidden,
             a.w_full,
             a.border,
+            pressed && t.atoms.bg,
             style,
             hovered
               ? t.atoms.border_contrast_high
