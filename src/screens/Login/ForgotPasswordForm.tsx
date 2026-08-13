@@ -1,14 +1,13 @@
 import {useCallback, useState} from 'react'
 import {ActivityIndicator, Keyboard, View} from 'react-native'
-import {type ComAtprotoServerDescribeServer} from '@atproto/api'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import * as EmailValidator from 'email-validator'
 
+import {createServiceClient} from '#/lib/lexClient'
 import {cleanError, isNetworkError} from '#/lib/strings/errors'
 import {logger} from '#/logger'
-import {Agent} from '#/state/session/agent'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import {FormError} from '#/components/forms/FormError'
@@ -16,9 +15,10 @@ import {HostingProvider} from '#/components/forms/HostingProvider'
 import * as TextField from '#/components/forms/TextField'
 import {At_Stroke2_Corner0_Rounded as At} from '#/components/icons/At'
 import {Text} from '#/components/Typography'
+import {com} from '#/lexicons'
 import {FormContainer} from './FormContainer'
 
-type ServiceDescription = ComAtprotoServerDescribeServer.OutputSchema
+type ServiceDescription = com.atproto.server.describeServer.$OutputBody
 
 export const ForgotPasswordForm = ({
   error,
@@ -55,8 +55,12 @@ export const ForgotPasswordForm = ({
     setIsProcessing(true)
 
     try {
-      const agent = new Agent(null, {service: serviceUrl})
-      await agent.com.atproto.server.requestPasswordReset({email})
+      /*
+       * Pre-auth request against a user-chosen host, so it goes through a
+       * one-off service client rather than a session-scoped one.
+       */
+      const client = createServiceClient(serviceUrl)
+      await client.call(com.atproto.server.requestPasswordReset, {email})
       onEmailSent()
     } catch (e: unknown) {
       const errMsg = String(e)

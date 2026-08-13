@@ -7,17 +7,22 @@ import {
   View,
 } from 'react-native'
 import {LinearGradient} from 'expo-linear-gradient'
+import {type DidString} from '@atproto/syntax'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
-import {getDmServiceHeadersForServiceUrl} from '#/lib/constants'
 import {usePalette} from '#/lib/hooks/usePalette'
 import {useWebMediaQueries} from '#/lib/hooks/useWebMediaQueries'
 import {cleanError} from '#/lib/strings/errors'
 import {colors, gradients, s} from '#/lib/styles'
 import {useTheme} from '#/lib/ThemeContext'
-import {useAgent, useSession, useSessionApi} from '#/state/session'
+import {
+  useChatClient,
+  usePdsClient,
+  useSession,
+  useSessionApi,
+} from '#/state/session'
 import {ErrorMessage} from '#/view/com/util/error/ErrorMessage'
 import {Text} from '#/view/com/util/text/Text'
 import {atoms as a, useTheme as useNewTheme} from '#/alf'
@@ -26,6 +31,7 @@ import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfo} from '#/components/ico
 import * as Toast from '#/components/Toast'
 import {Text as NewText} from '#/components/Typography'
 import {IS_WEB} from '#/env'
+import {chat, com} from '#/lexicons'
 import {resetToTab} from '#/Navigation'
 
 export function DeleteAccountDialog({
@@ -50,11 +56,9 @@ function DeleteAccountDialogInner({
   const theme = useTheme()
   const t = useNewTheme()
   const {currentAccount} = useSession()
-  const agent = useAgent()
+  const client = usePdsClient()
+  const chatClient = useChatClient()
   const {removeAccount} = useSessionApi()
-  const dmServiceHeaders = getDmServiceHeadersForServiceUrl(
-    agent.serviceUrl.toString(),
-  )
   const {_} = useLingui()
   const {isMobile} = useWebMediaQueries()
   const [isEmailSent, setIsEmailSent] = useState<boolean>(false)
@@ -67,7 +71,7 @@ function DeleteAccountDialogInner({
     setError('')
     setIsProcessing(true)
     try {
-      await agent.com.atproto.server.requestAccountDelete()
+      await client.call(com.atproto.server.requestAccountDelete)
       setIsEmailSent(true)
     } catch (e: unknown) {
       setError(cleanError(e))
@@ -85,18 +89,15 @@ function DeleteAccountDialogInner({
     const token = confirmCode.replace(/\s/g, '')
 
     try {
-      // inform chat service of intent to delete account
-      const {success} = await agent.api.chat.bsky.actor.deleteAccount(
-        undefined,
-        {
-          headers: dmServiceHeaders,
-        },
-      )
-      if (!success) {
-        throw new Error('Failed to inform chat service of account deletion')
-      }
-      await agent.com.atproto.server.deleteAccount({
-        did: currentAccount.did,
+      /*
+       * Inform chat service of intent to delete account. A non-2xx response
+       * throws, so reaching the next line means the chat service accepted it -
+       * the agent's `success` flag has no client-side equivalent.
+       */
+      await chatClient.call(chat.bsky.actor.deleteAccount)
+      await client.call(com.atproto.server.deleteAccount, {
+        // the persisted account did is already resolved
+        did: currentAccount.did as DidString,
         password,
         token,
       })

@@ -4,11 +4,11 @@ import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
+import {createServiceClient} from '#/lib/lexClient'
 import {logEvent} from '#/lib/statsig/statsig'
 import {cleanError, isNetworkError} from '#/lib/strings/errors'
 import {checkAndFormatResetCode} from '#/lib/strings/password'
 import {logger} from '#/logger'
-import {Agent} from '#/state/session/agent'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import {FormError} from '#/components/forms/FormError'
@@ -16,6 +16,7 @@ import * as TextField from '#/components/forms/TextField'
 import {Lock_Stroke2_Corner0_Rounded as Lock} from '#/components/icons/Lock'
 import {Ticket_Stroke2_Corner0_Rounded as Ticket} from '#/components/icons/Ticket'
 import {Text} from '#/components/Typography'
+import {com} from '#/lexicons'
 import {FormContainer} from './FormContainer'
 
 export const SetNewPasswordForm = ({
@@ -63,8 +64,12 @@ export const SetNewPasswordForm = ({
     setIsProcessing(true)
 
     try {
-      const agent = new Agent(null, {service: serviceUrl})
-      await agent.com.atproto.server.resetPassword({
+      /*
+       * Pre-auth request against a user-chosen host, so it goes through a
+       * one-off service client rather than a session-scoped one.
+       */
+      const client = createServiceClient(serviceUrl)
+      await client.call(com.atproto.server.resetPassword, {
         token: formattedCode,
         password,
       })
