@@ -4,6 +4,7 @@ import {
   type ChatBskyConvoListConvos,
   type ChatBskyGroupAddMembers,
 } from '@atproto/api'
+import {type DidString} from '@atproto/syntax'
 import {
   type InfiniteData,
   useMutation,
@@ -12,12 +13,12 @@ import {
 
 import {logger} from '#/logger'
 import {useProfileQuery} from '#/state/queries/profile'
-import {useAgent, useSession} from '#/state/session'
+import {useChatClient, useSession} from '#/state/session'
+import {chat} from '#/lexicons'
 import type * as bsky from '#/types/bsky'
 import {RQKEY as CONVO_KEY} from './conversation'
 import {RQKEY_ROOT as CONVO_LIST_KEY} from './list-conversations'
 import {listConvoMembersQueryKey} from './list-convo-members'
-import {getAgentDmServiceHeaders} from './utils/dm-service'
 
 export function useAddGroupMembers(
   convoId: string | undefined,
@@ -30,7 +31,7 @@ export function useAddGroupMembers(
   },
 ) {
   const queryClient = useQueryClient()
-  const agent = useAgent()
+  const client = useChatClient()
   const {currentAccount} = useSession()
   const {data: myProfile} = useProfileQuery({did: currentAccount?.did})
 
@@ -42,14 +43,11 @@ export function useAddGroupMembers(
       profiles: bsky.profile.AnyProfileView[]
     }) => {
       if (!convoId) throw new Error('No convoId provided')
-      const {data} = await agent.chat.bsky.group.addMembers(
-        {convoId, members},
-        {
-          headers: getAgentDmServiceHeaders(agent),
-          encoding: 'application/json',
-        },
-      )
-      return data
+      return await client.call(chat.bsky.group.addMembers, {
+        convoId,
+        // callers pass already-resolved actor dids
+        members: members as DidString[],
+      })
     },
     onMutate: ({profiles}) => {
       if (!convoId) return

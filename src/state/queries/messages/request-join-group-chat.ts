@@ -1,8 +1,10 @@
 import {type ChatBskyGroupRequestJoin} from '@atproto/api'
-import {useMutation} from '@tanstack/react-query'
+import {useMutation, useQueryClient} from '@tanstack/react-query'
 
-import {DM_SERVICE_HEADERS} from '#/lib/constants'
-import {useAgent} from '#/state/session'
+import {logger} from '#/logger'
+import {useChatClient, useSession} from '#/state/session'
+import {chat} from '#/lexicons'
+import {RQKEY_ROOT as REQUESTS_RQKEY_ROOT} from './list-conversation-requests'
 
 type Output = ChatBskyGroupRequestJoin.OutputSchema
 
@@ -13,16 +15,24 @@ export function useRequestJoinGroupChat({
   onSuccess?: (data: Output) => void
   onError?: (error: Error) => void
 } = {}) {
-  const agent = useAgent()
+  const client = useChatClient()
+  const queryClient = useQueryClient()
+  const {hasSession} = useSession()
+
   return useMutation({
     mutationFn: async ({code}: {code: string}) => {
-      const {data} = await agent.api.chat.bsky.group.requestJoin(
-        {code},
-        {headers: DM_SERVICE_HEADERS, encoding: 'application/json'},
-      )
-      return data
+      if (!hasSession) throw new Error('Must be logged in to join')
+      if (!code) throw new Error('No invite code')
+
+      return await client.call(chat.bsky.group.requestJoin, {code})
     },
-    onSuccess,
-    onError,
+    onSuccess: data => {
+      void queryClient.invalidateQueries({queryKey: [REQUESTS_RQKEY_ROOT]})
+      onSuccess?.(data)
+    },
+    onError: error => {
+      logger.error('Failed to join group chat', {safeMessage: error})
+      onError?.(error)
+    },
   })
 }

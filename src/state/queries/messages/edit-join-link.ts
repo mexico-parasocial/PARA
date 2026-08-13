@@ -6,12 +6,12 @@ import {
 import {useMutation, useQueryClient} from '@tanstack/react-query'
 
 import {logger} from '#/logger'
-import {useAgent} from '#/state/session'
+import {useChatClient} from '#/state/session'
+import {chat} from '#/lexicons'
 import {
   rollbackConvoOptimistic,
   updateConvoOptimistic,
 } from './utils/convo-cache'
-import {getAgentDmServiceHeaders} from './utils/dm-service'
 
 export function useEditJoinLink(
   convoId: string | undefined,
@@ -24,7 +24,7 @@ export function useEditJoinLink(
   },
 ) {
   const queryClient = useQueryClient()
-  const agent = useAgent()
+  const client = useChatClient()
 
   return useMutation({
     mutationFn: async ({
@@ -35,14 +35,11 @@ export function useEditJoinLink(
       requireApproval: boolean
     }) => {
       if (!convoId) throw new Error('No convoId provided')
-      const {data} = await agent.chat.bsky.group.editJoinLink(
-        {convoId, joinRule, requireApproval},
-        {
-          headers: getAgentDmServiceHeaders(agent),
-          encoding: 'application/json',
-        },
-      )
-      return data
+      return await client.call(chat.bsky.group.editJoinLink, {
+        convoId,
+        joinRule,
+        requireApproval,
+      })
     },
     onMutate: ({joinRule, requireApproval}) => {
       if (!convoId) return

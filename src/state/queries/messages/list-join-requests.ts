@@ -4,14 +4,16 @@ import {useInfiniteQuery, useQueryClient} from '@tanstack/react-query'
 
 import {useMessagesEventBus} from '#/state/messages/events'
 import {createQueryKey} from '#/state/queries/util'
-import {useAgent} from '#/state/session'
+import {useChatClient} from '#/state/session'
+import {chat} from '#/lexicons'
 import {STALE} from '..'
-import {getAgentDmServiceHeaders} from './utils/dm-service'
 
 const listJoinRequestsQueryKeyRoot = 'list-join-requests'
 
 export const createListJoinRequestsQueryKey = (args: {convoId: string}) =>
   createQueryKey(listJoinRequestsQueryKeyRoot, args)
+
+export const JOIN_REQUESTS_THRESHOLD = 20
 
 export function useListJoinRequestsQuery({
   convoId,
@@ -20,7 +22,7 @@ export function useListJoinRequestsQuery({
   convoId: string | undefined
   enabled?: boolean
 }) {
-  const agent = useAgent()
+  const client = useChatClient()
   const queryClient = useQueryClient()
   const messagesBus = useMessagesEventBus()
   const isEnabled = enabled !== false && !!convoId
@@ -52,11 +54,12 @@ export function useListJoinRequestsQuery({
     enabled: isEnabled,
     queryKey: createListJoinRequestsQueryKey({convoId: convoId ?? ''}),
     queryFn: async ({pageParam}) => {
-      const {data} = await agent.chat.bsky.group.listJoinRequests(
-        {convoId: convoId!, cursor: pageParam, limit: 20},
-        {headers: getAgentDmServiceHeaders(agent)},
-      )
-      return data
+      return await client.call(chat.bsky.group.listJoinRequests, {
+        // guarded by `isEnabled`
+        convoId: convoId!,
+        cursor: pageParam,
+        limit: JOIN_REQUESTS_THRESHOLD,
+      })
     },
     initialPageParam: undefined as string | undefined,
     getNextPageParam: page => page.cursor,
