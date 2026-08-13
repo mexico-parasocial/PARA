@@ -1,15 +1,11 @@
 import {type ImagePickerAsset} from 'expo-image-picker'
-import {
-  type AppBskyDraftDefs,
-  type AppBskyFeedPostgate,
-  type BskyPreferences,
-} from '@atproto/api'
+import {type AppBskyActorDefs, type AppBskyDraftDefs} from '@atproto/api'
+import {type AtUriString, toDatetimeString} from '@atproto/syntax'
 import {RichText} from '@bsky.app/sdk/richtext'
 import {nanoid} from 'nanoid/non-secure'
 
 import {type VideoTelemetry} from '#/lib/media/video/telemetry'
 import {type SelfLabel} from '#/lib/moderation'
-import {type ComposerFlair} from '#/lib/post-flairs'
 import {insertMentionAt} from '#/lib/strings/mention-manip'
 import {shortenLinks} from '#/lib/strings/rich-text-manip'
 import {
@@ -17,7 +13,7 @@ import {
   postUriToRelativePath,
   toBskyAppUrl,
 } from '#/lib/strings/url-helpers'
-import {type PostType} from '#/lib/tags'
+import {logger} from '#/logger'
 import {type ComposerImage, createInitialImages} from '#/state/gallery'
 import {createPostgateRecord} from '#/state/queries/postgate/util'
 import {threadgateRecordToAllowUISetting} from '#/state/queries/threadgate'
@@ -78,23 +74,12 @@ export type PostDraft = {
   richtext: RichText
   labels: SelfLabel[]
   embed: EmbedDraft
-  flairs: ComposerFlair[]
-  postType: PostType | null
-  isOfficial: boolean
-  isAdultContent: boolean
   shortenedGraphemeLength: number
 }
 
 export type PostAction =
   | {type: 'update_richtext'; richtext: RichText}
   | {type: 'update_labels'; labels: SelfLabel[]}
-  | {
-      type: 'update_flairs'
-      flairs: ComposerFlair[]
-    }
-  | {type: 'set_post_type'; postType: PostType | null}
-  | {type: 'set_is_official'; isOfficial: boolean}
-  | {type: 'toggle_adult_content'}
   | {type: 'embed_add_images'; images: ComposerImage[]}
   | {type: 'embed_update_image'; image: ComposerImage}
   | {type: 'embed_remove_image'; image: ComposerImage}
@@ -115,7 +100,7 @@ export type PostAction =
 
 export type ThreadDraft = {
   posts: PostDraft[]
-  postgate: AppBskyFeedPostgate.Record
+  postgate: app.bsky.feed.postgate.Main
   threadgate: ThreadgateAllowUISetting[]
 }
 
@@ -134,7 +119,7 @@ export type ComposerState = {
 }
 
 export type ComposerAction =
-  | {type: 'update_postgate'; postgate: AppBskyFeedPostgate.Record}
+  | {type: 'update_postgate'; postgate: app.bsky.feed.postgate.Main}
   | {type: 'update_threadgate'; threadgate: ThreadgateAllowUISetting[]}
   | {
       type: 'update_post'
@@ -158,6 +143,7 @@ export type ComposerAction =
       posts: PostDraft[]
       threadgateAllow: AppBskyDraftDefs.Draft['threadgateAllow']
       postgateEmbeddingRules: AppBskyDraftDefs.Draft['postgateEmbeddingRules']
+
       /** Map of localRefPath -> loaded media path/URL */
       loadedMedia: Map<string, string>
       /** Set of original localRef paths from the draft. Used to identify orphaned media on save. */
@@ -166,16 +152,38 @@ export type ComposerAction =
   | {
       type: 'clear'
       initInteractionSettings:
-        | BskyPreferences['postInteractionSettings']
-        | undefined
+        AppBskyActorDefs.PostInteractionSettingsPref | undefined
     }
   | {
       type: 'mark_saved'
       draftId: string
     }
 
-export const MAX_IMAGES = 4
+/**
+ * Threshold for picking between embed variants. <= this count uses the
+ * legacy `app.bsky.embed.images` shape; > this count promotes to
+ * `app.bsky.embed.gallery`. Named to flag that if/when we deprecate the
+ * legacy images embed entirely, this constant (and the variant split it
+ * gates) should go away.
+ */
 export const LEGACY_IMAGES_EMBED_MAX = 4
+export const MAX_GALLERY_IMAGES = 10
+
+/**
+ * Picks the embed variant for a set of images. <=4 lands in the legacy
+ * `app.bsky.embed.images` shape; >4 promotes to `app.bsky.embed.gallery`.
+ * Anything beyond the gallery cap is dropped by the hard slice; callers
+ * should already have enforced the cap upstream (picker, paste, etc),
+ * and the reducer logs a warning when the cap is exceeded so the UI
+ * layer can surface a toast.
+ */
+function imagesToMediaVariant(
+  images: ComposerImage[],
+): ImagesMedia | GalleryMedia {
+  return images.length <= LEGACY_IMAGES_EMBED_MAX
+    ? {type: 'images', images: images.slice(0, LEGACY_IMAGES_EMBED_MAX)}
+    : {type: 'gallery', images: images.slice(0, MAX_GALLERY_IMAGES)}
+}
 
 export function composerReducer(
   state: ComposerState,
@@ -185,6 +193,7 @@ export function composerReducer(
     case 'update_postgate': {
       return {
         ...state,
+        isDirty: true,
         thread: {
           ...state.thread,
           postgate: action.postgate,
@@ -194,6 +203,7 @@ export function composerReducer(
     case 'update_threadgate': {
       return {
         ...state,
+        isDirty: true,
         thread: {
           ...state.thread,
           threadgate: action.threadgate,
@@ -214,6 +224,7 @@ export function composerReducer(
       }
       return {
         ...state,
+        isDirty: true,
         thread: {
           ...state.thread,
           posts: nextPosts,
@@ -228,10 +239,6 @@ export function composerReducer(
         richtext: new RichText({text: ''}),
         shortenedGraphemeLength: 0,
         labels: [],
-        flairs: [],
-        postType: null,
-        isOfficial: false,
-        isAdultContent: false,
         embed: {
           quote: undefined,
           media: undefined,
@@ -240,6 +247,7 @@ export function composerReducer(
       })
       return {
         ...state,
+        isDirty: true,
         thread: {
           ...state.thread,
           posts: nextPosts,
@@ -265,6 +273,7 @@ export function composerReducer(
       }
       return {
         ...state,
+        isDirty: true,
         activePostIndex: nextActivePostIndex,
         mutableNeedsFocusActive: true,
         thread: {
@@ -306,13 +315,18 @@ export function composerReducer(
           posts,
           postgate: createPostgateRecord({
             post: '',
-            embeddingRules: postgateEmbeddingRules,
+            /*
+             * Draft records are still typed against the legacy client, so the
+             * stored rules arrive unbranded. Wave B migrates the draft types.
+             */
+            embeddingRules:
+              postgateEmbeddingRules as app.bsky.feed.postgate.Main['embeddingRules'],
           }),
           threadgate: threadgateRecordToAllowUISetting({
             $type: 'app.bsky.feed.threadgate',
-            post: '',
-            createdAt: new Date().toString(),
-            allow: threadgateAllow,
+            post: '' as AtUriString,
+            createdAt: toDatetimeString(new Date()),
+            allow: threadgateAllow as app.bsky.feed.threadgate.Main['allow'],
           }),
         },
       }
@@ -351,46 +365,34 @@ function postReducer(state: PostDraft, action: PostAction): PostDraft {
         labels: action.labels,
       }
     }
-    case 'update_flairs': {
-      return {
-        ...state,
-        flairs: action.flairs,
-      }
-    }
-    case 'set_post_type': {
-      return {
-        ...state,
-        postType: action.postType,
-      }
-    }
-    case 'set_is_official': {
-      return {
-        ...state,
-        isOfficial: action.isOfficial,
-      }
-    }
-    case 'toggle_adult_content': {
-      return {
-        ...state,
-        isAdultContent: !state.isAdultContent,
-      }
-    }
     case 'embed_add_images': {
       if (action.images.length === 0) {
         return state
       }
       const prevMedia = state.embed.media
       let nextMedia = prevMedia
+      const prevCount =
+        prevMedia?.type === 'images' || prevMedia?.type === 'gallery'
+          ? prevMedia.images.length
+          : 0
+      const incomingCount = prevCount + action.images.length
+      if (incomingCount > MAX_GALLERY_IMAGES) {
+        // Defense in depth: callers (applyGalleryCap in Composer) should have
+        // already trimmed and surfaced a toast. The hard slice in
+        // imagesToMediaVariant still drops the excess so the cap holds.
+        logger.warn('composer: image add exceeds MAX_GALLERY_IMAGES', {
+          prevCount,
+          incomingCount,
+          dropped: incomingCount - MAX_GALLERY_IMAGES,
+        })
+      }
       if (!prevMedia) {
-        nextMedia = {
-          type: 'images',
-          images: action.images.slice(0, MAX_IMAGES),
-        }
-      } else if (prevMedia.type === 'images') {
-        nextMedia = {
-          ...prevMedia,
-          images: [...prevMedia.images, ...action.images].slice(0, MAX_IMAGES),
-        }
+        nextMedia = imagesToMediaVariant(action.images)
+      } else if (prevMedia.type === 'images' || prevMedia.type === 'gallery') {
+        nextMedia = imagesToMediaVariant([
+          ...prevMedia.images,
+          ...action.images,
+        ])
       }
       return {
         ...state,
@@ -402,7 +404,7 @@ function postReducer(state: PostDraft, action: PostAction): PostDraft {
     }
     case 'embed_update_image': {
       const prevMedia = state.embed.media
-      if (prevMedia?.type === 'images') {
+      if (prevMedia?.type === 'images' || prevMedia?.type === 'gallery') {
         const updatedImage = action.image
         const nextMedia = {
           ...prevMedia,
@@ -426,19 +428,22 @@ function postReducer(state: PostDraft, action: PostAction): PostDraft {
     case 'embed_remove_image': {
       const prevMedia = state.embed.media
       let nextLabels = state.labels
-      if (prevMedia?.type === 'images') {
+      if (prevMedia?.type === 'images' || prevMedia?.type === 'gallery') {
         const removedImage = action.image
-        let nextMedia: ImagesMedia | undefined = {
-          ...prevMedia,
-          images: prevMedia.images.filter(img => {
-            return img.source.id !== removedImage.source.id
-          }),
-        }
-        if (nextMedia.images.length === 0) {
+        const remainingImages = prevMedia.images.filter(img => {
+          return img.source.id !== removedImage.source.id
+        })
+        let nextMedia: ImagesMedia | GalleryMedia | undefined
+        if (remainingImages.length === 0) {
           nextMedia = undefined
           if (!state.embed.link) {
             nextLabels = []
           }
+        } else {
+          // Re-pick the variant so a gallery that shrinks to <=4 demotes
+          // back to the legacy `app.bsky.embed.images` shape - keeps old
+          // clients rendering it when possible.
+          nextMedia = imagesToMediaVariant(remainingImages)
         }
         return {
           ...state,
@@ -626,15 +631,11 @@ export function createComposerState({
   initImageUris: ComposerOpts['imageUris']
   initQuoteUri: string | undefined
   initInteractionSettings:
-    | BskyPreferences['postInteractionSettings']
-    | undefined
+    AppBskyActorDefs.PostInteractionSettingsPref | undefined
 }): ComposerState {
-  let media: ImagesMedia | undefined
+  let media: ImagesMedia | GalleryMedia | undefined
   if (initImageUris?.length) {
-    media = {
-      type: 'images',
-      images: createInitialImages(initImageUris),
-    }
+    media = imagesToMediaVariant(createInitialImages(initImageUris))
   }
   let quote: Link | undefined
   if (initQuoteUri) {
@@ -725,7 +726,6 @@ export function createComposerState({
 
   return {
     activePostIndex: 0,
-
     mutableNeedsFocusActive: false,
     isDirty: false,
     thread: {
@@ -735,10 +735,6 @@ export function createComposerState({
           richtext: initRichText,
           shortenedGraphemeLength: getShortenedLength(initRichText),
           labels: [],
-          flairs: [],
-          postType: null,
-          isOfficial: false,
-          isAdultContent: false,
           embed: {
             quote,
             media,
@@ -748,13 +744,19 @@ export function createComposerState({
       ],
       postgate: createPostgateRecord({
         post: '',
-        embeddingRules: initInteractionSettings?.postgateEmbeddingRules || [],
+        /*
+         * Preferences are still typed against the legacy client, so the stored
+         * rules arrive unbranded. Wave B migrates `getPreferences`.
+         */
+        embeddingRules: (initInteractionSettings?.postgateEmbeddingRules ||
+          []) as app.bsky.feed.postgate.Main['embeddingRules'],
       }),
       threadgate: threadgateRecordToAllowUISetting({
         $type: 'app.bsky.feed.threadgate',
-        post: '',
-        createdAt: new Date().toString(),
-        allow: initInteractionSettings?.threadgateAllowRules,
+        post: '' as AtUriString,
+        createdAt: toDatetimeString(new Date()),
+        allow:
+          initInteractionSettings?.threadgateAllowRules as app.bsky.feed.threadgate.Main['allow'],
       }),
     },
   }

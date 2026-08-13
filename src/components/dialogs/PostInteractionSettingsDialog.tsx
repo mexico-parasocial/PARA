@@ -1,10 +1,7 @@
 import {useCallback, useMemo, useState} from 'react'
 import {LayoutAnimation, Text as NestedText, View} from 'react-native'
-import {
-  type AppBskyFeedDefs,
-  type AppBskyFeedPostgate,
-  AtUri,
-} from '@atproto/api'
+import {type AppBskyFeedDefs} from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Plural, Trans} from '@lingui/react/macro'
@@ -12,7 +9,6 @@ import {useQueryClient} from '@tanstack/react-query'
 
 import {useHaptics} from '#/lib/haptics'
 import {useNonReactiveCallback} from '#/lib/hooks/useNonReactiveCallback'
-import {logger} from '#/logger'
 import {STALE} from '#/state/queries'
 import {useMyListsQuery} from '#/state/queries/my-lists'
 import {useGetPost} from '#/state/queries/post'
@@ -37,7 +33,7 @@ import {
   PostThreadContextProvider,
   usePostThreadContext,
 } from '#/state/queries/usePostThread'
-import {useAgent, useSession} from '#/state/session'
+import {usePdsClient, useSession} from '#/state/session'
 import {UserAvatar} from '#/view/com/util/UserAvatar'
 import {atoms as a, useTheme, web} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
@@ -52,7 +48,9 @@ import {CloseQuote_Stroke2_Corner1_Rounded as QuoteIcon} from '#/components/icon
 import {Loader} from '#/components/Loader'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
+import {useAnalytics} from '#/analytics'
 import {IS_IOS} from '#/env'
+import {type app} from '#/lexicons'
 
 export type PostInteractionSettingsFormProps = {
   canSave?: boolean
@@ -63,8 +61,8 @@ export type PostInteractionSettingsFormProps = {
   persist?: boolean
   onChangePersist?: (v: boolean) => void
 
-  postgate: AppBskyFeedPostgate.Record
-  onChangePostgate: (v: AppBskyFeedPostgate.Record) => void
+  postgate: app.bsky.feed.postgate.Main
+  onChangePostgate: (v: app.bsky.feed.postgate.Main) => void
 
   threadgateAllowUISettings: ThreadgateAllowUISetting[]
   onChangeThreadgateAllowUISettings: (v: ThreadgateAllowUISetting[]) => void
@@ -81,8 +79,9 @@ export function PostInteractionSettingsControlledDialog({
 }: PostInteractionSettingsFormProps & {
   control: Dialog.DialogControlProps
 }) {
+  const ax = useAnalytics()
   const onClose = useNonReactiveCallback(() => {
-    logger.metric('composer:threadgate:save', {
+    ax.metric('composer:threadgate:save', {
       hasChanged: !!rest.isDirty,
       persist: !!rest.persist,
       replyOptions:
@@ -162,6 +161,7 @@ export function PostInteractionSettingsDialog(
 export function PostInteractionSettingsDialogControlledInner(
   props: PostInteractionSettingsDialogProps,
 ) {
+  const ax = useAnalytics()
   const {_} = useLingui()
   const {currentAccount} = useSession()
   const [isSaving, setIsSaving] = useState(false)
@@ -176,7 +176,7 @@ export function PostInteractionSettingsDialogControlledInner(
   const {mutateAsync: setThreadgateAllow} = useSetThreadgateAllowMutation()
 
   const [editedPostgate, setEditedPostgate] =
-    useState<AppBskyFeedPostgate.Record>()
+    useState<app.bsky.feed.postgate.Main>()
   const [editedAllowUISettings, setEditedAllowUISettings] =
     useState<ThreadgateAllowUISetting[]>()
 
@@ -229,10 +229,10 @@ export function PostInteractionSettingsDialogControlledInner(
       await Promise.all(requests)
 
       props.control.close()
-    } catch (e: unknown) {
-      logger.error(`Failed to save post interaction settings`, {
+    } catch (e: any) {
+      ax.logger.error(`Failed to save post interaction settings`, {
         source: 'PostInteractionSettingsDialogControlledInner',
-        safeMessage: e instanceof Error ? e.message : String(e),
+        safeMessage: e.message,
       })
       Toast.show(
         _(
@@ -247,6 +247,7 @@ export function PostInteractionSettingsDialogControlledInner(
     }
   }, [
     _,
+    ax,
     props.postUri,
     props.rootPostUri,
     props.control,
@@ -350,33 +351,30 @@ export function PostInteractionSettingsForm({
   ).length
 
   const toggleGroupValues = useMemo(() => {
-    if (
-      threadgateAllowUISettings.some(
-        s => s.type === 'everybody' || s.type === 'nobody',
-      )
-    ) {
-      return []
+    const values: string[] = []
+    for (const setting of threadgateAllowUISettings) {
+      switch (setting.type) {
+        case 'everybody':
+        case 'nobody':
+          // no granularity, early return with nothing
+          return []
+        case 'followers':
+          values.push('followers')
+          break
+        case 'following':
+          values.push('following')
+          break
+        case 'mention':
+          values.push('mention')
+          break
+        case 'list':
+          values.push(`list:${setting.list}`)
+          break
+        default:
+          break
+      }
     }
-    return threadgateAllowUISettings
-      .map(setting => {
-        switch (setting.type) {
-          case 'followers':
-            return 'followers'
-          case 'following':
-            return 'following'
-          case 'mention':
-            return 'mention'
-          case 'community':
-            return 'community'
-          case 'party':
-            return 'party'
-          case 'list':
-            return `list:${setting.list}`
-          default:
-            return null
-        }
-      })
-      .filter(Boolean) as string[]
+    return values
   }, [threadgateAllowUISettings])
 
   const toggleGroupOnChange = (values: string[]) => {
@@ -390,14 +388,7 @@ export function PostInteractionSettingsForm({
           const listId = value.slice('list:'.length)
           settings.push({type: 'list', list: listId})
         } else {
-          settings.push({
-            type: value as
-              | 'followers'
-              | 'following'
-              | 'mention'
-              | 'community'
-              | 'party',
-          })
+          settings.push({type: value as 'followers' | 'following' | 'mention'})
         }
       }
     }
@@ -529,36 +520,6 @@ export function PostInteractionSettingsForm({
                     <Toggle.Checkbox />
                     <Toggle.PanelText>
                       <Trans>People you mention</Trans>
-                    </Toggle.PanelText>
-                  </Toggle.Panel>
-                )}
-              </Toggle.Item>
-
-              <Toggle.Item
-                name="community"
-                type="checkbox"
-                label={_(msg`Allow people from your community to reply`)}
-                hitSlop={0}>
-                {({selected}) => (
-                  <Toggle.Panel active={selected} adjacent="both">
-                    <Toggle.Checkbox />
-                    <Toggle.PanelText>
-                      <Trans>People from your community</Trans>
-                    </Toggle.PanelText>
-                  </Toggle.Panel>
-                )}
-              </Toggle.Item>
-
-              <Toggle.Item
-                name="party"
-                type="checkbox"
-                label={_(msg`Allow people who support your party to reply`)}
-                hitSlop={0}>
-                {({selected}) => (
-                  <Toggle.Panel active={selected} adjacent="both">
-                    <Toggle.Checkbox />
-                    <Toggle.PanelText>
-                      <Trans>People who support your party</Trans>
                     </Toggle.PanelText>
                   </Toggle.Panel>
                 )}
@@ -705,9 +666,7 @@ export function PostInteractionSettingsForm({
         label={_(msg`Save`)}
         onPress={onSave}
         color="primary"
-        size="large"
-        style={{backgroundColor: '#374151'}}
-        hoverStyle={{backgroundColor: '#1F2937'}}>
+        size="large">
         <ButtonText>
           <Trans>Save</Trans>
         </ButtonText>
@@ -734,8 +693,9 @@ export function usePrefetchPostInteractionSettings({
   postUri: string
   rootPostUri: string
 }) {
+  const ax = useAnalytics()
   const queryClient = useQueryClient()
-  const agent = useAgent()
+  const pdsClient = usePdsClient()
   const getPost = useGetPost()
 
   return useCallback(async () => {
@@ -744,7 +704,7 @@ export function usePrefetchPostInteractionSettings({
         queryClient.prefetchQuery({
           queryKey: createPostgateQueryKey(postUri),
           queryFn: () =>
-            getPostgateRecord({agent, postUri}).then(res => res ?? null),
+            getPostgateRecord({pdsClient, postUri}).then(res => res ?? null),
           staleTime: STALE.SECONDS.THIRTY,
         }),
         queryClient.prefetchQuery({
@@ -756,10 +716,10 @@ export function usePrefetchPostInteractionSettings({
           staleTime: STALE.SECONDS.THIRTY,
         }),
       ])
-    } catch (e: unknown) {
-      logger.error(`Failed to prefetch post interaction settings`, {
-        safeMessage: (e as Error)?.message || String(e),
+    } catch (e: any) {
+      ax.logger.error(`Failed to prefetch post interaction settings`, {
+        safeMessage: e.message,
       })
     }
-  }, [queryClient, agent, postUri, rootPostUri, getPost])
+  }, [ax, queryClient, pdsClient, postUri, rootPostUri, getPost])
 }
