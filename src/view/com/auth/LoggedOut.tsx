@@ -1,11 +1,16 @@
 import {useCallback, useEffect, useState} from 'react'
 import {View} from 'react-native'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
+import {type DidString} from '@atproto/syntax'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
+import {useQueryClient} from '@tanstack/react-query'
 
 import {PressableScale} from '#/lib/custom-animations/PressableScale'
 import {logEvent} from '#/lib/statsig/statsig'
+import {STALE} from '#/state/queries'
+import {profilesQueryKey} from '#/state/queries/profile'
+import {useAppviewClient, useSession} from '#/state/session'
 import {
   useLoggedOutView,
   useLoggedOutViewControls,
@@ -18,6 +23,7 @@ import {LandingScreen} from '#/screens/StarterPack/StarterPackLandingScreen'
 import {atoms as a, native, tokens, useTheme} from '#/alf'
 import {Button, ButtonIcon} from '#/components/Button'
 import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/Times'
+import {app} from '#/lexicons'
 import {SplashScreen} from './SplashScreen'
 
 enum ScreenState {
@@ -50,6 +56,21 @@ export function LoggedOut({onDismiss}: {onDismiss?: () => void}) {
   useEffect(() => {
     setMinimalShellMode(true)
   }, [setMinimalShellMode])
+
+  const queryClient = useQueryClient()
+  const {accounts} = useSession()
+  const client = useAppviewClient()
+  useEffect(() => {
+    const actors = accounts.map(acc => acc.did as DidString)
+    if (actors.length === 0) return
+    void queryClient.prefetchQuery({
+      queryKey: profilesQueryKey(actors),
+      staleTime: STALE.MINUTES.FIVE,
+      queryFn: async () => {
+        return await client.call(app.bsky.actor.getProfiles, {actors})
+      },
+    })
+  }, [accounts, client, queryClient])
 
   const onPressDismiss = useCallback(() => {
     if (onDismiss) {
