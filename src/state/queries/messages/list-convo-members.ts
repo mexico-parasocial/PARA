@@ -5,9 +5,9 @@ import {type QueryClient, useQuery, useQueryClient} from '@tanstack/react-query'
 import {useMessagesEventBus} from '#/state/messages/events'
 import {STALE} from '#/state/queries'
 import {createQueryKey} from '#/state/queries/util'
-import {useAgent} from '#/state/session'
+import {useChatClient} from '#/state/session'
+import {chat} from '#/lexicons'
 import * as bsky from '#/types/bsky'
-import {getAgentDmServiceHeaders} from './utils/dm-service'
 
 const RQKEY_ROOT = 'listConvoMembers'
 export const listConvoMembersQueryKey = (convoId: string) =>
@@ -23,7 +23,7 @@ export function useListConvoMembersQuery({
   convoId: string
   placeholderData?: ChatBskyActorDefs.ProfileViewBasic[]
 }) {
-  const agent = useAgent()
+  const client = useChatClient()
   const queryClient = useQueryClient()
   const messagesBus = useMessagesEventBus()
 
@@ -116,14 +116,22 @@ export function useListConvoMembersQuery({
   return useQuery({
     queryKey: listConvoMembersQueryKey(convoId),
     queryFn: async () => {
-      const members = []
-      let cursor
+      /*
+       * Both locals are annotated because the loop is self-referential: `data`
+       * is inferred from a call whose params include `cursor`, so leaving
+       * `cursor` to be inferred from `data.cursor` is circular. Annotating
+       * `members` with the exported profile type also keeps the hook's result
+       * type unchanged for consumers.
+       */
+      const members: ChatBskyActorDefs.ProfileViewBasic[] = []
+      let cursor: string | undefined
 
       do {
-        const {data} = await agent.chat.bsky.convo.getConvoMembers(
-          {convoId, cursor, limit: LIMIT},
-          {headers: getAgentDmServiceHeaders(agent)},
-        )
+        const data = await client.call(chat.bsky.convo.getConvoMembers, {
+          convoId,
+          cursor,
+          limit: LIMIT,
+        })
         members.push(...data.members)
         cursor = data.cursor
       } while (cursor)

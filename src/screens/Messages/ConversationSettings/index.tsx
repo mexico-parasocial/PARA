@@ -16,6 +16,7 @@ import {
   type NativeStackScreenProps,
   type NavigationProp,
 } from '#/lib/routes/types'
+import {matchXrpcError} from '#/lib/xrpc-error'
 import {logger} from '#/logger'
 import {ConvoProvider, isConvoActive, useConvo} from '#/state/messages/convo'
 import {ConvoStatus} from '#/state/messages/convo/types'
@@ -55,6 +56,7 @@ import * as Prompt from '#/components/Prompt'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {IS_WEB} from '#/env'
+import {chat} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 import {InviteLinkDialog} from '../components/InviteLinkDialog'
 import {AddMembersLink} from './AddMembersLink'
@@ -419,6 +421,13 @@ function SettingsHeader({
       if (lock) {
         logger.error('Failed to lock group chat', {message: e})
         Toast.show(l`Failed to lock group chat`, {type: 'error'})
+      } else if (
+        matchXrpcError(e, chat.bsky.convo.unlockConvo) ===
+        'ConvoLockedByModeration'
+      ) {
+        Toast.show(l`This chat is locked by a moderation action`, {
+          type: 'error',
+        })
       } else {
         logger.error('Failed to unlock group chat', {message: e})
         Toast.show(l`Failed to unlock group chat`, {type: 'error'})

@@ -6,14 +6,14 @@ import {useMutation, useQueryClient} from '@tanstack/react-query'
 
 import {logger} from '#/logger'
 import {invalidateJoinLinkPreviewsForConvo} from '#/state/queries/join-links'
-import {useAgent} from '#/state/session'
+import {useChatClient} from '#/state/session'
+import {chat} from '#/lexicons'
 import {
   type ConvoRequestListQueryData,
   optimisticDelete as optimisticDeleteRequest,
   RQKEY_ROOT as REQUESTS_RQKEY_ROOT,
 } from './list-conversation-requests'
 import {RQKEY_ROOT as CONVO_LIST_KEY} from './list-conversations'
-import {getAgentDmServiceHeaders} from './utils/dm-service'
 
 const RQKEY_ROOT = 'leave-convo'
 export function RQKEY(convoId: string | undefined) {
@@ -38,22 +38,14 @@ export function useLeaveConvo(
   },
 ) {
   const queryClient = useQueryClient()
-  const agent = useAgent()
+  const client = useChatClient()
 
   return useMutation({
     mutationKey: RQKEY(convoId),
     mutationFn: async () => {
       if (!convoId) throw new Error('No convoId provided')
 
-      const {data} = await agent.chat.bsky.convo.leaveConvo(
-        {convoId},
-        {
-          headers: getAgentDmServiceHeaders(agent),
-          encoding: 'application/json',
-        },
-      )
-
-      return data
+      return await client.call(chat.bsky.convo.leaveConvo, {convoId})
     },
     onMutate: () => {
       const prevConvoListQueries =

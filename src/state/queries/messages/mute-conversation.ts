@@ -1,12 +1,12 @@
 import {type ChatBskyConvoMuteConvo} from '@atproto/api'
 import {useMutation, useQueryClient} from '@tanstack/react-query'
 
-import {useAgent} from '#/state/session'
+import {useChatClient} from '#/state/session'
+import {chat} from '#/lexicons'
 import {
   rollbackConvoOptimistic,
   updateConvoOptimistic,
 } from './utils/convo-cache'
-import {getAgentDmServiceHeaders} from './utils/dm-service'
 
 export function useMuteConvo(
   convoId: string | undefined,
@@ -19,29 +19,15 @@ export function useMuteConvo(
   },
 ) {
   const queryClient = useQueryClient()
-  const agent = useAgent()
+  const client = useChatClient()
 
   return useMutation({
     mutationFn: async ({mute}: {mute: boolean}) => {
       if (!convoId) throw new Error('No convoId provided')
       if (mute) {
-        const {data} = await agent.chat.bsky.convo.muteConvo(
-          {convoId},
-          {
-            headers: getAgentDmServiceHeaders(agent),
-            encoding: 'application/json',
-          },
-        )
-        return data
+        return await client.call(chat.bsky.convo.muteConvo, {convoId})
       } else {
-        const {data} = await agent.chat.bsky.convo.unmuteConvo(
-          {convoId},
-          {
-            headers: getAgentDmServiceHeaders(agent),
-            encoding: 'application/json',
-          },
-        )
-        return data
+        return await client.call(chat.bsky.convo.unmuteConvo, {convoId})
       }
     },
     onMutate: ({mute}) => {

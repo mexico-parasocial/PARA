@@ -14,12 +14,11 @@ import {
 } from '@tanstack/react-query'
 import throttle from 'lodash.throttle'
 
-import {DM_SERVICE_HEADERS} from '#/lib/constants'
-import {isChatServiceUnavailableError} from '#/lib/strings/errors'
 import {useCurrentConvoId} from '#/state/messages/current-convo-id'
 import {useMessagesEventBus} from '#/state/messages/events'
 import {invalidateJoinLinkPreviewsForConvo} from '#/state/queries/join-links'
-import {useAgent, useSession} from '#/state/session'
+import {useChatClient, useSession} from '#/state/session'
+import {chat} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 import {RQKEY as CONVO_KEY} from './conversation'
 import {
@@ -44,10 +43,7 @@ export const RQKEY = (
   readState: 'all' | 'unread' = 'all',
   kind: 'all' | 'group' | 'direct' = 'all',
   lockStatus:
-    | 'unlocked'
-    | 'locked'
-    | 'locked-permanently'
-    | undefined = undefined,
+    'unlocked' | 'locked' | 'locked-permanently' | undefined = undefined,
   limit?: number,
 ) => [RQKEY_ROOT, status, readState, kind, lockStatus, limit] as const
 
@@ -120,31 +116,20 @@ export function useListConvosQuery({
   limit?: number
   lockStatus?: 'unlocked' | 'locked' | 'locked-permanently'
 } = {}) {
-  const agent = useAgent()
+  const client = useChatClient()
 
   return useInfiniteQuery({
     enabled,
     queryKey: RQKEY(status ?? 'all', readState, kind, lockStatus, limit),
     queryFn: async ({pageParam}) => {
-      try {
-        const {data} = await agent.chat.bsky.convo.listConvos(
-          {
-            limit,
-            cursor: pageParam,
-            readState: readState === 'unread' ? 'unread' : undefined,
-            kind: kind === 'all' ? undefined : kind,
-            lockStatus,
-            status,
-          },
-          {headers: DM_SERVICE_HEADERS},
-        )
-        return data
-      } catch (e) {
-        if (isChatServiceUnavailableError(e)) {
-          return {convos: [], cursor: undefined}
-        }
-        throw e
-      }
+      return await client.call(chat.bsky.convo.listConvos, {
+        limit,
+        cursor: pageParam,
+        readState: readState === 'unread' ? 'unread' : undefined,
+        kind: kind === 'all' ? undefined : kind,
+        lockStatus,
+        status,
+      })
     },
     initialPageParam: undefined as RQPageParam,
     getNextPageParam: lastPage => lastPage.cursor,
@@ -272,9 +257,9 @@ export function ListConvosProviderInner({
           // memberCount bump to avoid double-counting.
           const alreadyKnownMember =
             queryClient
-              .getQueryData<
-                ChatBskyActorDefs.ProfileViewBasic[]
-              >(listConvoMembersQueryKey(convoId))
+              .getQueryData<ChatBskyActorDefs.ProfileViewBasic[]>(
+                listConvoMembersQueryKey(convoId),
+              )
               ?.some(m => m.did === did) ?? false
           mutateMembers(convoId, list =>
             list.some(m => m.did === did) ? list : list.concat(newMember),
@@ -296,9 +281,9 @@ export function ListConvosProviderInner({
           // list, skip the memberCount decrement to avoid double-counting.
           const alreadyRemovedMember =
             queryClient
-              .getQueryData<
-                ChatBskyActorDefs.ProfileViewBasic[]
-              >(listConvoMembersQueryKey(convoId))
+              .getQueryData<ChatBskyActorDefs.ProfileViewBasic[]>(
+                listConvoMembersQueryKey(convoId),
+              )
               ?.some(m => m.did === did) === false
           mutateMembers(convoId, list => list.filter(m => m.did !== did))
           mutateConvoView(

@@ -1,9 +1,8 @@
 import {useQuery} from '@tanstack/react-query'
 
-import {DM_SERVICE_HEADERS} from '#/lib/constants'
-import {isChatServiceUnavailableError} from '#/lib/strings/errors'
-import {useAgent, useSession} from '#/state/session'
+import {useChatClient, useSession} from '#/state/session'
 import {useAgeAssurance} from '#/ageAssurance'
+import {chat} from '#/lexicons'
 import {STALE} from '..'
 
 const RQKEY_ROOT = 'convo-unread-counts'
@@ -20,7 +19,7 @@ export const UNREAD_ACCEPTED_CAP = 31
 export const UNREAD_REQUEST_CAP = 11
 
 export function useUnreadCountsQuery() {
-  const agent = useAgent()
+  const client = useChatClient()
   const {hasSession} = useSession()
   const aa = useAgeAssurance()
   const includeGroupChats = !aa.flags.groupChatDisabled
@@ -28,22 +27,9 @@ export function useUnreadCountsQuery() {
   return useQuery({
     queryKey: RQKEY(includeGroupChats),
     queryFn: async () => {
-      try {
-        const {data} = await agent.chat.bsky.convo.getUnreadCounts(
-          {includeGroupChats},
-          {headers: DM_SERVICE_HEADERS},
-        )
-        return data
-      } catch (e) {
-        if (isChatServiceUnavailableError(e)) {
-          return {
-            unreadAcceptedConvos: 0,
-            unreadRequestConvos: 0,
-            unreadGroupChats: 0,
-          }
-        }
-        throw e
-      }
+      return await client.call(chat.bsky.convo.getUnreadCounts, {
+        includeGroupChats,
+      })
     },
     staleTime: STALE.SECONDS.FIFTEEN,
     enabled: hasSession,
