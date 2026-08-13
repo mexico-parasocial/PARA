@@ -1,6 +1,7 @@
 import {type Insets, Platform} from 'react-native'
 import * as Device from 'expo-device'
 import {type AppBskyActorDefs, BSKY_LABELER_DID} from '@atproto/api'
+import {type Service} from '@atproto/lex'
 
 import {type ProxyHeaderValue} from '#/state/session/agent'
 import {BLUESKY_PROXY_DID, CHAT_PROXY_DID, IS_DEV} from '#/env'
@@ -321,6 +322,21 @@ export const BLUESKY_PROXY_HEADER = {
     this.value = value
   },
 }
+
+/**
+ * The chat service's proxy target, in the `did#service_id` form a lex client's
+ * `service` option takes. A client constructed with it emits `atproto-proxy:
+ * <this value>` on every request, which is what routes `chat.bsky.*` calls to
+ * the chat service.
+ *
+ * The DID comes from the env-configurable `CHAT_PROXY_DID` (via
+ * `EXPO_PUBLIC_CHAT_PROXY_DID`) rather than a hard-coded constant, so the
+ * target can be retargeted per environment.
+ *
+ * This is the client-level equivalent of {@link DM_SERVICE_HEADERS}, which
+ * carries the same value as a per-call header.
+ */
+export const CHAT_PROXY_SERVICE: Service = `${CHAT_PROXY_DID}#bsky_chat`
 
 const LOCAL_DEV_APPVIEW_PROXY_DID =
   process.env.EXPO_PUBLIC_LOCAL_BSKY_PROXY_DID || DEV_ENV_APPVIEW_DID
