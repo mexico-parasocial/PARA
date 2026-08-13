@@ -1,7 +1,6 @@
 import {createContext, useCallback, useContext} from 'react'
 import {LayoutAnimation} from 'react-native'
 import {type ComAtprotoServerDescribeServer} from '@atproto/api'
-import {XrpcResponseError} from '@atproto/lex'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import * as EmailValidator from 'email-validator'
@@ -10,9 +9,11 @@ import {DEFAULT_SERVICE} from '#/lib/constants'
 import {cleanError} from '#/lib/strings/errors'
 import {createFullHandle} from '#/lib/strings/handles'
 import {getAge} from '#/lib/strings/time'
+import {matchXrpcError} from '#/lib/xrpc-error'
 import {logger} from '#/logger'
 import {useSessionApi} from '#/state/session'
 import {useOnboardingDispatch} from '#/state/shell'
+import {com} from '#/lexicons'
 
 export type ServiceDescription = ComAtprotoServerDescribeServer.OutputSchema
 
@@ -329,7 +330,10 @@ export function useSubmitSignup() {
         onboardingDispatch({type: 'start'})
       } catch (e: unknown) {
         let errMsg = String(e)
-        if (e instanceof XrpcResponseError && e.error === 'InvalidInviteCode') {
+        if (
+          matchXrpcError(e, com.atproto.server.createAccount) ===
+          'InvalidInviteCode'
+        ) {
           dispatch({
             type: 'setError',
             value: _(
