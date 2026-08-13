@@ -14,7 +14,7 @@ import {logger} from '#/logger'
 import {updateProfileShadow} from '#/state/cache/profile-shadow'
 import {useLanguagePrefs} from '#/state/preferences'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
-import {useAgent, useSession} from '#/state/session'
+import {useAppviewClient, usePdsClient, useSession} from '#/state/session'
 import {
   OnboardingControls,
   OnboardingDescriptionText,
@@ -54,7 +54,8 @@ export function StepSuggestedAccounts() {
   const t = useTheme()
   const {gtMobile} = useBreakpoints()
   const moderationOpts = useModerationOpts()
-  const agent = useAgent()
+  const appviewClient = useAppviewClient()
+  const pdsClient = usePdsClient()
   const {currentAccount} = useSession()
   const queryClient = useQueryClient()
 
@@ -64,7 +65,6 @@ export function StepSuggestedAccounts() {
   // keeping track of who was followed via the follow all button
   // so we can enable/disable the button without having to dig through the shadow cache
   const [followedUsers, setFollowedUsers] = useState<string[]>([])
-
 
   /*
    * Special language handling copied wholesale from the Explore screen
@@ -135,7 +135,10 @@ export function StepSuggestedAccounts() {
           followingUri: 'pending',
         })
       }
-      const uris = await wait(1e3, bulkWriteFollows(agent, followableDids))
+      const uris = await wait(
+        1e3,
+        bulkWriteFollows(pdsClient, appviewClient, followableDids),
+      )
       for (const did of followableDids) {
         const uri = uris.get(did)
         updateProfileShadow(queryClient, did, {

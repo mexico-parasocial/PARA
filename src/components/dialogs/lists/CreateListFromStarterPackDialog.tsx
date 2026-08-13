@@ -1,13 +1,14 @@
 import {View} from 'react-native'
-import {
-  type $Typed,
-  type AppBskyGraphDefs,
-  type AppBskyGraphListitem,
-  type AppBskyGraphStarterpack,
-  AtUri,
-  type ComAtprotoRepoApplyWrites,
-} from '@atproto/api'
+import {type AppBskyGraphDefs, type AppBskyGraphStarterpack} from '@atproto/api'
 import {TID} from '@atproto/common-web'
+import {type $Typed} from '@atproto/lex'
+import {
+  type AtIdentifierString,
+  AtUri,
+  type AtUriString,
+  type DidString,
+  toDatetimeString,
+} from '@atproto/syntax'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -18,10 +19,9 @@ import chunk from 'lodash.chunk'
 import {until} from '#/lib/async/until'
 import {wait} from '#/lib/async/wait'
 import {type NavigationProp} from '#/lib/routes/types'
-import {logEvent} from '#/lib/statsig/statsig'
 import {logger} from '#/logger'
 import {getAllListMembers} from '#/state/queries/list-members'
-import {useAgent, useAppviewClient, useSession} from '#/state/session'
+import {useAppviewClient, usePdsClient, useSession} from '#/state/session'
 import {atoms as a, platform, useTheme, web} from '#/alf'
 import {Admonition} from '#/components/Admonition'
 import {Button, ButtonText} from '#/components/Button'
@@ -29,6 +29,8 @@ import * as Dialog from '#/components/Dialog'
 import {Loader} from '#/components/Loader'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
+import {useAnalytics} from '#/analytics'
+import {app, com} from '#/lexicons'
 import {CreateOrEditListDialog} from './CreateOrEditListDialog'
 
 export function CreateListFromStarterPackDialog({
@@ -40,8 +42,8 @@ export function CreateListFromStarterPackDialog({
 }) {
   const {_} = useLingui()
   const t = useTheme()
-  const agent = useAgent()
   const appviewClient = useAppviewClient()
+  const pdsClient = usePdsClient()
   const ax = useAnalytics()
   const {currentAccount} = useSession()
   const navigation = useNavigation<NavigationProp>()
@@ -70,6 +72,7 @@ export function CreateListFromStarterPackDialog({
     }
 
     try {
+      // Fetch all members and add them, with minimum 3s duration for UX
       const listItems = await wait(
         3000,
         (async () => {
@@ -79,13 +82,14 @@ export function CreateListFromStarterPackDialog({
           )
 
           if (items.length > 0) {
-            const listitemWrites: $Typed<ComAtprotoRepoApplyWrites.Create>[] =
+            const listitemWrites: $Typed<com.atproto.repo.applyWrites.Create>[] =
               items.map(item => {
-                const listitemRecord: $Typed<AppBskyGraphListitem.Record> = {
+                const listitemRecord: $Typed<app.bsky.graph.listitem.Main> = {
                   $type: 'app.bsky.graph.listitem',
-                  subject: item.subject.did,
-                  list: listUri,
-                  createdAt: new Date().toISOString(),
+                  // the list view is still legacy-typed, so its strings are unbranded
+                  subject: item.subject.did as DidString,
+                  list: listUri as AtUriString,
+                  createdAt: toDatetimeString(new Date()),
                 }
                 return {
                   $type: 'com.atproto.repo.applyWrites#create',
@@ -97,8 +101,8 @@ export function CreateListFromStarterPackDialog({
 
             const chunks = chunk(listitemWrites, 50)
             for (const c of chunks) {
-              await agent.com.atproto.repo.applyWrites({
-                repo: currentAccount.did,
+              await pdsClient.call(com.atproto.repo.applyWrites, {
+                repo: currentAccount.did as AtIdentifierString,
                 writes: c,
               })
             }
@@ -106,10 +110,10 @@ export function CreateListFromStarterPackDialog({
             await until(
               5,
               1e3,
-              (res: {data: {items: unknown[]}}) => res.data.items.length > 0,
+              (res: {items: unknown[]}) => res.items.length > 0,
               () =>
-                agent.app.bsky.graph.getList({
-                  list: listUri,
+                appviewClient.call(app.bsky.graph.getList, {
+                  list: listUri as AtUriString,
                   limit: 1,
                 }),
             )
@@ -121,7 +125,7 @@ export function CreateListFromStarterPackDialog({
 
       queryClient.invalidateQueries({queryKey: ['list-members', listUri]})
 
-      logEvent('starterPack:convertToList', {
+      ax.metric('starterPack:convertToList', {
         starterPack: starterPack.uri,
         memberCount: listItems.length,
       })

@@ -29,14 +29,15 @@ import {
   useContactsMatchesQuery,
   useContactsSyncStatusQuery,
 } from '#/state/queries/find-contacts'
-import {useAgent, useAppviewClient, useSession} from '#/state/session'
+import {useAppviewClient, usePdsClient, useSession} from '#/state/session'
 import {ErrorScreen} from '#/view/com/util/error/ErrorScreen'
 import {List} from '#/view/com/util/List'
 import {atoms as a, tokens, useGutters, useTheme} from '#/alf'
 import {Admonition} from '#/components/Admonition'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import {ContactsHeroImage} from '#/components/contacts/components/HeroImage'
-import {ArrowRotateCounterClockwise_Stroke2_Corner0_Rounded as ResyncIcon} from '#/components/icons/ArrowRotateCounterClockwise'
+import {useDialogControl} from '#/components/Dialog'
+import {ArrowRotateClockwise_Stroke2_Corner0_Rounded as ResyncIcon} from '#/components/icons/ArrowRotate'
 import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/Times'
 import {Trash_Stroke2_Corner0_Rounded as TrashIcon} from '#/components/icons/Trash'
 import * as Layout from '#/components/Layout'
@@ -45,7 +46,9 @@ import {Loader} from '#/components/Loader'
 import * as ProfileCard from '#/components/ProfileCard'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
+import {useAnalytics} from '#/analytics'
 import {IS_NATIVE} from '#/env'
+import {InviteFriendsDialog} from '#/features/inviteFriends'
 import {app} from '#/lexicons'
 import type * as bsky from '#/types/bsky'
 import {bulkWriteFollows} from '../Onboarding/util'
@@ -53,13 +56,14 @@ import {bulkWriteFollows} from '../Onboarding/util'
 type Props = NativeStackScreenProps<AllNavigatorParams, 'FindContactsSettings'>
 export function FindContactsSettingsScreen({}: Props) {
   const {_} = useLingui()
+  const ax = useAnalytics()
 
   const {data, error, refetch} = useContactsSyncStatusQuery()
 
   const isFocused = useIsFocused()
   useEffect(() => {
     if (data && isFocused) {
-      logger.metric('contacts:settings:presented', {
+      ax.metric('contacts:settings:presented', {
         hasPreviouslySynced: !!data.syncStatus,
         matchCount: data.syncStatus?.matchesCount,
       })
@@ -72,7 +76,7 @@ export function FindContactsSettingsScreen({}: Props) {
         <Layout.Header.BackButton />
         <Layout.Header.Content>
           <Layout.Header.TitleText>
-            <Trans>Find Friends</Trans>
+            <Trans>Find and invite friends</Trans>
           </Layout.Header.TitleText>
         </Layout.Header.Content>
         <Layout.Header.Slot />
@@ -82,12 +86,7 @@ export function FindContactsSettingsScreen({}: Props) {
           !data.syncStatus ? (
             <Intro />
           ) : (
-            <SyncStatus
-              info={data.syncStatus}
-              refetchStatus={async () => {
-                await refetch()
-              }}
-            />
+            <SyncStatus info={data.syncStatus} refetchStatus={refetch} />
           )
         ) : error ? (
           <ErrorScreen
@@ -114,6 +113,8 @@ function Intro() {
   const gutter = useGutters(['base'])
   const t = useTheme()
   const {_} = useLingui()
+  const ax = useAnalytics()
+  const inviteFriendsControl = useDialogControl()
 
   const {data: isAvailable, isSuccess} = useQuery({
     queryKey: ['contacts-available'],
@@ -123,11 +124,14 @@ function Intro() {
   return (
     <Layout.Content contentContainerStyle={[gutter, a.gap_lg]}>
       <ContactsHeroImage />
+      <Text style={[a.text_xl, a.font_bold]}>
+        <Trans>Find people you know</Trans>
+      </Text>
       <Text style={[a.text_md, a.leading_snug, t.atoms.text_contrast_medium]}>
         <Trans>
-          Find your friends on PARA by verifying your phone number and matching
-          with your contacts. We protect your information and you control what
-          happens next.{' '}
+          Find your friends on Bluesky by verifying your phone number and
+          matching with your contacts. We protect your information and you
+          control what happens next.{' '}
           <InlineLinkText
             to={urls.website.blog.findFriendsAnnouncement}
             label={_(
@@ -162,6 +166,20 @@ function Intro() {
           </Admonition>
         )
       )}
+      <Button
+        label={_(msg`Share my profile`)}
+        size="large"
+        color="secondary"
+        onPress={() => {
+          ax.metric('invite:dialog:open', {logContext: 'FindContactsSettings'})
+          inviteFriendsControl.open()
+        }}
+        style={[a.flex_1, a.justify_center]}>
+        <ButtonText>
+          <Trans>Share my profile</Trans>
+        </ButtonText>
+      </Button>
+      <InviteFriendsDialog control={inviteFriendsControl} />
     </Layout.Content>
   )
 }
@@ -171,8 +189,9 @@ function SyncStatus({
   refetchStatus,
 }: {
   info: AppBskyContactDefs.SyncStatus
-  refetchStatus: () => Promise<void>
+  refetchStatus: () => Promise<any>
 }) {
+  const ax = useAnalytics()
   const client = useAppviewClient()
   const queryClient = useQueryClient()
   const {_} = useLingui()
@@ -203,7 +222,7 @@ function SyncStatus({
       })
     },
     onMutate: async (did: string) => {
-      logger.metric('contacts:settings:dismiss', {})
+      ax.metric('contacts:settings:dismiss', {})
       optimisticRemoveMatch(queryClient, did)
     },
     onError: err => {
@@ -284,6 +303,7 @@ function MatchItem({
 }) {
   const t = useTheme()
   const {_} = useLingui()
+  const ax = useAnalytics()
   const shadow = useProfileShadow(profile)
 
   return (
@@ -320,7 +340,7 @@ function MatchItem({
             profile={profile}
             moderationOpts={moderationOpts}
             logContext="FindContacts"
-            onFollow={() => logger.metric('contacts:settings:follow', {})}
+            onFollow={() => ax.metric('contacts:settings:follow', {})}
           />
           {!shadow.viewer?.following && (
             <Button
@@ -349,7 +369,8 @@ function StatusHeader({
   isAnyUnfollowed: boolean
 }) {
   const {_} = useLingui()
-  const agent = useAgent()
+  const ax = useAnalytics()
+  const pdsClient = usePdsClient()
   const client = useAppviewClient()
   const queryClient = useQueryClient()
   const {currentAccount} = useSession()
@@ -381,11 +402,14 @@ function StatusHeader({
         }
       } while (cursor)
 
-      logger.metric('contacts:settings:followAll', {
+      ax.metric('contacts:settings:followAll', {
         followCount: didsToFollow.length,
       })
 
-      const uris = await wait(500, bulkWriteFollows(agent, didsToFollow))
+      const uris = await wait(
+        500,
+        bulkWriteFollows(pdsClient, client, didsToFollow),
+      )
 
       for (const did of didsToFollow) {
         const uri = uris.get(did)
@@ -466,6 +490,7 @@ function StatusHeader({
 function StatusFooter({syncedAt}: {syncedAt: string}) {
   const {_, i18n} = useLingui()
   const t = useTheme()
+  const ax = useAnalytics()
   const client = useAppviewClient()
   const queryClient = useQueryClient()
 
@@ -473,7 +498,7 @@ function StatusFooter({syncedAt}: {syncedAt: string}) {
     mutationFn: async () => {
       await client.call(app.bsky.contact.removeData, {})
     },
-    onMutate: () => logger.metric('contacts:settings:removeData', {}),
+    onMutate: () => ax.metric('contacts:settings:removeData', {}),
     onSuccess: () => {
       Toast.show(_(msg`Contacts removed`))
       queryClient.setQueryData<app.bsky.contact.getSyncStatus.$OutputBody>(
@@ -527,7 +552,7 @@ function StatusFooter({syncedAt}: {syncedAt: string}) {
               (Date.now() - new Date(syncedAt).getTime()) /
                 (1000 * 60 * 60 * 24),
             )
-            logger.metric('contacts:settings:resync', {
+            ax.metric('contacts:settings:resync', {
               daysSinceLastSync,
             })
           }}
@@ -547,7 +572,7 @@ function StatusFooter({syncedAt}: {syncedAt: string}) {
         </Text>
         <Text style={[a.text_sm, a.leading_snug, t.atoms.text_contrast_medium]}>
           <Trans>
-            PARA stores your contacts as encoded data. Removing your contacts
+            Bluesky stores your contacts as encoded data. Removing your contacts
             will immediately delete this data.
           </Trans>
         </Text>

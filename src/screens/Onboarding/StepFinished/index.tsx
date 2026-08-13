@@ -3,9 +3,12 @@ import {View} from 'react-native'
 import {
   type AppBskyActorDefs,
   type AppBskyActorProfile,
+  type AppBskyGraphDefs,
+  AppBskyGraphStarterpack,
   type Un$Typed,
 } from '@atproto/api'
 import {TID} from '@atproto/common-web'
+import {type AtUriString} from '@atproto/syntax'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -14,15 +17,22 @@ import {useQueryClient} from '@tanstack/react-query'
 import {uploadBlob} from '#/lib/api'
 import {
   BSKY_APP_ACCOUNT_DID,
-  DEFAULT_ONBOARDING_SAVED_FEEDS,
+  DISCOVER_SAVED_FEED,
+  TIMELINE_SAVED_FEED,
+  VIDEO_SAVED_FEED,
 } from '#/lib/constants'
 import {useRequestNotificationsPermission} from '#/lib/notifications/notifications'
-import {logEvent} from '#/lib/statsig/statsig'
 import {logger} from '#/logger'
+import {useSetHasCheckedForStarterPack} from '#/state/preferences/used-starter-packs'
+import {getAllListMembers} from '#/state/queries/list-members'
 import {preferencesQueryKey} from '#/state/queries/preferences'
 import {RQKEY as profileRQKey} from '#/state/queries/profile'
-import {useAgent, useAppviewClient} from '#/state/session'
+import {useAgent, useAppviewClient, usePdsClient} from '#/state/session'
 import {useOnboardingDispatch} from '#/state/shell'
+import {
+  useActiveStarterPack,
+  useSetActiveStarterPack,
+} from '#/state/shell/landing'
 import {useProgressGuideControls} from '#/state/shell/progress-guide'
 import {
   OnboardingControls,
@@ -37,17 +47,24 @@ import {atoms as a, useBreakpoints} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import {ArrowRight_Stroke2_Corner0_Rounded as ArrowRight} from '#/components/icons/Arrow'
 import {Loader} from '#/components/Loader'
+import {useAnalytics} from '#/analytics'
 import {IS_WEB} from '#/env'
+import * as bsky from '#/types/bsky'
 import {ValuePropositionPager} from './ValuePropositionPager'
 
 export function StepFinished() {
   const {state, dispatch} = useOnboardingInternalState()
+  const ax = useAnalytics()
   const onboardDispatch = useOnboardingDispatch()
   const [saving, setSaving] = useState(false)
   const queryClient = useQueryClient()
   const agent = useAgent()
   const appviewClient = useAppviewClient()
+  const pdsClient = usePdsClient()
   const requestNotificationsPermission = useRequestNotificationsPermission()
+  const activeStarterPack = useActiveStarterPack()
+  const setActiveStarterPack = useSetActiveStarterPack()
+  const setHasCheckedForStarterPack = useSetHasCheckedForStarterPack()
   const {startProgressGuide} = useProgressGuideControls()
 
   const finishOnboarding = useCallback(async () => {
@@ -86,17 +103,49 @@ export function StepFinished() {
       const {selectedInterests} = interestsStepResults
 
       await Promise.all([
-        bulkWriteFollows(agent, [BSKY_APP_ACCOUNT_DID]),
+        bulkWriteFollows(
+          pdsClient,
+          appviewClient,
+          [BSKY_APP_ACCOUNT_DID, ...(listItems?.map(i => i.subject.did) ?? [])],
+          starterPack
+            ? // the starter pack view is still legacy-typed
+              {
+                uri: starterPack.uri as AtUriString,
+                cid: starterPack.cid,
+              }
+            : undefined,
+        ),
         (async () => {
           // Interests need to get saved first, then we can write the feeds to prefs
           await agent.setInterestsPref({tags: selectedInterests})
 
           // Default feeds that every user should have pinned when landing in the app
-          const feedsToSave: AppBskyActorDefs.SavedFeed[] =
-            DEFAULT_ONBOARDING_SAVED_FEEDS.map(feed => ({
-              ...feed,
+          const feedsToSave: AppBskyActorDefs.SavedFeed[] = [
+            {
+              ...DISCOVER_SAVED_FEED,
               id: TID.nextStr(),
-            }))
+            },
+            {
+              ...TIMELINE_SAVED_FEED,
+              id: TID.nextStr(),
+            },
+            {
+              ...VIDEO_SAVED_FEED,
+              id: TID.nextStr(),
+            },
+          ]
+
+          // Any starter pack feeds will be pinned _after_ the defaults
+          if (starterPack && starterPack.feeds?.length) {
+            feedsToSave.push(
+              ...starterPack.feeds.map(f => ({
+                type: 'feed',
+                value: f.uri,
+                pinned: true,
+                id: TID.nextStr(),
+              })),
+            )
+          }
 
           await agent.overwriteSavedFeeds(feedsToSave)
         })(),
@@ -117,6 +166,13 @@ export function StepFinished() {
               }
             }
 
+            if (starterPack) {
+              next.joinedViaStarterPack = {
+                uri: starterPack.uri,
+                cid: starterPack.cid,
+              }
+            }
+
             next.displayName = ''
 
             if (!next.createdAt) {
@@ -125,7 +181,7 @@ export function StepFinished() {
             return next
           })
 
-          logEvent('onboarding:finished:avatarResult', {
+          ax.metric('onboarding:finished:avatarResult', {
             avatarResult: profileStepResults.isCreatedAvatar
               ? 'created'
               : profileStepResults.image
@@ -135,9 +191,9 @@ export function StepFinished() {
         })(),
         requestNotificationsPermission('AfterOnboarding'),
       ])
-    } catch (e: unknown) {
+    } catch (e: any) {
       logger.info(`onboarding: bulk save failed`)
-      logger.error(String(e))
+      logger.error(e)
       // don't alert the user, just let them into their account
     }
 
@@ -155,25 +211,46 @@ export function StepFinished() {
     })
 
     setSaving(false)
+    setActiveStarterPack(undefined)
+    setHasCheckedForStarterPack(true)
     startProgressGuide('follow-10')
     dispatch({type: 'finish'})
     onboardDispatch({type: 'finish'})
-    logEvent('onboarding:finished:nextPressed', {
-      usedStarterPack: false,
-      starterPackName: undefined,
-      starterPackCreator: undefined,
-      starterPackUri: undefined,
-      profilesFollowed: 0,
-      feedsPinned: 0,
+    ax.metric('onboarding:finished:nextPressed', {
+      usedStarterPack: Boolean(starterPack),
+      starterPackName:
+        starterPack &&
+        bsky.dangerousIsType<AppBskyGraphStarterpack.Record>(
+          starterPack.record,
+          AppBskyGraphStarterpack.isRecord,
+        )
+          ? starterPack.record.name
+          : undefined,
+      starterPackCreator: starterPack?.creator.did,
+      starterPackUri: starterPack?.uri,
+      profilesFollowed: listItems?.length ?? 0,
+      feedsPinned: starterPack?.feeds?.length ?? 0,
     })
+    if (starterPack && listItems?.length) {
+      ax.metric('starterPack:followAll', {
+        logContext: 'Onboarding',
+        starterPack: starterPack.uri,
+        count: listItems?.length,
+      })
+    }
   }, [
+    ax,
     queryClient,
     agent,
     appviewClient,
+    pdsClient,
     dispatch,
     onboardDispatch,
+    activeStarterPack,
     state,
     requestNotificationsPermission,
+    setActiveStarterPack,
+    setHasCheckedForStarterPack,
     startProgressGuide,
   ])
 
@@ -197,6 +274,7 @@ function ValueProposition({
 }) {
   const [subStep, setSubStep] = useState<0 | 1 | 2>(0)
   const {_} = useLingui()
+  const ax = useAnalytics()
   const {gtMobile} = useBreakpoints()
 
   const onPress = () => {
@@ -204,10 +282,10 @@ function ValueProposition({
       finishOnboarding() // has its own metrics
     } else if (subStep === 1) {
       setSubStep(2)
-      logger.metric('onboarding:valueProp:stepTwo:nextPressed', {})
+      ax.metric('onboarding:valueProp:stepTwo:nextPressed', {})
     } else if (subStep === 0) {
       setSubStep(1)
-      logger.metric('onboarding:valueProp:stepOne:nextPressed', {})
+      ax.metric('onboarding:valueProp:stepOne:nextPressed', {})
     }
   }
 
@@ -222,7 +300,7 @@ function ValueProposition({
             size="small"
             label={_(msg`Skip introduction and start using your account`)}
             onPress={() => {
-              logger.metric('onboarding:valueProp:skipPressed', {})
+              ax.metric('onboarding:valueProp:skipPressed', {})
               finishOnboarding()
             }}
             style={[a.bg_transparent]}>
@@ -265,7 +343,7 @@ function ValueProposition({
                 : _(msg`Next`)
             }
             onPress={onPress}>
-            <ButtonText style={{color: 'white'}}>
+            <ButtonText>
               {saving ? (
                 <Trans>Finalizing</Trans>
               ) : subStep === 2 ? (
