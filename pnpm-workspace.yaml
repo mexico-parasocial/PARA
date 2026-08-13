@@ -2,9 +2,10 @@ packages:
   - '.'
 allowBuilds:
   '@sentry/cli': true
-  'core-js-pure': true
+  'core-js': false
+  'core-js-pure': false
   dtrace-provider: true
-  'esbuild': true
+  'esbuild': false
   'unrs-resolver': true
 autoInstallPeers: true # default: true
 minimumReleaseAgeExclude:
