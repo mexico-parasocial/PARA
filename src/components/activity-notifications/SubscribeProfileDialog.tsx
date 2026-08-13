@@ -2,10 +2,10 @@ import {useMemo, useState} from 'react'
 import {View} from 'react-native'
 import {
   type AppBskyNotificationDefs,
-  type AppBskyNotificationListActivitySubscriptions,
   type ModerationOpts,
   type Un$Typed,
 } from '@atproto/api'
+import {type DidString} from '@atproto/syntax'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -21,7 +21,7 @@ import {sanitizeHandle} from '#/lib/strings/handles'
 import {logger} from '#/logger'
 import {updateProfileShadow} from '#/state/cache/profile-shadow'
 import {RQKEY_getActivitySubscriptions} from '#/state/queries/activity-subscriptions'
-import {useAgent} from '#/state/session'
+import {useAppviewClient} from '#/state/session'
 import {atoms as a, platform, useTheme, web} from '#/alf'
 import {Admonition} from '#/components/Admonition'
 import {
@@ -37,6 +37,7 @@ import * as ProfileCard from '#/components/ProfileCard'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {IS_WEB} from '#/env'
+import {app} from '#/lexicons'
 import type * as bsky from '#/types/bsky'
 
 export function SubscribeProfileDialog({
@@ -73,7 +74,7 @@ function DialogInner({
 }) {
   const {_} = useLingui()
   const t = useTheme()
-  const agent = useAgent()
+  const client = useAppviewClient()
   const control = Dialog.useDialogContext()
   const queryClient = useQueryClient()
   const initialState = parseActivitySubscription(
@@ -121,8 +122,9 @@ function DialogInner({
     mutationFn: async (
       activitySubscription: Un$Typed<AppBskyNotificationDefs.ActivitySubscription>,
     ) => {
-      await agent.app.bsky.notification.putActivitySubscription({
-        subject: profile.did,
+      await client.call(app.bsky.notification.putActivitySubscription, {
+        // the profile view carries an already-resolved did
+        subject: profile.did as DidString,
         activitySubscription,
       })
     },
@@ -147,7 +149,7 @@ function DialogInner({
           queryClient.setQueryData(
             RQKEY_getActivitySubscriptions,
             (
-              old?: InfiniteData<AppBskyNotificationListActivitySubscriptions.OutputSchema>,
+              old?: InfiniteData<app.bsky.notification.listActivitySubscriptions.$OutputBody>,
             ) => {
               if (!old) return old
               return {

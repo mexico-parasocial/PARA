@@ -19,13 +19,14 @@ import {
 } from '@atproto/api'
 import {AtUri} from '@atproto/api'
 import {TID} from '@atproto/common-web'
+import {type DidString} from '@atproto/syntax'
 import {msg, plural} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Plural, Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 import {useQueryClient} from '@tanstack/react-query'
 
-import {DM_SERVICE_HEADERS, MAX_POST_LINES} from '#/lib/constants'
+import {MAX_POST_LINES} from '#/lib/constants'
 import {useAnimatedValue} from '#/lib/hooks/useAnimatedValue'
 import {makeProfileLink} from '#/lib/routes/links'
 import {type NavigationProp} from '#/lib/routes/types'
@@ -39,7 +40,7 @@ import {useProfileShadow} from '#/state/cache/profile-shadow'
 import {type FeedNotification} from '#/state/queries/notifications/feed'
 import {useProfileFollowMutationQueue} from '#/state/queries/profile'
 import {unstableCacheProfileView} from '#/state/queries/unstable-profile-cache'
-import {useAgent, useSession} from '#/state/session'
+import {useChatClient, useSession} from '#/state/session'
 import {FeedSourceCard} from '#/view/com/feeds/FeedSourceCard'
 import {Post} from '#/view/com/post/Post'
 import {formatCount} from '#/view/com/util/numeric/format'
@@ -71,6 +72,7 @@ import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
 import {IS_WEB} from '#/env'
+import {chat} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 
 const MAX_AUTHORS = 5
@@ -870,9 +872,28 @@ function FollowBackButton({profile}: {profile: AppBskyActorDefs.ProfileView}) {
 
 function SayHelloBtn({profile}: {profile: AppBskyActorDefs.ProfileView}) {
   const {_} = useLingui()
-  const agent = useAgent()
+  const client = useChatClient()
+  const {currentAccount} = useSession()
   const navigation = useNavigation<NavigationProp>()
   const [isLoading, setIsLoading] = useState(false)
+
+  const onPress = async () => {
+    try {
+      setIsLoading(true)
+      const data = await client.call(chat.bsky.convo.getConvoForMembers, {
+        // both dids are already resolved - one from the profile view, one from
+        // the active session
+        members: [profile.did, currentAccount!.did] as DidString[],
+      })
+      navigation.navigate('MessagesConversation', {
+        conversation: data.convo.id,
+      })
+    } catch (e) {
+      logger.error('Failed to get conversation', {safeMessage: e})
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   if (
     profile.associated?.chat?.allowIncoming === 'none' ||
@@ -890,27 +911,7 @@ function SayHelloBtn({profile}: {profile: AppBskyActorDefs.ProfileView}) {
       size="small"
       style={[a.self_center, {marginLeft: 'auto'}]}
       disabled={isLoading}
-      onPress={() => {
-        setIsLoading(true)
-        agent.api.chat.bsky.convo
-          .getConvoForMembers(
-            {
-              members: [profile.did, agent.session!.did],
-            },
-            {headers: DM_SERVICE_HEADERS},
-          )
-          .then(res => {
-            navigation.navigate('MessagesConversation', {
-              conversation: res.data.convo.id,
-            })
-          })
-          .catch(e => {
-            logger.error('Failed to get conversation', {safeMessage: e})
-          })
-          .finally(() => {
-            setIsLoading(false)
-          })
-      }}>
+      onPress={onPress}>
       <ButtonText>
         <Trans>Say hello!</Trans>
       </ButtonText>
