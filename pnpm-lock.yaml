@@ -302,6 +302,12 @@ importers:
       '@bsky.app/video':
         specifier: 0.3.6
         version: 0.3.6(expo@54.0.34(@babel/core@7.29.7(supports-color@8.1.1))(graphql@16.8.1)(react-native-webview@13.17.0(react-native@0.81.5(patch_hash=2656ac6deb71b92a4df4af4593d13ace6a5740936432e5e7e8ef32bc3cd05194)(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0))(react-native@0.81.5(patch_hash=2656ac6deb71b92a4df4af4593d13ace6a5740936432e5e7e8ef32bc3cd05194)(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)(supports-color@8.1.1))(react-native@0.81.5(patch_hash=2656ac6deb71b92a4df4af4593d13ace6a5740936432e5e7e8ef32bc3cd05194)(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)
+      '@bsky.app/video-compressor':
+        specifier: 0.2.0
+        version: 0.2.0(expo@54.0.34(@babel/core@7.29.7(supports-color@8.1.1))(graphql@16.8.1)(react-native-webview@13.17.0(react-native@0.81.5(patch_hash=2656ac6deb71b92a4df4af4593d13ace6a5740936432e5e7e8ef32bc3cd05194)(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0))(react-native@0.81.5(patch_hash=2656ac6deb71b92a4df4af4593d13ace6a5740936432e5e7e8ef32bc3cd05194)(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)(supports-color@8.1.1))(react-native@0.81.5(patch_hash=2656ac6deb71b92a4df4af4593d13ace6a5740936432e5e7e8ef32bc3cd05194)(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)
+      '@bsky/sdk':
+        specifier: 1.0.1
+        version: 1.0.1(@atproto/lex@0.3.6)
       '@discord/bottom-sheet':
         specifier: bluesky-social/react-native-bottom-sheet
         version: https://codeload.github.com/bluesky-social/react-native-bottom-sheet/tar.gz/28a87d1bb55e10fc355fa1455545a30734995908(dd794a0da61cb0c3f5bca74d7267461e)
@@ -1818,12 +1824,25 @@ packages:
       react-native: '*'
       tlds: '*'
 
+  '@bsky.app/video-compressor@0.2.0':
+    resolution: {integrity: sha512-hQPT/zxy3MoODuN7QM5Q0jA5anrrwKfka4o9BTz821sAaiRWW8E4vdw4xsbuhfUXRNOSXknQbDHch2Toh178Xw==}
+    peerDependencies:
+      expo: '*'
+      react: '*'
+      react-native: '*'
+
   '@bsky.app/video@0.3.6':
     resolution: {integrity: sha512-Ny7vz9v1lQOw5Llw4xejtJo/Dp/lmdRw1XdUJucOXlq6puXO93tv3mNXUIIyOEVWEwDPg8j/kSQxG/mGy+/hdQ==}
     peerDependencies:
       expo: '*'
       react: '*'
       react-native: '*'
+
+  '@bsky/sdk@1.0.1':
+    resolution: {integrity: sha512-COhrmIZFsUJ1gj4gvqm2UWkRhTbmXZAL1osTZKgSaFftD4Xy0RRl8S9SRluCxo4/VPw/R3p7NQZ4X3BQFbUjVQ==}
+    engines: {node: '>=22.12.0'}
+    peerDependencies:
+      '@atproto/lex': ^0.3.0
 
   '@crowdin/cli@4.14.3':
     resolution: {integrity: sha512-a2eXICWwEQX2WVM8+aCiHU2xapLXKmjmKw7V4fIRf4PNssyM82TB/y8KTt5ak1JFjU4tnl4f/HPD8Gob+YI2zg==}
@@ -12429,11 +12448,25 @@ snapshots:
       react-native: 0.81.5(patch_hash=2656ac6deb71b92a4df4af4593d13ace6a5740936432e5e7e8ef32bc3cd05194)(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.1.0)(supports-color@8.1.1)
       tlds: 1.261.0
 
+  '@bsky.app/video-compressor@0.2.0(expo@54.0.34(@babel/core@7.29.7(supports-color@8.1.1))(graphql@16.8.1)(react-native-webview@13.17.0(react-native@0.81.5(patch_hash=2656ac6deb71b92a4df4af4593d13ace6a5740936432e5e7e8ef32bc3cd05194)(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0))(react-native@0.81.5(patch_hash=2656ac6deb71b92a4df4af4593d13ace6a5740936432e5e7e8ef32bc3cd05194)(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)(supports-color@8.1.1))(react-native@0.81.5(patch_hash=2656ac6deb71b92a4df4af4593d13ace6a5740936432e5e7e8ef32bc3cd05194)(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)':
+    dependencies:
+      expo: 54.0.34(@babel/core@7.29.7(supports-color@8.1.1))(graphql@16.8.1)(react-native-webview@13.17.0(react-native@0.81.5(patch_hash=2656ac6deb71b92a4df4af4593d13ace6a5740936432e5e7e8ef32bc3cd05194)(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0))(react-native@0.81.5(patch_hash=2656ac6deb71b92a4df4af4593d13ace6a5740936432e5e7e8ef32bc3cd05194)(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)(supports-color@8.1.1)
+      mediabunny: 1.50.6
+      react: 19.1.0
+      react-native: 0.81.5(patch_hash=2656ac6deb71b92a4df4af4593d13ace6a5740936432e5e7e8ef32bc3cd05194)(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.1.0)(supports-color@8.1.1)
+
   '@bsky.app/video@0.3.6(expo@54.0.34(@babel/core@7.29.7(supports-color@8.1.1))(graphql@16.8.1)(react-native-webview@13.17.0(react-native@0.81.5(patch_hash=2656ac6deb71b92a4df4af4593d13ace6a5740936432e5e7e8ef32bc3cd05194)(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0))(react-native@0.81.5(patch_hash=2656ac6deb71b92a4df4af4593d13ace6a5740936432e5e7e8ef32bc3cd05194)(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)(supports-color@8.1.1))(react-native@0.81.5(patch_hash=2656ac6deb71b92a4df4af4593d13ace6a5740936432e5e7e8ef32bc3cd05194)(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)':
     dependencies:
       expo: 54.0.34(@babel/core@7.29.7(supports-color@8.1.1))(graphql@16.8.1)(react-native-webview@13.17.0(react-native@0.81.5(patch_hash=2656ac6deb71b92a4df4af4593d13ace6a5740936432e5e7e8ef32bc3cd05194)(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0))(react-native@0.81.5(patch_hash=2656ac6deb71b92a4df4af4593d13ace6a5740936432e5e7e8ef32bc3cd05194)(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.1.0)(supports-color@8.1.1))(react@19.1.0)(supports-color@8.1.1)
       react: 19.1.0
       react-native: 0.81.5(patch_hash=2656ac6deb71b92a4df4af4593d13ace6a5740936432e5e7e8ef32bc3cd05194)(@babel/core@7.29.7(supports-color@8.1.1))(@types/react@19.2.17)(react@19.1.0)(supports-color@8.1.1)
+
+  '@bsky/sdk@1.0.1(@atproto/lex@0.3.6)':
+    dependencies:
+      '@atproto-labs/handle-resolver': 0.4.8
+      '@atproto/lex': 0.3.6
+      '@atproto/syntax': 0.7.4
+      tlds: 1.261.0
 
   '@crowdin/cli@4.14.3':
     dependencies:

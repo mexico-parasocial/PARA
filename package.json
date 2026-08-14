@@ -133,6 +133,8 @@
     "@bsky.app/sift": "^0.3.9",
     "@bsky.app/tapper": "^0.6.1",
     "@bsky.app/video": "0.3.6",
+    "@bsky.app/video-compressor": "0.2.0",
+    "@bsky/sdk": "1.0.1",
     "@discord/bottom-sheet": "bluesky-social/react-native-bottom-sheet",
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
