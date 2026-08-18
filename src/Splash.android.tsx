@@ -170,13 +170,13 @@ export function Splash(props: PropsWithChildren<Props>) {
       }}
       onLayout={onLayout}>
       {!isAnimationComplete && (
-        <View style={StyleSheet.absoluteFillObject}>
+        <View style={StyleSheet.absoluteFill}>
           <Image
             accessibilityIgnoresInvertColors
             onError={onLoadEnd}
             onLoadEnd={onLoadEnd}
             source={{uri: isDarkMode ? darkSplashImageUri : splashImageUri}}
-            style={StyleSheet.absoluteFillObject}
+            style={StyleSheet.absoluteFill}
           />
         </View>
       )}
@@ -190,7 +190,7 @@ export function Splash(props: PropsWithChildren<Props>) {
           {!isAnimationComplete && (
             <Animated.View
               style={[
-                StyleSheet.absoluteFillObject,
+                StyleSheet.absoluteFill,
                 logoWrapperAnimation,
                 {
                   flex: 1,

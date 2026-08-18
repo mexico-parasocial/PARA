@@ -57,7 +57,7 @@ import {VideoClip_Stroke1_Corner0_Rounded as VideoIcon} from '#/components/icons
 import * as Layout from '#/components/Layout'
 import {ScreenHider} from '#/components/moderation/ScreenHider'
 import {navigate} from '#/Navigation'
-import {ExpoScrollForwarderView} from '../../../modules/expo-scroll-forwarder'
+import {ScrollForwarderView} from 'react-native-scroll-forwarder'
 
 interface SectionRef {
   scrollToTop: () => void
@@ -442,7 +442,7 @@ function ProfileScreenLoaded({
     setMinimumHeight: (height: number) => void
   }) => {
     return (
-      <ExpoScrollForwarderView scrollViewTag={scrollViewTag}>
+      <ScrollForwarderView scrollViewTag={scrollViewTag}>
         <ProfileHeader
           profile={profile}
           labeler={labelerInfo}
@@ -453,7 +453,7 @@ function ProfileScreenLoaded({
           setMinimumHeight={setMinimumHeight}
           paraIdentity={paraIdentity}
         />
-      </ExpoScrollForwarderView>
+      </ScrollForwarderView>
     )
   }
 

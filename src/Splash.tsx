@@ -2,7 +2,6 @@ import {type PropsWithChildren, useCallback, useEffect, useState} from 'react'
 import {
   AccessibilityInfo,
   Image as RNImage,
-  StyleSheet,
   View,
 } from 'react-native'
 import Animated, {
@@ -18,11 +17,14 @@ import {Image} from 'expo-image'
 import * as SplashScreen from 'expo-splash-screen'
 
 import {Logomark} from '#/view/icons/Logomark'
-import {useTheme} from '#/alf'
+import {atoms as a, useTheme} from '#/alf'
 // @ts-ignore
 import splashImagePointer from '../assets/illustrations/illustration-mobile.png'
 // @ts-ignore
 import darkSplashImagePointer from '../assets/illustrations/illustration-mobile-dark.png'
+/** Startup must not wait longer than this on the splash illustration. */
+const SPLASH_IMAGE_TIMEOUT_MS = 2000
+
 const splashImageUri = RNImage.resolveAssetSource(splashImagePointer).uri
 const darkSplashImageUri = RNImage.resolveAssetSource(
   darkSplashImagePointer,
@@ -49,6 +51,7 @@ export function Splash(props: PropsWithChildren<Props>) {
     isImageLoaded &&
     isLayoutReady &&
     reduceMotion !== undefined
+
 
   const isDarkMode = t.name !== 'light'
   const logoBg = t.atoms.bg.backgroundColor
@@ -114,6 +117,18 @@ export function Splash(props: PropsWithChildren<Props>) {
   const onLayout = useCallback(() => setIsLayoutReady(true), [])
   const onLoadEnd = useCallback(() => setIsImageLoaded(true), [])
 
+  /*
+   * Never let a splash image block startup. `onError` already treats a failed
+   * load as "done", but expo-image can also just never report either outcome -
+   * observed in dev, where the asset is fetched over HTTP from Metro rather
+   * than read from the bundle. Without this the app sits on the splash forever.
+   */
+  useEffect(() => {
+    if (isImageLoaded) return
+    const timer = setTimeout(onLoadEnd, SPLASH_IMAGE_TIMEOUT_MS)
+    return () => clearTimeout(timer)
+  }, [isImageLoaded, onLoadEnd])
+
   useEffect(() => {
     if (isReady) {
       SplashScreen.hideAsync()
@@ -170,13 +185,13 @@ export function Splash(props: PropsWithChildren<Props>) {
       }}
       onLayout={onLayout}>
       {!isAnimationComplete && (
-        <View style={StyleSheet.absoluteFillObject}>
+        <View style={[a.absolute, a.inset_0]}>
           <Image
             accessibilityIgnoresInvertColors
             onError={onLoadEnd}
             onLoadEnd={onLoadEnd}
             source={{uri: isDarkMode ? darkSplashImageUri : splashImageUri}}
-            style={StyleSheet.absoluteFillObject}
+            style={[a.absolute, a.inset_0]}
           />
         </View>
       )}
@@ -190,7 +205,8 @@ export function Splash(props: PropsWithChildren<Props>) {
           {!isAnimationComplete && (
             <Animated.View
               style={[
-                StyleSheet.absoluteFillObject,
+                a.absolute,
+                a.inset_0,
                 logoWrapperAnimation,
                 {
                   flex: 1,

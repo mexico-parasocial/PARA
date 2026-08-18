@@ -1760,10 +1760,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   cellOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   selectedCellOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderWidth: 4,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1774,7 +1774,7 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   selectedCellInset: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.9)',
   },
@@ -1800,7 +1800,7 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   axisOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   centerAxisVertical: {
     position: 'absolute',
@@ -1831,7 +1831,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(30, 41, 59, 0.42)',
   },
   ideologyOverlay: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
   },
   radicalCenterWrap: {
     position: 'absolute',

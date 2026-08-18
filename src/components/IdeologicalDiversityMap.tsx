@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   labels: {
-    ...StyleSheet.absoluteFillObject,
+    ...StyleSheet.absoluteFill,
     padding: 4,
     pointerEvents: 'none',
   },
