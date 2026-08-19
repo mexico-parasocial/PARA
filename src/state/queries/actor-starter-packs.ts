@@ -1,7 +1,4 @@
-import {
-  type AppBskyGraphGetActorStarterPacks,
-  type AppBskyGraphGetStarterPacksWithMembership,
-} from '@atproto/api'
+import {type DidString} from '@atproto/syntax'
 import {
   type InfiniteData,
   type QueryClient,
@@ -9,7 +6,8 @@ import {
   useInfiniteQuery,
 } from '@tanstack/react-query'
 
-import {useAgent} from '#/state/session'
+import {useAppviewClient} from '#/state/session'
+import {app} from '#/lexicons'
 
 export const RQKEY_ROOT = 'actor-starter-packs'
 export const RQKEY_WITH_MEMBERSHIP_ROOT = 'actor-starter-packs-with-membership'
@@ -26,23 +24,23 @@ export function useActorStarterPacksQuery({
   did?: string
   enabled?: boolean
 }) {
-  const agent = useAgent()
+  const client = useAppviewClient()
 
   return useInfiniteQuery<
-    AppBskyGraphGetActorStarterPacks.OutputSchema,
+    app.bsky.graph.getActorStarterPacks.$OutputBody,
     Error,
-    InfiniteData<AppBskyGraphGetActorStarterPacks.OutputSchema>,
+    InfiniteData<app.bsky.graph.getActorStarterPacks.$OutputBody>,
     QueryKey,
     string | undefined
   >({
     queryKey: RQKEY(did),
     queryFn: async ({pageParam}: {pageParam?: string}) => {
-      const res = await agent.app.bsky.graph.getActorStarterPacks({
-        actor: did!,
+      return await client.call(app.bsky.graph.getActorStarterPacks, {
+        // the enabled flag prevents this from running until did is set
+        actor: did! as DidString,
         limit: 10,
         cursor: pageParam,
       })
-      return res.data
     },
     enabled: Boolean(did) && enabled,
     initialPageParam: undefined,
@@ -57,23 +55,23 @@ export function useActorStarterPacksWithMembershipsQuery({
   did?: string
   enabled?: boolean
 }) {
-  const agent = useAgent()
+  const client = useAppviewClient()
 
   return useInfiniteQuery<
-    AppBskyGraphGetStarterPacksWithMembership.OutputSchema,
+    app.bsky.graph.getStarterPacksWithMembership.$OutputBody,
     Error,
-    InfiniteData<AppBskyGraphGetStarterPacksWithMembership.OutputSchema>,
+    InfiniteData<app.bsky.graph.getStarterPacksWithMembership.$OutputBody>,
     QueryKey,
     string | undefined
   >({
     queryKey: RQKEY_WITH_MEMBERSHIP(did),
     queryFn: async ({pageParam}: {pageParam?: string}) => {
-      const res = await agent.app.bsky.graph.getStarterPacksWithMembership({
-        actor: did!,
+      return await client.call(app.bsky.graph.getStarterPacksWithMembership, {
+        // the enabled flag prevents this from running until did is set
+        actor: did! as DidString,
         limit: 10,
         cursor: pageParam,
       })
-      return res.data
     },
     enabled: Boolean(did) && enabled,
     initialPageParam: undefined,
