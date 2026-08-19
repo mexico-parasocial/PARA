@@ -852,20 +852,20 @@ describe('session', () => {
       },
     ])
 
-    const agent = new AtpAgent({service: 'http://127.0.0.1:2583'})
-    agent.sessionManager.session = {
+    const freshBundle = makeBundle('http://127.0.0.1:2583')
+    const freshAccount = makeAccount('http://127.0.0.1:2583', {
       active: true,
       did: 'fresh-active-a-did',
       handle: 'active-a.test',
       accessJwt: 'fresh-access-jwt',
       refreshJwt: 'fresh-refresh-jwt',
-    }
+    })
 
     state = run(state, [
       {
         type: 'switched-to-account',
-        newAgent: agent,
-        newAccount: agentToSessionAccountOrThrow(agent),
+        newBundle: freshBundle,
+        newAccount: freshAccount,
       },
     ])
 

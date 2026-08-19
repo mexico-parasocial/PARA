@@ -487,7 +487,6 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
        */
       accountDid: data.did,
       patch: {
-        email: data.email,
         emailConfirmed: data.emailConfirmed,
         emailAuthFactor: data.emailAuthFactor,
       },
