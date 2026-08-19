@@ -21,7 +21,7 @@ import {type NavigationProp} from '#/lib/routes/types'
 import {logEvent} from '#/lib/statsig/statsig'
 import {logger} from '#/logger'
 import {getAllListMembers} from '#/state/queries/list-members'
-import {useAgent, useSession} from '#/state/session'
+import {useAgent, useAppviewClient, useSession} from '#/state/session'
 import {atoms as a, platform, useTheme, web} from '#/alf'
 import {Admonition} from '#/components/Admonition'
 import {Button, ButtonText} from '#/components/Button'
@@ -41,6 +41,8 @@ export function CreateListFromStarterPackDialog({
   const {_} = useLingui()
   const t = useTheme()
   const agent = useAgent()
+  const appviewClient = useAppviewClient()
+  const ax = useAnalytics()
   const {currentAccount} = useSession()
   const navigation = useNavigation<NavigationProp>()
   const queryClient = useQueryClient()
@@ -71,7 +73,10 @@ export function CreateListFromStarterPackDialog({
       const listItems = await wait(
         3000,
         (async () => {
-          const items = await getAllListMembers(agent, starterPack.list!.uri)
+          const items = await getAllListMembers(
+            appviewClient,
+            starterPack.list!.uri,
+          )
 
           if (items.length > 0) {
             const listitemWrites: $Typed<ComAtprotoRepoApplyWrites.Create>[] =

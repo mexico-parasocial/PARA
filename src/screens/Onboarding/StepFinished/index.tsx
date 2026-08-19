@@ -21,7 +21,7 @@ import {logEvent} from '#/lib/statsig/statsig'
 import {logger} from '#/logger'
 import {preferencesQueryKey} from '#/state/queries/preferences'
 import {RQKEY as profileRQKey} from '#/state/queries/profile'
-import {useAgent} from '#/state/session'
+import {useAgent, useAppviewClient} from '#/state/session'
 import {useOnboardingDispatch} from '#/state/shell'
 import {useProgressGuideControls} from '#/state/shell/progress-guide'
 import {
@@ -46,11 +46,40 @@ export function StepFinished() {
   const [saving, setSaving] = useState(false)
   const queryClient = useQueryClient()
   const agent = useAgent()
+  const appviewClient = useAppviewClient()
   const requestNotificationsPermission = useRequestNotificationsPermission()
   const {startProgressGuide} = useProgressGuideControls()
 
   const finishOnboarding = useCallback(async () => {
     setSaving(true)
+
+    let starterPack: AppBskyGraphDefs.StarterPackView | undefined
+    let listItems: AppBskyGraphDefs.ListItemView[] | undefined
+
+    if (activeStarterPack?.uri) {
+      try {
+        const spRes = await agent.app.bsky.graph.getStarterPack({
+          starterPack: activeStarterPack.uri,
+        })
+        starterPack = spRes.data.starterPack
+      } catch (e) {
+        logger.error('Failed to fetch starter pack', {safeMessage: e})
+        // don't tell the user, just get them through onboarding.
+      }
+      try {
+        if (starterPack?.list) {
+          listItems = await getAllListMembers(
+            appviewClient,
+            starterPack.list.uri,
+          )
+        }
+      } catch (e) {
+        logger.error('Failed to fetch starter pack list items', {
+          safeMessage: e,
+        })
+        // don't tell the user, just get them through onboarding.
+      }
+    }
 
     try {
       const {interestsStepResults, profileStepResults} = state
@@ -140,6 +169,7 @@ export function StepFinished() {
   }, [
     queryClient,
     agent,
+    appviewClient,
     dispatch,
     onboardDispatch,
     state,
