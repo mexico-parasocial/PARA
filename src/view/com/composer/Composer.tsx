@@ -78,6 +78,7 @@ import {
   MAX_GRAPHEME_LENGTH,
   SUPPORTED_MIME_TYPES,
   type SupportedMimeTypes,
+  VIDEO_10_MINUTE_MAX_DURATION_MS,
   VIDEO_MAX_DURATION_MS,
 } from '#/lib/constants'
 import {useIsKeyboardVisible} from '#/lib/hooks/useIsKeyboardVisible'
@@ -149,10 +150,7 @@ import {VideoTranscodeProgress} from '#/view/com/composer/videos/VideoTranscodeP
 import {Text} from '#/view/com/util/text/Text'
 import {UserAvatar} from '#/view/com/util/UserAvatar'
 import {IdentityContextSwitcher} from '#/screens/m8/components/IdentityContextSwitcher'
-import {
-  type IdentityContext,
-  type IdentityContextId,
-} from '#/screens/m8/types'
+import {type IdentityContext, type IdentityContextId} from '#/screens/m8/types'
 import {atoms as a, native, useBreakpoints, useTheme, web} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import * as EmojiPicker from '#/components/EmojiPicker'
@@ -252,6 +250,12 @@ export const ComposePost = ({
   const {i18n, t: l} = useLingui()
   const ax = useAnalytics()
   const _t = useTheme()
+  const allow10MinuteVideos = ax.features.enabled(
+    ax.features.VideoAllow10MinuteEnable,
+  )
+  const videoMaxDurationMs = allow10MinuteVideos
+    ? VIDEO_10_MINUTE_MAX_DURATION_MS
+    : VIDEO_MAX_DURATION_MS
   const requireAltTextEnabled = useRequireAltTextEnabled()
   const langPrefs = useLanguagePrefs()
   const setLangPrefs = useLanguagePrefsApi()
@@ -562,7 +566,7 @@ export const ComposePost = ({
        * Fail early on duration so we don't spend time compressing a video the
        * server would reject anyway.
        */
-      if (asset.duration != null && asset.duration > VIDEO_MAX_DURATION_MS) {
+      if (asset.duration != null && asset.duration > videoMaxDurationMs) {
         composerDispatch({
           type: 'update_post',
           postId: postId,
@@ -570,7 +574,9 @@ export const ComposePost = ({
             type: 'embed_update_video',
             videoAction: {
               type: 'to_error',
-              error: l`Videos must be less than 3 minutes long.`,
+              error: allow10MinuteVideos
+                ? l`Videos must be 10 minutes or less.`
+                : l`Videos must be less than 3 minutes long.`,
               signal: abortController.signal,
             },
           },
@@ -597,7 +603,16 @@ export const ComposePost = ({
         telemetry,
       )
     },
-    [i18n, agent, currentDid, composerDispatch, ax.metric],
+    [
+      l,
+      i18n,
+      agent,
+      currentDid,
+      composerDispatch,
+      ax.metric,
+      videoMaxDurationMs,
+      allow10MinuteVideos,
+    ],
   )
 
   const onInitVideo = useNonReactiveCallback(() => {
@@ -694,7 +709,7 @@ export const ComposePost = ({
           },
         })
 
-        if (asset.duration != null && asset.duration > VIDEO_MAX_DURATION_MS) {
+        if (asset.duration != null && asset.duration > videoMaxDurationMs) {
           composerDispatch({
             type: 'update_post',
             postId,
@@ -702,7 +717,9 @@ export const ComposePost = ({
               type: 'embed_update_video',
               videoAction: {
                 type: 'to_error',
-                error: l`Videos must be less than 3 minutes long.`,
+                error: allow10MinuteVideos
+                  ? l`Videos must be 10 minutes or less.`
+                  : l`Videos must be less than 3 minutes long.`,
                 signal: abortController.signal,
               },
             },
@@ -774,7 +791,16 @@ export const ComposePost = ({
         })
       }
     },
-    [i18n, agent, currentDid, composerDispatch, ax.metric],
+    [
+      l,
+      i18n,
+      agent,
+      currentDid,
+      composerDispatch,
+      ax.metric,
+      videoMaxDurationMs,
+      allow10MinuteVideos,
+    ],
   )
 
   const handleSelectDraft = useCallback(
