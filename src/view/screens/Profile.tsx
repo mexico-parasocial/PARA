@@ -33,7 +33,7 @@ import {useLabelerInfoQuery} from '#/state/queries/labeler'
 import {resetProfilePostsQueries} from '#/state/queries/post-feed'
 import {useProfileQuery} from '#/state/queries/profile'
 import {useResolveDidQuery} from '#/state/queries/resolve-uri'
-import {useAgent, useAppviewClient, useSession} from '#/state/session'
+import {useAppviewClient, useSession} from '#/state/session'
 import {useMinimalShellMode} from '#/state/shell'
 import {ProfileFeedgens} from '#/view/com/feeds/ProfileFeedgens'
 import {ProfileLists} from '#/view/com/lists/ProfileLists'
@@ -234,7 +234,7 @@ function ProfileScreenLoaded({
     [profile.did, profile.handle],
   )
 
-  const agent = useAgent()
+  const client = useAppviewClient()
 
   // Load visibility from ATProto ParaIdentity record so other users can read it
   useFocusEffect(
@@ -268,12 +268,12 @@ function ProfileScreenLoaded({
         )
       }
       // For everyone: fetch the owner's ParaIdentity from ATProto
-      fetchParaIdentity(agent, profile.did).then(identity => {
+      fetchParaIdentity(client, profile.did).then(identity => {
         if (identity) {
           setParaIdentity(identity)
         }
       })
-    }, [profile.did, isMe, agent]),
+    }, [profile.did, isMe, client]),
   )
 
   const hasLabeler = !!profile.associated?.labeler

@@ -57,7 +57,7 @@ import {
 import {type Client} from '@atproto/lex'
 import {type AtUriString} from '@atproto/syntax'
 import {msg, plural} from '@lingui/core/macro'
-import {type RichText} from '@bsky.app/sdk/richtext'
+import {RichText} from '@bsky.app/sdk/richtext'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 import {useQueries, useQueryClient} from '@tanstack/react-query'
@@ -121,8 +121,8 @@ import {usePreferencesQuery} from '#/state/queries/preferences'
 import {useProfileQuery} from '#/state/queries/profile'
 import {resolveLinkQueryOptions} from '#/state/queries/resolve-link'
 import {
-  useAgent,
   useAppviewClient,
+  useChatClient,
   usePdsClient,
   useSession,
 } from '#/state/session'
@@ -181,7 +181,7 @@ import {
   IS_WEB_SAFARI,
 } from '#/env'
 import {type Gif} from '#/features/gifPicker/types'
-import {app} from '#/lexicons'
+import {app, com} from '#/lexicons'
 import {BottomSheetPortalProvider} from '../../../../modules/bottom-sheet'
 import {DraftsButton} from './drafts/DraftsButton'
 import {
@@ -249,7 +249,6 @@ export const ComposePost = ({
   cancelRef?: RefObject<CancelRef | null>
 }) => {
   const {currentAccount} = useSession()
-  const agent = useAgent()
   const queryClient = useQueryClient()
   const currentDid = currentAccount!.did
   const {closeComposer} = useComposerControls()
@@ -263,7 +262,14 @@ export const ComposePost = ({
     ? VIDEO_10_MINUTE_MAX_DURATION_MS
     : VIDEO_MAX_DURATION_MS
   const client = useAppviewClient()
+  const chatClient = useChatClient()
   const pdsClient = usePdsClient()
+  /*
+   * The host the video service-auth token is minted for. This is the same value
+   * that seeds the session's PDS routing, so the audience always matches the host
+   * the upload actually reaches; a mismatch would 401 the upload.
+   */
+  const currentDispatchUrl = currentAccount!.pdsUrl ?? currentAccount!.service
   const requireAltTextEnabled = useRequireAltTextEnabled()
   const langPrefs = useLanguagePrefs()
   const setLangPrefs = useLanguagePrefsApi()
@@ -604,7 +610,8 @@ export const ComposePost = ({
             },
           })
         },
-        agent,
+        pdsClient,
+        currentDispatchUrl,
         currentDid,
         abortController.signal,
         i18n,
@@ -614,7 +621,8 @@ export const ComposePost = ({
     [
       l,
       i18n,
-      agent,
+      pdsClient,
+      currentDispatchUrl,
       currentDid,
       composerDispatch,
       ax.metric,
@@ -786,7 +794,8 @@ export const ComposePost = ({
               },
             })
           },
-          agent,
+          pdsClient,
+          currentDispatchUrl,
           currentDid,
           abortController.signal,
           i18n,
@@ -802,7 +811,8 @@ export const ComposePost = ({
     [
       l,
       i18n,
-      agent,
+      pdsClient,
+      currentDispatchUrl,
       currentDid,
       composerDispatch,
       ax.metric,
@@ -1046,7 +1056,7 @@ export const ComposePost = ({
     .map(post => post.embed.link!.uri)
   const linkQueries = useQueries({
     queries: linkUris.map(uri => ({
-      ...resolveLinkQueryOptions(agent, uri),
+      ...resolveLinkQueryOptions({appviewClient: client, chatClient}, uri),
       enabled: false,
     })),
   })
@@ -1187,12 +1197,13 @@ export const ComposePost = ({
           : undefined)
 
       postUri = (
-        await apilib.post(agent, queryClient, {
+        await apilib.post(queryClient, {
           thread: normalizedThread,
           replyTo: replyTo?.uri,
           onStateChange: setPublishingStage,
           langs: currentLanguages,
           appviewClient: client,
+          chatClient,
           pdsClient,
         })
       ).uris[0]
@@ -1241,8 +1252,8 @@ export const ComposePost = ({
       ) {
         try {
           const postRkey = new AtUri(postUri).rkey
-          await agent.com.atproto.repo.createRecord({
-            repo: agent.assertDid,
+          await pdsClient.call(com.atproto.repo.createRecord, {
+            repo: pdsClient.assertDid,
             collection: apilib.PARA_POST_META_COLLECTION,
             rkey: postRkey,
             record: {
@@ -1446,8 +1457,10 @@ export const ComposePost = ({
       )
     }, 500)
   }, [
-    agent,
+    l,
+    ax,
     client,
+    chatClient,
     pdsClient,
     canPost,
     isPublishing,

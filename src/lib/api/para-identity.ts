@@ -1,29 +1,31 @@
-import {type AtpAgent} from '@atproto/api'
+import {type Client, type LexMap} from '@atproto/lex'
+import {type AtIdentifierString, type NsidString} from '@atproto/syntax'
 
 import {
   PARA_IDENTITY_COLLECTION,
   type ParaIdentityRecord,
 } from '#/lib/api/para-lexicons'
+import {com} from '#/lexicons'
 
 export const PARA_IDENTITY_RKEY = 'self'
 
 export async function fetchParaIdentity(
-  agent: AtpAgent,
+  client: Client,
   repo: string,
 ): Promise<ParaIdentityRecord | null> {
-  const res = await agent.com.atproto.repo
-    .getRecord({
-      repo,
-      collection: PARA_IDENTITY_COLLECTION,
+  const res = await client
+    .call(com.atproto.repo.getRecord, {
+      repo: repo as AtIdentifierString,
+      collection: PARA_IDENTITY_COLLECTION as NsidString,
       rkey: PARA_IDENTITY_RKEY,
     })
     .catch(() => null)
 
-  return parseParaIdentityRecord(res?.data.value)
+  return parseParaIdentityRecord(res?.value)
 }
 
 export async function putParaIdentity(
-  agent: AtpAgent,
+  client: Client,
   repo: string,
   record: Omit<ParaIdentityRecord, 'createdAt'> & {createdAt?: string},
 ) {
@@ -44,11 +46,11 @@ export async function putParaIdentity(
     party: record.party,
   }
 
-  return await agent.com.atproto.repo.putRecord({
-    repo,
-    collection: PARA_IDENTITY_COLLECTION,
+  return await client.call(com.atproto.repo.putRecord, {
+    repo: repo as AtIdentifierString,
+    collection: PARA_IDENTITY_COLLECTION as NsidString,
     rkey: PARA_IDENTITY_RKEY,
-    record: fullRecord as unknown as Record<string, unknown>,
+    record: fullRecord as unknown as LexMap,
   })
 }
 

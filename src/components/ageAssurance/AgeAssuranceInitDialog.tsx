@@ -70,6 +70,7 @@ function Inner() {
   const langPrefs = useLanguagePrefs()
   const cleanError = useCleanError()
   const {close} = Dialog.useDialogContext()
+  const ax = useAnalytics()
   const aa = useAgeAssurance()
   const lastInitiatedAt = aa.state.lastInitiatedAt
   const getTimeAgo = useGetTimeAgo()

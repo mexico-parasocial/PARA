@@ -1,25 +1,23 @@
-import {
-  type Agent,
-  type AppBskyFeedDefs,
-  type AppBskyFeedSearchPostsV2,
-} from '@atproto/api'
+import {type AppBskyFeedDefs, type AppBskyFeedSearchPostsV2} from '@atproto/api'
+import {type Client} from '@atproto/lex'
 
 import {logger} from '#/logger'
+import {app} from '#/lexicons'
 import {type FeedAPI, type FeedAPIResponse} from './types'
 
 export class SearchPostsFeedAPI implements FeedAPI {
-  agent: Agent
+  client: Client
   params: AppBskyFeedSearchPostsV2.QueryParams
   peek: AppBskyFeedDefs.FeedViewPost | null = null
 
   constructor({
-    agent,
+    client,
     feedParams,
   }: {
-    agent: Agent
+    client: Client
     feedParams: AppBskyFeedSearchPostsV2.QueryParams
   }) {
-    this.agent = agent
+    this.client = client
     this.params = feedParams
   }
 
@@ -36,7 +34,7 @@ export class SearchPostsFeedAPI implements FeedAPI {
     limit: number
   }): Promise<FeedAPIResponse> {
     try {
-      const res = await this.agent.app.bsky.feed.searchPostsV2({
+      const res = await this.client.call(app.bsky.feed.searchPostsV2, {
         query: this.params.query || '',
         hashtags: this.params.hashtags,
         sort: this.params.sort === 'latest' ? 'recent' : this.params.sort,
@@ -44,17 +42,13 @@ export class SearchPostsFeedAPI implements FeedAPI {
         cursor,
       })
 
-      if (res.success) {
-        const feed: AppBskyFeedDefs.FeedViewPost[] = res.data.posts.map(
-          post => ({
-            post,
-          }),
-        )
-        this.peek = feed[0] ?? null
-        return {
-          feed,
-          cursor: res.data.cursor,
-        }
+      const feed: AppBskyFeedDefs.FeedViewPost[] = res.posts.map(post => ({
+        post: post as unknown as AppBskyFeedDefs.PostView,
+      }))
+      this.peek = feed[0] ?? null
+      return {
+        feed,
+        cursor: res.cursor,
       }
     } catch (e) {
       logger.error('SearchPostsFeedAPI fetch error', {error: e})

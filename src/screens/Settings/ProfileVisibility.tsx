@@ -15,7 +15,7 @@ import {
   type CommonNavigatorParams,
   type NativeStackScreenProps,
 } from '#/lib/routes/types'
-import {useAgent, useSession} from '#/state/session'
+import {usePdsClient, useSession} from '#/state/session'
 import * as SettingsList from '#/screens/Settings/components/SettingsList'
 import {atoms as a, useTheme} from '#/alf'
 import * as Toggle from '#/components/forms/Toggle'
@@ -30,7 +30,7 @@ type Props = NativeStackScreenProps<CommonNavigatorParams, 'ProfileVisibility'>
 export function ProfileVisibilityScreen({}: Props) {
   const t = useTheme()
   const {_} = useLingui()
-  const agent = useAgent()
+  const pdsClient = usePdsClient()
   const {currentAccount} = useSession()
   const [loading, setLoading] = useState(true)
 
@@ -52,7 +52,7 @@ export function ProfileVisibilityScreen({}: Props) {
           AsyncStorage.getItem('para_public_highlights'),
           AsyncStorage.getItem('para_is_public_figure'),
           currentAccount
-            ? fetchParaIdentity(agent, currentAccount.did)
+            ? fetchParaIdentity(pdsClient, currentAccount.did)
             : Promise.resolve(null),
         ])
 
@@ -67,7 +67,7 @@ export function ProfileVisibilityScreen({}: Props) {
     } finally {
       setLoading(false)
     }
-  }, [agent, currentAccount])
+  }, [pdsClient, currentAccount])
 
   useFocusEffect(
     useCallback(() => {
@@ -112,8 +112,8 @@ export function ProfileVisibilityScreen({}: Props) {
   ) => {
     try {
       if (!currentAccount) return
-      const identity = await fetchParaIdentity(agent, currentAccount.did)
-      await putParaIdentity(agent, currentAccount.did, {
+      const identity = await fetchParaIdentity(pdsClient, currentAccount.did)
+      await putParaIdentity(pdsClient, currentAccount.did, {
         isVerifiedPublicFigure: identity?.isVerifiedPublicFigure ?? false,
         proofBlob: identity?.proofBlob,
         verifiedAt: identity?.verifiedAt,
@@ -136,7 +136,7 @@ export function ProfileVisibilityScreen({}: Props) {
         throw new Error('No active account')
       }
 
-      await putParaIdentity(agent, currentAccount.did, {
+      await putParaIdentity(pdsClient, currentAccount.did, {
         isVerifiedPublicFigure: value,
       })
 

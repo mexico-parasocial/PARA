@@ -38,3 +38,7 @@ export const STALE = {
  */
 export const PERSISTED_QUERY_ROOT = 'PERSISTED'
 export const PERSISTED_QUERY_GCTIME = Infinity
+
+export const GCTIME = {
+  INFINITY: Infinity,
+}

@@ -4,7 +4,6 @@ import {
   type AppBskyActorDefs,
   AppBskyFeedDefs,
   type AppBskyFeedPost,
-  type AtpAgent,
   AtUri,
 } from '@atproto/api'
 import {type Client} from '@atproto/lex'
@@ -47,7 +46,7 @@ import {moderatePost} from '#/lib/moderation/subjects'
 import {logger} from '#/logger'
 import {STALE} from '#/state/queries'
 import {DEFAULT_LOGGED_OUT_PREFERENCES} from '#/state/queries/preferences/const'
-import {useAgent, useAppviewClient} from '#/state/session'
+import {useAppviewClient, useSession} from '#/state/session'
 import * as userActionHistory from '#/state/userActionHistory'
 import {KnownError} from '#/view/com/posts/PostFeedErrorMessage'
 import {useFeedTuners} from '../preferences/feed-tuners'
@@ -173,7 +172,7 @@ export function usePostFeedQuery(
     ) ?? -1
   const enableFollowingToDiscoverFallback =
     followingPinnedIndex === 0 && DEFAULT_SERVICE !== LOCAL_DEV_SERVICE
-  const agent = useAgent()
+  const {hasSession} = useSession()
   const client = useAppviewClient()
   const lastRun = useRef<{
     data: InfiniteData<FeedPageUnselected>
@@ -219,7 +218,6 @@ export function usePostFeedQuery(
               feedDesc,
               feedParams: params || {},
               feedTuners,
-              agent,
               client,
               // Not in the query key because they don't change:
               userInterests,
@@ -237,7 +235,7 @@ export function usePostFeedQuery(
        * moderations happen later, which results in some posts being shown and
        * some not.
        */
-      if (!agent.session) {
+      if (!hasSession) {
         assertSomePostsPassModeration(
           res.feed,
           preferences?.moderationPrefs ||
@@ -472,7 +470,6 @@ function createApi({
   feedParams,
   feedTuners,
   userInterests,
-  agent,
   client,
   enableFollowingToDiscoverFallback,
 }: {
@@ -480,7 +477,6 @@ function createApi({
   feedParams: FeedParams
   feedTuners: FeedTunerFn[]
   userInterests?: string
-  agent: AtpAgent
   client: Client
   enableFollowingToDiscoverFallback: boolean
 }) {
@@ -518,13 +514,13 @@ function createApi({
   } else if (feedDesc.startsWith('para')) {
     if (feedDesc === 'para-timeline') {
       return new ParaTimelineFeedAPI({
-        agent,
+        client,
         filters: feedParams.paraTimelineFilters,
       })
     }
     const [__, actor] = feedDesc.split('|')
     return new ParaFeedAPI({
-      agent,
+      client,
       feedParams: {actor},
     })
   } else if (feedDesc.startsWith('feedgen')) {
@@ -549,7 +545,7 @@ function createApi({
     const [__, tagStr] = feedDesc.split('|')
     const tags = tagStr ? tagStr.split(',').filter(Boolean) : undefined
     return new SearchPostsFeedAPI({
-      agent,
+      client,
       feedParams: {
         query: '',
         hashtags: tags,

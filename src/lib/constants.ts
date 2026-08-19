@@ -3,7 +3,6 @@ import * as Device from 'expo-device'
 import {type AppBskyActorDefs, BSKY_LABELER_DID} from '@atproto/api'
 import {type Service} from '@atproto/lex'
 
-import {type ProxyHeaderValue} from '#/state/session/agent'
 import {BLUESKY_PROXY_DID, CHAT_PROXY_DID, IS_DEV} from '#/env'
 
 const LOCAL_DEV_IP = process.env.EXPO_PUBLIC_LOCAL_DEV_IP || '192.168.100.30'
@@ -128,6 +127,16 @@ export const POST_IMG_MAX = {
   width: 2000,
   height: 2000,
   size: 1000000,
+}
+
+export const IMAGE_SIZE_CONFIG_POSTS = {
+  maxDimension: 4000,
+  maxSize: 2000000,
+}
+
+export const IMAGE_SIZE_CONFIG_2K_1MB = {
+  maxDimension: 2000,
+  maxSize: 1000000,
 }
 
 export const STAGING_LINK_META_PROXY =
@@ -314,9 +323,7 @@ export const BLUESKY_PROXY_HEADER = {
     if (DEFAULT_SERVICE === LOCAL_DEV_SERVICE) {
       return null
     }
-    return (BLUESKY_PROXY_DID
-      ? this.value
-      : undefined) as unknown as ProxyHeaderValue
+    return (BLUESKY_PROXY_DID ? this.value : undefined) as unknown as Service
   },
   set(value: string) {
     this.value = value
@@ -332,9 +339,6 @@ export const BLUESKY_PROXY_HEADER = {
  * The DID comes from the env-configurable `CHAT_PROXY_DID` (via
  * `EXPO_PUBLIC_CHAT_PROXY_DID`) rather than a hard-coded constant, so the
  * target can be retargeted per environment.
- *
- * This is the client-level equivalent of {@link DM_SERVICE_HEADERS}, which
- * carries the same value as a per-call header.
  */
 export const CHAT_PROXY_SERVICE: Service = `${CHAT_PROXY_DID}#bsky_chat`
 
@@ -408,9 +412,9 @@ export function normalizeLocalServiceUrl(serviceUrl: string): string {
 
 export function getBskyProxyHeaderForServiceUrl(
   serviceUrl?: string,
-): ProxyHeaderValue | null {
+): Service | null {
   if (isLikelyLocalServiceUrl(serviceUrl)) {
-    return `${LOCAL_DEV_APPVIEW_PROXY_DID}#bsky_appview` as ProxyHeaderValue
+    return `${LOCAL_DEV_APPVIEW_PROXY_DID}#bsky_appview` as Service
   }
   return BLUESKY_PROXY_HEADER.get()
 }

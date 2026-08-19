@@ -1,12 +1,13 @@
-import {
-  type AppBskyActorDefs,
-  type AppBskyFeedDefs,
-  type AtpAgent,
-  type ComAtprotoRepoListRecords,
-} from '@atproto/api'
+import {type AppBskyActorDefs, type AppBskyFeedDefs} from '@atproto/api'
+import {type Client} from '@atproto/lex'
+import {type AtIdentifierString, type NsidString} from '@atproto/syntax'
 
+import {DEFAULT_SERVICE} from '#/lib/constants'
+import {app, com} from '#/lexicons'
 import {PARA_POST_COLLECTION} from '../para-lexicons'
 import {type FeedAPI, type FeedAPIResponse} from './types'
+
+type ListRecordsItem = com.atproto.repo.listRecords.Record
 
 export type ParaPostView = {
   uri: string
@@ -39,18 +40,18 @@ type ParaRecordValue = Record<string, unknown> & {
 }
 
 export class ParaFeedAPI implements FeedAPI {
-  agent: AtpAgent
+  client: Client
   actor: string
   authorProfile: AppBskyActorDefs.ProfileViewDetailed | null = null
 
   constructor({
-    agent,
+    client,
     feedParams,
   }: {
-    agent: AtpAgent,
+    client: Client,
     feedParams: {actor: string}
   }) {
-    this.agent = agent
+    this.client = client
     this.actor = feedParams.actor
   }
 
@@ -69,8 +70,10 @@ export class ParaFeedAPI implements FeedAPI {
     // 1. Fetch Author Profile if needed (for PostView)
     if (!this.authorProfile) {
       try {
-        const profileRes = await this.agent.getProfile({actor: this.actor})
-        this.authorProfile = profileRes.data
+        const profile = await this.client.call(app.bsky.actor.getProfile, {
+          actor: this.actor as AtIdentifierString,
+        })
+        this.authorProfile = profile as unknown as AppBskyActorDefs.ProfileViewDetailed
       } catch (e) {
         if (isConcurrentSessionUpdateError(e)) throw e
         console.error('Failed to fetch author profile for Para feed', e)
@@ -80,19 +83,15 @@ export class ParaFeedAPI implements FeedAPI {
 
     // 2. List Records from com.para.post
     try {
-      const res = await this.agent.api.com.atproto.repo.listRecords({
-        repo: this.actor,
-        collection: PARA_POST_COLLECTION,
+      const res = await this.client.call(com.atproto.repo.listRecords, {
+        repo: this.actor as AtIdentifierString,
+        collection: PARA_POST_COLLECTION as NsidString,
         limit,
         cursor,
         reverse: true, // Newest first
       })
 
-      if (!res.success) {
-        throw new Error('Failed to list Para posts')
-      }
-
-      const records = res.data.records
+      const records = res.records
       const feed: AppBskyFeedDefs.FeedViewPost[] = []
       for (const record of records) {
         try {
@@ -103,7 +102,7 @@ export class ParaFeedAPI implements FeedAPI {
       }
 
       return {
-        cursor: res.data.cursor,
+        cursor: res.cursor,
         feed,
       }
     } catch (e) {
@@ -114,7 +113,7 @@ export class ParaFeedAPI implements FeedAPI {
   }
 
   hydrateRecord(
-    record: ComAtprotoRepoListRecords.Record,
+    record: ListRecordsItem,
     author: AppBskyActorDefs.ProfileViewDetailed,
   ): AppBskyFeedDefs.FeedViewPost {
     const val = JSON.parse(JSON.stringify(record.value)) as ParaRecordValue
@@ -133,9 +132,8 @@ export class ParaFeedAPI implements FeedAPI {
         const image = isObjectRecord(img) ? img : {}
         // Construct Link to Blob
         // format: <service>/xrpc/com.atproto.sync.getBlob?did=<did>&cid=<cid>
-        // Use agent.service (PDS)
-        // Ensure serviceUrl does not have trailing slash?
-        const serviceUrl = this.agent.service.toString().replace(/\/$/, '')
+        // MVP: single-PDS deployment, so the default service always hosts the blob.
+        const serviceUrl = DEFAULT_SERVICE.replace(/\/$/, '')
         const cid = readBlobRefString(image.image)
         const thumb = `${serviceUrl}/xrpc/com.atproto.sync.getBlob?did=${this.actor}&cid=${cid}`
         return {
@@ -204,18 +202,18 @@ export class ParaFeedAPI implements FeedAPI {
 }
 
 export class ParaTimelineFeedAPI implements FeedAPI {
-  agent: AtpAgent
+  client: Client
   filters: ParaTimelineFilters
   profiles = new Map<string, AppBskyActorDefs.ProfileViewDetailed>()
 
   constructor({
-    agent,
+    client,
     filters,
   }: {
-    agent: AtpAgent,
+    client: Client,
     filters?: ParaTimelineFilters
   }) {
-    this.agent = agent
+    this.client = client
     this.filters = filters ?? {}
   }
 
@@ -231,31 +229,14 @@ export class ParaTimelineFeedAPI implements FeedAPI {
     cursor: string | undefined
     limit: number
   }): Promise<FeedAPIResponse> {
-    try {
-      const res = await this.agent.call('com.para.feed.getTimeline', {
-        limit,
-        cursor,
-        ...buildParaTimelineFilterParams(this.filters),
-      })
-      const data = res.data as {cursor?: string; feed?: unknown[]}
-      const feed = await Promise.all(
-        (data.feed ?? [])
-          .filter(isParaTimelinePostView)
-          .map(post => this.hydrateTimelinePost(post)),
-      )
-
-      return {
-        cursor: data.cursor,
-        feed,
-      }
-    } catch (e) {
-      if (isConcurrentSessionUpdateError(e)) throw e
-      if (isMethodNotImplementedError(e)) {
-        return this.fetchBlueskyTimeline({cursor, limit})
-      }
-      console.error('Error fetching Para timeline posts', e)
-      return {feed: []}
-    }
+    /*
+     * `com.para.feed.getTimeline` is a custom lexicon that has never been
+     * added to the codegen pipeline (no lexicons/com/para/*.json), so it has
+     * no typed binding on the new lex Client and can't be called until that
+     * migration happens. Always fall back to the stock Bluesky timeline for
+     * now rather than reach for an endpoint the client can't express.
+     */
+    return this.fetchBlueskyTimeline({cursor, limit})
   }
 
   private async fetchBlueskyTimeline({
@@ -266,12 +247,13 @@ export class ParaTimelineFeedAPI implements FeedAPI {
     limit: number
   }): Promise<FeedAPIResponse> {
     try {
-      const res = await this.agent.getTimeline({cursor, limit})
-      if (res.success) {
-        return {
-          cursor: res.data.cursor,
-          feed: res.data.feed,
-        }
+      const res = await this.client.call(app.bsky.feed.getTimeline, {
+        cursor,
+        limit,
+      })
+      return {
+        cursor: res.cursor,
+        feed: res.feed as unknown as AppBskyFeedDefs.FeedViewPost[],
       }
     } catch (e) {
       if (isConcurrentSessionUpdateError(e)) throw e
@@ -294,9 +276,12 @@ export class ParaTimelineFeedAPI implements FeedAPI {
     if (cached) return cached
 
     try {
-      const res = await this.agent.getProfile({actor})
-      this.profiles.set(actor, res.data)
-      return res.data
+      const profile = await this.client.call(app.bsky.actor.getProfile, {
+        actor: actor as AtIdentifierString,
+      })
+      const res = profile as unknown as AppBskyActorDefs.ProfileViewDetailed
+      this.profiles.set(actor, res)
+      return res
     } catch (e) {
       if (isConcurrentSessionUpdateError(e)) throw e
       console.error('Failed to fetch author profile for Para timeline', e)
@@ -401,25 +386,6 @@ function isConcurrentSessionUpdateError(e: unknown): boolean {
   )
 }
 
-function isMethodNotImplementedError(e: unknown): boolean {
-  if (!e || typeof e !== 'object') return false
-
-  const maybeError = e as {
-    error?: unknown
-    message?: unknown
-    status?: unknown
-  }
-  return (
-    maybeError.error === 'MethodNotImplemented' ||
-    maybeError.error === 'NotImplemented' ||
-    (typeof maybeError.message === 'string' &&
-      maybeError.message.toLowerCase().includes('method not implemented')) ||
-    (maybeError.status === 404 &&
-      typeof maybeError.message === 'string' &&
-      maybeError.message.toLowerCase().includes('not implemented'))
-  )
-}
-
 export function isParaPostView(value: unknown): value is ParaPostView {
   if (!value || typeof value !== 'object') return false
   const item = value as Partial<ParaPostView>
@@ -445,6 +411,3 @@ export function isParaPostView(value: unknown): value is ParaPostView {
   return isValid
 }
 
-function isParaTimelinePostView(value: unknown): value is ParaPostView {
-  return isParaPostView(value)
-}

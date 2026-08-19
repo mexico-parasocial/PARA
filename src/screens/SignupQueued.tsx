@@ -14,7 +14,7 @@ import {atoms as a, native, useBreakpoints, useTheme, web} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import {Loader} from '#/components/Loader'
 import {P, Text} from '#/components/Typography'
-import {IS_IOS, IS_LIQUID_GLASS, IS_WEB} from '#/env'
+import {IS_IOS, IS_WEB} from '#/env'
 import {com} from '#/lexicons'
 
 const COL_WIDTH = 400

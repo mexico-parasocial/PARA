@@ -31,7 +31,7 @@ import {asSdkFacets} from '#/lib/strings/rich-text-helpers'
 import {GCTIME, STALE} from '#/state/queries'
 import {RQKEY as listQueryKey} from '#/state/queries/list'
 import {usePreferencesQuery} from '#/state/queries/preferences'
-import {useAgent, useAppviewClient, useSession} from '#/state/session'
+import {useAppviewClient, useSession} from '#/state/session'
 import {app} from '#/lexicons'
 import {router} from '#/routes'
 import {useModerationOpts} from '../preferences/moderation-opts'
@@ -266,9 +266,8 @@ export function createGetPopularFeedsQueryKey(
 }
 
 export function useGetPopularFeedsQuery(options?: GetPopularFeedsOptions) {
-  const {hasSession} = useSession()
+  const {hasSession, currentAccount} = useSession()
   const client = useAppviewClient()
-  const agent = useAgent()
   const limit = options?.limit || 10
   const {data: preferences} = usePreferencesQuery()
   const queryClient = useQueryClient()
@@ -298,23 +297,22 @@ export function useGetPopularFeedsQuery(options?: GetPopularFeedsOptions) {
       )
 
       // inject Cabildeo dev feeds
-      if (!pageParam && agent.session?.did) {
+      if (!pageParam && currentAccount?.did) {
         try {
-          const customFeedsRes = await agent.app.bsky.feed.getFeedGenerators({
-            feeds: [
-              `at://${agent.session?.did}/app.bsky.feed.generator/cabildeo-global`,
-              `at://${agent.session?.did}/app.bsky.feed.generator/cabildeo-jalisco`,
-              `at://${agent.session?.did}/app.bsky.feed.generator/cabildeo-resueltos`,
-            ],
-          })
-          if (customFeedsRes.data.feeds.length > 0) {
-            const customUris = new Set(
-              customFeedsRes.data.feeds.map(f => f.uri),
-            )
+          const customFeedsRes = await client.call(
+            app.bsky.feed.getFeedGenerators,
+            {
+              feeds: [
+                `at://${currentAccount.did}/app.bsky.feed.generator/cabildeo-global`,
+                `at://${currentAccount.did}/app.bsky.feed.generator/cabildeo-jalisco`,
+                `at://${currentAccount.did}/app.bsky.feed.generator/cabildeo-resueltos`,
+              ] as AtUriString[],
+            },
+          )
+          if (customFeedsRes.feeds.length > 0) {
+            const customUris = new Set(customFeedsRes.feeds.map(f => f.uri))
             data.feeds = data.feeds.filter(f => !customUris.has(f.uri))
-            data.feeds.unshift(
-              ...(customFeedsRes.data.feeds as unknown as typeof data.feeds),
-            )
+            data.feeds.unshift(...customFeedsRes.feeds)
           }
         } catch (e) {
           console.warn('Failed to fetch custom cabildeo feeds', e)
@@ -517,7 +515,7 @@ export function usePinnedFeedsInfos() {
       'pinned',
       pinnedItems.map(f => f.value),
     ),
-    gcTime: GCTIME,
+    gcTime: GCTIME.INFINITY,
     staleTime: STALE.INFINITY,
     enabled: !isLoadingPrefs,
     queryFn: async () => {
@@ -625,7 +623,7 @@ export function useSavedFeeds() {
       'saved',
       savedItems.map(f => f.value),
     ),
-    gcTime: GCTIME,
+    gcTime: GCTIME.INFINITY,
     staleTime: STALE.INFINITY,
     enabled: !isLoadingPrefs,
     placeholderData: previousData => {
