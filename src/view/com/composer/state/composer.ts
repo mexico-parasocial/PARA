@@ -2,10 +2,9 @@ import {type ImagePickerAsset} from 'expo-image-picker'
 import {
   type AppBskyDraftDefs,
   type AppBskyFeedPostgate,
-  AppBskyRichtextFacet,
   type BskyPreferences,
-  RichText,
 } from '@atproto/api'
+import {RichText} from '@bsky.app/sdk/richtext'
 import {nanoid} from 'nanoid/non-secure'
 
 import {type VideoTelemetry} from '#/lib/media/video/telemetry'
@@ -29,6 +28,8 @@ import {
   suggestLinkCardUri,
 } from '#/view/com/composer/text-input/text-input-util'
 import {type Gif} from '#/features/gifPicker/types'
+import {app} from '#/lexicons'
+import * as bsky from '#/types/bsky'
 import {
   createVideoState,
   type VideoAction,
@@ -676,7 +677,7 @@ export function createComposerState({
     if (initRichText.facets) {
       for (const facet of initRichText.facets) {
         for (const feature of facet.features) {
-          if (AppBskyRichtextFacet.isLink(feature)) {
+          if (bsky.isType(app.bsky.richtext.facet.link, feature)) {
             if (isBskyPostUrl(feature.uri)) {
               detectedPostUris.set(feature.uri, {facet, rt: initRichText})
             } else {

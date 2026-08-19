@@ -1,5 +1,5 @@
 import {type TextInput} from 'react-native'
-import {type RichText} from '@atproto/api'
+import {type RichText} from '@bsky.app/sdk/richtext'
 
 import {type ComposerFlair} from '#/lib/post-flairs'
 import {type PostType} from '#/lib/tags'

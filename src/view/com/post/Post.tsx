@@ -6,17 +6,15 @@ import {
   AtUri,
   moderatePost,
   type ModerationDecision,
-  RichText as RichTextAPI,
 } from '@atproto/api'
+import {RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
 import {useQueryClient} from '@tanstack/react-query'
 
 import {MAX_POST_LINES} from '#/lib/constants'
 import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
-import {usePalette} from '#/lib/hooks/usePalette'
-import {getPostBadges, type PostBadgeRecord} from '#/lib/post-flairs'
-import {makePostThreadLink} from '#/lib/routes/links'
+import {makeProfileLink} from '#/lib/routes/links'
 import {countLines} from '#/lib/strings/helpers'
-import {colors} from '#/lib/styles'
+import {asSdkFacets} from '#/lib/strings/rich-text-helpers'
 import {
   POST_TOMBSTONE,
   type Shadow,
@@ -27,9 +25,14 @@ import {unstableCacheProfileView} from '#/state/queries/profile'
 import {Link} from '#/view/com/util/Link'
 import {PostMeta} from '#/view/com/util/PostMeta'
 import {PreviewableUserAvatar} from '#/view/com/util/UserAvatar'
-import {atoms as a} from '#/alf'
+import {atoms as a, select, useTheme} from '#/alf'
+import {
+  GalleryBleed,
+  maybeApplyGalleryOffsetStyles,
+} from '#/components/images/Gallery'
 import {ContentHider} from '#/components/moderation/ContentHider'
 import {PostAlerts} from '#/components/moderation/PostAlerts'
+import * as ReportDialogMetadataContext from '#/components/moderation/ReportDialog/ReportDialogMetadataContext'
 import {Embed, PostEmbedViewContext} from '#/components/Post/Embed'
 import {PostRepliedTo} from '#/components/Post/PostRepliedTo'
 import {ShowMoreTextButton} from '#/components/Post/ShowMoreTextButton'
@@ -55,10 +58,7 @@ export function Post({
   const moderationOpts = useModerationOpts()
   const record = useMemo<AppBskyFeedPost.Record | undefined>(
     () =>
-      bsky.dangerousIsType<AppBskyFeedPost.Record>(
-        post.record,
-        AppBskyFeedPost.isRecord,
-      )
+      bsky.validate(post.record, AppBskyFeedPost.validateRecord)
         ? post.record
         : undefined,
     [post],
@@ -69,7 +69,7 @@ export function Post({
       record
         ? new RichTextAPI({
             text: record.text,
-            facets: record.facets,
+            facets: asSdkFacets(record.facets),
           })
         : undefined,
     [record],
@@ -83,16 +83,18 @@ export function Post({
   }
   if (record && richText && moderation) {
     return (
-      <PostInner
-        post={postShadowed}
-        record={record}
-        richText={richText}
-        moderation={moderation}
-        showReplyLine={showReplyLine}
-        hideTopBorder={hideTopBorder}
-        style={style}
-        onBeforePress={onBeforePress}
-      />
+      <ReportDialogMetadataContext.Provider key={postShadowed.uri}>
+        <PostInner
+          post={postShadowed}
+          record={record}
+          richText={richText}
+          moderation={moderation}
+          showReplyLine={showReplyLine}
+          hideTopBorder={hideTopBorder}
+          style={style}
+          onBeforePress={onBeforePress}
+        />
+      </ReportDialogMetadataContext.Provider>
     )
   }
   return null
@@ -118,21 +120,13 @@ function PostInner({
   onBeforePress?: () => void
 }) {
   const queryClient = useQueryClient()
-  const pal = usePalette('default')
+  const t = useTheme()
   const {openComposer} = useOpenComposer()
   const [limitLines, setLimitLines] = useState(
     () => countLines(richText?.text) >= MAX_POST_LINES,
   )
   const itemUrip = new AtUri(post.uri)
-  const itemHref = makePostThreadLink(
-    post.author,
-    itemUrip.rkey,
-    itemUrip.collection,
-  )
-  const postBadges = useMemo(
-    () => getPostBadges(record as PostBadgeRecord),
-    [record],
-  )
+  const itemHref = makeProfileLink(post.author, 'post', itemUrip.rkey)
   let replyAuthorDid = ''
   if (record.reply) {
     const urip = new AtUri(record.reply.parent?.uri || record.reply.root.uri)
@@ -150,6 +144,7 @@ function PostInner({
         moderation,
         langs: record.langs,
       },
+      logContext: 'PostReply',
     })
   }, [openComposer, post, record, moderation])
 
@@ -163,93 +158,122 @@ function PostInner({
   }, [queryClient, post.author, outerOnBeforePress])
 
   const [hover, setHover] = useState(false)
+
   return (
-    <Link
-      href={itemHref}
-      style={[
-        styles.outer,
-        pal.border,
-        !hideTopBorder && {borderTopWidth: StyleSheet.hairlineWidth},
-        style,
-      ]}
-      onBeforePress={onBeforePress}
-      onPointerEnter={() => {
-        setHover(true)
-      }}
-      onPointerLeave={() => {
-        setHover(false)
-      }}>
-      <SubtleHover hover={hover} />
-      {showReplyLine && <View style={styles.replyLine} />}
-      <View style={styles.layout}>
-        <View style={styles.layoutAvi}>
-          <PreviewableUserAvatar
-            size={42}
-            profile={post.author}
-            moderation={moderation.ui('avatar')}
-            type={post.author.associated?.labeler ? 'labeler' : 'user'}
+    <GalleryBleed>
+      <Link
+        href={itemHref}
+        style={[
+          styles.outer,
+          t.atoms.border_contrast_low,
+          !hideTopBorder && a.border_t,
+          style,
+        ]}
+        onBeforePress={onBeforePress}
+        onPointerEnter={() => {
+          setHover(true)
+        }}
+        onPointerLeave={() => {
+          setHover(false)
+        }}>
+        <SubtleHover hover={hover} />
+        {showReplyLine && (
+          <View
+            style={[
+              styles.replyLine,
+              {
+                backgroundColor: select(t.name, {
+                  light: t.palette.contrast_100,
+                  dim: t.palette.contrast_200,
+                  dark: t.palette.contrast_200,
+                }),
+              },
+            ]}
           />
-        </View>
-        <View style={styles.layoutContent}>
-          <PostMeta
-            author={post.author}
-            moderation={moderation}
-            timestamp={post.indexedAt}
-            postHref={itemHref}
-            postFlairs={postBadges.length ? postBadges : undefined}
-            postFlairsBelow
-          />
-          {replyAuthorDid !== '' && (
-            <PostRepliedTo parentAuthor={replyAuthorDid} />
-          )}
-          <ContentHider
-            modui={moderation.ui('contentView')}
-            style={styles.contentHider}
-            childContainerStyle={styles.contentHiderChild}>
-            <PostAlerts
-              post={post}
-              modui={moderation.ui('contentView')}
-              style={[a.pb_xs]}
+        )}
+        <View style={styles.layout}>
+          <View style={styles.layoutAvi}>
+            <PreviewableUserAvatar
+              size={42}
+              profile={post.author}
+              moderation={moderation.ui('avatar')}
+              type={post.author.associated?.labeler ? 'labeler' : 'user'}
             />
-            {richText.text ? (
-              <View>
-                <RichText
-                  enableTags
-                  testID="postText"
-                  value={richText}
-                  numberOfLines={limitLines ? MAX_POST_LINES : undefined}
-                  style={[a.flex_1, a.text_md]}
-                  authorHandle={post.author.handle}
-                  shouldProxyLinks={true}
-                />
-                {limitLines && (
-                  <ShowMoreTextButton
-                    style={[a.text_md]}
-                    onPress={onPressShowMore}
-                  />
-                )}
-              </View>
-            ) : undefined}
-            <TranslatedPost hideTranslateLink post={post} />
-            {post.embed ? (
-              <Embed
-                embed={post.embed}
-                moderation={moderation}
-                viewContext={PostEmbedViewContext.Feed}
+          </View>
+          <View
+            style={[
+              styles.layoutContent,
+              maybeApplyGalleryOffsetStyles('meta', {
+                post,
+                modui: moderation.ui('contentList'),
+                additionalCauses: [],
+              }),
+            ]}>
+            <PostMeta
+              author={post.author}
+              moderation={moderation}
+              timestamp={post.indexedAt}
+              postHref={itemHref}
+            />
+            {replyAuthorDid !== '' && (
+              <PostRepliedTo parentAuthor={replyAuthorDid} />
+            )}
+            <ContentHider
+              modui={moderation.ui('contentView')}
+              style={styles.contentHider}
+              childContainerStyle={styles.contentHiderChild}>
+              <PostAlerts
                 post={post}
+                modui={moderation.ui('contentView')}
+                style={[a.pb_xs]}
               />
-            ) : null}
-          </ContentHider>
-          <PostControls
-            post={post}
-            record={record}
-            richText={richText}
-            onPressReply={onPressReply}
-            logContext="Post"
-          />
+              {richText.text ? (
+                <View style={[a.mb_2xs]}>
+                  <RichText
+                    enableTags
+                    testID="postText"
+                    value={richText}
+                    numberOfLines={limitLines ? MAX_POST_LINES : undefined}
+                    style={[a.flex_1, a.text_md]}
+                    authorHandle={post.author.handle}
+                    shouldProxyLinks={true}
+                  />
+                  {limitLines && (
+                    <ShowMoreTextButton
+                      style={[a.text_md]}
+                      onPress={onPressShowMore}
+                    />
+                  )}
+                </View>
+              ) : undefined}
+              <TranslatedPost hideTranslateLink post={post} />
+              {post.embed ? (
+                <View
+                  style={maybeApplyGalleryOffsetStyles('embed', {
+                    post,
+                    modui: moderation.ui('contentList'),
+                    additionalCauses: [],
+                  })}>
+                  <Embed
+                    embed={post.embed}
+                    moderation={moderation}
+                    viewContext={PostEmbedViewContext.Feed}
+                    post={post}
+                  />
+                </View>
+              ) : null}
+            </ContentHider>
+            <PostControls
+              post={post}
+              record={record}
+              richText={richText}
+              onPressReply={onPressReply}
+              logContext="Post"
+            />
+          </View>
         </View>
-      </View>
-    </Link>
+      </Link>
+    </GalleryBleed>
   )
 }
 
@@ -281,7 +305,6 @@ const styles = StyleSheet.create({
     top: 70,
     bottom: 0,
     borderLeftWidth: 2,
-    borderLeftColor: colors.gray2,
   },
   contentHider: {
     marginBottom: 2,

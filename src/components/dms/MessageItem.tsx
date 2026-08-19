@@ -8,6 +8,7 @@ import {
   type ViewStyle,
 } from 'react-native'
 import Animated, {
+  type AnimatedStyle,
   FadeIn,
   FadeOut,
   interpolateColor,
@@ -26,16 +27,17 @@ import {
   type ChatBskyActorDefs,
   ChatBskyConvoDefs,
   ChatBskyEmbedJoinLink,
-  RichText as RichTextAPI,
+  moderateProfile,
 } from '@atproto/api'
+import {RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
 import {plural} from '@lingui/core/macro'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {useQueryClient} from '@tanstack/react-query'
 
 import {isBlockedOrBlocking} from '#/lib/moderation/blocked-and-muted'
 import {createSanitizedDisplayName} from '#/lib/moderation/create-sanitized-display-name'
-import {makeProfileLink} from '#/lib/routes/links'
 import {sanitizeHandle} from '#/lib/strings/handles'
+import {asSdkFacets} from '#/lib/strings/rich-text-helpers'
 import {useMaybeProfileShadow} from '#/state/cache/profile-shadow'
 import {type Shadow} from '#/state/cache/types'
 import {type ConvoItem} from '#/state/messages/convo/types'
@@ -43,6 +45,7 @@ import {useModerationOpts} from '#/state/preferences/moderation-opts'
 import {useProfileBlockMutationQueue} from '#/state/queries/profile'
 import {unstableCacheProfileView} from '#/state/queries/unstable-profile-cache'
 import {useSession} from '#/state/session'
+import {PreviewableUserAvatar} from '#/view/com/util/UserAvatar'
 import {atoms as a, native, platform, tokens, useTheme, utils} from '#/alf'
 import {isOnlyEmoji} from '#/alf/typography'
 import {Button} from '#/components/Button'
@@ -51,7 +54,7 @@ import {useMessageDialogs} from '#/components/dms/MessageOverlays'
 import {useMessageReplies} from '#/components/dms/MessageReplies'
 import {useReplyPreviewText} from '#/components/dms/replyPreview'
 import {ArrowCornerDownRight_Stroke2_Corner3_Rounded as ArrowCornerDownRightIcon} from '#/components/icons/ArrowCornerDownRight'
-import {InlineLinkText, Link} from '#/components/Link'
+import {InlineLinkText} from '#/components/Link'
 import * as ProfileCard from '#/components/ProfileCard'
 import * as Prompt from '#/components/Prompt'
 import {RichText} from '#/components/RichText'
@@ -73,14 +76,17 @@ const BORDER_RADIUS = 20
 const SQUARED_BORDER_RADIUS = 4
 const DISPLAY_NAME_INSET = 20
 
-function messageIsReply(
-  message:
-    ChatBskyConvoDefs.MessageView | ChatBskyConvoDefs.DeletedMessageView | null,
-): boolean {
+export type MessageItemNeighbor =
+  | ChatBskyConvoDefs.MessageView
+  | ChatBskyConvoDefs.DeletedMessageView
+  | null
+
+function messageIsReply(message: MessageItemNeighbor): boolean {
   return (
     ChatBskyConvoDefs.isMessageView(message) &&
     (ChatBskyConvoDefs.isMessageView(message.replyTo) ||
-      ChatBskyConvoDefs.isDeletedMessageView(message.replyTo))
+      ChatBskyConvoDefs.isDeletedMessageView(message.replyTo) ||
+      ChatBskyConvoDefs.isMessageBeforeUserJoinedGroupView(message.replyTo))
   )
 }
 
@@ -93,8 +99,7 @@ function isWithinClusterBoundary({
 }: {
   isPending: boolean
   message: ChatBskyConvoDefs.MessageView
-  adjacentMessage:
-    ChatBskyConvoDefs.MessageView | ChatBskyConvoDefs.DeletedMessageView | null
+  adjacentMessage: MessageItemNeighbor
   isFromSameSender: boolean
   direction: 'prev' | 'next'
 }): boolean {
@@ -130,10 +135,8 @@ let MessageItem = ({
 }: {
   item: ConvoItem & {type: 'message' | 'pending-message'}
   isGroupChat?: boolean
-  prevMessage:
-    ChatBskyConvoDefs.MessageView | ChatBskyConvoDefs.DeletedMessageView | null
-  nextMessage:
-    ChatBskyConvoDefs.MessageView | ChatBskyConvoDefs.DeletedMessageView | null
+  prevMessage: MessageItemNeighbor
+  nextMessage: MessageItemNeighbor
   relatedProfiles: Map<string, ChatBskyActorDefs.ProfileViewBasic>
 }): React.ReactNode => {
   const t = useTheme()
@@ -148,14 +151,22 @@ let MessageItem = ({
   const {openReactions} = useMessageDialogs()
   const {scrollToMessage, highlightedMessage} = useMessageReplies()
 
-  // `replyTo` comes back hydrated as the referenced message (or a deleted-
-  // message tombstone). Narrow away the open-union fallback so we only render
-  // shapes we understand.
+  // `replyTo` comes back hydrated as the referenced message, a deleted-message
+  // tombstone, or a before-joined placeholder. Narrow away the open-union
+  // fallback so we only render shapes we understand.
   const replyTo =
     ChatBskyConvoDefs.isMessageView(message.replyTo) ||
-    ChatBskyConvoDefs.isDeletedMessageView(message.replyTo)
+    ChatBskyConvoDefs.isDeletedMessageView(message.replyTo) ||
+    ChatBskyConvoDefs.isMessageBeforeUserJoinedGroupView(message.replyTo)
       ? message.replyTo
       : undefined
+  const replyToMessageId =
+    replyTo && !ChatBskyConvoDefs.isMessageBeforeUserJoinedGroupView(replyTo)
+      ? replyTo.id
+      : undefined
+  const onPressReplyTo = replyToMessageId
+    ? () => scrollToMessage(replyToMessageId)
+    : undefined
 
   const isPending = item.type === 'pending-message'
 
@@ -235,7 +246,10 @@ let MessageItem = ({
     ? t.palette.primary_300
     : t.palette.primary_100
 
-  const rt = new RichTextAPI({text: message.text, facets: message.facets})
+  const rt = new RichTextAPI({
+    text: message.text,
+    facets: asSdkFacets(message.facets),
+  })
 
   const isEmojiOnly = isOnlyEmoji(message.text)
 
@@ -320,22 +334,13 @@ let MessageItem = ({
 
   const avatar =
     profile && moderationOpts ? (
-      <Link
-        style={[a.rounded_full]}
-        label={l`${createSanitizedDisplayName(profile)}’s avatar`}
-        accessibilityHint={l`Opens this profile`}
-        to={makeProfileLink({
-          did: profile.did,
-          handle: profile.handle,
-        })}
-        onPress={() => unstableCacheProfileView(queryClient, profile)}>
-        <ProfileCard.Avatar
-          profile={profile}
-          size={AVATAR_SIZE}
-          moderationOpts={moderationOpts}
-          disabledPreview
-        />
-      </Link>
+      <PreviewableUserAvatar
+        profile={profile}
+        size={AVATAR_SIZE}
+        type={profile.associated?.labeler ? 'labeler' : 'user'}
+        onBeforePress={() => unstableCacheProfileView(queryClient, profile)}
+        moderation={moderateProfile(profile, moderationOpts).ui('avatar')}
+      />
     ) : (
       <ProfileCard.AvatarPlaceholder size={AVATAR_SIZE} />
     )
@@ -487,7 +492,7 @@ let MessageItem = ({
                 isGroupChat={isGroupChat}
                 replierDisplayName={displayName}
                 relatedProfiles={relatedProfiles}
-                onPress={() => scrollToMessage(replyTo.id)}
+                onPress={onPressReplyTo}
               />
             ) : displayName && showDisplayName ? (
               <Text
@@ -560,7 +565,7 @@ let MessageItem = ({
                           replyTo={replyTo}
                           isFromSelf={isFromSelf}
                           relatedProfiles={relatedProfiles}
-                          onPress={() => scrollToMessage(replyTo.id)}
+                          onPress={onPressReplyTo}
                         />
                       ) : null}
                       <RichText
@@ -662,7 +667,7 @@ function BlockedPlaceholder({
   style,
 }: {
   profile: Shadow<ChatBskyActorDefs.ProfileViewBasic>
-  style?: StyleProp<ViewStyle>
+  style?: AnimatedStyle<ViewStyle>
 }) {
   const {t: l} = useLingui()
   const t = useTheme()
@@ -770,28 +775,56 @@ function ReplyCaption({
   relatedProfiles,
   onPress,
 }: {
-  replyTo: ChatBskyConvoDefs.MessageView | ChatBskyConvoDefs.DeletedMessageView
+  replyTo:
+    | ChatBskyConvoDefs.MessageView
+    | ChatBskyConvoDefs.DeletedMessageView
+    | ChatBskyConvoDefs.MessageBeforeUserJoinedGroupView
   isFromSelf: boolean
   isGroupChat: boolean
   replierDisplayName: string | null
   relatedProfiles: Map<string, ChatBskyActorDefs.ProfileViewBasic>
-  onPress: () => void
+  onPress?: () => void
 }) {
   const t = useTheme()
   const {t: l} = useLingui()
   const {currentAccount} = useSession()
 
-  const originalSenderIsSelf = replyTo.sender.did === currentAccount?.did
-  const originalProfile = relatedProfiles.get(replyTo.sender.did)
-  const originalName = originalSenderIsSelf
-    ? null
-    : originalProfile
-      ? createSanitizedDisplayName(originalProfile)
-      : null
+  let caption: string = ''
+  if (
+    ChatBskyConvoDefs.isMessageView(replyTo) ||
+    ChatBskyConvoDefs.isDeletedMessageView(replyTo)
+  ) {
+    const originalSenderIsSelf = replyTo.sender.did === currentAccount?.did
+    const originalProfile = relatedProfiles.get(replyTo.sender.did)
+    const originalName = originalSenderIsSelf
+      ? null
+      : originalProfile
+        ? createSanitizedDisplayName(originalProfile)
+        : null
+
+    caption = isFromSelf
+      ? originalSenderIsSelf
+        ? l`You replied to yourself`
+        : originalName
+          ? l`You replied to ${originalName}`
+          : l`You replied`
+      : originalSenderIsSelf
+        ? l`${replierDisplayName} replied to you`
+        : originalName
+          ? l`${replierDisplayName} replied to ${originalName}`
+          : l`${replierDisplayName} replied`
+  } else {
+    caption = l`Someone replied`
+  }
 
   return (
     <Button
-      label={l`Scroll to the message this is replying to`}
+      label={
+        onPress
+          ? l`Scroll to the message this is replying to`
+          : l`A reply to a message sent before you joined`
+      }
+      disabled={!onPress}
       onPress={onPress}
       style={[
         a.w_full,
@@ -815,23 +848,7 @@ function ReplyCaption({
         style={[a.text_xs, a.flex_shrink, t.atoms.text_contrast_medium]}
         numberOfLines={1}
         emoji>
-        {isFromSelf ? (
-          originalSenderIsSelf ? (
-            <Trans>You replied to yourself</Trans>
-          ) : originalName ? (
-            <Trans>You replied to {originalName}</Trans>
-          ) : (
-            <Trans>You replied</Trans>
-          )
-        ) : originalSenderIsSelf ? (
-          <Trans>{replierDisplayName} replied to you</Trans>
-        ) : originalName ? (
-          <Trans>
-            {replierDisplayName} replied to {originalName}
-          </Trans>
-        ) : (
-          <Trans>{replierDisplayName} replied</Trans>
-        )}
+        {caption}
       </Text>
     </Button>
   )
@@ -847,17 +864,25 @@ function ReplyQuote({
   relatedProfiles,
   onPress,
 }: {
-  replyTo: ChatBskyConvoDefs.MessageView | ChatBskyConvoDefs.DeletedMessageView
+  replyTo:
+    | ChatBskyConvoDefs.MessageView
+    | ChatBskyConvoDefs.DeletedMessageView
+    | ChatBskyConvoDefs.MessageBeforeUserJoinedGroupView
   isFromSelf: boolean
   relatedProfiles: Map<string, ChatBskyActorDefs.ProfileViewBasic>
-  onPress: () => void
+  onPress?: () => void
 }) {
   const t = useTheme()
   const {t: l} = useLingui()
   const getReplyPreviewText = useReplyPreviewText()
 
+  const senderDid =
+    ChatBskyConvoDefs.isMessageView(replyTo) ||
+    ChatBskyConvoDefs.isDeletedMessageView(replyTo)
+      ? replyTo.sender.did
+      : undefined
   const senderProfile = useMaybeProfileShadow(
-    relatedProfiles.get(replyTo.sender.did),
+    senderDid ? relatedProfiles.get(senderDid) : undefined,
   )
   // Hide the quoted content if we block, or are blocked by, the original
   // sender - mirroring how the message bubble itself is hidden.
@@ -885,6 +910,12 @@ function ReplyQuote({
     subtle = true
   } else if (ChatBskyConvoDefs.isMessageView(replyTo)) {
     ;({text, subtle} = getReplyPreviewText(replyTo))
+  } else if (ChatBskyConvoDefs.isMessageBeforeUserJoinedGroupView(replyTo)) {
+    text = l({
+      message: `(message sent before you joined)`,
+      comment: 'A reply summary in chat',
+    })
+    subtle = true
   } else {
     text = l({message: '(deleted message)', comment: 'A reply summary in chat'})
     subtle = true
@@ -893,10 +924,13 @@ function ReplyQuote({
   return (
     <Button
       label={
-        senderName
-          ? l`Replied-to message from ${senderName}, tap to scroll to it`
-          : l`Replied-to message, tap to scroll to it`
+        !onPress
+          ? l`Replied-to message was sent before you joined`
+          : senderName
+            ? l`Replied-to message from ${senderName}, tap to scroll to it`
+            : l`Replied-to message, tap to scroll to it`
       }
+      disabled={!onPress}
       onPress={onPress}
       style={[
         a.mb_xs,

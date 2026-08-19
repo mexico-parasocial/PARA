@@ -7,8 +7,8 @@ import {
   AppBskyFeedThreadgate,
   AtUri,
   type ModerationDecision,
-  RichText as RichTextAPI,
 } from '@atproto/api'
+import {RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
 import {useQueryClient} from '@tanstack/react-query'
 
 import {useActorStatus} from '#/lib/actor-status'
@@ -28,6 +28,7 @@ import {
 } from '#/lib/post-flairs'
 import {makePostThreadLink} from '#/lib/routes/links'
 import {countLines} from '#/lib/strings/helpers'
+import {asSdkFacets} from '#/lib/strings/rich-text-helpers'
 import {logger} from '#/logger'
 import {
   POST_TOMBSTONE,
@@ -114,7 +115,7 @@ export function PostFeedItem({
     () =>
       new RichTextAPI({
         text: record.text,
-        facets: record.facets,
+        facets: asSdkFacets(record.facets),
       }),
     [record],
   )

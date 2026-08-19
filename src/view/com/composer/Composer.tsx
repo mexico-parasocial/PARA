@@ -53,11 +53,11 @@ import {
   AppBskyUnspeccedDefs,
   AtUri,
   ChatBskyGroupDefs,
-  RichText,
 } from '@atproto/api'
 import {type Client} from '@atproto/lex'
 import {type AtUriString} from '@atproto/syntax'
 import {msg, plural} from '@lingui/core/macro'
+import {type RichText} from '@bsky.app/sdk/richtext'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 import {useQueries, useQueryClient} from '@tanstack/react-query'
@@ -1186,6 +1186,7 @@ export const ComposePost = ({
           replyTo: replyTo?.uri,
           onStateChange: setPublishingStage,
           langs: currentLanguages,
+          appviewClient: client,
         })
       ).uris[0]
 

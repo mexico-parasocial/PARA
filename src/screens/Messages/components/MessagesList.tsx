@@ -26,13 +26,12 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import {
   type $Typed,
   type AppBskyEmbedRecord,
-  AppBskyRichtextFacet,
   ChatBskyConvoDefs,
   type ChatBskyEmbedJoinLink,
   ChatBskyGroupDefs,
-  RichText,
 } from '@atproto/api'
 import {useScrollEdgeEffectRef} from '@bsky.app/expo-scroll-edge-effect'
+import {RichText} from '@bsky.app/sdk/richtext'
 
 import {useNonReactiveCallback} from '#/lib/hooks/useNonReactiveCallback'
 import {mergeRefs} from '#/lib/merge-refs'
@@ -53,7 +52,7 @@ import {type ConvoState, ConvoStatus} from '#/state/messages/convo/types'
 import {useGetJoinLinkPreview} from '#/state/queries/join-links'
 import {useGetPost} from '#/state/queries/post'
 import {createEmbedViewRecordFromPost} from '#/state/queries/postgate/util'
-import {useAgent, useSession} from '#/state/session'
+import {useAppviewClient, useSession} from '#/state/session'
 import {List, type ListMethods} from '#/view/com/util/List'
 import {MessageComposer} from '#/screens/Messages/components/MessageComposer'
 import {MessageListError} from '#/screens/Messages/components/MessageListError'
@@ -69,6 +68,8 @@ import {Loader} from '#/components/Loader'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
 import {IS_ANDROID, IS_NATIVE, IS_WEB} from '#/env'
+import {app} from '#/lexicons'
+import * as bsky from '#/types/bsky'
 import {ChatStatusInfo} from './ChatStatusInfo'
 import {groupSystemMessages, type RenderItem} from './groupSystemMessages'
 import {InviteLinkDialogProvider} from './InviteLinkDialogProvider'
@@ -140,7 +141,11 @@ export function MessagesList({
 }) {
   const ax = useAnalytics()
   const convoState = useConvoActive()
-  const agent = useAgent()
+  /*
+   * Facet/mention resolution is an appview job - it resolves handles through
+   * the appview, and the public fallback keeps it working when logged out.
+   */
+  const appviewClient = useAppviewClient()
   const {hasSession, currentAccount} = useSession()
   const getPost = useGetPost()
   const getJoinLinkPreview = useGetJoinLinkPreview()
@@ -404,7 +409,8 @@ export function MessagesList({
         const linkFacet = rt.facets?.find(facet =>
           facet.features.find(
             feature =>
-              AppBskyRichtextFacet.isLink(feature) && predicate(feature.uri),
+              bsky.isType(app.bsky.richtext.facet.link, feature) &&
+              predicate(feature.uri),
           ),
         )
         if (linkFacet) {
@@ -469,7 +475,7 @@ export function MessagesList({
         replyTo = {messageId: reply.id}
       }
 
-      await rt.detectFacets(agent)
+      await rt.detectFacets(appviewClient)
 
       rt = shortenLinks(rt)
       rt = stripInvalidMentions(rt)
@@ -512,7 +518,7 @@ export function MessagesList({
       }
     },
     [
-      agent,
+      appviewClient,
       convoState,
       messageEmbed,
       getPost,

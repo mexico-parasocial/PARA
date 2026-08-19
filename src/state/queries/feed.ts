@@ -5,9 +5,9 @@ import {
   type AppBskyGraphDefs,
   AtUri,
   moderateFeedGenerator,
-  RichText,
 } from '@atproto/api'
 import {type AtUriString} from '@atproto/syntax'
+import {RichText} from '@bsky.app/sdk/richtext'
 import {t} from '@lingui/core/macro'
 import {
   type InfiniteData,
@@ -27,11 +27,8 @@ import {
 } from '#/lib/constants'
 import {sanitizeDisplayName} from '#/lib/strings/display-names'
 import {sanitizeHandle} from '#/lib/strings/handles'
-import {
-  PERSISTED_QUERY_GCTIME,
-  PERSISTED_QUERY_ROOT,
-  STALE,
-} from '#/state/queries'
+import {asSdkFacets} from '#/lib/strings/rich-text-helpers'
+import {GCTIME, STALE} from '#/state/queries'
 import {RQKEY as listQueryKey} from '#/state/queries/list'
 import {usePreferencesQuery} from '#/state/queries/preferences'
 import {useAgent, useAppviewClient, useSession} from '#/state/session'
@@ -112,7 +109,7 @@ export function hydrateFeedGenerator(
 
   const description = new RichText({
     text: view.description || '',
-    facets: (view.descriptionFacets || [])?.slice(),
+    facets: asSdkFacets((view.descriptionFacets || [])?.slice()),
   })
 
   if (!view.descriptionFacets) {
@@ -153,7 +150,7 @@ export function hydrateList(view: AppBskyGraphDefs.ListView): FeedSourceInfo {
 
   const description = new RichText({
     text: view.description || '',
-    facets: (view.descriptionFacets || [])?.slice(),
+    facets: asSdkFacets((view.descriptionFacets || [])?.slice()),
   })
 
   if (!view.descriptionFacets) {
@@ -507,7 +504,7 @@ const PWI_DISCOVER_FEED_STUB: SavedFeedSourceInfo = {
 const createPinnedFeedInfosQueryKeyRoot = (
   kind: 'pinned' | 'saved',
   feedUris: string[],
-) => [PERSISTED_QUERY_ROOT, 'feed-info', kind, feedUris]
+) => ['feed-info', kind, feedUris]
 
 export function usePinnedFeedsInfos() {
   const {hasSession} = useSession()
@@ -520,7 +517,7 @@ export function usePinnedFeedsInfos() {
       'pinned',
       pinnedItems.map(f => f.value),
     ),
-    gcTime: PERSISTED_QUERY_GCTIME,
+    gcTime: GCTIME,
     staleTime: STALE.INFINITY,
     enabled: !isLoadingPrefs,
     queryFn: async () => {
@@ -628,7 +625,7 @@ export function useSavedFeeds() {
       'saved',
       savedItems.map(f => f.value),
     ),
-    gcTime: PERSISTED_QUERY_GCTIME,
+    gcTime: GCTIME,
     staleTime: STALE.INFINITY,
     enabled: !isLoadingPrefs,
     placeholderData: previousData => {

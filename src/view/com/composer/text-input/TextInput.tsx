@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native'
 import {type PasteEventPayload, TextInputWrapper} from 'expo-paste-input'
-import {AppBskyRichtextFacet, RichText} from '@atproto/api'
+import {RichText} from '@bsky.app/sdk/richtext'
 import {useLingui} from '@lingui/react/macro'
 
 import {POST_IMG_MAX} from '#/lib/constants'
@@ -27,6 +27,8 @@ import {
 import {atoms as a, useAlf} from '#/alf'
 import {normalizeTextStyles} from '#/alf/typography'
 import {IS_ANDROID, IS_NATIVE} from '#/env'
+import {app} from '#/lexicons'
+import * as bsky from '#/types/bsky'
 import {
   applyCivicAutocompleteItem,
   type CivicAutocompleteItem,
@@ -113,7 +115,7 @@ export function TextInput({
       if (newRt.facets) {
         for (const facet of newRt.facets) {
           for (const feature of facet.features) {
-            if (AppBskyRichtextFacet.isLink(feature)) {
+            if (bsky.isType(app.bsky.richtext.facet.link, feature)) {
               if (isUriImage(feature.uri)) {
                 const res = await downloadAndResize({
                   uri: feature.uri,

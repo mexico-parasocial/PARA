@@ -1,35 +1,34 @@
 import {memo, useMemo, useState} from 'react'
-import {Platform, type StyleProp, View, type ViewStyle} from 'react-native'
+import {type StyleProp, View, type ViewStyle} from 'react-native'
 import {
   type AppBskyFeedDefs,
   type AppBskyFeedPost,
   type AppBskyFeedThreadgate,
-  AtUri,
-  type RichText as RichTextAPI,
 } from '@atproto/api'
-import {msg, plural} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
-import {useNavigation} from '@react-navigation/native'
+import {type RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
+import {plural} from '@lingui/core/macro'
+import {useLingui} from '@lingui/react/macro'
 
-import {useHaptics} from '#/lib/haptics'
+import {CountWheel} from '#/lib/custom-animations/CountWheel'
+import {AnimatedLikeIcon} from '#/lib/custom-animations/LikeIcon'
 import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
-import {makeProfileLink as _makeProfileLink} from '#/lib/routes/links'
-import {type NavigationProp} from '#/lib/routes/types'
-import {logger} from '#/logger'
 import {type Shadow} from '#/state/cache/types'
 import {useFeedFeedbackContext} from '#/state/feed-feedback'
-import {useHighlightMode, useHighlights} from '#/state/highlights'
-import {usePostLikeMutationQueue} from '#/state/queries/post'
+import {
+  usePostLikeMutationQueue,
+  usePostRepostMutationQueue,
+} from '#/state/queries/post'
 import {useRequireAuth} from '#/state/session'
 import {
   ProgressGuideAction,
   useProgressGuideControls,
 } from '#/state/shell/progress-guide'
-import {atoms as a, useBreakpoints} from '#/alf'
+import {atoms as a, useBreakpoints, useTheme} from '#/alf'
 import {Reply as Bubble} from '#/components/icons/Reply'
 import {useFormatPostStatCount} from '#/components/PostControls/util'
 import * as Skele from '#/components/Skeleton'
 import * as Toast from '#/components/Toast'
+import {useAnalytics} from '#/analytics'
 import {BookmarkButton} from './BookmarkButton'
 import {
   PostControlButton,
@@ -37,9 +36,8 @@ import {
   PostControlButtonText,
 } from './PostControlButton'
 import {PostMenuButton} from './PostMenu'
-import {QuoteButton} from './QuoteButton'
+import {RepostButton} from './RepostButton'
 import {ShareMenuButton} from './ShareMenu'
-import {RedditVoteButton} from './VoteButton'
 
 let PostControls = ({
   big,
@@ -54,7 +52,7 @@ let PostControls = ({
   logContext,
   threadgateRecord,
   onShowLess,
-  viaQuote,
+  viaRepost,
   variant,
   forceGoogleTranslate = false,
 }: {
@@ -70,23 +68,30 @@ let PostControls = ({
   logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
   threadgateRecord?: AppBskyFeedThreadgate.Record
   onShowLess?: (interaction: AppBskyFeedDefs.Interaction) => void
-  viaQuote?: {uri: string; cid: string}
+  viaRepost?: {uri: string; cid: string}
   variant?: 'compact' | 'normal' | 'large'
   forceGoogleTranslate?: boolean
 }): React.ReactNode => {
-  const {_} = useLingui()
+  const ax = useAnalytics()
+  const t = useTheme()
+  const {t: l} = useLingui()
   const {openComposer} = useOpenComposer()
   const {feedDescriptor} = useFeedFeedbackContext()
   const [queueLike, queueUnlike] = usePostLikeMutationQueue(
     post,
-    viaQuote,
+    viaRepost,
+    feedDescriptor,
+    logContext,
+  )
+  const [queueRepost, queueUnrepost] = usePostRepostMutationQueue(
+    post,
+    viaRepost,
     feedDescriptor,
     logContext,
   )
   const requireAuth = useRequireAuth()
   const {sendInteraction} = useFeedFeedbackContext()
   const {captureAction} = useProgressGuideControls()
-  const playHaptic = useHaptics()
   const isBlocked = Boolean(
     post.author.viewer?.blocking ||
     post.author.viewer?.blockedBy ||
@@ -96,44 +101,19 @@ let PostControls = ({
   const {gtPhone} = useBreakpoints()
   const formatPostStatCount = useFormatPostStatCount()
 
-  const [hasVoteIconBeenToggled, setHasVoteIconBeenToggled] = useState(false)
-  const [isDownvoted, setIsDownvoted] = useState(false)
-  const [currentVoteOverride, setCurrentVoteOverride] = useState<
-    'upvote' | 'downvote' | 'none'
-  >('none')
+  const [hasLikeIconBeenToggled, setHasLikeIconBeenToggled] = useState(false)
 
-  // Calculate vote state and counts
-  const currentVote =
-    currentVoteOverride !== 'none'
-      ? currentVoteOverride
-      : post.viewer?.like
-        ? 'upvote'
-        : 'none'
-
-  // Calculate net score: likes minus downvotes
-  const baseScore = post.likeCount || 0
-  const downvoteAdjustment = isDownvoted ? -1 : 0
-  const netScore = baseScore + downvoteAdjustment
-
-  const onPressUpvote = async () => {
+  const onPressToggleLike = async () => {
     if (isBlocked) {
-      Toast.show(_(msg`Cannot interact with a blocked user`), {
+      Toast.show(l`Cannot interact with a blocked user`, {
         type: 'warning',
       })
       return
     }
 
     try {
-      setHasVoteIconBeenToggled(true)
-
-      // If currently downvoted, clear downvote first
-      if (currentVoteOverride === 'downvote') {
-        setIsDownvoted(false)
-        setCurrentVoteOverride('none')
-      }
-
+      setHasLikeIconBeenToggled(true)
       if (!post.viewer?.like) {
-        playHaptic('Light')
         sendInteraction({
           item: post.uri,
           event: 'app.bsky.feed.defs#interactionLike',
@@ -143,53 +123,47 @@ let PostControls = ({
         captureAction(ProgressGuideAction.Like)
         await queueLike()
       } else {
-        // Only unlike if we're actually liked (not just clearing downvote)
-        if (currentVoteOverride !== 'downvote') {
-          await queueUnlike()
-        }
+        await queueUnlike()
       }
-    } catch (e: unknown) {
-      if ((e as {name?: string})?.name !== 'AbortError') {
+    } catch (err) {
+      const e = err as Error
+      if (e?.name !== 'AbortError') {
         throw e
       }
     }
   }
 
-  const onPressDownvote = async () => {
+  const onRepost = async () => {
     if (isBlocked) {
-      Toast.show(_(msg`Cannot interact with a blocked user`), {
+      Toast.show(l`Cannot interact with a blocked user`, {
         type: 'warning',
       })
       return
     }
 
-    setHasVoteIconBeenToggled(true)
-
-    // Toggle downvote state and update vote override
-    if (currentVoteOverride === 'downvote') {
-      // Currently downvoted, unselect
-      setIsDownvoted(false)
-      setCurrentVoteOverride('none')
-    } else {
-      // Switch to downvote (from upvote or none)
-      setIsDownvoted(true)
-      setCurrentVoteOverride('downvote')
-      // If currently liked, unlike first
-      if (post.viewer?.like) {
-        try {
-          await queueUnlike()
-        } catch (e: unknown) {
-          if ((e as {name?: string})?.name !== 'AbortError') {
-            throw e
-          }
-        }
+    try {
+      if (!post.viewer?.repost) {
+        sendInteraction({
+          item: post.uri,
+          event: 'app.bsky.feed.defs#interactionRepost',
+          feedContext,
+          reqId,
+        })
+        await queueRepost()
+      } else {
+        await queueUnrepost()
+      }
+    } catch (err) {
+      const e = err as Error
+      if (e?.name !== 'AbortError') {
+        throw e
       }
     }
   }
 
   const onQuote = () => {
     if (isBlocked) {
-      Toast.show(_(msg`Cannot interact with a blocked user`), {
+      Toast.show(l`Cannot interact with a blocked user`, {
         type: 'warning',
       })
       return
@@ -201,7 +175,7 @@ let PostControls = ({
       feedContext,
       reqId,
     })
-    logger.metric('post:clickQuotePost', {
+    ax.metric('post:clickQuotePost', {
       uri: post.uri,
       authorDid: post.author.did,
       logContext,
@@ -223,44 +197,6 @@ let PostControls = ({
     })
   }
 
-  const navigation = useNavigation<NavigationProp>()
-  const {enterHighlightMode} = useHighlightMode()
-  const {highlights, clearAll: clearAllHighlights} = useHighlights(post.uri)
-
-  const onHighlight = () => {
-    if (isBlocked) {
-      Toast.show(_(msg`Cannot interact with a blocked user`), {
-        type: 'warning',
-      })
-      return
-    }
-
-    // Enter highlight mode for this post
-    enterHighlightMode(post.uri)
-
-    // Only navigate to post thread if not already there
-    // The 'big' prop is true when rendered from ThreadItemAnchor (post thread screen)
-    if (!big) {
-      const urip = new AtUri(post.uri)
-      navigation.push('PostThread', {
-        name: post.author.handle,
-        rkey: urip.rkey,
-        ...(urip.collection !== 'app.bsky.feed.post'
-          ? {collection: urip.collection}
-          : {}),
-      })
-    }
-  }
-
-  const onRemoveAllHighlights = () => {
-    if (highlights.length > 0) {
-      clearAllHighlights()
-      Toast.show(_(msg`All highlights removed`))
-    } else {
-      Toast.show(_(msg`No highlights to remove`))
-    }
-  }
-
   const secondaryControlSpacingStyles = useSecondaryControlSpacingStyles({
     variant,
     big,
@@ -278,24 +214,12 @@ let PostControls = ({
         style,
       ]}>
       <View style={[a.flex_row, a.flex_1, {maxWidth: 320}]}>
-        {/* Vote buttons with integrated CountWheel */}
-        <View style={[a.flex_1, a.align_start, {flex: 1}]}>
-          <RedditVoteButton
-            score={netScore}
-            currentVote={currentVote}
-            big={big}
-            hasBeenToggled={hasVoteIconBeenToggled}
-            onUpvote={() => requireAuth(() => onPressUpvote())}
-            onDownvote={() => requireAuth(() => onPressDownvote())}
-          />
-        </View>
-
-        {/* Reply button */}
         <View
           style={[
             a.flex_1,
             a.align_start,
-            {marginLeft: Platform.OS === 'web' ? 36 : 40},
+            {marginLeft: big ? -2 : -6},
+            replyDisabled ? {opacity: 0.6} : undefined,
           ]}>
           <PostControlButton
             testID="replyBtn"
@@ -303,7 +227,7 @@ let PostControls = ({
               !replyDisabled
                 ? () =>
                     requireAuth(() => {
-                      logger.metric('post:clickReply', {
+                      ax.metric('post:clickReply', {
                         uri: post.uri,
                         authorDid: post.author.did,
                         logContext,
@@ -313,16 +237,14 @@ let PostControls = ({
                     })
                 : undefined
             }
-            label={_(
-              msg({
-                message: `Reply (${plural(post.replyCount || 0, {
-                  one: '# reply',
-                  other: '# replies',
-                })})`,
-                comment:
-                  'Accessibility label for the reply button, verb form followed by number of replies and noun form',
-              }),
-            )}
+            label={l({
+              message: `Reply (${plural(post.replyCount || 0, {
+                one: '# reply',
+                other: '# replies',
+              })})`,
+              comment:
+                'Accessibility label for the reply button, verb form followed by number of replies and noun form',
+            })}
             big={big}>
             <PostControlButtonIcon icon={Bubble} />
             {typeof post.replyCount !== 'undefined' && post.replyCount > 0 && (
@@ -332,25 +254,63 @@ let PostControls = ({
             )}
           </PostControlButton>
         </View>
-      </View>
-
-      {/* Secondary controls */}
-      <View style={[a.flex_row, a.justify_end, secondaryControlSpacingStyles]}>
-        <View
-          style={[
-            a.align_start,
-            {marginRight: Platform.OS === 'web' ? 102 : 24},
-          ]}>
-          <QuoteButton
-            quoteCount={post.quoteCount ?? 0}
+        <View style={[a.flex_1, a.align_start]}>
+          <RepostButton
+            isReposted={!!post.viewer?.repost}
+            repostCount={(post.repostCount ?? 0) + (post.quoteCount ?? 0)}
+            onRepost={() => void onRepost()}
             onQuote={onQuote}
-            onHighlight={onHighlight}
-            onRemoveAllHighlights={onRemoveAllHighlights}
-            hasHighlights={highlights.length > 0}
             big={big}
             embeddingDisabled={Boolean(post.viewer?.embeddingDisabled)}
           />
         </View>
+        <View style={[a.flex_1, a.align_start]}>
+          <PostControlButton
+            testID="likeBtn"
+            big={big}
+            active={Boolean(post.viewer?.like)}
+            activeColor={t.palette.pink}
+            onPress={() => requireAuth(() => onPressToggleLike())}
+            label={
+              post.viewer?.like
+                ? l({
+                    message: `Unlike (${plural(post.likeCount || 0, {
+                      one: '# like',
+                      other: '# likes',
+                    })})`,
+                    comment:
+                      'Accessibility label for the like button when the post has been liked, verb followed by number of likes and noun',
+                  })
+                : l({
+                    message: `Like (${plural(post.likeCount || 0, {
+                      one: '# like',
+                      other: '# likes',
+                    })})`,
+                    comment:
+                      'Accessibility label for the like button when the post has not been liked, verb form followed by number of likes and noun form',
+                  })
+            }>
+            <AnimatedLikeIcon
+              isLiked={Boolean(post.viewer?.like)}
+              big={big}
+              hasBeenToggled={hasLikeIconBeenToggled}
+            />
+            <CountWheel
+              count={post.likeCount ?? 0}
+              isToggled={Boolean(post.viewer?.like)}
+              hasBeenToggled={hasLikeIconBeenToggled}
+              renderCount={({count}) => (
+                <PostControlButtonText testID="likeCount">
+                  {formatPostStatCount(count)}
+                </PostControlButtonText>
+              )}
+            />
+          </PostControlButton>
+        </View>
+        {/* Spacer! */}
+        <View />
+      </View>
+      <View style={[a.flex_row, a.justify_end, secondaryControlSpacingStyles]}>
         <BookmarkButton
           post={post}
           big={big}
@@ -427,34 +387,20 @@ export function PostControlsSkeleton({
     <Skele.Row
       style={[a.flex_row, a.justify_between, a.align_center, a.gap_md, style]}>
       <View style={[a.flex_row, a.flex_1, {maxWidth: 320}]}>
-        <View style={[itemStyles, a.flex_1, a.align_start]}>
-          <Skele.Row>
-            <Skele.Pill blend size={size} />
-            <View style={[a.align_center, a.mx_xs]}>
-              <Skele.Pill blend size={size * 0.6} />
-            </View>
-            <Skele.Pill blend size={size} />
-          </Skele.Row>
-        </View>
         <View
-          style={[
-            itemStyles,
-            a.flex_1,
-            a.align_start,
-            {marginLeft: Platform.OS === 'web' ? 36 : 40},
-          ]}>
+          style={[itemStyles, a.flex_1, a.align_start, {marginLeft: -padding}]}>
+          <Skele.Pill blend size={size} />
+        </View>
+
+        <View style={[itemStyles, a.flex_1, a.align_start]}>
+          <Skele.Pill blend size={size} />
+        </View>
+
+        <View style={[itemStyles, a.flex_1, a.align_start]}>
           <Skele.Pill blend size={size} />
         </View>
       </View>
       <View style={[a.flex_row, a.justify_end, secondaryControlSpacingStyles]}>
-        <View
-          style={[
-            itemStyles,
-            a.align_start,
-            {marginRight: Platform.OS === 'web' ? 102 : 24},
-          ]}>
-          <Skele.Pill blend size={size} />
-        </View>
         <View style={itemStyles}>
           <Skele.Circle blend size={size} />
         </View>

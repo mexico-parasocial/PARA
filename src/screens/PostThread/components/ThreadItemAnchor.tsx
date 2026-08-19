@@ -10,11 +10,10 @@ import {
   AppBskyFeedPost,
   type AppBskyFeedThreadgate,
   AtUri,
-  RichText as RichTextAPI,
 } from '@atproto/api'
 import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
-import {Plural, Trans} from '@lingui/react/macro'
+import {RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
+import {Plural, Trans, useLingui} from '@lingui/react/macro'
 
 import {useActorStatus} from '#/lib/actor-status'
 import {useNonReactiveCallback} from '#/lib/hooks/useNonReactiveCallback'
@@ -24,6 +23,7 @@ import { getPostBadges,type PostBadgeRecord} from '#/lib/post-flairs'
 import {makeProfileLink} from '#/lib/routes/links'
 import {sanitizeDisplayName} from '#/lib/strings/display-names'
 import {sanitizeHandle} from '#/lib/strings/handles'
+import {asSdkFacets} from '#/lib/strings/rich-text-helpers'
 import {niceDate} from '#/lib/strings/time'
 import {getTranslatorLink, isPostInLanguage} from '#/locale/helpers'
 import {logger} from '#/logger'
@@ -206,7 +206,7 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
     () =>
       new RichTextAPI({
         text: record.text,
-        facets: record.facets,
+        facets: asSdkFacets(record.facets),
       }),
     [record],
   )
