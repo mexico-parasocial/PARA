@@ -360,7 +360,7 @@ export function StepProfile() {
               </ButtonText>
             </Button>
           </View>
-        </Dialog.ScrollableInnerInner>
+        </Dialog.ScrollableInner>
       </Dialog.Outer>
       <PlaceholderCanvas ref={canvasRef} />
     </AvatarContext.Provider>
