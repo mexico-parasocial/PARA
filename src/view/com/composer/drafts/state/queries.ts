@@ -7,7 +7,7 @@ import {
 
 import {isNetworkError} from '#/lib/strings/errors'
 import {matchXrpcError} from '#/lib/xrpc-error'
-import {useAppviewClient} from '#/state/session'
+import {useAppviewClient, useChatClient} from '#/state/session'
 import {type ComposerState} from '#/view/com/composer/state/composer'
 import {useAnalytics} from '#/analytics'
 import {getDeviceId} from '#/analytics/identifiers'
@@ -102,6 +102,7 @@ export async function loadDraftMedia(draft: AppBskyDraftDefs.Draft): Promise<{
  */
 export function useSaveDraftMutation() {
   const client = useAppviewClient()
+  const chatClient = useChatClient()
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -117,8 +118,10 @@ export function useSaveDraftMutation() {
       originalLocalRefs: Set<string> | undefined
     }> => {
       // Convert composer state to server draft format
-      const {draft: apiDraft, localRefPaths} =
-        await composerStateToDraft(composerState)
+      const {draft: apiDraft, localRefPaths} = await composerStateToDraft(
+        {appviewClient: client, chatClient},
+        composerState,
+      )
       /*
        * `composerStateToDraft` builds the draft against the `@atproto/api`
        * types, whose string fields are unbranded, so it is asserted once here
