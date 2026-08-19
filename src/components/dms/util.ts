@@ -1,13 +1,9 @@
-import {
-  type $Typed,
-  ChatBskyActorDefs,
-  ChatBskyConvoDefs,
-  moderateProfile,
-  type ModerationOpts,
-} from '@atproto/api'
+import {type $Typed, ChatBskyActorDefs, ChatBskyConvoDefs} from '@atproto/api'
+import {type ModerationOpts} from '@bsky.app/sdk/moderation'
 
 import {EMOJI_REACTION_LIMIT} from '#/lib/constants'
 import {isBlockedOrBlocking} from '#/lib/moderation/blocked-and-muted'
+import {moderateProfile} from '#/lib/moderation/subjects'
 import {logger} from '#/logger'
 import {type Shadow} from '#/state/cache/types'
 import {type ConvoState, ConvoStatus} from '#/state/messages/convo/types'
@@ -65,9 +61,7 @@ export function resolveAllowGroupInvites(
   chat: {allowIncoming?: string; allowGroupInvites?: string} | undefined,
 ): 'all' | 'none' | 'following' {
   return (chat?.allowGroupInvites ?? chat?.allowIncoming ?? 'following') as
-    | 'all'
-    | 'none'
-    | 'following'
+    'all' | 'none' | 'following'
 }
 
 export function localDateString(date: Date) {

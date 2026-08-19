@@ -8,7 +8,7 @@ import {
   useState,
 } from 'react'
 import {Pressable, type ScrollView, View} from 'react-native'
-import {type AppBskyLabelerDefs, BSKY_LABELER_DID} from '@atproto/api'
+import {BSKY_LABELER_DID} from '@atproto/api'
 import {Trans, useLingui} from '@lingui/react/macro'
 
 import {wait} from '#/lib/async/wait'
@@ -37,6 +37,7 @@ import {Loader} from '#/components/Loader'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
 import {IS_NATIVE} from '#/env'
+import {type app} from '#/lexicons'
 import {useSubmitReportMutation} from './action'
 import {
   BSKY_LABELER_ONLY_REPORT_REASONS,
@@ -81,7 +82,7 @@ export function ReportDialog(
     ax.metric('reportDialog:close', {})
     propsOnClose?.()
   }, [ax, propsOnClose])
-    return (
+  return (
     <Dialog.Outer control={props.control} onClose={onClose}>
       <Dialog.Handle />
       {subject ? <Inner {...props} subject={subject} /> : <Invalid />}
@@ -793,8 +794,8 @@ function LabelerCard({
   labeler,
   onSelect,
 }: {
-  labeler: AppBskyLabelerDefs.LabelerViewDetailed
-  onSelect?: (option: AppBskyLabelerDefs.LabelerViewDetailed) => void
+  labeler: app.bsky.labeler.defs.LabelerViewDetailed
+  onSelect?: (option: app.bsky.labeler.defs.LabelerViewDetailed) => void
 }) {
   const t = useTheme()
   const {t: l} = useLingui()

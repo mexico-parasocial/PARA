@@ -12,20 +12,21 @@ import {
   type AppBskyFeedDefs,
   type AppBskyFeedPost,
   type ComAtprotoLabelDefs,
+  mock,
+} from '@atproto/api'
+import {
   interpretLabelValueDefinition,
   type LabelPreference,
   LABELS,
-  mock,
-  moderatePost,
-  moderateProfile,
   type ModerationBehavior,
   type ModerationDecision,
   type ModerationOpts,
-} from '@atproto/api'
+} from '@bsky.app/sdk/moderation'
 import {RichText} from '@bsky.app/sdk/richtext'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 
+import {moderatePost, moderateProfile} from '#/lib/moderation/subjects'
 import {useGlobalLabelStrings} from '#/lib/moderation/useGlobalLabelStrings'
 import {
   type CommonNavigatorParams,
@@ -248,9 +249,13 @@ export const DebugModScreen = ({}: NativeStackScreenProps<
     return item
   }, [profile, currentAccount])
 
-  const modOpts = useMemo(() => {
+  const modOpts = useMemo<ModerationOpts>(() => {
     return {
-      userDid: isLoggedOut ? '' : isTargetMe ? did : 'did:web:alice.test',
+      userDid: (isLoggedOut
+        ? ''
+        : isTargetMe
+          ? did
+          : 'did:web:alice.test') as ModerationOpts['userDid'],
       prefs: {
         adultContentEnabled: !noAdult,
         labels: {
@@ -280,7 +285,7 @@ export const DebugModScreen = ({}: NativeStackScreenProps<
     return moderatePost(post, modOpts)
   }, [post, modOpts])
 
-    const sv = useSharedValue(0)
+  const sv = useSharedValue(0)
 
   return (
     <Layout.Screen>
@@ -497,7 +502,6 @@ export const DebugModScreen = ({}: NativeStackScreenProps<
                           </View>
                         </Toggle.Group>
                       </View>
-
                     </View>
                   </View>
                 </>
@@ -574,7 +578,6 @@ export const DebugModScreen = ({}: NativeStackScreenProps<
                       profile={profile}
                       moderation={profileModeration}
                     />
-
 
                     <Heading title="Account" subtitle="viewing directly" />
                     <MockAccountScreen

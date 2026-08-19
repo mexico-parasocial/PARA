@@ -27,7 +27,6 @@ import {
   type ChatBskyActorDefs,
   ChatBskyConvoDefs,
   ChatBskyEmbedJoinLink,
-  moderateProfile,
 } from '@atproto/api'
 import {RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
 import {plural} from '@lingui/core/macro'
@@ -36,6 +35,7 @@ import {useQueryClient} from '@tanstack/react-query'
 
 import {isBlockedOrBlocking} from '#/lib/moderation/blocked-and-muted'
 import {createSanitizedDisplayName} from '#/lib/moderation/create-sanitized-display-name'
+import {moderateProfile} from '#/lib/moderation/subjects'
 import {sanitizeHandle} from '#/lib/strings/handles'
 import {asSdkFacets} from '#/lib/strings/rich-text-helpers'
 import {useMaybeProfileShadow} from '#/state/cache/profile-shadow'
@@ -77,9 +77,7 @@ const SQUARED_BORDER_RADIUS = 4
 const DISPLAY_NAME_INSET = 20
 
 export type MessageItemNeighbor =
-  | ChatBskyConvoDefs.MessageView
-  | ChatBskyConvoDefs.DeletedMessageView
-  | null
+  ChatBskyConvoDefs.MessageView | ChatBskyConvoDefs.DeletedMessageView | null
 
 function messageIsReply(message: MessageItemNeighbor): boolean {
   return (

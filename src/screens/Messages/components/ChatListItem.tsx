@@ -1,11 +1,10 @@
 import {useCallback, useMemo, useState} from 'react'
 import {type GestureResponderEvent, View} from 'react-native'
+import {ChatBskyConvoDefs} from '@atproto/api'
 import {
-  ChatBskyConvoDefs,
-  moderateProfile,
   type ModerationDecision,
   type ModerationOpts,
-} from '@atproto/api'
+} from '@bsky.app/sdk/moderation'
 import {plural} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
@@ -14,6 +13,7 @@ import {useQueryClient} from '@tanstack/react-query'
 import {GestureActionView} from '#/lib/custom-animations/GestureActionView'
 import {useHaptics} from '#/lib/haptics'
 import {createSanitizedDisplayName} from '#/lib/moderation/create-sanitized-display-name'
+import {moderateProfile} from '#/lib/moderation/subjects'
 import {decrementBadgeCount} from '#/lib/notifications/notifications'
 import {type NavigationProp} from '#/lib/routes/types'
 import {sanitizeHandle} from '#/lib/strings/handles'

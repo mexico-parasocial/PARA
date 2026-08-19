@@ -1,5 +1,6 @@
 import {View} from 'react-native'
-import {type AppBskyActorDefs, type ModerationDecision} from '@atproto/api'
+import {type AppBskyActorDefs} from '@atproto/api'
+import {type ModerationDecision} from '@bsky.app/sdk/moderation'
 
 import {useAnonymousMode} from '#/lib/m8/hooks/useAnonymousMode'
 import {formatUserDisplayName} from '#/lib/strings/profile-names'

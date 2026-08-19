@@ -5,7 +5,7 @@ import {
   View,
   type ViewStyle,
 } from 'react-native'
-import {type ModerationUI} from '@atproto/api'
+import {type ModerationUI} from '@bsky.app/sdk/moderation'
 import {Trans, useLingui} from '@lingui/react/macro'
 
 import {
@@ -110,7 +110,7 @@ function ContentHiderActive({
         if (cause.source.type !== 'user') {
           return false
         }
-        if (ADULT_CONTENT_LABELS.includes(cause.label.val as AdultSelfLabel)) {
+        if (ADULT_CONTENT_LABELS.includes(cause.label.val)) {
           if (hasAdultContentLabel) {
             return false
           }
@@ -242,7 +242,7 @@ function ContentHiderActive({
               {desc.sourceType === 'user' ? (
                 <Trans>Labeled by the author.</Trans>
               ) : (
-                <Trans>Labeled by {sanitizeDisplayName(desc.source!)}.</Trans>
+                <Trans>Labeled by {sanitizeDisplayName(desc.source)}.</Trans>
               )}{' '}
               <Text
                 style={[

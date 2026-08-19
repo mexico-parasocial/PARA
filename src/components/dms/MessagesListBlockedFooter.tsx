@@ -1,6 +1,6 @@
 import {useCallback, useMemo} from 'react'
 import {View} from 'react-native'
-import {type ModerationDecision} from '@atproto/api'
+import {type ModerationDecision} from '@bsky.app/sdk/moderation'
 import {Trans, useLingui} from '@lingui/react/macro'
 
 import {useProfileShadow} from '#/state/cache/profile-shadow'
@@ -52,7 +52,7 @@ export function MessagesListBlockedFooter({
     if (listBlocks.length) {
       blockedByListControl.open()
     } else {
-    void queueUnblock()
+      void queueUnblock()
     }
   }, [blockedByListControl, listBlocks, queueUnblock])
 
@@ -93,7 +93,7 @@ export function MessagesListBlockedFooter({
         {isBlocking ? (
           <Button
             label={l`Unblock`}
-          color="secondary_inverted"
+            color="secondary_inverted"
             size="large"
             style={[a.mt_lg, a.w_full]}
             onPress={onUnblockPress}>
