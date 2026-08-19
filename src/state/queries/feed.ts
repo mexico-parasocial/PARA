@@ -315,7 +315,9 @@ export function useGetPopularFeedsQuery(options?: GetPopularFeedsOptions) {
               customFeedsRes.data.feeds.map(f => f.uri),
             )
             data.feeds = data.feeds.filter(f => !customUris.has(f.uri))
-            data.feeds.unshift(...customFeedsRes.data.feeds)
+            data.feeds.unshift(
+              ...(customFeedsRes.data.feeds as unknown as typeof data.feeds),
+            )
           }
         } catch (e) {
           console.warn('Failed to fetch custom cabildeo feeds', e)
