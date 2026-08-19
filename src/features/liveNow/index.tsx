@@ -221,7 +221,6 @@ export function useUpsertLiveStatusMutation(
 ) {
   const ax = useAnalytics()
   const {currentAccount} = useSession()
-  const agent = useAgent()
   const pdsClient = usePdsClient()
   const queryClient = useQueryClient()
   const control = useDialogContext()
@@ -241,15 +240,11 @@ export function useUpsertLiveStatusMutation(
             const img = await imageToThumb(linkMeta.image)
             if (img) {
               const blob = await uploadBlob(
-                agent,
+                pdsClient,
                 img.source.path,
                 img.source.mime,
               )
-              /*
-               * `uploadBlob` still returns the legacy `BlobRef` class
-               * instance; it moves to the client with the blob pipeline.
-               */
-              thumb = blob.data.blob as unknown as l.BlobRef
+              thumb = blob.blob
             }
           } catch (e: unknown) {
             ax.logger.error(`Failed to upload thumbnail for live status`, {
