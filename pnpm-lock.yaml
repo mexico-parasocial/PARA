@@ -248,6 +248,12 @@ importers:
       '@atproto/common-web':
         specifier: 0.5.7
         version: 0.5.7
+      '@atproto/lex-client':
+        specifier: 0.3.0
+        version: 0.3.0
+      '@atproto/lex-password-session':
+        specifier: 0.1.8
+        version: 0.1.8
       '@atproto/syntax':
         specifier: 0.7.2
         version: 0.7.2
@@ -920,12 +926,24 @@ packages:
     resolution: {integrity: sha512-2c5C6YV8352JJz9Z5fNfcsstllaKGAb3cQW9aO7unMAGh/FzTGFq+xOwNMW2lTeagO6z530uxYm8AiSRM6O+DQ==}
     engines: {node: '>=22'}
 
+  '@atproto/lex-client@0.3.0':
+    resolution: {integrity: sha512-P+S3hWdIIOgNTun7J42dvxSyCkQog3Q2ShTjvcwP761TqiRex7zDWaRAaT9gvCy6I4pRuNdBCStysjSMlJeSdg==}
+    engines: {node: '>=22'}
+
   '@atproto/lex-data@0.1.7':
     resolution: {integrity: sha512-kW/dPLqo/WgCLV+XESR4JKwV6c1rZWJGOfuPupZGTjEDAKoBbKXdaEzX9/1vKQYbZ9U3j0DS/n7OFFK7wBugyQ==}
     engines: {node: '>=22'}
 
   '@atproto/lex-json@0.1.6':
     resolution: {integrity: sha512-mvrAd0lbyuecIHjyld8QN6MN6CBf4j0GCxLzegsvLh0SvDf+GbYWklkcQqmITL44yFQOwmA/QNIQj0Uvh7+R/g==}
+    engines: {node: '>=22'}
+
+  '@atproto/lex-password-session@0.1.8':
+    resolution: {integrity: sha512-Zr3HLu6rgadiq2w82VSThOQcNfwTJNlrzlT8n9oBXDBw3CUEq3cTMatzTpdk4HYqv0unaqhaEowcKhJ4eWvSxQ==}
+    engines: {node: '>=22'}
+
+  '@atproto/lex-schema@0.2.5':
+    resolution: {integrity: sha512-/tP3dRqaZu0EIoq0BSVzhvFGL6u0uu2KFDV21i73DpFsg6TXOTddKJ9bvgK83XdAJYL7PWi703XsaR31v9u5Qg==}
     engines: {node: '>=22'}
 
   '@atproto/lexicon@0.7.11':
@@ -3888,6 +3906,9 @@ packages:
 
   '@sinonjs/fake-timers@10.3.0':
     resolution: {integrity: sha512-V4BG07kuYSUkTCSBHG8G8TNhM+F19jXFWnQtzj+we8DrkpSBCee9Z3Ms8yiGer/dlmhe35/Xdgyo3/0rQKg7YA==}
+
+  '@standard-schema/spec@1.1.0':
+    resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
 
   '@szmarczak/http-timer@4.0.6':
     resolution: {integrity: sha512-4BAffykYOgO+5nzBWYwE3W90sBgLJoUPRWWcL8wlyiM8IB8ipJz3UMJ9KXQd1RKQXpKp8Tutn80HZtWsu2u76w==}
@@ -11107,6 +11128,13 @@ snapshots:
       '@atproto/syntax': 0.7.4
       zod: 3.25.76
 
+  '@atproto/lex-client@0.3.0':
+    dependencies:
+      '@atproto/lex-data': 0.1.7
+      '@atproto/lex-json': 0.1.6
+      '@atproto/lex-schema': 0.2.5
+      tslib: 2.8.1
+
   '@atproto/lex-data@0.1.7':
     dependencies:
       multiformats: 13.4.2
@@ -11116,6 +11144,19 @@ snapshots:
   '@atproto/lex-json@0.1.6':
     dependencies:
       '@atproto/lex-data': 0.1.7
+      tslib: 2.8.1
+
+  '@atproto/lex-password-session@0.1.8':
+    dependencies:
+      '@atproto/lex-client': 0.3.0
+      '@atproto/lex-schema': 0.2.5
+      tslib: 2.8.1
+
+  '@atproto/lex-schema@0.2.5':
+    dependencies:
+      '@atproto/lex-data': 0.1.7
+      '@atproto/syntax': 0.7.4
+      '@standard-schema/spec': 1.1.0
       tslib: 2.8.1
 
   '@atproto/lexicon@0.7.11':
@@ -14929,6 +14970,8 @@ snapshots:
   '@sinonjs/fake-timers@10.3.0':
     dependencies:
       '@sinonjs/commons': 3.0.1
+
+  '@standard-schema/spec@1.1.0': {}
 
   '@szmarczak/http-timer@4.0.6':
     dependencies:

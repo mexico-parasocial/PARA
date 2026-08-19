@@ -1,9 +1,7 @@
 import {createContext, useCallback, useContext} from 'react'
 import {LayoutAnimation} from 'react-native'
-import {
-  ComAtprotoServerCreateAccount,
-  type ComAtprotoServerDescribeServer,
-} from '@atproto/api'
+import {type ComAtprotoServerDescribeServer} from '@atproto/api'
+import {XrpcResponseError} from '@atproto/lex-client'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import * as EmailValidator from 'email-validator'
@@ -32,11 +30,7 @@ type SubmitTask = {
 }
 
 type ErrorField =
-  | 'invite-code'
-  | 'email'
-  | 'handle'
-  | 'password'
-  | 'date-of-birth'
+  'invite-code' | 'email' | 'handle' | 'password' | 'date-of-birth'
 
 export type SignupState = {
   hasPrev: boolean
@@ -335,7 +329,7 @@ export function useSubmitSignup() {
         onboardingDispatch({type: 'start'})
       } catch (e: unknown) {
         let errMsg = String(e)
-        if (e instanceof ComAtprotoServerCreateAccount.InvalidInviteCodeError) {
+        if (e instanceof XrpcResponseError && e.error === 'InvalidInviteCode') {
           dispatch({
             type: 'setError',
             value: _(
