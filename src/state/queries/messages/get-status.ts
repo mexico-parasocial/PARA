@@ -5,8 +5,7 @@ import {chat} from '#/lexicons'
 import {STALE} from '..'
 import {createQueryKey} from '../util'
 
-const chatActorStatusQueryKey = () =>
-  createQueryKey('chat-actor-status', {}, {persistedVersion: 1})
+const chatActorStatusQueryKey = () => createQueryKey('chat-actor-status', {})
 
 export function useChatActorStatusQuery() {
   const client = useChatClient()
