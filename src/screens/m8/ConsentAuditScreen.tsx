@@ -8,7 +8,7 @@ import {
   View,
 } from 'react-native'
 // @ts-ignore - lingui macro types not available
-import { msg } from '@lingui/macro' // eslint-disable-line import-x/no-unresolved
+import {msg} from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 
 import { m8Fetch, postGrantRevoke } from '#/lib/m8'

@@ -10,6 +10,8 @@
       "#/*": ["./src/*"],
 
       "crypto": ["./src/platform/crypto.ts"],
+
+      "expo-age-range": ["./src/lib/shims/expo-age-range.ts"],
     },
     "plugins": [
       {

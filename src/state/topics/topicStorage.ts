@@ -1,7 +1,7 @@
 /**
  * MMKV-based storage for followed topics/items
  */
-import {MMKV} from '@bsky.app/react-native-mmkv'
+import {MMKV} from 'react-native-mmkv'
 import {nanoid} from 'nanoid/non-secure'
 
 import {type FollowedItem, type FollowedItemType} from './topicTypes'

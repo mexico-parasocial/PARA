@@ -16,7 +16,7 @@ import {
 } from '#/lib/hooks/usePermissions'
 import {openUnifiedPicker} from '#/lib/media/picker'
 import {extractDataUriMime} from '#/lib/media/util'
-import {MAX_IMAGES} from '#/view/com/composer/state/composer'
+import {MAX_GALLERY_IMAGES} from '#/view/com/composer/state/composer'
 import {atoms as a, useTheme} from '#/alf'
 import {Button} from '#/components/Button'
 import {useSheetWrapper} from '#/components/Dialog/sheet-wrapper'
@@ -409,7 +409,7 @@ export function SelectMediaButton({
   const t = useTheme()
   const hasAutoOpened = useRef(false)
 
-  const selectionCountRemaining = MAX_IMAGES - selectedAssetsCount
+  const selectionCountRemaining = MAX_GALLERY_IMAGES - selectedAssetsCount
 
   const processSelectedAssets = useCallback(
     async (rawAssets: ImagePickerAsset[]) => {
@@ -436,7 +436,7 @@ export function SelectMediaButton({
           ),
           [SelectedAssetError.MaxImages]: _(
             msg({
-              message: `You can select up to ${plural(MAX_IMAGES, {
+              message: `You can select up to ${plural(MAX_GALLERY_IMAGES, {
                 other: '# images',
               })} in total.`,
               comment: `Error message for maximum number of images that can be selected to add to a post, currently 4 but may change.`,
@@ -532,7 +532,7 @@ export function SelectMediaButton({
       )}
       accessibilityHint={_(
         msg({
-          message: `Opens device gallery to select up to ${plural(MAX_IMAGES, {
+          message: `Opens device gallery to select up to ${plural(MAX_GALLERY_IMAGES, {
             other: '# images',
           })}, or a single video or GIF.`,
           comment: `Accessibility hint for button in composer to add images, a video, or a GIF to a post. Maximum number of images that can be selected is currently 4 but may change.`,

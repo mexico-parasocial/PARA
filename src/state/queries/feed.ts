@@ -715,7 +715,13 @@ export function useSavedFeeds() {
   })
 }
 
-const feedInfoQueryKeyRoot = 'feedInfo'
+/**
+ * Root for the `useFeedInfo` query key. Exported as `FEED_INFO_RQKEY_ROOT` so
+ * callers (e.g. list mutations) can invalidate every feed-info query at once,
+ * matching the upstream name.
+ */
+export const FEED_INFO_RQKEY_ROOT = 'feedInfo'
+const feedInfoQueryKeyRoot = FEED_INFO_RQKEY_ROOT
 
 export function useFeedInfo(feedUri: string | undefined) {
   const client = useAppviewClient()

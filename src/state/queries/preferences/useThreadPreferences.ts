@@ -73,7 +73,7 @@ export function useThreadPreferences({
 
   const userUpdatedPrefs = useRef(false)
   const [isSaving, setIsSaving] = useState(false)
-  const {mutateAsync} = useSetThreadViewPreferencesMutation()
+  const {mutateAsync} = useSetThreadViewPreferencesMutation({})
   const savePrefs = useMemo(() => {
     return debounce(
       async (prefs: ThreadViewPreferences) => {

@@ -1,5 +1,4 @@
 module.exports = function (api) {
-  api.cache(true)
   return {
     presets: [
       [
@@ -39,6 +38,8 @@ module.exports = function (api) {
           alias: {
             // This needs to be mirrored in tsconfig.json
             crypto: './src/platform/crypto.ts',
+            // `expo-age-range` has no Expo SDK 54 build; stand-in until Expo 56+.
+            'expo-age-range': './src/lib/shims/expo-age-range.ts',
             '#': './src',
           },
         },
@@ -50,7 +51,13 @@ module.exports = function (api) {
         plugins: ['transform-remove-console'],
       },
       test: {
-        plugins: ['@babel/plugin-transform-class-static-block'],
+        plugins: [
+          '@babel/plugin-transform-class-static-block',
+          // Compile `import()` to require so jest (which runs without
+          // `--experimental-vm-modules`) can execute lazily-loaded modules
+          // like `@ipld/dag-cbor` via its moduleNameMapper.
+          '@babel/plugin-transform-dynamic-import',
+        ],
       },
     },
   }

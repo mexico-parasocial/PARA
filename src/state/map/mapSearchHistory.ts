@@ -3,7 +3,7 @@
  * Only search results are persisted (max 5). All other map state
  * (active layer, discourse filter, zoom, viewport) is intentionally ephemeral.
  */
-import {MMKV} from '@bsky.app/react-native-mmkv'
+import {MMKV} from 'react-native-mmkv'
 
 import {type SearchResult} from '#/lib/constants/mapHelpers'
 

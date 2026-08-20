@@ -5,7 +5,7 @@
  * alias and drag RN core into the web bundle, where its platform-extension
  * modules (e.g. Libraries/Utilities/Platform.js) resolve to themselves and
  * throw a TDZ error at startup. Packages that import codegen specs
- * unconditionally (react-native-uitextview) guard the native component behind
+ * unconditionally (@bsky.app/react-native-uitextview) guard the native component behind
  * a `Platform.OS === 'ios'` check, so nothing ever renders this on web.
  */
 module.exports = function codegenNativeComponent(componentName) {

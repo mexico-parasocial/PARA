@@ -6,7 +6,7 @@ import {type AppBskyEmbedImages} from '@atproto/api'
 import {atoms as a, useBreakpoints} from '#/alf'
 import {type Dimensions} from '#/components/Lightbox/types'
 import {PostEmbedViewContext} from '#/components/Post/Embed/types'
-import {GalleryItem} from './Gallery'
+import {GalleryItem} from './ImageLayoutGridItem'
 
 interface ImageLayoutGridProps {
   images: AppBskyEmbedImages.ViewImage[]

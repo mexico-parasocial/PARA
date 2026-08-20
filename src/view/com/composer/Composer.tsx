@@ -209,7 +209,7 @@ import {
   composerReducer,
   createComposerState,
   type EmbedDraft,
-  MAX_IMAGES,
+  MAX_GALLERY_IMAGES,
   type PostAction,
   type PostDraft,
   type ThreadDraft,
@@ -2595,7 +2595,7 @@ function ComposerFooter({
   const media = post.embed.media
   const images = media?.type === 'images' ? media.images : []
   const video = media?.type === 'video' ? media.video : null
-  const isMaxImages = images.length >= MAX_IMAGES
+  const isMaxImages = images.length >= MAX_GALLERY_IMAGES
   const isMaxVideos = !!video
 
   let selectedAssetsCount = 0

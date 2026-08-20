@@ -10,6 +10,10 @@ Pod::Spec.new do |s|
   s.static_framework = true
 
   s.dependency 'ExpoModulesCore'
+  # RN 0.81: RCTSurfaceTouchHandler lives in the React-RCTFabric module, which
+  # is not visible through ExpoModulesCore alone on this version. Upstream is on
+  # RN 0.86 where it resolves implicitly; drop this when we catch up.
+  s.dependency 'React-RCTFabric'
 
   # Swift/Objective-C compatibility
   s.pod_target_xcconfig = {

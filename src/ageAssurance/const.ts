@@ -4,6 +4,7 @@ import {
 } from '@atproto/api'
 
 import {AgeAssuranceAccess} from '#/ageAssurance/types'
+import {DEVICE_SIGNALS_MODULE_AVAILABLE} from '#/lib/shims/expo-age-range'
 import {
   ANDROID_API_LEVEL,
   IOS_MAJOR_VERSION,
@@ -26,6 +27,29 @@ export const AGE_ASSURANCE_PLATFORM: 'web' | 'ios' | 'android' = IS_WEB
   : IS_IOS
     ? 'ios'
     : 'android'
+
+/**
+ * Whether the current device can provide the native on-device age signals we
+ * use for age assurance (via `expo-age-range`). We gate on OS version because
+ * the underlying platform APIs are only available on:
+ *
+ * - iOS 26.0+ (Declared Age Range API)
+ *   https://developer.apple.com/documentation/declaredagerange/
+ * - Android 6.0 / API level 23+ (Play Age Signals API)
+ *   https://developer.android.com/google/play/age-signals/use-age-signals-api
+ *
+ * On unsupported platforms/versions (including web) this is `false`, so we skip
+ * the device flow and fall back to KWS.
+ *
+ * NOTE: additionally gated on DEVICE_SIGNALS_MODULE_AVAILABLE. `expo-age-range`
+ * has no Expo SDK 54 build, so it is currently a local shim (see
+ * `#/lib/shims/expo-age-range`) and this is always `false`. Drop that term when
+ * the app moves to Expo 56+ and the real package is installed.
+ */
+export const DEVICE_SIGNALS_SUPPORTED: boolean =
+  DEVICE_SIGNALS_MODULE_AVAILABLE &&
+  ((IS_IOS && IOS_MAJOR_VERSION >= 26) ||
+    (IS_ANDROID && ANDROID_API_LEVEL >= 23))
 
 export const FALLBACK_REGION_CONFIG: AppBskyAgeassuranceDefs.ConfigRegion = {
   countryCode: '*',

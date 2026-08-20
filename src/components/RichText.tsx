@@ -34,9 +34,15 @@ function isPARATag(tagStr: string) {
   })
 }
 
+/**
+ * Structural shape of a legacy `@atproto/api` RichText, which is not
+ * `instanceof` the SDK class. See the unwrap in {@link RichText}.
+ */
+type LegacyRichTextLike = {text: string; facets?: unknown[]}
+
 export type RichTextProps = TextStyleProp &
   Pick<TextProps, 'selectable' | 'onLayout' | 'onTextLayout'> & {
-    value: RichTextAPI | string
+    value: RichTextAPI | LegacyRichTextLike | string
     testID?: string
     numberOfLines?: number
     disableLinks?: boolean
@@ -78,11 +84,27 @@ export function RichText({
   const richText = useMemo(() => {
     if (value instanceof RichTextAPI) {
       return value
-    } else {
-      const rt = new RichTextAPI({text: value})
-      rt.detectFacetsWithoutResolution()
-      return rt
     }
+    /*
+     * The app is mid-migration to `@bsky.app/sdk`, and many call sites still
+     * hold a `RichText` from `@atproto/api`. Those are a different class, so
+     * the `instanceof` above misses them - passing one straight through as
+     * `text` would nest the object inside `UnicodeString`, and every later
+     * `.replace()` on `richText.text` would throw. Rebuild from its already
+     * resolved text/facets instead (the facet JSON shape is identical), and
+     * skip detection so server-resolved mentions survive.
+     *
+     * Remove this branch once nothing imports `RichText` from `@atproto/api`.
+     */
+    if (typeof value !== 'string') {
+      return new RichTextAPI({
+        text: value.text,
+        facets: value.facets as RichTextAPI['facets'],
+      })
+    }
+    const rt = new RichTextAPI({text: value})
+    rt.detectFacetsWithoutResolution()
+    return rt
   }, [value])
 
   const plainStyles = style
@@ -211,7 +233,7 @@ export function RichText({
       const nextTag = nextSegment?.tag
       if (
         nextTag &&
-        AppBskyRichtextFacet.validateTag(nextTag).success &&
+        bsky.matches(app.bsky.richtext.facet.tag, nextTag) &&
         isPARATag(nextTag.tag)
       ) {
         display = display.replace(/(?:\s*\|\|?\s*)$/g, '')

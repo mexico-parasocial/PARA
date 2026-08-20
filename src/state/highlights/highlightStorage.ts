@@ -1,7 +1,7 @@
 /**
  * MMKV-based storage for highlights
  */
-import {MMKV} from '@bsky.app/react-native-mmkv'
+import {MMKV} from 'react-native-mmkv'
 import {nanoid} from 'nanoid/non-secure'
 
 import {type HighlightData} from './highlightTypes'
