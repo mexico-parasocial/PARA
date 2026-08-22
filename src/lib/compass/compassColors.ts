@@ -62,6 +62,26 @@ export const COMPASS_LABEL_COLORS: Record<CompassPositionId, string> = {
 /**
  * 3 × 3 row/column grid order — use this when rendering any compass grid UI.
  */
+/**
+ * Human-readable name for each of the 9 positions — the "ninth" (nonant) names
+ * the RAQ reports back to users, so anything user-facing says the same words
+ * the quiz did. Note the centre column is "Econocenter", not "Center".
+ *
+ * Keyed by position id so it stays in lockstep with the colors above; the
+ * name-keyed {@link NINTH_NAME_TO_COMPASS_COLOR} is the inverse view of this.
+ */
+export const COMPASS_POSITION_NAMES: Record<CompassPositionId, string> = {
+  'auth-left': 'Auth Left',
+  'auth-center': 'Auth Econocenter',
+  'auth-right': 'Auth Right',
+  'center-left': 'Center Left',
+  center: 'Center Econocenter',
+  'center-right': 'Center Right',
+  'lib-left': 'Lib Left',
+  'lib-center': 'Lib Econocenter',
+  'lib-right': 'Lib Right',
+}
+
 export const COMPASS_GRID_ROWS: CompassPositionId[][] = [
   ['auth-left', 'auth-center', 'auth-right'],
   ['center-left', 'center', 'center-right'],

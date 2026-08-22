@@ -4,7 +4,7 @@ import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
-import {CIVIC_TREE_LABELS} from '#/lib/civic-tree-labels'
+import {CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
 import {
   useAddToCollectionMutation,
   useCollectionsQuery,

@@ -4,7 +4,7 @@ import {Trans} from '@lingui/react/macro'
 import {type CommunityPulse} from '#/state/queries/community-civic-tree'
 import {useTheme} from '#/alf'
 import {Text} from '#/components/Typography'
-import {CARD_TYPE_COLORS, STANCE_COLORS} from '../deliberation-colors'
+import {CARD_TYPE_COLORS, STANCE_COLORS} from '#/features/civicTree/colors'
 
 interface CommunityPulseSheetProps {
   pulse: CommunityPulse | null

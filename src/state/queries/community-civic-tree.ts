@@ -1,26 +1,23 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
-import {CIVIC_TREE_SOURCE_TYPES} from '#/lib/civic-tree-source-types'
+import {CIVIC_TREE_SOURCE_TYPES} from '#/features/civicTree/sourceTypes'
 import {useAgent} from '#/state/session'
 import {
   type GraphData,
   type GraphEdge,
   type GraphNode,
   type Stance,
-} from '#/screens/Data/deliberation-types'
+} from '#/features/civicTree/types'
 
 export type {GraphData, GraphEdge, GraphNode, Stance}
 
 export type CommunityCivicTreeCardType = string
 
 export type CommunityCivicTreeContributionStatus =
-  | 'pending'
-  | 'approved'
-  | 'rejected'
+  'pending' | 'approved' | 'rejected'
 export type CommunityCivicTreeContributionVote = 'approve' | 'reject'
 export type CommunityCivicTreeGovernanceMode =
-  | 'votes_sortition'
-  | 'moderator_gate'
+  'votes_sortition' | 'moderator_gate'
 
 export interface CommunityCivicTreeCard {
   id: string
@@ -179,7 +176,14 @@ export interface CreateRelationshipInput {
   authorDid: string
 }
 
+/*
+ * `topic` leads because it is the only type that is a subject rather than an
+ * artifact or a speech act. A claim asserts and a question asks; a topic is
+ * what they are about, and is what lets a community's contributions converge
+ * instead of piling up as a flat mesh.
+ */
 export const COMMUNITY_CIVIC_TREE_CARD_TYPES = [
+  {value: 'topic', label: 'Topic', icon: 'T'},
   ...CIVIC_TREE_SOURCE_TYPES,
   {value: 'event', label: 'Event', icon: 'E'},
   {value: 'claim', label: 'Claim', icon: 'C'},
@@ -242,7 +246,13 @@ export function getCommunityCivicTreeContributionsQueryKey(
   status: CommunityCivicTreeContributionStatus,
   viewerDid?: string,
 ) {
-  return ['community-civic-tree', 'contributions', communityUri, status, viewerDid] as const
+  return [
+    'community-civic-tree',
+    'contributions',
+    communityUri,
+    status,
+    viewerDid,
+  ] as const
 }
 
 export function getCommunityCivicTreeSummaryQueryKey(
@@ -262,30 +272,26 @@ export function normalizeCommunityCivicTreeGraph(
   graph: CommunityCivicTreeGraph,
 ): GraphData {
   return {
-    nodes: graph.nodes.map(
-      (node): GraphNode => ({
-        id: node.id,
-        title: node.title,
-        card_type: node.card_type,
-        author_did: node.author_did,
-        community_uri: node.community_uri,
-        influence: node.influence ?? 0,
-        vote_count: node.vote_count ?? 0,
-        stance: node.stance,
-        compass_quadrant: node.compass_quadrant,
-        content: node.content,
-        source_url: node.source_url,
-        metadata: node.metadata,
-      }),
-    ),
-    edges: graph.edges.map(
-      (edge): GraphEdge => ({
-        id: edge.id,
-        source: edge.source_card_id,
-        target: edge.target_card_id,
-        relationship_type: edge.relationship_type,
-      }),
-    ),
+    nodes: graph.nodes.map((node): GraphNode => ({
+      id: node.id,
+      title: node.title,
+      card_type: node.card_type,
+      author_did: node.author_did,
+      community_uri: node.community_uri,
+      influence: node.influence ?? 0,
+      vote_count: node.vote_count ?? 0,
+      stance: node.stance,
+      compass_quadrant: node.compass_quadrant,
+      content: node.content,
+      source_url: node.source_url,
+      metadata: node.metadata,
+    })),
+    edges: graph.edges.map((edge): GraphEdge => ({
+      id: edge.id,
+      source: edge.source_card_id,
+      target: edge.target_card_id,
+      relationship_type: edge.relationship_type,
+    })),
   }
 }
 
@@ -410,14 +416,20 @@ export function useVoteCommunityTreeContributionMutation() {
     },
     onSuccess: (data, variables) => {
       void queryClient.invalidateQueries({
-        queryKey: ['community-civic-tree', 'contributions', variables.communityUri],
+        queryKey: [
+          'community-civic-tree',
+          'contributions',
+          variables.communityUri,
+        ],
       })
       if (didContributionBecomeApproved(data.contribution)) {
         void queryClient.invalidateQueries({
           queryKey: getCommunityCivicTreeGraphQueryKey(variables.communityUri),
         })
         void queryClient.invalidateQueries({
-          queryKey: getCommunityCivicTreeSummaryQueryKey(variables.communityUri),
+          queryKey: getCommunityCivicTreeSummaryQueryKey(
+            variables.communityUri,
+          ),
         })
         void queryClient.invalidateQueries({
           queryKey: getCommunityCivicTreePulseQueryKey(variables.communityUri),
@@ -430,7 +442,11 @@ export function useVoteCommunityTreeContributionMutation() {
 export function useCreateCommunityCivicTreeRelationshipMutation() {
   const queryClient = useQueryClient()
   const agent = useAgent()
-  return useMutation<{relationship: CommunityCivicTreeRelationship}, Error, CreateRelationshipInput>({
+  return useMutation<
+    {relationship: CommunityCivicTreeRelationship},
+    Error,
+    CreateRelationshipInput
+  >({
     mutationFn: async input => {
       const res = await agent.call(
         'com.para.community.civicTree.createRelationship',
@@ -496,7 +512,12 @@ export function useCastCommunityCivicTreeVoteMutation() {
     },
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({
-        queryKey: ['community-civic-tree', 'card-vote', variables.cardId, variables.voterDid],
+        queryKey: [
+          'community-civic-tree',
+          'card-vote',
+          variables.cardId,
+          variables.voterDid,
+        ],
       })
       if (variables.communityUri) {
         void queryClient.invalidateQueries({
@@ -506,7 +527,9 @@ export function useCastCommunityCivicTreeVoteMutation() {
           queryKey: getCommunityCivicTreePulseQueryKey(variables.communityUri),
         })
         void queryClient.invalidateQueries({
-          queryKey: getCommunityCivicTreeSummaryQueryKey(variables.communityUri),
+          queryKey: getCommunityCivicTreeSummaryQueryKey(
+            variables.communityUri,
+          ),
         })
       } else {
         void queryClient.invalidateQueries({queryKey: ['community-civic-tree']})
@@ -568,7 +591,9 @@ export function useCommunityCivicTreeSuggestionsQuery(
         'com.para.community.civicTree.listSuggestions',
         {community: communityUri, status: 'pending'},
       )
-      return (res.data as {suggestions?: SuggestedRelationship[]}).suggestions ?? []
+      return (
+        (res.data as {suggestions?: SuggestedRelationship[]}).suggestions ?? []
+      )
     },
     enabled: !!communityUri,
     staleTime: 1000 * 60 * 2,
@@ -578,7 +603,11 @@ export function useCommunityCivicTreeSuggestionsQuery(
 export function useAcceptCommunityCivicTreeSuggestionMutation() {
   const queryClient = useQueryClient()
   const agent = useAgent()
-  return useMutation<void, Error, {id: string; communityUri?: string; authorDid: string}>({
+  return useMutation<
+    void,
+    Error,
+    {id: string; communityUri?: string; authorDid: string}
+  >({
     mutationFn: async input => {
       await agent.call(
         'com.para.community.civicTree.acceptSuggestion',
@@ -588,7 +617,11 @@ export function useAcceptCommunityCivicTreeSuggestionMutation() {
     },
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({
-        queryKey: ['community-civic-tree', 'suggestions', variables.communityUri],
+        queryKey: [
+          'community-civic-tree',
+          'suggestions',
+          variables.communityUri,
+        ],
       })
       if (variables.communityUri) {
         void queryClient.invalidateQueries({
@@ -612,7 +645,11 @@ export function useRejectCommunityCivicTreeSuggestionMutation() {
     },
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({
-        queryKey: ['community-civic-tree', 'suggestions', variables.communityUri],
+        queryKey: [
+          'community-civic-tree',
+          'suggestions',
+          variables.communityUri,
+        ],
       })
     },
   })

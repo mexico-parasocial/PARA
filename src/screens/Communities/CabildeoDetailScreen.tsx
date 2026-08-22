@@ -770,9 +770,6 @@ export function CabildeoDetailScreen({route}: Props) {
           <Layout.Header.TitleText>
             <Trans>Lobbying</Trans>
           </Layout.Header.TitleText>
-          <Layout.Header.SubtitleText>
-            {phase.icon} {phase.label}
-          </Layout.Header.SubtitleText>
         </Layout.Header.Content>
       </Layout.Header.Outer>
 

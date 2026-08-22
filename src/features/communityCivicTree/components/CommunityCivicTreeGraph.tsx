@@ -19,9 +19,9 @@ import {
   CARD_TYPE_COLORS,
   RELATIONSHIP_COLORS,
   STANCE_COLORS,
-} from '../deliberation-colors'
-import {type GraphData} from '../deliberation-types'
-import {useForceSimulation} from './useForceSimulation'
+} from '#/features/civicTree/colors'
+import {type GraphData} from '#/features/civicTree/types'
+import {useForceSimulation} from '#/screens/Data/components/useForceSimulation'
 
 interface CommunityCivicTreeGraphProps {
   data: GraphData

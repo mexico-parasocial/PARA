@@ -24,6 +24,14 @@ import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import * as SegmentedControl from '#/components/forms/SegmentedControl'
 import * as Layout from '#/components/Layout'
+import {
+  COMPASS_COLORS,
+  COMPASS_GRID_ROWS,
+  COMPASS_POSITION_NAMES,
+  type CompassPositionId,
+} from '#/lib/compass/compassColors'
+import {ChevronBottom_Stroke2_Corner0_Rounded as ChevronDownIcon} from '#/components/icons/Chevron'
+import * as Menu from '#/components/Menu'
 import {useAnalytics} from '#/analytics'
 
 export function CreateCommunityScreen() {
@@ -73,6 +81,7 @@ export function CreateCommunityScreen() {
   })
 
   const canCreateCommunity = boardsData?.canCreateCommunity ?? true
+
   const createdBoard = createdBoardData?.board
   const currentError = useMemo(() => {
     return createMutation.error || hydrationError || null
@@ -300,14 +309,10 @@ export function CreateCommunityScreen() {
                   placeholder="Nuevo León Water Table"
                   description="Use the public name people will recognize when they receive the draft invite."
                 />
-                <Field
+                <NonantPicker
                   theme={t}
-                  label="Nonant"
                   value={quadrant}
-                  onChangeText={setQuadrant}
-                  placeholder="noreste-agua"
-                  autoCapitalize="none"
-                  description="Pick the territorial nonant this community belongs to. The backend still stores this in the existing community field."
+                  onChange={setQuadrant}
                 />
                 <Field
                   theme={t}
@@ -623,6 +628,102 @@ export function CreateCommunityScreen() {
         </Layout.Center>
       </ScrollView>
     </Layout.Screen>
+  )
+}
+
+/**
+ * Nonant selector — the community's position on the political compass.
+ *
+ * A dropdown on web, a bottom sheet on native: the same `Menu` used elsewhere
+ * in the app, with the trigger styled as a form control so it sits flush with
+ * the surrounding fields.
+ *
+ * The nine positions, their order and their colors all come from
+ * `#/lib/compass/compassColors` — per CLAUDE.md that file is the single source
+ * of truth, so nothing here restates an id, a name or a hex value. Items are
+ * listed in `COMPASS_GRID_ROWS` order (auth → centre → lib) rather than
+ * alphabetically, so the menu reads in the same order as the compass itself.
+ */
+function NonantPicker({
+  theme,
+  value,
+  onChange,
+}: {
+  theme: ReturnType<typeof useTheme>
+  value: string
+  onChange: (next: CompassPositionId) => void
+}) {
+  const selected = COMPASS_GRID_ROWS.flat().find(id => id === value)
+
+  return (
+    <View style={styles.field}>
+      <Text style={[styles.fieldLabel, theme.atoms.text]}>Nonant</Text>
+      <Text style={[styles.fieldDescription, theme.atoms.text_contrast_medium]}>
+        The compass position this community organizes around.
+      </Text>
+
+      <Menu.Root>
+        <Menu.Trigger label="Select a nonant">
+          {({props: menuProps, state}) => (
+            <TouchableOpacity
+              {...menuProps}
+              activeOpacity={0.7}
+              style={[
+                styles.input,
+                styles.nonantTrigger,
+                {
+                  borderColor: state.focused
+                    ? theme.palette.primary_500
+                    : theme.palette.contrast_100,
+                  backgroundColor: theme.atoms.bg.backgroundColor,
+                },
+              ]}>
+              {selected ? (
+                <View
+                  style={[
+                    styles.nonantSwatch,
+                    {backgroundColor: COMPASS_COLORS[selected]},
+                  ]}
+                />
+              ) : null}
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.nonantValue,
+                  selected
+                    ? theme.atoms.text
+                    : {color: theme.palette.contrast_400},
+                ]}>
+                {selected ? COMPASS_POSITION_NAMES[selected] : 'Select a nonant'}
+              </Text>
+              <ChevronDownIcon size="sm" fill={theme.palette.contrast_500} />
+            </TouchableOpacity>
+          )}
+        </Menu.Trigger>
+
+        <Menu.Outer>
+          {COMPASS_GRID_ROWS.map((row, rowIndex) => (
+            <Menu.Group key={rowIndex}>
+              {row.map(id => (
+                <Menu.Item
+                  key={id}
+                  label={COMPASS_POSITION_NAMES[id]}
+                  onPress={() => onChange(id)}>
+                  <View
+                    style={[
+                      styles.nonantSwatch,
+                      {backgroundColor: COMPASS_COLORS[id]},
+                    ]}
+                  />
+                  <Menu.ItemText>{COMPASS_POSITION_NAMES[id]}</Menu.ItemText>
+                  <Menu.ItemRadio selected={value === id} />
+                </Menu.Item>
+              ))}
+            </Menu.Group>
+          ))}
+        </Menu.Outer>
+      </Menu.Root>
+    </View>
   )
 }
 
@@ -970,6 +1071,21 @@ const styles = StyleSheet.create({
   inputMultiline: {
     minHeight: 112,
     textAlignVertical: 'top',
+  },
+  nonantTrigger: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  nonantValue: {
+    flex: 1,
+    fontSize: 15,
+  },
+  nonantSwatch: {
+    width: 18,
+    height: 18,
+    borderRadius: 5,
   },
   primaryButton: {
     minHeight: 52,

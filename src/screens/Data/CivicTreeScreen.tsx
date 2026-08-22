@@ -13,10 +13,11 @@ import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {buildPersonalCivicTreeVaultManifest} from '#/lib/civic-export/obsidian'
-import {CIVIC_TREE_LABELS} from '#/lib/civic-tree-labels'
+import {CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
   getCivicTreeItemKey,
+  type CivicTreeItem,
   useCollectionsQuery,
   useCreateCollectionMutation,
   useDeleteCollectionMutation,
@@ -24,9 +25,15 @@ import {
 import {useSession} from '#/state/session'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
-import {AddTreeItemDialog} from '#/components/AddTreeItemDialog'
+import {AddTreeItemDialog} from '#/features/personalCivicTree/components/AddTreeItemDialog'
 import * as Dialog from '#/components/Dialog'
 import {GraphCanvas} from '#/components/graph/GraphCanvas'
+import {
+  PersonalTreeLegend,
+  PersonalTreeUnconnectedNotice,
+} from '#/features/personalCivicTree/components/PersonalTreeLegend'
+import {PersonalTreeNodeSheet} from '#/features/personalCivicTree/components/PersonalTreeNodeSheet'
+import {buildPersonalTreeGraph} from '#/features/personalCivicTree/graph'
 import {Bookmark as BookmarkIcon} from '#/components/icons/Bookmark'
 import {BulletList_Stroke2_Corner0_Rounded as ListIcon} from '#/components/icons/BulletList'
 import {DotGrid_Stroke2_Corner0_Rounded as GridIcon} from '#/components/icons/DotGrid'
@@ -46,7 +53,9 @@ type ViewMode = 'list' | 'graph'
 export function CivicTreeScreen() {
   const {_} = useLingui()
   const deletePrompt = Prompt.usePromptControl()
-  const [collectionToDelete, setCollectionToDelete] = useState<string | null>(null)
+  const [collectionToDelete, setCollectionToDelete] = useState<string | null>(
+    null,
+  )
   const deleteMutation = useDeleteCollectionMutation()
 
   const requestDelete = useCallback(
@@ -79,7 +88,9 @@ export function CivicTreeScreen() {
       <Prompt.Basic
         control={deletePrompt}
         title={_(msg`Delete collection?`)}
-        description={_(msg`This will permanently delete the collection and all its items.`)}
+        description={_(
+          msg`This will permanently delete the collection and all its items.`,
+        )}
         onConfirm={onConfirmDelete}
         confirmButtonCta={_(msg`Delete`)}
         confirmButtonColor="negative"
@@ -89,7 +100,11 @@ export function CivicTreeScreen() {
   )
 }
 
-function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => void}) {
+function CivicTreeInner({
+  onRequestDelete,
+}: {
+  onRequestDelete: (id: string) => void
+}) {
   const {_} = useLingui()
   const navigation = useNavigation<NavigationProp>()
   const t = useTheme()
@@ -129,8 +144,30 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
     )
   }, [newName, newDescription, createMutation, _])
 
-  const selectedCollection =
-    collections.find(c => c.id === selectedNodeId) || collections[0]
+  /*
+   * v1 drew collections as the nodes and synthesised an edge whenever two of
+   * them shared an item, which pictured the folders while hiding their
+   * contents. The graph is now built from the items themselves and from the
+   * relations the user actually authored - see personal-tree-graph.ts.
+   */
+  const graph = useMemo(
+    () => buildPersonalTreeGraph(collections),
+    [collections],
+  )
+
+  /*
+   * selectedNodeId identifies an item node, not a collection, so the add-item
+   * dialog resolves its target through the selected node's collection and
+   * falls back to the first collection when nothing is selected.
+   */
+  const selectedCollection = useMemo(() => {
+    const node = graph.nodes.find(n => n.id === selectedNodeId)
+    if (node) {
+      const owner = collections.find(c => c.id === node.metadata.collectionId)
+      if (owner) return owner
+    }
+    return collections[0]
+  }, [collections, graph.nodes, selectedNodeId])
 
   const onPressAddItem = useCallback(() => {
     if (collections.length === 0) {
@@ -138,15 +175,21 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
       setShowCreate(true)
       return
     }
-    if (!selectedNodeId) {
-      setSelectedNodeId(collections[0].id)
+    addItemControl.open()
+  }, [addItemControl, collections])
+
+  /*
+   * Adds into the selected collection, or the first one. With no collection at
+   * all there is nowhere to put a node, so fall back to creating one.
+   */
+  const onBrowsePolicies = useCallback(() => {
+    if (collections.length === 0) {
+      setViewMode('list')
+      setShowCreate(true)
+      return
     }
     addItemControl.open()
-  }, [addItemControl, collections, selectedNodeId])
-
-  const onBrowsePolicies = useCallback(() => {
-    navigation.navigate('Agora')
-  }, [navigation])
+  }, [collections.length, addItemControl])
 
   const onExportObsidianVault = useCallback(() => {
     const manifest = buildPersonalCivicTreeVaultManifest(collections)
@@ -161,49 +204,16 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
       })
   }, [collections, _])
 
-  // Build graph data from collections
-  const graphNodes = useMemo(() => {
-    return collections.map(c => ({
-      id: c.id,
-      title: c.name,
-      color: t.palette.primary_500,
-      borderColor: t.palette.contrast_200,
-      radius: 12 + Math.min(c.items.length * 0.5, 8),
-      group: 'collection',
-    }))
-  }, [collections, t.palette.contrast_200, t.palette.primary_500])
+  const [activeGroups, setActiveGroups] = useState<Set<string>>(() => new Set())
 
-  const graphEdges = useMemo(() => {
-    // Connect collections that share saved items.
-    const edges: {id: string; source: string; target: string; color?: string}[] = []
-    const itemToCollections = new Map<string, string[]>()
-    
-    for (const c of collections) {
-      for (const item of c.items) {
-        const itemKey = getCivicTreeItemKey(item)
-        const existing = itemToCollections.get(itemKey) || []
-        itemToCollections.set(itemKey, [...existing, c.id])
-      }
-    }
-    
-    let edgeId = 0
-    for (const [, collectionIds] of itemToCollections) {
-      if (collectionIds.length > 1) {
-        for (let i = 0; i < collectionIds.length - 1; i++) {
-          for (let j = i + 1; j < collectionIds.length; j++) {
-            edges.push({
-              id: `edge-${edgeId++}`,
-              source: collectionIds[i],
-              target: collectionIds[j],
-              color: '#94a3b8',
-            })
-          }
-        }
-      }
-    }
-    
-    return edges
-  }, [collections])
+  const toggleGroup = useCallback((groupId: string) => {
+    setActiveGroups(prev => {
+      const next = new Set(prev)
+      if (next.has(groupId)) next.delete(groupId)
+      else next.add(groupId)
+      return next
+    })
+  }, [])
 
   if (!myDid) {
     return (
@@ -248,12 +258,16 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
             <TouchableOpacity
               accessibilityRole="button"
               accessibilityLabel={_(msg`Toggle graph view`)}
-              accessibilityHint={_(msg`Shows collections in an interactive tree format`)}
+              accessibilityHint={_(
+                msg`Shows collections in an interactive tree format`,
+              )}
               accessibilityState={{selected: viewMode === 'graph'}}
               onPress={() => setViewMode('graph')}
               style={[
                 styles.modeBtn,
-                viewMode === 'graph' && {backgroundColor: t.palette.primary_500},
+                viewMode === 'graph' && {
+                  backgroundColor: t.palette.primary_500,
+                },
               ]}>
               <GridIcon
                 size="sm"
@@ -290,13 +304,18 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
                     styles.exportHubSubtitle,
                     t.atoms.text_contrast_medium,
                   ]}>
-                  <Trans>Copy an Obsidian-ready vault manifest for your personal civic tree.</Trans>
+                  <Trans>
+                    Copy an Obsidian-ready vault manifest for your personal
+                    civic tree.
+                  </Trans>
                 </Text>
               </View>
               <TouchableOpacity
                 accessibilityRole="button"
                 accessibilityLabel={_(msg`Export to Obsidian`)}
-                accessibilityHint={_(msg`Copies an Obsidian-ready vault manifest for your civic tree`)}
+                accessibilityHint={_(
+                  msg`Copies an Obsidian-ready vault manifest for your civic tree`,
+                )}
                 onPress={onExportObsidianVault}
                 style={[
                   styles.exportHubButton,
@@ -307,16 +326,21 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
             </View>
             <View style={styles.searchBar}>
               <TextInput
-                accessibilityLabel={_(msg`Search collections`)}
-                accessibilityHint={_(msg`Filters the civic tree collections by name`)}
+                accessibilityLabel={_(msg`Search items`)}
+                accessibilityHint={_(
+                  msg`Filters the items in your civic tree by title`,
+                )}
                 value={searchQuery}
                 onChangeText={setSearchQuery}
-                placeholder={_(msg`Search collections...`)}
+                placeholder={_(msg`Search items...`)}
                 placeholderTextColor={t.palette.contrast_400}
                 style={[
                   styles.searchInput,
                   t.atoms.text,
-                  {borderColor: t.palette.contrast_100, backgroundColor: t.palette.contrast_25},
+                  {
+                    borderColor: t.palette.contrast_100,
+                    backgroundColor: t.palette.contrast_25,
+                  },
                 ]}
               />
               {searchQuery.length > 0 && (
@@ -326,29 +350,54 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
                   accessibilityHint={_(msg`Clears the current search query`)}
                   onPress={() => setSearchQuery('')}
                   style={styles.clearSearchBtn}>
-                  <Text style={{color: t.palette.contrast_500, fontSize: 16}}>✕</Text>
+                  <Text style={{color: t.palette.contrast_500, fontSize: 16}}>
+                    ✕
+                  </Text>
                 </TouchableOpacity>
               )}
             </View>
-            {graphNodes.length === 0 ? (
+            {graph.nodes.length === 0 ? (
               <EmptyTreeCanvas
                 onAddItem={onPressAddItem}
                 onBrowsePolicies={onBrowsePolicies}
               />
             ) : (
-              <GraphCanvas
-                nodes={graphNodes}
-                edges={graphEdges}
-                onNodePress={(nodeId) => {
-                  setSelectedNodeId(nodeId)
-                  navigation.navigate('CollectionDetail', {collectionId: nodeId})
-                }}
-                selectedNodeId={selectedNodeId}
-                searchQuery={searchQuery}
-                emptyTitle={_(msg`Your personal civic tree is empty`)}
-                emptySubtitle={_(msg`Create collections to organize policies, topics, evidence, links, and notes under your own control.`)}
-                simulationConfig={{groupGravity: 300, springLength: 150}}
-              />
+              <>
+                <PersonalTreeLegend
+                  graph={graph}
+                  activeGroups={activeGroups}
+                  onToggleGroup={toggleGroup}
+                />
+                <PersonalTreeUnconnectedNotice
+                  count={graph.unconnectedCount}
+                  total={graph.totalItems}
+                />
+                {selectedNodeId ? (
+                  <PersonalTreeNodeSheet
+                    graph={graph}
+                    nodeId={selectedNodeId}
+                    onClose={() => setSelectedNodeId(undefined)}
+                    onOpenCollection={collectionId =>
+                      navigation.navigate('CollectionDetail', {collectionId})
+                    }
+                  />
+                ) : null}
+                <GraphCanvas
+                  nodes={graph.nodes}
+                  edges={graph.edges}
+                  activeGroups={
+                    activeGroups.size > 0 ? activeGroups : undefined
+                  }
+                  onNodePress={nodeId => setSelectedNodeId(nodeId)}
+                  selectedNodeId={selectedNodeId}
+                  searchQuery={searchQuery}
+                  emptyTitle={_(msg`Nothing matches that search`)}
+                  emptySubtitle={_(
+                    msg`Try another term, or clear the collection filters above.`,
+                  )}
+                  simulationConfig={{groupGravity: 220, springLength: 110}}
+                />
+              </>
             )}
           </View>
         ) : (
@@ -364,7 +413,10 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
                 </Text>
                 <Text
                   style={[styles.emptySubtitle, t.atoms.text_contrast_medium]}>
-                  <Trans>Create collections to organize policies, topics, evidence, links, and notes under your own control.</Trans>
+                  <Trans>
+                    Create collections to organize policies, topics, evidence,
+                    links, and notes under your own control.
+                  </Trans>
                 </Text>
               </View>
             }
@@ -373,19 +425,21 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
                 <TouchableOpacity
                   accessibilityRole="button"
                   accessibilityLabel={_(msg`Export to Obsidian`)}
-                  accessibilityHint={_(msg`Copies an Obsidian-ready vault manifest for your civic tree`)}
+                  accessibilityHint={_(
+                    msg`Copies an Obsidian-ready vault manifest for your civic tree`,
+                  )}
                   onPress={onExportObsidianVault}
                   style={[
                     styles.addBtn,
                     t.atoms.bg_contrast_25,
                     {borderWidth: 1, borderColor: t.palette.contrast_100},
                   ]}>
-                  <ExportIcon size="md" style={{color: t.palette.primary_500}} />
+                  <ExportIcon
+                    size="md"
+                    style={{color: t.palette.primary_500}}
+                  />
                   <Text
-                    style={[
-                      styles.addBtnText,
-                      {color: t.palette.primary_500},
-                    ]}>
+                    style={[styles.addBtnText, {color: t.palette.primary_500}]}>
                     <Trans>Export to Obsidian</Trans>
                   </Text>
                 </TouchableOpacity>
@@ -400,7 +454,9 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
                       value={newName}
                       onChangeText={setNewName}
                       accessibilityLabel={_(msg`Collection name`)}
-                      accessibilityHint={_(msg`Write the name of the new collection`)}
+                      accessibilityHint={_(
+                        msg`Write the name of the new collection`,
+                      )}
                       placeholder={_(msg`Collection name`)}
                       placeholderTextColor={t.palette.contrast_400}
                       style={[
@@ -413,7 +469,9 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
                       value={newDescription}
                       onChangeText={setNewDescription}
                       accessibilityLabel={_(msg`Collection description`)}
-                      accessibilityHint={_(msg`Describe what this collection is for`)}
+                      accessibilityHint={_(
+                        msg`Describe what this collection is for`,
+                      )}
                       placeholder={_(msg`Description (optional)`)}
                       placeholderTextColor={t.palette.contrast_400}
                       style={[
@@ -428,7 +486,9 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
                       <TouchableOpacity
                         accessibilityRole="button"
                         accessibilityLabel={_(msg`Cancel collection creation`)}
-                        accessibilityHint={_(msg`Closes the new collection form`)}
+                        accessibilityHint={_(
+                          msg`Closes the new collection form`,
+                        )}
                         onPress={() => {
                           setShowCreate(false)
                           setNewName('')
@@ -442,7 +502,9 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
                       <TouchableOpacity
                         accessibilityRole="button"
                         accessibilityLabel={_(msg`Create collection`)}
-                        accessibilityHint={_(msg`Creates a new collection in your personal civic tree`)}
+                        accessibilityHint={_(
+                          msg`Creates a new collection in your personal civic tree`,
+                        )}
                         onPress={onCreate}
                         disabled={!newName.trim() || createMutation.isPending}
                         style={[
@@ -462,15 +524,24 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
                   <TouchableOpacity
                     accessibilityRole="button"
                     accessibilityLabel={_(msg`New collection`)}
-                    accessibilityHint={_(msg`Opens the form to create a collection`)}
+                    accessibilityHint={_(
+                      msg`Opens the form to create a collection`,
+                    )}
                     onPress={() => setShowCreate(true)}
                     style={[
                       styles.addBtn,
                       t.atoms.bg_contrast_25,
                       {borderWidth: 1, borderColor: t.palette.contrast_100},
                     ]}>
-                    <PlusIcon size="md" style={{color: t.palette.primary_500}} />
-                    <Text style={[styles.addBtnText, {color: t.palette.primary_500}]}>
+                    <PlusIcon
+                      size="md"
+                      style={{color: t.palette.primary_500}}
+                    />
+                    <Text
+                      style={[
+                        styles.addBtnText,
+                        {color: t.palette.primary_500},
+                      ]}>
                       <Trans>New collection</Trans>
                     </Text>
                   </TouchableOpacity>
@@ -481,9 +552,13 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
               <TouchableOpacity
                 accessibilityRole="button"
                 accessibilityLabel={_(msg`Open collection ${item.name}`)}
-                accessibilityHint={_(msg`Opens this collection from your personal civic tree`)}
+                accessibilityHint={_(
+                  msg`Opens this collection from your personal civic tree`,
+                )}
                 onPress={() =>
-                  navigation.navigate('CollectionDetail', {collectionId: item.id})
+                  navigation.navigate('CollectionDetail', {
+                    collectionId: item.id,
+                  })
                 }
                 activeOpacity={0.7}
                 style={[
@@ -515,7 +590,8 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
                       {item.description}
                     </Text>
                   ) : null}
-                  <Text style={[styles.collectionCount, t.atoms.text_contrast_low]}>
+                  <Text
+                    style={[styles.collectionCount, t.atoms.text_contrast_low]}>
                     {item.items.length}{' '}
                     {item.items.length === 1 ? 'item' : 'items'}
                   </Text>
@@ -523,18 +599,26 @@ function CivicTreeInner({onRequestDelete}: {onRequestDelete: (id: string) => voi
                 <TouchableOpacity
                   accessibilityRole="button"
                   accessibilityLabel={_(msg`Delete collection ${item.name}`)}
-                  accessibilityHint={_(msg`Opens the confirmation to delete this collection`)}
+                  accessibilityHint={_(
+                    msg`Opens the confirmation to delete this collection`,
+                  )}
                   onPress={() => onRequestDelete(item.id)}
                   hitSlop={12}
                   style={styles.deleteBtn}>
-                  <TrashIcon size="sm" style={{color: t.palette.contrast_400}} />
+                  <TrashIcon
+                    size="sm"
+                    style={{color: t.palette.contrast_400}}
+                  />
                 </TouchableOpacity>
               </TouchableOpacity>
             )}
           />
         )}
       </Layout.Center>
-      <AddTreeItemDialog control={addItemControl} collection={selectedCollection} />
+      <AddTreeItemDialog
+        control={addItemControl}
+        collection={selectedCollection}
+      />
     </Layout.Screen>
   )
 }
@@ -549,18 +633,23 @@ function EmptyTreeCanvas({
   const t = useTheme()
   return (
     <View
-      style={[
-        styles.emptyTreeCanvas,
-        {borderColor: t.palette.contrast_100},
-      ]}>
+      style={[styles.emptyTreeCanvas, {borderColor: t.palette.contrast_100}]}>
       <View style={styles.emptyTreeNode} />
-      <View style={[styles.emptyTreeLine, {backgroundColor: t.palette.contrast_100}]} />
+      <View
+        style={[
+          styles.emptyTreeLine,
+          {backgroundColor: t.palette.contrast_100},
+        ]}
+      />
       <View style={styles.emptyTreeNodeSmall} />
       <Text style={[styles.emptyTitle, t.atoms.text]}>
         <Trans>Your personal civic tree is empty</Trans>
       </Text>
       <Text style={[styles.emptySubtitle, t.atoms.text_contrast_medium]}>
-        <Trans>Add an evidence card or browse policies to start connecting knowledge, votes, and references.</Trans>
+        <Trans>
+          Add an evidence card or browse policies to start connecting knowledge,
+          votes, and references.
+        </Trans>
       </Text>
       <View style={styles.emptyActions}>
         <TouchableOpacity
@@ -568,22 +657,25 @@ function EmptyTreeCanvas({
           accessibilityLabel="Add item"
           accessibilityHint="Starts adding an item to your personal civic tree"
           onPress={onAddItem}
-          style={[styles.primaryAction, {backgroundColor: t.palette.primary_500}]}>
+          style={[
+            styles.primaryAction,
+            {backgroundColor: t.palette.primary_500},
+          ]}>
           <Text style={styles.primaryActionText}>
             <Trans>Add item</Trans>
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           accessibilityRole="button"
-          accessibilityLabel="Browse policies"
-          accessibilityHint="Opens Agora to find policies to save"
+          accessibilityLabel="Add policy or topic"
+          accessibilityHint="Finds a policy or topic to add to your tree"
           onPress={onBrowsePolicies}
           style={[
             styles.secondaryAction,
             {borderColor: t.palette.contrast_100},
           ]}>
           <Text style={[styles.secondaryActionText, t.atoms.text]}>
-            <Trans>Browse policies</Trans>
+            <Trans>Add policy or topic</Trans>
           </Text>
         </TouchableOpacity>
       </View>

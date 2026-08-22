@@ -6,8 +6,8 @@ import {COMMUNITY_CIVIC_TREE_RELATIONSHIP_TYPES} from '#/state/queries/community
 import {useTheme} from '#/alf'
 import {Text} from '#/components/Typography'
 import {VotingButtonHorizontal} from '#/components/VotingButtonHorizontal'
-import {CARD_TYPE_COLORS} from '../deliberation-colors'
-import {type GraphEdge, type GraphNode} from '../deliberation-types'
+import {CARD_TYPE_COLORS} from '#/features/civicTree/colors'
+import {type GraphEdge, type GraphNode} from '#/features/civicTree/types'
 import {computeSuggestedConnections, type SuggestedTarget} from './suggestion-engine'
 
 interface NodeDetail {

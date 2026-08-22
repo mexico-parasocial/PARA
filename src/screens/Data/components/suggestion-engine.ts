@@ -14,7 +14,7 @@
  *  - Relationship gap analysis (what types of edges are missing?)
  */
 
-import {type Stance} from '../deliberation-types'
+import {type Stance} from '#/features/civicTree/types'
 
 // ---------------------------------------------------------------------------
 // Types

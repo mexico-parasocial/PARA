@@ -1,6 +1,11 @@
 export interface CivicTreeItem {
   itemId?: string
-  kind?: 'policy' | 'post' | 'link' | 'note' | 'evidence'
+  /**
+   * What the item is. Every kind except `topic` references an artifact with
+   * a URI or URL; a `topic` names a subject those artifacts are about and has
+   * no target of its own.
+   */
+  kind?: 'policy' | 'post' | 'link' | 'note' | 'evidence' | 'topic'
   title?: string
   description?: string
   url?: string
@@ -11,6 +16,12 @@ export interface CivicTreeItem {
   policyTitle?: string
   policyCategory?: string
   policyColor?: string
+  /**
+   * For a topic drawn from PARA's shared flair vocabulary, the flair id.
+   * Absent on a free-text topic. Two users tagging the same flair produce
+   * the same key, which is what makes personal trees comparable later.
+   */
+  flairId?: string
   note?: string
   addedAt: string
 }
@@ -44,9 +55,21 @@ export function getCivicTreeItemKind(item: CivicTreeItem) {
 }
 
 export function getCivicTreeItemTitle(item: CivicTreeItem) {
-  return item.title || item.policyTitle || item.sourceLabel || item.url || item.policyUri || ''
+  return (
+    item.title ||
+    item.policyTitle ||
+    item.sourceLabel ||
+    item.url ||
+    item.policyUri ||
+    ''
+  )
 }
 
 export function getCivicTreeItemKey(item: CivicTreeItem) {
-  return item.itemId || item.policyUri || item.url || `${getCivicTreeItemTitle(item)}-${item.addedAt}`
+  return (
+    item.itemId ||
+    item.policyUri ||
+    item.url ||
+    `${getCivicTreeItemTitle(item)}-${item.addedAt}`
+  )
 }

@@ -343,6 +343,7 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
   const onPressData = useCallback(() => {
     if (IS_WEB) {
       navigation.navigate('Data')
+      setDrawerOpen(false)
     } else {
       const state = navigation.getState()
       setDrawerOpen(false)
@@ -364,7 +365,13 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
           })
         }
       } else {
-        navigation.navigate('DataTab')
+        /*
+         * The Data tab also hosts drawer destinations that are pushed onto its
+         * stack (Communities, My Base, Civic Tree), so it is often left deep.
+         * Target the Data screen explicitly instead of letting the tab restore
+         * whatever was last open there.
+         */
+        navigation.navigate('DataTab', {screen: 'Data'} as never)
       }
     }
   }, [navigation, setDrawerOpen])

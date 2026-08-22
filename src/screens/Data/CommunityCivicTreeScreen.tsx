@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
-import {Trans} from '@lingui/react/macro'
+import {Trans, useLingui} from '@lingui/react/macro'
 import {useRoute} from '@react-navigation/native'
 
 import {buildCommunityCivicTreeVaultManifest} from '#/lib/civic-export/obsidian'
@@ -42,7 +42,14 @@ import {SearchInput} from '#/components/forms/SearchInput'
 import * as Layout from '#/components/Layout'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
-import {CommunityCivicTreeGraph} from './components/CommunityCivicTreeGraph'
+import {
+  CivicTreeFilterMenu,
+  CivicTreeFilterRow,
+} from '#/features/communityCivicTree/components/CivicTreeFilterMenu'
+import {CommunityHelpWanted} from '#/features/communityCivicTree/components/CommunityHelpWanted'
+import {CommunityTopicRail} from '#/features/communityCivicTree/components/CommunityTopicRail'
+import {CommunityCivicTreeGraph} from '#/features/communityCivicTree/components/CommunityCivicTreeGraph'
+import {CommunityCivicTreeOutline} from '#/features/communityCivicTree/components/CommunityCivicTreeOutline'
 import {CommunityPulseSheet} from './components/CommunityPulseSheet'
 import {ContributionReviewDetail} from './components/ContributionReviewDetail'
 import {NodeDetailSheet} from './components/NodeDetailSheet'
@@ -51,9 +58,10 @@ import {
   SortitionStatusCard,
 } from './components/SortitionStatusCard'
 import {SummaryModal} from './components/SummaryModal'
-import {type GraphData} from './deliberation-types'
+import {type GraphData} from '#/features/civicTree/types'
 
 export function CommunityCivicTreeScreen() {
+  const {t: l} = useLingui()
   const route = useRoute<{
     key: string
     name: 'CommunityCivicTree'
@@ -117,6 +125,13 @@ export function CommunityCivicTreeScreen() {
   const [activeCardTypes, setActiveCardTypes] = useState<Set<string>>(new Set())
   const [activeRelTypes, setActiveRelTypes] = useState<Set<string>>(new Set())
   const [activeStances, setActiveStances] = useState<Set<string>>(new Set())
+
+  /*
+   * The force graph shows how cards connect; the outline shows what is being
+   * argued. Both read the same filtered data, so switching never changes what
+   * is on screen - only how it is arranged.
+   */
+  const [viewMode, setViewMode] = useState<'graph' | 'outline'>('graph')
   const [showIdeologicalOverlay, setShowIdeologicalOverlay] = useState(false)
 
   const selectedCommunityFromBoards = useMemo(() => {
@@ -244,42 +259,6 @@ export function CommunityCivicTreeScreen() {
     }
   }, [graphData, pendingHighlightCardId])
 
-  const toggleCardType = useCallback((type: string) => {
-    setActiveCardTypes(prev => {
-      const next = new Set(prev)
-      if (next.has(type)) {
-        next.delete(type)
-      } else {
-        next.add(type)
-      }
-      return next
-    })
-  }, [])
-
-  const toggleRelType = useCallback((type: string) => {
-    setActiveRelTypes(prev => {
-      const next = new Set(prev)
-      if (next.has(type)) {
-        next.delete(type)
-      } else {
-        next.add(type)
-      }
-      return next
-    })
-  }, [])
-
-  const toggleStance = useCallback((stance: string) => {
-    setActiveStances(prev => {
-      const next = new Set(prev)
-      if (next.has(stance)) {
-        next.delete(stance)
-      } else {
-        next.add(stance)
-      }
-      return next
-    })
-  }, [])
-
   const clearAllFilters = useCallback(() => {
     setSearchQuery('')
     setActiveCardTypes(new Set())
@@ -358,6 +337,33 @@ export function CommunityCivicTreeScreen() {
                 canConfigure={true}
               />
               <View style={styles.communityActions}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    viewMode === 'graph'
+                      ? 'Switch to outline view'
+                      : 'Switch to graph view'
+                  }
+                  accessibilityHint="Toggles between the connection graph and the argument outline"
+                  onPress={() =>
+                    setViewMode(m => (m === 'graph' ? 'outline' : 'graph'))
+                  }
+                  style={[
+                    styles.pulseBtn,
+                    {backgroundColor: t.palette.primary_500 + '15'},
+                  ]}>
+                  <Text
+                    style={[
+                      styles.topActionText,
+                      {color: t.palette.primary_500},
+                    ]}>
+                    {viewMode === 'graph' ? (
+                      <Trans>Outline</Trans>
+                    ) : (
+                      <Trans>Graph</Trans>
+                    )}
+                  </Text>
+                </TouchableOpacity>
                 <TouchableOpacity
                   accessibilityRole="button"
                   accessibilityLabel="Community pulse"
@@ -664,6 +670,23 @@ export function CommunityCivicTreeScreen() {
             </View>
           )}
 
+          {/*
+           * Topics first: what the community is working on together, ranked by
+           * how many members have joined each one rather than by activity.
+           */}
+          {graphData && graphData.nodes.length > 0 ? (
+            <>
+              <CommunityTopicRail
+                data={graphData}
+                onTopicPress={setSelectedNodeId}
+              />
+              <CommunityHelpWanted
+                data={graphData}
+                onNodePress={setSelectedNodeId}
+              />
+            </>
+          ) : null}
+
           {/* Search & Filters */}
           {graphData && graphData.nodes.length > 0 && (
             <View style={styles.filterBar}>
@@ -676,18 +699,6 @@ export function CommunityCivicTreeScreen() {
                     label="Search contributions"
                   />
                 </View>
-                {hasActiveFilters && (
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    accessibilityLabel="Clear all filters"
-                    accessibilityHint="Removes search and all active filters"
-                    onPress={clearAllFilters}
-                    style={styles.clearButton}>
-                    <Text style={{color: t.palette.primary_500, fontSize: 13}}>
-                      <Trans>Clear</Trans>
-                    </Text>
-                  </TouchableOpacity>
-                )}
                 <TouchableOpacity
                   accessibilityRole="button"
                   accessibilityLabel="Toggle Ideological Overlay"
@@ -718,121 +729,31 @@ export function CommunityCivicTreeScreen() {
                 </TouchableOpacity>
               </View>
 
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={styles.chipsScroll}
-                contentContainerStyle={styles.chipsContent}>
-                {/* Relationship type chips */}
-                {COMMUNITY_CIVIC_TREE_RELATIONSHIP_TYPES.map(rt => {
-                  const active = activeRelTypes.has(rt.value)
-                  return (
-                    <TouchableOpacity
-                      key={rt.value}
-                      accessibilityRole="button"
-                      accessibilityLabel={rt.label}
-                      accessibilityHint={`Toggle ${rt.label} filter`}
-                      accessibilityState={{selected: active}}
-                      onPress={() => toggleRelType(rt.value)}
-                      style={[
-                        styles.chip,
-                        {
-                          backgroundColor: active
-                            ? rt.color + '30'
-                            : t.palette.contrast_100,
-                          borderColor: active ? rt.color : 'transparent',
-                        },
-                      ]}>
-                      <View
-                        style={[styles.chipDot, {backgroundColor: rt.color}]}
-                      />
-                      <Text
-                        style={[
-                          styles.chipText,
-                          {
-                            color: active ? rt.color : t.palette.contrast_700,
-                          },
-                        ]}>
-                        {rt.label}
-                      </Text>
-                    </TouchableOpacity>
-                  )
-                })}
-
-                {/* Card type chips */}
-                {COMMUNITY_CIVIC_TREE_CARD_TYPES.map(ct => {
-                  const active = activeCardTypes.has(ct.value)
-                  return (
-                    <TouchableOpacity
-                      key={ct.value}
-                      accessibilityRole="button"
-                      accessibilityLabel={ct.label}
-                      accessibilityHint={`Toggle ${ct.label} filter`}
-                      accessibilityState={{selected: active}}
-                      onPress={() => toggleCardType(ct.value)}
-                      style={[
-                        styles.chip,
-                        {
-                          backgroundColor: active
-                            ? t.palette.primary_500 + '15'
-                            : t.palette.contrast_100,
-                          borderColor: active
-                            ? t.palette.primary_500
-                            : 'transparent',
-                        },
-                      ]}>
-                      <Text style={styles.chipIcon}>{ct.icon}</Text>
-                      <Text
-                        style={[
-                          styles.chipText,
-                          {
-                            color: active
-                              ? t.palette.primary_500
-                              : t.palette.contrast_700,
-                          },
-                        ]}>
-                        {ct.label}
-                      </Text>
-                    </TouchableOpacity>
-                  )
-                })}
-
-                {/* Stance chips */}
-                {COMMUNITY_CIVIC_TREE_STANCE_FILTERS.map(sf => {
-                  const active = activeStances.has(sf.value)
-                  return (
-                    <TouchableOpacity
-                      key={sf.value}
-                      accessibilityRole="button"
-                      accessibilityLabel={sf.label}
-                      accessibilityHint={`Toggle ${sf.label} filter`}
-                      accessibilityState={{selected: active}}
-                      onPress={() => toggleStance(sf.value)}
-                      style={[
-                        styles.chip,
-                        {
-                          backgroundColor: active
-                            ? sf.color + '20'
-                            : t.palette.contrast_100,
-                          borderColor: active ? sf.color : 'transparent',
-                        },
-                      ]}>
-                      <View
-                        style={[styles.chipDot, {backgroundColor: sf.color}]}
-                      />
-                      <Text
-                        style={[
-                          styles.chipText,
-                          {
-                            color: active ? sf.color : t.palette.contrast_700,
-                          },
-                        ]}>
-                        {sf.label}
-                      </Text>
-                    </TouchableOpacity>
-                  )
-                })}
-              </ScrollView>
+              <CivicTreeFilterRow
+                onClear={clearAllFilters}
+                showClear={hasActiveFilters}>
+                <CivicTreeFilterMenu
+                  allLabel={l`All links`}
+                  groupLabel={l`Link type`}
+                  options={COMMUNITY_CIVIC_TREE_RELATIONSHIP_TYPES}
+                  selected={activeRelTypes}
+                  onChange={setActiveRelTypes}
+                />
+                <CivicTreeFilterMenu
+                  allLabel={l`All types`}
+                  groupLabel={l`Card type`}
+                  options={COMMUNITY_CIVIC_TREE_CARD_TYPES}
+                  selected={activeCardTypes}
+                  onChange={setActiveCardTypes}
+                />
+                <CivicTreeFilterMenu
+                  allLabel={l`All stances`}
+                  groupLabel={l`Stance`}
+                  options={COMMUNITY_CIVIC_TREE_STANCE_FILTERS}
+                  selected={activeStances}
+                  onChange={setActiveStances}
+                />
+              </CivicTreeFilterRow>
             </View>
           )}
 
@@ -926,6 +847,15 @@ export function CommunityCivicTreeScreen() {
                 </Trans>
               </Text>
             </View>
+          ) : graphDataForRender && viewMode === 'outline' ? (
+            <CommunityCivicTreeOutline
+              data={graphDataForRender}
+              searchQuery={searchQuery}
+              activeCardTypes={activeCardTypes}
+              activeStances={activeStances}
+              onNodePress={setSelectedNodeId}
+              selectedNodeId={selectedNodeId}
+            />
           ) : graphDataForRender ? (
             <CommunityCivicTreeGraph
               data={graphDataForRender}
@@ -1449,45 +1379,11 @@ const styles = StyleSheet.create({
   searchInputWrap: {
     flex: 1,
   },
-  clearButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-  },
   overlayToggle: {
     paddingHorizontal: 10,
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
-  },
-  chipsScroll: {
-    maxHeight: 44,
-  },
-  chipsContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    paddingVertical: 4,
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    gap: 5,
-  },
-  chipDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  chipIcon: {
-    fontSize: 13,
-  },
-  chipText: {
-    fontSize: 12,
-    fontWeight: '600',
   },
   communityButton: {
     borderWidth: 1,

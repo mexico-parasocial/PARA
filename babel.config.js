@@ -46,7 +46,6 @@ module.exports = function (api) {
       // the `react-native-worklets/plugin` plugin
       ...(api.env('test')
         ? [
-            '@babel/plugin-transform-class-static-block',
             // Compile `import()` to require so jest (which runs without
             // `--experimental-vm-modules`) can execute lazily-loaded modules
             // like `@ipld/dag-cbor` via its moduleNameMapper.

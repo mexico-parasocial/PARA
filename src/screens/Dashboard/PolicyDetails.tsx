@@ -19,7 +19,7 @@ import {
   getCabildeoTotalParticipants,
   getViewerParticipation,
 } from '#/lib/cabildeo-display'
-import {CIVIC_TREE_LABELS} from '#/lib/civic-tree-labels'
+import {CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
 import {REPRESENTATIVES} from '#/lib/mock-data'
 import {
   evaluateCabildeoAccess,
@@ -39,7 +39,7 @@ import {Text} from '#/view/com/util/text/Text'
 import {atoms as a, useBreakpoints, useTheme, web} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import {CompassMini} from '#/components/CompassMini'
-import {ContributeToCommunityTreeDialog} from '#/components/ContributeToCommunityTreeDialog'
+import {ContributeToCommunityTreeDialog} from '#/features/communityCivicTree/components/ContributeToCommunityTreeDialog'
 import * as Dialog from '#/components/Dialog'
 import {ArrowShareRight_Stroke2_Corner2_Rounded as ShareIcon} from '#/components/icons/ArrowShareRight'
 import {Bookmark as BookmarkIcon} from '#/components/icons/Bookmark'

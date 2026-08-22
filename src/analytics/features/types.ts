@@ -27,4 +27,5 @@ export enum Features {
   // PARA governance flags
   HorizontalGovernanceEnable = 'para:horizontal_governance:enable',
   PajareoEnable = 'para:pajareo:enable',
+  TrendingExploreTopicsCountValue = 'trending_explore_topics_count:value',
 }

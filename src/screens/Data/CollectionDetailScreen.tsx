@@ -13,6 +13,10 @@ import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation, useRoute} from '@react-navigation/native'
 
+import {
+  canContributeItem,
+  contributionFromItem,
+} from '#/features/civicTree/contribution'
 import {buildPersonalCivicTreeVaultManifest} from '#/lib/civic-export/obsidian'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
@@ -29,8 +33,11 @@ import {useExportCollectionToSembleMutation} from '#/state/queries/sembe'
 import {useSession} from '#/state/session'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
-import {AddTreeItemDialog} from '#/components/AddTreeItemDialog'
+import {AddTreeItemDialog} from '#/features/personalCivicTree/components/AddTreeItemDialog'
+import {ConnectTreeItemsDialog} from '#/features/personalCivicTree/components/ConnectTreeItemsDialog'
+import {ContributeToCommunityTreeDialog} from '#/features/communityCivicTree/components/ContributeToCommunityTreeDialog'
 import * as Dialog from '#/components/Dialog'
+import {ArrowCornerDownRight_Stroke2_Corner2_Rounded as ConnectIcon} from '#/components/icons/ArrowCornerDownRight'
 import {
   ChevronBottom_Stroke2_Corner0_Rounded as DownIcon,
   ChevronTop_Stroke2_Corner0_Rounded as UpIcon,
@@ -38,6 +45,7 @@ import {
 import {Pencil_Stroke2_Corner0_Rounded as PencilIcon} from '#/components/icons/Pencil'
 import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/Plus'
 import {SquareArrowTopRight_Stroke2_Corner0_Rounded as ExportIcon} from '#/components/icons/SquareArrowTopRight'
+import {Tree_Stroke2_Corner0_Rounded as TreeIcon} from '#/components/icons/Tree'
 import {Trash_Stroke2_Corner0_Rounded as TrashIcon} from '#/components/icons/Trash'
 import * as Layout from '#/components/Layout'
 import * as Prompt from '#/components/Prompt'
@@ -61,6 +69,12 @@ export function CollectionDetailScreen() {
   const duplicateMutation = useDuplicateCollectionMutation()
   const exportMutation = useExportCollectionToSembleMutation()
   const addItemControl = Dialog.useDialogControl()
+  const connectControl = Dialog.useDialogControl()
+  const contributeControl = Dialog.useDialogControl()
+  const [contributeSourceKey, setContributeSourceKey] = useState<
+    string | undefined
+  >()
+  const [connectSourceKey, setConnectSourceKey] = useState<string | undefined>()
   const exportPrompt = Prompt.usePromptControl()
 
   const deletePrompt = Prompt.usePromptControl()
@@ -172,9 +186,14 @@ export function CollectionDetailScreen() {
     )
   }, [collection, collectionId, duplicateMutation, navigation, _])
 
+  /*
+   * Browsing used to navigate to Agora and lose the user's place. A policy is
+   * a node in this collection, so the picker brings it here instead - and the
+   * same picker names topics, which are the nodes with no artifact behind them.
+   */
   const onBrowsePolicies = useCallback(() => {
-    navigation.navigate('Agora')
-  }, [navigation])
+    addItemControl.open()
+  }, [addItemControl])
 
   const onExportToSemble = useCallback(() => {
     if (!collection) return
@@ -365,7 +384,7 @@ export function CollectionDetailScreen() {
                     accessibilityRole="button"
                     accessibilityLabel={_(msg`Browse policies`)}
                     accessibilityHint={_(
-                      msg`Opens Agora to find policies to save`,
+                      msg`Finds a policy or topic to add to this collection`,
                     )}
                     onPress={onBrowsePolicies}
                     style={[
@@ -373,7 +392,7 @@ export function CollectionDetailScreen() {
                       {borderColor: t.palette.contrast_100},
                     ]}>
                     <Text style={[styles.secondaryBtnText, t.atoms.text]}>
-                      <Trans>Browse policies</Trans>
+                      <Trans>Add policy or topic</Trans>
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -452,6 +471,22 @@ export function CollectionDetailScreen() {
                 total={collection.items.length}
                 onMove={onMove}
                 onRequestDelete={requestDelete}
+                relationCount={
+                  (collection.relations ?? []).filter(
+                    r =>
+                      r.fromItemId === getCivicTreeItemKey(item) ||
+                      r.toItemId === getCivicTreeItemKey(item),
+                  ).length
+                }
+                onConnect={() => {
+                  setConnectSourceKey(getCivicTreeItemKey(item))
+                  connectControl.open()
+                }}
+                canContribute={canContributeItem(item)}
+                onContribute={() => {
+                  setContributeSourceKey(getCivicTreeItemKey(item))
+                  contributeControl.open()
+                }}
                 onPressItem={() => {
                   if (item.policyUri) {
                     navigation.navigate('PolicyDetails', {
@@ -489,6 +524,26 @@ export function CollectionDetailScreen() {
         isPending={removeMutation.isPending}
       />
       <AddTreeItemDialog control={addItemControl} collection={collection} />
+      {/*
+       * Always mounted, like the connect dialog: control.open() fires in the
+       * same handler that sets the key, so a conditionally mounted dialog
+       * would not exist yet at the moment it is asked to open.
+       */}
+      <ContributeToCommunityTreeDialog
+        control={contributeControl}
+        {...contributionFromItem(
+          collection?.items.find(
+            i => getCivicTreeItemKey(i) === contributeSourceKey,
+          ) ?? {addedAt: ''},
+        )}
+      />
+      <ConnectTreeItemsDialog
+        control={connectControl}
+        collection={collection}
+        sourceItem={collection?.items.find(
+          i => getCivicTreeItemKey(i) === connectSourceKey,
+        )}
+      />
     </Layout.Screen>
   )
 }
@@ -500,6 +555,10 @@ function CivicTreeItemRow({
   onMove,
   onRequestDelete,
   onPressItem,
+  onConnect,
+  onContribute,
+  canContribute,
+  relationCount,
 }: {
   item: CivicTreeItem
   index: number
@@ -507,6 +566,10 @@ function CivicTreeItemRow({
   onMove: (index: number, direction: -1 | 1) => void
   onRequestDelete: (itemKey: string) => void
   onPressItem: () => void
+  onConnect: () => void
+  onContribute: () => void
+  canContribute: boolean
+  relationCount: number
 }) {
   const t = useTheme()
   const itemKey = getCivicTreeItemKey(item)
@@ -575,6 +638,32 @@ function CivicTreeItemRow({
             index === total - 1 && styles.actionBtnDisabled,
           ]}>
           <DownIcon size="xs" style={{color: t.palette.contrast_400}} />
+        </TouchableOpacity>
+        {canContribute ? (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Contribute to a community tree"
+            accessibilityHint="Shares only this item with a community for review; your collection stays private"
+            onPress={onContribute}
+            style={styles.actionBtn}>
+            <TreeIcon size="xs" style={{color: t.palette.contrast_400}} />
+          </TouchableOpacity>
+        ) : null}
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Connect this item"
+          accessibilityHint="Links this item to another item in the collection"
+          onPress={onConnect}
+          style={styles.actionBtn}>
+          <ConnectIcon
+            size="xs"
+            style={{
+              color:
+                relationCount > 0
+                  ? t.palette.primary_500
+                  : t.palette.contrast_400,
+            }}
+          />
         </TouchableOpacity>
         <TouchableOpacity
           accessibilityRole="button"

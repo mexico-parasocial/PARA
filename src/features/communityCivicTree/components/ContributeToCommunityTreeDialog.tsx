@@ -3,12 +3,11 @@ import {StyleSheet, TextInput, TouchableOpacity, View} from 'react-native'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
-import {CIVIC_TREE_COPY, CIVIC_TREE_LABELS} from '#/lib/civic-tree-labels'
+import {CIVIC_TREE_COPY, CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
 import {
   CIVIC_TREE_SOURCE_TYPES,
-  type CivicTreeSourceType,
   inferCivicTreeSourceType,
-} from '#/lib/civic-tree-source-types'
+} from '#/features/civicTree/sourceTypes'
 import {type NavigationProp} from '#/lib/routes/types'
 import {useCommunityBoardsQuery} from '#/state/queries/community-boards'
 import {useCreateCommunityTreeContributionMutation} from '#/state/queries/community-civic-tree'
@@ -18,16 +17,26 @@ import {useTheme} from '#/alf'
 import * as Dialog from '#/components/Dialog'
 import * as Toast from '#/components/Toast'
 
+/*
+ * A contribution can originate from a record in the network (an AT-URI), a page
+ * on the web (a URL), both, or neither - a topic or a note the user wrote has
+ * no source at all and is still worth contributing.
+ */
 export function ContributeToCommunityTreeDialog({
   control,
   sourceUri,
+  sourceUrl,
   title,
   category,
+  defaultSourceType,
 }: {
   control: Dialog.DialogControlProps
-  sourceUri: string
+  sourceUri?: string
+  sourceUrl?: string
   title: string
   category?: string
+  /** Overrides the inferred type, e.g. `topic` for a topic item. */
+  defaultSourceType?: string
 }) {
   return (
     <Dialog.Outer control={control} testID="contributeToCommunityTreeDialog">
@@ -35,8 +44,10 @@ export function ContributeToCommunityTreeDialog({
       <ContributeToCommunityTreeDialogInner
         control={control}
         sourceUri={sourceUri}
+        sourceUrl={sourceUrl}
         title={title}
         category={category}
+        defaultSourceType={defaultSourceType}
       />
     </Dialog.Outer>
   )
@@ -45,13 +56,17 @@ export function ContributeToCommunityTreeDialog({
 function ContributeToCommunityTreeDialogInner({
   control,
   sourceUri,
+  sourceUrl,
   title,
   category,
+  defaultSourceType,
 }: {
   control: Dialog.DialogControlProps
-  sourceUri: string
+  sourceUri?: string
+  sourceUrl?: string
   title: string
   category?: string
+  defaultSourceType?: string
 }) {
   const t = useTheme()
   const navigation = useNavigation<NavigationProp>()
@@ -59,8 +74,12 @@ function ContributeToCommunityTreeDialogInner({
   const {data: boardsData, isLoading} = useCommunityBoardsQuery({limit: 50})
   const createContribution = useCreateCommunityTreeContributionMutation()
   const [selectedCommunityUri, setSelectedCommunityUri] = useState<string>()
-  const [sourceType, setSourceType] = useState<CivicTreeSourceType>(() =>
-    inferCivicTreeSourceType(`${sourceUri} ${category ?? ''} ${title}`),
+  const [sourceType, setSourceType] = useState<string>(
+    () =>
+      defaultSourceType ??
+      inferCivicTreeSourceType(
+        `${sourceUrl ?? ''} ${sourceUri ?? ''} ${category ?? ''} ${title}`,
+      ),
   )
   const [note, setNote] = useState('')
 
@@ -80,6 +99,8 @@ function ContributeToCommunityTreeDialogInner({
 
   const onContribute = () => {
     if (!currentAccount?.did || !selectedBoard) return
+    /* A card with no title is unreadable in every community view. */
+    if (!title.trim()) return
 
     createContribution.mutate(
       {
@@ -91,7 +112,8 @@ function ContributeToCommunityTreeDialogInner({
           (category
             ? `Aporte desde una política o tema guardado: ${category}`
             : 'Aporte desde una política o tema guardado.'),
-        sourceUrl: sourceUri,
+        sourceUri,
+        sourceUrl,
         sourceType,
         metadata: JSON.stringify({
           sourceType,
@@ -191,7 +213,17 @@ function ContributeToCommunityTreeDialogInner({
           <Trans>Tipo de fuente</Trans>
         </Text>
         <View style={styles.typeGrid}>
-          {CIVIC_TREE_SOURCE_TYPES.map(type => {
+          {[
+            /*
+             * `topic` is not a source format, but a contributed topic must be
+             * able to stay a topic - it is the one card type the community tree
+             * organises everything else around.
+             */
+            ...(defaultSourceType === 'topic'
+              ? [{value: 'topic', label: 'Tema', icon: 'T'}]
+              : []),
+            ...CIVIC_TREE_SOURCE_TYPES,
+          ].map(type => {
             const selected = type.value === sourceType
             return (
               <TouchableOpacity
@@ -248,12 +280,16 @@ function ContributeToCommunityTreeDialogInner({
         accessibilityRole="button"
         accessibilityLabel="Enviar aporte a revisión"
         accessibilityHint="Envía este elemento a revisión comunitaria para el árbol seleccionado"
-        disabled={!selectedCommunityUri || createContribution.isPending}
+        disabled={
+          !selectedCommunityUri || !title.trim() || createContribution.isPending
+        }
         onPress={onContribute}
         style={[
           styles.submitButton,
           {backgroundColor: t.palette.primary_500},
-          (!selectedCommunityUri || createContribution.isPending) && {
+          (!selectedCommunityUri ||
+            !title.trim() ||
+            createContribution.isPending) && {
             opacity: 0.5,
           },
         ]}>

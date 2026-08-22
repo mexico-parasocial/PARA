@@ -35,12 +35,15 @@ import {PressableScale} from '#/lib/custom-animations/PressableScale'
 import {type NavigationProp} from '#/lib/routes/types'
 import {useCabildeosQuery} from '#/state/queries/cabildeo'
 import {atoms as a, useTheme} from '#/alf'
+import {Button, ButtonIcon} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
 import {EmptyStateError} from '#/components/EmptyStates'
 import {CircleInfo_Stroke2_Corner0_Rounded as InfoIcon} from '#/components/icons/CircleInfo'
+import {CircleQuestion_Stroke2_Corner2_Rounded as QuestionIcon} from '#/components/icons/CircleQuestion'
 import {CommunityIcon_Stroke as Community} from '#/components/icons/Community'
 import {Globe_Stroke2_Corner0_Rounded as GlobeIcon} from '#/components/icons/Globe'
 import {Megaphone_Stroke2_Corner0_Rounded as MegaphoneIcon} from '#/components/icons/Megaphone'
+import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/Plus'
 import {Tree_Stroke2_Corner0_Rounded as TreeIcon} from '#/components/icons/Tree'
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'
@@ -831,9 +834,9 @@ function LobbyingSection({
 
       <Dialog.Outer control={infoDialogControl}>
         <Dialog.Handle />
-          <Dialog.ScrollableInner
-            accessibilityDescribedBy="lobbying-info"
-            accessibilityLabelledBy="lobbying-info">
+        <Dialog.ScrollableInner
+          accessibilityDescribedBy="lobbying-info"
+          accessibilityLabelledBy="lobbying-info">
           <View style={a.gap_md}>
             <Text style={[a.text_2xl, a.font_bold, t.atoms.text]}>
               <Trans>Lobbying</Trans>
@@ -841,7 +844,8 @@ function LobbyingSection({
             <Text style={[a.text_md, t.atoms.text_contrast_high]}>
               <Trans>
                 Cabildeos are the working items inside Civic Trees: proposals,
-                evidence, arguments, vote windows, and delegated power in one place.
+                evidence, arguments, vote windows, and delegated power in one
+                place.
               </Trans>
             </Text>
             <Dialog.Close />
@@ -1125,21 +1129,23 @@ export function AgoraScreen() {
   return (
     <Layout.Screen>
       <Layout.Header.Outer noBottomBorder>
+        <Layout.Header.BackButton />
         <Layout.Header.Content>
           <Layout.Header.TitleText>
             <Trans>Ágora</Trans>
           </Layout.Header.TitleText>
         </Layout.Header.Content>
         <Layout.Header.Slot>
-          <PressableScale
+          <Button
+            label={_(msg`How it works`)}
             onPress={howItWorksControl.open}
-            targetScale={0.9}
-            style={styles.headerButton}>
-            <Text
-              style={[styles.headerButtonText, {color: t.palette.primary_500}]}>
-              ?
-            </Text>
-          </PressableScale>
+            size="small"
+            variant="ghost"
+            color="secondary"
+            shape="round"
+            style={[a.justify_center]}>
+            <ButtonIcon icon={QuestionIcon} size="lg" />
+          </Button>
         </Layout.Header.Slot>
       </Layout.Header.Outer>
 
@@ -1188,7 +1194,7 @@ export function AgoraScreen() {
         onPress={handlePressCreateLobbying}
         targetScale={0.92}
         style={[styles.fab, {backgroundColor: t.palette.primary_500}]}>
-        <Text style={styles.fabText}>＋</Text>
+        <PlusIcon fill={t.palette.white} size="lg" />
       </PressableScale>
 
       <Dialog.Outer control={howItWorksControl}>
@@ -1213,10 +1219,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 16,
   },
-
-  // ─── Header ─────────────────────────────────────────────────────────────────
-  headerButton: {paddingHorizontal: 16, paddingVertical: 8},
-  headerButtonText: {fontSize: 18, fontWeight: '700'},
 
   // ─── Toggle ─────────────────────────────────────────────────────────────────
   toggleContainer: {
@@ -1602,11 +1604,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 6,
-  },
-  fabText: {
-    fontSize: 28,
-    fontWeight: '300',
-    color: '#fff',
-    lineHeight: 32,
   },
 })

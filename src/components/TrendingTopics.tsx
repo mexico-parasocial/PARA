@@ -1,4 +1,4 @@
-import {useMemo} from 'react'
+import {useEffect, useMemo} from 'react'
 import {type AppBskyUnspeccedDefs, type AtUri} from '@atproto/api'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -8,6 +8,32 @@ import {PressableScale} from '#/lib/custom-animations/PressableScale'
 // import {feedUriToHref} from '#/lib/strings/url-helpers'
 import {native} from '#/alf'
 import {Link as InternalLink, type LinkProps} from '#/components/Link'
+import {useCallOnce} from '#/lib/once'
+import {type Metrics, useAnalytics} from '#/analytics'
+
+/**
+ * Fires the `trendingTopic:seen` metric once per mounted topic.
+ */
+export function useTrendingTopicSeen(
+  context: Metrics['trendingTopic:seen']['context'],
+  rank: number,
+  recId?: string,
+  feedSliceIndex?: number,
+) {
+  const ax = useAnalytics()
+  const trackSeen = useCallOnce(() => {
+    ax.metric('trendingTopic:seen', {
+      context,
+      rank,
+      feedSliceIndex,
+      recId,
+    })
+  })
+
+  useEffect(() => {
+    trackSeen()
+  }, [trackSeen])
+}
 
 export function TrendingTopicLink({
   topic: raw,

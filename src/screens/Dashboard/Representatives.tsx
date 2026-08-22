@@ -1,4 +1,4 @@
-import {useMemo, useState} from 'react'
+import {useState} from 'react'
 import {
   ActivityIndicator,
   ScrollView,
@@ -20,44 +20,15 @@ import {
   type RepresentativeItem,
   useRepresentativesQuery,
 } from '#/state/queries/data-tab'
-import {useCompassFilter} from '#/state/shell/compass-filter'
 import {useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
-import {ActiveFiltersStackButton} from '#/components/CompassFilterControls'
 import {EmptyStateError, EmptyStateNoData} from '#/components/EmptyStates'
 import {SearchInput} from '#/components/forms/SearchInput'
-import {ArrowsDiagonalIn_Stroke2_Corner0_Rounded as SortIcon} from '#/components/icons/ArrowsDiagonal'
-import {Globe_Stroke2_Corner0_Rounded as CommunityIcon} from '#/components/icons/Globe'
-import {Person_Stroke2_Corner0_Rounded as PersonIcon} from '#/components/icons/Person'
 import {Verified_Stroke2_Corner2_Rounded as VerifiedIcon} from '#/components/icons/Verified'
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'
 
-// Canonical display order for known offices; categories are derived from the
-// fetched data so a filter is never offered when it would render empty.
-const CATEGORY_ORDER = [
-  'Presidenta de Mexico',
-  'President',
-  'Governor',
-  'Gobernador constitucional',
-  'Jefa de Gobierno',
-  'Senador de la Republica',
-  'Senadora de la Republica',
-  'Senator',
-  'Diputado Federal',
-  'Diputada Federal',
-  'Federal Deputy',
-  'Presidente nacional',
-  'Leader',
-  'Secretary',
-  'Spokesperson',
-  'Treasurer',
-  'City Council',
-  'Activist',
-]
-
-type SortMode = 'impact' | 'name' | 'office'
-type ViewMode = 'all' | 'official' | 'community'
+const ALL_OFFICES = 'All'
 
 type Props = NativeStackScreenProps<CommonNavigatorParams, 'Representatives'>
 
@@ -66,16 +37,9 @@ export function RepresentativesScreen({route}: Props) {
   const t = useTheme()
   const navigation = useNavigation<NavigationProp>()
 
-  const [selectedCategory, setSelectedCategory] = useState(
-    route.params?.category || 'All',
-  )
   const [searchQuery, setSearchQuery] = useState(route.params?.q || '')
-  const [sortMode, setSortMode] = useState<SortMode>('impact')
-  const [viewMode, setViewMode] = useState<ViewMode>('all')
-  const {activeFilters} = useCompassFilter()
+  const [office, setOffice] = useState(route.params?.category || ALL_OFFICES)
 
-  // Always fetch the full roster; category filtering happens client-side so
-  // the category pills can be derived from whatever data actually exists.
   const {
     data,
     isLoading,
@@ -89,55 +53,29 @@ export function RepresentativesScreen({route}: Props) {
     query: searchQuery,
   })
 
-  const reps = useMemo(
-    () => data?.pages.flatMap(page => page.items) || [],
-    [data],
-  )
+  const allReps = data?.pages.flatMap(page => page.items) || []
 
-  const availableCategories = useMemo(() => {
-    const present = new Set(reps.map(rep => rep.category))
-    const ordered = CATEGORY_ORDER.filter(category => present.has(category))
-    const extras = [...present]
-      .filter(category => !CATEGORY_ORDER.includes(category))
-      .sort((a, b) => a.localeCompare(b))
-    return ['All', ...ordered, ...extras]
-  }, [reps])
+  /*
+   * Offices come from the data rather than a fixed list, so a chip is never
+   * offered when it would render an empty directory. Most-common first.
+   */
+  const officeCounts = new Map<string, number>()
+  for (const rep of allReps) {
+    officeCounts.set(rep.category, (officeCounts.get(rep.category) ?? 0) + 1)
+  }
+  const offices = [
+    ALL_OFFICES,
+    ...[...officeCounts.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+      .map(([category]) => category),
+  ]
 
-  const filteredReps = useMemo(() => {
-    let result = reps.filter(rep => {
-      if (selectedCategory !== 'All' && rep.category !== selectedCategory) {
-        return false
-      }
-      if (activeFilters.length > 0) {
-        const matchesFilter = activeFilters.some(
-          filter => filter === rep.affiliate || filter === rep.state,
-        )
-        if (!matchesFilter) return false
-      }
-      if (viewMode === 'official') return rep.type === 'Party'
-      if (viewMode === 'community') return rep.type === 'Community'
-      return true
-    })
-
-    result = [...result].sort((a, b) => {
-      if (sortMode === 'name') return a.name.localeCompare(b.name)
-      if (sortMode === 'office') return a.category.localeCompare(b.category)
-      return representativeScore(b) - representativeScore(a)
-    })
-
-    return result
-  }, [activeFilters, reps, selectedCategory, sortMode, viewMode])
-
-  const featuredReps = filteredReps.slice(0, 3)
+  const reps = allReps
+    .filter(rep => office === ALL_OFFICES || rep.category === office)
+    .sort((a, b) => representativeScore(b) - representativeScore(a))
 
   const onPressRep = (rep: RepresentativeItem) => {
     navigation.navigate('Profile', {name: rep.handle})
-  }
-
-  const formatCount = (n: number) => {
-    if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`
-    if (n >= 1000) return `${(n / 1000).toFixed(1)}K`
-    return `${n}`
   }
 
   return (
@@ -149,70 +87,35 @@ export function RepresentativesScreen({route}: Props) {
             <Trans>Representatives</Trans>
           </Layout.Header.TitleText>
         </Layout.Header.Content>
-        <Layout.Header.Slot>
-          <ActiveFiltersStackButton />
-        </Layout.Header.Slot>
+        <Layout.Header.Slot />
       </Layout.Header.Outer>
 
       <Layout.Center style={styles.center}>
         <ScrollView
           style={styles.container}
           contentContainerStyle={styles.contentContainer}>
-          <View style={styles.searchPanel}>
-            <SearchInput
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onClearText={() => setSearchQuery('')}
-              placeholder={_(msg`Search names, handles, offices...`)}
-              style={styles.searchInput}
-            />
-            <SegmentedControl
-              value={viewMode}
-              onChange={setViewMode}
-              options={[
-                {value: 'all', label: _(msg`Todos`)},
-                {value: 'official', label: _(msg`Oficiales`)},
-                {value: 'community', label: _(msg`Comunidad`)},
-              ]}
-            />
-          </View>
+          <SearchInput
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onClearText={() => setSearchQuery('')}
+            placeholder={_(msg`Search names, handles, offices...`)}
+            style={styles.searchInput}
+          />
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.categoryList}>
-            {availableCategories.map(category => (
-              <FilterPill
-                key={category}
-                label={category}
-                selected={selectedCategory === category}
-                onPress={() => setSelectedCategory(category)}
-              />
-            ))}
-          </ScrollView>
-
-          {!isLoading && !error && featuredReps.length > 0 && (
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <Text style={[styles.sectionTitle, t.atoms.text]}>
-                  <Trans>Representantes clave</Trans>
-                </Text>
-                <SortToggle value={sortMode} onChange={setSortMode} />
-              </View>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.featuredList}>
-                {featuredReps.map(rep => (
-                  <FeaturedRepCard
-                    key={`featured-${rep.id}`}
-                    rep={rep}
-                    onPress={() => onPressRep(rep)}
-                    formatCount={formatCount}
-                  />
-                ))}
-              </ScrollView>
-            </View>
+          {offices.length > 2 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.officeRow}>
+              {offices.map(item => (
+                <OfficeChip
+                  key={item}
+                  label={item}
+                  selected={item === office}
+                  onPress={() => setOffice(item)}
+                />
+              ))}
+            </ScrollView>
           )}
 
           {isLoading && (
@@ -230,59 +133,57 @@ export function RepresentativesScreen({route}: Props) {
             />
           )}
 
-          {!isLoading && !error && filteredReps.length > 0 ? (
-            <View style={styles.section}>
-              <View style={styles.sectionHeaderCompact}>
-                <Text style={[styles.sectionTitle, t.atoms.text]}>
-                  <Trans>Directorio verificable</Trans>
-                </Text>
+          {!isLoading &&
+            !error &&
+            (reps.length > 0 ? (
+              <>
                 <Text
                   style={[styles.resultCount, t.atoms.text_contrast_medium]}>
-                  {filteredReps.length} <Trans>resultados</Trans>
+                  {reps.length} <Trans>resultados</Trans>
                 </Text>
-              </View>
-              {filteredReps.map(rep => (
-                <RepCard
-                  key={rep.id}
-                  rep={rep}
-                  onPress={() => onPressRep(rep)}
-                  formatCount={formatCount}
-                />
-              ))}
-              {hasNextPage && (
-                <Button
-                  label={_(msg`Load more representatives`)}
-                  variant="ghost"
-                  color="secondary"
-                  size="large"
-                  onPress={() => void fetchNextPage()}
-                  disabled={isFetchingNextPage}>
-                  <ButtonText>
-                    {isFetchingNextPage ? (
-                      <Trans>Cargando...</Trans>
-                    ) : (
-                      <Trans>Cargar más</Trans>
-                    )}
-                  </ButtonText>
-                </Button>
-              )}
-            </View>
-          ) : (
-            !isLoading &&
-            !error && (
+                {reps.map(rep => (
+                  <RepCard
+                    key={rep.id}
+                    rep={rep}
+                    onPress={() => onPressRep(rep)}
+                  />
+                ))}
+                {hasNextPage && (
+                  <Button
+                    label={_(msg`Load more representatives`)}
+                    variant="ghost"
+                    color="secondary"
+                    size="large"
+                    onPress={() => void fetchNextPage()}
+                    disabled={isFetchingNextPage}>
+                    <ButtonText>
+                      {isFetchingNextPage ? (
+                        <Trans>Cargando...</Trans>
+                      ) : (
+                        <Trans>Cargar más</Trans>
+                      )}
+                    </ButtonText>
+                  </Button>
+                )}
+              </>
+            ) : (
               <EmptyStateNoData
                 icon="🏛️"
                 title={_(msg`No representatives found`)}
-                message={_(msg`Try adjusting your filters or search terms.`)}
+                message={_(msg`Try a different search term.`)}
               />
-            )
-          )}
+            ))}
         </ScrollView>
       </Layout.Center>
     </Layout.Screen>
   )
 }
 
+/**
+ * Ranks the directory so the most consequential accounts surface first. The
+ * ordering is fixed - reach and mandate are the only signals that matter for
+ * a list the reader scans top-down.
+ */
 function representativeScore(rep: RepresentativeItem) {
   const reach = Math.log10((rep.followersCount ?? 0) + 1) * 10
   const hasMandate = rep.description ? 16 : 0
@@ -293,44 +194,7 @@ function representativeScore(rep: RepresentativeItem) {
   return reach + hasMandate + typeWeight + activity
 }
 
-function SegmentedControl({
-  value,
-  onChange,
-  options,
-}: {
-  value: ViewMode
-  onChange: (value: ViewMode) => void
-  options: Array<{value: ViewMode; label: string}>
-}) {
-  const t = useTheme()
-  return (
-    <View style={[styles.segmented, t.atoms.bg_contrast_25]}>
-      {options.map(option => {
-        const selected = option.value === value
-        return (
-          <TouchableOpacity
-            accessibilityRole="button"
-            key={option.value}
-            onPress={() => onChange(option.value)}
-            style={[
-              styles.segment,
-              selected && {backgroundColor: t.palette.primary_500},
-            ]}>
-            <Text
-              style={[
-                styles.segmentText,
-                selected ? {color: 'white'} : t.atoms.text_contrast_medium,
-              ]}>
-              {option.label}
-            </Text>
-          </TouchableOpacity>
-        )
-      })}
-    </View>
-  )
-}
-
-function FilterPill({
+function OfficeChip({
   label,
   selected,
   onPress,
@@ -343,17 +207,18 @@ function FilterPill({
   return (
     <TouchableOpacity
       accessibilityRole="button"
+      accessibilityState={{selected}}
       onPress={onPress}
       style={[
-        styles.categoryPill,
+        styles.officeChip,
         selected
           ? {backgroundColor: t.palette.primary_500}
-          : [t.atoms.bg_contrast_25, t.atoms.border_contrast_low],
+          : t.atoms.bg_contrast_25,
       ]}>
       <Text
         style={[
-          styles.categoryPillText,
-          selected ? {color: 'white'} : t.atoms.text,
+          styles.officeChipText,
+          selected ? {color: t.palette.white} : t.atoms.text_contrast_medium,
         ]}>
         {label}
       </Text>
@@ -361,110 +226,12 @@ function FilterPill({
   )
 }
 
-function SortToggle({
-  value,
-  onChange,
-}: {
-  value: SortMode
-  onChange: (value: SortMode) => void
-}) {
-  const t = useTheme()
-  const options: Array<{value: SortMode; label: string}> = [
-    {value: 'impact', label: 'Impacto'},
-    {value: 'office', label: 'Cargo'},
-    {value: 'name', label: 'A-Z'},
-  ]
-  return (
-    <View style={styles.sortGroup}>
-      {options.map(option => {
-        const selected = value === option.value
-        return (
-          <TouchableOpacity
-            accessibilityRole="button"
-            key={option.value}
-            onPress={() => onChange(option.value)}
-            style={[
-              styles.sortButton,
-              selected
-                ? {backgroundColor: t.palette.primary_500}
-                : t.atoms.bg_contrast_25,
-            ]}>
-            {option.value === 'impact' && (
-              <SortIcon
-                size="xs"
-                style={{color: selected ? 'white' : t.palette.contrast_500}}
-              />
-            )}
-            <Text
-              style={[
-                styles.sortText,
-                selected ? {color: 'white'} : t.atoms.text_contrast_medium,
-              ]}>
-              {option.label}
-            </Text>
-          </TouchableOpacity>
-        )
-      })}
-    </View>
-  )
-}
-
-function FeaturedRepCard({
-  rep,
-  onPress,
-  formatCount,
-}: {
-  rep: RepresentativeItem
-  onPress: () => void
-  formatCount: (n: number) => string
-}) {
-  const t = useTheme()
-  return (
-    <TouchableOpacity
-      accessibilityRole="button"
-      activeOpacity={0.86}
-      onPress={onPress}
-      style={[styles.featuredCard, t.atoms.bg_contrast_25]}>
-      <View style={styles.featuredTopRow}>
-        <Avatar rep={rep} size={46} />
-        <View style={styles.badgeStack}>
-          <OfficialCivicBadge />
-          <TrustBadge rep={rep} />
-        </View>
-      </View>
-      <Text style={[styles.featuredName, t.atoms.text]} numberOfLines={2}>
-        {rep.name}
-      </Text>
-      <Text
-        style={[styles.featuredOffice, t.atoms.text_contrast_medium]}
-        numberOfLines={1}>
-        {rep.category}
-      </Text>
-      <Text
-        style={[styles.featuredMandate, t.atoms.text_contrast_medium]}
-        numberOfLines={3}>
-        {rep.description || `${rep.affiliate} · ${rep.state}`}
-      </Text>
-      <View style={styles.featuredFooter}>
-        <Text style={[styles.reachText, {color: t.palette.primary_500}]}>
-          {formatCount(rep.followersCount ?? 0)} <Trans>alcance</Trans>
-        </Text>
-        <Text style={[styles.openText, t.atoms.text]}>
-          <Trans>Ver perfil</Trans>
-        </Text>
-      </View>
-    </TouchableOpacity>
-  )
-}
-
 function RepCard({
   rep,
   onPress,
-  formatCount,
 }: {
   rep: RepresentativeItem
   onPress: () => void
-  formatCount: (n: number) => string
 }) {
   const t = useTheme()
   return (
@@ -472,26 +239,25 @@ function RepCard({
       accessibilityRole="button"
       activeOpacity={0.82}
       onPress={onPress}
-      style={[
-        styles.repCard,
-        t.atoms.bg_contrast_25,
-        t.atoms.border_contrast_low,
-      ]}>
-      <View style={[styles.repAccent, {backgroundColor: rep.avatarColor}]} />
-      <Avatar rep={rep} size={52} />
+      style={[styles.repCard, t.atoms.border_contrast_low]}>
+      <View style={[styles.avatar, {backgroundColor: rep.avatarColor}]}>
+        <Text style={styles.avatarInitial}>
+          {rep.name.trim().charAt(0).toUpperCase()}
+        </Text>
+      </View>
       <View style={styles.repInfo}>
         <View style={styles.repTitleRow}>
           <Text style={[styles.repName, t.atoms.text]} numberOfLines={1}>
             {rep.name}
           </Text>
-          <OfficialCivicBadge compact />
-          <TrustBadge rep={rep} compact />
+          {rep.status === 'verified' && (
+            <VerifiedIcon size="xs" style={{color: t.palette.positive_500}} />
+          )}
         </View>
-        <Text style={[styles.repHandle, t.atoms.text_contrast_medium]}>
-          {rep.handle} · {rep.category}
-        </Text>
-        <Text style={[styles.repScope, t.atoms.text_contrast_medium]}>
-          {rep.affiliate} · {rep.state}
+        <Text
+          style={[styles.repMeta, t.atoms.text_contrast_medium]}
+          numberOfLines={1}>
+          {rep.category} · {rep.affiliate}
         </Text>
         {rep.description ? (
           <Text
@@ -500,138 +266,8 @@ function RepCard({
             {rep.description}
           </Text>
         ) : null}
-        <View style={styles.signalRow}>
-          <SignalPill
-            label={`${formatCount(rep.followersCount ?? 0)} alcance`}
-            icon="reach"
-          />
-          <SignalPill label="cuenta oficial" icon={rep.type} />
-        </View>
-      </View>
-      <View style={styles.viewButton}>
-        <Text style={{color: t.palette.primary_500, fontWeight: '800'}}>
-          <Trans>Ver perfil</Trans>
-        </Text>
       </View>
     </TouchableOpacity>
-  )
-}
-
-function Avatar({rep, size}: {rep: RepresentativeItem; size: number}) {
-  return (
-    <View
-      style={[
-        styles.avatar,
-        {
-          width: size,
-          height: size,
-          borderRadius: Math.max(8, size * 0.22),
-          backgroundColor: rep.avatarColor,
-        },
-      ]}>
-      <Text style={styles.avatarInitial}>
-        {rep.name.trim().charAt(0).toUpperCase()}
-      </Text>
-    </View>
-  )
-}
-
-function OfficialCivicBadge({compact = false}: {compact?: boolean}) {
-  const t = useTheme()
-  return (
-    <View
-      style={[
-        styles.officialBadge,
-        compact && styles.officialBadgeCompact,
-        {backgroundColor: t.palette.primary_500 + '14'},
-      ]}>
-      <CommunityIcon size="xs" style={{color: t.palette.primary_500}} />
-      {!compact && (
-        <Text
-          style={[styles.officialBadgeText, {color: t.palette.primary_500}]}>
-          <Trans>Cuenta oficial</Trans>
-        </Text>
-      )}
-    </View>
-  )
-}
-
-function TrustBadge({
-  rep,
-  compact = false,
-}: {
-  rep: RepresentativeItem
-  compact?: boolean
-}) {
-  const t = useTheme()
-  const isVerified = rep.status === 'verified'
-  return (
-    <View
-      style={[
-        styles.trustBadge,
-        compact && styles.trustBadgeCompact,
-        {
-          backgroundColor: isVerified
-            ? t.palette.positive_500 + '18'
-            : rep.status === 'retired'
-              ? t.palette.contrast_100
-              : t.palette.primary_500 + '14',
-        },
-      ]}>
-      {isVerified ? (
-        <VerifiedIcon size="xs" style={{color: t.palette.positive_500}} />
-      ) : (
-        <CommunityIcon
-          size="xs"
-          style={{
-            color:
-              rep.status === 'retired'
-                ? t.palette.contrast_500
-                : t.palette.primary_500,
-          }}
-        />
-      )}
-      {!compact && (
-        <Text
-          style={[
-            styles.trustText,
-            {
-              color: isVerified
-                ? t.palette.positive_500
-                : rep.status === 'retired'
-                  ? t.palette.contrast_500
-                  : t.palette.primary_500,
-            },
-          ]}>
-          {isVerified ? (
-            <Trans>Verificado</Trans>
-          ) : rep.status === 'retired' ? (
-            <Trans>Retirado</Trans>
-          ) : (
-            <Trans>Reservado</Trans>
-          )}
-        </Text>
-      )}
-    </View>
-  )
-}
-
-function SignalPill({
-  label,
-  icon,
-}: {
-  label: string
-  icon: 'reach' | RepresentativeItem['type']
-}) {
-  const t = useTheme()
-  const Icon = icon === 'reach' ? PersonIcon : CommunityIcon
-  return (
-    <View style={[styles.signalPill, {backgroundColor: t.palette.contrast_50}]}>
-      <Icon size="xs" style={{color: t.palette.contrast_500}} />
-      <Text style={[styles.signalText, t.atoms.text_contrast_medium]}>
-        {label}
-      </Text>
-    </View>
   )
 }
 
@@ -646,148 +282,39 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 100,
   },
-  searchPanel: {
-    gap: 10,
-    marginBottom: 12,
-  },
   searchInput: {
     borderRadius: 8,
   },
-  segmented: {
-    flexDirection: 'row',
-    borderRadius: 8,
-    padding: 4,
-  },
-  segment: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 9,
-    borderRadius: 6,
-  },
-  segmentText: {
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  categoryList: {
+  officeRow: {
     gap: 8,
-    paddingBottom: 16,
+    paddingTop: 12,
+    paddingRight: 16,
   },
-  categoryPill: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 14,
-    paddingVertical: 9,
+  officeChip: {
+    borderRadius: 999,
+    paddingHorizontal: 13,
+    paddingVertical: 7,
   },
-  categoryPillText: {
+  officeChipText: {
     fontSize: 13,
-    fontWeight: '800',
-  },
-  section: {
-    marginBottom: 24,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionHeaderCompact: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 19,
-    fontWeight: '900',
+    fontWeight: '700',
   },
   resultCount: {
     fontSize: 12,
     fontWeight: '700',
-  },
-  sortGroup: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  sortButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 11,
-    paddingVertical: 8,
-    borderRadius: 8,
-  },
-  sortText: {
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  featuredList: {
-    gap: 10,
-    paddingRight: 16,
-  },
-  featuredCard: {
-    width: 238,
-    borderRadius: 8,
-    padding: 14,
-  },
-  featuredTopRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 14,
-  },
-  badgeStack: {
-    alignItems: 'flex-end',
-    gap: 6,
-  },
-  featuredName: {
-    fontSize: 17,
-    lineHeight: 22,
-    fontWeight: '900',
-  },
-  featuredOffice: {
-    fontSize: 12,
-    fontWeight: '800',
-    marginTop: 4,
-    textTransform: 'uppercase',
-  },
-  featuredMandate: {
-    fontSize: 13,
-    lineHeight: 18,
-    marginTop: 10,
-    minHeight: 54,
-  },
-  featuredFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 12,
-  },
-  reachText: {
-    fontSize: 12,
-    fontWeight: '900',
-  },
-  openText: {
-    fontSize: 12,
-    fontWeight: '900',
+    marginTop: 16,
+    marginBottom: 12,
   },
   repCard: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 14,
-    marginBottom: 10,
-    overflow: 'hidden',
-  },
-  repAccent: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    paddingVertical: 14,
   },
   avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 11,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
@@ -804,77 +331,20 @@ const styles = StyleSheet.create({
   repTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 6,
   },
   repName: {
-    flex: 1,
+    flexShrink: 1,
     fontSize: 16,
-    fontWeight: '900',
+    fontWeight: '800',
   },
-  repHandle: {
+  repMeta: {
     fontSize: 12,
     fontWeight: '700',
-  },
-  repScope: {
-    fontSize: 12,
   },
   repMandate: {
     fontSize: 13,
     lineHeight: 18,
-    marginTop: 4,
-  },
-  signalRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: 8,
-  },
-  signalPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-  },
-  signalText: {
-    fontSize: 11,
-    fontWeight: '800',
-  },
-  trustBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-  },
-  trustBadgeCompact: {
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-  },
-  trustText: {
-    fontSize: 11,
-    fontWeight: '900',
-  },
-  officialBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-  },
-  officialBadgeCompact: {
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-  },
-  officialBadgeText: {
-    fontSize: 11,
-    fontWeight: '900',
-  },
-  viewButton: {
-    paddingLeft: 10,
   },
   emptyState: {
     padding: 40,

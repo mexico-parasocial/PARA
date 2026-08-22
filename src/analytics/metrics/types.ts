@@ -738,9 +738,19 @@ export type Events = {
   'trendingTopics:hide': {
     context: 'settings' | 'sidebar' | 'interstitial' | 'explore:trending'
   }
+  'trendingTopic:seen': {
+    context: 'sidebar' | 'interstitial' | 'explore'
+    recId?: string
+    rank: number
+    feedSliceIndex?: number
+  }
   'trendingTopic:click': {
     context: 'sidebar' | 'interstitial' | 'explore'
     recId?: string
+    // Optional here (required upstream) so PARA's existing call sites, which
+    // predate rank tracking, keep type-checking.
+    rank?: number
+    feedSliceIndex?: number
   }
   'trendingVideos:show': {
     context: 'settings'

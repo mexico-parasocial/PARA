@@ -4,7 +4,7 @@ import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
-import {CIVIC_TREE_COPY, CIVIC_TREE_LABELS} from '#/lib/civic-tree-labels'
+import {CIVIC_TREE_COPY, CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
 import {type PoliticalAffiliation} from '#/lib/political-affiliations'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'

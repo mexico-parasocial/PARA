@@ -8,7 +8,7 @@ import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {getCommunityInsignia} from '#/lib/civic-insignias'
-import {CIVIC_TREE_COPY,CIVIC_TREE_LABELS} from '#/lib/civic-tree-labels'
+import {CIVIC_TREE_COPY,CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
 import {type CommunityGovernanceView} from '#/lib/community-governance'
 import {type UsePaletteValue} from '#/lib/hooks/usePalette'
 import {type NavigationProp} from '#/lib/routes/types'
