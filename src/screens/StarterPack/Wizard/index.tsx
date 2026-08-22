@@ -195,6 +195,7 @@ function WizardInner({
   )
 
   const getDefaultName = () => {
+    if (!currentProfile) return _(msg`My Starter Pack`)
     const displayName = createSanitizedDisplayName(currentProfile, true)
     return _(msg`${displayName}'s Starter Pack`).slice(0, 50)
   }
