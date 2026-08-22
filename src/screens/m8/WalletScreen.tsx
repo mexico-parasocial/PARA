@@ -21,6 +21,7 @@ import {useLingui} from '@lingui/react'
 
 import {getGrants, postGrantRevoke, type ProofBrokerGrant} from '#/lib/m8'
 import {authenticateBiometric} from '#/lib/m8/biometric'
+import {INE_INTEGRATION_APPROVED, INE_PREVIEW_NOTICE} from '#/lib/m8/ine'
 import {useTheme} from '#/alf'
 import {Text} from '#/components/Typography'
 
@@ -31,6 +32,7 @@ interface StoredCredential {
   issuerDid: string
   issuedAt: string
   expiresAt: string
+  status: 'pending' | 'approved' | 'revoked' | 'expired'
   claims: {
     ageOver18?: boolean
     ageOver21?: boolean
@@ -83,11 +85,16 @@ function grantToCredential(grant: ProofBrokerGrant): StoredCredential {
   }
   return {
     id: grant.id,
-    issuerDid: 'did:m8:ine:emisor-001',
+    // Claims come from the m8 proof broker; the signed INE issuer credential
+    // only exists once INE integration is approved.
+    issuerDid: INE_INTEGRATION_APPROVED
+      ? 'did:m8:ine:emisor-001'
+      : 'did:m8:broker',
     issuedAt: grant.issuedAt ?? grant.requestedAt,
-    expiresAt: grant.expiresAt ?? '2031-01-01T00:00:00Z',
+    expiresAt: grant.expiresAt ?? grant.issuedAt ?? grant.requestedAt,
+    status: grant.status,
     claims,
-    proof: {type: 'Ed25519', jws: grant.proofArtifactIds[0] ?? 'mock'},
+    proof: {type: 'Ed25519', jws: grant.proofArtifactIds[0] ?? ''},
     revocationHash: `sha256:${grant.id}`,
     deviceBinding: 'device:m8:session',
   }
@@ -178,9 +185,12 @@ export default function WalletScreen() {
       setShowConsent(false)
 
       // Build presentation bundle
+      const jwsFragment = selectedCredential.proof.jws.slice(0, 20)
       const bundle: PresentationBundle = {
         credentialId: selectedCredential.id,
-        encryptedPayload: `encrypted:${selectedCredential.proof.jws.slice(0, 20)}...`,
+        encryptedPayload: jwsFragment
+          ? `encrypted:${jwsFragment}...`
+          : 'encrypted:(pending INE issuance)',
         nonce: `nonce:${Math.random().toString(36).slice(2)}`,
         expiresAt: Date.now() + 5 * 60 * 1000, // 5 min
         revealedClaims: selectedClaims,
@@ -267,6 +277,15 @@ export default function WalletScreen() {
         <Text style={[styles.headerSubtitle, t.atoms.text_contrast_medium]}>
           {credentials.length} credentials
         </Text>
+        {!INE_INTEGRATION_APPROVED && (
+          <Text
+            style={[
+              styles.headerSubtitle,
+              {color: t.palette.primary_600, marginTop: 6},
+            ]}>
+            {INE_PREVIEW_NOTICE}
+          </Text>
+        )}
       </View>
 
       <ScrollView
@@ -296,17 +315,27 @@ export default function WalletScreen() {
                       styles.issuerBadgeText,
                       {color: t.palette.primary_500},
                     ]}>
-                    INE
+                    {INE_INTEGRATION_APPROVED ? 'INE' : 'm8 broker'}
                   </Text>
                 </View>
                 <Text
-                  style={[styles.cardStatus, {color: t.palette.primary_500}]}>
-                  Active
+                  style={[
+                    styles.cardStatus,
+                    {
+                      color:
+                        cred.status === 'approved'
+                          ? t.palette.primary_500
+                          : t.palette.contrast_500,
+                    },
+                  ]}>
+                  {cred.status.charAt(0).toUpperCase() + cred.status.slice(1)}
                 </Text>
               </View>
 
               <Text style={[styles.cardTitle, t.atoms.text]}>
-                Mexican Citizen Credential
+                {INE_INTEGRATION_APPROVED
+                  ? 'Mexican Citizen Credential'
+                  : 'Citizen Credential (preview)'}
               </Text>
 
               <View style={styles.claimsRow}>
@@ -456,7 +485,9 @@ function CredentialDetail({
               Proof
             </Text>
             <Text style={[styles.proofValue, t.atoms.text_contrast_medium]}>
-              {credential.proof.type}: {credential.proof.jws.slice(0, 20)}...
+              {credential.proof.jws
+                ? `${credential.proof.type}: ${credential.proof.jws.slice(0, 20)}...`
+                : `${credential.proof.type}: pending INE issuance`}
             </Text>
           </View>
 

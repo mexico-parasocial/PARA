@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import {useCallback, useEffect, useState} from 'react'
 import {
   ScrollView,
   StyleSheet,
@@ -6,11 +6,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import { useLingui } from '@lingui/react'
+import {useLingui} from '@lingui/react'
 
-import { getGrants, type ProofBrokerProofArtifact } from '#/lib/m8'
-import { useTheme } from '#/alf'
-import { Text } from '#/components/Typography'
+import {getGrants, type ProofBrokerProofArtifact} from '#/lib/m8'
+import {INE_INTEGRATION_APPROVED, INE_PREVIEW_NOTICE} from '#/lib/m8/ine'
+import {useTheme} from '#/alf'
+import {Text} from '#/components/Typography'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -40,7 +41,12 @@ function proofToLog(proof: ProofBrokerProofArtifact): VerificationLog {
     credentialId: proof.grantId,
     verifierDid: proof.verifierId,
     timestamp: proof.issuedAt,
-    result: proof.status === 'active' ? 'success' : proof.status === 'revoked' ? 'revoked' : 'failed',
+    result:
+      proof.status === 'active'
+        ? 'success'
+        : proof.status === 'revoked'
+          ? 'revoked'
+          : 'failed',
     revealedClaims: [proof.claimType],
     mode: 'online',
   }
@@ -56,7 +62,7 @@ function computeMetrics(logs: VerificationLog[]): VerifyMetrics {
     successfulVerifications: successful,
     failedVerifications: failed,
     revokedCredentials: revoked,
-    averageResponseMs: 45,
+    averageResponseMs: 0,
   }
 }
 
@@ -84,7 +90,7 @@ export default function VerifyDashboardScreen() {
   useEffect(() => {
     let cancelled = false
     getGrants()
-      .then(({ proofs }) => {
+      .then(({proofs}) => {
         if (cancelled) return
         const mapped = proofs.map(proofToLog)
         setLogs(mapped)
@@ -93,7 +99,9 @@ export default function VerifyDashboardScreen() {
       .catch(err => {
         console.warn('[m8] Failed to load verification logs:', err)
       })
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const handleScan = useCallback(() => {
@@ -144,48 +152,99 @@ export default function VerifyDashboardScreen() {
     <View style={[styles.container, t.atoms.bg]}>
       <ScrollView contentContainerStyle={styles.content}>
         {/* Header */}
-        <Text style={[styles.headerTitle, t.atoms.text]}>Verification Dashboard</Text>
+        <Text style={[styles.headerTitle, t.atoms.text]}>
+          Verification Dashboard
+        </Text>
         <Text style={[styles.headerSubtitle, t.atoms.text_contrast_medium]}>
           Monitor and verify m8 credentials
         </Text>
 
         {/* Metrics Cards */}
         <View style={styles.metricsRow}>
-          <View style={[styles.metricCard, t.atoms.bg_contrast_25, { borderColor: t.palette.contrast_100 }]}>
-            <Text style={[styles.metricValue, t.atoms.text]}>{metrics.totalVerifications}</Text>
-            <Text style={[styles.metricLabel, t.atoms.text_contrast_medium]}>Total</Text>
+          <View
+            style={[
+              styles.metricCard,
+              t.atoms.bg_contrast_25,
+              {borderColor: t.palette.contrast_100},
+            ]}>
+            <Text style={[styles.metricValue, t.atoms.text]}>
+              {metrics.totalVerifications}
+            </Text>
+            <Text style={[styles.metricLabel, t.atoms.text_contrast_medium]}>
+              Total
+            </Text>
           </View>
-          <View style={[styles.metricCard, t.atoms.bg_contrast_25, { borderColor: t.palette.contrast_100 }]}>
-            <Text style={[styles.metricValue, { color: t.palette.primary_500 }]}>
+          <View
+            style={[
+              styles.metricCard,
+              t.atoms.bg_contrast_25,
+              {borderColor: t.palette.contrast_100},
+            ]}>
+            <Text style={[styles.metricValue, {color: t.palette.primary_500}]}>
               {metrics.successfulVerifications}
             </Text>
-            <Text style={[styles.metricLabel, t.atoms.text_contrast_medium]}>Success</Text>
+            <Text style={[styles.metricLabel, t.atoms.text_contrast_medium]}>
+              Success
+            </Text>
           </View>
-          <View style={[styles.metricCard, t.atoms.bg_contrast_25, { borderColor: t.palette.contrast_100 }]}>
-            <Text style={[styles.metricValue, { color: t.palette.contrast_500 }]}>
+          <View
+            style={[
+              styles.metricCard,
+              t.atoms.bg_contrast_25,
+              {borderColor: t.palette.contrast_100},
+            ]}>
+            <Text style={[styles.metricValue, {color: t.palette.contrast_500}]}>
               {metrics.failedVerifications}
             </Text>
-            <Text style={[styles.metricLabel, t.atoms.text_contrast_medium]}>Failed</Text>
+            <Text style={[styles.metricLabel, t.atoms.text_contrast_medium]}>
+              Failed
+            </Text>
           </View>
-          <View style={[styles.metricCard, t.atoms.bg_contrast_25, { borderColor: t.palette.contrast_100 }]}>
-            <Text style={[styles.metricValue, { color: t.palette.contrast_500 }]}>
+          <View
+            style={[
+              styles.metricCard,
+              t.atoms.bg_contrast_25,
+              {borderColor: t.palette.contrast_100},
+            ]}>
+            <Text style={[styles.metricValue, {color: t.palette.contrast_500}]}>
               {metrics.revokedCredentials}
             </Text>
-            <Text style={[styles.metricLabel, t.atoms.text_contrast_medium]}>Revoked</Text>
+            <Text style={[styles.metricLabel, t.atoms.text_contrast_medium]}>
+              Revoked
+            </Text>
           </View>
         </View>
 
         {/* Scan Input */}
-        <View style={[styles.scanCard, t.atoms.bg_contrast_25, { borderColor: t.palette.contrast_100 }]}>
-          <Text style={[styles.scanLabel, t.atoms.text]}>Verify Presentation</Text>
-          <TextInput accessibilityLabel="Text input field" accessibilityHint="Paste your credential presentation bundle here"
+        <View
+          style={[
+            styles.scanCard,
+            t.atoms.bg_contrast_25,
+            {borderColor: t.palette.contrast_100},
+          ]}>
+          <Text style={[styles.scanLabel, t.atoms.text]}>
+            Verify Presentation
+          </Text>
+          {!INE_INTEGRATION_APPROVED && (
+            <Text style={[styles.scanHint, t.atoms.text_contrast_medium]}>
+              {INE_PREVIEW_NOTICE}
+            </Text>
+          )}
+          <TextInput
+            accessibilityLabel="Text input field"
+            accessibilityHint="Paste your credential presentation bundle here"
             value={scanInput}
             onChangeText={setScanInput}
             placeholder="Paste presentation bundle JSON..."
             placeholderTextColor={t.palette.contrast_300}
             multiline
             numberOfLines={3}
-            style={[styles.scanInput, t.atoms.bg, t.atoms.text, { borderColor: t.palette.contrast_100 }]}
+            style={[
+              styles.scanInput,
+              t.atoms.bg,
+              t.atoms.text,
+              {borderColor: t.palette.contrast_100},
+            ]}
           />
           <TouchableOpacity
             accessibilityRole="button"
@@ -195,21 +254,43 @@ export default function VerifyDashboardScreen() {
             disabled={scanning || !scanInput.trim()}
             style={[
               styles.scanBtn,
-              { backgroundColor: scanning ? t.palette.contrast_200 : t.palette.primary_500 },
-            ]}
-          >
+              {
+                backgroundColor: scanning
+                  ? t.palette.contrast_200
+                  : t.palette.primary_500,
+              },
+            ]}>
             <Text style={styles.scanBtnText}>
               {scanning ? 'Verifying...' : 'Verify'}
             </Text>
           </TouchableOpacity>
 
           {lastResult && (
-            <View style={[styles.resultBadge, { backgroundColor: lastResult.valid ? t.palette.primary_500 + '15' : t.palette.contrast_200 }]}>
-              <Text style={[styles.resultText, { color: lastResult.valid ? t.palette.primary_500 : t.palette.contrast_500 }]}>
-                {lastResult.valid ? '✓ Valid' : '✗ Invalid'} — {lastResult.credentialId}
+            <View
+              style={[
+                styles.resultBadge,
+                {
+                  backgroundColor: lastResult.valid
+                    ? t.palette.primary_500 + '15'
+                    : t.palette.contrast_200,
+                },
+              ]}>
+              <Text
+                style={[
+                  styles.resultText,
+                  {
+                    color: lastResult.valid
+                      ? t.palette.primary_500
+                      : t.palette.contrast_500,
+                  },
+                ]}>
+                {lastResult.valid ? '✓ Valid' : '✗ Invalid'}
+                {INE_INTEGRATION_APPROVED ? '' : ' (simulated)'} —{' '}
+                {lastResult.credentialId}
               </Text>
               {lastResult.valid && (
-                <Text style={[styles.resultClaims, t.atoms.text_contrast_medium]}>
+                <Text
+                  style={[styles.resultClaims, t.atoms.text_contrast_medium]}>
                   Claims: {lastResult.claims.join(', ')}
                 </Text>
               )}
@@ -218,26 +299,56 @@ export default function VerifyDashboardScreen() {
         </View>
 
         {/* Verification Logs */}
-        <Text style={[styles.sectionTitle, t.atoms.text]}>Recent Verifications</Text>
+        <Text style={[styles.sectionTitle, t.atoms.text]}>
+          Recent Verifications
+        </Text>
         {logs.map(log => (
           <View
             key={log.id}
-            style={[styles.logCard, t.atoms.bg_contrast_25, { borderColor: t.palette.contrast_100 }]}
-          >
+            style={[
+              styles.logCard,
+              t.atoms.bg_contrast_25,
+              {borderColor: t.palette.contrast_100},
+            ]}>
             <View style={styles.logHeader}>
-              <View style={[styles.logBadge, { backgroundColor: resultColor(log.result, t) + '20' }]}>
-                <Text style={[styles.logBadgeText, { color: resultColor(log.result, t) }]}>
+              <View
+                style={[
+                  styles.logBadge,
+                  {backgroundColor: resultColor(log.result, t) + '20'},
+                ]}>
+                <Text
+                  style={[
+                    styles.logBadgeText,
+                    {color: resultColor(log.result, t)},
+                  ]}>
                   {log.result.toUpperCase()}
                 </Text>
               </View>
-              <Text style={[styles.logMode, t.atoms.text_contrast_medium]}>{log.mode}</Text>
+              <Text style={[styles.logMode, t.atoms.text_contrast_medium]}>
+                {log.mode}
+              </Text>
             </View>
-            <Text style={[styles.logCredential, t.atoms.text]}>{log.credentialId}</Text>
-            <Text style={[styles.logVerifier, t.atoms.text_contrast_medium]}>{log.verifierDid}</Text>
+            <Text style={[styles.logCredential, t.atoms.text]}>
+              {log.credentialId}
+            </Text>
+            <Text style={[styles.logVerifier, t.atoms.text_contrast_medium]}>
+              {log.verifierDid}
+            </Text>
             <View style={styles.logClaims}>
               {log.revealedClaims.map(claim => (
-                <View key={claim} style={[styles.logClaimChip, { backgroundColor: t.palette.primary_500 + '15' }]}>
-                  <Text style={[styles.logClaimText, { color: t.palette.primary_500 }]}>{claim}</Text>
+                <View
+                  key={claim}
+                  style={[
+                    styles.logClaimChip,
+                    {backgroundColor: t.palette.primary_500 + '15'},
+                  ]}>
+                  <Text
+                    style={[
+                      styles.logClaimText,
+                      {color: t.palette.primary_500},
+                    ]}>
+                    {claim}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -253,10 +364,14 @@ export default function VerifyDashboardScreen() {
 
 function resultColor(result: string, t: ReturnType<typeof useTheme>): string {
   switch (result) {
-    case 'success': return t.palette.primary_500
-    case 'failed': return t.palette.contrast_500
-    case 'revoked': return t.palette.contrast_500
-    default: return t.palette.contrast_300
+    case 'success':
+      return t.palette.primary_500
+    case 'failed':
+      return t.palette.contrast_500
+    case 'revoked':
+      return t.palette.contrast_500
+    default:
+      return t.palette.contrast_300
   }
 }
 
@@ -308,6 +423,11 @@ const styles = StyleSheet.create({
   scanLabel: {
     fontSize: 16,
     fontWeight: '700',
+  },
+  scanHint: {
+    fontSize: 12,
+    lineHeight: 16,
+    marginBottom: 4,
   },
   scanInput: {
     borderRadius: 8,

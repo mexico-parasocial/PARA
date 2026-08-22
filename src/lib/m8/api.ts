@@ -27,9 +27,19 @@ import {
   type ProofBrokerSession,
 } from './types'
 
-const M8_BROKER_URL =
+// Loopback defaults only apply in development. Release builds must set
+// EXPO_PUBLIC_M8_BROKER_URL; otherwise calls fail fast with a clear error
+// instead of silently targeting localhost.
+export const M8_BROKER_URL =
   process.env.EXPO_PUBLIC_M8_BROKER_URL ??
-  (Platform.OS === 'android' ? 'http://10.0.2.2:8787' : 'http://127.0.0.1:8787')
+  (__DEV__
+    ? Platform.OS === 'android'
+      ? 'http://10.0.2.2:8787'
+      : 'http://127.0.0.1:8787'
+    : '')
+
+export const M8_NOT_CONFIGURED_MESSAGE =
+  'm8 identity broker is not configured in this build (set EXPO_PUBLIC_M8_BROKER_URL).'
 
 const API_BASE = `${M8_BROKER_URL}/v1`
 
@@ -52,6 +62,9 @@ export async function m8Fetch(
   path: string,
   options: RequestInit = {},
 ): Promise<Response> {
+  if (!M8_BROKER_URL) {
+    throw new Error(M8_NOT_CONFIGURED_MESSAGE)
+  }
   const token = await getM8AccessToken()
   const headers: Record<string, string> = {
     'content-type': 'application/json',

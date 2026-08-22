@@ -9,12 +9,14 @@ import {
 } from 'react-native'
 import {useNavigation} from '@react-navigation/native'
 
+import {setStoredAnonymousProfile} from '#/lib/m8/anonymous'
 import {
   postIneAnalyze,
   postIneCredential,
   postIneVerify,
   postRevokeCredential,
 } from '#/lib/m8/api'
+import {INE_INTEGRATION_APPROVED, INE_PREVIEW_NOTICE} from '#/lib/m8/ine'
 import {type IneExtractedData, type IneVerificationResult} from '#/lib/m8/types'
 import {type NavigationProp} from '#/lib/routes/types'
 import * as Storage from '#/lib/storage'
@@ -91,6 +93,14 @@ export default function INEVerificationScreen() {
     setError(null)
     setStep('verify')
     try {
+      if (!INE_INTEGRATION_APPROVED) {
+        // Preview: INE infrastructure is not approved yet, so we complete the
+        // walkthrough locally. No credential is requested, no verification
+        // flags are written, and the success step is labeled as a preview.
+        setStep('success')
+        return
+      }
+
       // The credential endpoint requires a client-generated ZK age proof.
       // Proof generation (prover WebView) lands in a later build; until then
       // fail with an honest message instead of a server rejection.
@@ -129,11 +139,9 @@ export default function INEVerificationScreen() {
         result.credential.revocationHash,
       )
 
-      // Anonymous by default: store profile locally
-      await Storage.setItemAsync(
-        'para_anonymous_profile',
-        JSON.stringify(result.anonymousProfile),
-      )
+      // Anonymous by default: store profile locally (also flips the
+      // anonymous-enabled flag so the rest of the app agrees).
+      await setStoredAnonymousProfile(result.anonymousProfile)
 
       setStep('success')
     } catch (err) {
@@ -149,54 +157,6 @@ export default function INEVerificationScreen() {
   const handleDone = useCallback(() => {
     navigation.goBack()
   }, [navigation])
-
-  /*
-  const handleGenerateProof = useCallback(async () => {
-    const birthYear = await Storage.getItemAsync('para_zkp_birthYear')
-    const salt = await Storage.getItemAsync('para_zkp_salt')
-    if (!birthYear || !salt) {
-      Alert.alert('Error', 'No ZKP witness found. Please verify your identity first.')
-      return
-    }
-    const url = getZkpProverUrl({
-      birthYear: parseInt(birthYear, 10),
-      salt: parseInt(salt, 10),
-      currentYear: new Date().getFullYear(),
-      ageThreshold: 18,
-    })
-    setProverUrl(url)
-    setShowProver(true)
-  }, [])
-  */
-
-  /*
-  const handleProofResult = useCallback(async (result: {
-    success: boolean
-    proof?: unknown
-    publicSignals?: string[]
-    commitment?: string
-    error?: string
-  }) => {
-    setShowProver(false)
-    if (result.success && result.proof && result.publicSignals) {
-      try {
-        const verifyRes = await postZkpVerify({
-          proof: result.proof,
-          publicSignals: result.publicSignals,
-        })
-        if (verifyRes.valid) {
-          Alert.alert('Success', '✅ Proof verified! Your age is proven without revealing your birth year.')
-        } else {
-          Alert.alert('Rejected', `❌ Proof rejected: ${verifyRes.reason ?? 'unknown'}`)
-        }
-      } catch (err) {
-        Alert.alert('Error', `❌ Verification error: ${err instanceof Error ? err.message : 'unknown'}`)
-      }
-    } else {
-      Alert.alert('Error', `❌ Proof generation failed: ${result.error ?? 'unknown'}`)
-    }
-  }, [])
-  */
 
   const handleRevoke = useCallback(async () => {
     const revocationHash = await Storage.getItemAsync('para_zkp_revocationHash')
@@ -218,7 +178,14 @@ export default function INEVerificationScreen() {
                 revocationHash,
                 reason: 'User requested',
               })
+              await Storage.deleteItemAsync('para_ine_verified')
+              await Storage.deleteItemAsync('para_ine_verified_at')
+              await Storage.deleteItemAsync('para_verified_human')
+              await Storage.deleteItemAsync('para_zkp_commitment')
+              await Storage.deleteItemAsync('para_zkp_revocationHash')
+              await setStoredAnonymousProfile(null)
               Alert.alert('Revoked', 'Your credential has been revoked.')
+              navigation.goBack()
             } catch (err) {
               Alert.alert(
                 'Error',
@@ -314,6 +281,7 @@ export default function INEVerificationScreen() {
               <Text style={[styles.title, t.atoms.text]}>
                 Verify your identity with INE
               </Text>
+              {!INE_INTEGRATION_APPROVED && <PreviewNotice theme={t} />}
               <Text style={[styles.body, t.atoms.text_contrast_medium]}>
                 This process verifies your Mexican citizenship and age using
                 your voter ID card (INE). The verification results in a signed
@@ -445,6 +413,7 @@ export default function INEVerificationScreen() {
               <Text style={[styles.title, t.atoms.text]}>
                 Review extracted data
               </Text>
+              {!INE_INTEGRATION_APPROVED && <PreviewNotice theme={t} />}
 
               <View style={styles.confidenceRow}>
                 <View
@@ -579,10 +548,12 @@ export default function INEVerificationScreen() {
             <View style={styles.card}>
               <Text
                 style={[styles.successEmoji, {color: t.palette.positive_400}]}>
-                ✅
+                {INE_INTEGRATION_APPROVED ? '✅' : '👁️'}
               </Text>
               <Text style={[styles.title, t.atoms.text]}>
-                Your identity is verified
+                {INE_INTEGRATION_APPROVED
+                  ? 'Your identity is verified'
+                  : 'Preview complete'}
               </Text>
 
               <View
@@ -595,7 +566,9 @@ export default function INEVerificationScreen() {
                     styles.credentialTitle,
                     {color: t.palette.primary_700},
                   ]}>
-                  Issued credential claims
+                  {INE_INTEGRATION_APPROVED
+                    ? 'Issued credential claims'
+                    : 'Sample credential claims (preview — nothing was issued)'}
                 </Text>
                 <CredentialClaim label="Age ≥ 18" value="true" theme={t} />
                 <CredentialClaim label="Age ≥ 21" value="true" theme={t} />
@@ -612,27 +585,30 @@ export default function INEVerificationScreen() {
                 />
               </View>
 
-              <View
-                style={[
-                  styles.credentialCard,
-                  {backgroundColor: t.palette.primary_500, marginTop: 12},
-                ]}>
-                <Text
-                  style={[styles.credentialTitle, {color: t.palette.white}]}>
-                  Anonymous Persona
-                </Text>
-                <Text
+              {INE_INTEGRATION_APPROVED && (
+                <View
                   style={[
-                    styles.body,
-                    {color: t.palette.white, textAlign: 'center'},
+                    styles.credentialCard,
+                    {backgroundColor: t.palette.primary_500, marginTop: 12},
                   ]}>
-                  You are now posting as your verified anonymous citizen.
-                </Text>
-              </View>
+                  <Text
+                    style={[styles.credentialTitle, {color: t.palette.white}]}>
+                    Anonymous Persona
+                  </Text>
+                  <Text
+                    style={[
+                      styles.body,
+                      {color: t.palette.white, textAlign: 'center'},
+                    ]}>
+                    You are now posting as your verified anonymous citizen.
+                  </Text>
+                </View>
+              )}
 
               <Text style={[styles.body, t.atoms.text_contrast_medium]}>
-                Your credential has been stored in your wallet and your
-                anonymous persona is active across all PARA communities.
+                {INE_INTEGRATION_APPROVED
+                  ? 'Your credential has been stored in your wallet and your anonymous persona is active across all PARA communities.'
+                  : 'This walkthrough ran against simulated data. Once INE integration is approved, confirming here will issue a real credential to your wallet and activate your anonymous persona.'}
               </Text>
 
               <TouchableOpacity
@@ -645,25 +621,27 @@ export default function INEVerificationScreen() {
                 <Text style={styles.primaryButtonText}>Done</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity
-                accessibilityRole="button"
-                onPress={handleRevoke}
-                style={[
-                  styles.primaryButton,
-                  {
-                    backgroundColor: 'transparent',
-                    borderWidth: 1,
-                    borderColor: t.palette.negative_400,
-                  },
-                ]}>
-                <Text
+              {INE_INTEGRATION_APPROVED && (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={handleRevoke}
                   style={[
-                    styles.primaryButtonText,
-                    {color: t.palette.negative_400},
+                    styles.primaryButton,
+                    {
+                      backgroundColor: 'transparent',
+                      borderWidth: 1,
+                      borderColor: t.palette.negative_400,
+                    },
                   ]}>
-                  Revoke Credential
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[
+                      styles.primaryButtonText,
+                      {color: t.palette.negative_400},
+                    ]}>
+                    Revoke Credential
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
           )}
         </Layout.Center>
@@ -671,6 +649,17 @@ export default function INEVerificationScreen() {
 
       {/* Modal removed as it was unused */}
     </Layout.Screen>
+  )
+}
+
+function PreviewNotice({theme}: {theme: ReturnType<typeof useTheme>}) {
+  return (
+    <View
+      style={[styles.previewCard, {backgroundColor: theme.palette.primary_50}]}>
+      <Text style={[styles.previewText, {color: theme.palette.primary_700}]}>
+        {INE_PREVIEW_NOTICE}
+      </Text>
+    </View>
   )
 }
 
@@ -823,6 +812,17 @@ const styles = StyleSheet.create({
   privacyBody: {
     fontSize: 13,
     lineHeight: 18,
+  },
+  previewCard: {
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(217,119,6,0.35)',
+  },
+  previewText: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
   },
   primaryButton: {
     minHeight: 48,
