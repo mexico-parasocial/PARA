@@ -4,7 +4,7 @@
  */
 import {memo, useCallback, useEffect, useRef, useState} from 'react'
 import {Pressable, StyleSheet, Text, TextInput, View} from 'react-native'
-import {type RichText as RichTextAPI} from '@atproto/api'
+import {type RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 

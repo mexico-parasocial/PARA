@@ -1,3 +1,4 @@
+import * as React from 'react'
 import {useCallback, useState} from 'react'
 import {View} from 'react-native'
 import type Animated from 'react-native-reanimated'
@@ -143,7 +144,9 @@ function SavedFeedsInner({
         </Button>
       </Layout.Header.Outer>
 
-      <Layout.Content ref={scrollRef} scrollEnabled={!isDragging}>
+      <Layout.Content
+        ref={scrollRef as unknown as React.Ref<Animated.ScrollView>}
+        scrollEnabled={!isDragging}>
         {noSavedFeedsOfAnyType && (
           <View style={[t.atoms.border_contrast_low, a.border_b]}>
             <NoSavedFeedsOfAnyType

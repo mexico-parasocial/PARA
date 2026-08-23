@@ -36,7 +36,7 @@ export function GrowableBanner({
   backButton?: ReactNode
   children: ReactNode
   onPress?: () => void
-  bannerRef?: AnimatedRef<Animated.View>
+  bannerRef?: AnimatedRef
   testID?: string
   label?: string
 }) {
@@ -88,7 +88,7 @@ function GrowableBannerInner({
   backButton?: ReactNode
   children: ReactNode
   onPress?: () => void
-  bannerRef?: AnimatedRef<Animated.View>
+  bannerRef?: AnimatedRef
   testID?: string
   label?: string
 }) {

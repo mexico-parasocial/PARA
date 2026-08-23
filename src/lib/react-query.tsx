@@ -1,7 +1,12 @@
 import {useEffect, useRef, useState} from 'react'
 import {AppState, type AppStateStatus} from 'react-native'
 import {createAsyncStoragePersister} from '@tanstack/query-async-storage-persister'
-import {focusManager, onlineManager, QueryClient} from '@tanstack/react-query'
+import {
+  focusManager,
+  onlineManager,
+  QueryCache,
+  QueryClient,
+} from '@tanstack/react-query'
 import {
   type PersistQueryClientOptions,
   PersistQueryClientProvider,
@@ -9,7 +14,12 @@ import {
 } from '@tanstack/react-query-persist-client'
 
 import {createPersistedQueryStorage} from '#/lib/persisted-query-storage'
-import {listenNetworkConfirmed, listenNetworkLost} from '#/state/events'
+import {logger} from '#/logger'
+import {
+  listenNetworkConfirmed,
+  listenNetworkLost,
+  listenSessionDropped,
+} from '#/state/events'
 import {PERSISTED_QUERY_ROOT} from '#/state/queries'
 import * as env from '#/env'
 import {IS_NATIVE, IS_WEB} from '#/env'
@@ -50,6 +60,15 @@ let isNetworkStateUnclear = false
 listenNetworkLost(() => {
   receivedNetworkLost = true
   onlineManager.setOnline(false)
+})
+
+/*
+ * Re-arm auth reporting once the session layer has acted on the drop, so a
+ * later dead session is reported again instead of being silenced for the
+ * lifetime of the process.
+ */
+listenSessionDropped(() => {
+  resetQueryAuthErrorReporting()
 })
 
 listenNetworkConfirmed(() => {
@@ -112,8 +131,58 @@ focusManager.setEventListener(onFocus => {
   }
 })
 
+/*
+ * A dead session fails every in-flight query at once, and each rejection
+ * surfaces separately. In practice that was 758 identical
+ * "XrpcResponseError: Token has expired" lines in one run - enough to bury any
+ * real error in the log.
+ *
+ * Auth failures are already handled where they belong: the session layer
+ * refreshes, and emits `session-dropped` when it cannot. There is nothing a
+ * query can add, so report the first one per session and stay quiet after that.
+ * Any other error still logs every time.
+ */
+const AUTH_ERROR_NAMES = new Set([
+  'ExpiredToken',
+  'InvalidToken',
+  'AuthMissing',
+])
+
+function isAuthError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false
+  const {name, message} = error as {name?: unknown; message?: unknown}
+  if (typeof name === 'string' && AUTH_ERROR_NAMES.has(name)) return true
+  return (
+    typeof message === 'string' &&
+    /token has expired|invalid token|expiredtoken/i.test(message)
+  )
+}
+
+let reportedAuthFailure = false
+
+/** Called on `session-dropped` so the next dead session reports again. */
+export function resetQueryAuthErrorReporting() {
+  reportedAuthFailure = false
+}
+
 const createQueryClient = () =>
   new QueryClient({
+    queryCache: new QueryCache({
+      onError: (error, query) => {
+        if (isAuthError(error)) {
+          if (reportedAuthFailure) return
+          reportedAuthFailure = true
+          logger.warn('query: failing on an expired session', {
+            queryKey: String(query.queryKey[0]),
+          })
+          return
+        }
+        logger.error(error instanceof Error ? error : String(error), {
+          safeMessage: 'query failed',
+          queryKey: String(query.queryKey[0]),
+        })
+      },
+    }),
     defaultOptions: {
       queries: {
         // NOTE

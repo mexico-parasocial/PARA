@@ -11,15 +11,15 @@ import {
   type AppBskyFeedThreadgate,
   AtUri,
 } from '@atproto/api'
-import {msg} from '@lingui/core/macro'
 import {RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
 import {Plural, Trans, useLingui} from '@lingui/react/macro'
 
 import {useActorStatus} from '#/lib/actor-status'
+import {HITSLOP_20} from '#/lib/constants'
 import {useNonReactiveCallback} from '#/lib/hooks/useNonReactiveCallback'
 import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
 import {useTranslate} from '#/lib/hooks/useTranslate'
-import { getPostBadges,type PostBadgeRecord} from '#/lib/post-flairs'
+import {getPostBadges, type PostBadgeRecord} from '#/lib/post-flairs'
 import {makeProfileLink} from '#/lib/routes/links'
 import {sanitizeDisplayName} from '#/lib/strings/display-names'
 import {sanitizeHandle} from '#/lib/strings/handles'
@@ -191,7 +191,7 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
   postSource?: PostSource
 }) {
   const t = useTheme()
-  const {_} = useLingui()
+  const {t: _} = useLingui()
   const {openComposer} = useOpenComposer()
   const {currentAccount, hasSession} = useSession()
   const feedFeedback = useFeedFeedback(postSource?.feedSourceInfo, hasSession)
@@ -377,7 +377,11 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
                   </Text>
 
                   <View style={[a.pl_xs]}>
-                    <VerificationCheckButton profile={authorShadow} size="md" />
+                    <VerificationCheckButton
+                      profile={authorShadow}
+                      width={14}
+                      hitSlop={HITSLOP_20}
+                    />
                   </View>
                 </View>
                 <Text
@@ -486,9 +490,7 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
                 </Text>
               ) : null}
               {paraSummaryMetrics.highlights !== 0 ? (
-                <Link
-                  to={highlightsHref}
-                  label={_(msg`Highlights on this post`)}>
+                <Link to={highlightsHref} label={_`Highlights on this post`}>
                   <Text
                     testID="highlightCount-expanded"
                     style={[a.text_md, t.atoms.text_contrast_medium]}>
@@ -505,7 +507,7 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
               ) : null}
               {paraSummaryMetrics.quotes !== 0 &&
               !post.viewer?.embeddingDisabled ? (
-                <Link to={quotesHref} label={_(msg`Quotes of this post`)}>
+                <Link to={quotesHref} label={_`Quotes of this post`}>
                   <Text
                     testID="quoteCount-expanded"
                     style={[a.text_md, t.atoms.text_contrast_medium]}>
@@ -555,7 +557,7 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
                 threadgateRecord={threadgateRecord}
                 feedContext={postSource?.post?.feedContext}
                 reqId={postSource?.post?.reqId}
-                viaQuote={viaQuote}
+                viaRepost={viaQuote}
               />
             </FeedFeedbackProvider>
           </View>
@@ -574,7 +576,7 @@ function ExpandedPostDetails({
   isThreadAuthor: boolean
 }) {
   const t = useTheme()
-  const {_, i18n} = useLingui()
+  const {t: _, i18n} = useLingui()
   const translate = useTranslate()
   const isRootPost = !('reply' in post.record)
   const langPrefs = useLanguagePrefs()
@@ -636,7 +638,7 @@ function ExpandedPostDetails({
                 post.record.text,
                 langPrefs.primaryLanguage,
               )}
-              label={_(msg`Translate`)}
+              label={_`Translate`}
               style={[a.text_sm]}
               onPress={onTranslatePress}>
               <Trans>Translate</Trans>
@@ -650,7 +652,7 @@ function ExpandedPostDetails({
 
 function BackdatedPostIndicator({post}: {post: AppBskyFeedDefs.PostView}) {
   const t = useTheme()
-  const {_, i18n} = useLingui()
+  const {t: _, i18n} = useLingui()
   const control = Prompt.usePromptControl()
 
   const indexedAt = new Date(post.indexedAt)
@@ -672,10 +674,8 @@ function BackdatedPostIndicator({post}: {post: AppBskyFeedDefs.PostView}) {
   return (
     <>
       <Button
-        label={_(msg`Archived post`)}
-        accessibilityHint={_(
-          msg`Shows information about when this post was created`,
-        )}
+        label={_`Archived post`}
+        accessibilityHint={_`Shows information about when this post was created`}
         onPress={e => {
           e.preventDefault()
           e.stopPropagation()
@@ -739,7 +739,7 @@ function BackdatedPostIndicator({post}: {post: AppBskyFeedDefs.PostView}) {
             </Trans>
           </Text>
           <Prompt.Actions>
-            <Prompt.Action cta={_(msg`Okay`)} onPress={() => {}} />
+            <Prompt.Action cta={_`Okay`} onPress={() => {}} />
           </Prompt.Actions>
         </Prompt.Content>
       </Prompt.Outer>

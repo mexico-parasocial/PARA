@@ -37,6 +37,7 @@ import Animated, {
   LinearTransition,
   runOnUI,
   scrollTo,
+  type AnimatedStyle,
   useAnimatedRef,
   useAnimatedScrollHandler,
   useAnimatedStyle,
@@ -49,11 +50,7 @@ import Animated, {
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import * as FileSystem from 'expo-file-system'
 import {type ImagePickerAsset} from 'expo-image-picker'
-import {
-  AppBskyUnspeccedDefs,
-  AtUri,
-  ChatBskyGroupDefs,
-} from '@atproto/api'
+import {AppBskyUnspeccedDefs, AtUri, ChatBskyGroupDefs} from '@atproto/api'
 import {type Client} from '@atproto/lex'
 import {type AtUriString} from '@atproto/syntax'
 import {msg, plural} from '@lingui/core/macro'
@@ -644,7 +641,18 @@ export const ComposePost = ({
   // Fire composer:open metric on mount
   useCallOnce(() => {
     ax.metric('composer:open', {
-      logContext: logContext ?? 'Other',
+      /*
+       * PARA extends `ComposerLogContext` with 'ComposerPrompt' and
+       * 'Navigation', which the metrics schema doesn't know about yet. Send
+       * them through unchanged; the collector accepts arbitrary strings.
+       */
+      logContext: (logContext ?? 'Other') as
+        | 'Fab'
+        | 'PostReply'
+        | 'QuotePost'
+        | 'ProfileFeed'
+        | 'Deeplink'
+        | 'Other',
       isReply: !!replyTo,
       hasQuote: !!initQuote,
       hasDraft: false,
@@ -2069,7 +2077,7 @@ function ComposerTopBar({
   isThread: boolean
   onCancel: () => void
   onPublish: () => void
-  topBarAnimatedStyle: StyleProp<ViewStyle>
+  topBarAnimatedStyle: AnimatedStyle<ViewStyle>
   children?: ReactNode
   draftsButton?: ReactNode
 }) {
@@ -2322,7 +2330,7 @@ function ComposerPills({
   thread: ThreadDraft
   activePost: PostDraft
   dispatch: (action: ComposerAction) => void
-  bottomBarAnimatedStyle: StyleProp<ViewStyle>
+  bottomBarAnimatedStyle: AnimatedStyle<ViewStyle>
   selectedFlairs: ComposerFlair[]
   setSelectedFlairs: (flairs: ComposerFlair[]) => void
   isOfficial: boolean

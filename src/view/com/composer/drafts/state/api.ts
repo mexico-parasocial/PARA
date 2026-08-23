@@ -639,6 +639,9 @@ export async function draftToComposerPosts(
         richtext,
         shortenedGraphemeLength: shortenLinks(richtext).graphemeLength,
         labels,
+        flairs: [],
+        postType: null,
+        isOfficial: false,
         embed,
       }
     }),

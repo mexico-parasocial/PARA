@@ -1,10 +1,8 @@
 import {useCallback, useMemo} from 'react'
 import {Image, StyleSheet, View} from 'react-native'
-import {
-  type AppBskyFeedDefs,
-  AppBskyFeedPost,
-  RichText as RichTextAPI,
-} from '@atproto/api'
+import {type AppBskyFeedDefs, AppBskyFeedPost} from '@atproto/api'
+import {RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
+import {asSdkFacets} from '#/lib/strings/rich-text-helpers'
 import {Trans} from '@lingui/react/macro'
 import {type NativeStackScreenProps} from '@react-navigation/native-stack'
 
@@ -154,7 +152,7 @@ export function SeeHighlightDetailsScreen({route}: Props) {
         record: r,
         richText: new RichTextAPI({
           text: r.text,
-          facets: r.facets,
+          facets: asSdkFacets(r.facets),
         }),
       }
     }
@@ -499,7 +497,9 @@ export function SeeHighlightDetailsScreen({route}: Props) {
                   ]}
                 />
                 <View style={{flex: 1}}>
-                  <Text style={[styles.relatedText, t.atoms.text]} numberOfLines={2}>
+                  <Text
+                    style={[styles.relatedText, t.atoms.text]}
+                    numberOfLines={2}>
                     {item.text}
                   </Text>
                   <Text
@@ -519,7 +519,7 @@ export function SeeHighlightDetailsScreen({route}: Props) {
             styles.card,
             t.atoms.bg_contrast_25,
             t.atoms.border_contrast_low,
-        ]}>
+          ]}>
           <View style={styles.controlsRow}>
             {/* Reply */}
             <PostControlButton
@@ -603,7 +603,9 @@ export function SeeHighlightDetailsScreen({route}: Props) {
               <PostControlButton
                 testID="moreBtn"
                 label="More options"
-                onPress={() => Toast.show('More highlight actions coming soon')}>
+                onPress={() =>
+                  Toast.show('More highlight actions coming soon')
+                }>
                 <PostControlButtonIcon icon={MoreIcon} />
               </PostControlButton>
             )}

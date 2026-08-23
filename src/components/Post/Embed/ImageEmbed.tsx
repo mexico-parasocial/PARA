@@ -1,4 +1,4 @@
-import {type Component, useRef} from 'react'
+import {useRef} from 'react'
 import {InteractionManager, View} from 'react-native'
 import {type AnimatedRef} from 'react-native-reanimated'
 import {Image} from 'expo-image'
@@ -7,7 +7,10 @@ import {atoms as a, tokens} from '#/alf'
 import {AutoSizedImage} from '#/components/images/AutoSizedImage'
 import {Gallery} from '#/components/images/Gallery/index'
 import {ImageLayoutGrid} from '#/components/images/ImageLayoutGrid'
-import {type LightboxMetricsContext, useLightboxControls} from '#/components/Lightbox/state'
+import {
+  type LightboxMetricsContext,
+  useLightboxControls,
+} from '#/components/Lightbox/state'
 import {type Dimensions} from '#/components/Lightbox/types'
 import {ImageContextMenu} from '#/components/Post/Embed/ImageContextMenu'
 import {PostEmbedViewContext} from '#/components/Post/Embed/types'
@@ -42,7 +45,7 @@ export function ImageEmbed({
 
   // Captured from AutoSizedImage so the peek-commit handler can reuse the same
   // ref + dims that a tap would — keeps the lightbox's return animation intact.
-  const singleContainerRef = useRef<AnimatedRef<React.Component> | null>(null)
+  const singleContainerRef = useRef<AnimatedRef | null>(null)
   const singleDimsRef = useRef<Dimensions | null>(null)
 
   if (images.length > 0) {
@@ -54,7 +57,7 @@ export function ImageEmbed({
     }))
     const onPress = (
       index: number,
-      refs: AnimatedRef<React.Component>[],
+      refs: AnimatedRef[],
       fetchedDims: (Dimensions | null)[],
     ) => {
       if (postContext) {
@@ -69,9 +72,7 @@ export function ImageEmbed({
         images: items.map((item, i) => ({
           ...item,
           thumbRect: null,
-          thumbRef: refs[i]
-            ? (refs[i] as unknown as AnimatedRef<Component>)
-            : null,
+          thumbRef: refs[i] ?? null,
           thumbDimensions: fetchedDims[i] ?? null,
           thumbBorderRadius: tokens.borderRadius.md,
           type: 'image',

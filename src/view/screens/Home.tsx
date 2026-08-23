@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useLayoutEffect, useMemo, useRef} from 'react'
 import {ActivityIndicator, StyleSheet} from 'react-native'
 import {withSpring} from 'react-native-reanimated'
-import {RichText} from '@atproto/api'
+import {RichText} from '@bsky.app/sdk/richtext'
 import {useFocusEffect} from '@react-navigation/native'
 
 import {classifyCompassFeedFilters} from '#/lib/compass-filters'

@@ -124,7 +124,6 @@ export function SearchScreenShell({
   const tabParam = (route.params as {q?: string; tab?: TabParam})?.tab
   const [activeTab, setActiveTab] = useState(() => getTabIndex(tabParam))
 
-
   /*
    * A raw `from:me` operator stays visible in the search input. Submitting the
    * advanced dialog promotes it to a structured `from=me` filter and removes
@@ -576,16 +575,6 @@ export function SearchScreenShell({
           )}
           <View style={[a.px_lg, a.pt_sm, a.pb_sm, a.overflow_hidden]}>
             <View style={[a.gap_sm]}>
-              {query && !showAutocomplete && (
-                <DetectedLanguagesAdmonition
-                  query={query}
-                  filters={filters}
-                  sort={activeTab === 1 ? 'latest' : 'top'}
-                  enabled={activeTab === 0 || activeTab === 1}
-                  onPressLanguage={onChangeLang}
-                />
-              )}
-
               <View style={[a.w_full, a.flex_row, a.align_stretch, a.gap_sm]}>
                 <View style={[a.flex_1, a.flex_row, a.align_center, a.gap_sm]}>
                   {showAutocomplete && (

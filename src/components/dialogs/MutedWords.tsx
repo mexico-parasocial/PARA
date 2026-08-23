@@ -1,6 +1,7 @@
 import {useCallback, useState} from 'react'
 import {View} from 'react-native'
 import {type DatetimeString, toDatetimeString} from '@atproto/syntax'
+import {type AppBskyActorDefs} from '@atproto/api'
 import {sanitizeMutedWordValue} from '@bsky.app/sdk/utils'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -435,12 +436,12 @@ function MutedWordRow({
 
   const remove = useCallback(async () => {
     control.close()
-    removeMutedWord(word)
+    removeMutedWord(word as AppBskyActorDefs.MutedWord)
   }, [removeMutedWord, word, control])
 
   const renew = (days?: number) => {
     updateMutedWord({
-      ...word,
+      ...(word as AppBskyActorDefs.MutedWord),
       expiresAt: days
         ? toDatetimeString(new Date(Date.now() + days * ONE_DAY))
         : undefined,

@@ -7,6 +7,7 @@ import {
   useState,
 } from 'react'
 import {type LayoutChangeEvent, type ScrollViewProps, View} from 'react-native'
+import {type AtUriString} from '@atproto/syntax'
 import {
   KeyboardChatScrollView,
   type KeyboardChatScrollViewProps,
@@ -433,7 +434,7 @@ export function MessagesList({
                * the lexicon input declares.
                */
               record: {
-                uri: post.uri,
+                uri: post.uri as AtUriString,
                 cid: post.cid,
               },
             }

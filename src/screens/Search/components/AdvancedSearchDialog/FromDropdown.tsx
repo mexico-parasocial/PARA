@@ -9,7 +9,7 @@ import {
 import * as Menu from '#/components/Menu'
 import {type FromFilter} from './utils'
 
-export function FollowingDropdown({
+export function FromDropdown({
   value,
   onChange,
 }: {

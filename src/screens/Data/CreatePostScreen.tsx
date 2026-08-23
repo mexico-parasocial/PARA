@@ -27,7 +27,12 @@ import {toPostLanguages, useLanguagePrefs} from '#/state/preferences/languages'
 import {usePreferencesQuery} from '#/state/queries/preferences'
 import {useProfileQuery} from '#/state/queries/profile'
 import {type Gif} from '#/state/queries/tenor'
-import {useAgent, useSession} from '#/state/session'
+import {
+  useAppviewClient,
+  useChatClient,
+  usePdsClient,
+  useSession,
+} from '#/state/session'
 import {CharProgress} from '#/view/com/composer/char-progress/CharProgress'
 import {ExternalEmbedLink} from '#/view/com/composer/ExternalEmbed'
 import {LabelsBtn} from '#/view/com/composer/labels/LabelsBtn'
@@ -71,7 +76,9 @@ export function CreatePostScreen() {
   const {_} = useLingui()
   const t = useTheme()
   const {currentAccount} = useSession()
-  const agent = useAgent()
+  const appviewClient = useAppviewClient()
+  const chatClient = useChatClient()
+  const pdsClient = usePdsClient()
   const queryClient = useQueryClient()
   const navigation = useNavigation<NavigationProp>()
   const insets = useSafeAreaInsets()
@@ -177,10 +184,13 @@ export function CreatePostScreen() {
         : thread
 
       // apilib.post handles adding the flair tag to metadata
-      const result = await apilib.post(agent, queryClient, {
+      const result = await apilib.post(queryClient, {
         thread: threadToPost,
         onStateChange: () => {},
         langs: currentLanguages,
+        appviewClient,
+        chatClient,
+        pdsClient,
       })
 
       if (selectedFlair && result.uris[0]) {
@@ -201,13 +211,17 @@ export function CreatePostScreen() {
 
       navigation.goBack()
     } catch (e: unknown) {
-      logger.error(e as Error | string, {message: `CreatePostScreen: create post failed`})
+      logger.error(e as Error | string, {
+        message: `CreatePostScreen: create post failed`,
+      })
       const cleanErr = cleanError((e as Error)?.message || String(e)) // Renamed from 'err' to 'cleanErr' for clarity
       setError(cleanErr)
       setIsPublishing(false)
     }
   }, [
-    agent,
+    appviewClient,
+    chatClient,
+    pdsClient,
     queryClient,
     thread,
     canPost,

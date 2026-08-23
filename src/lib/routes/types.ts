@@ -115,7 +115,6 @@ export type CommonNavigatorParams = {
   NewFollowerNotificationSettings: undefined
   LikesOnRepostsNotificationSettings: undefined
   RepostsOnRepostsNotificationSettings: undefined
-  ActivityNotificationSettings: undefined
   MiscellaneousNotificationSettings: undefined
   InterestsSettings: undefined
   FollowedElementsSettings: {selectedId?: string} | undefined

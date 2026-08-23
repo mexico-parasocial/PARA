@@ -40,6 +40,7 @@ import {
   EmailDialogScreenID,
   useEmailDialogControl,
 } from '#/components/dialogs/EmailDialog'
+import type * as bsky from '#/types/bsky'
 import {MessagesListBlockedFooter} from '#/components/dms/MessagesListBlockedFooter'
 import {MessagesListHeader} from '#/components/dms/MessagesListHeader'
 import {type ConvoWithDetails, parseConvoView} from '#/components/dms/util'
@@ -244,7 +245,7 @@ function InnerReady({
   ) {
     footer = (
       <MessagesListBlockedFooter
-        recipient={primaryMember}
+        recipient={primaryMember as unknown as bsky.profile.AnyProfileView}
         convoId={convo.view.id}
         isGroup={convo.kind === 'group'}
         moderation={primaryMemberModeration}

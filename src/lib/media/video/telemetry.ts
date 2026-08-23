@@ -191,6 +191,7 @@ export function createVideoTelemetry({
         uploadId,
         engine,
         errorClass: errorClass(e),
+        errorMessage: errorMessage(e),
         elapsedMs: Date.now() - phaseStartedAt,
       })
       endTxn('error')

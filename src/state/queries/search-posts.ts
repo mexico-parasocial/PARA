@@ -1,9 +1,5 @@
 import {useRef} from 'react'
-import {
-  type AppBskyActorDefs,
-  type AppBskyFeedDefs,
-  moderatePost,
-} from '@atproto/api'
+import {type AppBskyActorDefs, type AppBskyFeedDefs} from '@atproto/api'
 import {
   type InfiniteData,
   type QueryKey,
@@ -12,6 +8,7 @@ import {
 
 import {isParaPostView} from '#/lib/api/feed/para'
 import {hydrateCommunityPosts} from '#/lib/community-posts'
+import {moderatePost} from '#/lib/moderation/subjects'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
 import {useAgent} from '#/state/session'
 
@@ -74,16 +71,16 @@ const paraSearchPostsQueryKey = ({
 export function hasParaSearchFilters(filters: ParaSearchPostsFilters) {
   return Boolean(
     filters.tag?.length ||
-      filters.communityUris?.length ||
-      filters.cabildeoUris?.length ||
-      filters.politicalCompassPositions?.length ||
-      filters.postType ||
-      filters.flairs?.length ||
-      filters.party ||
-      filters.verifiedPublicFigure != null ||
-      filters.state ||
-      filters.districtKey ||
-      filters.cabildeoPhase,
+    filters.communityUris?.length ||
+    filters.cabildeoUris?.length ||
+    filters.politicalCompassPositions?.length ||
+    filters.postType ||
+    filters.flairs?.length ||
+    filters.party ||
+    filters.verifiedPublicFigure != null ||
+    filters.state ||
+    filters.districtKey ||
+    filters.cabildeoPhase,
   )
 }
 

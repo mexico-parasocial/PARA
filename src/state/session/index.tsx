@@ -20,6 +20,7 @@ import {useGlobalDialogsControlContext} from '#/components/dialogs/Context'
 import {AnalyticsContext, useAnalyticsBase, utils} from '#/analytics'
 import {IS_WEB} from '#/env'
 import {com} from '#/lexicons'
+import {logger} from '#/logger'
 import {emitSessionDropped} from '../events'
 import {getPublicAppviewClient} from './clients'
 import {createSessionBundleAndCreateAccount} from './create-account'
@@ -591,8 +592,25 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
       }
       if (syncedAccount && syncedAccount.refreshJwt) {
         if (syncedAccount.did !== state.currentBundleState.did) {
-          // The leader refreshes before broadcasting, so followers receive fresh tokens.
-          void resumeSession(syncedAccount)
+          /*
+           * The leader refreshes before broadcasting, so followers receive
+           * fresh tokens.
+           *
+           * The rejection must be handled rather than voided. `resume` rejects
+           * only when the stored account is definitively invalid - a transient
+           * failure reports through `onUpdateFailure` and resolves with the
+           * stale tokens - so a rejection here means this tab is holding an
+           * account that cannot authenticate. Dropping it on the floor left the
+           * app signed in with dead tokens, surfacing later as an unhandled
+           * "Token has expired" from whichever query happened to run first.
+           * Treat it as the expiry path above does.
+           */
+          resumeSession(syncedAccount).catch((err: unknown) => {
+            logger.error(err instanceof Error ? err : String(err), {
+              safeMessage: 'session: resume failed for a synced account',
+            })
+            emitSessionDropped()
+          })
         } else {
           /*
            * PasswordSession cannot be patched in place. Rebuild from the tokens
@@ -832,7 +850,6 @@ export function useMaybeChatClient(): Client | null {
 export function usePublicAppviewClient(): Client {
   return getPublicAppviewClient()
 }
-
 
 /*
  * Compat shim for the pre-lex-client `useAgent()`.

@@ -67,7 +67,6 @@ export const router = new Router({
     '/settings/notifications/likes-on-reposts',
   RepostsOnRepostsNotificationSettings:
     '/settings/notifications/reposts-on-reposts',
-  ActivityNotificationSettings: '/settings/notifications/activity',
   MiscellaneousNotificationSettings: '/settings/notifications/miscellaneous',
   // support
   Support: '/support',

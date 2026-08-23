@@ -1,10 +1,10 @@
-import {type AppBskyLabelerDefs} from '@atproto/api'
 import {type DidString} from '@atproto/syntax'
 import {addLabeler, removeLabeler} from '@bsky.app/sdk'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 import {z} from 'zod'
 
 import {MAX_LABELERS} from '#/lib/constants'
+import {app} from '#/lexicons'
 import {GCTIME, STALE} from '#/state/queries'
 import {
   preferencesQueryKey,
@@ -44,7 +44,7 @@ export function useLabelerInfoQuery({
         dids: [did!],
         detailed: true,
       })
-      return res.data.views[0] as AppBskyLabelerDefs.LabelerViewDetailed
+      return res.data.views[0] as app.bsky.labeler.defs.LabelerViewDetailed
     },
   })
 }
@@ -56,7 +56,7 @@ export function useLabelersInfoQuery({dids}: {dids: string[]}) {
     queryKey: labelersInfoQueryKey(dids),
     queryFn: async () => {
       const res = await agent.app.bsky.labeler.getServices({dids})
-      return res.data.views as AppBskyLabelerDefs.LabelerView[]
+      return res.data.views as app.bsky.labeler.defs.LabelerView[]
     },
   })
 }
@@ -73,7 +73,7 @@ export function useLabelersDetailedInfoQuery({dids}: {dids: string[]}) {
         dids,
         detailed: true,
       })
-      return res.data.views as AppBskyLabelerDefs.LabelerViewDetailed[]
+      return res.data.views as app.bsky.labeler.defs.LabelerViewDetailed[]
     },
   })
 }

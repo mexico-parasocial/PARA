@@ -127,7 +127,7 @@ export function useOTAUpdates() {
   const appState = useRef<AppStateStatus>('active')
   const lastMinimize = useRef(0)
   const ranInitialCheck = useRef(false)
-  const timeout = useRef<NodeJS.Timeout>(undefined)
+  const timeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const {currentlyRunning, isUpdatePending} = useUpdates()
   const currentChannel = currentlyRunning?.channel
 

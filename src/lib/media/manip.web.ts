@@ -5,24 +5,32 @@ import {blobToDataUri, convertCdnPreset, getDataUriSize} from './util'
 
 export async function compressIfNeeded(
   img: PickerImage,
-  maxSize: number = POST_IMG_MAX.size,
+  maxSize: number | {maxDimension: number; maxSize: number} = POST_IMG_MAX.size,
 ): Promise<PickerImage> {
-  if (img.size < maxSize) {
+  const resolvedMaxSize =
+    typeof maxSize === 'number' ? maxSize : maxSize.maxSize
+  if (img.size < resolvedMaxSize) {
     return img
   }
   return await doResize(img.path, {
     width: img.width,
     height: img.height,
     mode: 'stretch',
-    maxSize,
+    maxSize: resolvedMaxSize,
   })
 }
 
 export interface DownloadAndResizeOpts {
   uri: string
-  width: number
-  height: number
-  mode: 'contain' | 'cover' | 'stretch'
+  /*
+   * Upstream callers pass `maxDimension` while PARA callers pass explicit
+   * `width`/`height`/`mode`. Both shapes are accepted; when only
+   * `maxDimension` is given it is used as a square bound.
+   */
+  maxDimension?: number
+  width?: number
+  height?: number
+  mode?: 'contain' | 'cover' | 'stretch'
   maxSize: number
   timeout: number
 }
@@ -35,7 +43,13 @@ export async function downloadAndResize(opts: DownloadAndResizeOpts) {
   clearTimeout(to)
 
   const dataUri = await blobToDataUri(resBody)
-  return await doResize(dataUri, opts)
+  const dimension = opts.maxDimension ?? POST_IMG_MAX.width
+  return await doResize(dataUri, {
+    width: opts.width ?? dimension,
+    height: opts.height ?? dimension,
+    mode: opts.mode ?? 'contain',
+    maxSize: opts.maxSize,
+  })
 }
 
 export async function shareImageModal(_opts: {uri: string}) {

@@ -296,14 +296,10 @@ let PostControls = ({
               hasBeenToggled={hasLikeIconBeenToggled}
             />
             <CountWheel
-              count={post.likeCount ?? 0}
-              isToggled={Boolean(post.viewer?.like)}
+              likeCount={post.likeCount ?? 0}
+              big={big}
+              isLiked={Boolean(post.viewer?.like)}
               hasBeenToggled={hasLikeIconBeenToggled}
-              renderCount={({count}) => (
-                <PostControlButtonText testID="likeCount">
-                  {formatPostStatCount(count)}
-                </PostControlButtonText>
-              )}
             />
           </PostControlButton>
         </View>

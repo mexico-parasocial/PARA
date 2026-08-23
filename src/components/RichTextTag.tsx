@@ -1,4 +1,5 @@
 import {useMemo} from 'react'
+import {type AppBskyActorDefs} from '@atproto/api'
 import {type StyleProp, Text as RNText, type TextStyle} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -156,7 +157,9 @@ export function RichTextTag({
           onPress={() => {
             if (isMuted) {
               resetUpsert()
-              removeMutedWords(removeableMuteWords)
+              removeMutedWords(
+                removeableMuteWords as AppBskyActorDefs.MutedWord[],
+              )
             } else {
               resetRemove()
               upsertMutedWord([

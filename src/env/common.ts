@@ -14,11 +14,7 @@ export const RELEASE_VERSION: string =
  * The env the app is running in e.g. development, testflight, production, e2e
  */
 export const ENV: string = process.env.EXPO_PUBLIC_ENV as
-  | 'production'
-  | 'testflight'
-  | 'development'
-  | 'e2e'
-  | (string & {})
+  'production' | 'testflight' | 'development' | 'e2e' | (string & {})
 
 /**
  * Indicates whether the app is running in TestFlight
@@ -62,10 +58,7 @@ export const BUNDLE_DATE: number =
  * The log level for the app.
  */
 export const LOG_LEVEL = (process.env.EXPO_PUBLIC_LOG_LEVEL || 'info') as
-  | 'debug'
-  | 'info'
-  | 'warn'
-  | 'error'
+  'debug' | 'info' | 'warn' | 'error'
 
 /**
  * Enable debug logs for specific logger instances
@@ -76,13 +69,13 @@ export const LOG_DEBUG: string = process.env.EXPO_PUBLIC_LOG_DEBUG || ''
  * The DID of the PARA appview to proxy to
  */
 export const BLUESKY_PROXY_DID: Did =
-  process.env.EXPO_PUBLIC_BLUESKY_PROXY_DID || 'did:web:api.bsky.app'
+  (process.env.EXPO_PUBLIC_BLUESKY_PROXY_DID as Did) || 'did:web:api.bsky.app'
 
 /**
  * The DID of the chat service to proxy to
  */
 export const CHAT_PROXY_DID: Did =
-  process.env.EXPO_PUBLIC_CHAT_PROXY_DID || 'did:web:api.bsky.chat'
+  (process.env.EXPO_PUBLIC_CHAT_PROXY_DID as Did) || 'did:web:api.bsky.chat'
 
 /**
  * Metrics API host

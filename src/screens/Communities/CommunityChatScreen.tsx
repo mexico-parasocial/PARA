@@ -1,4 +1,10 @@
-import {type ComponentType, useCallback, useEffect, useMemo, useState} from 'react'
+import {
+  type ComponentType,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import {
   ActivityIndicator,
   StyleSheet,
@@ -7,7 +13,7 @@ import {
 } from 'react-native'
 import {WebView} from 'react-native-webview'
 import {Asset} from 'expo-asset'
-import * as FileSystem from 'expo-file-system'
+import * as FileSystem from 'expo-file-system/legacy'
 import {useNavigation, useRoute} from '@react-navigation/native'
 
 import {getDefaultChatIdentityMode} from '#/lib/chat/identity'
@@ -98,7 +104,10 @@ export function CommunityChatScreen() {
         )
         if (!cancelled) setSdkBundle(content)
       } catch (err) {
-        console.warn('[CommunityChat] Failed to load local Matrix SDK bundle:', err)
+        console.warn(
+          '[CommunityChat] Failed to load local Matrix SDK bundle:',
+          err,
+        )
         if (!cancelled) setSdkBundle(undefined)
       }
     }
@@ -376,9 +385,9 @@ function OnboardingBanner({
           Deliberación cívica
         </Text>
         <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-          Esta es la {roomLabel}. Los mensajes aquí son parte de la
-          conversación de la comunidad. Usa los botones de arriba para resumir,
-          proponer o recopilar evidencia.
+          Esta es la {roomLabel}. Los mensajes aquí son parte de la conversación
+          de la comunidad. Usa los botones de arriba para resumir, proponer o
+          recopilar evidencia.
         </Text>
       </View>
       <TouchableOpacity

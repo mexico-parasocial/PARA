@@ -22,6 +22,7 @@ import {
   buildGermAssociatedProfileButton,
   type GermAssociatedProfile,
 } from '#/lib/germ/messageMe'
+import {HITSLOP_20} from '#/lib/constants'
 import {useHaptics} from '#/lib/haptics'
 import {useAnonymousMode} from '#/lib/m8/hooks/useAnonymousMode'
 import {moderateProfile} from '#/lib/moderation/subjects'
@@ -183,7 +184,11 @@ let ProfileHeaderStandard = ({
                   moderation: moderation.ui('displayName'),
                 })}
                 <View style={[a.pl_xs, {marginTop: platform({ios: 2})}]}>
-                  <VerificationCheckButton profile={profile} size="lg" />
+                  <VerificationCheckButton
+                    profile={profile}
+                    width={18}
+                    hitSlop={HITSLOP_20}
+                  />
                 </View>
               </Text>
             </View>
@@ -298,7 +303,8 @@ function ProfileCivicBadges({
         ]}>
         <VerificationCheckButton
           profile={profile as Shadow<bsky.profile.AnyProfileView>}
-          size="sm"
+          width={12}
+          hitSlop={HITSLOP_20}
         />
         <Text style={[a.text_sm, a.font_bold, {color: t.palette.primary_500}]}>
           <Trans>Verified Citizen</Trans>

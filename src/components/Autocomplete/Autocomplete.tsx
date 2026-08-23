@@ -30,6 +30,7 @@ export function Autocomplete({
   render = renderItem,
   onSelect,
   onDismiss,
+  fullWidth = false,
 }: {
   inverted?: boolean
   sift: UseSiftReturn
@@ -37,6 +38,12 @@ export function Autocomplete({
   render?: Parameters<typeof Sift<AutocompleteItem>>[0]['render']
   onSelect: (item: AutocompleteItem) => void
   onDismiss: () => void
+  /**
+   * Match the anchor's width instead of the default capped width. Use for
+   * full-width anchors like the search bar; leave off for inline mention
+   * inputs.
+   */
+  fullWidth?: boolean
 }) {
   const t = useTheme()
 
@@ -63,7 +70,7 @@ export function Autocomplete({
             t.atoms.border_contrast_low,
             t.atoms.bg,
             a.w_full,
-            IS_WEB
+            IS_WEB && !fullWidth
               ? {
                   maxWidth: 300,
                 }

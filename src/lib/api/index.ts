@@ -12,7 +12,12 @@ import {t} from '@lingui/core/macro'
 import {type QueryClient} from '@tanstack/react-query'
 
 import {type LinkResolvers} from '#/lib/api/resolve'
-import {applyOfficialToFlairTag, derivePostTypeId} from '#/lib/post-flairs'
+import {
+  applyOfficialToFlairTag,
+  type ComposerFlair,
+  derivePostTypeId,
+} from '#/lib/post-flairs'
+import {type PostType} from '#/lib/tags'
 import {isNetworkError} from '#/lib/strings/errors'
 import {shortenLinks, stripInvalidMentions} from '#/lib/strings/rich-text-manip'
 import {MATTER_POLICY_TAGS} from '#/lib/tags'
@@ -41,18 +46,29 @@ export {uploadBlob}
 export * from './para-lexicons'
 
 /**
+ * The PARA composer carries flair/post-type classification on the draft when
+ * writing `com.para.post` records. These fields are PARA-specific additions to
+ * the upstream `PostDraft` shape, so they are declared here as an intersection
+ * rather than on the composer state type itself.
+ */
+type ParaPostDraft = PostDraft & {
+  matterPolicyType?: string
+  flairs?: ComposerFlair[]
+  isOfficial?: boolean
+  postType?: PostType | null
+}
+
+/**
  * Build the tags array from flair and matterPolicyType
  */
-function buildTagsArray(
-  draft: PostDraft & {matterPolicyType?: string},
-): string[] | undefined {
+function buildTagsArray(draft: ParaPostDraft): string[] | undefined {
   const tags: string[] = []
 
   // Add flair tags if present
   if (draft.flairs) {
     draft.flairs.forEach(f => {
       if (f.tag) {
-        tags.push(applyOfficialToFlairTag(f.tag, draft.isOfficial))
+        tags.push(applyOfficialToFlairTag(f.tag, !!draft.isOfficial))
       }
     })
   }
@@ -79,9 +95,9 @@ function buildTagsArray(
   return tags.length > 0 ? tags : undefined
 }
 
-function buildFlairsArray(draft: PostDraft): string[] | undefined {
+function buildFlairsArray(draft: ParaPostDraft): string[] | undefined {
   const flairs = draft.flairs
-    ?.map(flair => applyOfficialToFlairTag(flair.tag, draft.isOfficial))
+    ?.map(flair => applyOfficialToFlairTag(flair.tag, !!draft.isOfficial))
     .filter(Boolean)
   return flairs?.length ? flairs : undefined
 }
@@ -189,7 +205,7 @@ export async function post(queryClient: QueryClient, opts: PostOpts) {
       // when writing to com.para.post so the backend can index them directly.
       ...(opts.collection === 'com.para.post' && {
         flairs: buildFlairsArray(draft),
-        postType: derivePostTypeId(draft),
+        postType: derivePostTypeId(draft as ParaPostDraft),
         party: opts.party || undefined,
         community: opts.community || undefined,
       }),
@@ -537,8 +553,7 @@ async function resolveMedia(
           description: resolvedLink.description,
           thumb: blob,
           associatedRefs: resolvedLink.associatedRefs as
-            | com.atproto.repo.strongRef.Main[]
-            | undefined,
+            com.atproto.repo.strongRef.Main[] | undefined,
         },
       }
     }

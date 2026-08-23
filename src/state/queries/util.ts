@@ -36,8 +36,43 @@ export async function truncateAndInvalidate<T = unknown>(
 // AtUri should be the URI that is being searched for, while currentUri
 // is the URI that is being checked. currentAuthor is the author
 // of the currentUri that is being checked.
-export function createQueryKey(root: string, args?: Record<string, unknown>) {
-  return [root, args]
+export type StructuredQueryKey<T extends Record<string, unknown>> = readonly [
+  string,
+  T,
+  {
+    persistedVersion?: number
+  },
+]
+
+/**
+ * Helper method to ensure consistent query keys and key ordering
+ */
+export function createQueryKey<T extends Record<string, unknown>>(
+  /**
+   * The query key root. All queries must have a root.
+   */
+  root: string,
+  /**
+   * Any arguments the query depends on, and if changed, should result in the query being refetched.
+   */
+  args: T,
+  options: {
+    /**
+     * If provided, this indicates that the query is persisted and the version
+     * of the persisted query format.
+     *
+     * This is used to ensure that when we make breaking changes to the
+     * persisted query format, we can increment the version and avoid trying to
+     * read old persisted queries with the new format.
+     *
+     * If you're persisting your queries, you probably want to set `gcTime:
+     * GCTIME.INFINITY` for this query, otherwise it'll get busted immediately
+     * after being persisted.
+     */
+    persistedVersion?: number
+  } = {},
+): StructuredQueryKey<T> {
+  return [root, args, options] as const
 }
 
 export function didOrHandleUriMatches(

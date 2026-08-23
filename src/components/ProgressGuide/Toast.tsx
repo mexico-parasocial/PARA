@@ -46,7 +46,9 @@ export const ProgressGuideToast = forwardRef<
   const translateY = useSharedValue(0)
   const opacity = useSharedValue(0)
   const animatedCheckRef = useRef<AnimatedCheckRef | null>(null)
-  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(
+    undefined,
+  )
   const winDim = useWindowDimensions()
 
   /**
@@ -119,7 +121,8 @@ export const ProgressGuideToast = forwardRef<
       left = right = (winDim.width - 380) / 2
     }
     return {
-      position: IS_WEB ? 'fixed' : 'absolute',
+      // position: fixed is web only
+      position: (IS_WEB ? 'fixed' : 'absolute') as 'absolute',
       top: 0,
       left,
       right,
@@ -134,12 +137,7 @@ export const ProgressGuideToast = forwardRef<
   return (
     isOpen && (
       <Portal>
-        <Animated.View
-          style={[
-            // @ts-ignore position: fixed is web only
-            containerStyle,
-            animatedStyle,
-          ]}>
+        <Animated.View style={[containerStyle, animatedStyle]}>
           <Pressable
             style={[
               t.atoms.bg,

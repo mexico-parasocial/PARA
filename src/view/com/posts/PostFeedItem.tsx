@@ -470,7 +470,7 @@ let FeedItemInner = ({
             reqId={reqId}
             threadgateRecord={threadgateRecord}
             onShowLess={onShowLess}
-            viaQuote={viaQuote}
+            viaRepost={viaQuote}
             style={{marginTop: 'auto'}}
           />
         </View>

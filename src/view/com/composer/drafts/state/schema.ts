@@ -3,6 +3,7 @@
  * Server draft types come from @atproto/api.
  */
 import {type RichText as RichTextAPI} from '@atproto/api'
+import {type RichText as RichTextSDK} from '@bsky.app/sdk/richtext'
 
 /**
  * Reference to locally cached media file for display
@@ -54,7 +55,7 @@ export type DraftPostDisplay = {
     handle: string
   }
   /** RichText for display */
-  richtext: RichTextAPI
+  richtext: RichTextAPI | RichTextSDK
 }
 
 /**

@@ -12,6 +12,7 @@ import Animated, {
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
 
 import {useShellLayout} from '#/state/shell/shell-layout'
+import {useEnableMinimalShellModeForScreen} from '#/state/shell'
 import {useIsWithinSplitView} from '#/screens/Messages/components/splitView/context'
 import {
   atoms as a,
@@ -36,6 +37,7 @@ export type ScreenProps = React.ComponentProps<typeof View> & {
   style?: StyleProp<ViewStyle>
   noInsetTop?: boolean
   hideBorders?: boolean
+  minimalShell?: boolean
 }
 
 /**
@@ -45,10 +47,12 @@ export const Screen = memo(function Screen({
   style,
   noInsetTop,
   hideBorders,
+  minimalShell = false,
   ...props
 }: ScreenProps) {
   const {top} = useSafeAreaInsets()
   const {isWithinSplitView} = useIsWithinSplitView()
+  useEnableMinimalShellModeForScreen({enabled: minimalShell})
   return (
     <>
       {IS_WEB && !hideBorders && !isWithinSplitView && <WebCenterBorders />}

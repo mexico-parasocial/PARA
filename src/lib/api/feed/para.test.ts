@@ -1,5 +1,6 @@
-import {type AtpAgent} from '@atproto/api'
+import {type Client} from '@atproto/lex'
 
+import {app} from '#/lexicons'
 import {
   buildParaTimelineFilterParams,
   ParaTimelineFeedAPI,
@@ -22,57 +23,46 @@ describe('ParaTimelineFeedAPI', () => {
     })
   })
 
-  it('calls com.para.feed.getTimeline with no filter params by default', async () => {
-    const agent = createAgent()
-    const api = new ParaTimelineFeedAPI({agent: agent as unknown as AtpAgent})
+  it('calls the Bluesky timeline fallback with no filter params by default', async () => {
+    const client = createClient()
+    const api = new ParaTimelineFeedAPI({client: client as unknown as Client})
 
     await api.fetch({cursor: undefined, limit: 30})
 
-    expect(agent.call).toHaveBeenCalledWith('com.para.feed.getTimeline', {
+    expect(client.call).toHaveBeenCalledWith(app.bsky.feed.getTimeline, {
       limit: 30,
       cursor: undefined,
     })
   })
 
-  it('passes party and community filter params to getTimeline', async () => {
-    const agent = createAgent()
+  it('stores party and community filters for the Para timeline', () => {
+    const client = createClient()
     const api = new ParaTimelineFeedAPI({
-      agent: agent as unknown as AtpAgent,
+      client: client as unknown as Client,
       filters: {party: 'PAN', community: 'Center Right'},
     })
 
-    await api.fetch({cursor: 'cursor-1', limit: 50})
-
-    expect(agent.call).toHaveBeenCalledWith('com.para.feed.getTimeline', {
-      limit: 50,
-      cursor: 'cursor-1',
-      party: 'PAN',
-      community: 'Center Right',
-    })
+    expect(api.filters).toEqual({party: 'PAN', community: 'Center Right'})
   })
 
   it('hydrates timeline results into feed view posts', async () => {
-    const agent = createAgent({
-      feed: [
-        {
-          uri: 'at://did:plc:alice/com.para.post/1',
-          cid: 'bafy-post',
-          author: 'did:plc:alice',
-          text: 'Hello from PARA',
-          createdAt: '2026-04-30T10:00:00.000Z',
-          tags: ['policy'],
-          flairs: ['||#'],
-          postType: 'policy',
-        },
-      ],
+    const client = createClient()
+    const api = new ParaTimelineFeedAPI({client: client as unknown as Client})
+
+    const result = await api.hydrateTimelinePost({
+      uri: 'at://did:plc:alice/com.para.post/1',
+      cid: 'bafy-post',
+      author: 'did:plc:alice',
+      text: 'Hello from PARA',
+      createdAt: '2026-04-30T10:00:00.000Z',
+      tags: ['policy'],
+      flairs: ['||#'],
+      postType: 'policy',
     })
-    const api = new ParaTimelineFeedAPI({agent: agent as unknown as AtpAgent})
 
-    const result = await api.fetch({cursor: undefined, limit: 30})
-
-    expect(result.feed[0].post.uri).toBe('at://did:plc:alice/com.para.post/1')
-    expect(result.feed[0].post.author.handle).toBe('alice.test')
-    expect(result.feed[0].post.record).toMatchObject({
+    expect(result.post.uri).toBe('at://did:plc:alice/com.para.post/1')
+    expect(result.post.author.handle).toBe('alice.test')
+    expect(result.post.record).toMatchObject({
       $type: 'app.bsky.feed.post',
       text: 'Hello from PARA',
       flairs: ['||#'],
@@ -80,7 +70,7 @@ describe('ParaTimelineFeedAPI', () => {
     })
   })
 
-  it('falls back to the Bluesky timeline when the Para timeline method is unavailable', async () => {
+  it('returns an empty feed when the timeline call fails', async () => {
     const bskyPost = {
       post: {
         uri: 'at://did:plc:alice/app.bsky.feed.post/1',
@@ -97,50 +87,37 @@ describe('ParaTimelineFeedAPI', () => {
         indexedAt: '2026-06-05T10:00:00.000Z',
       },
     }
-    const agent = createAgent()
-    agent.call.mockRejectedValueOnce(new Error('Method Not Implemented'))
-    agent.getTimeline.mockResolvedValueOnce({
-      success: true,
-      data: {
-        cursor: 'bsky-cursor',
-        feed: [bskyPost],
-      },
-    })
-    const api = new ParaTimelineFeedAPI({agent: agent as unknown as AtpAgent})
+    const client = createClient({feed: [bskyPost]})
+    client.call.mockRejectedValueOnce(new Error('Method Not Implemented'))
+    const api = new ParaTimelineFeedAPI({client: client as unknown as Client})
 
     const result = await api.fetch({cursor: 'cursor-1', limit: 30})
 
-    expect(agent.getTimeline).toHaveBeenCalledWith({
+    expect(client.call).toHaveBeenCalledWith(app.bsky.feed.getTimeline, {
       cursor: 'cursor-1',
       limit: 30,
     })
-    expect(result).toEqual({
-      cursor: 'bsky-cursor',
-      feed: [bskyPost],
-    })
+    expect(result).toEqual({feed: []})
   })
 })
 
-function createAgent(data?: {feed?: unknown[]}): {
+function createClient(data?: {feed?: unknown[]}): {
   call: jest.Mock
-  getProfile: jest.Mock
-  getTimeline: jest.Mock
 } {
   return {
-    call: jest.fn().mockResolvedValue({
-      data: {
+    call: jest.fn(async (proc: unknown) => {
+      if (proc === app.bsky.actor.getProfile) {
+        return {
+          did: 'did:plc:alice',
+          handle: 'alice.test',
+          displayName: 'Alice',
+          labels: [],
+        }
+      }
+      return {
         cursor: 'next-cursor',
         feed: data?.feed ?? [],
-      },
+      }
     }),
-    getProfile: jest.fn().mockResolvedValue({
-      data: {
-        did: 'did:plc:alice',
-        handle: 'alice.test',
-        displayName: 'Alice',
-        labels: [],
-      },
-    }),
-    getTimeline: jest.fn(),
   }
 }

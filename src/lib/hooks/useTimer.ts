@@ -4,7 +4,7 @@ import {useCallback, useEffect, useRef} from 'react'
  * Helper hook to run persistent timers on views
  */
 export function useTimer(time: number, handler: () => void) {
-  const timer = useRef<undefined | NodeJS.Timeout>(undefined)
+  const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   // function to restart the timer
   const reset = useCallback(() => {

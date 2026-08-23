@@ -1,3 +1,4 @@
+import type * as bsky from '#/types/bsky'
 import {useCallback, useMemo} from 'react'
 import {useQueryClient} from '@tanstack/react-query'
 

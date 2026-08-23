@@ -25,16 +25,15 @@ import {convertCdnPreset} from './util'
 
 export async function compressIfNeeded(
   img: PickerImage,
-  maxSize: number = POST_IMG_MAX.size,
+  maxSize: number | {maxDimension: number; maxSize: number} = POST_IMG_MAX.size,
 ): Promise<PickerImage> {
-  if (img.size < maxSize) {
+  const resolvedMaxSize =
+    typeof maxSize === 'number' ? maxSize : maxSize.maxSize
+  if (img.size < resolvedMaxSize) {
     return img
   }
   const resizedImage = await doResize(normalizePath(img.path), {
-    width: img.width,
-    height: img.height,
-    mode: 'stretch',
-    maxSize,
+    maxSize: resolvedMaxSize,
   })
   const finalImageMovedPath = await moveToPermanentPath(
     resizedImage.path,
@@ -49,9 +48,16 @@ export async function compressIfNeeded(
 
 export interface DownloadAndResizeOpts {
   uri: string
-  width: number
-  height: number
-  mode: 'contain' | 'cover' | 'stretch'
+  /*
+   * Upstream callers pass `maxDimension` while PARA callers pass explicit
+   * `width`/`height`/`mode`. Both shapes are accepted; the resize
+   * implementation derives the final dimensions from the source image
+   * itself, so these fields only act as hints.
+   */
+  maxDimension?: number
+  width?: number
+  height?: number
+  mode?: 'contain' | 'cover' | 'stretch'
   maxSize: number
   timeout: number
 }
@@ -67,7 +73,7 @@ export async function downloadAndResize(opts: DownloadAndResizeOpts) {
   const path = await downloadImage(opts.uri, String(uuid.v4()), opts.timeout)
 
   try {
-    return await doResize(path, opts)
+    return await doResize(path, {maxSize: opts.maxSize})
   } finally {
     void safeDeleteAsync(path)
   }
@@ -188,9 +194,6 @@ export function getImageDim(path: string): Promise<Dimensions> {
 // =
 
 interface DoResizeOpts {
-  width: number
-  height: number
-  mode: 'contain' | 'cover' | 'stretch'
   maxSize: number
 }
 

@@ -345,7 +345,7 @@ export async function processVideo(
       dispatchUrl,
       did,
       signal,
-      _: i18n._,
+      i18n,
       setProgress: p => {
         dispatch({type: 'update_progress', progress: p, signal})
       },

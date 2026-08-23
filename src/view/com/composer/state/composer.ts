@@ -6,6 +6,7 @@ import {nanoid} from 'nanoid/non-secure'
 
 import {type VideoTelemetry} from '#/lib/media/video/telemetry'
 import {type SelfLabel} from '#/lib/moderation'
+import {type ComposerFlair} from '#/lib/post-flairs'
 import {insertMentionAt} from '#/lib/strings/mention-manip'
 import {shortenLinks} from '#/lib/strings/rich-text-manip'
 import {
@@ -13,6 +14,7 @@ import {
   postUriToRelativePath,
   toBskyAppUrl,
 } from '#/lib/strings/url-helpers'
+import {type PostType} from '#/lib/tags'
 import {logger} from '#/logger'
 import {type ComposerImage, createInitialImages} from '#/state/gallery'
 import {createPostgateRecord} from '#/state/queries/postgate/util'
@@ -74,12 +76,21 @@ export type PostDraft = {
   richtext: RichText
   labels: SelfLabel[]
   embed: EmbedDraft
+  flairs: ComposerFlair[]
+  postType: PostType | null
+  isOfficial: boolean
   shortenedGraphemeLength: number
 }
 
 export type PostAction =
   | {type: 'update_richtext'; richtext: RichText}
   | {type: 'update_labels'; labels: SelfLabel[]}
+  | {
+      type: 'update_flairs'
+      flairs: ComposerFlair[]
+    }
+  | {type: 'set_post_type'; postType: PostType | null}
+  | {type: 'set_is_official'; isOfficial: boolean}
   | {type: 'embed_add_images'; images: ComposerImage[]}
   | {type: 'embed_update_image'; image: ComposerImage}
   | {type: 'embed_remove_image'; image: ComposerImage}
@@ -239,6 +250,9 @@ export function composerReducer(
         richtext: new RichText({text: ''}),
         shortenedGraphemeLength: 0,
         labels: [],
+        flairs: [],
+        postType: null,
+        isOfficial: false,
         embed: {
           quote: undefined,
           media: undefined,
@@ -363,6 +377,24 @@ function postReducer(state: PostDraft, action: PostAction): PostDraft {
       return {
         ...state,
         labels: action.labels,
+      }
+    }
+    case 'update_flairs': {
+      return {
+        ...state,
+        flairs: action.flairs,
+      }
+    }
+    case 'set_post_type': {
+      return {
+        ...state,
+        postType: action.postType,
+      }
+    }
+    case 'set_is_official': {
+      return {
+        ...state,
+        isOfficial: action.isOfficial,
       }
     }
     case 'embed_add_images': {
@@ -735,6 +767,9 @@ export function createComposerState({
           richtext: initRichText,
           shortenedGraphemeLength: getShortenedLength(initRichText),
           labels: [],
+          flairs: [],
+          postType: null,
+          isOfficial: false,
           embed: {
             quote,
             media,

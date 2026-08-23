@@ -386,7 +386,7 @@ function SuggestedProfileCard({
   position: number
   category: string | null
   onSeen: (did: string, position: number) => void
-  recId?: string
+  recId?: string | number
 }) {
   const t = useTheme()
 

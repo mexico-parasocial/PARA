@@ -1,6 +1,6 @@
 import {Platform, useWindowDimensions} from 'react-native'
 import {type StyleProp, type ViewStyle} from 'react-native'
-import {type AnimatedStyleProp} from 'react-native-reanimated'
+import {type AnimatedStyle} from 'react-native-reanimated'
 import {StickyTable} from 'react-native-sticky-table'
 
 import {type UsePaletteValue} from '#/lib/hooks/usePalette'
@@ -95,7 +95,7 @@ export function TableContent({pal}: {pal: UsePaletteValue}) {
             paddingHorizontal: 8,
             justifyContent: 'center',
           },
-        ] as unknown as AnimatedStyleProp<ViewStyle>,
+        ] as unknown as AnimatedStyle<ViewStyle>,
         otherIndexContainerStyle: [
           pal.view,
           pal.border,
@@ -105,7 +105,7 @@ export function TableContent({pal}: {pal: UsePaletteValue}) {
             paddingHorizontal: 8,
             justifyContent: 'center',
           },
-        ] as unknown as AnimatedStyleProp<ViewStyle>,
+        ] as unknown as AnimatedStyle<ViewStyle>,
         separatorViewStyle: [
           pal.view,
           pal.border,

@@ -11,7 +11,7 @@ import * as env from '#/env'
 
 export {Features} from '#/analytics/features/types'
 
-const logger = Logger.create(Logger.Context.Growthbook)
+const logger = Logger.create(Logger.Context.GrowthBook)
 const CACHE = new MMKV({id: 'bsky_features_cache'})
 
 const BETA_USER_ATTRIBUTE = 'isBetaUser'

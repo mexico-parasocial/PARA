@@ -78,6 +78,11 @@ export type Events = {
       | 'saved'
       | 'settings'
       | 'menu'
+      // PARA-specific navigation items
+      | 'data'
+      | 'communities'
+      | 'compass'
+      | 'explore'
     surface: 'bottomBar' | 'drawer' | 'drawerHeader' | 'topBar' | 'leftNav'
   }
   'deepLink:referrerReceived': {
@@ -357,6 +362,35 @@ export type Events = {
     logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
     feedDescriptor?: string
   }
+  'postSubscription:enable': {
+    uri: string
+    authorDid: string
+    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
+    feedDescriptor?: string
+  }
+  'postSubscription:disable': {
+    uri: string
+    authorDid: string
+    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
+    feedDescriptor?: string
+  }
+  'community:create:ctaShown': {}
+  'community:create:eligibilityDenied': {}
+  'community:create:ctaClicked': {}
+  'community:create:submitStarted': {}
+  'community:create:submitSucceeded': {}
+  'community:create:submitFailed': {}
+  'community:create:wizardCompleted': {}
+  'search:paraFilter:applied': {
+    filter: string
+  }
+  'search:paraFilter:select': {
+    field: string
+    value: string
+  }
+  'search:paraFilter:clear': {
+    field: string
+  }
   'post:mute': {
     uri: string
     authorDid: string
@@ -436,6 +470,7 @@ export type Events = {
       | 'Hashtag'
       | 'Topic'
       | 'PostQuotes'
+      | 'FlairFeed'
     feedDescriptor?: string
     position?: number
   }
@@ -497,6 +532,8 @@ export type Events = {
   }
   'profile:mute': {}
   'profile:unmute': {}
+  'profile:muteReposts': {}
+  'profile:unmuteReposts': {}
   'profile:block': {}
   'profile:unblock': {}
   'suggestedUser:follow': {
@@ -510,7 +547,7 @@ export type Events = {
       | 'ProgressGuide'
     location: 'Card' | 'Profile' | 'FollowAll'
     recSource?: 'Search'
-    recId?: string
+    recId?: string | number
     position: number
     suggestedDid: string
     category: string | null
@@ -523,7 +560,7 @@ export type Events = {
       | 'ProfileHeader'
       | 'Onboarding'
       | 'SeeMoreSuggestedUsers'
-    recId?: string
+    recId?: string | number
     position: number
     suggestedDid: string
     category: string | null
@@ -538,7 +575,7 @@ export type Events = {
       | 'SeeMoreSuggestedUsers'
       | 'ProgressGuide'
     recSource?: 'Search'
-    recId?: string
+    recId?: string | number
     position: number
     suggestedDid: string
     category: string | null
@@ -550,11 +587,11 @@ export type Events = {
       | 'ProfileInterstitial'
       | 'ProfileHeader'
       | 'Onboarding'
-    recId?: string
+    recId?: string | number
   }
   'suggestedUser:dismiss': {
     logContext: 'DiscoverInterstitial' | 'ProfileInterstitial' | 'ProfileHeader'
-    recId?: string
+    recId?: string | number
     position: number
     suggestedDid: string
   }
@@ -740,13 +777,13 @@ export type Events = {
   }
   'trendingTopic:seen': {
     context: 'sidebar' | 'interstitial' | 'explore'
-    recId?: string
+    recId?: string | number
     rank: number
     feedSliceIndex?: number
   }
   'trendingTopic:click': {
     context: 'sidebar' | 'interstitial' | 'explore'
-    recId?: string
+    recId?: string | number
     // Optional here (required upstream) so PARA's existing call sites, which
     // predate rank tracking, keep type-checking.
     rank?: number
@@ -807,6 +844,8 @@ export type Events = {
 
   'search:advanced:press': {
     filterCount: number
+    paraFilterCount?: number
+    paraFilters?: string[]
   }
 
   'search:shareLink:press': {
@@ -815,6 +854,8 @@ export type Events = {
 
   'search:addFilter:press': {
     filterCount: number
+    field?: string
+    mode?: string
   }
 
   'progressGuide:hide': {}
@@ -1448,6 +1489,8 @@ export type Events = {
     engine: string
     bytes: number
     errorClass: string
+    /** Truncated to 256 chars */
+    errorMessage: string
     elapsedMs: number
   }
   'video:upload:processingStarted': {

@@ -3,7 +3,7 @@ import {AppBskyDraftCreateDraft, type AppBskyDraftDefs} from '@atproto/api'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {isNetworkError} from '#/lib/strings/errors'
-import {useAgent} from '#/state/session'
+import {useAppviewClient, useChatClient, useAgent} from '#/state/session'
 import {type ComposerState} from '#/view/com/composer/state/composer'
 import {useAnalytics} from '#/analytics'
 import {
@@ -101,6 +101,8 @@ export function useLoadDraft() {
  */
 export function useSaveDraft() {
   const agent = useAgent()
+  const appviewClient = useAppviewClient()
+  const chatClient = useChatClient()
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -112,7 +114,10 @@ export function useSaveDraft() {
       existingDraftId?: string
     }): Promise<string> => {
       // Convert composer state to server draft format
-      const {draft, localRefPaths} = await composerStateToDraft(composerState)
+      const {draft, localRefPaths} = await composerStateToDraft(
+        {appviewClient, chatClient},
+        composerState,
+      )
 
       // Save media files locally
       for (const [localRefPath, sourcePath] of localRefPaths) {

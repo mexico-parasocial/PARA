@@ -128,7 +128,7 @@ export function InterestTabs({
       cleanupRef.current()
     }
 
-    let holdTimeout: NodeJS.Timeout | null = null
+    let holdTimeout: ReturnType<typeof setTimeout> | null = null
     let animationFrame: number | null = null
     let isActive = true
     isContinuouslyScrollingRef.current = false

@@ -26,7 +26,7 @@ export function CaptchaWebView({
   onError,
 }: CaptchaWebViewProps) {
   const startedAt = useRef(Date.now())
-  const successTo = useRef<NodeJS.Timeout>(undefined)
+  const successTo = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   useEffect(() => {
     return () => {

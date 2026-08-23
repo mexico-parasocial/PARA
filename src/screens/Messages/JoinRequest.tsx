@@ -10,10 +10,8 @@ import {moderateProfile} from '#/lib/moderation/subjects'
 import {sanitizeHandle} from '#/lib/strings/handles'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
 import {useJoinLinkPreviewsQuery} from '#/state/queries/join-links'
-// @ts-expect-error Module '#/state/shell/landing' does not exist in this branch.
 import {useActiveGroupChatJoinRequest} from '#/state/shell/landing'
 import {LoggedOutScreenState} from '#/view/com/auth/LoggedOut'
-// @ts-expect-error Module '#/view/icons/LogomarkWithType' does not exist in this branch.
 import {LogomarkWithType} from '#/view/icons/LogomarkWithType'
 import {atoms as a, useBreakpoints, useTheme} from '#/alf'
 import {AvatarBubbles} from '#/components/AvatarBubbles'
