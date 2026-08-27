@@ -248,7 +248,8 @@ export function RichText({
       }
 
       let display = segment.text
-      display = display.replace(/\[PARA\]\s*/g, '')
+      display = display.replace(/\[PARA\]\s*/gi, '')
+      display = display.replace(/(?:\|{1,2}\??#\S+)(\s+|$)/g, '')
 
       const nextSegment = segments[i + 1]
       const nextTag = nextSegment?.tag
