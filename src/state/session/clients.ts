@@ -1,9 +1,11 @@
-import {type Agent, type Client} from '@atproto/lex'
+import {type Agent, type Client, type Service} from '@atproto/lex'
 import {type PasswordSession} from '@atproto/lex-password-session'
 
 import {
   BLUESKY_PROXY_HEADER,
   CHAT_PROXY_SERVICE,
+  IS_LOCAL_DEV_MODE,
+  LOCAL_DEV_CHAT_PROXY_DID,
   PUBLIC_BSKY_SERVICE,
 } from '#/lib/constants'
 import {createLexClient} from '#/lib/lexClient'
@@ -58,9 +60,12 @@ export function buildPdsClient(agent: Agent): Client {
  * takes no moderation authorities.
  */
 export function buildChatClient(agent: Agent): Client {
+  const chatService = (IS_LOCAL_DEV_MODE
+    ? `${LOCAL_DEV_CHAT_PROXY_DID}#bsky_chat`
+    : CHAT_PROXY_SERVICE) as Service
   return createLexClient(agent, {
     appLabelers: null,
-    service: CHAT_PROXY_SERVICE,
+    service: chatService,
   })
 }
 
