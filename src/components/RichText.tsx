@@ -1,10 +1,10 @@
 import {useMemo} from 'react'
-import {View, type StyleProp, type TextStyle} from 'react-native'
+import {type StyleProp, type TextStyle} from 'react-native'
 import {RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
 
 import {toShortUrl} from '#/lib/strings/url-helpers'
 import {POST_FLAIRS, POST_TYPES} from '#/lib/tags'
-import {atoms as a, flatten, type TextStyleProp} from '#/alf'
+import {android, atoms as a, flatten, type TextStyleProp} from '#/alf'
 import {isOnlyEmoji} from '#/alf/typography'
 import {InlineLinkText, type LinkProps} from '#/components/Link'
 import {ProfileHoverCard} from '#/components/ProfileHoverCard'
@@ -52,6 +52,18 @@ export type RichTextProps = TextStyleProp &
     interactiveStyle?: StyleProp<TextStyle>
     emojiMultiplier?: number
     shouldProxyLinks?: boolean
+    suffix?: React.ReactNode
+    /**
+     * How far below the text baseline `suffix` extends, in px.
+     *
+     * Android clips inline views that are translated below the measured text
+     * bounds. Reserve matching room there and cancel it with a negative margin
+     * so content following the text does not move. iOS allows inline attachment
+     * overflow through `RNUITextView` and does not need this compensation.
+     *
+     * Overrides any `paddingBottom`/`marginBottom` set via `style` on Android.
+     */
+    suffixOffset?: number
     /**
      * DANGEROUS: Disable facet lexicon validation
      *
@@ -62,8 +74,6 @@ export type RichTextProps = TextStyleProp &
      * Use with care - only use if you're rendering facets you're generating yourself.
      */
     disableMentionFacetValidation?: true
-    suffix?: React.ReactNode
-    suffixOffset?: number
   }
 
 export function RichText({
@@ -81,9 +91,9 @@ export function RichText({
   onLayout,
   onTextLayout,
   shouldProxyLinks,
-  disableMentionFacetValidation,
   suffix,
-  suffixOffset,
+  suffixOffset = 0,
+  disableMentionFacetValidation,
 }: RichTextProps) {
   const richText = useMemo(() => {
     if (value instanceof RichTextAPI) {
@@ -112,6 +122,10 @@ export function RichText({
   }, [value])
 
   const plainStyles = style
+  const suffixStyles =
+    suffix && suffixOffset
+      ? android({paddingBottom: suffixOffset, marginBottom: -suffixOffset})
+      : null
   const interactiveStyles = [plainStyles, interactiveStyle]
 
   const {text, facets} = richText
@@ -121,60 +135,45 @@ export function RichText({
       const flattenedStyle = flatten(style) ?? {}
       const fontSize =
         (flattenedStyle.fontSize ?? a.text_sm.fontSize) * emojiMultiplier
-      const textEl = (
+      return (
         <Text
           emoji
           selectable={selectable}
           testID={testID}
-          style={[plainStyles, {fontSize}]}
+          style={[plainStyles, {fontSize}, suffixStyles]}
           onLayout={onLayout}
           onTextLayout={onTextLayout}
-          // @ts-ignore web only -prf
           dataSet={WORD_WRAP}>
           {text}
+          {suffix ? ' ' : null}
+          {suffix}
         </Text>
       )
-      if (suffix) {
-        return (
-          <View style={{flexDirection: 'row', alignItems: 'flex-end'}}>
-            <View style={{flex: 1, paddingBottom: suffixOffset}}>{textEl}</View>
-            {suffix}
-          </View>
-        )
-      }
-      return textEl
     }
     let rawDisplay = text
     rawDisplay = rawDisplay.replace(/\[PARA\]\s*/gi, '')
     rawDisplay = rawDisplay.replace(/(?:\|{1,2}\??#\S+)(\s+|$)/g, '')
 
-    const textEl = (
+    return (
       <Text
         emoji
         selectable={selectable}
         testID={testID}
-        style={plainStyles}
+        style={[plainStyles, suffixStyles]}
         numberOfLines={numberOfLines}
         onLayout={onLayout}
         onTextLayout={onTextLayout}
-        // @ts-ignore web only -prf
         dataSet={WORD_WRAP}>
         {rawDisplay}
+        {suffix ? ' ' : null}
+        {suffix}
       </Text>
     )
-    if (suffix) {
-      return (
-        <View style={{flexDirection: 'row', alignItems: 'flex-end'}}>
-          <View style={{flex: 1, paddingBottom: suffixOffset}}>{textEl}</View>
-          {suffix}
-        </View>
-      )
-    }
-    return textEl
   }
 
   const els = []
   let key = 0
+  // N.B. must access segments via `richText.segments`, not via destructuring
   const segments = Array.from(richText.segments())
 
   for (let i = 0; i < segments.length; i++) {
@@ -194,7 +193,7 @@ export function RichText({
             selectable={selectable}
             to={`/profile/${mention.did}`}
             style={interactiveStyles}
-            // @ts-ignore TODO
+            // @ts-expect-error TODO
             dataSet={WORD_WRAP}
             shouldProxy={shouldProxyLinks}
             onPress={onLinkPress}>
@@ -213,7 +212,7 @@ export function RichText({
             key={key}
             to={link.uri}
             style={interactiveStyles}
-            // @ts-ignore TODO
+            // @ts-expect-error TODO
             dataSet={WORD_WRAP}
             shareOnLongPress
             shouldProxy={shouldProxyLinks}
@@ -258,7 +257,7 @@ export function RichText({
         bsky.matches(app.bsky.richtext.facet.tag, nextTag) &&
         isPARATag(nextTag.tag)
       ) {
-        display = display.replace(/(?:\s*\|\|?\s*)$/g, '')
+        display = display.replace(/(?:\s*\|\|?\s*)$/, '')
       }
 
       if (display) {
@@ -268,27 +267,19 @@ export function RichText({
     key++
   }
 
-  const textEl = (
+  return (
     <Text
       emoji
       selectable={selectable}
       testID={testID}
-      style={plainStyles}
+      style={[plainStyles, suffixStyles]}
       numberOfLines={numberOfLines}
       onLayout={onLayout}
       onTextLayout={onTextLayout}
-      // @ts-ignore web only -prf
       dataSet={WORD_WRAP}>
       {els}
+      {suffix ? ' ' : null}
+      {suffix}
     </Text>
   )
-  if (suffix) {
-    return (
-      <View style={{flexDirection: 'row', alignItems: 'flex-end'}}>
-        <View style={{flex: 1, paddingBottom: suffixOffset}}>{textEl}</View>
-        {suffix}
-      </View>
-    )
-  }
-  return textEl
 }
