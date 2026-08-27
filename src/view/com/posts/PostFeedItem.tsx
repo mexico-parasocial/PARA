@@ -13,6 +13,7 @@ import {useQueryClient} from '@tanstack/react-query'
 
 import {useActorStatus} from '#/lib/actor-status'
 import {type ReasonFeedSource} from '#/lib/api/feed/types'
+import {type FeedPostNumbering} from '#/lib/api/feed-manip'
 import {
   createDisplayRichText,
   extractPartyInsignia,
@@ -48,10 +49,20 @@ import {
 import {Link} from '#/view/com/util/Link'
 import {PostMeta} from '#/view/com/util/PostMeta'
 import {PreviewableUserAvatar} from '#/view/com/util/UserAvatar'
+import {
+  POST_NUMBER_INLINE_OFFSET,
+  ThreadItemPostNumber,
+  useHasThreadItemPostNumber,
+} from '#/screens/PostThread/components/ThreadItemPostNumber'
 import {atoms as a} from '#/alf'
+import {
+  GalleryBleed,
+  maybeApplyGalleryOffsetStyles,
+} from '#/components/images/Gallery'
 import {CivicInsignia} from '#/components/CivicInsignia'
 import {ContentHider} from '#/components/moderation/ContentHider'
 import {PostAlerts} from '#/components/moderation/PostAlerts'
+import * as ReportDialogMetadataContext from '#/components/moderation/ReportDialog/ReportDialogMetadataContext'
 import {type AppModerationCause} from '#/components/Pills'
 import {Embed} from '#/components/Post/Embed'
 import {PostEmbedViewContext} from '#/components/Post/Embed/types'
@@ -68,6 +79,7 @@ import {PostFeedReason} from './PostFeedReason'
 
 interface FeedItemProps {
   record: AppBskyFeedPost.Record
+  postNumbering?: FeedPostNumbering
   reason:
     | AppBskyFeedDefs.ReasonRepost
     | AppBskyFeedDefs.ReasonPin
@@ -90,6 +102,7 @@ interface FeedItemProps {
 export function PostFeedItem({
   post,
   record,
+  postNumbering,
   reason,
   feedContext,
   reqId,
@@ -134,29 +147,31 @@ export function PostFeedItem({
   }
   if (richText && moderation) {
     return (
-      <FeedItemInner
-        // Safeguard from clobbering per-post state below:
-        key={postShadowed.uri}
-        post={postShadowed}
-        record={record}
-        reason={reason}
-        feedContext={feedContext}
-        reqId={reqId}
-        richText={displayRichText}
-        partyShield={partyShield}
-        authorInsignia={authorInsignia}
-        parentAuthor={parentAuthor}
-        showReplyTo={showReplyTo}
-        moderation={moderation}
-        isThreadChild={isThreadChild}
-        isThreadLastChild={isThreadLastChild}
-        isThreadParent={isThreadParent}
-        hideTopBorder={hideTopBorder}
-        isParentBlocked={isParentBlocked}
-        isParentNotFound={isParentNotFound}
-        rootPost={rootPost}
-        onShowLess={onShowLess}
-      />
+      <ReportDialogMetadataContext.Provider key={postShadowed.uri}>
+        <FeedItemInner
+          key={postShadowed.uri}
+          post={postShadowed}
+          record={record}
+          postNumbering={postNumbering}
+          reason={reason}
+          feedContext={feedContext}
+          reqId={reqId}
+          richText={displayRichText}
+          partyShield={partyShield}
+          authorInsignia={authorInsignia}
+          parentAuthor={parentAuthor}
+          showReplyTo={showReplyTo}
+          moderation={moderation}
+          isThreadChild={isThreadChild}
+          isThreadLastChild={isThreadLastChild}
+          isThreadParent={isThreadParent}
+          hideTopBorder={hideTopBorder}
+          isParentBlocked={isParentBlocked}
+          isParentNotFound={isParentNotFound}
+          rootPost={rootPost}
+          onShowLess={onShowLess}
+        />
+      </ReportDialogMetadataContext.Provider>
     )
   }
   return null
@@ -165,6 +180,7 @@ export function PostFeedItem({
 let FeedItemInner = ({
   post,
   record,
+  postNumbering,
   reason,
   feedContext,
   reqId,
@@ -193,6 +209,7 @@ let FeedItemInner = ({
   const queryClient = useQueryClient()
   const {openComposer} = useOpenComposer()
   const pal = usePalette('default')
+  const {currentAccount} = useSession()
 
   const [hover, setHover] = useState(false)
   const showAuthorInsignias = useShowAuthorInsignias()
@@ -253,6 +270,15 @@ let FeedItemInner = ({
       authorDid: post.author.did,
       logContext: 'FeedItem',
       feedDescriptor,
+    })
+  }
+
+  const onOpenReposter = () => {
+    sendInteraction({
+      item: post.uri,
+      event: 'app.bsky.feed.defs#clickthroughReposter',
+      feedContext,
+      reqId,
     })
   }
 
@@ -330,181 +356,7 @@ let FeedItemInner = ({
       }
     }
   }, [reason])
-  const hasVisibleReason = reason && !AppBskyFeedDefs.isReasonRepost(reason)
 
-  return (
-    <Link
-      testID={`feedItem-by-${post.author.handle}`}
-      style={outerStyles}
-      href={href}
-      noFeedback
-      accessible={false}
-      onBeforePress={onBeforePress}
-      dataSet={{feedContext}}
-      onPointerEnter={() => {
-        setHover(true)
-      }}
-      onPointerLeave={() => {
-        setHover(false)
-      }}>
-      <SubtleHover hover={hover} />
-      {(hasVisibleReason || isThreadChild) && (
-        <View style={{flexDirection: 'row', gap: 10, paddingLeft: 8}}>
-          <View style={{width: 42}}>
-            {isThreadChild && (
-              <View
-                style={[
-                  styles.replyLine,
-                  {
-                    flexGrow: 1,
-                    backgroundColor: pal.colors.replyLine,
-                    marginBottom: 4,
-                  },
-                ]}
-              />
-            )}
-          </View>
-
-          <View style={[a.pt_sm, a.flex_shrink]}>
-            {hasVisibleReason ? <PostFeedReason reason={reason} /> : null}
-          </View>
-        </View>
-      )}
-
-      <View style={styles.layout}>
-        <View style={styles.layoutAvi}>
-          <PreviewableUserAvatar
-            size={42}
-            profile={post.author}
-            moderation={moderation.ui('avatar')}
-            type={post.author.associated?.labeler ? 'labeler' : 'user'}
-            onBeforePress={onOpenAuthor}
-            live={live}
-          />
-          {isPolicyPostRecord(record) && (
-            <>
-              <View
-                style={[
-                  styles.voteThread,
-                  {backgroundColor: pal.colors.replyLine},
-                ]}
-              />
-              <View style={{marginTop: 8, alignItems: 'center'}}>
-                <VotingButton
-                  initialVote={(post as {voteCount?: number}).voteCount || 0}
-                  onVoteChange={onVoteChange}
-                />
-              </View>
-            </>
-          )}
-
-          {showAuthorInsignias && authorInsignia && (
-            <View
-              style={[
-                a.mt_auto,
-                a.align_center,
-                a.pb_xs,
-                {
-                  // Align with the controls row height
-                  height: 35,
-                  justifyContent: 'center',
-                },
-              ]}>
-              <CivicInsignia
-                variant="shield"
-                abbreviation={authorInsignia.abbreviation}
-                colors={authorInsignia.colors}
-                size="sm"
-              />
-            </View>
-          )}
-          {isThreadParent && (
-            <View
-              style={[
-                styles.replyLine,
-                {
-                  flexGrow: 1,
-                  backgroundColor: pal.colors.replyLine,
-                  marginTop: live ? 8 : 4,
-                },
-              ]}
-            />
-          )}
-        </View>
-        <View style={styles.layoutContent}>
-          <PostMeta
-            author={post.author}
-            moderation={moderation}
-            timestamp={post.indexedAt}
-            postHref={href}
-            onOpenAuthor={onOpenAuthor}
-            partyShield={partyShield}
-            postFlairs={postBadges.length ? postBadges : undefined}
-            postFlairsBelow
-          />
-          {showReplyTo &&
-            (parentAuthor || isParentBlocked || isParentNotFound) && (
-              <PostRepliedTo
-                parentAuthor={parentAuthor}
-                isParentBlocked={isParentBlocked}
-                isParentNotFound={isParentNotFound}
-              />
-            )}
-          <PostContent
-            moderation={moderation}
-            richText={richText}
-            postEmbed={post.embed}
-            postAuthor={post.author}
-            onOpenEmbed={onOpenEmbed}
-            post={post}
-            feedDescriptor={feedDescriptor}
-            threadgateRecord={threadgateRecord}
-          />
-          <PostControls
-            post={post}
-            record={record}
-            richText={richText}
-            onPressReply={onPressReply}
-            logContext="FeedItem"
-            feedContext={feedContext}
-            reqId={reqId}
-            threadgateRecord={threadgateRecord}
-            onShowLess={onShowLess}
-            viaRepost={viaQuote}
-            style={{marginTop: 'auto'}}
-          />
-        </View>
-
-        <DiscoverDebug feedContext={feedContext} />
-      </View>
-    </Link>
-  )
-}
-FeedItemInner = memo(FeedItemInner)
-
-let PostContent = ({
-  post,
-  moderation,
-  richText,
-  postEmbed,
-  postAuthor,
-  onOpenEmbed,
-  feedDescriptor,
-  threadgateRecord,
-}: {
-  moderation: ModerationDecision
-  richText: RichTextAPI
-  postEmbed: AppBskyFeedDefs.PostView['embed']
-  postAuthor: AppBskyFeedDefs.PostView['author']
-  onOpenEmbed: () => void
-  post: AppBskyFeedDefs.PostView
-  feedDescriptor?: string
-  threadgateRecord?: AppBskyFeedThreadgate.Record
-}): React.ReactNode => {
-  const {currentAccount} = useSession()
-  const [limitLines, setLimitLines] = useState(
-    () => countLines(richText.text) >= MAX_POST_LINES,
-  )
   const threadgateHiddenReplies = useMergedThreadgateHiddenReplies({
     threadgateRecord,
   })
@@ -528,6 +380,196 @@ let PostContent = ({
         ]
       : []
   }, [post, currentAccount?.did, threadgateHiddenReplies])
+
+  return (
+    <GalleryBleed>
+      <Link
+        testID={`feedItem-by-${post.author.handle}`}
+        style={outerStyles}
+        href={href}
+        noFeedback
+        accessible={false}
+        onBeforePress={onBeforePress}
+        dataSet={{feedContext}}
+        onPointerEnter={() => {
+          setHover(true)
+        }}
+        onPointerLeave={() => {
+          setHover(false)
+        }}>
+        <SubtleHover hover={hover} />
+        <View style={{flexDirection: 'row', gap: 10, paddingLeft: 8}}>
+          <View style={{width: 42}}>
+            {isThreadChild && (
+              <View
+                style={[
+                  styles.replyLine,
+                  {
+                    backgroundColor: pal.colors.replyLine,
+                    marginBottom: 4,
+                  },
+                ]}
+              />
+            )}
+          </View>
+
+          <View style={[a.pt_sm, a.flex_shrink]}>
+            {reason && (
+              <PostFeedReason
+                reason={reason}
+                moderation={moderation}
+                onOpenReposter={onOpenReposter}
+              />
+            )}
+          </View>
+        </View>
+
+        <View style={styles.layout}>
+          <View style={styles.layoutAvi}>
+            <PreviewableUserAvatar
+              size={42}
+              profile={post.author}
+              moderation={moderation.ui('avatar')}
+              type={post.author.associated?.labeler ? 'labeler' : 'user'}
+              onBeforePress={onOpenAuthor}
+              live={live}
+            />
+            {isPolicyPostRecord(record) && (
+              <>
+                <View
+                  style={[
+                    styles.voteThread,
+                    {backgroundColor: pal.colors.replyLine},
+                  ]}
+                />
+                <View style={{marginTop: 8, alignItems: 'center'}}>
+                  <VotingButton
+                    initialVote={(post as {voteCount?: number}).voteCount || 0}
+                    onVoteChange={onVoteChange}
+                  />
+                </View>
+              </>
+            )}
+
+            {showAuthorInsignias && authorInsignia && (
+              <View
+                style={[
+                  a.mt_auto,
+                  a.align_center,
+                  a.pb_xs,
+                  {
+                    height: 35,
+                    justifyContent: 'center',
+                  },
+                ]}>
+                <CivicInsignia
+                  variant="shield"
+                  abbreviation={authorInsignia.abbreviation}
+                  colors={authorInsignia.colors}
+                  size="sm"
+                />
+              </View>
+            )}
+            {isThreadParent && (
+              <View
+                style={[
+                  styles.replyLine,
+                  {
+                    flexGrow: 1,
+                    backgroundColor: pal.colors.replyLine,
+                    marginTop: live ? 8 : 4,
+                  },
+                ]}
+              />
+            )}
+          </View>
+          <View
+            style={[
+              styles.layoutContent,
+              maybeApplyGalleryOffsetStyles('meta', {
+                post,
+                modui: moderation.ui('contentList'),
+                additionalCauses: additionalPostAlerts,
+              }),
+            ]}>
+            <PostMeta
+              author={post.author}
+              moderation={moderation}
+              timestamp={post.indexedAt}
+              postHref={href}
+              onOpenAuthor={onOpenAuthor}
+              partyShield={partyShield}
+              postFlairs={postBadges.length ? postBadges : undefined}
+              postFlairsBelow
+            />
+            {showReplyTo &&
+              (parentAuthor || isParentBlocked || isParentNotFound) && (
+                <PostRepliedTo
+                  parentAuthor={parentAuthor}
+                  isParentBlocked={isParentBlocked}
+                  isParentNotFound={isParentNotFound}
+                />
+              )}
+            <PostContent
+              moderation={moderation}
+              richText={richText}
+              postNumbering={postNumbering}
+              postEmbed={post.embed}
+              postAuthor={post.author}
+              onOpenEmbed={onOpenEmbed}
+              post={post}
+              additionalPostAlerts={additionalPostAlerts}
+              feedDescriptor={feedDescriptor}
+            />
+            <PostControls
+              post={post}
+              record={record}
+              richText={richText}
+              onPressReply={onPressReply}
+              logContext="FeedItem"
+              feedContext={feedContext}
+              reqId={reqId}
+              threadgateRecord={threadgateRecord}
+              onShowLess={onShowLess}
+              viaRepost={viaQuote}
+              style={{marginTop: 'auto'}}
+            />
+          </View>
+
+          <DiscoverDebug feedContext={feedContext} />
+        </View>
+      </Link>
+    </GalleryBleed>
+  )
+}
+FeedItemInner = memo(FeedItemInner)
+
+let PostContent = ({
+  post,
+  postNumbering,
+  moderation,
+  richText,
+  postEmbed,
+  postAuthor,
+  onOpenEmbed,
+  additionalPostAlerts,
+  feedDescriptor,
+}: {
+  moderation: ModerationDecision
+  richText: RichTextAPI
+  postEmbed: AppBskyFeedDefs.PostView['embed']
+  postAuthor: AppBskyFeedDefs.PostView['author']
+  onOpenEmbed: () => void
+  post: AppBskyFeedDefs.PostView
+  postNumbering: FeedPostNumbering | undefined
+  additionalPostAlerts?: AppModerationCause[]
+  feedDescriptor?: string
+}): React.ReactNode => {
+  const [limitLines, setLimitLines] = useState(
+    () => countLines(richText.text) >= MAX_POST_LINES,
+  )
+  const showPostNumber = useHasThreadItemPostNumber(postNumbering)
+
   const record = useMemo<AppBskyFeedPost.Record | undefined>(
     () =>
       bsky.dangerousIsType<AppBskyFeedPost.Record>(
@@ -565,22 +607,44 @@ let PostContent = ({
             style={[a.flex_1, a.text_md]}
             authorHandle={postAuthor.handle}
             shouldProxyLinks={true}
+            suffixOffset={POST_NUMBER_INLINE_OFFSET}
+            suffix={
+              !limitLines && showPostNumber ? (
+                <ThreadItemPostNumber value={postNumbering} />
+              ) : undefined
+            }
           />
           {limitLines && (
-            <ShowMoreTextButton style={[a.text_md]} onPress={onPressShowMore} />
+            <View style={[a.flex_row, a.align_center, a.gap_xs]}>
+              <ShowMoreTextButton
+                style={[a.text_md]}
+                onPress={onPressShowMore}
+              />
+              <ThreadItemPostNumber inline={false} value={postNumbering} />
+            </View>
           )}
         </View>
-      ) : undefined}
-      {record ? <TranslatedPost hideTranslateLink post={post} /> : undefined}
+      ) : (
+        <ThreadItemPostNumber inline={false} value={postNumbering} />
+      )}
+      {record && <TranslatedPost hideTranslateLink post={post} />}
       {postEmbed ? (
-        <View style={[a.pb_xs]}>
+        <View
+          style={[
+            a.pb_xs,
+            maybeApplyGalleryOffsetStyles('embed', {
+              post,
+              modui: moderation.ui('contentList'),
+              additionalCauses: additionalPostAlerts,
+            }),
+          ]}>
           <Embed
             embed={postEmbed}
             moderation={moderation}
             onOpen={onOpenEmbed}
             viewContext={PostEmbedViewContext.Feed}
-            feedDescriptor={feedDescriptor}
             post={post}
+            feedDescriptor={feedDescriptor}
           />
         </View>
       ) : null}
@@ -591,12 +655,12 @@ PostContent = memo(PostContent)
 
 const styles = StyleSheet.create({
   outer: {
-    paddingTop: 8,
     paddingLeft: 10,
     paddingRight: 15,
     cursor: 'pointer',
   },
   replyLine: {
+    flexGrow: 1,
     width: 2,
     marginLeft: 'auto',
     marginRight: 'auto',
@@ -616,13 +680,9 @@ const styles = StyleSheet.create({
   layoutAvi: {
     paddingLeft: 8,
     paddingRight: 10,
-    position: 'relative',
-    zIndex: 999,
   },
   layoutContent: {
-    position: 'relative',
     flex: 1,
-    zIndex: 0,
   },
   alert: {
     marginTop: 6,

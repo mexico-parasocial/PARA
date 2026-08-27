@@ -1,5 +1,5 @@
 import {useMemo} from 'react'
-import {type StyleProp, type TextStyle} from 'react-native'
+import {View, type StyleProp, type TextStyle} from 'react-native'
 import {RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
 
 import {toShortUrl} from '#/lib/strings/url-helpers'
@@ -62,6 +62,8 @@ export type RichTextProps = TextStyleProp &
      * Use with care - only use if you're rendering facets you're generating yourself.
      */
     disableMentionFacetValidation?: true
+    suffix?: React.ReactNode
+    suffixOffset?: number
   }
 
 export function RichText({
@@ -80,6 +82,8 @@ export function RichText({
   onTextLayout,
   shouldProxyLinks,
   disableMentionFacetValidation,
+  suffix,
+  suffixOffset,
 }: RichTextProps) {
   const richText = useMemo(() => {
     if (value instanceof RichTextAPI) {
@@ -117,7 +121,7 @@ export function RichText({
       const flattenedStyle = flatten(style) ?? {}
       const fontSize =
         (flattenedStyle.fontSize ?? a.text_sm.fontSize) * emojiMultiplier
-      return (
+      const textEl = (
         <Text
           emoji
           selectable={selectable}
@@ -130,12 +134,21 @@ export function RichText({
           {text}
         </Text>
       )
+      if (suffix) {
+        return (
+          <View style={{flexDirection: 'row', alignItems: 'flex-end'}}>
+            <View style={{flex: 1, paddingBottom: suffixOffset}}>{textEl}</View>
+            {suffix}
+          </View>
+        )
+      }
+      return textEl
     }
     let rawDisplay = text
     rawDisplay = rawDisplay.replace(/\[PARA\]\s*/gi, '')
     rawDisplay = rawDisplay.replace(/(?:\|{1,2}\??#\S+)(\s+|$)/g, '')
 
-    return (
+    const textEl = (
       <Text
         emoji
         selectable={selectable}
@@ -149,6 +162,15 @@ export function RichText({
         {rawDisplay}
       </Text>
     )
+    if (suffix) {
+      return (
+        <View style={{flexDirection: 'row', alignItems: 'flex-end'}}>
+          <View style={{flex: 1, paddingBottom: suffixOffset}}>{textEl}</View>
+          {suffix}
+        </View>
+      )
+    }
+    return textEl
   }
 
   const els = []
@@ -246,7 +268,7 @@ export function RichText({
     key++
   }
 
-  return (
+  const textEl = (
     <Text
       emoji
       selectable={selectable}
@@ -260,4 +282,13 @@ export function RichText({
       {els}
     </Text>
   )
+  if (suffix) {
+    return (
+      <View style={{flexDirection: 'row', alignItems: 'flex-end'}}>
+        <View style={{flex: 1, paddingBottom: suffixOffset}}>{textEl}</View>
+        {suffix}
+      </View>
+    )
+  }
+  return textEl
 }
