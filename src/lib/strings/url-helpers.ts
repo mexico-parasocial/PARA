@@ -8,6 +8,7 @@ import {startUriToStarterPackUri} from '#/lib/strings/starter-pack'
 import {logger} from '#/logger'
 
 export const BSKY_APP_HOST = 'https://bsky.app'
+export const BSKY_HOSTING_ENDSWITH = '.host.bsky.network'
 const BSKY_TRUSTED_HOSTS = [
   'bsky\\.app',
   'bsky\\.social',
@@ -57,6 +58,30 @@ export function toNiceDomain(url: string): string {
     }
     return urlp.host ? urlp.host : url
   } catch (e) {
+    return url
+  }
+}
+
+export function isBlueskyHostedUrl(url: string): boolean {
+  try {
+    const {host} = new URL(url)
+    return (
+      host === new URL(BSKY_SERVICE).host ||
+      host.endsWith(BSKY_HOSTING_ENDSWITH)
+    )
+  } catch {
+    return false
+  }
+}
+
+export function toNiceHostingUrl(url: string): string {
+  try {
+    const urlp = new URL(url)
+    if (urlp.host.endsWith(BSKY_HOSTING_ENDSWITH)) {
+      return 'Bluesky'
+    }
+    return urlp.host
+  } catch {
     return url
   }
 }
