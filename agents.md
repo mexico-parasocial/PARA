@@ -319,6 +319,42 @@ decision is made.
 
 ---
 
+## 2026-08-29: Local dev networking + error-surface fixes
+
+- **`EXPO_PUBLIC_LOCAL_DEV_IP` drift:** The dev machine's LAN IP is set in
+  `PARA/.env.local` (`EXPO_PUBLIC_LOCAL_DEV_IP`, plus `EXPO_PUBLIC_M8_BROKER_URL`
+  which uses the same IP). When the Mac's DHCP address changes, update both.
+  `WatZappa/scripts/sync-local-dev-service.sh` auto-detects the IP and writes
+  `PARA/.env` — but `.env.local` **overrides** `.env`, so its stale
+  `EXPO_PUBLIC_LOCAL_DEV_IP` line silently defeats the script. Delete that line
+  from `.env.local` if you want the script to manage it.
+- **Metro caches env vars at transform time.** Editing `.env.local` does
+  nothing until Metro is restarted with a cleared cache
+  (`npx expo start --clear`). Verified by grepping the served bundle
+  (`curl localhost:8081/index.bundle?platform=ios... | grep LOCAL_DEV_IP`).
+  On the iOS simulator the PDS URL is `localhost:2583` (IP-independent), but
+  `DEV_ENV_APPVIEW` in `src/lib/constants.ts` always uses
+  `http://${LOCAL_DEV_IP}:2584`, so a stale IP breaks AppView calls even on
+  the simulator.
+- **Background/backgrounded-service queries must degrade gracefully.** Two
+  known local-dev error sources were converted from red LogBox screens to
+  `logger.warn`:
+  - `useUnreadCountQuery` (matrix bridge on `:3001`) now returns
+    `{unread: 0, communities: []}` when the bridge is unreachable. The bridge
+    container (`para-matrix-bridge`) does not build currently — its Dockerfile
+    fails compiling `@atproto/lex-data`; the rest of the matrix compose stack
+    runs.
+  - Global `QueryCache.onError` in `src/lib/react-query.tsx` now logs
+    `MethodNotImplemented` (501) responses at warn level. The local watx
+    AppView intentionally throws "Suggestions/Topics agent not available"
+    because IRIS is not part of the dev stack.
+- **Remaining local-dev red-screen sources (not yet handled):** "Search v2 is
+  not enabled" (Open Questions screen calls search v2 while the
+  `SearchV2Enable` flag is off — GrowthBook 404s locally) and chat
+  "Poll latest failed" 500s from the local AppView chat routes.
+
+---
+
 ## 2026-07-13: pnpm 11.11.0 alignment and web dev build fix
 
 - **pnpm version:** Both `WatZappa/` and `PARA/` now declare

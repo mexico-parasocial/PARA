@@ -13,7 +13,7 @@ import {Trans, useLingui} from '@lingui/react/macro'
 import {useRoute} from '@react-navigation/native'
 
 import {buildCommunityCivicTreeVaultManifest} from '#/lib/civic-export/obsidian'
-import {useAnonymousMode} from '#/lib/m8/hooks/useAnonymousMode'
+import {useAnonymousMode} from '#/lib/im8/hooks/useAnonymousMode'
 import {usePartyLobbyingBriefingPacksQuery} from '#/state/queries/briefing-packs'
 import {useCommunityBoardsQuery} from '#/state/queries/community-boards'
 import {

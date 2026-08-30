@@ -22,7 +22,7 @@ export function Logotype({
 } & SvgProps) {
   useCinzelFont()
   const pal = usePalette('default')
-  // @ts-ignore it's fiiiiine
+  // @ts-expect-error it's fiiiiine
   const size = parseInt(rest.width || 32, 10)
   const textFill = fill || pal.text.color
   const isStrong = variant === 'strong'

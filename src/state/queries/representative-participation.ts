@@ -7,7 +7,7 @@ import {
   postPajareoReport,
   postPajareoResponse,
   postPajareoSupport,
-} from '#/lib/m8/api'
+} from '#/lib/im8/api'
 import {type RepresentativeItem} from '#/lib/mock-data'
 import {
   createRepresentativeNomination,

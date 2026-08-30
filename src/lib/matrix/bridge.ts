@@ -1,4 +1,4 @@
-import {clearM8Session, getM8AccessToken, refreshM8AccessToken} from '#/lib/m8/api'
+import {clearM8Session, getM8AccessToken, refreshM8AccessToken} from '#/lib/im8/api'
 import {navigate} from '#/Navigation'
 
 export const MATRIX_BRIDGE_API_URL =

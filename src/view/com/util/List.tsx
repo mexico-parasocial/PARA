@@ -1,5 +1,5 @@
 import {forwardRef, memo, useMemo} from 'react'
-import {RefreshControl, type ViewToken} from 'react-native'
+import {type ListViewToken as ViewToken, RefreshControl} from 'react-native'
 import {
   type FlatListPropsWithLayout,
   runOnJS,
@@ -175,7 +175,6 @@ let List = forwardRef<ListMethods, ListProps>(
         scrollsToTop={scrollsToTop}
         scrollEventThrottle={1}
         style={style}
-        // @ts-expect-error FlatList_INTERNAL ref type is wrong -sfn
         ref={ref}
       />
     )

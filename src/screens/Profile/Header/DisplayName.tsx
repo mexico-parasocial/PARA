@@ -2,7 +2,7 @@ import {View} from 'react-native'
 import {type AppBskyActorDefs} from '@atproto/api'
 import {type ModerationDecision} from '@bsky.app/sdk/moderation'
 
-import {useAnonymousMode} from '#/lib/m8/hooks/useAnonymousMode'
+import {useAnonymousMode} from '#/lib/im8/hooks/useAnonymousMode'
 import {formatUserDisplayName} from '#/lib/strings/profile-names'
 import {type Shadow} from '#/state/cache/types'
 import {useSession} from '#/state/session'

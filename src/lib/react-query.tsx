@@ -158,6 +158,18 @@ function isAuthError(error: unknown): boolean {
   )
 }
 
+/**
+ * Backends deliberately answer 501 for features whose backing service isn't
+ * part of the current deployment (e.g. IRIS suggestions/topics in local dev).
+ * These are expected, not actionable, so they must not red-box the app.
+ */
+function isMethodNotImplemented(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false
+  const {name, message} = error as {name?: unknown; message?: unknown}
+  if (name === 'MethodNotImplementedError') return true
+  return typeof message === 'string' && /methodnotimplemented/i.test(message)
+}
+
 let reportedAuthFailure = false
 
 /** Called on `session-dropped` so the next dead session reports again. */
@@ -173,6 +185,13 @@ const createQueryClient = () =>
           if (reportedAuthFailure) return
           reportedAuthFailure = true
           logger.warn('query: failing on an expired session', {
+            queryKey: String(query.queryKey[0]),
+          })
+          return
+        }
+        if (isMethodNotImplemented(error)) {
+          logger.warn('query: method not implemented by server', {
+            safeMessage: 'method not implemented',
             queryKey: String(query.queryKey[0]),
           })
           return

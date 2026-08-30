@@ -18,17 +18,17 @@ import * as SplashScreen from 'expo-splash-screen'
 
 import {Logomark} from '#/view/icons/Logomark'
 import {atoms as a, useTheme} from '#/alf'
-// @ts-ignore
+// @ts-expect-error
 import splashImagePointer from '../assets/illustrations/illustration-mobile.png'
-// @ts-ignore
+// @ts-expect-error
 import darkSplashImagePointer from '../assets/illustrations/illustration-mobile-dark.png'
 /** Startup must not wait longer than this on the splash illustration. */
 const SPLASH_IMAGE_TIMEOUT_MS = 2000
 
-const splashImageUri = RNImage.resolveAssetSource(splashImagePointer).uri
+const splashImageUri = RNImage.resolveAssetSource(splashImagePointer)!.uri
 const darkSplashImageUri = RNImage.resolveAssetSource(
   darkSplashImagePointer,
-).uri
+)!.uri
 
 type Props = {
   isReady: boolean

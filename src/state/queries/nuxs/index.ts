@@ -1,4 +1,4 @@
-import {removeNuxs, upsertNux} from '@bsky.app/sdk'
+import {removeNuxs, upsertNux} from '@bsky/sdk'
 import {useMutation, useQueryClient} from '@tanstack/react-query'
 
 import {type AppNux, type Nux} from '#/state/queries/nuxs/definitions'
@@ -8,7 +8,6 @@ import {
   usePreferencesQuery,
 } from '#/state/queries/preferences'
 import {usePdsClient} from '#/state/session'
-import {type app} from '#/lexicons'
 
 export {Nux} from '#/state/queries/nuxs/definitions'
 
@@ -46,7 +45,7 @@ export function useNuxs():
   //   const queryClient = useQueryClient()
   //   const pdsClient = usePdsClient()
 
-  //   // @ts-ignore
+  //   // @ts-expect-error
   //   window.clearNux = async (ids: string[]) => {
   //     await pdsClient.call(removeNuxs, ids)
   //     // triggers a refetch
@@ -104,14 +103,7 @@ export function useSaveNux() {
   return useMutation({
     retry: 3,
     mutationFn: async (nux: AppNux) => {
-      /*
-       * `serializeAppNux` still returns the legacy `Nux`, whose strings are
-       * unbranded; it is validated against the same schema the action expects.
-       */
-      await pdsClient.call(
-        upsertNux,
-        serializeAppNux(nux) as app.bsky.actor.defs.Nux,
-      )
+      await pdsClient.call(upsertNux, serializeAppNux(nux))
       // triggers a refetch
       await queryClient.invalidateQueries({
         queryKey: preferencesQueryKey,

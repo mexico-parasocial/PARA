@@ -887,8 +887,8 @@ const styles = StyleSheet.create({
 
     left: '50%',
     width: LEFT_NAV_STANDARD_WIDTH,
-    // @ts-expect-error web only
     maxHeight: '100vh',
+    // @ts-expect-error web only
     overflowY: 'auto',
     scrollbarWidth: 'thin',
   },

@@ -23,6 +23,7 @@ export async function openPicker(opts?: ImagePickerOptions) {
     quality: 1,
     selectionLimit: 1,
     ...opts,
+    shouldDownloadFromNetwork: true,
     legacy: true,
     preferredAssetRepresentationMode:
       UIImagePickerPreferredAssetRepresentationMode.Automatic,
@@ -60,6 +61,7 @@ export async function openUnifiedPicker({
     legacy: true,
     base64: IS_WEB,
     selectionLimit: IS_IOS ? selectionCountRemaining : undefined,
+    shouldDownloadFromNetwork: true,
     preferredAssetRepresentationMode:
       UIImagePickerPreferredAssetRepresentationMode.Automatic,
     videoExportPreset: VideoExportPreset.Passthrough,

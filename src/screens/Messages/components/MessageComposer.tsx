@@ -188,7 +188,7 @@ export function MessageComposer({
       <View
         collapsable={false}
         ref={native(
-          (node: View) =>
+          (node: React.ComponentRef<typeof View>) =>
             void composerInternalApiRef.current?.setAutocompleteAnchor(node),
         )}>
         <GlassContainer
@@ -208,7 +208,9 @@ export function MessageComposer({
                     composerInternalApiRef.current?.insert(emoji.native)
                   }
                   nextFocusRef={() =>
-                    composerInternalApiRef.current?.input?.element
+                    composerInternalApiRef.current?.input
+                      ?.element as unknown as
+                      {focus: () => void} | null | undefined                    
                   }>
                   <EmojiPicker.Trigger label={l`Open emoji picker`}>
                     {({props, state, control}) => (

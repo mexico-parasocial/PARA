@@ -227,7 +227,7 @@ function BlockDialogInner({
           <View style={[a.py_lg, a.align_center, a.justify_center]}>
             <Loader size="lg" />
           </View>
-        ) : null
+        ) : undefined
       }
       footer={
         <Dialog.FlatListFooter

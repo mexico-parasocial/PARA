@@ -56,11 +56,25 @@ jest.mock('expo-media-library', () => ({
   __esModule: true, // this property makes it work
   default: jest.fn(),
   usePermissions: jest.fn(() => [true]),
+  requestPermissionsAsync: jest.fn().mockResolvedValue({granted: true}),
+  saveToLibraryAsync: jest.fn().mockResolvedValue(undefined),
 }))
 
-jest.mock('lande', () => ({
-  __esModule: true, // this property makes it work
-  default: jest.fn().mockReturnValue([['eng']]),
+jest.mock('expo-media-library/legacy', () => ({
+  __esModule: true,
+  default: jest.fn(),
+  usePermissions: jest.fn(() => [true]),
+  requestPermissionsAsync: jest.fn().mockResolvedValue({granted: true}),
+  saveToLibraryAsync: jest.fn().mockResolvedValue(undefined),
+}))
+
+jest.mock('@bsky.app/expo-guess-language', () => ({
+  guessLanguageSync: jest
+    .fn()
+    .mockReturnValue([{language: 'en', confidence: 1}]),
+  guessLanguageAsync: jest
+    .fn()
+    .mockResolvedValue([{language: 'en', confidence: 1}]),
 }))
 
 jest.mock('sentry-expo', () => ({
@@ -105,28 +119,9 @@ jest.mock('expo-modules-core', () => ({
   requireNativeViewManager: jest.fn().mockImplementation(_ => {
     return () => null
   }),
-  createPermissionHook: jest
-    .fn()
-    .mockImplementation(() => () => [{granted: true}]),
+  createPermissionHook: () => () => [true],
 }))
 
 jest.mock('expo-localization', () => ({
   getLocales: () => [],
 }))
-
-jest.mock(
-  'statsig-react-native-expo',
-  () => ({
-    Statsig: {
-      initialize() {},
-      initializeCalled() {
-        return false
-      },
-    },
-  }),
-  {virtual: true},
-)
-
-import {i18n} from '@lingui/core'
-i18n.load('en', {})
-i18n.activate('en')

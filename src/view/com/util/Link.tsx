@@ -132,13 +132,13 @@ export const Link = memo(function Link({
               onAccessibilityAction?.(e)
             }
           }}
-          // @ts-ignore web only -sfn
+          // @ts-expect-error web only -sfn
           dataSet={dataSet}
           {...props}
           android_ripple={{
             color: t.atoms.bg_contrast_25.backgroundColor,
           }}>
-          {/* @ts-ignore web only -prf */}
+          {/* @ts-expect-error web only -prf */}
           <View style={style} href={anchorHref}>
             {children ? children : <Text>{title || 'link'}</Text>}
           </View>
@@ -157,7 +157,7 @@ export const Link = memo(function Link({
       accessibilityRole="link"
       accessibilityLabel={props.accessibilityLabel ?? title}
       accessibilityHint={props.accessibilityHint}
-      // @ts-ignore web only -prf
+      // @ts-expect-error web only -prf
       href={anchorHref}
       dataSet={dataSet}
       {...props}>
@@ -290,7 +290,7 @@ export const TextLink = memo(function TextLink({
       lineHeight={lineHeight}
       dataSet={dataSet}
       title={title}
-      // @ts-ignore web only -prf
+      // @ts-expect-error web only -prf
       hrefAttrs={hrefAttrs} // hack to get open in new tab to work on safari. without this, safari will open in a new window
       onPress={onPress}
       accessibilityRole="link"
@@ -406,7 +406,7 @@ function onPressInner(
   } else if (
     !e.defaultPrevented && // onPress prevented default
     (isLeftClick || isMiddleClick) && // ignore everything but left and middle clicks
-    // @ts-ignore Web only -prf
+    // @ts-expect-error Web only -prf
     [undefined, null, '', 'self'].includes(e.currentTarget?.target) // let browser handle "target=_blank" etc.
   ) {
     e.preventDefault()
@@ -425,10 +425,8 @@ function onPressInner(
     } else {
       const [routeName, params] = router.matchPath(href)
       if (navigationAction === 'push') {
-        // @ts-ignore we're not able to type check on this one -prf
         navigation.dispatch(StackActions.push(routeName, params))
       } else if (navigationAction === 'replace') {
-        // @ts-ignore we're not able to type check on this one -prf
         navigation.dispatch(StackActions.replace(routeName, params))
       } else if (navigationAction === 'navigate') {
         const state = navigation.getState()
@@ -438,7 +436,6 @@ function onPressInner(
         } else {
           // note: 'navigate' actually acts the same as 'push' nowadays
           // therefore we need to add 'pop' -sfn
-          // @ts-ignore we're not able to type check on this one -prf
           navigation.navigate(routeName, params, {pop: true})
         }
       } else {

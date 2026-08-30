@@ -19,9 +19,9 @@ import Animated, {
 } from 'react-native-reanimated'
 import {useLingui} from '@lingui/react'
 
-import {getGrants, postGrantRevoke, type ProofBrokerGrant} from '#/lib/m8'
-import {authenticateBiometric} from '#/lib/m8/biometric'
-import {INE_INTEGRATION_APPROVED, INE_PREVIEW_NOTICE} from '#/lib/m8/ine'
+import {getGrants, postGrantRevoke, type ProofBrokerGrant} from '#/lib/im8'
+import {authenticateBiometric} from '#/lib/im8/biometric'
+import {INE_INTEGRATION_APPROVED, INE_PREVIEW_NOTICE} from '#/lib/im8/ine'
 import {useTheme} from '#/alf'
 import {Text} from '#/components/Typography'
 

@@ -15,12 +15,17 @@ export enum Features {
   PostThreadKnownLikersEnable = 'post_thread:known_likers:enable',
   PostThreadKnownLikersFetchEnable = 'post_thread:known_likers:fetch:enable',
   CustomLogoJapanEnable = 'custom_logo:japan:enable',
-  VideoAllow10MinuteEnable = 'video:allow-10-minute:enable',
-  VideoMultipartUploadEnable = 'video:multipart_upload:enable',
   SearchStarterPacksV2Enable = 'search_starter_packs_v2:enable',
   FollowSortEnable = 'follow_sort:enable',
   LargeVideoUploads = 'large_video_uploads:enable',
   NotificationsExpandedProfileCardEnable = 'notifications:expanded_profile_card:enable',
+  CanonicalPostNumberingEnable = 'canonical_post_numbering:enable',
+  ContentVisibilitySettingsEnable = 'content_visibility_settings:enable',
+  ModerationInboxEnable = 'moderation_inbox:enable',
+
+  // values
+  TrendingDiscoverValues = 'trending_discover:values',
+  TrendingExploreTopicsCountValue = 'trending_explore_topics_count:value',
 
   AATest = 'aa-test',
 

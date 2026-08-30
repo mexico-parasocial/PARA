@@ -1,14 +1,7 @@
-import {
-  forwardRef,
-  type JSX,
-  memo,
-  type MutableRefObject,
-  type ReactNode,
-  useCallback,
-  useState,
-} from 'react'
+import {forwardRef, memo, useCallback, useState} from 'react'
+import {type JSX} from 'react'
 import {type ScrollView, View} from 'react-native'
-import {type SharedValue, useAnimatedRef} from 'react-native-reanimated'
+import {useAnimatedRef} from 'react-native-reanimated'
 
 import {
   Pager,
@@ -23,7 +16,9 @@ import {TabBar} from './TabBar'
 export interface PagerWithHeaderChildParams {
   headerHeight: number
   isFocused: boolean
-  scrollElRef: MutableRefObject<ListMethods | ScrollView | null>
+  scrollElRef: React.MutableRefObject<
+    ListMethods | React.ComponentRef<typeof ScrollView> | null
+  >
 }
 
 export interface PagerWithHeaderProps {
@@ -141,7 +136,7 @@ let PagerTabBar = ({
   onCurrentPageSelected?: (index: number) => void
   onSelect?: (index: number) => void
   tabBarAnchor?: JSX.Element | null | undefined
-}): ReactNode => {
+}): React.ReactNode => {
   return (
     <>
       <Layout.Center>{renderHeader?.({setMinimumHeight: noop})}</Layout.Center>
@@ -163,15 +158,8 @@ let PagerTabBar = ({
           selectedPage={currentPage}
           onSelect={onSelect}
           onPressSelected={onCurrentPageSelected}
-          dragProgress={
-            undefined as unknown as SharedValue<number> /* native-only */
-          }
-          dragState={
-            undefined as unknown as SharedValue<
-              'idle' | 'dragging' | 'settling'
-            >
-            /* native-only */
-          }
+          dragProgress={undefined as any /* native-only */}
+          dragState={undefined as any /* native-only */}
         />
       </Layout.Center>
     </>
@@ -193,8 +181,8 @@ function PagerItem({
   return renderTab({
     headerHeight: 0,
     isFocused,
-    scrollElRef: scrollElRef as MutableRefObject<
-      ListMethods | ScrollView | null
+    scrollElRef: scrollElRef as React.MutableRefObject<
+      ListMethods | React.ComponentRef<typeof ScrollView> | null
     >,
   })
 }

@@ -4,85 +4,94 @@
  * the app is ready to go.
  */
 
-import {useMemo} from 'react'
-import {StyleSheet, View} from 'react-native'
-import {type ThemeName} from '@bsky.app/alf'
+import {useEffect, useRef, useState} from 'react'
+import Svg, {Path} from 'react-native-svg'
 
-import {Logomark} from '#/view/icons/Logomark'
-import {Logotype} from '#/view/icons/Logotype'
-import {atoms as a} from '#/alf'
-import {themes} from '#/alf/themes'
-import {Text} from '#/components/Typography'
+import {atoms as a, flattenToCSS} from '#/alf'
 
-function getInitialTheme(): ThemeName {
-  if (typeof window === 'undefined') return 'light'
-  const stored = window.localStorage.getItem('ALF_THEME')
-  if (stored === 'dark' || stored === 'dim' || stored === 'light') {
-    return stored
-  }
-  if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
-    return 'dim'
-  }
-  return 'light'
-}
+const size = 100
+const ratio = 57 / 64
 
-export function Splash({isReady: _isReady}: {isReady?: boolean} = {}) {
-  const themeName = useMemo(() => getInitialTheme(), [])
-  const t = themes[themeName]
+export function Splash({
+  isReady,
+  children,
+}: React.PropsWithChildren<{
+  isReady: boolean
+}>) {
+  const [isAnimationComplete, setIsAnimationComplete] = useState(false)
+  const splashRef = useRef<HTMLDivElement>(null)
+
+  // hide the static one that's baked into the HTML - gets replaced by our React version below
+  useEffect(() => {
+    // double rAF ensures that the React version gets painted first
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const splash = document.getElementById('splash')
+        if (splash) {
+          splash.remove()
+        }
+      })
+    })
+  }, [])
+
+  // when ready, we fade/scale out
+  useEffect(() => {
+    if (!isReady) return
+
+    const reduceMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches
+    const node = splashRef.current
+    if (!node || reduceMotion) {
+      setIsAnimationComplete(true)
+      return
+    }
+
+    const animation = node.animate(
+      [
+        {opacity: 1, transform: 'scale(1)'},
+        {opacity: 0, transform: 'scale(1.5)'},
+      ],
+      {
+        duration: 300,
+        easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+        fill: 'forwards',
+      },
+    )
+    animation.onfinish = () => setIsAnimationComplete(true)
+
+    return () => {
+      animation.cancel()
+    }
+  }, [isReady])
 
   return (
-    <View
-      style={[
-        a.fixed,
-        a.inset_0,
-        a.align_center,
-        a.justify_center,
-        {backgroundColor: t.atoms.bg.backgroundColor},
-      ]}>
-      <View style={[a.align_center, {top: -40}]}>
-        {/* Logo lockup — same as desktop/web nav */}
-        <View style={[a.flex_row, a.align_center, {gap: 6}, a.mb_xl]}>
-          <Logomark allowVariants={false} width={40} fill={t.palette.primary_500} />
-          <View style={{paddingTop: 2}}>
-            <Logotype allowVariants={false} width={100} fill={t.atoms.text.color} variant="strong" />
-          </View>
-        </View>
+    <>
+      {isReady && children}
 
-        {/* Tagline */}
-        <Text
-          style={[
-            a.text_md,
-            a.text_center,
-            {color: t.atoms.text_contrast_medium?.color || t.atoms.text.color},
-          ]}>
-          Real people. Real conversations.
-        </Text>
-
-        {/* Subtle animated loader line */}
-        <View
-          style={[styles.loaderTrack, t.atoms.bg_contrast_25, a.mt_xl]}>
-          <View
-            style={[
-              styles.loaderBar,
-              {backgroundColor: t.palette.primary_500},
-            ]}
-          />
-        </View>
-      </View>
-    </View>
+      {!isAnimationComplete && (
+        <div
+          ref={splashRef}
+          style={flattenToCSS([
+            a.fixed,
+            a.inset_0,
+            a.flex,
+            a.align_center,
+            a.justify_center,
+            // to compensate for the `top: -50px` below
+            {transformOrigin: 'center calc(50% - 50px)'},
+          ])}>
+          <Svg
+            fill="none"
+            viewBox="0 0 64 57"
+            style={[a.relative, {width: size, height: size * ratio, top: -50}]}>
+            <Path
+              fill="#006AFF"
+              d="M13.873 3.805C21.21 9.332 29.103 20.537 32 26.55v15.882c0-.338-.13.044-.41.867-1.512 4.456-7.418 21.847-20.923 7.944-7.111-7.32-3.819-14.64 9.125-16.85-7.405 1.264-15.73-.825-18.014-9.015C1.12 23.022 0 8.51 0 6.55 0-3.268 8.579-.182 13.873 3.805ZM50.127 3.805C42.79 9.332 34.897 20.537 32 26.55v15.882c0-.338.13.044.41.867 1.512 4.456 7.418 21.847 20.923 7.944 7.111-7.32 3.819-14.64-9.125-16.85 7.405 1.264 15.73-.825 18.014-9.015C62.88 23.022 64 8.51 64 6.55c0-9.818-8.578-6.732-13.873-2.745Z"
+            />
+          </Svg>
+        </div>
+      )}
+    </>
   )
 }
-
-const styles = StyleSheet.create({
-  loaderTrack: {
-    width: 140,
-    height: 2,
-    borderRadius: 1,
-    overflow: 'hidden',
-  },
-  loaderBar: {
-    width: '30%',
-    height: '100%',
-    borderRadius: 1,
-  },
-})

@@ -8,13 +8,13 @@ import {
 } from 'react-native'
 import Animated, {
   type AnimatedRef,
-  runOnUI,
   scrollTo,
   type SharedValue,
   useAnimatedRef,
   useAnimatedStyle,
   useSharedValue,
 } from 'react-native-reanimated'
+import {scheduleOnUI} from 'react-native-worklets'
 
 import {ScrollProvider} from '#/lib/ScrollContext'
 import {
@@ -31,7 +31,9 @@ import {TabBar} from './TabBar'
 export interface PagerWithHeaderChildParams {
   headerHeight: number
   isFocused: boolean
-  scrollElRef: React.MutableRefObject<ListMethods | ScrollView | null>
+  scrollElRef: React.MutableRefObject<
+    ListMethods | React.ComponentRef<typeof ScrollView> | null
+  >
 }
 
 export interface PagerWithHeaderProps {
@@ -123,14 +125,9 @@ export function PagerWithHeader({
     ],
   )
 
-  const scrollRefs = useSharedValue<
-    Array<AnimatedRef<ScrollView | ListMethods> | null>
-  >([])
+  const scrollRefs = useSharedValue<Array<AnimatedRef<any> | null>>([])
   const registerRef = useCallback(
-    (
-      scrollRef: AnimatedRef<ScrollView | ListMethods> | null,
-      atIndex: number,
-    ) => {
+    (scrollRef: AnimatedRef<any> | null, atIndex: number) => {
       scrollRefs.modify(refs => {
         'worklet'
         refs[atIndex] = scrollRef
@@ -186,7 +183,7 @@ export function PagerWithHeader({
   )
 
   const onTabPressed = useCallback(() => {
-    runOnUI(adjustScrollForOtherPages)('dragging')
+    scheduleOnUI(adjustScrollForOtherPages, 'dragging')
   }, [adjustScrollForOtherPages])
 
   return (
@@ -274,7 +271,7 @@ let PagerTabBar = ({
       ],
     }
   })
-  const headerRef = useRef<View>(null)
+  const headerRef = useRef<React.ComponentRef<typeof View>>(null)
   const fallbackHeaderOnlyHeight = useRef(0)
   return (
     <Animated.View
@@ -360,14 +357,11 @@ function PagerItem({
   index: number
   isFocused: boolean
   isReady: boolean
-  registerRef: (
-    scrollRef: AnimatedRef<ScrollView | ListMethods> | null,
-    atIndex: number,
-  ) => void
+  registerRef: (scrollRef: AnimatedRef<any> | null, atIndex: number) => void
   onScrollWorklet: (e: NativeScrollEvent) => void
   renderTab: ((props: PagerWithHeaderChildParams) => JSX.Element) | null
 }) {
-  const scrollElRef = useAnimatedRef<ScrollView | ListMethods>()
+  const scrollElRef = useAnimatedRef()
 
   useEffect(() => {
     registerRef(scrollElRef, index)
@@ -385,7 +379,9 @@ function PagerItem({
       {renderTab({
         headerHeight,
         isFocused,
-        scrollElRef: scrollElRef,
+        scrollElRef: scrollElRef as React.MutableRefObject<
+          ListMethods | React.ComponentRef<typeof ScrollView> | null
+        >,
       })}
     </ScrollProvider>
   )

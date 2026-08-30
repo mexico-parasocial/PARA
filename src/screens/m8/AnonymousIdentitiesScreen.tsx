@@ -19,9 +19,9 @@ import {
   postAnonymousGermLink,
   postAnonymousGermUnlink,
   postAnonymousIdentity,
-} from '#/lib/m8/api'
-import {useAnonymousMode} from '#/lib/m8/hooks/useAnonymousMode'
-import {type AnonymousIdentityCard} from '#/lib/m8/types'
+} from '#/lib/im8/api'
+import {useAnonymousMode} from '#/lib/im8/hooks/useAnonymousMode'
+import {type AnonymousIdentityCard} from '#/lib/im8/types'
 import {type NavigationProp} from '#/lib/routes/types'
 import {useTheme} from '#/alf'
 import {ChatIdentityPill} from '#/components/chat/ChatIdentityPill'

@@ -2,7 +2,10 @@ import {Platform} from 'react-native'
 import {type ImagePickerAsset} from 'expo-image-picker'
 import {nanoid} from 'nanoid/non-secure'
 
-import {type VideoCompressSkipReason} from '#/lib/media/video/types'
+import {
+  type ProbedMetadata,
+  type VideoCompressSkipReason,
+} from '#/lib/media/video/types'
 import {Sentry} from '#/logger/sentry/lib'
 import {type Metrics} from '#/analytics/metrics'
 
@@ -14,7 +17,7 @@ type MetricFn = <E extends keyof Metrics>(event: E, payload: Metrics[E]) => void
 const COMPRESS_ENGINE =
   Platform.OS === 'web'
     ? 'web:mediabunny@1.25.3'
-    : 'native:react-native-compressor@1.13.0'
+    : 'native:@bsky.app/video-compressor@0.2.0'
 
 type Phase = 'compress' | 'upload' | 'processing'
 
@@ -33,6 +36,7 @@ export type VideoTelemetry = {
   readonly engine: string
   picked: () => void
   compressStarted: () => void
+  probed: (metadata: ProbedMetadata) => void
   compressSkipped: (video: {
     size: number
     mimeType: string
@@ -160,6 +164,24 @@ export function createVideoTelemetry({
       })
     },
 
+    probed(metadata) {
+      metric('video:upload:probed', {
+        uploadId,
+        engine,
+        mimeType: metadata.mimeType,
+        codec: metadata.codec,
+        width: metadata.width,
+        height: metadata.height,
+        duration: metadata.duration,
+        bitrate: metadata.bitrate,
+        fileSize: metadata.fileSize,
+        hasAudio: metadata.hasAudio,
+        frameRate: metadata.frameRate,
+        rotation: metadata.rotation,
+        isHDR: metadata.isHDR,
+      })
+    },
+
     compressSkipped({size, mimeType, skipReason}) {
       metric('video:upload:compressSkipped', {
         uploadId,
@@ -227,7 +249,6 @@ export function createVideoTelemetry({
         engine,
         bytes: uploadBytes ?? 0,
         errorClass: errorClass(e),
-        errorMessage: errorMessage(e),
         elapsedMs: Date.now() - phaseStartedAt,
       })
       endTxn('error')

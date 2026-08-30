@@ -215,7 +215,7 @@ export function ProfileGrid({
 
   // Track seen profiles
   const seenProfilesRef = useRef<Set<string>>(new Set())
-  const containerRef = useRef<View>(null)
+  const containerRef = useRef<React.ComponentRef<typeof View>>(null)
   const hasTrackedRef = useRef(false)
   const logContext: Metrics['suggestedUser:seen']['logContext'] = isFeedContext
     ? 'DiscoverInterstitial'
@@ -274,7 +274,7 @@ export function ProfileGrid({
         },
         {threshold: 0.5},
       )
-      // @ts-ignore - web only
+      // @ts-expect-error - web only
       observer.observe(node)
       return () => observer.disconnect()
     } else {

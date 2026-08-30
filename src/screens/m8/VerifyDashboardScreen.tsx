@@ -8,8 +8,8 @@ import {
 } from 'react-native'
 import {useLingui} from '@lingui/react'
 
-import {getGrants, type ProofBrokerProofArtifact} from '#/lib/m8'
-import {INE_INTEGRATION_APPROVED, INE_PREVIEW_NOTICE} from '#/lib/m8/ine'
+import {getGrants, type ProofBrokerProofArtifact} from '#/lib/im8'
+import {INE_INTEGRATION_APPROVED, INE_PREVIEW_NOTICE} from '#/lib/im8/ine'
 import {useTheme} from '#/alf'
 import {Text} from '#/components/Typography'
 

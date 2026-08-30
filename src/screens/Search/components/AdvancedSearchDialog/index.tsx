@@ -173,8 +173,8 @@ function DialogInner({
     [ax],
   )
 
-  const scrollRef = useRef<ScrollView>(null)
-  const filtersSectionRef = useRef<View>(null)
+  const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null)
+  const filtersSectionRef = useRef<React.ComponentRef<typeof View>>(null)
 
   const suggestions = [
     {

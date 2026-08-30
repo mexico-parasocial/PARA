@@ -11,7 +11,7 @@ import {
   getAnonymousVoiceProfile,
   getKarmaProfile,
   postAnonymousFollow,
-} from '#/lib/m8'
+} from '#/lib/im8'
 import {type FlatNavigatorParams} from '#/lib/routes/types'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'

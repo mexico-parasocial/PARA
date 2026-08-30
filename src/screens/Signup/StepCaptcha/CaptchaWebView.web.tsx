@@ -4,7 +4,6 @@ import {Button, StyleSheet, Text, TextInput, View} from 'react-native'
 
 import {type CaptchaWebViewProps} from './CaptchaWebView.shared'
 
-// @ts-ignore web only, we will always redirect to the app on web (CORS)
 const REDIRECT_HOST = new URL(window.location.href).host
 
 export function CaptchaWebView({
@@ -26,13 +25,11 @@ export function CaptchaWebView({
   }, [onError])
 
   const onLoad = useCallback(() => {
-    // @ts-ignore web
     const frame: HTMLIFrameElement = document.getElementById(
       'captcha-iframe',
     ) as HTMLIFrameElement
 
     try {
-      // @ts-ignore web
       const href = frame?.contentWindow?.location.href
       if (!href) return
       const urlp = new URL(href)

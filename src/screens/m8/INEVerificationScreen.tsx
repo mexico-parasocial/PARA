@@ -9,15 +9,15 @@ import {
 } from 'react-native'
 import {useNavigation} from '@react-navigation/native'
 
-import {setStoredAnonymousProfile} from '#/lib/m8/anonymous'
+import {setStoredAnonymousProfile} from '#/lib/im8/anonymous'
 import {
   postIneAnalyze,
   postIneCredential,
   postIneVerify,
   postRevokeCredential,
-} from '#/lib/m8/api'
-import {INE_INTEGRATION_APPROVED, INE_PREVIEW_NOTICE} from '#/lib/m8/ine'
-import {type IneExtractedData, type IneVerificationResult} from '#/lib/m8/types'
+} from '#/lib/im8/api'
+import {INE_INTEGRATION_APPROVED, INE_PREVIEW_NOTICE} from '#/lib/im8/ine'
+import {type IneExtractedData, type IneVerificationResult} from '#/lib/im8/types'
 import {type NavigationProp} from '#/lib/routes/types'
 import * as Storage from '#/lib/storage'
 import {Text} from '#/view/com/util/text/Text'

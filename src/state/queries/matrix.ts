@@ -1,6 +1,7 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {matrixBridgeFetch} from '#/lib/matrix/bridge'
+import {logger} from '#/logger'
 
 interface CommunitySpaceResponse {
   spaceId: string
@@ -115,11 +116,22 @@ export function useUnreadCountQuery({enabled = true}: {enabled?: boolean} = {}) 
   return useQuery<UnreadResponse>({
     queryKey: ['matrix-unread'],
     queryFn: async () => {
-      const res = await matrixBridgeFetch('/api/unread')
-      if (!res.ok) {
-        throw new Error(await getBridgeErrorMessage(res, 'Failed to fetch unread'))
+      // Background poller: the bridge being down is routine (local dev runs
+      // without it), so degrade to a zero count instead of surfacing an error.
+      try {
+        const res = await matrixBridgeFetch('/api/unread')
+        if (!res.ok) {
+          throw new Error(
+            await getBridgeErrorMessage(res, 'Failed to fetch unread'),
+          )
+        }
+        return res.json()
+      } catch (err) {
+        logger.warn('matrix: bridge unavailable, defaulting unread to 0', {
+          safeMessage: `${err}`,
+        })
+        return {unread: 0, communities: []}
       }
-      return res.json()
     },
     enabled,
     refetchInterval: 1000 * 60 * 2, // Poll every 2 minutes

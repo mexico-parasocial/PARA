@@ -9,7 +9,7 @@ import {type NativeStackScreenProps} from '@react-navigation/native-stack'
 import {
   getStoredAnonymousProfile,
   setStoredAnonymousProfile,
-} from '#/lib/m8/anonymous'
+} from '#/lib/im8/anonymous'
 import {
   getKarmaMe,
   getKarmaProfile,
@@ -17,8 +17,8 @@ import {
   postAnonymousDisable,
   postAnonymousEnable,
   putKarmaRevelation,
-} from '#/lib/m8/api'
-import {type AnonymousProfile} from '#/lib/m8/types'
+} from '#/lib/im8/api'
+import {type AnonymousProfile} from '#/lib/im8/types'
 import {type CommonNavigatorParams} from '#/lib/routes/types'
 import * as Storage from '#/lib/storage'
 import {useSession} from '#/state/session'

@@ -1,7 +1,7 @@
 import {useQuery} from '@tanstack/react-query'
 
-import {restoreM8SessionOrNull} from '#/lib/m8'
-import {type IneAddress} from '#/lib/m8/types'
+import {restoreM8SessionOrNull} from '#/lib/im8'
+import {type IneAddress} from '#/lib/im8/types'
 
 export type M8IdentityLocation = {
   /** Whether the user has an active m8 session with INE credentials */

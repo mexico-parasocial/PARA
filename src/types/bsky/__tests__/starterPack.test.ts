@@ -1,9 +1,11 @@
-import {type AppBskyGraphDefs} from '@atproto/api'
+/* Full schema matching exercises CID validation, so use the real CID parser. */
+jest.unmock('multiformats/cid')
 
-import {type app} from '#/lexicons'
+import {app} from '#/lexicons'
 import {
   type AnyStarterPackView,
   isBasicView,
+  isTrustedView,
   isView,
 } from '#/types/bsky/starterPack'
 
@@ -11,15 +13,21 @@ const now = () => new Date().toISOString()
 
 const creator = {
   $type: 'app.bsky.actor.defs#profileViewBasic',
-  did: 'did:plc:abc',
-  handle: 'alice.test',
+  did: 'did:plc:qrllvid7s54k4hnwtqxwetrf',
+  handle: 'joshuajfriedman.com',
 }
 
 const basicView = {
   $type: 'app.bsky.graph.defs#starterPackViewBasic',
-  uri: 'at://did:plc:abc/app.bsky.graph.starterpack/123',
-  cid: 'bafypack',
-  record: {},
+  uri: 'at://did:plc:qrllvid7s54k4hnwtqxwetrf/app.bsky.graph.starterpack/3l4poszxde32k',
+  cid: 'bafyreiaxduxpwdpjgvve3klfs4flkwjwfqiurszw4o6jvjarpqqmeqwiza',
+  record: {
+    $type: 'app.bsky.graph.starterpack',
+    createdAt: '2024-09-22T03:52:03.686Z',
+    feeds: [],
+    list: 'at://did:plc:qrllvid7s54k4hnwtqxwetrf/app.bsky.graph.list/3l4posztwzy2e',
+    name: 'Bluesky for Art History',
+  },
   creator,
   indexedAt: now(),
 }
@@ -29,25 +37,31 @@ const fullView = {
   $type: 'app.bsky.graph.defs#starterPackView',
 }
 
+const {$type: _, ...directFullView} = fullView
+
+const syntheticFullView = {
+  ...fullView,
+  list: {
+    uri: 'at://did:plc:abc/app.bsky.graph.list/123',
+    cid: '',
+    name: 'Starter pack',
+    purpose: 'app.bsky.graph.defs#referencelist',
+  },
+}
+
 /*
- * Type-level assertions for the dual-world widening: the alias must accept a
- * starter pack view from either world, because both have live producers. These
- * are compile-time only - a failure surfaces as a typecheck error.
+ * Type-level assertions for the view alias: it must accept both the basic and
+ * the full starter pack view. Compile-time only - a failure surfaces as a
+ * typecheck error.
  */
 type Assignable<From, To> = From extends To ? true : false
 type Expect<T extends true> = T
 
-type _AcceptsNewBasicView = Expect<
+type _AcceptsBasicView = Expect<
   Assignable<app.bsky.graph.defs.StarterPackViewBasic, AnyStarterPackView>
 >
-type _AcceptsNewFullView = Expect<
+type _AcceptsFullView = Expect<
   Assignable<app.bsky.graph.defs.StarterPackView, AnyStarterPackView>
->
-type _AcceptsOldBasicView = Expect<
-  Assignable<AppBskyGraphDefs.StarterPackViewBasic, AnyStarterPackView>
->
-type _AcceptsOldFullView = Expect<
-  Assignable<AppBskyGraphDefs.StarterPackView, AnyStarterPackView>
 >
 
 describe('types/bsky/starterPack guards', () => {
@@ -81,6 +95,23 @@ describe('types/bsky/starterPack guards', () => {
       expect(isView({uri: 'at://x', cid: 'y'})).toBe(false)
       expect(isView(null)).toBe(false)
       expect(isView(undefined)).toBe(false)
+    })
+  })
+
+  describe('isTrustedView', () => {
+    it('accepts a direct full view with an omitted $type', () => {
+      expect(isTrustedView(directFullView)).toBe(true)
+    })
+
+    it('accepts a typed synthetic view with placeholder fields', () => {
+      expect(
+        app.bsky.graph.defs.starterPackView.matches(syntheticFullView),
+      ).toBe(false)
+      expect(isTrustedView(syntheticFullView)).toBe(true)
+    })
+
+    it('rejects the basic view', () => {
+      expect(isTrustedView(basicView)).toBe(false)
     })
   })
 

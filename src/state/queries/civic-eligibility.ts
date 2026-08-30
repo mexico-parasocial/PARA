@@ -4,7 +4,7 @@ import {
   getGrants,
   type ProofBrokerClaimType,
   type ProofBrokerGrant,
-} from '#/lib/m8'
+} from '#/lib/im8'
 
 export type CivicEligibility = {
   canVote: boolean

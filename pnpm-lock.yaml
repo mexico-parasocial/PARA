@@ -228,6 +228,7 @@ patchedDependencies:
   expo@57.0.8: 1722861d12907a2d412d04230545b2fcbfa5547a79f99d763cb3e8de6f3a6f2a
   react-native-compressor@1.13.0: 58379dfaace6ced8590cb341c77f2ca8099dfa8f7df6297032ec51de767a9925
   react-native-date-picker@5.0.13: 142807e0a9f018d17dbbca31a0975a5c5c97713f8370faa1c8db2eceaf85e890
+  react-native-dotenv@3.4.11: 16b34eb974399935d3cf7c2526534f906991ccd876215176658347059cdd2021
   react-native-drawer-layout@4.2.3: 74f2c043cc22ab87054f219e7c7373a509b779b18bfa79d27e7d051d73355130
   react-native-keyboard-controller@1.21.9: ac52bf7502ff3ad34a8594b5e1a916b96bf87a2523b6abc87c31f03607d52271
   react-native-pager-view@6.8.0: 0979d6fe1e2fa43b2784cc0b5e0ff0117d53b53423e85ee5855eefdc41a00108
@@ -245,17 +246,17 @@ importers:
         specifier: 0.20.39
         version: 0.20.39
       '@atproto/common-web':
-        specifier: 0.5.9
-        version: 0.5.9
+        specifier: 0.5.10
+        version: 0.5.10
       '@atproto/lex':
-        specifier: 0.3.6
-        version: 0.3.6
+        specifier: 0.3.8
+        version: 0.3.8
       '@atproto/lex-password-session':
-        specifier: 0.2.0
-        version: 0.2.0
+        specifier: 0.2.2
+        version: 0.2.2
       '@atproto/syntax':
-        specifier: 0.7.4
-        version: 0.7.4
+        specifier: 0.7.5
+        version: 0.7.5
       '@bitdrift/react-native':
         specifier: ^0.6.8
         version: 0.6.14(react-native@0.86.0(patch_hash=dd549527bb84c88acc7b0b1d521c9f4b666fda484c75cd0b282f8e9838524909)(@babel/core@7.29.0(supports-color@8.1.1))(@react-native/jest-preset@0.86.0(@babel/core@7.29.0(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.0(@babel/core@7.29.0(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1)
@@ -288,7 +289,7 @@ importers:
         version: 2.7.0(react-native@0.86.0(patch_hash=dd549527bb84c88acc7b0b1d521c9f4b666fda484c75cd0b282f8e9838524909)(@babel/core@7.29.0(supports-color@8.1.1))(@react-native/jest-preset@0.86.0(@babel/core@7.29.0(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.0(@babel/core@7.29.0(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
       '@bsky.app/sdk':
         specifier: npm:bsky-sdk-preview@0.0.1-preview.2
-        version: bsky-sdk-preview@0.0.1-preview.2(@atproto/lex@0.3.6)
+        version: bsky-sdk-preview@0.0.1-preview.2(@atproto/lex@0.3.8)
       '@bsky.app/sift':
         specifier: ^0.3.9
         version: 0.3.9(expo@57.0.8)(react-native-safe-area-context@5.7.0(react-native@0.86.0(patch_hash=dd549527bb84c88acc7b0b1d521c9f4b666fda484c75cd0b282f8e9838524909)(@babel/core@7.29.0(supports-color@8.1.1))(@react-native/jest-preset@0.86.0(@babel/core@7.29.0(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.0(@babel/core@7.29.0(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3))(react-native@0.86.0(patch_hash=dd549527bb84c88acc7b0b1d521c9f4b666fda484c75cd0b282f8e9838524909)(@babel/core@7.29.0(supports-color@8.1.1))(@react-native/jest-preset@0.86.0(@babel/core@7.29.0(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.0(@babel/core@7.29.0(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
@@ -302,8 +303,8 @@ importers:
         specifier: 0.2.0
         version: 0.2.0(expo@57.0.8)(react-native@0.86.0(patch_hash=dd549527bb84c88acc7b0b1d521c9f4b666fda484c75cd0b282f8e9838524909)(@babel/core@7.29.0(supports-color@8.1.1))(@react-native/jest-preset@0.86.0(@babel/core@7.29.0(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.0(@babel/core@7.29.0(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1))(react@19.2.3)
       '@bsky/sdk':
-        specifier: 1.0.1
-        version: 1.0.1(@atproto/lex@0.3.6)
+        specifier: 1.1.0
+        version: 1.1.0(@atproto/lex@0.3.8)
       '@discord/bottom-sheet':
         specifier: bluesky-social/react-native-bottom-sheet
         version: https://codeload.github.com/bluesky-social/react-native-bottom-sheet/tar.gz/28a87d1bb55e10fc355fa1455545a30734995908(9da6ddce533071af5d242341d801718e)
@@ -773,9 +774,6 @@ importers:
       '@babel/core':
         specifier: ^7.26.0
         version: 7.29.0(supports-color@8.1.1)
-      '@babel/plugin-transform-dynamic-import':
-        specifier: ^8.0.1
-        version: 8.0.1(@babel/core@7.29.0(supports-color@8.1.1))
       '@babel/preset-env':
         specifier: ^7.26.0
         version: 7.29.5(@babel/core@7.29.0(supports-color@8.1.1))(supports-color@8.1.1)
@@ -910,7 +908,7 @@ importers:
         version: 3.9.6
       react-native-dotenv:
         specifier: ^3.4.11
-        version: 3.4.11(@babel/runtime@7.29.2)
+        version: 3.4.11(patch_hash=16b34eb974399935d3cf7c2526534f906991ccd876215176658347059cdd2021)(@babel/runtime@7.29.2)
       react-refresh:
         specifier: ^0.14.0
         version: 0.14.2
@@ -971,12 +969,12 @@ packages:
     resolution: {integrity: sha512-FRjwAmYe0kKlWsAe8IvfbmAAKyjpXnl2NV67vWEEjux0FwIEIG6JbOo6YkD5tjK2xjL0Daa429R0E8phmxRrrQ==}
     engines: {node: '>=22'}
 
-  '@atproto/common-web@0.5.9':
-    resolution: {integrity: sha512-2c5C6YV8352JJz9Z5fNfcsstllaKGAb3cQW9aO7unMAGh/FzTGFq+xOwNMW2lTeagO6z530uxYm8AiSRM6O+DQ==}
+  '@atproto/common-web@0.5.10':
+    resolution: {integrity: sha512-w4JUdsJ3VXt8ewkavYh5m/u0UbxDtFdCKhNZPEpJ0U1vcWIjDaSInIexteETDgD7fBJAhidIEi30MGz1kk49ug==}
     engines: {node: '>=22'}
 
-  '@atproto/common@0.8.0':
-    resolution: {integrity: sha512-fBtd08LdouLqNaL8SaGLEIa0l3Ue27yR810jhUu+iBv/xdoXp+1G0pxvPe6JUStH7YGtf/v/v0w/cRGh1xUOaA==}
+  '@atproto/common@0.8.1':
+    resolution: {integrity: sha512-WvgY0CDgodmTS7B1KDVFt868h1b85iQtQZeoDVI+6oOZmg1jINWUl+bZ1rwf59Tk1PqcMz5OzH6OS2J7Mb9/Iw==}
     engines: {node: '>=22'}
 
   '@atproto/crypto@0.5.4':
@@ -987,48 +985,48 @@ packages:
     resolution: {integrity: sha512-BlnwQ+obL+4ZA71KH/EzZ3TY+cpSxnLiUI85mjBJIQwvDF/oN2sQA18wIj9jpduviIt2b/cMtlJuzHjzBkfXvw==}
     engines: {node: '>=22'}
 
-  '@atproto/lex-builder@0.1.12':
-    resolution: {integrity: sha512-uo3mcdoOgqBfQnf+PhYYLNEBdUTgoNe2ARYb3cUaiec8O0oritOeZndUDgmths06ACrlqFkZNTV1YJX6CsH71g==}
+  '@atproto/lex-builder@0.1.13':
+    resolution: {integrity: sha512-YHSONY88fWdMcN6Xa/Noap98DNW2m5zVZGspQWaROsX2lFx1mLf7g/XKLBcPRVDpE3OWRZ98QkkSZN3SgbOXrg==}
     engines: {node: '>=22'}
 
   '@atproto/lex-cbor@0.1.6':
     resolution: {integrity: sha512-PxLQy7jzV8u9zTGURNF8ZczLPk+ZH+WNx/2z/z7RacJbu7sWNpx26U2pC7cIkWtt4jyDaruaLhssw3w3atLotA==}
     engines: {node: '>=22'}
 
-  '@atproto/lex-client@0.3.3':
-    resolution: {integrity: sha512-sWChe7Jukm9uxDfxT6ElICp6vMTqAFmwcHdSLdMDtsKBZSrwO7vWL9F6rpoMPyxS29Ob9nNAhMg30kKfZrb+uw==}
+  '@atproto/lex-client@0.3.5':
+    resolution: {integrity: sha512-IOYjgQ2H+pw8QhV0vMMG9PTRg+oh5In9APbGBvotNZlbF4SCZNDVd7dONFY4rU2Dg6BHSkiqbqoNUHNgTC+ITA==}
     engines: {node: '>=22'}
 
   '@atproto/lex-data@0.1.7':
     resolution: {integrity: sha512-kW/dPLqo/WgCLV+XESR4JKwV6c1rZWJGOfuPupZGTjEDAKoBbKXdaEzX9/1vKQYbZ9U3j0DS/n7OFFK7wBugyQ==}
     engines: {node: '>=22'}
 
-  '@atproto/lex-document@0.1.9':
-    resolution: {integrity: sha512-TmpwttQ9pKCXlvwUlJ/5HMZPtJMFBvgZ1bunEeQD5JfU6n/sgK/fob8tfjhTdL2QrpZMtM6opMEk3w5STm1RDQ==}
+  '@atproto/lex-document@0.1.10':
+    resolution: {integrity: sha512-7ivrxWttSxInDksR2rtM24xGdntY/3Ew5j08W5SiG45B+T2nyARL5EOk2xMXEm3MLjPrpNYAybA21ZEDYhGG0Q==}
     engines: {node: '>=22'}
 
-  '@atproto/lex-installer@0.1.15':
-    resolution: {integrity: sha512-4/xDyY7yxxs66vF0WZB+7fcuEy4I5IRDyDoQFzLQx7C6PlQ76/e/PxvYTff7x0/N6hknmOlANODnnxo3rtdnCA==}
+  '@atproto/lex-installer@0.1.17':
+    resolution: {integrity: sha512-XSXiFLoDT7YEe+GuUdwczKQmhuLrA2CHVVlL8s5U8FLtWC5Cr3ELmz1t1b/Y8dV+R31hWyvdsk/t992B6+WW3Q==}
     engines: {node: '>=22'}
 
   '@atproto/lex-json@0.1.6':
     resolution: {integrity: sha512-mvrAd0lbyuecIHjyld8QN6MN6CBf4j0GCxLzegsvLh0SvDf+GbYWklkcQqmITL44yFQOwmA/QNIQj0Uvh7+R/g==}
     engines: {node: '>=22'}
 
-  '@atproto/lex-password-session@0.2.0':
-    resolution: {integrity: sha512-u958Etax/bPVr9FWko+/B5nRcU1klQHvrdiVtYb4lkgrM6uvV7BvaFJZYEu5DzlEeqNAZ9a65PmbC1F5oyUBjQ==}
+  '@atproto/lex-password-session@0.2.2':
+    resolution: {integrity: sha512-lifxp9sMdOGP1AfPhjNUMson6yzqEbS0PS8Q7UCVQucXbBlM89r5ff9DMBJF2sTiH5Qt8yXXsthI543OT9FXgg==}
     engines: {node: '>=22'}
 
-  '@atproto/lex-resolver@0.2.8':
-    resolution: {integrity: sha512-j3dIxeEAStp/RzJS4MECRDPuOFX41mX9fnteGgrQhe9053eRuTnl2oTyJbV7rKgzy+hEI4jH6X6Y4wOStjUb/Q==}
+  '@atproto/lex-resolver@0.2.10':
+    resolution: {integrity: sha512-0Ml37emPqi6zr7hBAVR8fi7XDgG6xWsksBotoMU4Doh/PNFNt/H79Zopt/jnmDRcl8DGj9PNqZOZjzcAr2IuFw==}
     engines: {node: '>=22'}
 
-  '@atproto/lex-schema@0.2.5':
-    resolution: {integrity: sha512-/tP3dRqaZu0EIoq0BSVzhvFGL6u0uu2KFDV21i73DpFsg6TXOTddKJ9bvgK83XdAJYL7PWi703XsaR31v9u5Qg==}
+  '@atproto/lex-schema@0.2.6':
+    resolution: {integrity: sha512-8fe/gmhjMImBsy073jMANkbHHQLe/w4s9XLATpAz+Qd6WrR9RYTqc2DU8uZDL13F5bfdGTj8KECt/Xs4CoPXdQ==}
     engines: {node: '>=22'}
 
-  '@atproto/lex@0.3.6':
-    resolution: {integrity: sha512-8Hpc6MbfkPJKaO5CvvIerEylbihI5GfrY5DzapZD4rV2TWfm3RU+DzeRpsxQJ0W9WOZRYvp1JnBcq/gZ48Qb0g==}
+  '@atproto/lex@0.3.8':
+    resolution: {integrity: sha512-8X7f6wxVDm4IVNR80Yg3BV3IXb89sKo/KIZeYb4or/EHP7ljazVU4qU+RPXmlELnWiIcw+PiJE+hPSkGLnMPOA==}
     engines: {node: '>=22'}
     hasBin: true
 
@@ -1036,12 +1034,12 @@ packages:
     resolution: {integrity: sha512-ukCZMCWmiu7fAlssBbLs+IMaf2K2R9mADaTKz2jEeC/xeZ3jT77Ka0S2G+ELBB+Dc9ijBACU0iPMQLhquOkuzQ==}
     engines: {node: '>=22'}
 
-  '@atproto/repo@0.10.11':
-    resolution: {integrity: sha512-QqDzEv8d6NUuqZ0xvWG+n8DfWd4Vuka04nyuD9oglKsj5avB1zbEsWx3Oit1oYtZFUf9JSVWMDqMXhu3UbB+lA==}
+  '@atproto/repo@0.10.12':
+    resolution: {integrity: sha512-SnDSoFi1bRAfN0IcDjSPFcefknDCIIjKgJXgFsd5jvktCkopmzml8BpQEP5t2/mcZ7NvEn5onQ0kaWkXhgL+5g==}
     engines: {node: '>=22'}
 
-  '@atproto/syntax@0.7.4':
-    resolution: {integrity: sha512-EHsEHtasH/DGPljBYecVDjweGMQ5eTu6Ns0GZ5z0qdqpOI8ipBvldWnMIxWkA+5HfZ9Dsu4V1MX0WP7wgL8cuA==}
+  '@atproto/syntax@0.7.5':
+    resolution: {integrity: sha512-6vnLQK8OAzg0dO6z/xnvuXn5zMV0UMI54zbxk7G7BXhGlIlLMb1yo+JVYtAlv8Nxzr+AaFdNZ8AJt+L/QhJMFQ==}
     engines: {node: '>=22'}
 
   '@atproto/xrpc@0.8.10':
@@ -1121,12 +1119,6 @@ packages:
   '@babel/helper-plugin-utils@7.28.6':
     resolution: {integrity: sha512-S9gzZ/bz83GRysI7gAD4wPT/AI3uCnY+9xn+Mx/KPs2JwHJIz1W8PZkg2cqyt3RNOBM8ejcXhV6y8Og7ly/Dug==}
     engines: {node: '>=6.9.0'}
-
-  '@babel/helper-plugin-utils@8.0.1':
-    resolution: {integrity: sha512-3PKFgjTyPlhFhorfP+SjKQxLViIL++zWjFOO4hGriYU+Bsm983DxEM1JmDRJVWXV0O9npu+xXRqz7Pbd3mh70g==}
-    engines: {node: ^22.18.0 || >=24.11.0}
-    peerDependencies:
-      '@babel/core': ^8.0.0
 
   '@babel/helper-remap-async-to-generator@7.27.1':
     resolution: {integrity: sha512-7fiA521aVw8lSPeI4ZOD3vRFkoqkJcS+z4hFo82bFSH/2tNd6eJ5qCVMS5OzDmZh/kaHQeBaeyxK6wljcPtveA==}
@@ -1443,12 +1435,6 @@ packages:
     engines: {node: '>=6.9.0'}
     peerDependencies:
       '@babel/core': ^7.0.0-0
-
-  '@babel/plugin-transform-dynamic-import@8.0.1':
-    resolution: {integrity: sha512-AS9GlgKc43tJNRu7yOvLaTko4qmdOb+8M69uNS8i421WLO20eVez7LdG5khKdi8E0LIQpYzzzdGIrdXWnO753g==}
-    engines: {node: ^22.18.0 || >=24.11.0}
-    peerDependencies:
-      '@babel/core': ^8.0.0
 
   '@babel/plugin-transform-explicit-resource-management@7.28.6':
     resolution: {integrity: sha512-Iao5Konzx2b6g7EPqTy40UZbcdXE126tTxVFr/nAIj+WItNxjKSYTEw3RC+A2/ZetmdJsgueL1KhaMCQHkLPIg==}
@@ -1858,8 +1844,8 @@ packages:
       react: '*'
       react-native: '*'
 
-  '@bsky/sdk@1.0.1':
-    resolution: {integrity: sha512-COhrmIZFsUJ1gj4gvqm2UWkRhTbmXZAL1osTZKgSaFftD4Xy0RRl8S9SRluCxo4/VPw/R3p7NQZ4X3BQFbUjVQ==}
+  '@bsky/sdk@1.1.0':
+    resolution: {integrity: sha512-6ZSrhNa6KC0arcimBG79Otk+FGZ15Br1YaEeatncbJYfWXGsw9l9nPjZ38IVpSW7UqQ/uhZ+WSQGnVUAdekzaw==}
     engines: {node: '>=22.12.0'}
     peerDependencies:
       '@atproto/lex': ^0.3.0
@@ -11439,25 +11425,25 @@ snapshots:
 
   '@atproto/api@0.20.39':
     dependencies:
-      '@atproto/common-web': 0.5.9
+      '@atproto/common-web': 0.5.10
       '@atproto/lexicon': 0.7.11
-      '@atproto/syntax': 0.7.4
+      '@atproto/syntax': 0.7.5
       '@atproto/xrpc': 0.8.10
       await-lock: 3.0.0
       multiformats: 13.4.2
       tlds: 1.261.0
       zod: 3.25.76
 
-  '@atproto/common-web@0.5.9':
+  '@atproto/common-web@0.5.10':
     dependencies:
       '@atproto/lex-data': 0.1.7
       '@atproto/lex-json': 0.1.6
-      '@atproto/syntax': 0.7.4
+      '@atproto/syntax': 0.7.5
       zod: 3.25.76
 
-  '@atproto/common@0.8.0':
+  '@atproto/common@0.8.1':
     dependencies:
-      '@atproto/common-web': 0.5.9
+      '@atproto/common-web': 0.5.10
       '@atproto/lex-cbor': 0.1.6
       '@atproto/lex-data': 0.1.7
       multiformats: 13.4.2
@@ -11473,10 +11459,10 @@ snapshots:
     dependencies:
       zod: 3.25.76
 
-  '@atproto/lex-builder@0.1.12':
+  '@atproto/lex-builder@0.1.13':
     dependencies:
-      '@atproto/lex-document': 0.1.9
-      '@atproto/lex-schema': 0.2.5
+      '@atproto/lex-document': 0.1.10
+      '@atproto/lex-schema': 0.2.6
       prettier: 3.9.6
       ts-morph: 27.0.2
       tslib: 2.8.1
@@ -11487,11 +11473,11 @@ snapshots:
       cborg: 4.5.8
       tslib: 2.8.1
 
-  '@atproto/lex-client@0.3.3':
+  '@atproto/lex-client@0.3.5':
     dependencies:
       '@atproto/lex-data': 0.1.7
       '@atproto/lex-json': 0.1.6
-      '@atproto/lex-schema': 0.2.5
+      '@atproto/lex-schema': 0.2.6
       tslib: 2.8.1
 
   '@atproto/lex-data@0.1.7':
@@ -11500,21 +11486,21 @@ snapshots:
       tslib: 2.8.1
       unicode-segmenter: 0.14.5
 
-  '@atproto/lex-document@0.1.9':
+  '@atproto/lex-document@0.1.10':
     dependencies:
-      '@atproto/lex-schema': 0.2.5
+      '@atproto/lex-schema': 0.2.6
       core-js: 3.50.0
       tslib: 2.8.1
 
-  '@atproto/lex-installer@0.1.15':
+  '@atproto/lex-installer@0.1.17':
     dependencies:
-      '@atproto/lex-builder': 0.1.12
+      '@atproto/lex-builder': 0.1.13
       '@atproto/lex-cbor': 0.1.6
       '@atproto/lex-data': 0.1.7
-      '@atproto/lex-document': 0.1.9
-      '@atproto/lex-resolver': 0.2.8
-      '@atproto/lex-schema': 0.2.5
-      '@atproto/syntax': 0.7.4
+      '@atproto/lex-document': 0.1.10
+      '@atproto/lex-resolver': 0.2.10
+      '@atproto/lex-schema': 0.2.6
+      '@atproto/syntax': 0.7.5
       tslib: 2.8.1
 
   '@atproto/lex-json@0.1.6':
@@ -11522,61 +11508,61 @@ snapshots:
       '@atproto/lex-data': 0.1.7
       tslib: 2.8.1
 
-  '@atproto/lex-password-session@0.2.0':
+  '@atproto/lex-password-session@0.2.2':
     dependencies:
-      '@atproto/lex-client': 0.3.3
-      '@atproto/lex-schema': 0.2.5
+      '@atproto/lex-client': 0.3.5
+      '@atproto/lex-schema': 0.2.6
       tslib: 2.8.1
 
-  '@atproto/lex-resolver@0.2.8':
+  '@atproto/lex-resolver@0.2.10':
     dependencies:
       '@atproto-labs/did-resolver': 0.3.7
       '@atproto/crypto': 0.5.4
-      '@atproto/lex-client': 0.3.3
+      '@atproto/lex-client': 0.3.5
       '@atproto/lex-data': 0.1.7
-      '@atproto/lex-document': 0.1.9
-      '@atproto/lex-schema': 0.2.5
-      '@atproto/repo': 0.10.11
-      '@atproto/syntax': 0.7.4
+      '@atproto/lex-document': 0.1.10
+      '@atproto/lex-schema': 0.2.6
+      '@atproto/repo': 0.10.12
+      '@atproto/syntax': 0.7.5
       tslib: 2.8.1
 
-  '@atproto/lex-schema@0.2.5':
+  '@atproto/lex-schema@0.2.6':
     dependencies:
       '@atproto/lex-data': 0.1.7
-      '@atproto/syntax': 0.7.4
+      '@atproto/syntax': 0.7.5
       '@standard-schema/spec': 1.1.0
       tslib: 2.8.1
 
-  '@atproto/lex@0.3.6':
+  '@atproto/lex@0.3.8':
     dependencies:
-      '@atproto/lex-builder': 0.1.12
-      '@atproto/lex-client': 0.3.3
+      '@atproto/lex-builder': 0.1.13
+      '@atproto/lex-client': 0.3.5
       '@atproto/lex-data': 0.1.7
-      '@atproto/lex-installer': 0.1.15
+      '@atproto/lex-installer': 0.1.17
       '@atproto/lex-json': 0.1.6
-      '@atproto/lex-schema': 0.2.5
+      '@atproto/lex-schema': 0.2.6
       tslib: 2.8.1
       yargs: 18.1.0
 
   '@atproto/lexicon@0.7.11':
     dependencies:
-      '@atproto/common-web': 0.5.9
-      '@atproto/syntax': 0.7.4
+      '@atproto/common-web': 0.5.10
+      '@atproto/syntax': 0.7.5
       multiformats: 13.4.2
       zod: 3.25.76
 
-  '@atproto/repo@0.10.11':
+  '@atproto/repo@0.10.12':
     dependencies:
-      '@atproto/common': 0.8.0
-      '@atproto/common-web': 0.5.9
+      '@atproto/common': 0.8.1
+      '@atproto/common-web': 0.5.10
       '@atproto/crypto': 0.5.4
       '@atproto/lex-cbor': 0.1.6
       '@atproto/lex-data': 0.1.7
-      '@atproto/syntax': 0.7.4
+      '@atproto/syntax': 0.7.5
       varint: 6.0.0
       zod: 3.25.76
 
-  '@atproto/syntax@0.7.4':
+  '@atproto/syntax@0.7.5':
     dependencies:
       iso-datestring-validator: 2.2.2
       tslib: 2.8.1
@@ -11704,10 +11690,6 @@ snapshots:
       '@babel/types': 7.29.0
 
   '@babel/helper-plugin-utils@7.28.6': {}
-
-  '@babel/helper-plugin-utils@8.0.1(@babel/core@7.29.0(supports-color@8.1.1))':
-    dependencies:
-      '@babel/core': 7.29.0(supports-color@8.1.1)
 
   '@babel/helper-remap-async-to-generator@7.27.1(@babel/core@7.29.0(supports-color@8.1.1))(supports-color@8.1.1)':
     dependencies:
@@ -12045,11 +12027,6 @@ snapshots:
     dependencies:
       '@babel/core': 7.29.0(supports-color@8.1.1)
       '@babel/helper-plugin-utils': 7.28.6
-
-  '@babel/plugin-transform-dynamic-import@8.0.1(@babel/core@7.29.0(supports-color@8.1.1))':
-    dependencies:
-      '@babel/core': 7.29.0(supports-color@8.1.1)
-      '@babel/helper-plugin-utils': 8.0.1(@babel/core@7.29.0(supports-color@8.1.1))
 
   '@babel/plugin-transform-explicit-resource-management@7.28.6(@babel/core@7.29.0(supports-color@8.1.1))(supports-color@8.1.1)':
     dependencies:
@@ -12568,11 +12545,11 @@ snapshots:
       react: 19.2.3
       react-native: 0.86.0(patch_hash=dd549527bb84c88acc7b0b1d521c9f4b666fda484c75cd0b282f8e9838524909)(@babel/core@7.29.0(supports-color@8.1.1))(@react-native/jest-preset@0.86.0(@babel/core@7.29.0(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.0(@babel/core@7.29.0(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1)
 
-  '@bsky/sdk@1.0.1(@atproto/lex@0.3.6)':
+  '@bsky/sdk@1.1.0(@atproto/lex@0.3.8)':
     dependencies:
       '@atproto-labs/handle-resolver': 0.4.8
-      '@atproto/lex': 0.3.6
-      '@atproto/syntax': 0.7.4
+      '@atproto/lex': 0.3.8
+      '@atproto/syntax': 0.7.5
       tlds: 1.261.0
 
   '@crowdin/cli@4.14.2':
@@ -15701,7 +15678,7 @@ snapshots:
     dependencies:
       minimatch: 10.2.5
       path-browserify: 1.0.1
-      tinyglobby: 0.2.16
+      tinyglobby: 0.2.17
 
   '@tsconfig/node10@1.0.13': {}
 
@@ -16818,11 +16795,11 @@ snapshots:
     dependencies:
       node-int64: 0.4.0
 
-  bsky-sdk-preview@0.0.1-preview.2(@atproto/lex@0.3.6):
+  bsky-sdk-preview@0.0.1-preview.2(@atproto/lex@0.3.8):
     dependencies:
       '@atproto-labs/handle-resolver': 0.4.8
-      '@atproto/lex': 0.3.6
-      '@atproto/syntax': 0.7.4
+      '@atproto/lex': 0.3.8
+      '@atproto/syntax': 0.7.5
       tlds: 1.261.0
 
   buffer-crc32@0.2.13: {}
@@ -21801,7 +21778,7 @@ snapshots:
       react: 19.2.3
       react-native: 0.86.0(patch_hash=dd549527bb84c88acc7b0b1d521c9f4b666fda484c75cd0b282f8e9838524909)(@babel/core@7.29.0(supports-color@8.1.1))(@react-native/jest-preset@0.86.0(@babel/core@7.29.0(supports-color@8.1.1))(react@19.2.3)(supports-color@8.1.1))(@react-native/metro-config@0.86.0(@babel/core@7.29.0(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.2.18)(react@19.2.3)(supports-color@8.1.1)
 
-  react-native-dotenv@3.4.11(@babel/runtime@7.29.2):
+  react-native-dotenv@3.4.11(patch_hash=16b34eb974399935d3cf7c2526534f906991ccd876215176658347059cdd2021)(@babel/runtime@7.29.2):
     dependencies:
       '@babel/runtime': 7.29.2
       dotenv: 16.6.1

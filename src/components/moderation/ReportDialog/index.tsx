@@ -117,7 +117,7 @@ function Inner(props: ReportDialogProps) {
   const logger = ax.logger.useChild(ax.logger.Context.ReportDialog)
   const t = useTheme()
   const {t: l} = useLingui()
-  const ref = useRef<ScrollView>(null)
+  const ref = useRef<React.ComponentRef<typeof ScrollView>>(null)
   const {control, onAfterSubmit, subject} = props
   const {
     data: allLabelers,

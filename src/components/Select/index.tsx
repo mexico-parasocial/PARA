@@ -36,7 +36,7 @@ const Context = createContext<ContextType | null>(null)
 Context.displayName = 'SelectContext'
 
 const ValueTextContext = createContext<
-  [unknown, React.Dispatch<React.SetStateAction<unknown>>]
+  [any, React.Dispatch<React.SetStateAction<any>>]
 >([undefined, () => {}])
 ValueTextContext.displayName = 'ValueTextContext'
 
@@ -50,7 +50,7 @@ function useSelectContext() {
 
 export function Root({children, value, onValueChange, disabled}: RootProps) {
   const control = Dialog.useDialogControl()
-  const valueTextCtx = useState<unknown>()
+  const valueTextCtx = useState<any>()
 
   const ctx = useMemo(
     () => ({
@@ -70,7 +70,7 @@ export function Root({children, value, onValueChange, disabled}: RootProps) {
   )
 }
 
-export function Trigger({children, label}: TriggerProps) {
+export function Trigger({children, hitSlop, label}: TriggerProps) {
   const {control} = useSelectContext()
   const {state: focused, onIn: onFocus, onOut: onBlur} = useInteractionState()
   const {
@@ -100,11 +100,21 @@ export function Trigger({children, label}: TriggerProps) {
   } else {
     return (
       <Button
+        hitSlop={
+          typeof hitSlop === 'number'
+            ? {
+                top: hitSlop,
+                right: hitSlop,
+                bottom: hitSlop,
+                left: hitSlop,
+              }
+            : (hitSlop ?? undefined)
+        }
         label={label}
         onPress={control.open}
-        style={[a.flex_1, a.justify_between]}
+        style={[a.flex_1, a.justify_between, a.pl_lg, a.pr_md]}
         color="secondary"
-        size="small"
+        size="large"
         shape="rectangular">
         <>{children}</>
       </Button>
@@ -120,9 +130,7 @@ export function ValueText({
   const [value] = useContext(ValueTextContext)
   const t = useTheme()
 
-  let text: React.ReactNode = value
-    ? children(value as {label: string})
-    : null
+  let text = value && children(value)
   if (!text) text = placeholder
 
   return (
@@ -138,18 +146,16 @@ export function Icon({}: IconProps) {
 
 export function Content<T>({
   items,
-  valueExtractor = defaultItemValueExtractor as (item: T) => string,
+  valueExtractor = defaultItemValueExtractor,
   ...props
 }: ContentProps<T>) {
   const {control, ...context} = useSelectContext()
   const [, setValue] = useContext(ValueTextContext)
 
   useLayoutEffect(() => {
-    const currentItem = items.find(
-      item => valueExtractor(item) === context.value,
-    )
-    if (currentItem) {
-      setValue(currentItem)
+    const item = items.find(item => valueExtractor(item) === context.value)
+    if (item) {
+      setValue(item)
     }
   }, [items, context.value, valueExtractor, setValue])
 
@@ -213,7 +219,7 @@ function ContentInner<T>({
   )
 }
 
-function defaultItemValueExtractor(item: {value: string}) {
+function defaultItemValueExtractor(item: any) {
   return item.value
 }
 
@@ -283,13 +289,11 @@ export function ItemText({children, style, emoji}: ItemTextProps) {
   )
 }
 
-export function ItemIndicator({icon: IconComponent}: ItemIndicatorProps) {
+export function ItemIndicator({icon: Icon}: ItemIndicatorProps) {
   const {selected, focused, hovered} = useItemContext()
 
-  if (IconComponent) {
-    return (
-      <View style={{width: 24}}>{selected && <IconComponent size="md" />}</View>
-    )
+  if (Icon) {
+    return <View style={{width: 24}}>{selected && <Icon size="md" />}</View>
   }
 
   return (

@@ -63,7 +63,7 @@ export function DateField({
       <TextField.Icon icon={CalendarDays} />
       <Input
         value={value === '' ? '' : toSimpleDateString(value)}
-        inputRef={inputRef as Ref<TextInput>}
+        inputRef={inputRef as Ref<React.ComponentRef<typeof TextInput>>}
         label={label}
         // @ts-expect-error not typed as <input type="date"> even though it is one
         onChange={handleOnChange}

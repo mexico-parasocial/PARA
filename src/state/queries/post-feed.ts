@@ -1,17 +1,12 @@
 import {useCallback, useEffect, useMemo, useRef} from 'react'
 import {AppState} from 'react-native'
-import {
-  type AppBskyActorDefs,
-  AppBskyFeedDefs,
-  type AppBskyFeedPost,
-  AtUri,
-} from '@atproto/api'
 import {type Client} from '@atproto/lex'
-import {type AtIdentifierString, type AtUriString} from '@atproto/syntax'
+import {type AtIdentifierString, AtUri, type AtUriString} from '@atproto/syntax'
 import {
+  moderatePost,
   type ModerationDecision,
   type ModerationPrefs,
-} from '@bsky.app/sdk/moderation'
+} from '@bsky/sdk/moderation'
 import {
   type InfiniteData,
   type QueryClient,
@@ -27,28 +22,23 @@ import {HomeFeedAPI} from '#/lib/api/feed/home'
 import {LikesFeedAPI} from '#/lib/api/feed/likes'
 import {ListFeedAPI} from '#/lib/api/feed/list'
 import {MergeFeedAPI} from '#/lib/api/feed/merge'
-import {
-  ParaFeedAPI,
-  ParaTimelineFeedAPI,
-  type ParaTimelineFilters,
-} from '#/lib/api/feed/para'
 import {PostListFeedAPI} from '#/lib/api/feed/posts'
-import {SearchPostsFeedAPI} from '#/lib/api/feed/search'
 import {type FeedAPI, type ReasonFeedSource} from '#/lib/api/feed/types'
 import {aggregateUserInterests} from '#/lib/api/feed/utils'
-import {FeedTuner, type FeedTunerFn} from '#/lib/api/feed-manip'
 import {
-  DEFAULT_SERVICE,
-  isDiscoverFeedUri,
-  LOCAL_DEV_SERVICE,
-} from '#/lib/constants'
-import {moderatePost} from '#/lib/moderation/subjects'
+  type FeedPostNumbering,
+  FeedTuner,
+  type FeedTunerFn,
+} from '#/lib/api/feed-manip'
+import {DISCOVER_FEED_URI} from '#/lib/constants'
 import {logger} from '#/logger'
 import {STALE} from '#/state/queries'
 import {DEFAULT_LOGGED_OUT_PREFERENCES} from '#/state/queries/preferences/const'
 import {useAppviewClient, useSession} from '#/state/session'
 import * as userActionHistory from '#/state/userActionHistory'
 import {KnownError} from '#/view/com/posts/PostFeedErrorMessage'
+import {app} from '#/lexicons'
+import * as bsky from '#/types/bsky'
 import {useFeedTuners} from '../preferences/feed-tuners'
 import {useModerationOpts} from '../preferences/moderation-opts'
 import {usePreferencesQuery} from './preferences'
@@ -72,19 +62,15 @@ type PostsUriList = string
 export type FeedDescriptor =
   | 'following'
   | `author|${ActorDid}|${AuthorFilter}`
-  | `para|${ActorDid}`
-  | 'para-timeline'
   | `feedgen|${FeedUri}`
   | `likes|${ActorDid}`
   | `list|${ListUri}`
   | `posts|${PostsUriList}`
-  | `search|${string}`
   | 'demo'
 export interface FeedParams {
   mergeFeedEnabled?: boolean
   mergeFeedSources?: string[]
   feedCacheKey?: 'discover' | 'explore' | undefined
-  paraTimelineFilters?: ParaTimelineFilters
 }
 
 type RQPageParam = {cursor: string | undefined; api: FeedAPI} | undefined
@@ -96,11 +82,12 @@ export function RQKEY(feedDesc: FeedDescriptor, params?: FeedParams) {
 
 export interface FeedPostSliceItem {
   _reactKey: string
-  uri: string
-  post: AppBskyFeedDefs.PostView
-  record: AppBskyFeedPost.Record
+  uri: AtUriString
+  post: app.bsky.feed.defs.PostView
+  record: app.bsky.feed.post.Main
+  postNumbering?: FeedPostNumbering
   moderation: ModerationDecision
-  parentAuthor?: AppBskyActorDefs.ProfileViewBasic
+  parentAuthor?: app.bsky.actor.defs.ProfileViewBasic
   isParentBlocked?: boolean
   isParentNotFound?: boolean
 }
@@ -115,8 +102,8 @@ export interface FeedPostSlice {
   reqId: string | undefined
   feedPostUri: string
   reason?:
-    | AppBskyFeedDefs.ReasonRepost
-    | AppBskyFeedDefs.ReasonPin
+    | app.bsky.feed.defs.ReasonRepost
+    | app.bsky.feed.defs.ReasonPin
     | ReasonFeedSource
     | {[k: string]: unknown; $type: string}
 }
@@ -124,7 +111,7 @@ export interface FeedPostSlice {
 export interface FeedPageUnselected {
   api: FeedAPI
   cursor: string | undefined
-  feed: AppBskyFeedDefs.FeedViewPost[]
+  feed: app.bsky.feed.defs.FeedViewPost[]
   fetchedAt: number
 }
 
@@ -146,15 +133,9 @@ const MIN_POSTS = 30
 export function usePostFeedQuery(
   feedDesc: FeedDescriptor,
   params?: FeedParams,
-  opts?: {
-    enabled?: boolean
-    ignoreFilterFor?: string
-    applyCompassCommunityFilters?: boolean
-  },
+  opts?: {enabled?: boolean; ignoreFilterFor?: string},
 ) {
-  const feedTuners = useFeedTuners(feedDesc, {
-    applyCompassCommunityFilters: opts?.applyCompassCommunityFilters,
-  })
+  const feedTuners = useFeedTuners(feedDesc)
   const moderationOpts = useModerationOpts()
   const {data: preferences} = usePreferencesQuery()
   /**
@@ -170,8 +151,7 @@ export function usePostFeedQuery(
     preferences?.savedFeeds?.findIndex(
       f => f.pinned && f.value === 'following',
     ) ?? -1
-  const enableFollowingToDiscoverFallback =
-    followingPinnedIndex === 0 && DEFAULT_SERVICE !== LOCAL_DEV_SERVICE
+  const enableFollowingToDiscoverFallback = followingPinnedIndex === 0
   const {hasSession} = useSession()
   const client = useAppviewClient()
   const lastRun = useRef<{
@@ -179,7 +159,7 @@ export function usePostFeedQuery(
     args: typeof selectArgs
     result: InfiniteData<FeedPage>
   } | null>(null)
-  const isDiscover = isDiscoverFeedUri(feedDesc.split('|')[1])
+  const isDiscover = feedDesc.includes(DISCOVER_FEED_URI)
 
   /**
    * The number of posts to fetch in a single request. Because we filter
@@ -269,38 +249,36 @@ export function usePostFeedQuery(
 
         // Keep track of the last run and whether we can reuse
         // some already selected pages from there.
-        let reusedPages: FeedPage[] = []
-        // OPTIMIZATION DISABLED: This was causing FeedTuner state to be polluted with old posts,
-        // resulting in dedupThreads removing everything on re-renders.
-        // if (lastRun.current) {
-        //   const {
-        //     data: lastData,
-        //     args: lastArgs,
-        //     result: lastResult,
-        //   } = lastRun.current
-        //   let canReuse = true
-        //   for (let key in selectArgs) {
-        //     if (selectArgs.hasOwnProperty(key)) {
-        //       if ((selectArgs as any)[key] !== (lastArgs as any)[key]) {
-        //         // Can't do reuse anything if any input has changed.
-        //         canReuse = false
-        //         break
-        //       }
-        //     }
-        //   }
-        //   if (canReuse) {
-        //     for (let i = 0; i < data.pages.length; i++) {
-        //       if (data.pages[i] && lastData.pages[i] === data.pages[i]) {
-        //         reusedPages.push(lastResult.pages[i])
-        //         // Keep the tuner in sync so that the end result is deterministic.
-        //         tuner.tune(lastData.pages[i].feed)
-        //         continue
-        //       }
-        //       // Stop as soon as pages stop matching up.
-        //       break
-        //     }
-        //   }
-        // }
+        let reusedPages = []
+        if (lastRun.current) {
+          const {
+            data: lastData,
+            args: lastArgs,
+            result: lastResult,
+          } = lastRun.current
+          let canReuse = true
+          for (let key in selectArgs) {
+            if (selectArgs.hasOwnProperty(key)) {
+              if ((selectArgs as any)[key] !== (lastArgs as any)[key]) {
+                // Can't do reuse anything if any input has changed.
+                canReuse = false
+                break
+              }
+            }
+          }
+          if (canReuse) {
+            for (let i = 0; i < data.pages.length; i++) {
+              if (data.pages[i] && lastData.pages[i] === data.pages[i]) {
+                reusedPages.push(lastResult.pages[i])
+                // Keep the tuner in sync so that the end result is deterministic.
+                tuner.tune(lastData.pages[i].feed)
+                continue
+              }
+              // Stop as soon as pages stop matching up.
+              break
+            }
+          }
+        }
 
         const result = {
           pageParams: data.pageParams,
@@ -367,6 +345,7 @@ export function usePostFeedQuery(
                         uri: item.post.uri,
                         post: item.post,
                         record: item.record,
+                        postNumbering: item.postNumbering,
                         moderation: moderations[i],
                         parentAuthor: item.parentAuthor,
                         isParentBlocked: item.isParentBlocked,
@@ -511,18 +490,6 @@ function createApi({
       client,
       feedParams: {actor: actor as AtIdentifierString},
     })
-  } else if (feedDesc.startsWith('para')) {
-    if (feedDesc === 'para-timeline') {
-      return new ParaTimelineFeedAPI({
-        client,
-        filters: feedParams.paraTimelineFilters,
-      })
-    }
-    const [__, actor] = feedDesc.split('|')
-    return new ParaFeedAPI({
-      client,
-      feedParams: {actor},
-    })
   } else if (feedDesc.startsWith('feedgen')) {
     const [__, feed] = feedDesc.split('|')
     return new CustomFeedAPI({
@@ -541,17 +508,6 @@ function createApi({
     })
   } else if (feedDesc === 'demo') {
     return new DemoFeedAPI({client})
-  } else if (feedDesc.startsWith('search')) {
-    const [__, tagStr] = feedDesc.split('|')
-    const tags = tagStr ? tagStr.split(',').filter(Boolean) : undefined
-    return new SearchPostsFeedAPI({
-      client,
-      feedParams: {
-        query: '',
-        hashtags: tags,
-        sort: 'latest',
-      },
-    })
   } else {
     // shouldnt happen
     return new FollowingFeedAPI({client})
@@ -561,7 +517,7 @@ function createApi({
 export function* findAllPostsInQueryData(
   queryClient: QueryClient,
   uri: string,
-): Generator<AppBskyFeedDefs.PostView, undefined> {
+): Generator<app.bsky.feed.defs.PostView, undefined> {
   const atUri = new AtUri(uri)
 
   const queryDatas = queryClient.getQueriesData<
@@ -584,7 +540,7 @@ export function* findAllPostsInQueryData(
           yield embedViewRecordToPostView(quotedPost)
         }
 
-        if (AppBskyFeedDefs.isPostView(item.reply?.parent)) {
+        if (bsky.isType(app.bsky.feed.defs.postView, item.reply?.parent)) {
           if (didOrHandleUriMatches(atUri, item.reply.parent)) {
             yield item.reply.parent
           }
@@ -598,7 +554,7 @@ export function* findAllPostsInQueryData(
           }
         }
 
-        if (AppBskyFeedDefs.isPostView(item.reply?.root)) {
+        if (bsky.isType(app.bsky.feed.defs.postView, item.reply?.root)) {
           if (didOrHandleUriMatches(atUri, item.reply.root)) {
             yield item.reply.root
           }
@@ -616,7 +572,7 @@ export function* findAllPostsInQueryData(
 export function* findAllProfilesInQueryData(
   queryClient: QueryClient,
   did: string,
-): Generator<AppBskyActorDefs.ProfileViewBasic, undefined> {
+): Generator<app.bsky.actor.defs.ProfileViewBasic, undefined> {
   const queryDatas = queryClient.getQueriesData<
     InfiniteData<FeedPageUnselected>
   >({
@@ -636,13 +592,13 @@ export function* findAllProfilesInQueryData(
           yield quotedPost.author
         }
         if (
-          AppBskyFeedDefs.isPostView(item.reply?.parent) &&
+          bsky.isType(app.bsky.feed.defs.postView, item.reply?.parent) &&
           item.reply?.parent?.author.did === did
         ) {
           yield item.reply.parent.author
         }
         if (
-          AppBskyFeedDefs.isPostView(item.reply?.root) &&
+          bsky.isType(app.bsky.feed.defs.postView, item.reply?.root) &&
           item.reply?.root?.author.did === did
         ) {
           yield item.reply.root.author
@@ -653,7 +609,7 @@ export function* findAllProfilesInQueryData(
 }
 
 function assertSomePostsPassModeration(
-  feed: AppBskyFeedDefs.FeedViewPost[],
+  feed: app.bsky.feed.defs.FeedViewPost[],
   moderationPrefs: ModerationPrefs,
 ) {
   // no posts in this feed
@@ -703,11 +659,8 @@ export function resetProfilePostsQueries(
   }, timeout)
 }
 
-export function isFeedPostSlice(v: unknown): v is FeedPostSlice {
-  return !!(
-    v &&
-    typeof v === 'object' &&
-    '_isFeedPostSlice' in v &&
-    v._isFeedPostSlice
+export function isFeedPostSlice(v: any): v is FeedPostSlice {
+  return (
+    v && typeof v === 'object' && '_isFeedPostSlice' in v && v._isFeedPostSlice
   )
 }

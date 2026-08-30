@@ -24,7 +24,7 @@ import {
 } from '#/lib/germ/messageMe'
 import {HITSLOP_20} from '#/lib/constants'
 import {useHaptics} from '#/lib/haptics'
-import {useAnonymousMode} from '#/lib/m8/hooks/useAnonymousMode'
+import {useAnonymousMode} from '#/lib/im8/hooks/useAnonymousMode'
 import {moderateProfile} from '#/lib/moderation/subjects'
 import {sanitizeDisplayName} from '#/lib/strings/display-names'
 import {formatUserDisplayName} from '#/lib/strings/profile-names'

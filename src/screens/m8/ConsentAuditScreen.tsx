@@ -11,7 +11,7 @@ import {
 import {msg} from '@lingui/core/macro'
 import { useLingui } from '@lingui/react'
 
-import { m8Fetch, postGrantRevoke } from '#/lib/m8'
+import { m8Fetch, postGrantRevoke } from '#/lib/im8'
 import { useTheme } from '#/alf'
 import { Text } from '#/components/Typography'
 

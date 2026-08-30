@@ -1,6 +1,6 @@
 import {type AtpAgent} from '@atproto/api'
 
-import {type M8CivicVoteProof,postCivicVoteProof} from '#/lib/m8'
+import {type M8CivicVoteProof,postCivicVoteProof} from '#/lib/im8'
 
 export async function issueParaVoteProof(
   agent: AtpAgent,

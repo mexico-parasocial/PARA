@@ -9,7 +9,7 @@ import {
 import { useLingui } from '@lingui/react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-import { m8Fetch } from '#/lib/m8/api'
+import { m8Fetch } from '#/lib/im8/api'
 import { useTheme } from '#/alf'
 import { Text } from '#/components/Typography'
 
