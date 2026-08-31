@@ -5,7 +5,11 @@ import {type Service} from '@atproto/lex'
 
 import {BLUESKY_PROXY_DID, CHAT_PROXY_DID, IS_DEV} from '#/env'
 
-const LOCAL_DEV_IP = process.env.EXPO_PUBLIC_LOCAL_DEV_IP || '192.168.0.4'
+// Physical devices must set EXPO_PUBLIC_LOCAL_DEV_IP in .env.local to reach
+// the dev machine (localhost on a phone is the phone itself). The localhost
+// fallback is deliberately wrong for that case — a confusing connection
+// error beats silently pointing at a machine that may not be the dev Mac.
+const LOCAL_DEV_IP = process.env.EXPO_PUBLIC_LOCAL_DEV_IP || 'localhost'
 const LOCAL_DEV_SERVICE_OVERRIDE = process.env.EXPO_PUBLIC_LOCAL_DEV_SERVICE
 const DEFAULT_SERVICE_OVERRIDE = process.env.EXPO_PUBLIC_DEFAULT_SERVICE
 const USE_LOCAL_DEFAULT_SERVICE =
