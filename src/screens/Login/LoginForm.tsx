@@ -24,6 +24,8 @@ import {cleanError, isNetworkError} from '#/lib/strings/errors'
 import {createFullHandle} from '#/lib/strings/handles'
 import {useSessionApi} from '#/state/session'
 import {useSetHasCheckedForStarterPack} from '#/state/preferences/used-starter-packs'
+import {getM8AccessToken} from '#/lib/im8/api'
+import {openM8Verification} from '#/lib/im8/linking'
 import {logger} from '#/logger'
 import {useLoggedOutViewControls} from '#/state/shell/logged-out'
 import {atoms as a, native, useBreakpoints, useTheme} from '#/alf'
@@ -33,6 +35,7 @@ import {useDialogControl} from '#/components/Dialog'
 import * as TextField from '#/components/forms/TextField'
 import {useTextFieldContext} from '#/components/forms/TextField'
 import {useHostingProvider} from '#/state/queries/pds-detection'
+import * as SegmentedControl from '#/components/forms/SegmentedControl'
 import {At_Stroke2_Corner0_Rounded as At} from '#/components/icons/At'
 import {
   Eye_Stroke2_Corner0_Rounded as Eye,
@@ -89,6 +92,9 @@ export const LoginForm = ({
 
   const [isProcessing, setIsProcessing] = useState(false)
   const [isAuthFactorTokenNeeded, setIsAuthFactorTokenNeeded] = useState(false)
+  const [authFactorMethod, setAuthFactorMethod] = useState<'email' | 'im8'>(
+    'email',
+  )
   const [revealPassword, setRevealPassword] = useState(false)
   const [hasPassword, setHasPassword] = useState(false)
   const [errorField, setErrorField] = useState<
@@ -116,6 +122,98 @@ export const LoginForm = ({
     Keyboard.dismiss()
     hostingProviderControl.open()
   }, [hostingProviderControl])
+
+  const onPressIm8Verify = useCallback(async () => {
+    setAuthFactorMethod('im8')
+    setError('')
+    setErrorField('unknown')
+
+    await openM8Verification()
+
+    // Poll for M8 access token after verification
+    const maxAttempts = 30
+    for (let i = 0; i < maxAttempts; i++) {
+      await new Promise(r => setTimeout(r, 1000))
+      const token = await getM8AccessToken()
+      if (token) {
+        setAuthFactorToken(token)
+        // Auto-submit with the M8 token
+        setIsProcessing(true)
+        try {
+          const identifier = identifierValueRef.current.toLowerCase().trim()
+          const password = passwordValueRef.current
+          const service =
+            hostingProviderState.status === 'overridden' &&
+            hostingProviderState.pdsUrl
+              ? hostingProviderState.pdsUrl
+              : serviceUrl
+
+          let fullIdent = identifier
+          if (
+            !identifier.includes('@') &&
+            !identifier.includes('.') &&
+            serviceDescription &&
+            serviceDescription.availableUserDomains.length > 0
+          ) {
+            let matched = false
+            for (const domain of serviceDescription.availableUserDomains) {
+              if (fullIdent.endsWith(domain)) {
+                matched = true
+              }
+            }
+            if (!matched) {
+              fullIdent = createFullHandle(
+                identifier,
+                serviceDescription.availableUserDomains[0],
+              )
+            }
+          }
+
+          await login(
+            {
+              service,
+              identifier: fullIdent,
+              password,
+              authFactorToken: token,
+            },
+            'LoginForm',
+          )
+          onAttemptSuccess()
+          setShowLoggedOut(false)
+          setHasCheckedForStarterPack(true)
+          requestNotificationsPermission('Login')
+        } catch (e: unknown) {
+          const errMsg = String(e)
+          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+          setIsProcessing(false)
+          if (e instanceof LexAuthFactorError) {
+            setError(_(msg`iM8 verification did not complete. Try again.`))
+          } else {
+            onAttemptFailed()
+            setError(cleanError(errMsg))
+          }
+        }
+        return
+      }
+    }
+
+    setError(
+      _(
+        msg`Timed out waiting for iM8 verification. Please try again.`,
+      ),
+    )
+  }, [
+    hostingProviderState,
+    serviceUrl,
+    serviceDescription,
+    login,
+    onAttemptSuccess,
+    onAttemptFailed,
+    setShowLoggedOut,
+    setHasCheckedForStarterPack,
+    requestNotificationsPermission,
+    _,
+  ])
 
   const onPressNext = async () => {
     if (isProcessing) return
@@ -422,49 +520,118 @@ export const LoginForm = ({
 
       {isAuthFactorTokenNeeded && (
         <View>
-          <View
-            style={[a.flex_row, a.align_center, a.gap_md, a.justify_between]}>
-            <TextField.LabelText nativeID="auth-factor-token-label">
-              <Trans>2FA code</Trans>
-            </TextField.LabelText>
-            <Button
-              label={_(msg`Resend code`)}
-              accessibilityHint={_(msg`Resends the 2FA code to your email`)}
-              hitSlop={HITSLOP_10}>
-              <ButtonText>
-                <Trans>Resend</Trans>
-              </ButtonText>
-            </Button>
-          </View>
-          <TextField.Root isInvalid={errorField === 'authFactorToken'}>
-            <TextField.Icon icon={Ticket} />
-            <TextField.Input
-              testID="loginAuthFactorTokenInput"
-              label={_(msg`Confirmation code`)}
-              nativeID="auth-factor-token-label"
-              autoCapitalize="none"
-              autoFocus
-              autoCorrect={false}
-              autoComplete="one-time-code"
-              returnKeyType="done"
-              blurOnSubmit={false}
-              onChangeText={setAuthFactorToken}
-              value={authFactorToken}
-              onSubmitEditing={onPressNext}
-              editable={!isProcessing}
-              accessibilityHint={_(
-                msg`Input the code which has been emailed to you`,
+          <SegmentedControl.Root
+            type="tabs"
+            label={_(msg`2FA method`)}
+            value={authFactorMethod}
+            onChange={v => setAuthFactorMethod(v as 'email' | 'im8')}>
+            <SegmentedControl.Item
+              testID="authFactorEmail"
+              value="email"
+              label={_(msg`Email code`)}>
+              <SegmentedControl.ItemText>
+                {_(msg`Email code`)}
+              </SegmentedControl.ItemText>
+            </SegmentedControl.Item>
+            <SegmentedControl.Item
+              testID="authFactorIm8"
+              value="im8"
+              label={_(msg`iM8`)}>
+              <SegmentedControl.ItemText>
+                {_(msg`iM8`)}
+              </SegmentedControl.ItemText>
+            </SegmentedControl.Item>
+          </SegmentedControl.Root>
+
+          {authFactorMethod === 'email' ? (
+            <>
+              <View
+                style={[
+                  a.flex_row,
+                  a.align_center,
+                  a.gap_md,
+                  a.justify_between,
+                  a.mt_md,
+                ]}>
+                <TextField.LabelText nativeID="auth-factor-token-label">
+                  <Trans>2FA code</Trans>
+                </TextField.LabelText>
+                <Button
+                  label={_(msg`Resend code`)}
+                  accessibilityHint={_(
+                    msg`Resends the 2FA code to your email`,
+                  )}
+                  hitSlop={HITSLOP_10}>
+                  <ButtonText>
+                    <Trans>Resend</Trans>
+                  </ButtonText>
+                </Button>
+              </View>
+              <TextField.Root isInvalid={errorField === 'authFactorToken'}>
+                <TextField.Icon icon={Ticket} />
+                <TextField.Input
+                  testID="loginAuthFactorTokenInput"
+                  label={_(msg`Confirmation code`)}
+                  nativeID="auth-factor-token-label"
+                  autoCapitalize="none"
+                  autoFocus
+                  autoCorrect={false}
+                  autoComplete="one-time-code"
+                  returnKeyType="done"
+                  blurOnSubmit={false}
+                  onChangeText={setAuthFactorToken}
+                  value={authFactorToken}
+                  onSubmitEditing={onPressNext}
+                  editable={!isProcessing}
+                  accessibilityHint={_(
+                    msg`Input the code which has been emailed to you`,
+                  )}
+                  style={{
+                    textTransform:
+                      authFactorToken === '' ? 'none' : 'uppercase',
+                  }}
+                />
+              </TextField.Root>
+              <Text
+                style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_sm]}>
+                <Trans>
+                  Check your email for a sign in code and enter it here.
+                </Trans>
+              </Text>
+            </>
+          ) : (
+            <View style={[a.mt_md]}>
+              {authFactorToken ? (
+                <Admonition type="tip">
+                  <Trans>iM8 verified. Signing in...</Trans>
+                </Admonition>
+              ) : (
+                <>
+                  <Admonition type="info">
+                    <Trans>
+                      Tap below to verify your identity with iM8. You'll need
+                      the iM8 app installed on this device.
+                    </Trans>
+                  </Admonition>
+                  <Button
+                    testID="loginIm8VerifyButton"
+                    label={_(msg`Verify with iM8`)}
+                    accessibilityHint={_(
+                      msg`Opens iM8 app for identity verification`,
+                    )}
+                    variant="solid"
+                    color="primary"
+                    size="large"
+                    onPress={onPressIm8Verify}
+                    style={[a.mt_md]}>
+                    <ButtonText>
+                      <Trans>Verify with iM8</Trans>
+                    </ButtonText>
+                  </Button>
+                </>
               )}
-              style={{
-                textTransform: authFactorToken === '' ? 'none' : 'uppercase',
-              }}
-            />
-          </TextField.Root>
-          <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_sm]}>
-            <Trans>
-              Check your email for a sign in code and enter it here.
-            </Trans>
-          </Text>
+            </View>
+          )}
         </View>
       )}
 
