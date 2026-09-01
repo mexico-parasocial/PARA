@@ -6,6 +6,7 @@
 #Agents
 GEMINI.md
 CLAUDE.md
+.zcode/
 
 # Lint suppressions (inherited from Bluesky, do not commit)
 eslint-supressions.json

@@ -463,7 +463,14 @@ export function Explore({
           }
         }
       } else {
-        if (feedsError) {
+        if (suggestedFeedsError) {
+          i.push({
+            type: 'error',
+            key: 'suggestedFeedsError',
+            message: l`Failed to load suggested feeds`,
+            error: cleanError(suggestedFeedsError),
+          })
+        } else if (feedsError) {
           i.push({
             type: 'error',
             key: 'feedsError',

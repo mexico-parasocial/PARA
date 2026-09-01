@@ -30,6 +30,7 @@ import {
 import ProgressCircle from 'react-native-progress/Circle'
 import Animated, {
   type AnimatedRef,
+  type AnimatedStyle,
   FadeIn,
   FadeOut,
   interpolateColor,
@@ -37,7 +38,6 @@ import Animated, {
   LinearTransition,
   runOnUI,
   scrollTo,
-  type AnimatedStyle,
   useAnimatedRef,
   useAnimatedScrollHandler,
   useAnimatedStyle,
@@ -53,8 +53,8 @@ import {type ImagePickerAsset} from 'expo-image-picker'
 import {AppBskyUnspeccedDefs, AtUri, ChatBskyGroupDefs} from '@atproto/api'
 import {type Client} from '@atproto/lex'
 import {type AtUriString} from '@atproto/syntax'
-import {msg, plural} from '@lingui/core/macro'
 import {RichText} from '@bsky.app/sdk/richtext'
+import {msg, plural} from '@lingui/core/macro'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 import {useQueries, useQueryClient} from '@tanstack/react-query'
@@ -246,7 +246,6 @@ export const ComposePost = ({
 }) => {
   const {currentAccount} = useSession()
   const queryClient = useQueryClient()
-  const currentDid = currentAccount!.did
   const {closeComposer} = useComposerControls()
   const {i18n, t: l} = useLingui()
   const ax = useAnalytics()
@@ -578,7 +577,7 @@ export const ComposePost = ({
             type: 'embed_update_video',
             videoAction: {
               type: 'to_error',
-                error: l`Videos must be 10 minutes or less.`,
+              error: l`Videos must be 10 minutes or less.`,
               signal: abortController.signal,
             },
           },
@@ -1756,12 +1755,12 @@ export const ComposePost = ({
                   onPress={handleSaveDraft}
                   color="primary"
                 />
+                <Prompt.Cancel cta={l`Keep editing`} />
                 <Prompt.Action
                   cta={i18n._(msg`Discard`)}
                   onPress={handleDiscard}
                   color="negative_subtle"
                 />
-                <Prompt.Cancel />
               </Prompt.Actions>
             </Prompt.Content>
           </Prompt.Outer>
@@ -1904,6 +1903,8 @@ const ComposerPost = memo(function ComposerPost({
 
   return (
     <View
+      // Keep focused inputs attached while active-state opacity changes.
+      collapsable={false}
       style={[
         a.mx_lg,
         a.mb_sm,
@@ -1924,7 +1925,7 @@ const ComposerPost = memo(function ComposerPost({
           style={[a.pt_xs]}
           richtext={richtext}
           placeholder={selectTextInputPlaceholder}
-          autoFocus={isLastPost}
+          autoFocus={isActive}
           webForceMinHeight={forceMinHeight}
           // To avoid overlap with the close button:
           hasRightPadding={isPartOfThread}

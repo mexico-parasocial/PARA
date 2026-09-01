@@ -39,6 +39,7 @@ import {
 } from '#/components/PolicyUpdateOverlay'
 import {Outlet as PortalOutlet} from '#/components/Portal'
 import {useAgeAssurance} from '#/ageAssurance'
+import {DataUnavailableScreen} from '#/ageAssurance/components/DataUnavailableScreen'
 import {NoAccessScreen} from '#/ageAssurance/components/NoAccessScreen'
 import {RedirectOverlay} from '#/ageAssurance/components/RedirectOverlay'
 import {PassiveAnalytics} from '#/analytics/PassiveAnalytics'
@@ -254,7 +255,9 @@ export function Shell() {
         <Deactivated />
       ) : (
         <>
-          {aa.state.access === aa.Access.None ? (
+          {aa.state.error === 'account-data' ? (
+            <DataUnavailableScreen />
+          ) : aa.state.access === aa.Access.None ? (
             <NoAccessScreen />
           ) : (
             <RoutesContainer>

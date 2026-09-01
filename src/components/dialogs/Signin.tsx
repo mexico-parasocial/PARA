@@ -9,7 +9,7 @@ import {useLoggedOutViewControls} from '#/state/shell/logged-out'
 import {useCloseAllActiveElements} from '#/state/util'
 import {Logomark} from '#/view/icons/Logomark'
 import {Logotype} from '#/view/icons/Logotype'
-import {atoms as a, useBreakpoints, useTheme} from '#/alf'
+import {atoms as a, useBreakpoints, useTheme, web} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
 import {useGlobalDialogsControlContext} from '#/components/dialogs/Context'
@@ -46,7 +46,7 @@ function SigninDialogInner({}: {control: Dialog.DialogOuterProps['control']}) {
   return (
     <Dialog.ScrollableInner
       label={_(msg`Sign in to PARA or create a new account`)}
-      style={[gtMobile ? {width: 'auto', maxWidth: 420} : a.w_full]}>
+      style={[a.w_full, gtMobile && web({width: 'auto', maxWidth: 420})]}>
       <View style={[!IS_NATIVE && a.p_2xl]}>
         <View
           style={[
@@ -58,7 +58,11 @@ function SigninDialogInner({}: {control: Dialog.DialogOuterProps['control']}) {
           ]}>
           <Logomark allowVariants={false} width={32} fill="#474652" />
           <View style={{paddingTop: 6}}>
-            <Logotype allowVariants={false} width={120} fill={t.atoms.text.color} />
+            <Logotype
+              allowVariants={false}
+              width={120}
+              fill={t.atoms.text.color}
+            />
           </View>
         </View>
 

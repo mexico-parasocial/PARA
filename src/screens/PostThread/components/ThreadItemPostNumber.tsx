@@ -67,8 +67,6 @@ export function ThreadItemPostNumber({
               android: {transform: [{translateY: POST_NUMBER_INLINE_OFFSET}]},
               ios: {transform: [{translateY: a.py_2xs.paddingBottom}]},
               web: {
-                top: -2,
-                marginBottom: -2,
                 // Inline views inherit the surrounding line height on web. Keep
                 // the badge at its usual size when emoji-only text enlarges it.
                 lineHeight: a.text_xs.fontSize * a.leading_normal.lineHeight,
@@ -78,7 +76,10 @@ export function ThreadItemPostNumber({
       ]}>
       <Text
         accessibilityLabel={l({
-          message: `Post ${index} of ${count}`,
+          // The generated lexicon type does not declare these fields yet, so
+          // they arrive as `unknown`; useHasThreadItemPostNumber has already
+          // validated them as numbers >= 1.
+          message: `Post ${Number(index)} of ${Number(count)}`,
           context: 'post-number-in-thread',
           comment:
             "Screen reader label indicating post count in a thread, e.g., the 3rd post of 5 total is 'Post 3 of 5'",
