@@ -64,11 +64,7 @@ import {Header, Screen} from '#/components/Layout'
 import {Loader} from '#/components/Loader'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
-import {
-  type CoarseLocation,
-  useCoarseLocation,
-  useDeviceGeolocationApi,
-} from '#/geolocation'
+import {useCoarseLocation, useDeviceGeolocationApi} from '#/geolocation'
 import {
   BigCitiesDataOverlay,
   DistrictsDataOverlay,
@@ -1512,30 +1508,44 @@ export function MapScreenImpl({
       />
     )
 
+  // The mobile bottom overlays (state summary, cities, districts) occupy the
+  // same corner as the zoom cluster; hide the cluster while one is open —
+  // pinch still zooms. Overlays only render in the non-split-pane branch.
+  const bottomOverlayOpen =
+    !hasSplitPane &&
+    ((!!selectedState &&
+      activeLayer === 'states' &&
+      !showCities &&
+      !showDistricts) ||
+      showCities ||
+      showDistricts)
+
   const floatingControls = (
     <>
-      {MapViewComponent && (!gtMobile || isDesktopSplitPane) && (
-        <View
-          style={[
-            a.absolute,
-            {right: 20, bottom: 60 + insets.bottom},
-            a.gap_md,
-            {zIndex: 20},
-          ]}>
-          <TouchableOpacity
-            accessibilityRole="button"
-            onPress={() => handleZoom('in')}
-            style={styles.floatingButton(t)}>
-            <Text style={[a.text_2xl, a.font_bold, t.atoms.text]}>+</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            accessibilityRole="button"
-            onPress={() => handleZoom('out')}
-            style={styles.floatingButton(t)}>
-            <Text style={[a.text_2xl, a.font_bold, t.atoms.text]}>-</Text>
-          </TouchableOpacity>
-        </View>
-      )}
+      {MapViewComponent &&
+        (!gtMobile || isDesktopSplitPane) &&
+        !bottomOverlayOpen && (
+          <View
+            style={[
+              a.absolute,
+              {right: 20, bottom: 60 + insets.bottom},
+              a.gap_md,
+              {zIndex: 20},
+            ]}>
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={() => handleZoom('in')}
+              style={styles.floatingButton(t)}>
+              <Text style={[a.text_2xl, a.font_bold, t.atoms.text]}>+</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={() => handleZoom('out')}
+              style={styles.floatingButton(t)}>
+              <Text style={[a.text_2xl, a.font_bold, t.atoms.text]}>-</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
       <View style={[a.absolute, {right: 20, top: 20}, a.gap_sm, {zIndex: 20}]}>
         <TouchableOpacity
@@ -1897,10 +1907,13 @@ export function MapScreenImpl({
               onSelect={handleSearchSelect}
             />
 
-            <MapLayersPanel
-              activeLayer={activeLayer}
-              onSelectLayer={handleSelectLayer}
-            />
+            {/* The expanded search drops a results list over this corner. */}
+            {!searchExpanded && (
+              <MapLayersPanel
+                activeLayer={activeLayer}
+                onSelectLayer={handleSelectLayer}
+              />
+            )}
 
             {floatingControls}
             {mobileOverlays}

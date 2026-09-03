@@ -55,9 +55,8 @@ export const ChooseAccountForm = ({
         })
         // Move to login form.
         onSelectAccount(account)
-      } finally {
-        setPendingDid(null)
       }
+      setPendingDid(null)
     },
     [currentAccount, resumeSession, pendingDid, onSelectAccount, _],
   )

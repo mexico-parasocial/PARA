@@ -1,5 +1,5 @@
 import {View} from 'react-native'
-import {type ModerationOpts} from '@bsky.app/sdk/moderation'
+import {type ModerationOpts} from '@bsky/sdk/moderation'
 import {Trans} from '@lingui/react/macro'
 
 import {moderateProfile} from '#/lib/moderation/subjects'

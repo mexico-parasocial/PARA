@@ -1,5 +1,5 @@
 import {AppBskyUnspeccedDefs} from '@atproto/api'
-import {type ModerationOpts} from '@bsky.app/sdk/moderation'
+import {type ModerationOpts} from '@bsky/sdk/moderation'
 
 import {
   type ApiThreadItem,

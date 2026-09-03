@@ -1,6 +1,6 @@
-name: 'Bug Report - Fabric/New Architecture'
+name: "Bug Report - Fabric/New Architecture"
 description: "Create a bug report for builds using the New Architecture. If you are not sure what that means, don't use this template, and instead use the default bug report template."
-labels: ['bug', 'fabric']
+labels: ["bug", "fabric"]
 body:
   - type: checkboxes
     attributes:
@@ -33,7 +33,7 @@ body:
         If possible, please provide any images or videos that may help us understand the issue you are experiencing.
     validations:
       required: false
-      accept: '.png,.jpg,.jpeg,.gif,.webp,.mp4,.mov,.webm'
+      accept: ".png,.jpg,.jpeg,.gif,.webp,.mp4,.mov,.webm"
   - type: dropdown
     attributes:
       label: What platform(s) does this occur on?
@@ -67,4 +67,4 @@ body:
         Please provide any additional information that you think may be helpful in identifying the issue you are
         experiencing. This can include any error messages, logs, or other information that you think may be relevant.
     validations:
-      required: false
+        required: false

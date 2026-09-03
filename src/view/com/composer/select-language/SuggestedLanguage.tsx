@@ -5,7 +5,7 @@ import {
   guessLanguageAsync,
   type LanguageResult,
 } from '@bsky.app/expo-guess-language'
-import {RichText} from '@bsky.app/sdk/richtext'
+import {RichText} from '@bsky/sdk/richtext'
 import {Trans, useLingui} from '@lingui/react/macro'
 import debounce from 'lodash.debounce'
 
@@ -147,7 +147,7 @@ export function SuggestedLanguage({
     // clear
     setSuggLang(undefined)
     setHasInteracted(true)
- }
+  }
   /**
    * Merge in remote config (eventually)
    */
@@ -250,7 +250,7 @@ export function SuggestedLanguage({
    * We've detected a language, and the user hasn't already selected it.
    * Note: suggLang is only set if it's not in declinedSuggLangsRef (checked
    * in detectLanguage), so we don't need to filter it here.
-  */
+   */
   const hasLanguageSuggestion = suggLang && !currentLanguages.includes(suggLang)
 
   /*
@@ -276,7 +276,7 @@ export function SuggestedLanguage({
         metadata={{currentTargetLanguages: currentLanguages, rawText: text}}
         onAccept={onAccept}
         onDecline={() => onDecline(suggLang)}
-        />
+      />
     )
   } else if (hasSuggestedReplyLanguage) {
     return (

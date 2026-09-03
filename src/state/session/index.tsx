@@ -13,6 +13,7 @@ import {type Client} from '@atproto/lex'
 import {type SessionData} from '@atproto/lex-password-session'
 
 import {BLUESKY_PROXY_HEADER, isLikelyLocalServiceUrl} from '#/lib/constants'
+import {logger} from '#/logger'
 import * as persisted from '#/state/persisted'
 import * as userActionHistory from '#/state/userActionHistory'
 import {useCloseAllActiveElements} from '#/state/util'
@@ -20,8 +21,8 @@ import {useGlobalDialogsControlContext} from '#/components/dialogs/Context'
 import {AnalyticsContext, useAnalyticsBase, utils} from '#/analytics'
 import {IS_WEB} from '#/env'
 import {com} from '#/lexicons'
-import {logger} from '#/logger'
 import {emitSessionDropped} from '../events'
+import {BskyAppAgent, PasswordSessionManager} from './bridge-agent'
 import {getPublicAppviewClient} from './clients'
 import {createSessionBundleAndCreateAccount} from './create-account'
 import {pickExpiryRescueCandidate} from './expiry-rescue'
@@ -36,7 +37,6 @@ import {
   type SessionBundle,
   sessionDataToSessionAccount,
 } from './session-core'
-import {BskyAppAgent, PasswordSessionManager} from './bridge-agent'
 export {isSignupQueued} from './session-data'
 import {
   addSessionDebugLog,
@@ -708,9 +708,11 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
   const bundle = state.currentBundleState.bundle as unknown as
     SessionBundle | PublicSessionBundle
 
-  // @ts-expect-error window type is not declared, debug only
-  // eslint-disable-next-line react-hooks/immutability
-  if (__DEV__ && IS_WEB) window.bundle = bundle
+  useEffect(() => {
+    if (!__DEV__ || !IS_WEB) return
+    // @ts-expect-error window type is not declared, debug only
+    window.bundle = bundle
+  }, [bundle])
 
   const currentBundleRef = useRef(bundle)
   /*

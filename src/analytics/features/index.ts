@@ -77,6 +77,7 @@ export function getFeatures() {
 
 export function getFeatureDescription(feature: Features, i18n: I18n) {
   switch (feature) {
+    case Features.PostFeedKnownLikersEnable:
     case Features.PostThreadKnownLikersEnable:
       return {
         key: feature,

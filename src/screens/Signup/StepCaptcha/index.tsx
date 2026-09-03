@@ -49,9 +49,8 @@ export function StepCaptchaNative() {
         }
       } catch (e: unknown) {
         logger.error(String(e))
-      } finally {
-        setReady(true)
       }
+      setReady(true)
     })()
   }, [])
 

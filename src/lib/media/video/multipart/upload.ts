@@ -208,6 +208,11 @@ async function getUploadStatusWithRetry(
   throw lastError
 }
 
+/**
+ * Releases the reservation for an upload we can no longer finish, then surfaces
+ * the failure that got us here. The abort can race a service-side completion,
+ * so a `completed` result is resolved as a success instead.
+ */
 async function abortThenRethrowOrResolve(
   jobId: string,
   token: string,

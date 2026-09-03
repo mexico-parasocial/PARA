@@ -22,7 +22,7 @@ import {type DidString} from '@atproto/syntax'
 import {
   type ModerationDecision,
   type ModerationOpts,
-} from '@bsky.app/sdk/moderation'
+} from '@bsky/sdk/moderation'
 import {plural} from '@lingui/core/macro'
 import {Plural, Trans, useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
@@ -933,9 +933,8 @@ function SayHelloBtn({profile}: {profile: AppBskyActorDefs.ProfileView}) {
       })
     } catch (e) {
       logger.error('Failed to get conversation', {safeMessage: e})
-    } finally {
-      setIsLoading(false)
     }
+    setIsLoading(false)
   }
 
   if (

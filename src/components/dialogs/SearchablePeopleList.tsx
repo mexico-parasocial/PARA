@@ -7,7 +7,7 @@ import {
   useState,
 } from 'react'
 import {TextInput, View} from 'react-native'
-import {type ModerationOpts} from '@bsky.app/sdk/moderation'
+import {type ModerationOpts} from '@bsky/sdk/moderation'
 import {Plural, Trans, useLingui} from '@lingui/react/macro'
 
 import {createSanitizedDisplayName} from '#/lib/moderation/create-sanitized-display-name'
@@ -67,11 +67,7 @@ type ErrorItem = {
 }
 
 type Item =
-  | ProfileItem
-  | ExistingChatItem
-  | EmptyItem
-  | PlaceholderItem
-  | ErrorItem
+  ProfileItem | ExistingChatItem | EmptyItem | PlaceholderItem | ErrorItem
 
 export function SearchablePeopleList({
   title,

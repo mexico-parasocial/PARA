@@ -15,7 +15,10 @@ import {useRoute} from '@react-navigation/native'
 import {buildCommunityCivicTreeVaultManifest} from '#/lib/civic-export/obsidian'
 import {useAnonymousMode} from '#/lib/im8/hooks/useAnonymousMode'
 import {usePartyLobbyingBriefingPacksQuery} from '#/state/queries/briefing-packs'
-import {useCommunityBoardsQuery} from '#/state/queries/community-boards'
+import {
+  type CommunityBoardView,
+  useCommunityBoardsQuery,
+} from '#/state/queries/community-boards'
 import {
   COMMUNITY_CIVIC_TREE_CARD_TYPES,
   COMMUNITY_CIVIC_TREE_RELATIONSHIP_TYPES,
@@ -42,14 +45,15 @@ import {SearchInput} from '#/components/forms/SearchInput'
 import * as Layout from '#/components/Layout'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
+import {type GraphData} from '#/features/civicTree/types'
 import {
   CivicTreeFilterMenu,
   CivicTreeFilterRow,
 } from '#/features/communityCivicTree/components/CivicTreeFilterMenu'
-import {CommunityHelpWanted} from '#/features/communityCivicTree/components/CommunityHelpWanted'
-import {CommunityTopicRail} from '#/features/communityCivicTree/components/CommunityTopicRail'
 import {CommunityCivicTreeGraph} from '#/features/communityCivicTree/components/CommunityCivicTreeGraph'
 import {CommunityCivicTreeOutline} from '#/features/communityCivicTree/components/CommunityCivicTreeOutline'
+import {CommunityHelpWanted} from '#/features/communityCivicTree/components/CommunityHelpWanted'
+import {CommunityTopicRail} from '#/features/communityCivicTree/components/CommunityTopicRail'
 import {CommunityPulseSheet} from './components/CommunityPulseSheet'
 import {ContributionReviewDetail} from './components/ContributionReviewDetail'
 import {NodeDetailSheet} from './components/NodeDetailSheet'
@@ -58,7 +62,6 @@ import {
   SortitionStatusCard,
 } from './components/SortitionStatusCard'
 import {SummaryModal} from './components/SummaryModal'
-import {type GraphData} from '#/features/civicTree/types'
 
 export function CommunityCivicTreeScreen() {
   const {t: l} = useLingui()
@@ -178,7 +181,32 @@ export function CommunityCivicTreeScreen() {
     )
   const fallbackBoard = fallbackBoardsData?.boards?.[0]
 
-  const selectedCommunity = selectedCommunityFromBoards ?? fallbackBoard
+  /*
+   * A deep link can point at a community the viewer has not joined, or one
+   * that falls outside the boards query's first page. The tree stays viewable
+   * via a stub derived from the route params; member-only actions are then
+   * rejected server-side with NotAMember.
+   */
+  const deepLinkedCommunity = useMemo<CommunityBoardView | undefined>(() => {
+    if (!initialUri || selectedCommunityFromBoards) return undefined
+    return {
+      uri: initialUri,
+      cid: '',
+      creatorDid: '',
+      communityId: initialUri,
+      slug: initialName ?? '',
+      name: initialName ?? 'Community',
+      quadrant: '',
+      delegatesChatId: '',
+      subdelegatesChatId: '',
+      memberCount: 0,
+      viewerMembershipState: 'none',
+      createdAt: '',
+    }
+  }, [initialName, initialUri, selectedCommunityFromBoards])
+
+  const selectedCommunity =
+    selectedCommunityFromBoards ?? fallbackBoard ?? deepLinkedCommunity
 
   const communityUri = selectedCommunity?.uri
 

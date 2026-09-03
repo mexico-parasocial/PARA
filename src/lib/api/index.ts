@@ -7,7 +7,7 @@ import {
   toDatetimeString,
   type UriString,
 } from '@atproto/syntax'
-import {RichText} from '@bsky.app/sdk/richtext'
+import {RichText} from '@bsky/sdk/richtext'
 import {t} from '@lingui/core/macro'
 import {type QueryClient} from '@tanstack/react-query'
 
@@ -17,9 +17,9 @@ import {
   type ComposerFlair,
   derivePostTypeId,
 } from '#/lib/post-flairs'
-import {type PostType} from '#/lib/tags'
 import {isNetworkError} from '#/lib/strings/errors'
 import {shortenLinks, stripInvalidMentions} from '#/lib/strings/rich-text-manip'
+import {type PostType} from '#/lib/tags'
 import {MATTER_POLICY_TAGS} from '#/lib/tags'
 import {logger} from '#/logger'
 import {compressImage} from '#/state/gallery'
@@ -205,7 +205,7 @@ export async function post(queryClient: QueryClient, opts: PostOpts) {
       // when writing to com.para.post so the backend can index them directly.
       ...(opts.collection === 'com.para.post' && {
         flairs: buildFlairsArray(draft),
-        postType: derivePostTypeId(draft as ParaPostDraft),
+        postType: derivePostTypeId(draft),
         party: opts.party || undefined,
         community: opts.community || undefined,
       }),
@@ -552,8 +552,7 @@ async function resolveMedia(
           title: resolvedLink.title,
           description: resolvedLink.description,
           thumb: blob,
-          associatedRefs: resolvedLink.associatedRefs as
-            com.atproto.repo.strongRef.Main[] | undefined,
+          associatedRefs: resolvedLink.associatedRefs,
         },
       }
     }

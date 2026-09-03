@@ -1,3 +1,4 @@
+// eslint-disable-next-line import/no-nodejs-modules -- app.config.js runs in Node at build time
 const path = require('path')
 const pkg = require('./package.json')
 try {
@@ -73,7 +74,7 @@ module.exports = function (_config) {
   ]
 
   // OTA updates disabled — self-hosted server is post-launch P0
-  const UPDATES_ENABLED = false
+  const _UPDATES_ENABLED = false
 
   const USE_SENTRY = Boolean(process.env.SENTRY_AUTH_TOKEN)
 
@@ -305,8 +306,8 @@ module.exports = function (_config) {
             },
             android: {
               compileSdkVersion: 36,
-              targetSdkVersion: 35,
-              buildToolsVersion: '35.0.0',
+              targetSdkVersion: 36,
+              buildToolsVersion: '36.0.0',
               buildReactNativeFromSource: IS_PRODUCTION,
             },
           },
@@ -322,7 +323,6 @@ module.exports = function (_config) {
                 : [path.resolve(__dirname, './assets/dm.mp3')],
           },
         ],
-        'react-native-compressor',
         [
           '@bitdrift/react-native',
           {

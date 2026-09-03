@@ -1,19 +1,14 @@
-import {useCallback, useEffect} from 'react'
+import {useEffect} from 'react'
 import {Keyboard, View} from 'react-native'
 import {KeyboardAwareScrollView} from 'react-native-keyboard-controller'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import {Image} from 'expo-image'
-import {
-  type AppBskyActorDefs,
-  type AppBskyFeedDefs,
-  type AppBskyGraphDefs,
-  AtUri,
-} from '@atproto/api'
-import {type ModerationOpts} from '@bsky.app/sdk/moderation'
+import {AtUri} from '@atproto/syntax'
+import {type ModerationOpts} from '@bsky/sdk/moderation'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Plural, Trans} from '@lingui/react/macro'
-import {useFocusEffect, useNavigation} from '@react-navigation/native'
+import {useNavigation} from '@react-navigation/native'
 import {type NativeStackScreenProps} from '@react-navigation/native-stack'
 
 import {STARTER_PACK_MAX_SIZE} from '#/lib/constants'
@@ -22,7 +17,6 @@ import {
   type CommonNavigatorParams,
   type NavigationProp,
 } from '#/lib/routes/types'
-import {logEvent} from '#/lib/statsig/statsig'
 import {sanitizeDisplayName} from '#/lib/strings/display-names'
 import {sanitizeHandle} from '#/lib/strings/handles'
 import {enforceLen} from '#/lib/strings/helpers'
@@ -40,7 +34,6 @@ import {
   useStarterPackQuery,
 } from '#/state/queries/starter-packs'
 import {useSession} from '#/state/session'
-import {useSetMinimalShellMode} from '#/state/shell'
 import {UserAvatar} from '#/view/com/util/UserAvatar'
 import {
   useWizardState,
@@ -58,7 +51,9 @@ import {Loader} from '#/components/Loader'
 import {WizardEditListDialog} from '#/components/StarterPack/Wizard/WizardEditListDialog'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
+import {useAnalytics} from '#/analytics'
 import {IS_NATIVE} from '#/env'
+import {type app} from '#/lexicons'
 import type * as bsky from '#/types/bsky'
 import {Provider} from './State'
 
@@ -132,6 +127,7 @@ export function Wizard({
 
   return (
     <Layout.Screen
+      minimalShell
       testID="starterPackWizardScreen"
       style={web([{minHeight: 0}, a.flex_1])}>
       <Provider
@@ -159,16 +155,16 @@ function WizardInner({
   fromDialog,
   onSuccess,
 }: {
-  currentStarterPack?: AppBskyGraphDefs.StarterPackView
-  currentListItems?: AppBskyGraphDefs.ListItemView[]
-  profile: AppBskyActorDefs.ProfileViewDetailed
+  currentStarterPack?: app.bsky.graph.defs.StarterPackView
+  currentListItems?: app.bsky.graph.defs.ListItemView[]
+  profile: app.bsky.actor.defs.ProfileViewDetailed
   moderationOpts: ModerationOpts
   fromDialog?: boolean
   onSuccess?: () => void
 }) {
   const navigation = useNavigation<NavigationProp>()
+  const ax = useAnalytics()
   const {_} = useLingui()
-  const setMinimalShellMode = useSetMinimalShellMode()
   const [state, dispatch] = useWizardState()
   const {currentAccount} = useSession()
 
@@ -184,19 +180,8 @@ function WizardInner({
     })
   }, [navigation])
 
-  useFocusEffect(
-    useCallback(() => {
-      setMinimalShellMode(true)
-
-      return () => {
-        setMinimalShellMode(false)
-      }
-    }, [setMinimalShellMode]),
-  )
-
   const getDefaultName = () => {
-    if (!currentProfile) return _(msg`My Starter Pack`)
-    const displayName = createSanitizedDisplayName(currentProfile, true)
+    const displayName = createSanitizedDisplayName(currentProfile!, true)
     return _(msg`${displayName}'s Starter Pack`).slice(0, 50)
   }
 
@@ -221,7 +206,7 @@ function WizardInner({
 
   const onSuccessCreate = (data: {uri: string; cid: string}) => {
     const rkey = new AtUri(data.uri).rkey
-    logEvent('starterPack:create', {
+    ax.metric('starterPack:create', {
       setName: state.name != null,
       setDescription: state.description != null,
       profilesCount: state.profiles.length,
@@ -356,7 +341,16 @@ function WizardInner({
         {state.currentStep === 'Details' ? (
           <StepDetails />
         ) : state.currentStep === 'Profiles' ? (
-          <StepProfiles moderationOpts={moderationOpts} />
+          <StepProfiles
+            moderationOpts={moderationOpts}
+            optedOutDids={
+              new Set(
+                currentListItems
+                  ?.filter(item => item.subjectOptedOut)
+                  .map(item => item.subject.did),
+              )
+            }
+          />
         ) : state.currentStep === 'Feeds' ? (
           <StepFeeds moderationOpts={moderationOpts} />
         ) : null}
@@ -636,7 +630,7 @@ function Footer({
 }
 
 function getName(
-  item: bsky.profile.AnyProfileView | AppBskyFeedDefs.GeneratorView,
+  item: bsky.profile.AnyProfileView | app.bsky.feed.defs.GeneratorView,
 ) {
   if (typeof item.displayName === 'string') {
     return enforceLen(sanitizeDisplayName(item.displayName), 28, true)

@@ -1,7 +1,7 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
-import {CIVIC_TREE_SOURCE_TYPES} from '#/features/civicTree/sourceTypes'
 import {useAgent} from '#/state/session'
+import {CIVIC_TREE_SOURCE_TYPES} from '#/features/civicTree/sourceTypes'
 import {
   type GraphData,
   type GraphEdge,
@@ -268,6 +268,20 @@ export function getCommunityCivicTreePulseQueryKey(
   return ['community-civic-tree', 'pulse', communityUri, viewerDid] as const
 }
 
+/*
+ * The AppView has shipped both `source_card_id`/`target_card_id` and the
+ * shorter `source`/`target` edge shape; accept either so shape drift degrades
+ * to a missing edge instead of a crash.
+ */
+export type RawCommunityCivicTreeGraphEdge = {
+  id: string
+  source_card_id?: string
+  target_card_id?: string
+  source?: string
+  target?: string
+  relationship_type: string
+}
+
 export function normalizeCommunityCivicTreeGraph(
   graph: CommunityCivicTreeGraph,
 ): GraphData {
@@ -286,13 +300,26 @@ export function normalizeCommunityCivicTreeGraph(
       source_url: node.source_url,
       metadata: node.metadata,
     })),
-    edges: graph.edges.map((edge): GraphEdge => ({
-      id: edge.id,
-      source: edge.source_card_id,
-      target: edge.target_card_id,
-      relationship_type: edge.relationship_type,
-    })),
+    edges: (graph.edges as RawCommunityCivicTreeGraphEdge[]).map(
+      (edge): GraphEdge => ({
+        id: edge.id,
+        source: edge.source_card_id ?? edge.source ?? '',
+        target: edge.target_card_id ?? edge.target ?? '',
+        relationship_type: edge.relationship_type,
+      }),
+    ),
   }
+}
+
+export function isCommunityCivicTreeGraphResponse(
+  data: unknown,
+): data is CommunityCivicTreeGraph {
+  return (
+    !!data &&
+    typeof data === 'object' &&
+    Array.isArray((data as CommunityCivicTreeGraph).nodes) &&
+    Array.isArray((data as CommunityCivicTreeGraph).edges)
+  )
 }
 
 export function didContributionBecomeApproved(
@@ -312,7 +339,9 @@ export function useCommunityCivicTreeGraphQuery(
       const res = await agent.call('com.para.community.getCivicTree', {
         community: communityUri,
       })
-      return (res.data ?? {nodes: [], edges: []}) as CommunityCivicTreeGraph
+      return isCommunityCivicTreeGraphResponse(res.data)
+        ? res.data
+        : {nodes: [], edges: []}
     },
     enabled: !!communityUri,
     staleTime: 1000 * 60 * 2,

@@ -5,14 +5,14 @@ import {
   type AppBskyFeedPost,
   type AppBskyFeedThreadgate,
 } from '@atproto/api'
-import {type RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
+import {type RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {useLingui} from '@lingui/react/macro'
 
 import {type Shadow} from '#/state/cache/post-shadow'
 import {EventStopper} from '#/view/com/util/EventStopper'
 import {DotGrid3x1_Stroke2_Corner0_Rounded as DotsHorizontal} from '#/components/icons/DotGrid'
-import {useMenuControl} from '#/components/Menu'
 import * as Menu from '#/components/Menu'
+import {useMenuControl} from '#/components/Menu'
 import {PostControlButton, PostControlButtonIcon} from '../PostControlButton'
 import {PostMenuItems} from './PostMenuItems'
 

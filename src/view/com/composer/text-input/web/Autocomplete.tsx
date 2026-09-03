@@ -1,7 +1,7 @@
 import {forwardRef, useEffect, useImperativeHandle, useState} from 'react'
 import {Pressable, View} from 'react-native'
 import {type AppBskyActorDefs} from '@atproto/api'
-import {type ModerationOpts} from '@bsky.app/sdk/moderation'
+import {type ModerationOpts} from '@bsky/sdk/moderation'
 import {Trans} from '@lingui/react/macro'
 import {ReactRenderer} from '@tiptap/react'
 import {

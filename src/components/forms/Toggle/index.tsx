@@ -80,6 +80,7 @@ export type ItemProps = ViewStyleProp & {
   onChange?: (selected: boolean) => void
   isInvalid?: boolean
   highlightRow?: boolean
+  testID?: string
   children: ((props: ItemState) => React.ReactNode) | React.ReactNode
   hitSlop?: PressableProps['hitSlop']
 }

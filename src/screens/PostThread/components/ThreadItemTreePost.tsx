@@ -5,7 +5,7 @@ import {
   type AppBskyFeedThreadgate,
   AtUri,
 } from '@atproto/api'
-import {RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
+import {RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {Trans} from '@lingui/react/macro'
 
 import {MAX_POST_LINES} from '#/lib/constants'
@@ -171,10 +171,17 @@ const ThreadItemTreePostInnerWrapper = memo(
     children: React.ReactNode
   }) {
     const t = useTheme()
+    /*
+     * Do not give this wrapper (or the column inside it) `flex: 1`. In a
+     * column, `flex: 1` means `flexBasis: 0`, so Yoga sizes the wrapper from
+     * its parent's measured height instead of its own content. When the
+     * lightbox rotates the device and back, that parent height can come from
+     * a stale measurement, leaving the reply text and controls laid out at the
+     * wrong size inside a correctly sized cell (APP-2687).
+     */
     return (
       <View
         style={[
-          a.flex_1, // TODO check on ios
           {
             paddingHorizontal: OUTER_SPACE,
             paddingTop: OUTER_SPACE / 2,
@@ -330,7 +337,7 @@ const ThreadItemTreePostInner = memo(function ThreadItemTreePostInner({
           profile={post.author}
           interpretFilterAsBlur>
           <ThreadItemTreePostInnerWrapper item={item}>
-            <View style={[a.flex_1]}>
+            <View>
               <PostMeta
                 author={post.author}
                 moderation={moderation}

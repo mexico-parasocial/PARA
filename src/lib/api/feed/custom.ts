@@ -91,7 +91,7 @@ export class CustomFeedAPI implements FeedAPI {
     const feed =
       data.feed.length > limit ? data.feed.slice(0, limit) : data.feed
     return {
-      cursor: feed.length ? data.cursor : undefined,
+      cursor: data.cursor,
       feed,
     }
   }
@@ -156,9 +156,5 @@ async function loggedOutFetch({
   data = res.ok
     ? (jsonStringToLex(await res.text()) as app.bsky.feed.getFeed.$OutputBody)
     : null
-  if (data?.feed?.length) {
-    return data
-  }
-
-  return null
+  return data
 }

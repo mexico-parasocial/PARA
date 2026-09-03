@@ -1,4 +1,4 @@
-import {type ReactNode, useEffect, useMemo, useRef} from 'react'
+import {type ReactNode, useCallback, useEffect, useMemo, useRef} from 'react'
 import {
   ScrollView,
   type StyleProp,
@@ -8,7 +8,17 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import Animated, {FadeInDown, SlideInDown} from 'react-native-reanimated'
+import {Gesture, GestureDetector} from 'react-native-gesture-handler'
+import Animated, {
+  FadeInDown,
+  runOnJS,
+  SlideInDown,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated'
+import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -75,6 +85,11 @@ type MapLayersPanelProps = {
 
 type SearchResultType = SearchResult['type']
 
+// A drag past this distance, or released with this much downward velocity,
+// dismisses the state summary sheet.
+const SHEET_DISMISS_OFFSET = 100
+const SHEET_DISMISS_VELOCITY = 800
+
 const SEARCH_GROUPS: Array<{type: SearchResultType; label: string}> = [
   {type: 'state', label: 'States'},
   {type: 'district', label: 'Districts'},
@@ -104,12 +119,12 @@ function getCitiesForState(stateName: string) {
   return match?.[1] || []
 }
 
-function getPanelFrame(gtMobile: boolean) {
+function getPanelFrame(gtMobile: boolean, insets: {bottom: number}) {
   if (gtMobile) {
     return {top: 136, bottom: 20, left: 20, width: 360}
   }
 
-  return {left: 12, right: 12, bottom: 12, maxHeight: 430}
+  return {left: 12, right: 12, bottom: 12 + insets.bottom, maxHeight: 430}
 }
 
 function SectionHeader({label}: {label: string}) {
@@ -239,13 +254,14 @@ function OverlayFrame({
 }) {
   const {gtMobile} = useBreakpoints()
   const t = useTheme()
+  const insets = useSafeAreaInsets()
 
   return (
     <Animated.View
-      entering={SlideInDown.springify().damping(16)}
+      entering={SlideInDown.duration(280)}
       style={[
         a.absolute,
-        getPanelFrame(gtMobile),
+        getPanelFrame(gtMobile, insets),
         a.rounded_xl,
         t.atoms.bg,
         a.border,
@@ -314,7 +330,7 @@ function CityContextCard({
   const cityCabildeos = allCabildeos.filter(
     c =>
       normalizeMexicoStateName(c.region || '') ===
-        normalizeMexicoStateName(stateName),
+      normalizeMexicoStateName(stateName),
   )
 
   return (
@@ -418,9 +434,7 @@ function CityContextCard({
           {cityCabildeos.length > 3 && (
             <TouchableOpacity
               accessibilityRole="button"
-              onPress={() =>
-                navRef.navigate('CabildeoList')
-              }>
+              onPress={() => navRef.navigate('CabildeoList')}>
               <Text
                 style={[
                   a.text_xs,
@@ -614,6 +628,67 @@ export function SelectedStateOverlay({
   const t = useTheme()
   const navRef = useNavigation<NavigationProp>()
   const {data: allCabildeos = []} = useCabildeosQuery()
+  const isReducedMotion = useReducedMotion()
+  const translateY = useSharedValue(0)
+  const dismissing = useSharedValue(false)
+
+  // The null return sits below the hooks, so this component stays mounted
+  // while hidden — clear the drag offset before the sheet re-enters.
+  useEffect(() => {
+    if (visible && selectedState) {
+      dismissing.set(false)
+      translateY.set(0)
+    }
+  }, [visible, selectedState, dismissing, translateY])
+
+  const closeSheet = useCallback(() => {
+    if (isReducedMotion) {
+      onClose()
+      return
+    }
+    // Animate out manually rather than via an `exiting` prop: after a drag
+    // the transform is mid-travel and an exit keyframe would snap the sheet
+    // back to rest before sliding it away.
+    translateY.set(
+      withTiming(800, {duration: 220}, finished => {
+        if (finished) runOnJS(onClose)()
+      }),
+    )
+  }, [isReducedMotion, onClose, translateY])
+
+  const panGesture = useMemo(
+    () =>
+      Gesture.Pan()
+        .activeOffsetY([-10, 10])
+        .onChange(e => {
+          'worklet'
+          // Track downward travel only; upward drags pin the sheet in place.
+          translateY.set(Math.max(0, e.translationY))
+        })
+        .onEnd(e => {
+          'worklet'
+          if (
+            e.translationY > SHEET_DISMISS_OFFSET ||
+            e.velocityY > SHEET_DISMISS_VELOCITY
+          ) {
+            dismissing.set(true)
+            runOnJS(closeSheet)()
+          }
+        })
+        .onFinalize(() => {
+          'worklet'
+          // Runs on both end and cancellation, so an interrupted drag always
+          // settles back home.
+          if (!dismissing.get()) {
+            translateY.set(withTiming(0, {duration: 200}))
+          }
+        }),
+    [translateY, dismissing, closeSheet],
+  )
+
+  const sheetAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{translateY: translateY.get()}],
+  }))
 
   if (!selectedState || !visible) return null
 
@@ -627,9 +702,9 @@ export function SelectedStateOverlay({
   const stats =
     STATE_DEMOGRAPHICS[selectedState.name] || STATE_DEMOGRAPHICS['default']
 
-  return (
+  const sheet = (
     <Animated.View
-      entering={SlideInDown.springify().damping(15)}
+      entering={SlideInDown.duration(280)}
       style={[
         a.absolute,
         gtMobile
@@ -642,6 +717,7 @@ export function SelectedStateOverlay({
         a.border,
         t.atoms.border_contrast_low,
         a.shadow_lg,
+        sheetAnimatedStyle,
         {zIndex: 18},
       ]}>
       {!gtMobile && (
@@ -667,7 +743,7 @@ export function SelectedStateOverlay({
         </View>
         <TouchableOpacity
           accessibilityRole="button"
-          onPress={onClose}
+          onPress={closeSheet}
           style={[a.p_xs, a.rounded_full, t.atoms.bg_contrast_100]}>
           <CircleX fill={t.atoms.text.color} width={20} height={20} />
         </TouchableOpacity>
@@ -741,6 +817,10 @@ export function SelectedStateOverlay({
       </View>
     </Animated.View>
   )
+
+  if (gtMobile) return sheet
+
+  return <GestureDetector gesture={panGesture}>{sheet}</GestureDetector>
 }
 
 export function BigCitiesDataOverlay({
@@ -754,10 +834,9 @@ export function BigCitiesDataOverlay({
   if (!selectedState || !showCities) return null
 
   const cityData = getCitiesForState(selectedState.name)
-  const selectedCity =
-    selectedCityName
-      ? cityData.find(c => c.name === selectedCityName) || null
-      : null
+  const selectedCity = selectedCityName
+    ? cityData.find(c => c.name === selectedCityName) || null
+    : null
 
   return (
     <OverlayFrame
@@ -842,11 +921,7 @@ export function BigCitiesDataOverlay({
                   <Text style={[a.font_bold]}>{city.population}</Text>
                 </Text>
                 <Text
-                  style={[
-                    a.text_sm,
-                    t.atoms.text_contrast_medium,
-                    a.mt_xs,
-                  ]}>
+                  style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_xs]}>
                   Mayor: {city.governing_mayor}
                 </Text>
               </View>
@@ -897,7 +972,7 @@ export function MapSearchControls({
       ]}>
       {searchExpanded ? (
         <Animated.View
-          entering={FadeInDown.springify().damping(15)}
+          entering={FadeInDown.duration(200)}
           style={[
             mapStyles.searchInputWrap,
             t.atoms.bg_contrast_25,
@@ -931,7 +1006,7 @@ export function MapSearchControls({
           </TouchableOpacity>
         </Animated.View>
       ) : (
-        <Animated.View entering={FadeInDown.springify().damping(15)}>
+        <Animated.View entering={FadeInDown.duration(200)}>
           <TouchableOpacity
             accessibilityRole="button"
             onPress={() => setSearchExpanded(true)}
@@ -950,7 +1025,7 @@ export function MapSearchControls({
 
       {searchExpanded && (groupedResults.length > 0 || hasRecentResults) && (
         <Animated.View
-          entering={FadeInDown.springify().damping(15)}
+          entering={FadeInDown.duration(200)}
           style={[
             mapStyles.searchResults,
             t.atoms.bg_contrast_100,
@@ -994,7 +1069,7 @@ export function MapSearchControls({
 
       {showEmptyState && (
         <Animated.View
-          entering={FadeInDown.springify().damping(15)}
+          entering={FadeInDown.duration(200)}
           style={[
             mapStyles.searchResults,
             t.atoms.bg_contrast_100,
@@ -1072,7 +1147,7 @@ function SearchResultRow({
           query={query}
           style={[a.text_md, t.atoms.text]}
         />
-          <View style={[a.flex_row, a.align_center, a.gap_xs, a.mt_xs]}>
+        <View style={[a.flex_row, a.align_center, a.gap_xs, a.mt_xs]}>
           {!!result.subtitle && (
             <HighlightedSearchText
               text={result.subtitle}

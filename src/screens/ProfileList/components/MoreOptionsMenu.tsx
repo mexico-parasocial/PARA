@@ -1,4 +1,4 @@
-import {type AppBskyActorDefs, AppBskyGraphDefs, AtUri} from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -12,6 +12,7 @@ import {
   useListBlockMutation,
   useListDeleteMutation,
   useListMuteMutation,
+  useReferenceListOptOutMutation,
 } from '#/state/queries/list'
 import {useRemoveFeedMutation} from '#/state/queries/preferences'
 import {useSession} from '#/state/session'
@@ -34,20 +35,24 @@ import {
 } from '#/components/moderation/ReportDialog'
 import * as Prompt from '#/components/Prompt'
 import * as Toast from '#/components/Toast'
+import {useAnalytics} from '#/analytics'
 import {IS_WEB} from '#/env'
+import {app} from '#/lexicons'
 
 export function MoreOptionsMenu({
   list,
   savedFeedConfig,
 }: {
-  list: AppBskyGraphDefs.ListView
-  savedFeedConfig?: AppBskyActorDefs.SavedFeed
+  list: app.bsky.graph.defs.ListView
+  savedFeedConfig?: app.bsky.actor.defs.SavedFeed
 }) {
   const {_} = useLingui()
+  const ax = useAnalytics()
   const {currentAccount} = useSession()
   const editListDialogControl = useDialogControl()
   const deleteListPromptControl = useDialogControl()
   const reportDialogControl = useReportDialogControl()
+  const optOutDialogControl = useDialogControl()
   const navigation = useNavigation<NavigationProp>()
 
   const {mutateAsync: removeSavedFeed} = useRemoveFeedMutation()
@@ -55,12 +60,38 @@ export function MoreOptionsMenu({
   const {mutateAsync: muteList} = useListMuteMutation()
   const {mutateAsync: blockList} = useListBlockMutation()
 
-  const isCurateList = list.purpose === AppBskyGraphDefs.CURATELIST
-  const isModList = list.purpose === AppBskyGraphDefs.MODLIST
+  const isCurateList = list.purpose === app.bsky.graph.defs.curatelist.value
+  const isModList = list.purpose === app.bsky.graph.defs.modlist.value
+  const isReferenceList =
+    list.purpose === app.bsky.graph.defs.referencelist.value
   const isBlocking = !!list.viewer?.blocked
   const isMuting = !!list.viewer?.muted
   const isPinned = Boolean(savedFeedConfig?.pinned)
   const isOwner = currentAccount?.did === list.creator.did
+  const referenceListOptOut = list.viewer?.referenceListOptOut
+  const {mutate: setReferenceListOptOut, isPending: isOptOutPending} =
+    useReferenceListOptOutMutation({
+      list,
+      onSuccess: action => {
+        ax.metric('starterPack:optOut', {
+          starterPack: list.uri,
+          action,
+        })
+        Toast.show(
+          action === 'optOut'
+            ? _(msg`Opted out of starter pack`)
+            : _(msg`Opt-out undone`),
+        )
+      },
+      onError: error => {
+        logger.error('Failed to update starter pack opt-out', {
+          safeMessage: error,
+        })
+        Toast.show(_(msg`Failed to update starter pack opt-out`), {
+          type: 'error',
+        })
+      },
+    })
 
   const onPressShare = () => {
     const {rkey} = new AtUri(list.uri)
@@ -112,11 +143,7 @@ export function MoreOptionsMenu({
     try {
       await muteList({uri: list.uri, mute: false})
       Toast.show(_(msg({message: 'List unmuted', context: 'toast'})))
-      logger.metric(
-        'moderation:unsubscribedFromList',
-        {listType: 'mute'},
-        {statsig: true},
-      )
+      ax.metric('moderation:unsubscribedFromList', {listType: 'mute'})
     } catch {
       Toast.show(
         _(
@@ -130,11 +157,7 @@ export function MoreOptionsMenu({
     try {
       await blockList({uri: list.uri, block: false})
       Toast.show(_(msg({message: 'List unblocked', context: 'toast'})))
-      logger.metric(
-        'moderation:unsubscribedFromList',
-        {listType: 'block'},
-        {statsig: true},
-      )
+      ax.metric('moderation:unsubscribedFromList', {listType: 'block'})
     } catch {
       Toast.show(
         _(
@@ -211,16 +234,41 @@ export function MoreOptionsMenu({
               </Menu.Item>
             </Menu.Group>
           ) : (
-            <Menu.Group>
-              <Menu.Item
-                label={_(msg`Report list`)}
-                onPress={reportDialogControl.open}>
-                <Menu.ItemText>
-                  <Trans>Report list</Trans>
-                </Menu.ItemText>
-                <Menu.ItemIcon position="right" icon={WarningIcon} />
-              </Menu.Item>
-            </Menu.Group>
+            <>
+              <Menu.Group>
+                <Menu.Item
+                  label={_(msg`Report list`)}
+                  onPress={reportDialogControl.open}>
+                  <Menu.ItemText>
+                    <Trans>Report list</Trans>
+                  </Menu.ItemText>
+                  <Menu.ItemIcon position="right" icon={WarningIcon} />
+                </Menu.Item>
+              </Menu.Group>
+              {isReferenceList ? (
+                <>
+                  <Menu.Divider />
+                  <Menu.Group>
+                    <Menu.Item
+                      label={
+                        referenceListOptOut
+                          ? _(msg`Undo opt-out from starter pack`)
+                          : _(msg`Opt out of starter pack`)
+                      }
+                      disabled={isOptOutPending}
+                      onPress={optOutDialogControl.open}>
+                      <Menu.ItemText>
+                        {referenceListOptOut ? (
+                          <Trans>Undo opt-out</Trans>
+                        ) : (
+                          <Trans>Opt out of starter pack</Trans>
+                        )}
+                      </Menu.ItemText>
+                    </Menu.Item>
+                  </Menu.Group>
+                </>
+              ) : null}
+            </>
           )}
 
           {isModList && isPinned && (
@@ -281,6 +329,46 @@ export function MoreOptionsMenu({
         confirmButtonCta={_(msg`Delete`)}
         confirmButtonColor="negative"
       />
+
+      {isReferenceList ? (
+        <Prompt.Outer control={optOutDialogControl}>
+          <Prompt.TitleText>
+            {referenceListOptOut ? (
+              <Trans>Undo opt-out?</Trans>
+            ) : (
+              <Trans>Opt out of this starter pack?</Trans>
+            )}
+          </Prompt.TitleText>
+          <Prompt.DescriptionText>
+            {referenceListOptOut ? (
+              <Trans>
+                You will be eligible to appear in this starter pack again.
+              </Trans>
+            ) : (
+              <Trans>
+                You will no longer appear in this starter pack. The creator will
+                be able to see that you've opted out and remove you if they
+                wish.
+              </Trans>
+            )}
+          </Prompt.DescriptionText>
+          <Prompt.Actions>
+            <Prompt.Action
+              cta={
+                referenceListOptOut
+                  ? _(msg`Undo opt-out`)
+                  : _(msg`Opt out of starter pack`)
+              }
+              color={referenceListOptOut ? 'primary' : 'negative'}
+              disabled={isOptOutPending}
+              onPress={() => {
+                setReferenceListOptOut({referenceListOptOut})
+              }}
+            />
+            <Prompt.Cancel />
+          </Prompt.Actions>
+        </Prompt.Outer>
+      ) : null}
 
       <ReportDialog
         control={reportDialogControl}

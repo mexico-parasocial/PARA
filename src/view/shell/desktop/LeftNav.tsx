@@ -119,7 +119,6 @@ function ProfileCard({minimal}: {minimal: boolean}) {
   const {t: l} = useLingui()
   const t = useTheme()
 
-
   const profile = profiles?.find(p => p.did === currentAccount!.did)
   const otherAccounts = accounts
     .filter(acc => acc.did !== currentAccount!.did)
@@ -132,7 +131,7 @@ function ProfileCard({minimal}: {minimal: boolean}) {
 
   return (
     <View style={[a.pb_md, !minimal && [a.w_full, a.align_start]]}>
-    {!isLoading && profile ? (
+      {!isLoading && profile ? (
         <Menu.Root>
           <Menu.Trigger label={l`Switch accounts`}>
             {({props, state, control}) => {
@@ -229,7 +228,7 @@ function ProfileCard({minimal}: {minimal: boolean}) {
           width={LARGE_ELEMENT_SIZE}
           height={LARGE_ELEMENT_SIZE}
           style={[a.rounded_full, !minimal && a.ml_lg]}
-          />
+        />
       )}
       <Prompt.Basic
         control={signOutPromptControl}
@@ -285,9 +284,7 @@ function SwitchMenuItems({
         </>
       )}
       <SwitcherMenuProfileLink />
-      <Menu.Item
-        label={l`Add another account`}
-        onPress={onAddAnotherAccount}>
+      <Menu.Item label={l`Add another account`} onPress={onAddAnotherAccount}>
         <Menu.ItemIcon icon={PlusIcon} />
         <Menu.ItemText>
           <Trans>Add another account</Trans>
@@ -415,7 +412,7 @@ function NavItem({
   minimal,
   navItem,
 }: NavItemProps) {
-const t = useTheme()
+  const t = useTheme()
   const {t: l} = useLingui()
   const ax = useAnalytics()
   const {currentAccount} = useSession()
@@ -460,7 +457,7 @@ const t = useTheme()
     [navigation, href, isCurrent, ax, navItem],
   )
 
- const Icon = isCurrent || isRelated ? icons.active : icons.inactive
+  const Icon = isCurrent || isRelated ? icons.active : icons.inactive
 
   return (
     <PressableWithHover
@@ -578,7 +575,6 @@ function ComposeBtn({minimal}: {minimal: boolean}) {
           handle = await fetchHandle(handle)
         } catch (e) {
           handle = undefined
-        } finally {
           setIsFetchingHandle(false)
         }
       }
@@ -611,7 +607,7 @@ function ComposeBtn({minimal}: {minimal: boolean}) {
           a.rounded_full,
           minimal && {width: LARGE_ELEMENT_SIZE, height: LARGE_ELEMENT_SIZE},
         ]}>
-<ButtonIcon icon={EditBigIcon} size={minimal ? 'lg' : 'sm'} />
+        <ButtonIcon icon={EditBigIcon} size={minimal ? 'lg' : 'sm'} />
         {!minimal && (
           <ButtonText>
             <Trans context="action">New post</Trans>
@@ -755,7 +751,9 @@ export function DesktopLeftNav({routeName}: {routeName: string}) {
                   translateX:
                     -(CENTER_COLUMN_WIDTH / 2) +
                     (centerColumnOffset ? CENTER_COLUMN_OFFSET : 0) +
-                    (isSplitViewScreen && !leftNavMinimalBreakpoint ? LEFT_NAV_MINIMAL_WIDTH - LEFT_NAV_STANDARD_WIDTH : 0),
+                    (isSplitViewScreen && !leftNavMinimalBreakpoint
+                      ? LEFT_NAV_MINIMAL_WIDTH - LEFT_NAV_STANDARD_WIDTH
+                      : 0),
                 },
                 {translateX: '-100%'},
                 ...a.scrollbar_offset.transform,
@@ -815,7 +813,7 @@ export function DesktopLeftNav({routeName}: {routeName: string}) {
               inactive: MessageIcon,
               active: MessageFilledIcon,
             }}
-            />
+          />
           <BaseNavItem minimal={leftNavMinimal} />
           <MyBaseNavItem minimal={leftNavMinimal} />
           <MessagesNavItem minimal={leftNavMinimal} />
@@ -869,7 +867,7 @@ export function DesktopLeftNav({routeName}: {routeName: string}) {
             href="/settings"
             navItem="settings"
             minimal={leftNavMinimal}
-                        icons={{
+            icons={{
               inactive: SettingsIcon,
               active: SettingsFilledIcon,
             }}
@@ -884,7 +882,6 @@ export function DesktopLeftNav({routeName}: {routeName: string}) {
 
 const styles = StyleSheet.create({
   leftNav: {
-
     left: '50%',
     width: LEFT_NAV_STANDARD_WIDTH,
     maxHeight: '100vh',

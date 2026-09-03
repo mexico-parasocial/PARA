@@ -4,7 +4,7 @@ import {ChatBskyConvoDefs} from '@atproto/api'
 import {
   type ModerationDecision,
   type ModerationOpts,
-} from '@bsky.app/sdk/moderation'
+} from '@bsky/sdk/moderation'
 import {plural} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
@@ -51,8 +51,8 @@ import {Envelope_Open_Stroke2_Corner0_Rounded as EnvelopeOpenIcon} from '#/compo
 import {Lock_Stroke2_Corner2_Rounded as LockIcon} from '#/components/icons/Lock'
 import {Trash_Stroke2_Corner0_Rounded as TrashIcon} from '#/components/icons/Trash'
 import {Link} from '#/components/Link'
-import {useMenuControl} from '#/components/Menu'
 import * as Menu from '#/components/Menu'
+import {useMenuControl} from '#/components/Menu'
 import {PostAlerts} from '#/components/moderation/PostAlerts'
 import {createPortalGroup} from '#/components/Portal'
 import {ProfileBadges} from '#/components/ProfileBadges'

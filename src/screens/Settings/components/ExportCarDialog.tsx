@@ -54,9 +54,8 @@ export function ExportCarDialog({
     } catch (e) {
       logger.error('Error occurred while downloading CAR file', {message: e})
       Toast.show(l`Error occurred while saving file`, {type: 'error'})
-    } finally {
-      setLoading(false)
     }
+    setLoading(false)
   }, [l, currentAccount, pdsClient])
 
   const downloadChatData = useCallback(async () => {
@@ -85,9 +84,8 @@ export function ExportCarDialog({
     } catch (e) {
       logger.error('Error occurred while downloading chat data', {message: e})
       Toast.show(l`Error occurred while saving file`, {type: 'error'})
-    } finally {
-      setLoading(false)
     }
+    setLoading(false)
   }, [l, currentAccount, chatClient])
 
   return (

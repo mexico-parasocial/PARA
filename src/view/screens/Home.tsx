@@ -1,15 +1,21 @@
 import {useCallback, useEffect, useLayoutEffect, useMemo, useRef} from 'react'
 import {ActivityIndicator, StyleSheet} from 'react-native'
-import {withSpring} from 'react-native-reanimated'
-import {RichText} from '@bsky.app/sdk/richtext'
+import {
+  Reanimated3DefaultSpringConfig,
+  withSpring,
+} from 'react-native-reanimated'
+import {RichText} from '@bsky/sdk/richtext'
+import {useLingui} from '@lingui/react/macro'
 import {useFocusEffect} from '@react-navigation/native'
 
 import {classifyCompassFeedFilters} from '#/lib/compass-filters'
 import {
   BSKY_SERVICE,
   DEFAULT_DISCOVER_FEED_DESCRIPTOR,
+  DISCOVER_FEED_URI,
   PUBLIC_BSKY_SERVICE,
   STAGING_SERVICE,
+  TIMELINE_SAVED_FEED,
 } from '#/lib/constants'
 import {useNonReactiveCallback} from '#/lib/hooks/useNonReactiveCallback'
 import {useOTAUpdates} from '#/lib/hooks/useOTAUpdates'
@@ -19,7 +25,7 @@ import {
   type HomeTabNavigatorParams,
   type NativeStackScreenProps,
 } from '#/lib/routes/types'
-import {logEvent} from '#/lib/statsig/statsig'
+import {getLocalizedFeedName} from '#/lib/strings/feed-names'
 import {emitSoftReset} from '#/state/events'
 import {
   type SavedFeedSourceInfo,
@@ -29,7 +35,6 @@ import {type FeedDescriptor, type FeedParams} from '#/state/queries/post-feed'
 import {usePreferencesQuery} from '#/state/queries/preferences'
 import {type UsePreferencesQueryResponse} from '#/state/queries/preferences/types'
 import {useSession} from '#/state/session'
-import {useMinimalShellMode} from '#/state/shell'
 import {useCompassFilter} from '#/state/shell/compass-filter'
 import {useLoggedOutViewControls} from '#/state/shell/logged-out'
 import {useSelectedFeed, useSetSelectedFeed} from '#/state/shell/selected-feed'
@@ -43,9 +48,14 @@ import {
 import {CustomFeedEmptyState} from '#/view/com/posts/CustomFeedEmptyState'
 import {FollowingEmptyState} from '#/view/com/posts/FollowingEmptyState'
 import {FollowingEndOfFeed} from '#/view/com/posts/FollowingEndOfFeed'
+import {
+  HomeHeaderModeProvider,
+  useHomeHeaderMode,
+} from '#/view/com/util/MainScrollProvider'
 import {NoFeedsPinned} from '#/screens/Home/NoFeedsPinned'
 import * as Layout from '#/components/Layout'
-import {IS_WEB} from '#/env'
+import {useAnalytics} from '#/analytics'
+import {IS_LIQUID_GLASS, IS_WEB} from '#/env'
 import {useDemoMode} from '#/storage/hooks/demo-mode'
 
 type Props = NativeStackScreenProps<HomeTabNavigatorParams, 'Home' | 'Start'>
@@ -88,12 +98,14 @@ export function HomeScreen(props: Props) {
 
   if (preferences && pinnedFeedInfos && !isPinnedFeedsLoading) {
     return (
-      <Layout.Screen testID="HomeScreen" noInsetTop>
-        <HomeScreenReady
-          {...props}
-          preferences={preferences}
-          pinnedFeedInfos={pinnedFeedInfos}
-        />
+      <Layout.Screen testID="HomeScreen" noInsetTop={IS_LIQUID_GLASS}>
+        <HomeHeaderModeProvider>
+          <HomeScreenReady
+            {...props}
+            preferences={preferences}
+            pinnedFeedInfos={pinnedFeedInfos}
+          />
+        </HomeHeaderModeProvider>
       </Layout.Screen>
     )
   } else {
@@ -136,6 +148,8 @@ function HomeScreenReady({
   preferences: UsePreferencesQueryResponse
   pinnedFeedInfos: SavedFeedSourceInfo[]
 }) {
+  const {i18n} = useLingui()
+  const ax = useAnalytics()
   const {currentAccount, hasSession} = useSession()
   const showParaFeeds = Boolean(
     currentAccount?.service && !isBlueskyInfrastructure(currentAccount.service),
@@ -155,9 +169,10 @@ function HomeScreenReady({
   const maybeFoundIndex = allFeeds.indexOf(maybeRawSelectedFeed)
   const selectedIndex = Math.max(0, maybeFoundIndex)
   const maybeSelectedFeed: FeedDescriptor | undefined = allFeeds[selectedIndex]
+  const selectedFeedInfo = homeFeeds[selectedIndex]
   const requestNotificationsPermission = useRequestNotificationsPermission()
 
-  useSetTitle(homeFeeds[selectedIndex]?.displayName)
+  useSetTitle(selectedFeedInfo && getLocalizedFeedName(selectedFeedInfo, i18n))
   useOTAUpdates()
 
   useEffect(() => {
@@ -176,10 +191,15 @@ function HomeScreenReady({
     }
   }, [selectedIndex])
 
-  const {headerMode} = useMinimalShellMode()
+  const headerMode = useHomeHeaderMode()
   const showHeader = useCallback(() => {
     'worklet'
-    headerMode.set(withSpring(0, {overshootClamping: true}))
+    headerMode.set(
+      withSpring(0, {
+        ...Reanimated3DefaultSpringConfig,
+        overshootClamping: true,
+      }),
+    )
   }, [headerMode])
 
   useFocusEffect(
@@ -191,7 +211,7 @@ function HomeScreenReady({
   useFocusEffect(
     useNonReactiveCallback(() => {
       if (maybeSelectedFeed) {
-        logEvent('home:feedDisplayed', {
+        ax.metric('home:feedDisplayed', {
           index: selectedIndex,
           feedType: maybeSelectedFeed.split('|')[0],
           feedUrl: maybeSelectedFeed,
@@ -212,14 +232,14 @@ function HomeScreenReady({
       setSelectedFeed(maybeFeed)
 
       if (maybeFeed) {
-        logEvent('home:feedDisplayed', {
+        ax.metric('home:feedDisplayed', {
           index,
           feedType: maybeFeed.split('|')[0],
           feedUrl: maybeFeed,
         })
       }
     },
-    [setSelectedFeed, showHeader, allFeeds],
+    [ax, setSelectedFeed, showHeader, allFeeds],
   )
 
   const onPressSelected = useCallback(() => {
@@ -247,8 +267,13 @@ function HomeScreenReady({
             {...props}
             testID="homeScreenFeedTabs"
             onPressSelected={onPressSelected}
-            // @ts-expect-error
-            feeds={[{displayName: 'Following'}, {displayName: 'Discover'}]}
+            feeds={[
+              {
+                displayName: 'Following',
+                uri: TIMELINE_SAVED_FEED.value,
+              },
+              {displayName: 'Discover', uri: DISCOVER_FEED_URI},
+            ]}
           />
         )
       }
@@ -298,7 +323,6 @@ function HomeScreenReady({
         ref={pagerRef}
         testID="homeScreen"
         onPageSelected={onPageSelected}
-        onPageScrollStateChanged={onPageScrollStateChanged}
         renderTabBar={renderTabBar}
         initialPage={selectedIndex}>
         <FeedPage

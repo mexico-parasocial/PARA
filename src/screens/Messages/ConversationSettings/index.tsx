@@ -1,7 +1,7 @@
 import {useEffect, useState} from 'react'
 import {Pressable, View} from 'react-native'
 import {ChatBskyActorDefs, ChatBskyConvoDefs} from '@atproto/api'
-import {type ModerationOpts} from '@bsky.app/sdk/moderation'
+import {type ModerationOpts} from '@bsky/sdk/moderation'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
@@ -242,14 +242,12 @@ function GroupSettings({
       : []),
   ]
   items.push(
-    ...groupMembers.map(
-      (profile): Item => ({
-        type: 'CHAT_MEMBER',
-        key: profile.did,
-        profile,
-        status: primaryMember?.did === profile.did ? 'owner' : 'standard',
-      }),
-    ),
+    ...groupMembers.map((profile): Item => ({
+      type: 'CHAT_MEMBER',
+      key: profile.did,
+      profile,
+      status: primaryMember?.did === profile.did ? 'owner' : 'standard',
+    })),
   )
   const placeholderCount = Math.max(
     0,

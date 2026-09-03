@@ -1,5 +1,4 @@
 import {
-  type ReactNode,
   useCallback,
   useEffect,
   useMemo,
@@ -8,21 +7,23 @@ import {
   useState,
 } from 'react'
 import {Pressable, type ScrollView, View} from 'react-native'
-import {BSKY_LABELER_DID} from '@atproto/api'
+import {api} from '@bsky/sdk'
 import {Trans, useLingui} from '@lingui/react/macro'
 
 import {wait} from '#/lib/async/wait'
+import {formatTime} from '#/lib/media/video/formatTime'
 import {getLabelingServiceTitle} from '#/lib/moderation'
 import {useCallOnce} from '#/lib/once'
 import {sanitizeHandle} from '#/lib/strings/handles'
 import {useMyLabelersQuery} from '#/state/queries/preferences'
 import {CharProgress} from '#/view/com/composer/char-progress/CharProgress'
 import {UserAvatar} from '#/view/com/util/UserAvatar'
-import {atoms as a, useGutters, useTheme, web} from '#/alf'
+import {atoms as a, useGutters, useTheme} from '#/alf'
 import * as Admonition from '#/components/Admonition'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
 import {useGlobalDialogsControlContext} from '#/components/dialogs/Context'
+import * as Toggle from '#/components/forms/Toggle'
 import {useDelayedLoading} from '#/components/hooks/useDelayedLoading'
 import {ArrowRotateCounterClockwise_Stroke2_Corner0_Rounded as Retry} from '#/components/icons/ArrowRotate'
 import {
@@ -42,11 +43,20 @@ import {useSubmitReportMutation} from './action'
 import {
   BSKY_LABELER_ONLY_REPORT_REASONS,
   BSKY_LABELER_ONLY_SUBJECT_TYPES,
+  NCII_FORM,
   NEW_TO_OLD_REASONS_MAP,
   SUPPORT_PAGE,
 } from './const'
 import {useCopyForSubject} from './copy'
-import {initialState, reducer} from './state'
+import {classifyReportError} from './errors'
+import {useReportDialogMetadataContext} from './ReportDialogMetadataContext'
+import {
+  getNciiQualificationOutcome,
+  initialState,
+  type NciiQualification as NciiQualificationState,
+  reducer,
+  type ReportAction,
+} from './state'
 import {type ReportDialogProps, type ReportSubject} from './types'
 import {parseReportSubject} from './utils/parseReportSubject'
 import {
@@ -73,19 +83,47 @@ export function ReportDialog(
   },
 ) {
   const ax = useAnalytics()
+  const reportDialogMetadata = useReportDialogMetadataContext()
   const subject = useMemo(
     () => (props.subject ? parseReportSubject(props.subject) : undefined),
     [props.subject],
   )
+  const [presentation, setPresentation] = useState<{
+    openCount: number
+    videoTimestampSeconds?: number
+  }>({openCount: 0})
+  const onOpen = useCallback(() => {
+    const seconds =
+      subject?.type === 'post' && subject.attributes.video
+        ? reportDialogMetadata?.current.videoTimestampSeconds
+        : undefined
+
+    setPresentation(current => ({
+      openCount: current.openCount + 1,
+      // Values below one second indicate that the video was never meaningfully
+      // played, so avoid offering to attach a noisy "0:00" timestamp.
+      videoTimestampSeconds:
+        seconds !== undefined && seconds >= 1 ? Math.floor(seconds) : undefined,
+    }))
+  }, [reportDialogMetadata, subject])
   const propsOnClose = props.onClose
   const onClose = useCallback(() => {
     ax.metric('reportDialog:close', {})
     propsOnClose?.()
   }, [ax, propsOnClose])
   return (
-    <Dialog.Outer control={props.control} onClose={onClose}>
+    <Dialog.Outer control={props.control} onOpen={onOpen} onClose={onClose}>
       <Dialog.Handle />
-      {subject ? <Inner {...props} subject={subject} /> : <Invalid />}
+      {subject ? (
+        <Inner
+          key={presentation.openCount}
+          {...props}
+          subject={subject}
+          videoTimestampSeconds={presentation.videoTimestampSeconds}
+        />
+      ) : (
+        <Invalid />
+      )}
     </Dialog.Outer>
   )
 }
@@ -112,13 +150,16 @@ function Invalid() {
   )
 }
 
-function Inner(props: ReportDialogProps) {
+function Inner(
+  props: ReportDialogProps & {
+    videoTimestampSeconds?: number
+  },
+) {
   const ax = useAnalytics()
   const logger = ax.logger.useChild(ax.logger.Context.ReportDialog)
   const t = useTheme()
   const {t: l} = useLingui()
   const ref = useRef<React.ComponentRef<typeof ScrollView>>(null)
-  const {control, onAfterSubmit, subject} = props
   const {
     data: allLabelers,
     isLoading: isLabelerLoading,
@@ -126,7 +167,7 @@ function Inner(props: ReportDialogProps) {
     refetch: refetchLabelers,
   } = useMyLabelersQuery({excludeNonConfigurableLabelers: true})
   const isLoading = useDelayedLoading(500, isLabelerLoading)
-  const copy = useCopyForSubject(subject)
+  const copy = useCopyForSubject(props.subject)
   const {categories, getCategory} = useReportOptions()
   const [state, dispatch] = useReducer(reducer, initialState)
 
@@ -137,12 +178,16 @@ function Inner(props: ReportDialogProps) {
   const [isPending, setIsPending] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
 
-  // some reasons ONLY go to PARA
+  const {videoTimestampSeconds} = props
+
+  // some reasons ONLY go to Bluesky
   const isBskyOnlyReason = state?.selectedOption?.reason
     ? BSKY_LABELER_ONLY_REPORT_REASONS.has(state.selectedOption.reason)
     : false
-  // some subjects ONLY go to PARA
-  const isBskyOnlySubject = BSKY_LABELER_ONLY_SUBJECT_TYPES.has(subject.type)
+  // some subjects ONLY go to Bluesky
+  const isBskyOnlySubject = BSKY_LABELER_ONLY_SUBJECT_TYPES.has(
+    props.subject.type,
+  )
 
   /**
    * Labelers that support this `subject` and its NSID collection
@@ -153,7 +198,7 @@ function Inner(props: ReportDialogProps) {
       .filter(l => {
         const subjectTypes: string[] | undefined = l.subjectTypes
         if (subjectTypes === undefined) return true
-        if (subject.type === 'account') {
+        if (props.subject.type === 'account') {
           return subjectTypes.includes('account')
         } else if (
           props.subject.type === 'convoMessage' ||
@@ -167,28 +212,32 @@ function Inner(props: ReportDialogProps) {
       .filter(l => {
         const collections: string[] | undefined = l.subjectCollections
         if (collections === undefined) return true
-        // all chat collections accepted, since only PARA handles chats
-        if (subject.type === 'convoMessage') return true
-        return collections.includes(subject.nsid)
+        // all chat collections accepted, since only Bluesky handles chats
+        if (
+          props.subject.type === 'convoMessage' ||
+          props.subject.type === 'convo'
+        )
+          return true
+        return collections.includes(props.subject.nsid)
       })
       .filter(l => {
         if (!state.selectedOption) return false
         if (isBskyOnlyReason || isBskyOnlySubject) {
-          return l.creator.did === BSKY_LABELER_DID
+          return l.creator.did === api.moderation.did
         }
         const supportedReasonTypes: string[] | undefined = l.reasonTypes
         if (supportedReasonTypes === undefined) return true
         return (
           // supports new reason type
-          supportedReasonTypes.includes(state.selectedOption.reason) ||
           // supports old reason type (backwards compat)
+          supportedReasonTypes.includes(state.selectedOption.reason) ||
           supportedReasonTypes.includes(
             NEW_TO_OLD_REASONS_MAP[state.selectedOption.reason],
           )
         )
       })
   }, [
-    subject,
+    props.subject,
     allLabelers,
     state.selectedOption,
     isBskyOnlyReason,
@@ -199,7 +248,7 @@ function Inner(props: ReportDialogProps) {
 
   /**
    * We skip the select labeler step if there's only one possible labeler, and
-   * that labeler is PARA (which is the case for chat reports and certain
+   * that labeler is Bluesky (which is the case for chat reports and certain
    * reason types). We'll use this below to adjust the indexing and skip the
    * step in the UI.
    */
@@ -217,8 +266,9 @@ function Inner(props: ReportDialogProps) {
       await wait(
         1e3,
         submitReport({
-          subject,
+          subject: props.subject,
           state,
+          videoTimestampSeconds,
         }),
       )
       setIsSuccess(true)
@@ -226,31 +276,56 @@ function Inner(props: ReportDialogProps) {
         reason: state.selectedOption?.reason ?? '',
         labeler: state.selectedLabeler?.creator.handle ?? '',
         details: !!state.details,
+        videoTimestamp: state.includeVideoTimestamp,
       })
       // give time for user feedback
       setTimeout(() => {
-        control.close(() => {
-          onAfterSubmit?.()
+        props.control.close(() => {
+          props.onAfterSubmit?.()
         })
       }, 1e3)
     } catch (err) {
-      const e = err as Error
+      const e = err instanceof Error ? err : new Error(String(err))
+      const classification = classifyReportError(e)
+      const tags = {
+        ...classification.tags,
+        report_subject_type: props.subject.type,
+        report_labeler: state.selectedLabeler?.creator.did,
+        report_reason: state.selectedOption?.reason,
+      }
+
       ax.metric('reportDialog:failure', {})
-      logger.error(e, {
-        source: 'ReportDialog',
-      })
+
+      if (classification.shouldReport) {
+        logger.error(e, {
+          source: 'ReportDialog',
+          fingerprint: classification.fingerprint,
+          tags,
+        })
+      } else {
+        logger.warn('Report rejected for taken down account', {tags})
+      }
+
+      let error = l`Something went wrong. Please try again.`
+      if (classification.kind === 'account-takedown') {
+        error = l`Your account cannot submit reports while it is suspended.`
+      } else if (classification.kind === 'invalid-reason-type') {
+        error = l`This moderation service does not support that report reason. Please choose a different reason or moderation service.`
+      } else if (classification.kind === 'service-unavailable') {
+        error = l`The moderation service is temporarily unavailable. Please try again later.`
+      }
+
       dispatch({
         type: 'setError',
-        error: l`Something went wrong. Please try again.`,
+        error,
       })
-    } finally {
-      setIsPending(false)
     }
-  }, [logger, submitReport, props, state, ax, l])
+    setIsPending(false)
+  }, [logger, submitReport, props, state, ax, l, videoTimestampSeconds])
 
   useCallOnce(() => {
     ax.metric('reportDialog:open', {
-      subjectType: subject.type,
+      subjectType: props.subject.type,
     })
   })()
 
@@ -259,7 +334,7 @@ function Inner(props: ReportDialogProps) {
       testID="report:dialog"
       label={l`Report dialog`}
       ref={ref}
-      style={[a.w_full, web({maxWidth: 500})]}>
+      style={[a.w_full, {maxWidth: 500}]}>
       <View style={[a.gap_2xl, IS_NATIVE && a.pt_md]}>
         <StepOuter>
           <StepTitle
@@ -289,7 +364,7 @@ function Inner(props: ReportDialogProps) {
                 <Admonition.Button
                   color="negative_subtle"
                   label={l`Retry loading report options`}
-                  onPress={() => refetchLabelers()}>
+                  onPress={() => void refetchLabelers()}>
                   <ButtonText>
                     <Trans>Retry</Trans>
                   </ButtonText>
@@ -378,23 +453,28 @@ function Inner(props: ReportDialogProps) {
             activeIndex1={state.activeStepIndex1}
           />
           {state.selectedOption ? (
-            <View style={[a.flex_row, a.align_center, a.gap_md]}>
-              <View style={[a.flex_1]}>
-                <OptionCard option={state.selectedOption} />
+            <>
+              <View style={[a.flex_row, a.align_center, a.gap_md]}>
+                <View style={[a.flex_1]}>
+                  <OptionCard option={state.selectedOption} />
+                </View>
+                <Button
+                  testID="report:clearReportOption"
+                  label={l`Change report reason`}
+                  size="tiny"
+                  variant="solid"
+                  color="secondary"
+                  shape="round"
+                  onPress={() => {
+                    dispatch({type: 'clearOption'})
+                  }}>
+                  <ButtonIcon icon={X} />
+                </Button>
               </View>
-              <Button
-                testID="report:clearReportOption"
-                label={l`Change report reason`}
-                size="tiny"
-                variant="solid"
-                color="secondary"
-                shape="round"
-                onPress={() => {
-                  dispatch({type: 'clearOption'})
-                }}>
-                <ButtonIcon icon={X} />
-              </Button>
-            </View>
+              {state.ncii && (
+                <NciiQualification ncii={state.ncii} dispatch={dispatch} />
+              )}
+            </>
           ) : state.selectedCategory ? (
             <View style={[a.gap_sm]}>
               {getCategory(state.selectedCategory.key).options.map(o => (
@@ -522,7 +602,7 @@ function Inner(props: ReportDialogProps) {
                   </Trans>{' '}
                   {!state.detailsOpen ? (
                     <InlineLinkText
-                      label={`Add more details (optional)`}
+                      label={l`Add more details (optional)`}
                       {...createStaticClick(() => {
                         dispatch({type: 'showDetails'})
                       })}>
@@ -561,9 +641,21 @@ function Inner(props: ReportDialogProps) {
                   </View>
                 )}
               </View>
+
+              {videoTimestampSeconds !== undefined &&
+                state.selectedLabeler?.creator.did === api.moderation.did && (
+                  <IncludeVideoTimestampToggle
+                    seconds={videoTimestampSeconds}
+                    selected={state.includeVideoTimestamp}
+                    onChange={include => {
+                      dispatch({type: 'setIncludeVideoTimestamp', include})
+                    }}
+                  />
+                )}
+
               <Button
                 testID="report:submit"
-                label={`Submit report`}
+                label={l`Submit report`}
                 size="large"
                 variant="solid"
                 color="primary"
@@ -586,9 +678,44 @@ function Inner(props: ReportDialogProps) {
           )}
         </StepOuter>
       </View>
-
       <Dialog.Close />
     </Dialog.ScrollableInner>
+  )
+}
+
+/**
+ * Opt-in for attaching how far the viewer had watched to a video report. Only
+ * rendered once we have a position and the report is going to Bluesky.
+ */
+function IncludeVideoTimestampToggle({
+  seconds,
+  selected,
+  onChange,
+}: {
+  seconds: number
+  selected: boolean
+  onChange: (selected: boolean) => void
+}) {
+  const {t: l} = useLingui()
+  const videoTimestamp = formatTime(seconds)
+  const label = l({
+    message: `Include video timestamp (${videoTimestamp})`,
+    comment:
+      'Checkbox shown when reporting a video. The value is the current playback position, formatted as minutes:seconds.',
+  })
+  return (
+    <Toggle.Item
+      testID="report:includeVideoTimestamp"
+      name="includeVideoTimestamp"
+      type="checkbox"
+      label={label}
+      value={selected}
+      onChange={onChange}>
+      <Toggle.Checkbox />
+      <Toggle.LabelText style={[a.flex_1, a.font_normal, a.leading_snug]}>
+        {label}
+      </Toggle.LabelText>
+    </Toggle.Item>
   )
 }
 
@@ -607,7 +734,7 @@ function ActionOnce({
   return null
 }
 
-function StepOuter({children}: {children: ReactNode}) {
+function StepOuter({children}: {children: React.ReactNode}) {
   return <View style={[a.gap_md, a.w_full]}>{children}</View>
 }
 
@@ -749,7 +876,11 @@ function OptionCard({
   return (
     <Button
       testID={`report:option:${option.title}`}
-      label={l`Create report for ${option.title}`}
+      label={l({
+        message: `Create report for ${option.title}`,
+        comment:
+          'Accessibility label for button to create a moderation report for the selected option',
+      })}
       onPress={onPress}
       disabled={!onSelect}>
       {({hovered, pressed}) => (
@@ -771,6 +902,126 @@ function OptionCard({
         </View>
       )}
     </Button>
+  )
+}
+
+/**
+ * Qualifying question shown when the NCII reason is selected. The depicted
+ * person (or their authorized representative) is directed to the external
+ * NCII report form; everyone else continues with the normal in-app
+ * submission.
+ */
+function NciiQualification({
+  ncii,
+  dispatch,
+}: {
+  ncii: NciiQualificationState
+  dispatch: React.Dispatch<ReportAction>
+}) {
+  const t = useTheme()
+  const {t: l} = useLingui()
+  const outcome = getNciiQualificationOutcome(ncii)
+  return (
+    <View style={[a.gap_md]}>
+      <YesNoQuestion
+        testID="report:ncii:isDepicted"
+        question={l`Are you the person depicted, or an authorized representative acting on behalf of the person depicted?`}
+        value={ncii.isDepicted}
+        onAnswer={answer => {
+          dispatch({
+            type: 'answerNciiQuestion',
+            question: 'isDepicted',
+            answer,
+          })
+        }}
+      />
+      {outcome === 'externalForm' && (
+        <Link
+          to={NCII_FORM}
+          label={l({
+            message:
+              'Submit your report through the Report non-consensual intimate imagery (NCII) form',
+            context: 'english-only-resource',
+          })}>
+          {({hovered, pressed}) => (
+            <View
+              style={[
+                a.flex_row,
+                a.align_center,
+                a.w_full,
+                a.px_md,
+                a.py_sm,
+                a.rounded_sm,
+                a.border,
+                hovered || pressed
+                  ? [t.atoms.border_contrast_high]
+                  : [t.atoms.border_contrast_low],
+              ]}>
+              <Text style={[a.flex_1, a.italic, a.leading_snug]}>
+                <Trans context="english-only-resource">
+                  Please submit your report through the Report non-consensual
+                  intimate imagery (NCII) form.
+                </Trans>
+              </Text>
+              <SquareArrowTopRight size="sm" fill={t.atoms.text.color} />
+            </View>
+          )}
+        </Link>
+      )}
+    </View>
+  )
+}
+
+function YesNoQuestion({
+  question,
+  value,
+  onAnswer,
+  testID,
+}: {
+  question: string
+  value?: boolean
+  onAnswer: (answer: boolean) => void
+  testID?: string
+}) {
+  const {t: l} = useLingui()
+  return (
+    <View style={[a.gap_sm]}>
+      <Text style={[a.text_sm, a.leading_snug]}>{question}</Text>
+      <View style={[a.flex_row, a.gap_sm]}>
+        <View style={[a.flex_1]}>
+          <Button
+            testID={testID ? `${testID}:yes` : undefined}
+            label={l({
+              message: 'Yes',
+              context: 'Answer to a yes/no question',
+            })}
+            accessibilityHint={question}
+            size="small"
+            color={value === true ? 'primary' : 'secondary'}
+            onPress={() => onAnswer(true)}>
+            <ButtonText>
+              <Trans context="Answer to a yes/no question">Yes</Trans>
+            </ButtonText>
+          </Button>
+        </View>
+        <View style={[a.flex_1]}>
+          <Button
+            testID={testID ? `${testID}:no` : undefined}
+            label={l({
+              message: 'No',
+              context: 'Answer to a yes/no question',
+            })}
+            accessibilityHint={question}
+            size="small"
+            color={value === false ? 'primary' : 'secondary'}
+            onPress={() => onAnswer(false)}>
+            <ButtonText>
+              <Trans context="Answer to a yes/no question">No</Trans>
+            </ButtonText>
+          </Button>
+        </View>
+      </View>
+    </View>
   )
 }
 

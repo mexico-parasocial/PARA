@@ -91,7 +91,7 @@ export function ProfileFeedgens({
     error,
     refetch,
   } = useProfileFeedgensQuery(did, opts)
-  const isEmpty = !isPending && !data?.pages[0]?.feeds.length
+  const isEmpty = !isPending && !data?.pages.some(page => page.feeds.length)
   const {data: preferences} = usePreferencesQuery()
   const navigation = useNavigation()
   const {currentAccount} = useSession()
@@ -161,10 +161,7 @@ export function ProfileFeedgens({
   // =
 
   const renderItem = useCallback(
-    ({
-      item,
-      index,
-    }: ListRenderItemInfo<Item>) => {
+    ({item, index}: ListRenderItemInfo<Item>) => {
       if (item === EMPTY) {
         return (
           <EmptyState

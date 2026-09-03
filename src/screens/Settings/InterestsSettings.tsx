@@ -1,6 +1,6 @@
 import {useMemo, useState} from 'react'
-import {type TextStyle, View, type ViewStyle} from 'react-native'
-import {setInterestsPref} from '@bsky.app/sdk'
+import {View} from 'react-native'
+import {setInterestsPref} from '@bsky/sdk'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -188,13 +188,9 @@ function Inner({
                 </View>
                 <View style={[a.flex_row, a.flex_wrap, a.gap_sm]}>
                   {category.interests.map(interest => {
-                    const label =
-                      category.interestLabels[interest] || interest
+                    const label = category.interestLabels[interest] || interest
                     return (
-                      <Toggle.Item
-                        key={interest}
-                        name={interest}
-                        label={label}>
+                      <Toggle.Item key={interest} name={interest} label={label}>
                         <CivicInterestPill label={label} />
                       </Toggle.Item>
                     )

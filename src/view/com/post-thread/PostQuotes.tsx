@@ -1,6 +1,6 @@
 import {useCallback, useState} from 'react'
 import {type AppBskyFeedDefs, AppBskyFeedPost} from '@atproto/api'
-import {type ModerationDecision} from '@bsky.app/sdk/moderation'
+import {type ModerationDecision} from '@bsky/sdk/moderation'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 

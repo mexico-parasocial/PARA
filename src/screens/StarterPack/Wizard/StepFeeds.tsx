@@ -2,7 +2,7 @@ import {useState} from 'react'
 import {type ListRenderItemInfo, View} from 'react-native'
 import {KeyboardAwareScrollView} from 'react-native-keyboard-controller'
 import {type AppBskyFeedDefs} from '@atproto/api'
-import {type ModerationOpts} from '@bsky.app/sdk/moderation'
+import {type ModerationOpts} from '@bsky/sdk/moderation'
 import {Trans} from '@lingui/react/macro'
 
 import {isDiscoverFeedUri} from '#/lib/constants'

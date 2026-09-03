@@ -7,7 +7,10 @@ import {
   useState,
 } from 'react'
 import {View} from 'react-native'
-import {withSpring} from 'react-native-reanimated'
+import {
+  Reanimated3DefaultSpringConfig,
+  withSpring,
+} from 'react-native-reanimated'
 import {type AppBskyActorDefs, AppBskyFeedDefs} from '@atproto/api'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -30,12 +33,14 @@ import {
 } from '#/state/queries/post-feed'
 import {truncateAndInvalidate} from '#/state/queries/util'
 import {useSession} from '#/state/session'
-import {useMinimalShellMode} from '#/state/shell'
 import {PostFeed} from '#/view/com/posts/PostFeed'
 import {FAB} from '#/view/com/util/fab/FAB'
 import {type ListMethods} from '#/view/com/util/List'
 import {LoadLatestBtn} from '#/view/com/util/load-latest/LoadLatestBtn'
-import {MainScrollProvider} from '#/view/com/util/MainScrollProvider'
+import {
+  MainScrollProvider,
+  useHomeHeaderMode,
+} from '#/view/com/util/MainScrollProvider'
 import {useTheme} from '#/alf'
 import {useHeaderOffset} from '#/components/hooks/useHeaderOffset'
 import {EditBig_Stroke2_Corner2_Rounded as EditBigIcon} from '#/components/icons/EditBig'
@@ -72,10 +77,15 @@ export function FeedPage({
   const queryClient = useQueryClient()
   const {openComposer} = useOpenComposer()
   const [isScrolledDown, setIsScrolledDown] = useState(false)
-  const {headerMode} = useMinimalShellMode()
+  const headerMode = useHomeHeaderMode()
   const showHeader = useCallback(() => {
     'worklet'
-    headerMode.set(withSpring(0, {overshootClamping: true}))
+    headerMode.set(
+      withSpring(0, {
+        ...Reanimated3DefaultSpringConfig,
+        overshootClamping: true,
+      }),
+    )
   }, [headerMode])
   const screenHeaderOffset = useHeaderOffset()
   const headerOffset = useHeaderInset ? screenHeaderOffset : 0

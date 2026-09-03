@@ -1,11 +1,5 @@
 import {Fragment, useMemo, useRef} from 'react'
-import {
-  Keyboard,
-  Platform,
-  type StyleProp,
-  View,
-  type ViewStyle,
-} from 'react-native'
+import {Keyboard, type StyleProp, View, type ViewStyle} from 'react-native'
 import {
   type AppBskyFeedDefs,
   AppBskyFeedPost,
@@ -37,7 +31,7 @@ import {Earth_Stroke2_Corner0_Rounded as EarthIcon} from '#/components/icons/Glo
 import {Group3_Stroke2_Corner0_Rounded as GroupIcon} from '#/components/icons/Group'
 import {InlineLinkText} from '#/components/Link'
 import {Text} from '#/components/Typography'
-import {IS_NATIVE} from '#/env'
+import {IS_NATIVE, IS_WEB} from '#/env'
 import * as bsky from '#/types/bsky'
 
 interface WhoCanReplyProps {
@@ -116,14 +110,9 @@ export function WhoCanReply({post, isThreadAuthor, style}: WhoCanReplyProps) {
         }
         onPress={onPressOpen}
         {...(isThreadAuthor
-          ? Platform.select({
-              web: {
-                onHoverIn: prefetch,
-              },
-              native: {
-                onPressIn: prefetch,
-              },
-            })
+          ? IS_WEB
+            ? {onHoverIn: prefetch}
+            : {onPressIn: prefetch}
           : {})}
         hitSlop={HITSLOP_10}>
         {({hovered, focused, pressed}) => (
@@ -131,7 +120,7 @@ export function WhoCanReply({post, isThreadAuthor, style}: WhoCanReplyProps) {
             style={[
               a.flex_row,
               a.align_center,
-              a.gap_xs,
+              {gap: 3},
               (hovered || focused || pressed) && native({opacity: 0.5}),
               style,
             ]}>
@@ -139,16 +128,16 @@ export function WhoCanReply({post, isThreadAuthor, style}: WhoCanReplyProps) {
               color={
                 isThreadAuthor ? t.palette.primary_500 : t.palette.contrast_400
               }
-              width={16}
+              width={12}
               settings={settings}
             />
             <Text
               style={[
-                a.text_sm,
+                a.text_xs,
                 a.leading_tight,
                 isThreadAuthor
                   ? {color: t.palette.primary_500}
-                  : t.atoms.text_contrast_medium,
+                  : t.atoms.text_contrast_high,
                 (hovered || focused || pressed) && web(a.underline),
               ]}>
               {description}

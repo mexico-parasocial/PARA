@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useMemo, useState} from 'react'
 import {LayoutAnimation, View} from 'react-native'
 import {AppBskyFeedPost, AtUri} from '@atproto/api'
-import {RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
+import {RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {type RouteProp, useNavigation, useRoute} from '@react-navigation/native'
 

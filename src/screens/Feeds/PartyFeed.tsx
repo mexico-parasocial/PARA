@@ -1,5 +1,5 @@
 import {View} from 'react-native'
-import {RichText} from '@bsky.app/sdk/richtext'
+import {RichText} from '@bsky/sdk/richtext'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -15,6 +15,7 @@ import {toShareUrl} from '#/lib/strings/url-helpers'
 import {type FeedSourceInfo} from '#/state/queries/feed'
 import {type FeedParams} from '#/state/queries/post-feed'
 import {FeedPage} from '#/view/com/feeds/FeedPage'
+import {HomeHeaderModeProvider} from '#/view/com/util/MainScrollProvider'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonIcon} from '#/components/Button'
 import {ArrowOutOfBoxModified_Stroke2_Corner2_Rounded as Share} from '#/components/icons/ArrowOutOfBox'
@@ -139,16 +140,18 @@ function PartyFeedScreenInner({profile}: {profile: PartyFeedProfile}) {
             </View>
           </View>
         </View>
-        <FeedPage
-          testID={`partyFeed-${profile.id}`}
-          feed="para-timeline"
-          feedParams={feedParams}
-          isPageFocused
-          isPageAdjacent={false}
-          feedInfo={feedInfo}
-          useHeaderInset={false}
-          renderEmptyState={() => <PartyFeedEmptyState name={profile.name} />}
-        />
+        <HomeHeaderModeProvider>
+          <FeedPage
+            testID={`partyFeed-${profile.id}`}
+            feed="para-timeline"
+            feedParams={feedParams}
+            isPageFocused
+            isPageAdjacent={false}
+            feedInfo={feedInfo}
+            useHeaderInset={false}
+            renderEmptyState={() => <PartyFeedEmptyState name={profile.name} />}
+          />
+        </HomeHeaderModeProvider>
       </Layout.Center>
     </Layout.Screen>
   )

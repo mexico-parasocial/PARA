@@ -14,7 +14,6 @@ import {useInitialNumToRender} from '#/lib/hooks/useInitialNumToRender'
 import {useNonReactiveCallback} from '#/lib/hooks/useNonReactiveCallback'
 import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
 import {usePostViewTracking} from '#/lib/hooks/usePostViewTracking'
-import {logger} from '#/logger'
 import {
   FeedFeedbackProvider,
   type StateContext as FeedFeedbackStateContext,
@@ -56,6 +55,7 @@ import {
 import {atoms as a, native, platform, useBreakpoints, web} from '#/alf'
 import * as Layout from '#/components/Layout'
 import {ListFooter} from '#/components/Lists'
+import {useAnalytics} from '#/analytics'
 import {IS_NATIVE} from '#/env'
 
 const PARENT_CHUNK_SIZE = IS_NATIVE ? 5 : 20
@@ -65,6 +65,7 @@ const analyticsOnlySendInteraction: FeedFeedbackStateContext['sendInteraction'] 
   () => {}
 
 export function PostThread({uri}: {uri: string}) {
+  const ax = useAnalytics()
   const {gtMobile} = useBreakpoints()
   const {hasSession} = useSession()
   const initialNumToRender = useInitialNumToRender()
@@ -79,7 +80,7 @@ export function PostThread({uri}: {uri: string}) {
    * One query to rule them all
    */
   const thread = usePostThread({anchor: uri})
-  const {anchor, hasParents} = (() => {
+  const {anchor, hasParents} = useMemo(() => {
     let hasParents = false
     for (const item of thread.data.items) {
       if (item.type === 'threadPost' && item.depth === 0) {
@@ -88,7 +89,7 @@ export function PostThread({uri}: {uri: string}) {
       hasParents = true
     }
     return {hasParents}
-  })()
+  }, [thread.data.items])
 
   // Track post:view event when anchor post is viewed
   const seenPostUriRef = useRef<string | null>(null)
@@ -100,18 +101,15 @@ export function PostThread({uri}: {uri: string}) {
       const post = anchor.value.post
       seenPostUriRef.current = post.uri
 
-      logger.metric(
-        'post:view',
-        {
-          uri: post.uri,
-          authorDid: post.author.did,
-          logContext: 'Post',
-          feedDescriptor: feedFeedback.feedDescriptor,
-        },
-        {statsig: false},
-      )
+      ax.metric('post:view', {
+        uri: post.uri,
+        authorDid: post.author.did,
+        isReply: !!post.record.reply,
+        logContext: 'Post',
+        feedDescriptor: feedFeedback.feedDescriptor,
+      })
     }
-  }, [anchor, feedFeedback.feedDescriptor])
+  }, [ax, anchor, feedFeedback.feedDescriptor])
 
   // Track post:view events for parent posts and replies (non-anchor posts)
   const trackThreadItemView = usePostViewTracking('PostThreadItem')
@@ -202,8 +200,8 @@ export function PostThread({uri}: {uri: string}) {
    */
   const onContentSizeChangeWebOnly = web(() => {
     const list = listRef.current
-    const anchor = anchorRef.current as unknown as HTMLElement
-    const header = headerRef.current as unknown as HTMLElement
+    const anchor = anchorRef.current as any as Element
+    const header = headerRef.current as any as Element
 
     if (list && anchor && header && shouldHandleScroll.current) {
       const anchorOffsetTop = anchor.getBoundingClientRect().top
@@ -402,7 +400,10 @@ export function PostThread({uri}: {uri: string}) {
   }, [thread, deferParents, maxParentCount, maxChildrenCount])
 
   /**
-   * Defer rendering reply skeletons so the anchor post can paint first.
+   * Defer rendering reply skeletons so that the anchor post (from cache)
+   * can paint without being blocked by skeleton layout work. On mount,
+   * skeletons are filtered out. After the first render, they're added
+   * back via a low-priority transition.
    */
   const [showReplySkeletons, setShowReplySkeletons] = useState(false)
   useEffect(() => {
@@ -649,6 +650,7 @@ export function PostThread({uri}: {uri: string}) {
     </PostThreadContextProvider>
   )
 }
+
 function AnalyticsOnlyFeedFeedbackProvider({
   children,
   feedDescriptor,

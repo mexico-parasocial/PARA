@@ -1,6 +1,6 @@
 import {type ComponentType, useMemo} from 'react'
 import {BSKY_LABELER_DID} from '@atproto/api'
-import {type ModerationCause} from '@bsky.app/sdk/moderation'
+import {type ModerationCause} from '@bsky/sdk/moderation'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 

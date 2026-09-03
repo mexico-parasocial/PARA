@@ -16,13 +16,13 @@ import {
   moderateUserList as sdkModerateUserList,
   type ModerationDecision,
   type ModerationOpts,
-} from '@bsky.app/sdk/moderation'
+} from '@bsky/sdk/moderation'
 
 import {type app, type chat} from '#/lexicons'
 
 /*
  * TRANSITIONAL. The moderation implementation now comes from
- * `@bsky.app/sdk/moderation`, whose subject types are the generated
+ * `@bsky/sdk/moderation`, whose subject types are the generated
  * `#/lexicons` views - so their `did`/`uri`/`cid` fields are branded
  * (`DidString`, `AtUriString`). Many read paths still emit the identically
  * shaped `@atproto/api` views, whose same fields are plain `string`.
@@ -35,7 +35,7 @@ import {type app, type chat} from '#/lexicons'
  * These wrappers widen each subject parameter to accept a view from either
  * world and drop the brand on the way in. Delete this module once every
  * producer emits `#/lexicons` views (the `@atproto/api` removal pass) and point
- * callers back at `@bsky.app/sdk/moderation` directly.
+ * callers back at `@bsky/sdk/moderation` directly.
  */
 
 type AnyProfileSubject =

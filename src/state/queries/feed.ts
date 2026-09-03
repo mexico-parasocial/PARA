@@ -6,7 +6,7 @@ import {
   AtUri,
 } from '@atproto/api'
 import {type AtUriString} from '@atproto/syntax'
-import {RichText} from '@bsky.app/sdk/richtext'
+import {RichText} from '@bsky/sdk/richtext'
 import {t} from '@lingui/core/macro'
 import {
   type InfiniteData,

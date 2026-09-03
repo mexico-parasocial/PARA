@@ -99,9 +99,8 @@ export function NotificationFeed({
       logger.error('Failed to refresh notifications feed', {
         message: err,
       })
-    } finally {
-      setIsPTRing(false)
     }
+    setIsPTRing(false)
   }, [refreshNotifications, setIsPTRing])
 
   const onEndReached = useCallback(async () => {

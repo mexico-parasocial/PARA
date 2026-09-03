@@ -3,7 +3,7 @@ import {
   type InterpretedLabelValueDefinition,
   interpretLabelValueDefinition,
   LABELS,
-} from '@bsky.app/sdk/moderation'
+} from '@bsky/sdk/moderation'
 import {useLingui} from '@lingui/react'
 import * as bcp47Match from 'bcp-47-match'
 

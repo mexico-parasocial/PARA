@@ -5,8 +5,8 @@ import {type AppBskyActorDefs} from '@atproto/api'
 import {
   type ModerationDecision,
   type ModerationOpts,
-} from '@bsky.app/sdk/moderation'
-import {type RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
+} from '@bsky/sdk/moderation'
+import {type RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -18,15 +18,14 @@ import {
   COMPASS_CROSS_GRADIENTS,
   type CompassPositionId,
 } from '#/lib/compass/compassColors'
+import {HITSLOP_20} from '#/lib/constants'
 import {
   buildGermAssociatedProfileButton,
   type GermAssociatedProfile,
 } from '#/lib/germ/messageMe'
-import {HITSLOP_20} from '#/lib/constants'
 import {useHaptics} from '#/lib/haptics'
 import {useAnonymousMode} from '#/lib/im8/hooks/useAnonymousMode'
 import {moderateProfile} from '#/lib/moderation/subjects'
-import {sanitizeDisplayName} from '#/lib/strings/display-names'
 import {formatUserDisplayName} from '#/lib/strings/profile-names'
 import {logger} from '#/logger'
 import {type Shadow, useProfileShadow} from '#/state/cache/profile-shadow'

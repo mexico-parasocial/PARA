@@ -39,7 +39,7 @@ export function ModerationBlockedAccounts({}: Props) {
     fetchNextPage,
     isFetchingNextPage,
   } = useMyBlockedAccountsQuery()
-  const isEmpty = !isFetching && !data?.pages[0]?.blocks.length
+  const isEmpty = !isFetching && !data?.pages.some(page => page.blocks.length)
   const profiles = useMemo(() => {
     if (data?.pages) {
       return data.pages.flatMap(page => page.blocks)

@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useMemo} from 'react'
 import {type GestureResponderEvent, View} from 'react-native'
 import {type AppBskyFeedDefs, type AppBskyGraphDefs, AtUri} from '@atproto/api'
-import {RichText as RichTextApi} from '@bsky.app/sdk/richtext'
+import {RichText as RichTextApi} from '@bsky/sdk/richtext'
 import {Plural, Trans, useLingui} from '@lingui/react/macro'
 import {useQueryClient} from '@tanstack/react-query'
 
@@ -260,7 +260,10 @@ export function Footer({
     const diffH = Math.floor(diffMs / (1000 * 60 * 60))
     const diffD = Math.floor(diffH / 24)
     if (diffD > 30) {
-      return date.toLocaleDateString(i18n.locale, {month: 'short', year: 'numeric'})
+      return date.toLocaleDateString(i18n.locale, {
+        month: 'short',
+        year: 'numeric',
+      })
     }
     if (diffD > 0) return `${diffD}d`
     if (diffH > 0) return `${diffH}h`

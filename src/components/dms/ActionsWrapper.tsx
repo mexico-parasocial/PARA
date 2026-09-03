@@ -1,6 +1,6 @@
 import {View} from 'react-native'
 import {type ChatBskyConvoDefs} from '@atproto/api'
-import {type ModerationOpts} from '@bsky.app/sdk/moderation'
+import {type ModerationOpts} from '@bsky/sdk/moderation'
 import {useLingui} from '@lingui/react/macro'
 
 import {MessageContextMenu} from '#/components/dms/MessageContextMenu'

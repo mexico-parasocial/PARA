@@ -1,7 +1,7 @@
 name: Nightly Update Source Languages
 on:
   schedule:
-    - cron: '0 2 * * *' # run at 2 AM UTC
+    - cron: "0 2 * * *" # run at 2 AM UTC
   workflow_dispatch:
 
 jobs:
@@ -15,8 +15,8 @@ jobs:
       contents: write
 
     steps:
-      - name: Check out Git repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: ⬇️ Check out Git repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ssh-key: ${{secrets.GH_ACTION_DEPLOY_KEY}}
       - uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
@@ -25,20 +25,20 @@ jobs:
         with:
           node-version-file: package.json
           cache: pnpm
-      - name: pnpm install
+      - name: 📦 pnpm install
         run: pnpm install --frozen-lockfile
-      - name: Extract language strings
+      - name: 🔤 Extract language strings
         run: pnpm intl:extract
-      - name: Create commit
+      - name: 📝 Create commit
         uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d # v7.2.0
         with:
           commit_message: Nightly source-language update
           file_pattern: ./src/locale/locales/en/messages.po
-      - name: Push source lang to Crowdin
-        uses: crowdin/github-action@c7af9bc98b01694653031fef2a0dc6c7888ce9bc # v2.17.0
+      - name: 🚀 Push source lang to Crowdin
+        uses: crowdin/github-action@8f01d54f70f1713ee3f09d82c2bbb2daeac28689 # v2.17.1
         with:
           upload_sources: true
-          upload_sources_args: '-b main'
+          upload_sources_args: "-b main"
           upload_translations: false
           push_translations: false
           push_sources: false

@@ -9,7 +9,7 @@ import {
 } from '@atproto/api'
 import {type Client} from '@atproto/lex'
 import {type AtUriString} from '@atproto/syntax'
-import {type ModerationOpts} from '@bsky.app/sdk/moderation'
+import {type ModerationOpts} from '@bsky/sdk/moderation'
 import {type QueryClient} from '@tanstack/react-query'
 import chunk from 'lodash.chunk'
 

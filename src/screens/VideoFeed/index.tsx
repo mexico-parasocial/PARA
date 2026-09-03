@@ -23,14 +23,9 @@ import {useEvent, useEventListener} from 'expo'
 import {Image, type ImageStyle} from 'expo-image'
 import {LinearGradient} from 'expo-linear-gradient'
 import {createVideoPlayer, type VideoPlayer, VideoView} from 'expo-video'
-import {
-  AppBskyEmbedVideo,
-  type AppBskyFeedDefs,
-  AppBskyFeedPost,
-  AtUri,
-} from '@atproto/api'
-import {type ModerationDecision} from '@bsky.app/sdk/moderation'
-import {RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
+import {AtUri} from '@atproto/syntax'
+import {type ModerationDecision} from '@bsky/sdk/moderation'
+import {RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {
   type ListViewToken as ViewToken,
@@ -49,6 +44,7 @@ import {HITSLOP_20} from '#/lib/constants'
 import {useHaptics} from '#/lib/haptics'
 import {useNonReactiveCallback} from '#/lib/hooks/useNonReactiveCallback'
 import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
+import {hasPlaybackStarted} from '#/lib/media/video/analytics'
 import {
   createPlaybackTelemetry,
   type PlaybackTelemetry,
@@ -60,7 +56,6 @@ import {
 import {sanitizeDisplayName} from '#/lib/strings/display-names'
 import {cleanError} from '#/lib/strings/errors'
 import {sanitizeHandle} from '#/lib/strings/handles'
-import {asSdkFacets} from '#/lib/strings/rich-text-helpers'
 import {logger} from '#/logger'
 import {useA11y} from '#/state/a11y'
 import {
@@ -106,6 +101,7 @@ import {RichText} from '#/components/RichText'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
 import {IS_ANDROID} from '#/env'
+import {app} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 import {Scrubber, VIDEO_PLAYER_BOTTOM_INSET} from './components/Scrubber'
 
@@ -179,8 +175,8 @@ type CurrentSource = {
 
 type VideoItem = {
   moderation: ModerationDecision
-  post: AppBskyFeedDefs.PostView
-  video: AppBskyEmbedVideo.View
+  post: app.bsky.feed.defs.PostView
+  video: app.bsky.embed.video.View
   feedContext: string | undefined
   reqId: string | undefined
 }
@@ -218,8 +214,8 @@ function Feed() {
         const items: {
           _reactKey: string
           moderation: ModerationDecision
-          post: AppBskyFeedDefs.PostView
-          video: AppBskyEmbedVideo.View
+          post: app.bsky.feed.defs.PostView
+          video: app.bsky.embed.video.View
           feedContext: string | undefined
           reqId: string | undefined
         }[] = []
@@ -227,7 +223,10 @@ function Feed() {
           const feedPost = slice.items.find(
             item => item.uri === slice.feedPostUri,
           )
-          if (feedPost && AppBskyEmbedVideo.isView(feedPost.post.embed)) {
+          if (
+            feedPost &&
+            bsky.isType(app.bsky.embed.video.view, feedPost.post.embed)
+          ) {
             items.push({
               _reactKey: feedPost._reactKey,
               moderation: feedPost.moderation,
@@ -296,14 +295,14 @@ function Feed() {
       const prevPost = prevSlice?.post
       const prevEmbed = prevPost?.embed
       const prevVideo =
-        prevEmbed && AppBskyEmbedVideo.isView(prevEmbed)
+        prevEmbed && bsky.isType(app.bsky.embed.video.view, prevEmbed)
           ? prevEmbed.playlist
           : null
       const currSlice = videos.at(index)
       const currPost = currSlice?.post
       const currEmbed = currPost?.embed
       const currVideo =
-        currEmbed && AppBskyEmbedVideo.isView(currEmbed)
+        currEmbed && bsky.isType(app.bsky.embed.video.view, currEmbed)
           ? currEmbed.playlist
           : null
       const currVideoModeration = currSlice?.moderation
@@ -311,7 +310,7 @@ function Feed() {
       const nextPost = nextSlice?.post
       const nextEmbed = nextPost?.embed
       const nextVideo =
-        nextEmbed && AppBskyEmbedVideo.isView(nextEmbed)
+        nextEmbed && bsky.isType(app.bsky.embed.video.view, nextEmbed)
           ? nextEmbed.playlist
           : null
 
@@ -384,11 +383,10 @@ function Feed() {
         }
       }
 
-      if (
-        updatedSources[0]?.source !== currentSources[0]?.source ||
-        updatedSources[1]?.source !== currentSources[1]?.source ||
-        updatedSources[2]?.source !== currentSources[2]?.source
-      ) {
+      const sourcesChanged = [0, 1, 2].some(
+        i => updatedSources[i]?.source !== currentSources[i]?.source,
+      )
+      if (sourcesChanged) {
         setCurrentSources(updatedSources)
       }
     },
@@ -481,8 +479,8 @@ let VideoItem = ({
   reqId,
 }: {
   player?: VideoPlayer
-  post: AppBskyFeedDefs.PostView
-  embed: AppBskyEmbedVideo.View
+  post: app.bsky.feed.defs.PostView
+  embed: app.bsky.embed.video.View
   active: boolean
   adjacent: boolean
   scrollGesture: NativeGesture
@@ -495,9 +493,19 @@ let VideoItem = ({
   const {width, height} = useSafeAreaFrame()
   const {sendInteraction, feedDescriptor} = useFeedFeedbackContext()
   const hasTrackedView = useRef(false)
+  const hasTrackedVideoImpression = useRef(false)
 
   useEffect(() => {
     if (active) {
+      if (!hasTrackedVideoImpression.current) {
+        hasTrackedVideoImpression.current = true
+        ax.metric('video:impression', {
+          postUri: post.uri,
+          postAuthorDid: post.author.did,
+          context: 'immersiveFeed',
+          presentation: embed.presentation === 'gif' ? 'gif' : 'video',
+        })
+      }
       sendInteraction({
         item: post.uri,
         event: 'app.bsky.feed.defs#interactionSeen',
@@ -511,6 +519,7 @@ let VideoItem = ({
         ax.metric('post:view', {
           uri: post.uri,
           authorDid: post.author.did,
+          isReply: !!post.record.reply,
           logContext: 'ImmersiveVideo',
           feedDescriptor,
         })
@@ -521,6 +530,7 @@ let VideoItem = ({
     active,
     post.uri,
     post.author.did,
+    embed.presentation,
     feedContext,
     reqId,
     sendInteraction,
@@ -559,7 +569,12 @@ let VideoItem = ({
         <>
           <VideoItemPlaceholder embed={embed} />
           {shouldRenderVideo && player && (
-            <VideoItemInner player={player} embed={embed} active={active} />
+            <VideoItemInner
+              player={player}
+              embed={embed}
+              post={post}
+              active={active}
+            />
           )}
           {moderation && (
             <Overlay
@@ -589,16 +604,20 @@ VideoItem = memo(VideoItem)
 function VideoItemInner({
   player,
   embed,
+  post,
   active,
 }: {
   player: VideoPlayer
-  embed: AppBskyEmbedVideo.View
+  embed: app.bsky.embed.video.View
+  post: app.bsky.feed.defs.PostView
   active: boolean
 }) {
   const {bottom} = useSafeAreaInsets()
   const [isReady, setIsReady] = useState(!IS_ANDROID)
   const reportDialogMetadata =
     ReportDialogMetadataContext.useReportDialogMetadataContext()
+  const ax = useAnalytics()
+  const playbackStartTrackedRef = useRef(false)
 
   usePlaybackTelemetry({player, active, playlist: embed.playlist})
 
@@ -618,6 +637,20 @@ function VideoItemInner({
       evt.currentTime >= 0
     ) {
       reportDialogMetadata.current.videoTimestampSeconds = evt.currentTime
+    }
+    if (
+      active &&
+      !playbackStartTrackedRef.current &&
+      hasPlaybackStarted(evt.currentTime)
+    ) {
+      playbackStartTrackedRef.current = true
+      ax.metric('video:playback:start', {
+        postUri: post.uri,
+        postAuthorDid: post.author.did,
+        context: 'immersiveFeed',
+        presentation: embed.presentation === 'gif' ? 'gif' : 'video',
+        autoplay: true,
+      })
     }
   })
 
@@ -661,10 +694,12 @@ function usePlaybackTelemetry({
 
   useEffect(() => {
     if (!active) return
-    telemetryRef.current ??= createPlaybackTelemetry({
-      surface: 'immersiveFeed',
-      presentation: 'video',
-    })
+    if (telemetryRef.current == null) {
+      telemetryRef.current = createPlaybackTelemetry({
+        surface: 'immersiveFeed',
+        presentation: 'video',
+      })
+    }
     const telemetry = telemetryRef.current
     const preloaded = player.status === 'readyToPlay'
     telemetry.activated({preloaded})
@@ -709,7 +744,7 @@ function ModerationOverlay({
   embed,
   onPressShow,
 }: {
-  embed: AppBskyEmbedVideo.View
+  embed: app.bsky.embed.video.View
   onPressShow: () => void
 }) {
   const {t: l} = useLingui()
@@ -807,8 +842,8 @@ function Overlay({
   reqId,
 }: {
   player?: VideoPlayer
-  post: Shadow<AppBskyFeedDefs.PostView>
-  embed: AppBskyEmbedVideo.View
+  post: Shadow<app.bsky.feed.defs.PostView>
+  embed: app.bsky.embed.video.View
   active: boolean
   scrollGesture: NativeGesture
   moderation: ModerationDecision
@@ -829,15 +864,12 @@ function Overlay({
   )
 
   const rkey = new AtUri(post.uri).rkey
-  const record = bsky.dangerousIsType<AppBskyFeedPost.Record>(
-    post.record,
-    AppBskyFeedPost.isRecord,
-  )
+  const record = bsky.isType(app.bsky.feed.post, post.record)
     ? post.record
     : undefined
   const richText = new RichTextAPI({
     text: record?.text || '',
-    facets: asSdkFacets(record?.facets),
+    facets: record?.facets,
   })
   const handle = sanitizeHandle(post.author.handle, '@')
 
@@ -1092,7 +1124,7 @@ function VideoItemPlaceholder({
   style,
   blur,
 }: {
-  embed: AppBskyEmbedVideo.View
+  embed: app.bsky.embed.video.View
   style?: ImageStyle
   blur?: boolean
 }) {
@@ -1133,7 +1165,7 @@ function PlayPauseTapArea({
   reqId,
 }: {
   player: VideoPlayer
-  post: Shadow<AppBskyFeedDefs.PostView>
+  post: Shadow<app.bsky.feed.defs.PostView>
   feedContext: string | undefined
   reqId: string | undefined
 }) {
@@ -1275,7 +1307,9 @@ function EndMessage() {
 /*
  * If the video is taller than 9:16
  */
-function isTallAspectRatio(aspectRatio: AppBskyEmbedVideo.View['aspectRatio']) {
+function isTallAspectRatio(
+  aspectRatio: app.bsky.embed.video.View['aspectRatio'],
+) {
   const videoAspectRatio =
     (aspectRatio?.width ?? 1) / (aspectRatio?.height ?? 1)
   return videoAspectRatio <= 9 / 16

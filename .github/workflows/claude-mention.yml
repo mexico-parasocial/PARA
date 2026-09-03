@@ -54,13 +54,13 @@ jobs:
       cancel-in-progress: false
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
 
       - name: 🤖 Claude
-        uses: anthropics/claude-code-action@1623c36729ac1cd5895198cded705a287de7db79 # v1.0.187
+        uses: anthropics/claude-code-action@e5ad3c7725bc2459721893f88879fef9dbcf97b0 # v1.0.202
         env:
           ANTHROPIC_BASE_URL: https://agentgateway.k1.prod.bsky.dev
         with:

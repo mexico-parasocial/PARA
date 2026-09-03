@@ -1,5 +1,6 @@
 import {type AppBskyActorDefs, nuxSchema} from '@atproto/api'
 
+import {logger} from '#/logger'
 import {
   type AppNux,
   type Nux,
@@ -16,7 +17,16 @@ export function parseAppNux(nux: AppBskyActorDefs.Nux): AppNux | undefined {
   const schema = NuxSchemas[nux.id as Nux]
 
   if (schema && data) {
-    const parsedData = JSON.parse(data)
+    // `data` is a server-controlled string, don't let a malformed value throw
+    let parsedData: unknown
+    try {
+      parsedData = JSON.parse(data)
+    } catch (e) {
+      logger.error(`nuxs: failed to parse data for nux "${nux.id}"`, {
+        message: e,
+      })
+      return
+    }
 
     if (!schema.safeParse(parsedData).success) return
 

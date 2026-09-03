@@ -5,7 +5,7 @@ import * as Contacts from 'expo-contacts'
 import {type Un$Typed} from '@atproto/lex'
 import {type Client} from '@atproto/lex'
 import {toDatetimeString} from '@atproto/syntax'
-import {upsertProfile} from '@bsky.app/sdk'
+import {upsertProfile} from '@bsky/sdk'
 import {msg, t} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -28,7 +28,6 @@ import * as Layout from '#/components/Layout'
 import {Loader} from '#/components/Loader'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
-import {useAnalytics} from '#/analytics'
 import {app} from '#/lexicons'
 import {
   contactsWithPhoneNumbersOnly,
@@ -53,7 +52,6 @@ export function GetContacts({
   context: 'Onboarding' | 'Standalone'
 }) {
   const {_} = useLingui()
-  const ax = useAnalytics()
   const pdsClient = usePdsClient()
   const appviewClient = useAppviewClient()
   const insets = useSafeAreaInsets()

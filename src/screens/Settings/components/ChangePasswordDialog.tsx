@@ -104,9 +104,8 @@ function Inner() {
         })
         setError(cleanError(e))
       }
-    } finally {
-      setIsProcessing(false)
     }
+    setIsProcessing(false)
   }
 
   const onChangePassword = async () => {
@@ -153,9 +152,8 @@ function Inner() {
         logger.error('Failed to set new password', {safeMessage: String(e)})
         setError(cleanError(e))
       }
-    } finally {
-      setIsProcessing(false)
     }
+    setIsProcessing(false)
   }
 
   const onBlur = () => {

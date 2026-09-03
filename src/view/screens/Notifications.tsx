@@ -1,6 +1,10 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {View} from 'react-native'
-import {useDerivedValue, withSpring} from 'react-native-reanimated'
+import {
+  Reanimated3DefaultSpringConfig,
+  useDerivedValue,
+  withSpring,
+} from 'react-native-reanimated'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -22,7 +26,6 @@ import {
   useUnreadNotificationsApi,
 } from '#/state/queries/notifications/unread'
 import {truncateAndInvalidate} from '#/state/queries/util'
-import {useMinimalShellMode} from '#/state/shell'
 import {NotificationFeed} from '#/view/com/notifications/NotificationFeed'
 import {Pager, type RenderTabBarFnProps} from '#/view/com/pager/Pager'
 import {TabBar as NativeTabBar} from '#/view/com/pager/TabBar'
@@ -30,7 +33,11 @@ import {TabBar as WebTabBar} from '#/view/com/pager/TabBar.web'
 import {FAB} from '#/view/com/util/fab/FAB'
 import {type ListMethods} from '#/view/com/util/List'
 import {LoadLatestBtn} from '#/view/com/util/load-latest/LoadLatestBtn'
-import {MainScrollProvider} from '#/view/com/util/MainScrollProvider'
+import {
+  HomeHeaderModeProvider,
+  MainScrollProvider,
+  useHomeHeaderMode,
+} from '#/view/com/util/MainScrollProvider'
 import {atoms as a, useTheme, web} from '#/alf'
 import {Admonition} from '#/components/Admonition'
 import {ButtonIcon} from '#/components/Button'
@@ -147,24 +154,26 @@ export function NotificationsScreen({}: Props) {
           </Link>
         </Layout.Header.Slot>
       </Layout.Header.Outer>
-      <Pager
-        onPageSelected={onPageSelected}
-        renderTabBar={props => (
-          <Layout.Center style={[a.z_10, web([a.sticky, {top: 0}])]}>
-            <View style={[a.flex_row, a.align_center, t.atoms.bg]}>
-              <NotificationTabsWithChat
-                props={props}
-                allLabel={sections[0].title}
-                mentionsLabel={sections[1].title}
-              />
-            </View>
-          </Layout.Center>
-        )}
-        initialPage={initialActiveTab}>
-        {sections.map((section, i) => (
-          <View key={i}>{section.component}</View>
-        ))}
-      </Pager>
+      <HomeHeaderModeProvider>
+        <Pager
+          onPageSelected={onPageSelected}
+          renderTabBar={props => (
+            <Layout.Center style={[a.z_10, web([a.sticky, {top: 0}])]}>
+              <View style={[a.flex_row, a.align_center, t.atoms.bg]}>
+                <NotificationTabsWithChat
+                  props={props}
+                  allLabel={sections[0].title}
+                  mentionsLabel={sections[1].title}
+                />
+              </View>
+            </Layout.Center>
+          )}
+          initialPage={initialActiveTab}>
+          {sections.map((section, i) => (
+            <View key={i}>{section.component}</View>
+          ))}
+        </Pager>
+      </HomeHeaderModeProvider>
       <FAB
         testID="composeFAB"
         onPress={() => openComposer({})}
@@ -338,10 +347,15 @@ function NotificationsTab({
   const {_} = useLingui()
   const scrollElRef = useRef<ListMethods>(null)
   const [isScrolledDown, setIsScrolledDown] = useState(false)
-  const {headerMode} = useMinimalShellMode()
+  const headerMode = useHomeHeaderMode()
   const showHeader = useCallback(() => {
     'worklet'
-    headerMode.set(withSpring(0, {overshootClamping: true}))
+    headerMode.set(
+      withSpring(0, {
+        ...Reanimated3DefaultSpringConfig,
+        overshootClamping: true,
+      }),
+    )
   }, [headerMode])
   const queryClient = useQueryClient()
   const isScreenFocused = useIsFocused()
@@ -421,7 +435,7 @@ function NotificationsTab({
           ListHeaderComponent={
             filter === 'mentions' ? (
               <DisabledNotificationsWarning active={isFocusedAndActive} />
-            ) : null
+            ) : undefined
           }
         />
       </MainScrollProvider>

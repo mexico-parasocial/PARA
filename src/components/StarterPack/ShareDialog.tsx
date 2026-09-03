@@ -11,8 +11,8 @@ import {getStarterPackOgCard} from '#/lib/strings/starter-pack'
 import {logger} from '#/logger'
 import {atoms as a, useBreakpoints, useTheme} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
-import {type DialogControlProps} from '#/components/Dialog'
 import * as Dialog from '#/components/Dialog'
+import {type DialogControlProps} from '#/components/Dialog'
 import {ChainLink_Stroke2_Corner0_Rounded as ChainLinkIcon} from '#/components/icons/ChainLink'
 import {Download_Stroke2_Corner0_Rounded as DownloadIcon} from '#/components/icons/Download'
 import {QrCode_Stroke2_Corner0_Rounded as QrCodeIcon} from '#/components/icons/QrCode'
@@ -52,14 +52,15 @@ function ShareDialogInner({
 
   const imageUrl = getStarterPackOgCard(starterPack)
 
-  const onShareLink = async () => {
+  const onShareLink = () => {
     if (!link) return
-    shareUrl(link)
     logger.metric('starterPack:share', {
       starterPack: starterPack.uri,
       shareType: 'link',
     })
-    control.close()
+    control.close(() => {
+      void shareUrl(link)
+    })
   }
 
   const saveImageToAlbum = useSaveImageToMediaLibrary()

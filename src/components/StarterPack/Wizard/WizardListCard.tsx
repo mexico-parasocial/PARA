@@ -1,12 +1,15 @@
 import {Keyboard, View} from 'react-native'
-import {type AppBskyActorDefs, type AppBskyFeedDefs} from '@atproto/api'
-import {type ModerationOpts, type ModerationUI} from '@bsky.app/sdk/moderation'
+import {
+  moderateFeedGenerator,
+  moderateProfile,
+  type ModerationOpts,
+  type ModerationUI,
+} from '@bsky/sdk/moderation'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
 import {DISCOVER_FEED_URI, STARTER_PACK_MAX_SIZE} from '#/lib/constants'
-import {moderateFeedGenerator, moderateProfile} from '#/lib/moderation/subjects'
 import {sanitizeDisplayName} from '#/lib/strings/display-names'
 import {sanitizeHandle} from '#/lib/strings/handles'
 import {useSession} from '#/state/session'
@@ -21,6 +24,7 @@ import * as Toggle from '#/components/forms/Toggle'
 import {Checkbox} from '#/components/forms/Toggle'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
+import {type app} from '#/lexicons'
 import type * as bsky from '#/types/bsky'
 
 function WizardListCard({
@@ -32,18 +36,20 @@ function WizardListCard({
   avatar,
   included,
   disabled,
+  subjectOptedOut,
   moderationUi,
 }: {
   type: 'user' | 'algo'
   btnType: 'checkbox' | 'remove'
-  profile?: AppBskyActorDefs.ProfileViewBasic
-  feed?: AppBskyFeedDefs.GeneratorView
+  profile?: app.bsky.actor.defs.ProfileViewBasic
+  feed?: app.bsky.feed.defs.GeneratorView
   displayName: string
   subtitle: string
   onPress: () => void
   avatar?: string
   included?: boolean
   disabled?: boolean
+  subjectOptedOut?: boolean
   moderationUi: ModerationUI
 }) {
   const t = useTheme()
@@ -93,6 +99,11 @@ function WizardListCard({
           numberOfLines={1}>
           {subtitle}
         </Text>
+        {subjectOptedOut ? (
+          <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
+            <Trans>Opted out</Trans>
+          </Text>
+        ) : null}
       </View>
       {btnType === 'checkbox' ? (
         <Checkbox />
@@ -119,12 +130,14 @@ export function WizardProfileCard({
   dispatch,
   profile,
   moderationOpts,
+  subjectOptedOut = false,
 }: {
   btnType: 'checkbox' | 'remove'
   state: WizardState
   dispatch: (action: WizardAction) => void
   profile: bsky.profile.AnyProfileView
   moderationOpts: ModerationOpts
+  subjectOptedOut?: boolean
 }) {
   const ax = useAnalytics()
   const {currentAccount} = useSession()
@@ -134,7 +147,9 @@ export function WizardProfileCard({
   const isTarget = profile.did === targetProfileDid
   const included = isTarget || state.profiles.some(p => p.did === profile.did)
   const disabled =
-    isTarget || (!included && state.profiles.length >= STARTER_PACK_MAX_SIZE)
+    subjectOptedOut ||
+    isTarget ||
+    (!included && state.profiles.length >= STARTER_PACK_MAX_SIZE)
   const moderationUi = moderateProfile(profile, moderationOpts).ui('avatar')
   const displayName = profile.displayName
     ? sanitizeDisplayName(profile.displayName)
@@ -165,6 +180,7 @@ export function WizardProfileCard({
       avatar={profile.avatar}
       included={included}
       disabled={disabled}
+      subjectOptedOut={subjectOptedOut}
       moderationUi={moderationUi}
     />
   )
@@ -178,7 +194,7 @@ export function WizardFeedCard({
   moderationOpts,
 }: {
   btnType: 'checkbox' | 'remove'
-  generator: AppBskyFeedDefs.GeneratorView
+  generator: app.bsky.feed.defs.GeneratorView
   state: WizardState
   dispatch: (action: WizardAction) => void
   moderationOpts: ModerationOpts

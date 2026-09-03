@@ -4,7 +4,7 @@ import {
   type AppBskyFeedDefs,
   AppBskyFeedPost,
 } from '@atproto/api'
-import {type ModerationCause, type ModerationUI} from '@bsky.app/sdk/moderation'
+import {type ModerationCause, type ModerationUI} from '@bsky/sdk/moderation'
 
 import {unique} from '#/lib/moderation'
 import {type AppModerationCause} from '#/components/Pills'

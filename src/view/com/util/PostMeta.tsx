@@ -1,7 +1,7 @@
 import {memo, useCallback} from 'react'
 import {type StyleProp, View, type ViewStyle} from 'react-native'
 import {type AppBskyActorDefs} from '@atproto/api'
-import {type ModerationDecision} from '@bsky.app/sdk/moderation'
+import {type ModerationDecision} from '@bsky/sdk/moderation'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {useQueryClient} from '@tanstack/react-query'

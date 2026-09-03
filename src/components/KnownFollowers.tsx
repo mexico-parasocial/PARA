@@ -1,7 +1,7 @@
 import {useRef} from 'react'
 import {View} from 'react-native'
 import {type AppBskyActorDefs} from '@atproto/api'
-import {type ModerationOpts} from '@bsky.app/sdk/moderation'
+import {type ModerationOpts} from '@bsky/sdk/moderation'
 import {Plural, Trans, useLingui} from '@lingui/react/macro'
 
 import {moderateProfile} from '#/lib/moderation/subjects'

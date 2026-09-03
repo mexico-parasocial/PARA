@@ -1,6 +1,7 @@
 import {useCallback, useEffect, useState} from 'react'
 import {MMKV} from 'react-native-mmkv'
 
+import {logger} from '#/logger'
 import {type Account, type Device} from '#/storage/schema'
 
 export * from '#/storage/schema'
@@ -42,8 +43,18 @@ export class Storage<Scopes extends unknown[], Schema> {
   ): Schema[Key] | undefined {
     const res = this.store.getString(scopes.join(this.sep))
     if (!res) return undefined
-    // parsed from storage structure `{ data: <value> }`
-    return JSON.parse(res).data
+    try {
+      // parsed from storage structure `{ data: <value> }`
+      return JSON.parse(res).data
+    } catch (e) {
+      // a corrupt value should degrade to "not set", never crash the caller
+      // (this runs inside `useStorage`'s state initializer, i.e. during render)
+      logger.error(
+        `storage: failed to parse value for key "${scopes.join(this.sep)}"`,
+        {message: e},
+      )
+      return undefined
+    }
   }
 
   /**

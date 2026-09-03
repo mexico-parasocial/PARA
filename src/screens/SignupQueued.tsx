@@ -60,9 +60,8 @@ export function SignupQueued() {
       }
     } catch (e: unknown) {
       logger.error('Failed to check signup queue', {err: String(e)})
-    } finally {
-      setProcessing(false)
     }
+    setProcessing(false)
   }, [
     setProcessing,
     setEstimatedTime,

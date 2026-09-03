@@ -4,7 +4,7 @@ import {
   type AppBskyFeedPost,
   type AppBskyFeedThreadgate,
 } from '@atproto/api'
-import {type RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
+import {type RichText as RichTextAPI} from '@bsky/sdk/richtext'
 
 import {type Shadow} from '#/state/cache/post-shadow'
 

@@ -2,7 +2,7 @@ import {useState} from 'react'
 import {View} from 'react-native'
 import {Image} from 'expo-image'
 import {type ChatBskyGroupDefs} from '@atproto/api'
-import {type ModerationOpts} from '@bsky.app/sdk/moderation'
+import {type ModerationOpts} from '@bsky/sdk/moderation'
 import {Plural, Trans, useLingui} from '@lingui/react/macro'
 
 import {useOpenComposer} from '#/lib/hooks/useOpenComposer'

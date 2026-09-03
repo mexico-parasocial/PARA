@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from 'react'
+import {useEffect, useState} from 'react'
 import {AppState, type AppStateStatus} from 'react-native'
 import {createAsyncStoragePersister} from '@tanstack/query-async-storage-persister'
 import {
@@ -159,15 +159,29 @@ function isAuthError(error: unknown): boolean {
 }
 
 /**
- * Backends deliberately answer 501 for features whose backing service isn't
- * part of the current deployment (e.g. IRIS suggestions/topics in local dev).
- * These are expected, not actionable, so they must not red-box the app.
+ * Backends deliberately decline features whose backing service isn't part of
+ * the current deployment (e.g. IRIS suggestions/topics in local dev): the
+ * AppView answers 501 `MethodNotImplemented`, and the suggestions-agent stub
+ * answers 404 `XRPCNotSupported`. These are expected, not actionable, so they
+ * must not red-box the app.
  */
-function isMethodNotImplemented(error: unknown): boolean {
+function isUnsupportedMethodError(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false
-  const {name, message} = error as {name?: unknown; message?: unknown}
+  const {
+    name,
+    message,
+    error: errorCode,
+  } = error as {
+    name?: unknown
+    message?: unknown
+    error?: unknown
+  }
   if (name === 'MethodNotImplementedError') return true
-  return typeof message === 'string' && /methodnotimplemented/i.test(message)
+  if (errorCode === 'XRPCNotSupported') return true
+  return (
+    typeof message === 'string' &&
+    /methodnotimplemented|xrpc ?not ?supported/i.test(message)
+  )
 }
 
 let reportedAuthFailure = false
@@ -189,9 +203,9 @@ const createQueryClient = () =>
           })
           return
         }
-        if (isMethodNotImplemented(error)) {
-          logger.warn('query: method not implemented by server', {
-            safeMessage: 'method not implemented',
+        if (isUnsupportedMethodError(error)) {
+          logger.warn('query: method not supported by server', {
+            safeMessage: 'method not supported',
             queryKey: String(query.queryKey[0]),
           })
           return
@@ -256,8 +270,8 @@ function QueryProviderInner({
   children: React.ReactNode
   currentDid: string | undefined
 }) {
-  const initialDid = useRef(currentDid)
-  if (currentDid !== initialDid.current) {
+  const [initialDid] = useState(currentDid)
+  if (currentDid !== initialDid) {
     throw Error(
       'Something is very wrong. Expected did to be stable due to key above.',
     )

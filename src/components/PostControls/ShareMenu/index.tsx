@@ -6,7 +6,7 @@ import {
   type AppBskyFeedThreadgate,
   AtUri,
 } from '@atproto/api'
-import {type RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
+import {type RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 
@@ -19,8 +19,8 @@ import {useFeedFeedbackContext} from '#/state/feed-feedback'
 import {EventStopper} from '#/view/com/util/EventStopper'
 import {native} from '#/alf'
 import {ArrowShareRight_Stroke2_Corner2_Rounded as ArrowShareRightIcon} from '#/components/icons/ArrowShareRight'
-import {useMenuControl} from '#/components/Menu'
 import * as Menu from '#/components/Menu'
+import {useMenuControl} from '#/components/Menu'
 import {PostControlButton, PostControlButtonIcon} from '../PostControlButton'
 import {ShareMenuItems} from './ShareMenuItems'
 

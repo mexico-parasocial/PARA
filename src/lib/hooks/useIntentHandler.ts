@@ -19,6 +19,12 @@ type IntentType = 'compose' | 'verify-email' | 'age-assurance' | 'apply-ota'
 
 const VALID_IMAGE_REGEX = /^[\w.:\-_/]+\|\d+(\.\d+)?\|\d+(\.\d+)?$/
 
+// For some security, we're going to reject any video uri that is external. We don't want someone to
+// be able to provide some link like "bluesky://intent/compose?videoUri=https://IHaveYourIpNow.com/video.mp4
+// and we fetch that video. The legit senders (iOS share extension, Android intent) hand us a local
+// file: either a `file://` URI or an absolute path, never a remote scheme.
+const VALID_VIDEO_URI_REGEX = /^(file:\/\/\/.+|\/.+)\|\d+(\.\d+)?\|\d+(\.\d+)?$/
+
 // This needs to stay outside of react to persist between account switches
 let previousIntentUrl = ''
 
@@ -133,7 +139,9 @@ export function useComposeIntent() {
       closeAllActiveElements()
 
       // Whenever a video URI is present, we don't support adding images right now.
-      if (videoUri) {
+      // There are no legit web senders, so the video path is native-only, and the
+      // URI must be local (see VALID_VIDEO_URI_REGEX above for why).
+      if (IS_NATIVE && videoUri && VALID_VIDEO_URI_REGEX.test(videoUri)) {
         const [uri, width, height] = videoUri.split('|')
         openComposer({
           text: text ?? undefined,
@@ -191,7 +199,13 @@ export function useGroupChatJoinIntent() {
         control.open()
       })
     },
-    [closeAllActiveElements, hasSession, control, setState, prefetchJoinLinkPreviews],
+    [
+      closeAllActiveElements,
+      hasSession,
+      control,
+      setState,
+      prefetchJoinLinkPreviews,
+    ],
   )
 }
 

@@ -1,9 +1,5 @@
 import {type PropsWithChildren, useCallback, useEffect, useState} from 'react'
-import {
-  AccessibilityInfo,
-  Image as RNImage,
-  View,
-} from 'react-native'
+import {AccessibilityInfo, Image as RNImage, View} from 'react-native'
 import Animated, {
   Easing,
   interpolate,
@@ -51,7 +47,6 @@ export function Splash(props: PropsWithChildren<Props>) {
     isImageLoaded &&
     isLayoutReady &&
     reduceMotion !== undefined
-
 
   const isDarkMode = t.name !== 'light'
   const logoBg = t.atoms.bg.backgroundColor
@@ -133,13 +128,13 @@ export function Splash(props: PropsWithChildren<Props>) {
     if (isReady) {
       SplashScreen.hideAsync()
         .then(() => {
-          intro.set(() =>
+          intro.set(
             withTiming(
               1,
               {duration: 400, easing: Easing.out(Easing.cubic)},
               () => {
                 'worklet'
-                outroLogo.set(() =>
+                outroLogo.set(
                   withTiming(
                     1,
                     {duration: 1200, easing: Easing.in(Easing.cubic)},
@@ -148,13 +143,13 @@ export function Splash(props: PropsWithChildren<Props>) {
                     },
                   ),
                 )
-                outroApp.set(() =>
+                outroApp.set(
                   withTiming(1, {
                     duration: 1200,
                     easing: Easing.inOut(Easing.cubic),
                   }),
                 )
-                outroAppOpacity.set(() =>
+                outroAppOpacity.set(
                   withTiming(1, {
                     duration: 1200,
                     easing: Easing.in(Easing.cubic),

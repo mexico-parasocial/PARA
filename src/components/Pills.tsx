@@ -1,7 +1,7 @@
 import {useMemo} from 'react'
 import {View} from 'react-native'
 import {BSKY_LABELER_DID} from '@atproto/api'
-import {type ModerationCause} from '@bsky.app/sdk/moderation'
+import {type ModerationCause} from '@bsky/sdk/moderation'
 import {Trans, useLingui} from '@lingui/react/macro'
 
 import {useModerationCauseDescription} from '#/lib/moderation/useModerationCauseDescription'

@@ -5,7 +5,7 @@ import {
   type AppBskyFeedThreadgate,
   AtUri,
 } from '@atproto/api'
-import {RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
+import {RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {Trans} from '@lingui/react/macro'
 
 import {useActorStatus} from '#/lib/actor-status'

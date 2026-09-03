@@ -14,7 +14,7 @@ import {type ReasonFeedSource} from './feed/types'
 export type FeedPostNumbering = Pick<
   app.bsky.unspecced.defs.ThreadItemPost,
   'opThreadPostIndex' | 'opThreadPostCount'
-> 
+>
 
 type ValidFeedPostNumbering = Required<FeedPostNumbering>
 
@@ -69,7 +69,7 @@ export type FeedTunerFn = (
 type FeedSliceItem = {
   post: AppBskyFeedDefs.PostView
   record: AppBskyFeedPost.Record
-  postNumbering: FeedPostNumbering | undefined
+  postNumbering: ValidFeedPostNumbering | undefined
   parentAuthor: AppBskyActorDefs.ProfileViewBasic | undefined
   isParentBlocked: boolean
   isParentNotFound: boolean
@@ -95,7 +95,7 @@ export class FeedViewPostsSlice {
 
   constructor(
     feedPost: FeedViewPost,
-    postNumberingByUri: Map<string, FeedPostNumbering>,
+    postNumberingByUri: Map<string, ValidFeedPostNumbering>,
   ) {
     const {post, reply, reason} = feedPost
     this.items = []
@@ -298,6 +298,22 @@ export class FeedViewPostsSlice {
   }
 }
 
+export function createFeedViewPostsSlices(
+  feed: FeedViewPost[],
+): FeedViewPostsSlice[] {
+  const postNumberingByUri = new Map<string, ValidFeedPostNumbering>()
+  for (const item of feed) {
+    const postNumbering = getPostNumbering(item)
+    if (postNumbering) {
+      postNumberingByUri.set(item.post.uri, postNumbering)
+    }
+  }
+
+  return feed
+    .map(item => new FeedViewPostsSlice(item, postNumberingByUri))
+    .filter(slice => slice.items.length > 0 || slice.isFallbackMarker)
+}
+
 export class FeedTuner {
   seenKeys: Set<string> = new Set()
   seenUris: Set<string> = new Set()
@@ -311,17 +327,7 @@ export class FeedTuner {
       dryRun: false,
     },
   ): FeedViewPostsSlice[] {
-    const postNumberingByUri = new Map<string, FeedPostNumbering>()
-    for (const item of feed) {
-      const postNumbering = getPostNumbering(item)
-      if (postNumbering) {
-        postNumberingByUri.set(item.post.uri, postNumbering)
-      }
-    }
-
-  let slices: FeedViewPostsSlice[] = feed
-    .map(item => new FeedViewPostsSlice(item, postNumberingByUri))
-    .filter(s => s.items.length > 0 || s.isFallbackMarker)
+    let slices = createFeedViewPostsSlices(feed)
 
     // run the custom tuners
     for (const tunerFn of this.tunerFns) {

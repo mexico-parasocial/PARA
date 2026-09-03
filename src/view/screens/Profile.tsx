@@ -1,10 +1,14 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {StyleSheet} from 'react-native'
-import {withSpring} from 'react-native-reanimated'
+import {
+  Reanimated3DefaultSpringConfig,
+  withSpring,
+} from 'react-native-reanimated'
 import {SafeAreaView} from 'react-native-safe-area-context'
+import {ScrollForwarderView} from 'react-native-scroll-forwarder'
 import {type AppBskyActorDefs} from '@atproto/api'
-import {type ModerationOpts} from '@bsky.app/sdk/moderation'
-import {RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
+import {type ModerationOpts} from '@bsky/sdk/moderation'
+import {RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -34,13 +38,16 @@ import {resetProfilePostsQueries} from '#/state/queries/post-feed'
 import {useProfileQuery} from '#/state/queries/profile'
 import {useResolveDidQuery} from '#/state/queries/resolve-uri'
 import {useAppviewClient, useSession} from '#/state/session'
-import {useMinimalShellMode} from '#/state/shell'
 import {ProfileFeedgens} from '#/view/com/feeds/ProfileFeedgens'
 import {ProfileLists} from '#/view/com/lists/ProfileLists'
 import {PagerWithHeader} from '#/view/com/pager/PagerWithHeader'
 import {ErrorScreen} from '#/view/com/util/error/ErrorScreen'
 import {FAB} from '#/view/com/util/fab/FAB'
 import {type ListRef} from '#/view/com/util/List'
+import {
+  HomeHeaderModeProvider,
+  useHomeHeaderMode,
+} from '#/view/com/util/MainScrollProvider'
 import {ProfileHeader, ProfileHeaderLoading} from '#/screens/Profile/Header'
 import {ProfileFeedSection} from '#/screens/Profile/Sections/Feed'
 import {ProfileHighlightsSection} from '#/screens/Profile/Sections/Highlights'
@@ -57,7 +64,6 @@ import {VideoClip_Stroke1_Corner0_Rounded as VideoIcon} from '#/components/icons
 import * as Layout from '#/components/Layout'
 import {ScreenHider} from '#/components/moderation/ScreenHider'
 import {navigate} from '#/Navigation'
-import {ScrollForwarderView} from 'react-native-scroll-forwarder'
 
 interface SectionRef {
   scrollToTop: () => void
@@ -142,12 +148,14 @@ function ProfileScreenInner({route}: Props) {
   }
   if (profile && moderationOpts) {
     return (
-      <ProfileScreenLoaded
-        profile={profile}
-        moderationOpts={moderationOpts}
-        isPlaceholderProfile={isPlaceholderProfile}
-        hideBackButton={!!route.params.hideBackButton}
-      />
+      <HomeHeaderModeProvider>
+        <ProfileScreenLoaded
+          profile={profile}
+          moderationOpts={moderationOpts}
+          isPlaceholderProfile={isPlaceholderProfile}
+          hideBackButton={!!route.params.hideBackButton}
+        />
+      </HomeHeaderModeProvider>
     )
   }
   // should never happen
@@ -178,10 +186,15 @@ function ProfileScreenLoaded({
   const t = useTheme()
   const profile = useProfileShadow(profileUnshadowed)
   const {hasSession, currentAccount} = useSession()
-  const {headerMode} = useMinimalShellMode()
+  const headerMode = useHomeHeaderMode()
   const showHeader = useCallback(() => {
     'worklet'
-    headerMode.set(withSpring(0, {overshootClamping: true}))
+    headerMode.set(
+      withSpring(0, {
+        ...Reanimated3DefaultSpringConfig,
+        overshootClamping: true,
+      }),
+    )
   }, [headerMode])
   const {openComposer} = useOpenComposer()
   const {
@@ -289,12 +302,9 @@ function ProfileScreenLoaded({
   const showListsTab = hasSession && (isMe || listCount > 0)
 
   // Visibility tabs: read from owner's ParaIdentity record so the switch actually works
-  const showVotesTab =
-    isMe || (paraIdentity?.publicVotes ?? false)
-  const showRaqTab =
-    isMe || (paraIdentity?.publicRaq ?? false)
-  const showHighlightsTab =
-    isMe || (paraIdentity?.publicHighlights ?? false)
+  const showVotesTab = isMe || (paraIdentity?.publicVotes ?? false)
+  const showRaqTab = isMe || (paraIdentity?.publicRaq ?? false)
+  const showHighlightsTab = isMe || (paraIdentity?.publicHighlights ?? false)
   const isPajareoEnabled = usePajareoEnabled()
   const showPajareoTab =
     isPajareoEnabled && representativeProfile?.status === 'verified'

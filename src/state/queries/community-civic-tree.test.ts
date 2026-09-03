@@ -6,6 +6,7 @@ import {
   didContributionBecomeApproved,
   getCommunityCivicTreeContributionsQueryKey,
   getCommunityCivicTreeGraphQueryKey,
+  isCommunityCivicTreeGraphResponse,
   normalizeCommunityCivicTreeGraph,
 } from './community-civic-tree'
 import {
@@ -15,11 +16,9 @@ import {
 
 describe('community civic tree v2 queries', () => {
   it('uses community-scoped query keys', () => {
-    expect(getCommunityCivicTreeGraphQueryKey('at://did:example:alice/app/1')).toEqual([
-      'community-civic-tree',
-      'graph',
-      'at://did:example:alice/app/1',
-    ])
+    expect(
+      getCommunityCivicTreeGraphQueryKey('at://did:example:alice/app/1'),
+    ).toEqual(['community-civic-tree', 'graph', 'at://did:example:alice/app/1'])
     expect(
       getCommunityCivicTreeContributionsQueryKey(
         'at://did:example:alice/app/1',
@@ -40,7 +39,8 @@ describe('community civic tree v2 queries', () => {
       nodes: [
         {
           id: 'card-1',
-          community_uri: 'at://did:example:community/com.para.community.board/1',
+          community_uri:
+            'at://did:example:community/com.para.community.board/1',
           author_did: 'did:example:alice',
           title: 'Transit should be safer',
           content: 'Protected lanes reduce injuries.',
@@ -55,7 +55,8 @@ describe('community civic tree v2 queries', () => {
       edges: [
         {
           id: 'rel-1',
-          community_uri: 'at://did:example:community/com.para.community.board/1',
+          community_uri:
+            'at://did:example:community/com.para.community.board/1',
           source_card_id: 'card-1',
           target_card_id: 'card-2',
           relationship_type: 'supports',
@@ -69,7 +70,8 @@ describe('community civic tree v2 queries', () => {
       nodes: [
         {
           id: 'card-1',
-          community_uri: 'at://did:example:community/com.para.community.board/1',
+          community_uri:
+            'at://did:example:community/com.para.community.board/1',
           author_did: 'did:example:alice',
           title: 'Transit should be safer',
           content: 'Protected lanes reduce injuries.',
@@ -90,6 +92,38 @@ describe('community civic tree v2 queries', () => {
         },
       ],
     })
+  })
+
+  it('normalizes raw source/target edges from the data plane', () => {
+    const graph = {
+      nodes: [],
+      edges: [
+        {
+          id: 'rel-1',
+          source: 'card-1',
+          target: 'card-2',
+          relationship_type: 'supports',
+        },
+      ],
+    } as unknown as CommunityCivicTreeGraph
+
+    expect(normalizeCommunityCivicTreeGraph(graph).edges).toEqual([
+      {
+        id: 'rel-1',
+        source: 'card-1',
+        target: 'card-2',
+        relationship_type: 'supports',
+      },
+    ])
+  })
+
+  it('rejects malformed graph responses instead of crashing on shape drift', () => {
+    expect(isCommunityCivicTreeGraphResponse({nodes: [], edges: []})).toBe(true)
+    expect(isCommunityCivicTreeGraphResponse(null)).toBe(false)
+    expect(isCommunityCivicTreeGraphResponse({nodes: []})).toBe(false)
+    expect(isCommunityCivicTreeGraphResponse({nodes: 'x', edges: []})).toBe(
+      false,
+    )
   })
 
   it('detects approved contributions that should highlight a new card', () => {

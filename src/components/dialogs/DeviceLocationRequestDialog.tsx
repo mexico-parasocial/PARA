@@ -95,9 +95,8 @@ function DeviceLocationRequestDialogInner({onLocationAcquired}: Props) {
           safeMessage: e instanceof Error ? e.message : String(e),
         })
       }
-    } finally {
-      setIsRequesting(false)
     }
+    setIsRequesting(false)
   }
 
   return (

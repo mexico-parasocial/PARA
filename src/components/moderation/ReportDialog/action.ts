@@ -1,3 +1,4 @@
+import {BSKY_LABELER_DID} from '@atproto/api'
 import {type AtUriString, type DidString} from '@atproto/syntax'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -6,7 +7,7 @@ import {useMutation} from '@tanstack/react-query'
 import {logger} from '#/logger'
 import {useAppviewClient} from '#/state/session'
 import {com} from '#/lexicons'
-import {NEW_TO_OLD_REASONS_MAP} from './const'
+import {NEW_TO_OLD_REASONS_MAP, REPORT_MOD_TOOL_NAME} from './const'
 import {type ReportState} from './state'
 import {type ParsedReportSubject} from './types'
 
@@ -20,9 +21,15 @@ export function useSubmitReportMutation() {
     async mutationFn({
       subject,
       state,
+      videoTimestampSeconds,
     }: {
       subject: ParsedReportSubject
       state: ReportState
+      /**
+       * How far the viewer watched when the dialog opened, if the subject is a
+       * post with a video.
+       */
+      videoTimestampSeconds?: number
     }) {
       if (!state.selectedOption) {
         throw new Error(_(msg`Please select a reason for this report`))
@@ -107,6 +114,21 @@ export function useSubmitReportMutation() {
             }),
           }
           break
+        }
+      }
+
+      const modToolMeta =
+        state.includeVideoTimestamp &&
+        videoTimestampSeconds != null &&
+        subject.type === 'post' &&
+        labeler.creator.did === BSKY_LABELER_DID
+          ? {videoTimestampSeconds}
+          : undefined
+
+      if (modToolMeta) {
+        report.modTool = {
+          name: REPORT_MOD_TOOL_NAME,
+          meta: modToolMeta,
         }
       }
 

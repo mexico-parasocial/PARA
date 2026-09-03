@@ -28,7 +28,7 @@ import {
   ChatBskyConvoDefs,
   ChatBskyEmbedJoinLink,
 } from '@atproto/api'
-import {RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
+import {RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {plural} from '@lingui/core/macro'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {useQueryClient} from '@tanstack/react-query'

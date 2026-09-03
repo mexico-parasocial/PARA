@@ -5,9 +5,9 @@ import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 
 import {HITSLOP_10} from '#/lib/constants'
-import {useMinimalShellHeaderTransform} from '#/lib/hooks/useMinimalShellTransform'
 import {useSession} from '#/state/session'
 import {useShellLayout} from '#/state/shell/shell-layout'
+import {useHomeHeaderTransform} from '#/view/com/util/MainScrollProvider'
 import {Logomark} from '#/view/icons/Logomark'
 import {Logotype} from '#/view/icons/Logotype'
 import {atoms as a, useTheme} from '#/alf'
@@ -31,7 +31,7 @@ export function HomeHeaderLayoutMobile({
   const ax = useAnalytics()
   const {headerHeight} = useShellLayout()
   const insets = useSafeAreaInsets()
-  const headerMinimalShellTransform = useMinimalShellHeaderTransform()
+  const headerMinimalShellTransform = useHomeHeaderTransform()
   const {hasSession} = useSession()
   const topRowOffset = insets.top
 
@@ -162,7 +162,11 @@ export function HomeHeaderLayoutMobile({
                           shadowOffset: {width: 0, height: 2},
                         }),
                   }}>
-                  <Logotype allowVariants={false} width={106} fill={t.atoms.text.color} />
+                  <Logotype
+                    allowVariants={false}
+                    width={106}
+                    fill={t.atoms.text.color}
+                  />
                 </View>
               </View>
             </View>

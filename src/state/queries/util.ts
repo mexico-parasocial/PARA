@@ -1,41 +1,98 @@
-import {
-  type AppBskyActorDefs,
-  AppBskyEmbedRecord,
-  AppBskyEmbedRecordWithMedia,
-  type AppBskyFeedDefs,
-  AppBskyFeedPost,
-  type AtUri,
-} from '@atproto/api'
+import {useEffect, useRef} from 'react'
+import {type AtUri} from '@atproto/syntax'
 import {
   type InfiniteData,
   type QueryClient,
   type QueryKey,
 } from '@tanstack/react-query'
 
+import {app} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 
-export async function truncateAndInvalidate<T = unknown>(
-  queryClient: QueryClient,
-  queryKey: QueryKey,
-) {
-  queryClient.setQueriesData<InfiniteData<T>>({queryKey}, data => {
-    if (data) {
-      return {
-        pageParams: data.pageParams.slice(0, 1),
-        pages: data.pages.slice(0, 1),
-      }
-    }
-    return data
-  })
-  return queryClient.invalidateQueries({queryKey})
+/**
+ * The appview does its own `fillPage`, and defaults to 10 pages. Previously
+ * the frontend tried up to 50 pages, thus the MAX_ATTEMPTS of 5 is a
+ * reasonable compromise to match pre-existing behavior and without blowing up
+ * our backend.
+ */
+const MAX_ATTEMPTS = 5
+
+type AutoPaginationQuery = {
+  data?: {pageParams: unknown[]}
+  isLoading: boolean
+  isRefetching: boolean
+  isFetchingNextPage: boolean
+  hasNextPage: boolean
+  fetchNextPage: () => Promise<unknown>
 }
 
-// Given an AtUri, this function will check if the AtUri matches a
-// hit regardless of whether the AtUri uses a DID or handle as a host.
-//
-// AtUri should be the URI that is being searched for, while currentUri
-// is the URI that is being checked. currentAuthor is the author
-// of the currentUri that is being checked.
+export function useAutoPagination(
+  query: AutoPaginationQuery,
+  itemCount: number,
+  pageSize: number,
+) {
+  const lastItemCount = useRef(0)
+  const lastPageParams = useRef(query.data?.pageParams)
+  const wantedItemCount = useRef(pageSize)
+  const attemptCount = useRef(0)
+
+  useEffect(() => {
+    const cursorOf = (param: unknown) =>
+      param && typeof param === 'object' && 'cursor' in param
+        ? param.cursor
+        : param
+    const pageParams = query.data?.pageParams
+    const previousPageParams = lastPageParams.current
+    const continuedPagination =
+      pageParams &&
+      previousPageParams &&
+      pageParams.length > previousPageParams.length &&
+      previousPageParams.every((param, index) =>
+        Object.is(cursorOf(param), cursorOf(pageParams[index])),
+      )
+    if (
+      pageParams !== previousPageParams &&
+      previousPageParams &&
+      !continuedPagination
+    ) {
+      wantedItemCount.current = pageSize
+      attemptCount.current = 0
+    }
+    lastPageParams.current = pageParams
+
+    if (itemCount !== lastItemCount.current) {
+      attemptCount.current = 0
+      if (itemCount < lastItemCount.current) {
+        wantedItemCount.current = Math.max(itemCount, pageSize)
+      }
+      lastItemCount.current = itemCount
+    }
+
+    if (query.isLoading || query.isRefetching) {
+      wantedItemCount.current = pageSize
+      attemptCount.current = 0
+    } else if (query.isFetchingNextPage) {
+      if (itemCount > wantedItemCount.current) {
+        wantedItemCount.current = itemCount + pageSize
+      }
+    } else if (query.hasNextPage) {
+      if (itemCount < wantedItemCount.current) {
+        const currentCursor = cursorOf(pageParams?.at(-1))
+        const repeatedCursor = pageParams
+          ?.slice(0, -1)
+          .some(param => Object.is(cursorOf(param), currentCursor))
+        if (repeatedCursor) return
+        attemptCount.current++
+        if (attemptCount.current < MAX_ATTEMPTS) {
+          void query.fetchNextPage()
+        }
+      } else {
+        attemptCount.current = 0
+      }
+    }
+  }, [itemCount, pageSize, query])
+}
+
 export type StructuredQueryKey<T extends Record<string, unknown>> = readonly [
   string,
   T,
@@ -75,9 +132,47 @@ export function createQueryKey<T extends Record<string, unknown>>(
   return [root, args, options] as const
 }
 
+export function isQueryPersisted(
+  queryKey: QueryKey,
+): queryKey is StructuredQueryKey<Record<string, unknown>> {
+  return (
+    Array.isArray(queryKey) &&
+    queryKey.length === 3 &&
+    typeof queryKey[0] === 'string' &&
+    typeof queryKey[1] === 'object' &&
+    queryKey[1] !== null &&
+    typeof queryKey[2] === 'object' &&
+    queryKey[2] !== null &&
+    'persistedVersion' in queryKey[2] &&
+    typeof queryKey[2].persistedVersion === 'number'
+  )
+}
+
+export async function truncateAndInvalidate<T = any>(
+  queryClient: QueryClient,
+  queryKey: QueryKey,
+) {
+  queryClient.setQueriesData<InfiniteData<T>>({queryKey}, data => {
+    if (data) {
+      return {
+        pageParams: data.pageParams.slice(0, 1),
+        pages: data.pages.slice(0, 1),
+      }
+    }
+    return data
+  })
+  return queryClient.invalidateQueries({queryKey})
+}
+
+// Given an AtUri, this function will check if the AtUri matches a
+// hit regardless of whether the AtUri uses a DID or handle as a host.
+//
+// AtUri should be the URI that is being searched for, while currentUri
+// is the URI that is being checked. currentAuthor is the author
+// of the currentUri that is being checked.
 export function didOrHandleUriMatches(
   atUri: AtUri,
-  record: {uri: string; author: AppBskyActorDefs.ProfileViewBasic},
+  record: {uri: string; author: app.bsky.actor.defs.ProfileViewBasic},
 ) {
   if (atUri.host.startsWith('did:')) {
     return atUri.href === record.uri
@@ -88,26 +183,19 @@ export function didOrHandleUriMatches(
 
 export function getEmbeddedPost(
   v: unknown,
-): AppBskyEmbedRecord.ViewRecord | undefined {
-  if (
-    bsky.dangerousIsType<AppBskyEmbedRecord.View>(v, AppBskyEmbedRecord.isView)
-  ) {
+): app.bsky.embed.record.ViewRecord | undefined {
+  if (bsky.isType(app.bsky.embed.record.view, v)) {
     if (
-      AppBskyEmbedRecord.isViewRecord(v.record) &&
-      AppBskyFeedPost.isRecord(v.record.value)
+      bsky.isType(app.bsky.embed.record.viewRecord, v.record) &&
+      bsky.isType(app.bsky.feed.post, v.record.value)
     ) {
       return v.record
     }
   }
-  if (
-    bsky.dangerousIsType<AppBskyEmbedRecordWithMedia.View>(
-      v,
-      AppBskyEmbedRecordWithMedia.isView,
-    )
-  ) {
+  if (bsky.isType(app.bsky.embed.recordWithMedia.view, v)) {
     if (
-      AppBskyEmbedRecord.isViewRecord(v.record.record) &&
-      AppBskyFeedPost.isRecord(v.record.record.value)
+      bsky.isType(app.bsky.embed.record.viewRecord, v.record.record) &&
+      bsky.isType(app.bsky.feed.post, v.record.record.value)
     ) {
       return v.record.record
     }
@@ -115,8 +203,8 @@ export function getEmbeddedPost(
 }
 
 export function embedViewRecordToPostView(
-  v: AppBskyEmbedRecord.ViewRecord,
-): AppBskyFeedDefs.PostView {
+  v: app.bsky.embed.record.ViewRecord,
+): app.bsky.feed.defs.PostView {
   return {
     uri: v.uri,
     cid: v.cid,

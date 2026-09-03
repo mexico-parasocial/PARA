@@ -1,15 +1,17 @@
 import {useCallback, useEffect, useId, useRef, useState} from 'react'
 import {View} from 'react-native'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
+import {useLingui} from '@lingui/react/macro'
 import type * as HlsTypes from 'hls.js'
 
 import {useNonReactiveCallback} from '#/lib/hooks/useNonReactiveCallback'
+import {hasPlaybackStarted} from '#/lib/media/video/analytics'
 import {atoms as a} from '#/alf'
 import {AltBadgeWithDialog} from '#/components/AltBadgeWithDialog'
 import {useFullscreen} from '#/components/hooks/useFullscreen'
+import {useReportDialogMetadataContext} from '#/components/moderation/ReportDialog/ReportDialogMetadataContext'
 import * as BandwidthEstimate from './bandwidth-estimate'
 import {
+  HLSFatalError,
   HLSUnsupportedError,
   type VideoEmbedInnerWebProps,
   VideoNotFoundError,
@@ -17,6 +19,7 @@ import {
 import {Controls} from './web-controls/VideoControls'
 
 export {
+  HLSFatalError,
   HLSUnsupportedError,
   VideoNotFoundError,
 } from './VideoEmbedInnerWeb.shared'
@@ -27,6 +30,7 @@ export function VideoEmbedInnerWeb({
   setActive,
   onScreen,
   lastKnownTime,
+  onPlaybackStart,
 }: VideoEmbedInnerWebProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -34,9 +38,11 @@ export function VideoEmbedInnerWeb({
   const [hasSubtitleTrack, setHasSubtitleTrack] = useState(false)
   const [hlsLoading, setHlsLoading] = useState(false)
   const figId = useId()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const [isFullscreen] = useFullscreen(containerRef)
   const isGif = embed.presentation === 'gif'
+  const reportDialogMetadata = useReportDialogMetadataContext()
+  const playbackStartTrackedRef = useRef(false)
 
   // send error up to error boundary
   const [error, setError] = useState<Error | null>(null)
@@ -61,7 +67,7 @@ export function VideoEmbedInnerWeb({
   return (
     <View
       style={[a.flex_1, a.rounded_md, a.overflow_hidden]}
-      accessibilityLabel={_(msg`Embedded video player`)}
+      accessibilityLabel={l`Embedded video player`}
       accessibilityHint="">
       <div ref={containerRef} style={{height: '100%', width: '100%'}}>
         <figure style={{margin: 0, position: 'absolute', inset: 0}}>
@@ -74,7 +80,23 @@ export function VideoEmbedInnerWeb({
             muted={embed.presentation === 'gif' || !focused}
             aria-labelledby={embed.alt ? figId : undefined}
             onTimeUpdate={e => {
-              lastKnownTime.current = e.currentTarget.currentTime
+              const currentTime = e.currentTarget.currentTime
+              lastKnownTime.current = currentTime
+              if (
+                !playbackStartTrackedRef.current &&
+                hasPlaybackStarted(currentTime)
+              ) {
+                playbackStartTrackedRef.current = true
+                onPlaybackStart(!focused)
+              }
+              if (
+                !isGif &&
+                reportDialogMetadata &&
+                Number.isFinite(currentTime) &&
+                currentTime >= 0
+              ) {
+                reportDialogMetadata.current.videoTimestampSeconds = currentTime
+              }
             }}
             loop={loop}
           />
@@ -139,9 +161,10 @@ type CachedPromise<T> = Promise<T> & {value: undefined | T}
 const promiseForHls = import(
   // @ts-expect-error
   'hls.js/dist/hls.min'
+  // oxlint-disable-next-line typescript/no-unsafe-member-access
 ).then(mod => mod.default) as CachedPromise<typeof HlsTypes.default>
 promiseForHls.value = undefined
-promiseForHls.then(Hls => {
+void promiseForHls.then(Hls => {
   promiseForHls.value = Hls
 })
 
@@ -164,7 +187,7 @@ function useHLS({
   useEffect(() => {
     if (!Hls) {
       setHlsLoading(true)
-      promiseForHls.then(loadedHls => {
+      void promiseForHls.then(loadedHls => {
         setHls(() => loadedHls)
         setHlsLoading(false)
       })
@@ -301,12 +324,58 @@ function useHLS({
     hls.on(Hls.Events.ERROR, (_event, data) => {
       if (data.fatal) {
         if (
-          data.details === 'manifestLoadError' &&
+          (data.details as string) === 'manifestLoadError' &&
           data.response?.code === 404
         ) {
           setError(new VideoNotFoundError())
         } else {
-          setError(data.error)
+          const video = videoRef.current
+          const mediaError = video?.error
+          setError(
+            new HLSFatalError({
+              detail: data.details,
+              type: data.type,
+              cause: data.error,
+              diagnostics: {
+                hlsError: {
+                  detail: data.details,
+                  type: data.type,
+                  sourceBufferName: data.sourceBufferName,
+                  parent: data.parent,
+                  reason: data.reason,
+                  errorName: data.error.name,
+                  errorCode: (data.error as DOMException).code,
+                },
+                fragment: data.frag
+                  ? {
+                      sn: data.frag.sn,
+                      level: data.frag.level,
+                      type: data.frag.type,
+                      start: data.frag.start,
+                      duration: data.frag.duration,
+                      cc: data.frag.cc,
+                    }
+                  : undefined,
+                media: video
+                  ? {
+                      errorCode: mediaError?.code,
+                      errorMessage: mediaError?.message,
+                      readyState: video.readyState,
+                      networkState: video.networkState,
+                      currentTime: video.currentTime,
+                      paused: video.paused,
+                      ended: video.ended,
+                      seeking: video.seeking,
+                    }
+                  : undefined,
+                lifecycle: {
+                  documentVisibility: document.visibilityState,
+                  hlsIsCurrent: hlsRef.current === hls,
+                },
+                playlist,
+              },
+            }),
+          )
         }
       } else {
         console.error(data.error)

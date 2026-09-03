@@ -64,7 +64,7 @@ export const ProgressGuideToast = forwardRef<
 
     // animate the opacity then set isOpen to false when done
     const setIsntOpen = () => setIsOpen(false)
-    opacity.set(() =>
+    opacity.set(
       withTiming(
         0,
         {
@@ -83,7 +83,7 @@ export const ProgressGuideToast = forwardRef<
     // animate the vertical translation, the opacity, and the checkmark
     const playCheckmark = () => animatedCheckRef.current?.play()
     opacity.set(0)
-    opacity.set(() =>
+    opacity.set(
       withTiming(
         1,
         {
@@ -94,7 +94,7 @@ export const ProgressGuideToast = forwardRef<
       ),
     )
     translateY.set(0)
-    translateY.set(() =>
+    translateY.set(
       withTiming(insets.top + 10, {
         duration: 500,
         easing: Easing.out(Easing.cubic),

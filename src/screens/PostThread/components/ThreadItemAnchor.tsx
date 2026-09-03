@@ -11,7 +11,7 @@ import {
   type AppBskyFeedThreadgate,
   AtUri,
 } from '@atproto/api'
-import {RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
+import {RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {Plural, Trans, useLingui} from '@lingui/react/macro'
 
 import {useActorStatus} from '#/lib/actor-status'
@@ -61,6 +61,7 @@ import {ContentHider} from '#/components/moderation/ContentHider'
 import {PostAlerts} from '#/components/moderation/PostAlerts'
 import {type AppModerationCause} from '#/components/Pills'
 import {Embed, PostEmbedViewContext} from '#/components/Post/Embed'
+import {KnownLikers} from '#/components/Post/KnownLikers'
 import {PostFlairStrip} from '#/components/Post/PostFlairStrip'
 import {TranslatedPost} from '#/components/Post/Translated'
 import {PostControls, PostControlsSkeleton} from '#/components/PostControls'
@@ -74,6 +75,8 @@ import * as Skele from '#/components/Skeleton'
 import {Text} from '#/components/Typography'
 import {VerificationCheckButton} from '#/components/verification/VerificationCheckButton'
 import {WhoCanReply} from '#/components/WhoCanReply'
+import {Features, useAnalytics} from '#/analytics'
+import {type app} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 
 export function ThreadItemAnchor({
@@ -196,8 +199,15 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
   const {currentAccount, hasSession} = useSession()
   const feedFeedback = useFeedFeedback(postSource?.feedSourceInfo, hasSession)
   const formatPostStatCount = useFormatPostStatCount()
+  const ax = useAnalytics()
 
   const post = postShadow
+  /*
+   * LikesStat/KnownLikers read `viewer.knownLikers`, which exists on the
+   * generated lexicon PostView but not yet on the @atproto/api type behind
+   * `postShadow`; the runtime payload carries the field either way.
+   */
+  const postWithKnownLikers = post as unknown as app.bsky.feed.defs.PostView
   const record = item.value.post.record
   const moderation = item.moderation
   const authorShadow = useProfileShadow(post.author)
@@ -293,7 +303,7 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
   })
 
   const onOpenAuthor = () => {
-    logger.metric('post:clickthroughAuthor', {
+    ax.metric('post:clickthroughAuthor', {
       uri: post.uri,
       authorDid: post.author.did,
       logContext: 'PostThreadItem',
@@ -310,7 +320,7 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
   }
 
   const onOpenEmbed = () => {
-    logger.metric('post:clickthroughEmbed', {
+    ax.metric('post:clickthroughEmbed', {
       uri: post.uri,
       authorDid: post.author.did,
       logContext: 'PostThreadItem',
@@ -467,19 +477,18 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
                   columnGap: a.gap_lg.gap,
                 },
                 a.border_t,
-                a.border_b,
                 a.mt_md,
                 a.py_md,
                 t.atoms.border_contrast_low,
               ]}>
               {paraSummaryMetrics.votes !== 0 ? (
-                <LikesStat post={post} />
+                <LikesStat post={postWithKnownLikers} />
               ) : null}
               {paraSummaryMetrics.comments !== 0 ? (
                 <Text
                   testID="commentsCount-expanded"
-                  style={[a.text_md, t.atoms.text_contrast_medium]}>
-                  <Text style={[a.text_md, a.font_semi_bold, t.atoms.text]}>
+                  style={[a.text_sm, t.atoms.text_contrast_high]}>
+                  <Text style={[a.text_sm, a.font_semi_bold, t.atoms.text]}>
                     {formatPostStatCount(paraSummaryMetrics.comments)}
                   </Text>{' '}
                   <Plural
@@ -493,8 +502,8 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
                 <Link to={highlightsHref} label={_`Highlights on this post`}>
                   <Text
                     testID="highlightCount-expanded"
-                    style={[a.text_md, t.atoms.text_contrast_medium]}>
-                    <Text style={[a.text_md, a.font_semi_bold, t.atoms.text]}>
+                    style={[a.text_sm, t.atoms.text_contrast_high]}>
+                    <Text style={[a.text_sm, a.font_semi_bold, t.atoms.text]}>
                       {formatPostStatCount(paraSummaryMetrics.highlights)}
                     </Text>{' '}
                     <Plural
@@ -510,8 +519,8 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
                 <Link to={quotesHref} label={_`Quotes of this post`}>
                   <Text
                     testID="quoteCount-expanded"
-                    style={[a.text_md, t.atoms.text_contrast_medium]}>
-                    <Text style={[a.text_md, a.font_semi_bold, t.atoms.text]}>
+                    style={[a.text_sm, t.atoms.text_contrast_high]}>
+                    <Text style={[a.text_sm, a.font_semi_bold, t.atoms.text]}>
                       {formatPostStatCount(paraSummaryMetrics.quotes)}
                     </Text>{' '}
                     <Plural
@@ -525,8 +534,8 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
               {paraSummaryMetrics.saves !== 0 ? (
                 <Text
                   testID="saveCount-expanded"
-                  style={[a.text_md, t.atoms.text_contrast_medium]}>
-                  <Text style={[a.text_md, a.font_semi_bold, t.atoms.text]}>
+                  style={[a.text_sm, t.atoms.text_contrast_high]}>
+                  <Text style={[a.text_sm, a.font_semi_bold, t.atoms.text]}>
                     {formatPostStatCount(paraSummaryMetrics.saves)}
                   </Text>{' '}
                   <Plural
@@ -538,6 +547,10 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
               ) : null}
             </View>
           ) : null}
+          <KnownLikers
+            post={postWithKnownLikers}
+            feature={Features.PostThreadKnownLikersEnable}
+          />
           <View
             style={[
               a.pt_sm,
@@ -585,7 +598,11 @@ function ExpandedPostDetails({
     () =>
       Boolean(
         langPrefs.primaryLanguage &&
-        !isPostInLanguage(post, [langPrefs.primaryLanguage]),
+        // Thread-item posts carry a narrowed record shape; the helper's
+        // generated `PostView` parameter only inspects text/languages.
+        !isPostInLanguage(post as unknown as app.bsky.feed.defs.PostView, [
+          langPrefs.primaryLanguage,
+        ]),
       ),
     [post, langPrefs.primaryLanguage],
   )
@@ -619,7 +636,7 @@ function ExpandedPostDetails({
     <View style={[a.gap_md, a.pt_md, a.align_start]}>
       <BackdatedPostIndicator post={post} />
       <View style={[a.flex_row, a.align_center, a.flex_wrap, a.gap_sm]}>
-        <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
+        <Text style={[a.text_xs, t.atoms.text_contrast_high]}>
           {niceDate(i18n, post.indexedAt, 'dot separated')}
         </Text>
         {isRootPost && (

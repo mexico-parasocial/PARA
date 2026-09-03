@@ -1,4 +1,3 @@
-import {type AppBskyFeedDefs} from '@atproto/api'
 import {type Client} from '@atproto/lex'
 import {type AtUriString} from '@atproto/syntax'
 import shuffle from 'lodash.shuffle'
@@ -16,7 +15,7 @@ import {
   type FeedAPIResponse,
   type ReasonFeedSource,
 } from './types'
-import {createBskyTopicsHeader, isPARAOwnedFeed} from './utils'
+import {createBskyTopicsHeader, isBlueskyOwnedFeed} from './utils'
 
 const REQUEST_WAIT_MS = 500 // 500ms
 const POST_AGE_CUTOFF = 60e3 * 60 * 24 // 24hours
@@ -28,7 +27,7 @@ const POST_AGE_CUTOFF = 60e3 * 60 * 24 // 24hours
  */
 type MergeFeedPage = {
   cursor?: string
-  feed: AppBskyFeedDefs.FeedViewPost[]
+  feed: app.bsky.feed.defs.FeedViewPost[]
 } | null
 
 export class MergeFeedAPI implements FeedAPI {
@@ -89,7 +88,7 @@ export class MergeFeedAPI implements FeedAPI {
     }
   }
 
-  async peekLatest(): Promise<AppBskyFeedDefs.FeedViewPost> {
+  async peekLatest(): Promise<app.bsky.feed.defs.FeedViewPost> {
     const data = await this.client.call(app.bsky.feed.getTimeline, {
       limit: 1,
     })
@@ -109,8 +108,8 @@ export class MergeFeedAPI implements FeedAPI {
 
     const promises = []
 
-    // always keep following topped up
-    if (this.following.numReady < limit) {
+    // always keep following topped up while the source has another page
+    if (this.following.hasMore && this.following.numReady < limit) {
       await this.following.fetchNext(60)
     }
 
@@ -126,7 +125,7 @@ export class MergeFeedAPI implements FeedAPI {
       !this.following.hasMore && this.following.numReady < limit
     if (this.params.mergeFeedEnabled || outOfFollows) {
       for (const feed of feeds) {
-        if (feed.numReady < 5) {
+        if (feed.hasMore && feed.numReady < 5) {
           promises.push(feed.fetchNext(10))
         }
       }
@@ -136,7 +135,7 @@ export class MergeFeedAPI implements FeedAPI {
     await Promise.all(promises)
 
     // assemble a response by sampling from feeds with content
-    const posts: AppBskyFeedDefs.FeedViewPost[] = []
+    const posts: app.bsky.feed.defs.FeedViewPost[] = []
     while (posts.length < limit) {
       let slice = this.sampleItem()
       if (slice[0]) {
@@ -146,8 +145,12 @@ export class MergeFeedAPI implements FeedAPI {
       }
     }
 
+    const hasMore =
+      this.following.hasMore ||
+      this.following.numReady > 0 ||
+      this.customFeeds.some(feed => feed.hasMore || feed.numReady > 0)
     return {
-      cursor: String(this.itemCursor),
+      cursor: hasMore ? String(this.itemCursor) : undefined,
       feed: posts,
     }
   }
@@ -156,8 +159,8 @@ export class MergeFeedAPI implements FeedAPI {
     const i = this.itemCursor++
     const candidateFeeds = this.customFeeds.filter(f => f.numReady > 0)
     const canSample = candidateFeeds.length > 0
-    const hasFollows = this.following.hasMore
     const hasFollowsReady = this.following.numReady > 0
+    const hasFollows = this.following.hasMore || hasFollowsReady
 
     // this condition establishes the frequency that custom feeds are woven into follows
     const shouldSample =
@@ -188,7 +191,8 @@ class MergeFeedSource {
   feedTuners: FeedTunerFn[]
   sourceInfo: ReasonFeedSource | undefined
   cursor: string | undefined = undefined
-  queue: AppBskyFeedDefs.FeedViewPost[] = []
+  seenCursors = new Set<string>()
+  queue: app.bsky.feed.defs.FeedViewPost[] = []
   hasMore = true
 
   constructor({
@@ -210,7 +214,7 @@ class MergeFeedSource {
     return this.hasMore && this.queue.length === 0
   }
 
-  take(n: number): AppBskyFeedDefs.FeedViewPost[] {
+  take(n: number): app.bsky.feed.defs.FeedViewPost[] {
     return this.queue.splice(0, n)
   }
 
@@ -222,10 +226,15 @@ class MergeFeedSource {
     const page = await this._getFeed(this.cursor, n)
     if (page) {
       this.cursor = page.cursor
-      if (page.feed.length) {
-        this.queue = this.queue.concat(page.feed)
+      const cursor = this.cursor
+      if (cursor) {
+        this.hasMore = !this.seenCursors.has(cursor)
+        this.seenCursors.add(cursor)
       } else {
         this.hasMore = false
+      }
+      if (page.feed.length) {
+        this.queue = this.queue.concat(page.feed)
       }
     } else {
       this.hasMore = false
@@ -306,7 +315,7 @@ class MergeFeedSource_Custom extends MergeFeedSource {
   ): Promise<MergeFeedPage> {
     try {
       const contentLangs = getContentLanguages().join(',')
-      const isPARAOwned = isPARAOwnedFeed(this.feedUri)
+      const isBlueskyOwned = isBlueskyOwnedFeed(this.feedUri)
       const data = await this.client.call(
         app.bsky.feed.getFeed,
         {
@@ -316,7 +325,9 @@ class MergeFeedSource_Custom extends MergeFeedSource {
         },
         {
           headers: {
-            ...(isPARAOwned ? createBskyTopicsHeader(this.userInterests) : {}),
+            ...(isBlueskyOwned
+              ? createBskyTopicsHeader(this.userInterests)
+              : {}),
             'Accept-Language': contentLangs,
           },
         },
@@ -325,7 +336,7 @@ class MergeFeedSource_Custom extends MergeFeedSource {
       // some custom feeds fail to enforce the pagination limit
       // so we manually truncate here
       // -prf
-      let feed: AppBskyFeedDefs.FeedViewPost[] =
+      let feed: app.bsky.feed.defs.FeedViewPost[] =
         limit && data.feed.length > limit
           ? data.feed.slice(0, limit)
           : data.feed
@@ -333,7 +344,7 @@ class MergeFeedSource_Custom extends MergeFeedSource {
       feed = feed.filter(post => new Date(post.post.indexedAt) > this.minDate)
       // attach source info
       for (const post of feed) {
-        // @ts-ignore
+        // @ts-expect-error
         post.__source = this.sourceInfo
       }
       return {

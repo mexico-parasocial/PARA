@@ -12,7 +12,6 @@ import {
 import {HITSLOP_20} from '#/lib/constants'
 import {mergeRefs} from '#/lib/merge-refs'
 import {
-  android,
   applyFonts,
   atoms as a,
   flatten,
@@ -27,6 +26,7 @@ import {
 import {useInteractionState} from '#/components/hooks/useInteractionState'
 import {type Props as SVGIconProps} from '#/components/icons/common'
 import {Text} from '#/components/Typography'
+import {IS_WEB} from '#/env'
 
 const Context = createContext<{
   inputRef: React.RefObject<React.ComponentRef<typeof TextInput> | null> | null
@@ -100,11 +100,13 @@ export function Root({children, isInvalid = false, style}: RootProps) {
           a.px_md,
           style,
         ]}
-        {...web({
-          onClick: () => inputRef.current?.focus(),
-          onMouseOver: onHoverIn,
-          onMouseOut: onHoverOut,
-        })}>
+        {...(IS_WEB
+          ? {
+              onClick: () => inputRef.current?.focus(),
+              onMouseOver: onHoverIn,
+              onMouseOut: onHoverOut,
+            }
+          : {})}>
         {children}
       </View>
     </Context.Provider>
@@ -243,7 +245,6 @@ export function createInput(Component: typeof TextInput) {
     }
 
     applyFonts(flattened, fonts.family)
-
 
     if (flattened.fontSize) {
       flattened.fontSize = Math.round(

@@ -13,11 +13,6 @@ import {
 } from '#/state/queries/usePostThread/const'
 import {type PostThreadContextType} from '#/state/queries/usePostThread/context'
 import {
-  adaptParaPostThread,
-  getParaThreadAuthors,
-  isParaPostUri,
-} from '#/state/queries/usePostThread/para'
-import {
   createCacheMutator,
   getThreadPlaceholder,
 } from '#/state/queries/usePostThread/queryCache'
@@ -33,11 +28,12 @@ import {
 } from '#/state/queries/usePostThread/types'
 import {getThreadgateRecord} from '#/state/queries/usePostThread/utils'
 import * as views from '#/state/queries/usePostThread/views'
-import {useAgent, useAppviewClient, useSession} from '#/state/session'
+import {useAppviewClient, useSession} from '#/state/session'
 import {useMergeThreadgateHiddenReplies} from '#/state/threadgate-hidden-replies'
 import {useBreakpoints} from '#/alf'
 import {IS_WEB} from '#/env'
 import {app} from '#/lexicons'
+import * as bsky from '#/types/bsky'
 
 export * from '#/state/queries/usePostThread/context'
 export {useUpdatePostThreadThreadgateQueryCache} from '#/state/queries/usePostThread/queryCache'
@@ -46,7 +42,6 @@ export * from '#/state/queries/usePostThread/types'
 export function usePostThread({anchor}: {anchor?: string}) {
   const qc = useQueryClient()
   const client = useAppviewClient()
-  const agent = useAgent()
   const {hasSession} = useSession()
   const {gtPhone} = useBreakpoints()
   const moderationOpts = useModerationOpts()
@@ -79,16 +74,35 @@ export function usePostThread({anchor}: {anchor?: string}) {
     enabled: isThreadPreferencesLoaded && !!anchor && !!moderationOpts,
     queryKey: postThreadQueryKey,
     async queryFn(ctx) {
-      if (isParaPostUri(anchor!)) {
-        return getParaPostThread(agent, anchor!, below)
-      }
-
+      const placeholder = getThreadPlaceholder(qc, anchor!)
       const data = await client.call(app.bsky.unspecced.getPostThreadV2, {
         anchor: anchor! as AtUriString,
         branchingFactor: view === 'linear' ? LINEAR_VIEW_BF : TREE_VIEW_BF,
         below,
         sort: sort,
       })
+
+      const cachedKnownLikers =
+        placeholder &&
+        bsky.isType(app.bsky.unspecced.defs.threadItemPost, placeholder.value)
+          ? placeholder.value.post.viewer?.knownLikers
+          : undefined
+      if (cachedKnownLikers?.actors.length) {
+        const anchorItem = data.thread?.find(item => item.uri === anchor)
+        if (
+          anchorItem &&
+          bsky.isType(
+            app.bsky.unspecced.defs.threadItemPost,
+            anchorItem.value,
+          ) &&
+          !anchorItem.value.post.viewer?.knownLikers?.actors.length
+        ) {
+          anchorItem.value.post.viewer = {
+            ...anchorItem.value.post.viewer,
+            knownLikers: cachedKnownLikers,
+          }
+        }
+      }
 
       /*
        * Initialize `ctx.meta` to track if we know we have additional replies
@@ -343,33 +357,4 @@ export function usePostThread({anchor}: {anchor?: string}) {
     postThreadQueryKey,
     postThreadOtherQueryKey,
   ])
-}
-
-async function getParaPostThread(
-  agent: ReturnType<typeof useAgent>,
-  anchor: string,
-  below: number,
-): Promise<UsePostThreadQueryResult> {
-  const {data} = await agent.call('com.para.feed.getPostThread', {
-    uri: anchor,
-    depth: below,
-    parentHeight: LINEAR_VIEW_BELOW,
-  })
-  const profiles = new Map(
-    await Promise.all(
-      getParaThreadAuthors(data).map(async author => {
-        try {
-          const res = await agent.getProfile({actor: author})
-          return [author, res.data] as const
-        } catch {
-          return undefined
-        }
-      }),
-    ).then(entries =>
-      entries.filter(
-        (entry): entry is Exclude<typeof entry, undefined> => !!entry,
-      ),
-    ),
-  )
-  return adaptParaPostThread(data, profiles)
 }

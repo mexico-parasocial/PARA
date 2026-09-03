@@ -1,5 +1,5 @@
 import {type $Typed, ChatBskyActorDefs, ChatBskyConvoDefs} from '@atproto/api'
-import {type ModerationOpts} from '@bsky.app/sdk/moderation'
+import {type ModerationOpts} from '@bsky/sdk/moderation'
 
 import {EMOJI_REACTION_LIMIT} from '#/lib/constants'
 import {isBlockedOrBlocking} from '#/lib/moderation/blocked-and-muted'

@@ -1,4 +1,12 @@
-import {memo, useCallback, useEffect, useMemo, useRef, useState} from 'react'
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import {
   ActivityIndicator,
   AppState,
@@ -10,19 +18,11 @@ import {
   View,
   type ViewStyle,
 } from 'react-native'
-import {
-  type AppBskyActorDefs,
-  AppBskyEmbedExternal,
-  AppBskyEmbedGallery,
-  AppBskyEmbedImages,
-  AppBskyEmbedVideo,
-  type AppBskyFeedDefs,
-} from '@atproto/api'
-import {type RichText as RichTextType} from '@bsky.app/sdk/richtext'
+import {type RichText as RichTextType} from '@bsky/sdk/richtext'
 import {useLingui} from '@lingui/react/macro'
 import {useQueryClient} from '@tanstack/react-query'
 
-import {isDefaultDiscoverFeedUri, KNOWN_SHUTDOWN_FEEDS} from '#/lib/constants'
+import {DISCOVER_FEED_URI, KNOWN_SHUTDOWN_FEEDS} from '#/lib/constants'
 import {useBottomBarOffset} from '#/lib/hooks/useBottomBarOffset'
 import {useInitialNumToRender} from '#/lib/hooks/useInitialNumToRender'
 import {useNonReactiveCallback} from '#/lib/hooks/useNonReactiveCallback'
@@ -73,6 +73,8 @@ import {
   isStatusValidForViewers,
   useLiveNowConfig,
 } from '#/features/liveNow'
+import {app} from '#/lexicons'
+import * as bsky from '#/types/bsky'
 import {ComposerPrompt} from '../feeds/ComposerPrompt'
 import {DiscoverFallbackHeader} from './DiscoverFallbackHeader'
 import {FeedShutdownMsg} from './FeedShutdownMsg'
@@ -191,6 +193,10 @@ export function getItemsForFeedback(feedRow: FeedRow): {
   }
 }
 
+export type PostFeedRef = {
+  refreshFeed: () => Promise<void>
+}
+
 // DISABLED need to check if this is causing random feed refreshes -prf
 // const REFRESH_AFTER = STALE.HOURS.ONE
 const CHECK_LATEST_AFTER = STALE.SECONDS.THIRTY
@@ -200,7 +206,6 @@ let PostFeed = ({
   description,
   feedParams,
   ignoreFilterFor,
-  applyCompassCommunityFilters = false,
   style,
   enabled,
   pollInterval,
@@ -219,14 +224,12 @@ let PostFeed = ({
   savedFeedConfig,
   initialNumToRender: initialNumToRenderOverride,
   isVideoFeed = false,
-  hideComposerPrompt = false,
-  manualRefreshSignal,
+  ref,
 }: {
   feed: FeedDescriptor
   description?: RichTextType
   feedParams?: FeedParams
   ignoreFilterFor?: string
-  applyCompassCommunityFilters?: boolean
   style?: StyleProp<ViewStyle>
   enabled?: boolean
   pollInterval?: number
@@ -242,12 +245,11 @@ let PostFeed = ({
   desktopFixedHeightOffset?: number
   ListHeaderComponent?: () => React.ReactElement
   extraData?: Record<string, unknown>
-  savedFeedConfig?: AppBskyActorDefs.SavedFeed
+  savedFeedConfig?: app.bsky.actor.defs.SavedFeed
   initialNumToRender?: number
   isVideoFeed?: boolean
-  hideComposerPrompt?: boolean
-  manualRefreshSignal?: number
   lastFetchDate?: () => number
+  ref?: React.Ref<PostFeedRef>
 }): React.ReactNode => {
   const ax = useAnalytics()
   const t = useTheme()
@@ -264,11 +266,20 @@ let PostFeed = ({
   const {rightNavVisible} = useLayoutBreakpoints()
   const areVideoFeedsEnabled = IS_NATIVE
 
+  const trendingIndices = ax.features.getValue(
+    ax.features.TrendingDiscoverValues,
+    {
+      topics: 5,
+      accounts: 15,
+      videos: 30,
+    },
+  )
+
   const [hasPressedShowLessUris, setHasPressedShowLessUris] = useState(
     () => new Set<string>(),
   )
   const onPressShowLess = useCallback(
-    (interaction: AppBskyFeedDefs.Interaction) => {
+    (interaction: app.bsky.feed.defs.Interaction) => {
       if (interaction.item) {
         const uri = interaction.item
         setHasPressedShowLessUris(prev => new Set([...prev, uri]))
@@ -280,8 +291,8 @@ let PostFeed = ({
 
   const feedCacheKey = feedParams?.feedCacheKey
   const opts = useMemo(
-    () => ({enabled, ignoreFilterFor, applyCompassCommunityFilters}),
-    [enabled, ignoreFilterFor, applyCompassCommunityFilters],
+    () => ({enabled, ignoreFilterFor}),
+    [enabled, ignoreFilterFor],
   )
   const {
     data,
@@ -312,7 +323,7 @@ let PostFeed = ({
     }
 
     // Discover always has fresh content
-    if (isDefaultDiscoverFeedUri(feedUriOrActorDid)) {
+    if (feedUriOrActorDid === DISCOVER_FEED_URI) {
       return onHasNew(true)
     }
 
@@ -326,7 +337,7 @@ let PostFeed = ({
       }
     } catch (e) {
       if (!isNetworkError(e)) {
-        logger.error('Poll latest failed', {feed, message: String(e)})
+        logger.warn('Poll latest failed', {feed, message: String(e)})
       }
     }
   })
@@ -426,7 +437,7 @@ let PostFeed = ({
     let feedKind: 'following' | 'discover' | 'profile' | 'thevids' | undefined
     if (feedType === 'following') {
       feedKind = 'following'
-    } else if (isDefaultDiscoverFeedUri(feedUriOrActorDid)) {
+    } else if (feedUriOrActorDid === DISCOVER_FEED_URI) {
       feedKind = 'discover'
     } else if (
       feedType === 'author' &&
@@ -436,7 +447,7 @@ let PostFeed = ({
       feedKind = 'profile'
     }
 
-    const arr: FeedRow[] = []
+    let arr: FeedRow[] = []
     if (KNOWN_SHUTDOWN_FEEDS.includes(feedUriOrActorDid)) {
       arr.push({
         type: 'feedShutdownMsg',
@@ -470,7 +481,7 @@ let PostFeed = ({
               )
               if (
                 item &&
-                AppBskyEmbedVideo.isView(item.post.embed) &&
+                bsky.isType(app.bsky.embed.video.view, item.post.embed) &&
                 !blockedOrMutedAuthors.includes(item.post.author.did)
               ) {
                 videos.push({
@@ -550,8 +561,7 @@ let PostFeed = ({
                     // Show composer prompt for Discover and Following feeds
                     if (
                       hasSession &&
-                      !hideComposerPrompt &&
-                      (isDefaultDiscoverFeedUri(feedUriOrActorDid) ||
+                      (feedUriOrActorDid === DISCOVER_FEED_URI ||
                         feed === 'following')
                     ) {
                       arr.push({
@@ -559,20 +569,20 @@ let PostFeed = ({
                         key: 'composerPrompt-' + sliceIndex,
                       })
                     }
-                  } else if (sliceIndex === 1) {
+                  } else if (sliceIndex === trendingIndices.topics) {
                     arr.push({
                       type: 'interstitialFeedTrendingTopics',
                       key: 'interstitialFeedTrendingTopics-' + sliceIndex,
                       feedSliceIndex: sliceIndex,
                     })
-                  } else if (sliceIndex === 15) {
+                  } else if (sliceIndex === trendingIndices.videos) {
                     if (areVideoFeedsEnabled && !trendingVideoDisabled) {
                       arr.push({
                         type: 'interstitialTrendingVideos',
                         key: 'interstitial-' + sliceIndex + '-' + lastFetchedAt,
                       })
                     }
-                  } else if (sliceIndex === 30) {
+                  } else if (sliceIndex === trendingIndices.accounts) {
                     arr.push({
                       type: 'interstitialFollows',
                       key: 'interstitial-' + sliceIndex + '-' + lastFetchedAt,
@@ -581,7 +591,7 @@ let PostFeed = ({
                 } else if (feedKind === 'following') {
                   if (sliceIndex === 0) {
                     // Show composer prompt for Following feed
-                    if (hasSession && !hideComposerPrompt) {
+                    if (hasSession) {
                       arr.push({
                         type: 'composerPrompt',
                         key: 'composerPrompt-' + sliceIndex,
@@ -725,13 +735,14 @@ let PostFeed = ({
     ageAssuranceBannerState,
     isCurrentFeedAtStartupSelected,
     blockedOrMutedAuthors,
-    hideComposerPrompt,
+    trendingIndices,
   ])
 
   // events
   // =
+  //
 
-  const onRefresh = useCallback(async () => {
+  const refreshFeed = async () => {
     if (!enabled) return
 
     ax.metric('feed:refresh', {
@@ -739,30 +750,25 @@ let PostFeed = ({
       feedUrl: feed,
       reason: 'pull-to-refresh',
     })
-    setIsPTRing(true)
     try {
       await truncateAndInvalidate(queryClient, RQKEY(feed, feedParams))
-      onHasNew?.(false)
+      if (onHasNew) {
+        onHasNew(false)
+      }
     } catch (err) {
       logger.error('Failed to refresh posts feed', {message: err})
     }
-    setIsPTRing(false)
-  }, [
-    ax,
-    queryClient,
-    setIsPTRing,
-    onHasNew,
-    feed,
-    feedParams,
-    feedType,
-    enabled,
-  ])
+  }
 
-  useEffect(() => {
-    if (manualRefreshSignal) {
-      void onRefresh()
-    }
-  }, [manualRefreshSignal, onRefresh])
+  const onRefresh = async () => {
+    setIsPTRing(true)
+    await refreshFeed()
+    setIsPTRing(false)
+  }
+
+  useImperativeHandle(ref, () => ({
+    refreshFeed,
+  }))
 
   const onEndReached = useCallback(async () => {
     if (isFetching || !hasNextPage || isError) return
@@ -842,7 +848,6 @@ let PostFeed = ({
         return <ProgressGuide />
       } else if (row.type === 'ageAssuranceBanner') {
         return <AgeAssuranceDismissibleFeedBanner />
-
       } else if (row.type === 'interstitialFeedTrendingTopics') {
         return (
           <FeedTrendingTopicsInterstitial feedSliceIndex={row.feedSliceIndex} />
@@ -867,7 +872,7 @@ let PostFeed = ({
           <PostFeedItem
             post={item.post}
             record={item.record}
-            postNumbering={item.postNumbering}            
+            postNumbering={item.postNumbering}
             reason={indexInSlice === 0 ? slice.reason : undefined}
             feedContext={slice.feedContext}
             reqId={slice.reqId}
@@ -949,7 +954,8 @@ let PostFeed = ({
     /*
      * A bit of padding at the bottom of the feed as you scroll and when you
      * reach the end, so that content isn't cut off by the bottom of the
-     * screen.
+     * screen. On mobile web, also clear the fixed bottom bar; on native the
+     * doubled headerOffset already covers the tab bar.
      */
     const offset =
       Math.max(headerOffset, 32) * (IS_WEB ? 1 : 2) +
@@ -977,6 +983,8 @@ let PostFeed = ({
 
   const seenActorWithStatusRef = useRef<Set<string>>(new Set())
   const seenPostUrisRef = useRef<Set<string>>(new Set())
+  // Tracks every post we've seen so we can fire per-post events exactly once,
+  // regardless of the post's position within its slice.
   const seenPerPostUrisRef = useRef<Set<string>>(new Set())
 
   // Helper to calculate position in feed (count only root posts, not interstitials or thread replies)
@@ -1010,6 +1018,56 @@ let PostFeed = ({
     (item: FeedRow) => {
       feedFeedback.onItemSeen(item)
 
+      // Events that should fire exactly once for every new post, regardless of
+      // its position within a slice or video grid row.
+      const onPostSeen = (post: app.bsky.feed.defs.PostView) => {
+        if (seenPerPostUrisRef.current.has(post.uri)) return
+        seenPerPostUrisRef.current.add(post.uri)
+
+        // Standard site embed view tracking
+        if (
+          bsky.isType(app.bsky.embed.external.view, post.embed) &&
+          isStandardSiteEmbed(post.embed.external)
+        ) {
+          ax.metric('embed:standardSite:view', {url: post.embed.external.uri})
+        }
+
+        // Photo embed impression tracking
+        if (
+          bsky.isType(app.bsky.embed.images.view, post.embed) ||
+          bsky.isType(app.bsky.embed.gallery.view, post.embed)
+        ) {
+          const totalImages = bsky.isType(
+            app.bsky.embed.gallery.view,
+            post.embed,
+          )
+            ? post.embed.items.filter(item =>
+                bsky.isType(app.bsky.embed.gallery.viewImage, item),
+              ).length
+            : post.embed.images.length
+          const useExpandedLayout = bsky.isType(
+            app.bsky.embed.gallery.view,
+            post.embed,
+          )
+            ? totalImages > 4
+            : ax.features.enabled(ax.features.PostGalleryEmbedEnable)
+          const layout =
+            totalImages === 1
+              ? 'single'
+              : useExpandedLayout
+                ? 'carousel'
+                : 'grid'
+
+          ax.metric('post:photoEmbed:impression', {
+            layout,
+            totalImages,
+            postUri: post.uri,
+            postAuthorDid: post.author.did,
+            feedDescriptor: feedFeedback.feedDescriptor || feed,
+          })
+        }
+      }
+
       // Track post:view events
       if (item.type === 'sliceItem') {
         const slice = item.slice
@@ -1017,56 +1075,28 @@ let PostFeed = ({
         const postItem = slice.items[indexInSlice]
         const post = postItem.post
 
-        // Only track the root post of each slice (index 0) to avoid double-counting thread items
-        if (indexInSlice === 0 && !seenPostUrisRef.current.has(post.uri)) {
+        onPostSeen(post)
+
+        // Track the post selected by the feed once it is actually visible.
+        if (
+          post.uri === slice.feedPostUri &&
+          !seenPostUrisRef.current.has(post.uri)
+        ) {
           seenPostUrisRef.current.add(post.uri)
 
-          const position = getPostPosition('sliceItem', item.key)
+          const position = getPostPosition(
+            'sliceItem',
+            slice.items[0]._reactKey,
+          )
 
           ax.metric('post:view', {
             uri: post.uri,
             authorDid: post.author.did,
+            isReply: !!postItem.record.reply,
             logContext: 'FeedItem',
             feedDescriptor: feedFeedback.feedDescriptor || feed,
             position,
           })
-
-          // Track photo embed impressions for this post
-          if (
-            post.embed &&
-            !seenPerPostUrisRef.current.has(post.uri) &&
-            (AppBskyEmbedImages.isView(post.embed) ||
-              AppBskyEmbedGallery.isView(post.embed))
-          ) {
-            seenPerPostUrisRef.current.add(post.uri)
-            const totalImages = AppBskyEmbedImages.isView(post.embed)
-              ? post.embed.images.length
-              : AppBskyEmbedGallery.isView(post.embed)
-                ? post.embed.items.length
-                : 0
-            if (totalImages > 0) {
-              ax.metric('post:photoEmbed:impression', {
-                layout: totalImages === 1 ? 'single' : 'grid',
-                totalImages,
-                postUri: post.uri,
-                postAuthorDid: post.author.did,
-                feedDescriptor: feedFeedback.feedDescriptor || feed,
-              })
-            }
-          }
-
-          // Track standard site embed impressions
-          if (
-            post.embed &&
-            AppBskyEmbedExternal.isView(post.embed) &&
-            isStandardSiteEmbed(post.embed.external)
-          ) {
-            const url = post.embed.external.uri
-            if (!seenPerPostUrisRef.current.has(url)) {
-              seenPerPostUrisRef.current.add(url)
-              ax.metric('embed:standardSite:view', {url})
-            }
-          }
         }
 
         // Live status tracking (existing code)
@@ -1098,47 +1128,11 @@ let PostFeed = ({
             ax.metric('post:view', {
               uri: post.uri,
               authorDid: post.author.did,
+              isReply: !!postItem.record.reply,
               logContext: 'FeedItem',
               feedDescriptor: feedFeedback.feedDescriptor || feed,
               position,
             })
-
-            // Track photo embed impressions for this post
-            if (
-              post.embed &&
-              !seenPerPostUrisRef.current.has(post.uri) &&
-              (AppBskyEmbedImages.isView(post.embed) ||
-                AppBskyEmbedGallery.isView(post.embed))
-            ) {
-              seenPerPostUrisRef.current.add(post.uri)
-              const totalImages = AppBskyEmbedImages.isView(post.embed)
-                ? post.embed.images.length
-                : AppBskyEmbedGallery.isView(post.embed)
-                  ? post.embed.items.length
-                  : 0
-              if (totalImages > 0) {
-                ax.metric('post:photoEmbed:impression', {
-                  layout: totalImages === 1 ? 'single' : 'grid',
-                  totalImages,
-                  postUri: post.uri,
-                  postAuthorDid: post.author.did,
-                  feedDescriptor: feedFeedback.feedDescriptor || feed,
-                })
-              }
-            }
-
-            // Track standard site embed impressions
-            if (
-              post.embed &&
-              AppBskyEmbedExternal.isView(post.embed) &&
-              isStandardSiteEmbed(post.embed.external)
-            ) {
-              const url = post.embed.external.uri
-              if (!seenPerPostUrisRef.current.has(url)) {
-                seenPerPostUrisRef.current.add(url)
-                ax.metric('embed:standardSite:view', {url})
-              }
-            }
           }
         }
       }

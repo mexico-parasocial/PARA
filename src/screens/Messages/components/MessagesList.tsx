@@ -7,7 +7,6 @@ import {
   useState,
 } from 'react'
 import {type LayoutChangeEvent, type ScrollViewProps, View} from 'react-native'
-import {type AtUriString} from '@atproto/syntax'
 import {
   KeyboardChatScrollView,
   type KeyboardChatScrollViewProps,
@@ -31,8 +30,9 @@ import {
   type ChatBskyEmbedJoinLink,
   ChatBskyGroupDefs,
 } from '@atproto/api'
+import {type AtUriString} from '@atproto/syntax'
 import {useScrollEdgeEffectRef} from '@bsky.app/expo-scroll-edge-effect'
-import {RichText} from '@bsky.app/sdk/richtext'
+import {RichText} from '@bsky/sdk/richtext'
 
 import {useNonReactiveCallback} from '#/lib/hooks/useNonReactiveCallback'
 import {mergeRefs} from '#/lib/merge-refs'
@@ -69,7 +69,7 @@ import {Loader} from '#/components/Loader'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
 import {IS_ANDROID, IS_NATIVE, IS_WEB} from '#/env'
-import {app, type chat, type com} from '#/lexicons'
+import {app, type chat} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 import {ChatStatusInfo} from './ChatStatusInfo'
 import {groupSystemMessages, type RenderItem} from './groupSystemMessages'

@@ -5,14 +5,10 @@ import {
   View,
   type ViewStyle,
 } from 'react-native'
-import {type ModerationUI} from '@bsky.app/sdk/moderation'
+import {type ModerationUI} from '@bsky/sdk/moderation'
 import {Trans, useLingui} from '@lingui/react/macro'
 
-import {
-  ADULT_CONTENT_LABELS,
-  type AdultSelfLabel,
-  isJustAMute,
-} from '#/lib/moderation'
+import {ADULT_CONTENT_LABELS, isJustAMute} from '#/lib/moderation'
 import {useGlobalLabelStrings} from '#/lib/moderation/useGlobalLabelStrings'
 import {getDefinition, getLabelStrings} from '#/lib/moderation/useLabelInfo'
 import {useModerationCauseDescription} from '#/lib/moderation/useModerationCauseDescription'
@@ -100,36 +96,28 @@ function ContentHiderActive({
         return desc.name
       }
     }
-
+    const selfBlurCauses = []
     let hasAdultContentLabel = false
-    const selfBlurNames = modui.blurs
-      .filter(cause => {
-        if (cause.type !== 'label') {
-          return false
-        }
-        if (cause.source.type !== 'user') {
-          return false
-        }
-        if (ADULT_CONTENT_LABELS.includes(cause.label.val)) {
-          if (hasAdultContentLabel) {
-            return false
-          }
-          hasAdultContentLabel = true
-        }
-        return true
-      })
-      .slice(0, 2)
-      .map(cause => {
-        if (cause.type !== 'label') {
-          return
-        }
+    for (const cause of modui.blurs) {
+      if (cause.type !== 'label') continue
+      if (cause.source.type !== 'user') continue
+      if (ADULT_CONTENT_LABELS.includes(cause.label.val)) {
+        if (hasAdultContentLabel) continue
+        hasAdultContentLabel = true
+      }
+      selfBlurCauses.push(cause)
+    }
+    const selfBlurNames = selfBlurCauses.slice(0, 2).map(cause => {
+      if (cause.type !== 'label') {
+        return
+      }
 
-        const def = cause.labelDef || getDefinition(labelDefs, cause.label)
-        if (def.identifier === 'porn' || def.identifier === 'sexual') {
-          return l`Adult Content`
-        }
-        return getLabelStrings(i18n.locale, globalLabelStrings, def).name
-      })
+      const def = cause.labelDef || getDefinition(labelDefs, cause.label)
+      if (def.identifier === 'porn' || def.identifier === 'sexual') {
+        return l`Adult Content`
+      }
+      return getLabelStrings(i18n.locale, globalLabelStrings, def).name
+    })
 
     if (selfBlurNames.length === 0) {
       return desc.name

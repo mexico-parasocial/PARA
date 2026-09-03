@@ -7,8 +7,8 @@ import {
   AppBskyFeedThreadgate,
   AtUri,
 } from '@atproto/api'
-import {type ModerationDecision} from '@bsky.app/sdk/moderation'
-import {RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
+import {type ModerationDecision} from '@bsky/sdk/moderation'
+import {RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {useQueryClient} from '@tanstack/react-query'
 
 import {useActorStatus} from '#/lib/actor-status'
@@ -30,7 +30,6 @@ import {
 import {makePostThreadLink} from '#/lib/routes/links'
 import {countLines} from '#/lib/strings/helpers'
 import {asSdkFacets} from '#/lib/strings/rich-text-helpers'
-import {logger} from '#/logger'
 import {
   POST_TOMBSTONE,
   type Shadow,
@@ -55,17 +54,18 @@ import {
   useHasThreadItemPostNumber,
 } from '#/screens/PostThread/components/ThreadItemPostNumber'
 import {atoms as a, select, useTheme} from '#/alf'
+import {CivicInsignia} from '#/components/CivicInsignia'
 import {
   GalleryBleed,
   maybeApplyGalleryOffsetStyles,
 } from '#/components/images/Gallery'
-import {CivicInsignia} from '#/components/CivicInsignia'
 import {ContentHider} from '#/components/moderation/ContentHider'
 import {PostAlerts} from '#/components/moderation/PostAlerts'
 import * as ReportDialogMetadataContext from '#/components/moderation/ReportDialog/ReportDialogMetadataContext'
 import {type AppModerationCause} from '#/components/Pills'
 import {Embed} from '#/components/Post/Embed'
 import {PostEmbedViewContext} from '#/components/Post/Embed/types'
+import {KnownLikers} from '#/components/Post/KnownLikers'
 import {PostRepliedTo} from '#/components/Post/PostRepliedTo'
 import {ShowMoreTextButton} from '#/components/Post/ShowMoreTextButton'
 import {TranslatedPost} from '#/components/Post/Translated'
@@ -74,6 +74,8 @@ import {DiscoverDebug} from '#/components/PostControls/DiscoverDebug'
 import {RichText} from '#/components/RichText'
 import {SubtleHover} from '#/components/SubtleHover'
 import {VotingButton} from '#/components/VotingButton'
+import {Features, useAnalytics} from '#/analytics'
+import {type app} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 import {PostFeedReason} from './PostFeedReason'
 
@@ -207,6 +209,7 @@ let FeedItemInner = ({
 }): React.ReactNode => {
   const queryClient = useQueryClient()
   const {openComposer} = useOpenComposer()
+  const ax = useAnalytics()
   const pal = usePalette('default')
   const t = useTheme()
   const {currentAccount} = useSession()
@@ -266,7 +269,7 @@ let FeedItemInner = ({
       feedContext,
       reqId,
     })
-    logger.metric('post:clickthroughAuthor', {
+    ax.metric('post:clickthroughAuthor', {
       uri: post.uri,
       authorDid: post.author.did,
       logContext: 'FeedItem',
@@ -290,7 +293,7 @@ let FeedItemInner = ({
       feedContext,
       reqId,
     })
-    logger.metric('post:clickthroughEmbed', {
+    ax.metric('post:clickthroughEmbed', {
       uri: post.uri,
       authorDid: post.author.did,
       logContext: 'FeedItem',
@@ -305,7 +308,7 @@ let FeedItemInner = ({
       feedContext,
       reqId,
     })
-    logger.metric('post:clickthroughItem', {
+    ax.metric('post:clickthroughItem', {
       uri: post.uri,
       authorDid: post.author.did,
       logContext: 'FeedItem',
@@ -542,6 +545,11 @@ let FeedItemInner = ({
               onShowLess={onShowLess}
               viaRepost={viaRepost}
               style={{marginTop: 'auto'}}
+            />
+            <KnownLikers
+              post={post as unknown as app.bsky.feed.defs.PostView}
+              feature={Features.PostFeedKnownLikersEnable}
+              variant="feed"
             />
           </View>
 

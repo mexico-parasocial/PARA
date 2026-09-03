@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native'
 import {type PasteEventPayload, TextInputWrapper} from 'expo-paste-input'
-import {RichText} from '@bsky.app/sdk/richtext'
+import {RichText} from '@bsky/sdk/richtext'
 import {useLingui} from '@lingui/react/macro'
 
 import {POST_IMG_MAX} from '#/lib/constants'
@@ -44,8 +44,7 @@ interface Selection {
 }
 
 type NativeAutocompleteSelection =
-  | {type: 'mention'; profile: {handle: string}}
-  | CivicAutocompleteItem
+  {type: 'mention'; profile: {handle: string}} | CivicAutocompleteItem
 
 export function TextInput({
   ref,

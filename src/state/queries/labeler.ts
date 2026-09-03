@@ -1,10 +1,9 @@
 import {type DidString} from '@atproto/syntax'
-import {addLabeler, removeLabeler} from '@bsky.app/sdk'
+import {addLabeler, removeLabeler} from '@bsky/sdk'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 import {z} from 'zod'
 
 import {MAX_LABELERS} from '#/lib/constants'
-import {app} from '#/lexicons'
 import {GCTIME, STALE} from '#/state/queries'
 import {
   preferencesQueryKey,
@@ -12,6 +11,7 @@ import {
 } from '#/state/queries/preferences'
 import {createQueryKey} from '#/state/queries/util'
 import {useAgent, usePdsClient} from '#/state/session'
+import {type app} from '#/lexicons'
 
 const labelerInfoQueryKeyRoot = 'labeler-info'
 export const labelerInfoQueryKey = (did: string) => [

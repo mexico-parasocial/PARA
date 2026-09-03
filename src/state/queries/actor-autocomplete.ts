@@ -1,6 +1,6 @@
 import {useCallback} from 'react'
 import {type AppBskyActorDefs} from '@atproto/api'
-import {type ModerationOpts} from '@bsky.app/sdk/moderation'
+import {type ModerationOpts} from '@bsky/sdk/moderation'
 import {keepPreviousData, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {isJustAMute, moduiContainsHideableOffense} from '#/lib/moderation'

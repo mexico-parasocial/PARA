@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useMemo, useState} from 'react'
 import {View} from 'react-native'
 import {type AppBskyGraphDefs} from '@atproto/api'
-import {RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
+import {RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Plural, Trans} from '@lingui/react/macro'

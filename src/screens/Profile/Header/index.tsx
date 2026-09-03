@@ -8,8 +8,8 @@ import Animated, {
 } from 'react-native-reanimated'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import {type AppBskyActorDefs} from '@atproto/api'
-import {type ModerationOpts} from '@bsky.app/sdk/moderation'
-import {type RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
+import {type ModerationOpts} from '@bsky/sdk/moderation'
+import {type RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {useIsFocused} from '@react-navigation/native'
 
 import {type ParaIdentityRecord} from '#/lib/api/para-lexicons'

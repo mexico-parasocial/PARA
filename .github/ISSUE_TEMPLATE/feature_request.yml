@@ -1,6 +1,6 @@
-name: 'Feature Request'
-description: 'Suggest an idea for the Bluesky app.'
-labels: ['feature-request']
+name: "Feature Request"
+description: "Suggest an idea for the Bluesky app."
+labels: ["feature-request"]
 body:
   - type: markdown
     attributes:
@@ -24,7 +24,7 @@ body:
         in or is missing from.
     validations:
       required: false
-      accept: '.png,.jpg,.jpeg,.gif,.webp,.mp4,.mov,.webm'
+      accept: ".png,.jpg,.jpeg,.gif,.webp,.mp4,.mov,.webm"
   - type: textarea
     attributes:
       label: Describe Alternatives

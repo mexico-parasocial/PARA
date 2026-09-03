@@ -1,18 +1,13 @@
 import {useCallback, useMemo} from 'react'
 import {View} from 'react-native'
-import {
-  type $Typed,
-  type AppBskyFeedDefs,
-  AppBskyFeedPost,
-  AtUri,
-} from '@atproto/api'
-import {RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
+import {type $Typed} from '@atproto/lex'
+import {AtUri} from '@atproto/syntax'
+import {moderatePost} from '@bsky/sdk/moderation'
+import {RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {Trans} from '@lingui/react/macro'
 import {useQueryClient} from '@tanstack/react-query'
 
-import {moderatePost} from '#/lib/moderation/subjects'
 import {makeProfileLink} from '#/lib/routes/links'
-import {asSdkFacets} from '#/lib/strings/rich-text-helpers'
 import {getChatInviteCodeFromUrl} from '#/lib/strings/url-helpers'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
 import {unstableCacheProfileView} from '#/state/queries/profile'
@@ -21,13 +16,16 @@ import {Link} from '#/view/com/util/Link'
 import {PostMeta} from '#/view/com/util/PostMeta'
 import {atoms as a, useTheme} from '#/alf'
 import {useInteractionState} from '#/components/hooks/useInteractionState'
+import {GalleryBleed} from '#/components/images/Gallery'
 import {ContentHider} from '#/components/moderation/ContentHider'
 import {PostAlerts} from '#/components/moderation/PostAlerts'
+import * as ReportDialogMetadataContext from '#/components/moderation/ReportDialog/ReportDialogMetadataContext'
 import {StandardSiteEmbed} from '#/components/Post/Embed/StandardSiteEmbed'
 import {isStandardSiteEmbed} from '#/components/Post/Embed/StandardSiteEmbed/utils'
 import {RichText} from '#/components/RichText'
 import {Embed as StarterPackCard} from '#/components/StarterPack/StarterPackCard'
 import {SubtleHover} from '#/components/SubtleHover'
+import {app} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 import {
   type Embed as TEmbed,
@@ -50,6 +48,7 @@ export function Embed({embed: rawEmbed, ...rest}: EmbedProps) {
 
   switch (embed.type) {
     case 'images':
+    case 'gallery':
     case 'link':
     case 'video': {
       return <MediaEmbed embed={embed} {...rest} />
@@ -89,7 +88,8 @@ function MediaEmbed({
   embed: TEmbed
 }) {
   switch (embed.type) {
-    case 'images': {
+    case 'images':
+    case 'gallery': {
       return (
         <ContentHider
           modui={rest.moderation?.ui('contentMedia')}
@@ -134,6 +134,7 @@ function MediaEmbed({
           <ExternalEmbed
             link={embed.view.external}
             onOpen={rest.onOpen}
+            post={rest.post}
             style={[a.mt_sm, rest.style]}
           />
         </ContentHider>
@@ -144,7 +145,7 @@ function MediaEmbed({
         <ContentHider
           modui={rest.moderation?.ui('contentMedia')}
           activeStyle={[a.mt_sm]}>
-          <VideoEmbed embed={embed.view} />
+          <VideoEmbed embed={embed.view} post={rest.post} />
         </ContentHider>
       )
     }
@@ -263,7 +264,7 @@ export function QuoteEmbed({
   linkDisabled?: boolean
 }) {
   const moderationOpts = useModerationOpts()
-  const quote = useMemo<$Typed<AppBskyFeedDefs.PostView>>(
+  const quote = useMemo<$Typed<app.bsky.feed.defs.PostView>>(
     () => ({
       ...embed.view,
       $type: 'app.bsky.feed.defs#postView',
@@ -283,16 +284,10 @@ export function QuoteEmbed({
   const itemTitle = `Post by ${quote.author.handle}`
 
   const richText = useMemo(() => {
-    if (
-      !bsky.dangerousIsType<AppBskyFeedPost.Record>(
-        quote.record,
-        AppBskyFeedPost.isRecord,
-      )
-    )
-      return undefined
+    if (!bsky.isType(app.bsky.feed.post, quote.record)) return undefined
     const {text, facets} = quote.record
     return text.trim()
-      ? new RichTextAPI({text: text, facets: asSdkFacets(facets)})
+      ? new RichTextAPI({text: text, facets: facets})
       : undefined
   }, [quote.record])
 
@@ -313,13 +308,14 @@ export function QuoteEmbed({
   } = useInteractionState()
 
   const contents = (
-    <>
+    <ReportDialogMetadataContext.Provider key={quote.uri}>
       <PostMeta
         author={quote.author}
         moderation={moderation}
         showAvatar
         postHref={itemHref}
         timestamp={quote.indexedAt}
+        linkDisabled
       />
       {moderation ? (
         <PostAlerts
@@ -346,50 +342,54 @@ export function QuoteEmbed({
           allowNestedQuotes={
             parentIsWithinQuote ? false : parentAllowNestedQuotes
           }
+          // The photo embed belongs to the quoted post, so attribute its
+          // analytics to the quoted post rather than the parent.
           post={quote}
         />
       )}
-    </>
+    </ReportDialogMetadataContext.Provider>
   )
 
   return (
-    <View
-      style={[viewContext !== PostEmbedViewContext.ChatMessage && a.mt_sm]}
-      onPointerEnter={linkDisabled ? undefined : onPointerEnter}
-      onPointerLeave={linkDisabled ? undefined : onPointerLeave}>
-      <ContentHider
-        modui={moderation?.ui('contentList')}
-        style={[a.rounded_md, a.border, t.atoms.border_contrast_low, style]}
-        activeStyle={[a.p_md, a.pt_sm]}
-        childContainerStyle={[a.pt_sm]}>
-        {({active}) => (
-          <>
-            {!active && !linkDisabled && (
-              <SubtleHover
-                native
-                hover={hover || pressed}
-                style={[a.rounded_md]}
-              />
-            )}
-            {linkDisabled ? (
-              <View style={[!active && a.p_md]} pointerEvents="none">
-                {contents}
-              </View>
-            ) : (
-              <Link
-                style={[!active && a.p_md]}
-                hoverStyle={t.atoms.border_contrast_high}
-                href={itemHref}
-                title={itemTitle}
-                onBeforePress={onBeforePress}
-                onPressIn={onPressIn}
-                onPressOut={onPressOut}>
-                {contents}
-              </Link>
-            )}
-          </>
-        )}
-      </ContentHider>
-    </View>
+    <GalleryBleed>
+      <View
+        style={[viewContext !== PostEmbedViewContext.ChatMessage && a.mt_sm]}
+        onPointerEnter={linkDisabled ? undefined : onPointerEnter}
+        onPointerLeave={linkDisabled ? undefined : onPointerLeave}>
+        <ContentHider
+          modui={moderation?.ui('contentList')}
+          style={[a.rounded_md, a.border, t.atoms.border_contrast_low, style]}
+          activeStyle={[a.p_md, a.pt_sm]}
+          childContainerStyle={[a.pt_sm]}>
+          {({active}) => (
+            <>
+              {!active && !linkDisabled && (
+                <SubtleHover
+                  native
+                  hover={hover || pressed}
+                  style={[a.rounded_md]}
+                />
+              )}
+              {linkDisabled ? (
+                <View style={[!active && a.p_md]} pointerEvents="none">
+                  {contents}
+                </View>
+              ) : (
+                <Link
+                  style={[!active && a.p_md]}
+                  hoverStyle={t.atoms.border_contrast_high}
+                  href={itemHref}
+                  title={itemTitle}
+                  onBeforePress={onBeforePress}
+                  onPressIn={onPressIn}
+                  onPressOut={onPressOut}>
+                  {contents}
+                </Link>
+              )}
+            </>
+          )}
+        </ContentHider>
+      </View>
+    </GalleryBleed>
   )
 }

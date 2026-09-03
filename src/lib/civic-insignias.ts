@@ -1,4 +1,4 @@
-import {RichText as RichTextAPI} from '@bsky.app/sdk/richtext'
+import {RichText as RichTextAPI} from '@bsky/sdk/richtext'
 
 import {inferPoliticalAffiliation} from '#/lib/political-affiliations'
 

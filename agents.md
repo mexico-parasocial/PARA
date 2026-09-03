@@ -123,6 +123,7 @@ PARA is a React Native mobile application built on the **AT Protocol (atproto)**
 If you are a new agent taking over this workspace:
 
 0. **Read the quarter plan:** the current planning horizon lives in the backend repo at `../WatZappa/docs/QUARTER_PLAN_2026Q4.md` (pilot community launch, Sep–Nov 2026). PARA's committed items per sprint are listed there; anything not listed is explicitly deferred.
+   - **Map feature roadmap:** map work is tracked separately in `docs/MAP_QUARTER_PLAN_2027Q1.md` (Dec 2026 – Feb 2027, plus the shipped S0 UX fixes) — it is deliberately not part of the Q4 pilot plan.
 1. **Check the Lexicons:** Before modifying API calls, inspect `src/lib/api/para-lexicons.ts` to understand the data schema.
 2. **Respect the Atoms:** Always use the `alf` design system. Do not write ad-hoc CSS/Styles unless absolutely necessary for custom animations.
 3. **Check target files:** This codebase supports both Native and Web. When modifying a screen, check if a `.web.tsx` counterpart exists to maintain parity.

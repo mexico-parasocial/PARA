@@ -53,7 +53,7 @@ import {type ImagePickerAsset} from 'expo-image-picker'
 import {AppBskyUnspeccedDefs, AtUri, ChatBskyGroupDefs} from '@atproto/api'
 import {type Client} from '@atproto/lex'
 import {type AtUriString} from '@atproto/syntax'
-import {RichText} from '@bsky.app/sdk/richtext'
+import {RichText} from '@bsky/sdk/richtext'
 import {msg, plural} from '@lingui/core/macro'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
@@ -535,7 +535,7 @@ export const ComposePost = ({
        */
       if (asset.duration == null && IS_NATIVE) {
         try {
-          const probed = await getVideoMetadata(asset.uri)
+          const probed = await getVideoMetadata(asset.uri, asset.mimeType)
           asset = {
             ...asset,
             mimeType: probed.mimeType ?? asset.mimeType,
@@ -675,8 +675,8 @@ export const ComposePost = ({
           let uri = videoInfo.uri
           if (IS_ANDROID) {
             // Android: expo-file-system double-encodes filenames with special chars.
-            // The file exists, but react-native-compressor's MediaMetadataRetriever
-            // can't handle the double-encoded URI. Copy to a temp file with a simple name.
+            // The native metadata probe can't handle the double-encoded URI, so
+            // copy it to a temp file with a simple name.
             const sourceFile = new FileSystem.File(videoInfo.uri)
             const tempFileName = `draft-video-${Date.now()}.${mimeToExt(videoInfo.mimeType)}`
             const tempFile = new FileSystem.File(
@@ -690,7 +690,7 @@ export const ComposePost = ({
             })
             uri = tempFile.uri
           }
-          asset = await getVideoMetadata(uri)
+          asset = await getVideoMetadata(uri, videoInfo.mimeType)
         }
 
         // Start video processing using existing flow
@@ -1387,7 +1387,7 @@ export const ComposePost = ({
     if (initQuote) {
       // We want to wait for the quote count to update before we call `onPost`, which will refetch data
       void whenAppViewReady(client, initQuote.uri, res => {
-        const anchor = res.thread.at(0)
+        const anchor = res?.thread.at(0)
         if (
           AppBskyUnspeccedDefs.isThreadItemPost(anchor?.value) &&
           anchor.value.post.quoteCount !== initQuote.quoteCount
@@ -2886,7 +2886,10 @@ function useKeyboardVerticalOffset() {
 async function whenAppViewReady(
   client: Client,
   uri: string,
-  fn: (res: app.bsky.unspecced.getPostThreadV2.$OutputBody) => boolean,
+  fn: (
+    res: app.bsky.unspecced.getPostThreadV2.$OutputBody | undefined,
+    err: unknown,
+  ) => boolean,
 ) {
   await until(
     5, // 5 tries

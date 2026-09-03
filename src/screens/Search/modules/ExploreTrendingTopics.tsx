@@ -2,7 +2,7 @@ import {useMemo} from 'react'
 import {Pressable, View} from 'react-native'
 import {Image} from 'expo-image'
 import {type AppBskyUnspeccedDefs} from '@atproto/api'
-import {RichText as RichTextApi} from '@bsky.app/sdk/richtext'
+import {RichText as RichTextApi} from '@bsky/sdk/richtext'
 import {Plural, Trans, useLingui} from '@lingui/react/macro'
 
 import {moderateProfile} from '#/lib/moderation/subjects'
@@ -26,7 +26,10 @@ import {Link} from '#/components/Link'
 import * as Prompt from '#/components/Prompt'
 import {RichText} from '#/components/RichText'
 import {SubtleHover} from '#/components/SubtleHover'
-import {useTrendingTopicSeen} from '#/components/TrendingTopics'
+import {
+  TrendingTopicsPrompt,
+  useTrendingTopicSeen,
+} from '#/components/TrendingTopics'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
 import * as ModuleHeader from '../components/ModuleHeader'
@@ -101,11 +104,8 @@ function Inner() {
             })}
       </View>
 
-      <Prompt.Basic
+      <TrendingTopicsPrompt
         control={trendingPrompt}
-        title={l`Hide trending topics?`}
-        description={l`You can update this later from your settings.`}
-        confirmButtonCta={l`Hide`}
         onConfirm={() => {
           ax.metric('trendingTopics:hide', {context: 'explore:trending'})
           setTrendingDisabled(true)
