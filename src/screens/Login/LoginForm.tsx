@@ -24,7 +24,8 @@ import {cleanError, isNetworkError} from '#/lib/strings/errors'
 import {createFullHandle} from '#/lib/strings/handles'
 import {useSessionApi} from '#/state/session'
 import {useSetHasCheckedForStarterPack} from '#/state/preferences/used-starter-packs'
-import {getM8AccessToken} from '#/lib/im8/api'
+import {getM8AccessToken, restoreM8Session} from '#/lib/im8/api'
+import {authenticateBiometric} from '#/lib/im8/biometric'
 import {openM8Verification} from '#/lib/im8/linking'
 import {logger} from '#/logger'
 import {useLoggedOutViewControls} from '#/state/shell/logged-out'
@@ -124,85 +125,99 @@ export const LoginForm = ({
   }, [hostingProviderControl])
 
   const onPressIm8Verify = useCallback(async () => {
+    if (isProcessing) return
     setAuthFactorMethod('im8')
     setError('')
     setErrorField('unknown')
+    setIsProcessing(true)
 
-    await openM8Verification()
-
-    // Poll for M8 access token after verification
-    const maxAttempts = 30
-    for (let i = 0; i < maxAttempts; i++) {
-      await new Promise(r => setTimeout(r, 1000))
-      const token = await getM8AccessToken()
-      if (token) {
-        setAuthFactorToken(token)
-        // Auto-submit with the M8 token
-        setIsProcessing(true)
-        try {
-          const identifier = identifierValueRef.current.toLowerCase().trim()
-          const password = passwordValueRef.current
-          const service =
-            hostingProviderState.status === 'overridden' &&
-            hostingProviderState.pdsUrl
-              ? hostingProviderState.pdsUrl
-              : serviceUrl
-
-          let fullIdent = identifier
-          if (
-            !identifier.includes('@') &&
-            !identifier.includes('.') &&
-            serviceDescription &&
-            serviceDescription.availableUserDomains.length > 0
-          ) {
-            let matched = false
-            for (const domain of serviceDescription.availableUserDomains) {
-              if (fullIdent.endsWith(domain)) {
-                matched = true
-              }
-            }
-            if (!matched) {
-              fullIdent = createFullHandle(
-                identifier,
-                serviceDescription.availableUserDomains[0],
-              )
-            }
-          }
-
-          await login(
-            {
-              service,
-              identifier: fullIdent,
-              password,
-              authFactorToken: token,
-            },
-            'LoginForm',
-          )
-          onAttemptSuccess()
-          setShowLoggedOut(false)
-          setHasCheckedForStarterPack(true)
-          requestNotificationsPermission('Login')
-        } catch (e: unknown) {
-          const errMsg = String(e)
-          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-          setIsProcessing(false)
-          if (e instanceof LexAuthFactorError) {
-            setError(_(msg`iM8 verification did not complete. Try again.`))
-          } else {
-            onAttemptFailed()
-            setError(cleanError(errMsg))
-          }
-        }
-        return
-      }
+    // Easy UX: biometric gate in-app, then reuse the M8 session PARA
+    // already holds. No app-switch, no polling loop.
+    const biometricOk = await authenticateBiometric()
+    if (!biometricOk) {
+      setIsProcessing(false)
+      setError(
+        _(msg`Biometric check didn't pass. Try again or use an email code.`),
+      )
+      return
     }
 
-    setError(
-      _(
-        msg`Timed out waiting for iM8 verification. Please try again.`,
-      ),
-    )
+    let token = await getM8AccessToken()
+    if (!token) {
+      const session = await restoreM8Session().catch(() => null)
+      if (session) {
+        token = await getM8AccessToken()
+      }
+    }
+    if (!token) {
+      setIsProcessing(false)
+      setError(
+        _(
+          msg`No iM8 session found on this device. Open the iM8 app to connect, or use an email code instead.`,
+        ),
+      )
+      await openM8Verification()
+      return
+    }
+
+    setAuthFactorToken(token)
+    // Auto-submit with the M8 token (isProcessing already true)
+    try {
+      const identifier = identifierValueRef.current.toLowerCase().trim()
+      const password = passwordValueRef.current
+      const service =
+        hostingProviderState.status === 'overridden' &&
+        hostingProviderState.pdsUrl
+          ? hostingProviderState.pdsUrl
+          : serviceUrl
+
+      let fullIdent = identifier
+      if (
+        !identifier.includes('@') &&
+        !identifier.includes('.') &&
+        serviceDescription &&
+        serviceDescription.availableUserDomains.length > 0
+      ) {
+        let matched = false
+        for (const domain of serviceDescription.availableUserDomains) {
+          if (fullIdent.endsWith(domain)) {
+            matched = true
+          }
+        }
+        if (!matched) {
+          fullIdent = createFullHandle(
+            identifier,
+            serviceDescription.availableUserDomains[0],
+          )
+        }
+      }
+
+      await login(
+        {
+          service,
+          identifier: fullIdent,
+          password,
+          authFactorToken: token,
+        },
+        'LoginForm',
+      )
+      onAttemptSuccess()
+      setShowLoggedOut(false)
+      setHasCheckedForStarterPack(true)
+      requestNotificationsPermission('Login')
+    } catch (e: unknown) {
+      const errMsg = String(e)
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+      setIsProcessing(false)
+      if (e instanceof LexAuthFactorError) {
+        setError(_(msg`iM8 verification did not complete. Try again.`))
+      } else {
+        onAttemptFailed()
+        setError(cleanError(errMsg))
+      }
+    }
   }, [
+    isProcessing,
     hostingProviderState,
     serviceUrl,
     serviceDescription,
@@ -609,15 +624,16 @@ export const LoginForm = ({
                 <>
                   <Admonition type="info">
                     <Trans>
-                      Tap below to verify your identity with iM8. You'll need
-                      the iM8 app installed on this device.
+                      One tap: confirm with FaceID and we'll use your iM8
+                      session on this device to finish signing in. No codes
+                      to type.
                     </Trans>
                   </Admonition>
                   <Button
                     testID="loginIm8VerifyButton"
                     label={_(msg`Verify with iM8`)}
                     accessibilityHint={_(
-                      msg`Opens iM8 app for identity verification`,
+                      msg`Confirms your identity with biometrics and signs in using iM8`,
                     )}
                     variant="solid"
                     color="primary"
