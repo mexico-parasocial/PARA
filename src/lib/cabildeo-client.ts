@@ -112,6 +112,7 @@ export function mapCabildeoReadViewToView(
     flairs: view.flairs?.length ? view.flairs : undefined,
     region: view.region,
     geoRestricted: !!view.geoRestricted,
+    geo: view.geo,
     options: view.options,
     minQuorum: view.minQuorum,
     minimumViewTier: view.minimumViewTier ?? 'public',
