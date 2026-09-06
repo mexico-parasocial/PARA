@@ -7,6 +7,7 @@ import {type NativeStackScreenProps} from '@react-navigation/native-stack'
 import {type CommonNavigatorParams} from '#/lib/routes/types'
 import {useNotificationDeclarationQuery} from '#/state/queries/activity-subscriptions'
 import {useAppPasswordsQuery} from '#/state/queries/app-passwords'
+import {useAuthFactorQuery} from '#/state/queries/auth-factor'
 import {useSession} from '#/state/session'
 import * as SettingsList from '#/screens/Settings/components/SettingsList'
 import {atoms as a, useTheme} from '#/alf'
@@ -18,6 +19,7 @@ import {ShieldCheck_Stroke2_Corner0_Rounded as ShieldIcon} from '#/components/ic
 import * as Layout from '#/components/Layout'
 import {InlineLinkText} from '#/components/Link'
 import {Email2FAToggle} from './components/Email2FAToggle'
+import {Im8FAToggle} from './components/Im8FAToggle'
 import {PwiOptOut} from './components/PwiOptOut'
 import {ItemTextWithSubtitle} from './NotificationSettings/components/ItemTextWithSubtitle'
 
@@ -30,6 +32,7 @@ export function PrivacyAndSecuritySettingsScreen({}: Props) {
   const t = useTheme()
   const {data: appPasswords} = useAppPasswordsQuery()
   const {currentAccount} = useSession()
+  const {data: authFactor, isError: authFactorError} = useAuthFactorQuery()
   const {
     data: notificationDeclaration,
     isPending,
@@ -67,6 +70,26 @@ export function PrivacyAndSecuritySettingsScreen({}: Props) {
             </SettingsList.ItemText>
             <Email2FAToggle />
           </SettingsList.Item>
+          {!authFactorError && (
+            <SettingsList.Item>
+              <SettingsList.ItemIcon
+                icon={ShieldIcon}
+                color={
+                  authFactor?.authFactorType === 'im8'
+                    ? t.palette.primary_500
+                    : undefined
+                }
+              />
+              <SettingsList.ItemText>
+                {authFactor?.authFactorType === 'im8' ? (
+                  <Trans>iM8 2FA enabled</Trans>
+                ) : (
+                  <Trans>iM8 two-factor authentication</Trans>
+                )}
+              </SettingsList.ItemText>
+              <Im8FAToggle />
+            </SettingsList.Item>
+          )}
           <SettingsList.LinkItem
             to="/settings/app-passwords"
             label={_(msg`App passwords`)}>

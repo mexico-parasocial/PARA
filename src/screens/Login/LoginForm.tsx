@@ -14,12 +14,13 @@ import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
 import {
+  DEFAULT_SERVICE,
   HITSLOP_10,
   IS_LOCAL_DEV_MODE,
   LOCAL_DEV_SERVICE,
 } from '#/lib/constants'
 import {useRequestNotificationsPermission} from '#/lib/notifications/notifications'
-import {toNiceHostingUrl} from '#/lib/strings/url-helpers'
+import {isBlueskyHostedUrl, toNiceHostingUrl} from '#/lib/strings/url-helpers'
 import {cleanError, isNetworkError} from '#/lib/strings/errors'
 import {createFullHandle} from '#/lib/strings/handles'
 import {useSessionApi} from '#/state/session'
@@ -104,6 +105,18 @@ export const LoginForm = ({
   const identifierValueRef = useRef(initialHandle || '')
   const passwordValueRef = useRef('')
   const [authFactorToken, setAuthFactorToken] = useState('')
+  // Reactive mirror of the identifier input. The refs above don't trigger
+  // re-renders, so without this the hosting-provider detection hook would
+  // only ever see the initial handle.
+  const [identifier, setIdentifier] = useState(initialHandle || '')
+  const [pendingConfirm, setPendingConfirm] = useState<{
+    service: string
+    identifier: string
+    passwordLength: number
+  } | null>(null)
+  // Host the user already acknowledged in the typosquatting dialog. Reset
+  // whenever the identifier changes so a new host re-arms the gate.
+  const confirmedHostRef = useRef<string | null>(null)
   const identifierRef = useRef<React.ComponentRef<typeof TextInput>>(null)
   const passwordRef = useRef<React.ComponentRef<typeof TextInput>>(null)
   const hasFocusedOnce = useRef(false)
@@ -114,21 +127,116 @@ export const LoginForm = ({
     override: overrideHostingProvider,
     clearOverride: clearHostingOverride,
   } = useHostingProvider({
-    identifier: identifierValueRef.current,
+    identifier,
   })
 
-  const isEmail = identifierValueRef.current.includes('@')
+  const isEmail = identifier.includes('@')
 
   const onPressSelectService = useCallback(() => {
     Keyboard.dismiss()
     hostingProviderControl.open()
   }, [hostingProviderControl])
 
-  const onPressIm8Verify = useCallback(async () => {
+  // Shared login plumbing used by both the email-code and iM8 2FA paths.
+  // Resolves the handle-guessing and effective service for the attempt.
+  const resolveLoginInput = () => {
+    const rawIdentifier = identifierValueRef.current.toLowerCase().trim()
+    const password = passwordValueRef.current
+    let fullIdent = rawIdentifier
+    if (
+      !rawIdentifier.includes('@') &&
+      !rawIdentifier.includes('.') &&
+      serviceDescription &&
+      serviceDescription.availableUserDomains.length > 0
+    ) {
+      let matched = false
+      for (const domain of serviceDescription.availableUserDomains) {
+        if (fullIdent.endsWith(domain)) {
+          matched = true
+        }
+      }
+      if (!matched) {
+        fullIdent = createFullHandle(
+          rawIdentifier,
+          serviceDescription.availableUserDomains[0],
+        )
+      }
+    }
+    const service =
+      hostingProviderState.status === 'overridden' &&
+      hostingProviderState.pdsUrl
+        ? hostingProviderState.pdsUrl
+        : serviceUrl
+    return {fullIdent, password, service}
+  }
+
+  // Opens the typosquatting confirmation dialog when the typed handle
+  // auto-resolved to a third-party PDS. Returns true when the attempt
+  // was gated (caller must not proceed to login).
+  const maybeGateThirdParty = (
+    fullIdent: string,
+    password: string,
+  ): boolean => {
+    if (
+      !IS_LOCAL_DEV_MODE &&
+      hostingProviderState.status === 'detected' &&
+      hostingProviderState.pdsUrl !== DEFAULT_SERVICE &&
+      !isBlueskyHostedUrl(hostingProviderState.pdsUrl) &&
+      confirmedHostRef.current !== hostingProviderState.pdsUrl
+    ) {
+      setIsProcessing(false)
+      setPendingConfirm({
+        service: hostingProviderState.pdsUrl,
+        identifier: fullIdent,
+        passwordLength: password.length,
+      })
+      confirmHostingProviderControl.open()
+      return true
+    }
+    return false
+  }
+
+  // Performs the login attempt. Throws on failure; callers own error
+  // presentation because the email and iM8 paths explain failures
+  // differently.
+  const submitLogin = async (authToken: string) => {
+    const {fullIdent, password, service} = resolveLoginInput()
+    if (maybeGateThirdParty(fullIdent, password)) return
+    await login(
+      {
+        service,
+        identifier: fullIdent,
+        password,
+        authFactorToken: authToken,
+      },
+      'LoginForm',
+    )
+    onAttemptSuccess()
+    setShowLoggedOut(false)
+    setHasCheckedForStarterPack(true)
+    requestNotificationsPermission('Login')
+  }
+
+  const onPressIm8Verify = async () => {
     if (isProcessing) return
+    Keyboard.dismiss()
     setAuthFactorMethod('im8')
     setError('')
     setErrorField('unknown')
+
+    const identifier = identifierValueRef.current.toLowerCase().trim()
+    const password = passwordValueRef.current
+    if (!identifier) {
+      setErrorField('identifier')
+      setError(_(msg`Your username or email address appears to be invalid.`))
+      return
+    }
+    if (!password) {
+      setErrorField('password')
+      setError(_(msg`Your password appears to be invalid.`))
+      return
+    }
+
     setIsProcessing(true)
 
     // Easy UX: biometric gate in-app, then reuse the M8 session PARA
@@ -163,48 +271,7 @@ export const LoginForm = ({
     setAuthFactorToken(token)
     // Auto-submit with the M8 token (isProcessing already true)
     try {
-      const identifier = identifierValueRef.current.toLowerCase().trim()
-      const password = passwordValueRef.current
-      const service =
-        hostingProviderState.status === 'overridden' &&
-        hostingProviderState.pdsUrl
-          ? hostingProviderState.pdsUrl
-          : serviceUrl
-
-      let fullIdent = identifier
-      if (
-        !identifier.includes('@') &&
-        !identifier.includes('.') &&
-        serviceDescription &&
-        serviceDescription.availableUserDomains.length > 0
-      ) {
-        let matched = false
-        for (const domain of serviceDescription.availableUserDomains) {
-          if (fullIdent.endsWith(domain)) {
-            matched = true
-          }
-        }
-        if (!matched) {
-          fullIdent = createFullHandle(
-            identifier,
-            serviceDescription.availableUserDomains[0],
-          )
-        }
-      }
-
-      await login(
-        {
-          service,
-          identifier: fullIdent,
-          password,
-          authFactorToken: token,
-        },
-        'LoginForm',
-      )
-      onAttemptSuccess()
-      setShowLoggedOut(false)
-      setHasCheckedForStarterPack(true)
-      requestNotificationsPermission('Login')
+      await submitLogin(token)
     } catch (e: unknown) {
       const errMsg = String(e)
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
@@ -216,19 +283,7 @@ export const LoginForm = ({
         setError(cleanError(errMsg))
       }
     }
-  }, [
-    isProcessing,
-    hostingProviderState,
-    serviceUrl,
-    serviceDescription,
-    login,
-    onAttemptSuccess,
-    onAttemptFailed,
-    setShowLoggedOut,
-    setHasCheckedForStarterPack,
-    requestNotificationsPermission,
-    _,
-  ])
+  }
 
   const onPressNext = async () => {
     if (isProcessing) return
@@ -255,44 +310,7 @@ export const LoginForm = ({
     setIsProcessing(true)
 
     try {
-      let fullIdent = identifier
-      if (
-        !identifier.includes('@') &&
-        !identifier.includes('.') &&
-        serviceDescription &&
-        serviceDescription.availableUserDomains.length > 0
-      ) {
-        let matched = false
-        for (const domain of serviceDescription.availableUserDomains) {
-          if (fullIdent.endsWith(domain)) {
-            matched = true
-          }
-        }
-        if (!matched) {
-          fullIdent = createFullHandle(
-            identifier,
-            serviceDescription.availableUserDomains[0],
-          )
-        }
-      }
-
-      const service = hostingProviderState.status === 'overridden' && hostingProviderState.pdsUrl
-        ? hostingProviderState.pdsUrl
-        : serviceUrl
-
-      await login(
-        {
-          service,
-          identifier: fullIdent,
-          password,
-          authFactorToken: authFactorToken.trim(),
-        },
-        'LoginForm',
-      )
-      onAttemptSuccess()
-      setShowLoggedOut(false)
-      setHasCheckedForStarterPack(true)
-      requestNotificationsPermission('Login')
+      await submitLogin(authFactorToken.trim())
     } catch (e: unknown) {
       const errMsg = String(e)
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
@@ -344,19 +362,25 @@ export const LoginForm = ({
   }
 
   const onSelectAutomatic = useCallback(() => {
+    confirmedHostRef.current = null
     clearHostingOverride()
   }, [clearHostingOverride])
 
   const onSelectManual = useCallback(
     (url: string) => {
+      confirmedHostRef.current = null
       overrideHostingProvider(url)
     },
     [overrideHostingProvider],
   )
 
   const onConfirm = useCallback(() => {
+    if (pendingConfirm) {
+      confirmedHostRef.current = pendingConfirm.service
+      setPendingConfirm(null)
+    }
     onPressNext()
-  }, [onPressNext])
+  }, [onPressNext, pendingConfirm])
 
   return (
     <FormContainer testID="loginForm" titleText={<Trans>Sign in</Trans>}>
@@ -462,6 +486,8 @@ export const LoginForm = ({
               defaultValue={initialHandle || ''}
               onChangeText={v => {
                 identifierValueRef.current = v
+                setIdentifier(v)
+                confirmedHostRef.current = null
               }}
               onSubmitEditing={() => {
                 passwordRef.current?.focus()
@@ -740,12 +766,12 @@ export const LoginForm = ({
       <ConfirmHostingProviderDialog
         control={confirmHostingProviderControl}
         host={
-          hostingProviderState.status === 'overridden' && hostingProviderState.pdsUrl
-            ? toNiceHostingUrl(hostingProviderState.pdsUrl)
-            : ''
+          pendingConfirm ? toNiceHostingUrl(pendingConfirm.service) : ''
         }
-        identifier={identifierValueRef.current}
-        passwordLength={passwordValueRef.current.length}
+        identifier={pendingConfirm?.identifier ?? identifierValueRef.current}
+        passwordLength={
+          pendingConfirm?.passwordLength ?? passwordValueRef.current.length
+        }
         onConfirm={onConfirm}
       />
     </FormContainer>
