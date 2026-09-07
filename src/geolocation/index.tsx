@@ -19,9 +19,13 @@ export {
 export {
   findClosestDistrict,
   GEO_SCOPE_DESCRIPTIONS,
+  GEO_SCOPE_GRID,
   GEO_SCOPE_LABELS,
+  geoForScope,
   type GeoScope,
   resolveStateFromCoordinate,
+  snapGeoToGridE7,
+  type ScopedGeo,
 } from '#/geolocation/geoScope'
 export {
   type AccurateLocation,
