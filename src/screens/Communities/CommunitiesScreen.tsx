@@ -1,5 +1,6 @@
 import {
   type ComponentProps,
+  type ComponentRef,
   useCallback,
   useEffect,
   useMemo,
@@ -122,7 +123,7 @@ export function CommunitiesScreen() {
     sort: 'activity',
   })
 
-  const politicalScrollRef = useRef<ScrollView>(null)
+  const politicalScrollRef = useRef<ComponentRef<typeof ScrollView>>(null)
 
   const matterFlairs = useMemo(
     () =>
@@ -1091,7 +1092,7 @@ function WheelPicker({
   onValueChange: (value: string) => void
   theme: ThemeShape
 }) {
-  const scrollViewRef = useRef<ScrollView>(null)
+  const scrollViewRef = useRef<ComponentRef<typeof ScrollView>>(null)
   const initialIndex = items.findIndex(item => item === selectedValue)
   const [selectedIndex, setSelectedIndex] = useState(
     initialIndex >= 0 ? initialIndex : 0,

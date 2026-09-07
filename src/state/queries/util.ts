@@ -172,7 +172,8 @@ export async function truncateAndInvalidate<T = any>(
 // of the currentUri that is being checked.
 export function didOrHandleUriMatches(
   atUri: AtUri,
-  record: {uri: string; author: app.bsky.actor.defs.ProfileViewBasic},
+  // Structural: callers pass both api-typed and lexicon-typed posts.
+  record: {uri: string; author: {handle: string}},
 ) {
   if (atUri.host.startsWith('did:')) {
     return atUri.href === record.uri

@@ -30,11 +30,10 @@ export {
 } from '#/geolocation/hooks/useAccurateLocation'
 export {
   type CoarseLocation,
+  fetchCoarseLocation,
   useCoarseLocation,
 } from '#/geolocation/hooks/useCoarseLocation'
-export {
-  useLocationPermission,
-} from '#/geolocation/hooks/useLocationPermission'
+export {useLocationPermission} from '#/geolocation/hooks/useLocationPermission'
 export {
   type M8IdentityLocation,
   useM8IdentityLocation,

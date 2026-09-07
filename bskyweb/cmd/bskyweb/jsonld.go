@@ -265,6 +265,32 @@ func findVideoEmbed(pv *appbsky.FeedDefs_PostView, embedHidden bool) *appbsky.Em
 	return nil
 }
 
+// videoMeta carries a post video's og:video fields. Shared with server.go
+// so og:video and JSON-LD VideoObject stay in sync via findVideoEmbed.
+type videoMeta struct {
+	URL     string
+	Type    string
+	HasSize bool
+	Width   int64
+	Height  int64
+}
+
+// extractVideoMeta returns the post's video playlist URL and dimensions,
+// or an empty videoMeta when there is no usable video embed.
+func extractVideoMeta(pv *appbsky.FeedDefs_PostView, embedHidden bool) videoMeta {
+	v := findVideoEmbed(pv, embedHidden)
+	if v == nil || v.Playlist == "" {
+		return videoMeta{}
+	}
+	vm := videoMeta{URL: v.Playlist, Type: "application/x-mpegURL"}
+	if v.AspectRatio != nil && v.AspectRatio.Width != 0 && v.AspectRatio.Height != 0 {
+		vm.HasSize = true
+		vm.Width = v.AspectRatio.Width
+		vm.Height = v.AspectRatio.Height
+	}
+	return vm
+}
+
 // buildVideoObject returns a VideoObject for the post's video embed, or
 // nil if there's no usable video. Falls back to "Video by @<handle>" when
 // alt text is empty so name is always populated (Google requires it).

@@ -413,8 +413,8 @@ export function findPostNumberingInQueryData(
   const atUri = new AtUri(uri)
   const queryDatas = queryClient.getQueriesData<
     InfiniteData<{
-      feed: app.bsky.feed.defs.GeneratorView
-      posts: app.bsky.feed.defs.FeedViewPost[]
+      feed: AppBskyFeedDefs.GeneratorView
+      posts: AppBskyFeedDefs.FeedViewPost[]
     }>
   >({
     queryKey: [RQKEY_ROOT],

@@ -1,8 +1,8 @@
 import {Text, View} from 'react-native'
 import {Trans, useLingui} from '@lingui/react/macro'
 
+import {type FeedPostNumbering} from '#/lib/api/feed-manip'
 import {atoms as a, ios, platform, useTheme} from '#/alf'
-import {type app} from '#/lexicons'
 
 /**
  * How far the inline badge is nudged below the text baseline. Android's
@@ -10,10 +10,7 @@ import {type app} from '#/lexicons'
  */
 export const POST_NUMBER_INLINE_OFFSET = 6
 
-export type ThreadItemPostNumbering = Pick<
-  app.bsky.unspecced.defs.ThreadItemPost,
-  'opThreadPostIndex' | 'opThreadPostCount'
->
+export type ThreadItemPostNumbering = FeedPostNumbering
 
 export function useHasThreadItemPostNumber(
   value: ThreadItemPostNumbering | undefined,
@@ -22,11 +19,7 @@ export function useHasThreadItemPostNumber(
   const count = value?.opThreadPostCount
 
   return (
-    index !== undefined &&
-    count !== undefined &&
-    index >= 1 &&
-    count >= 1 &&
-    index <= count
+    index != null && count != null && index >= 1 && count >= 1 && index <= count
   )
 }
 
@@ -73,9 +66,9 @@ export function ThreadItemPostNumber({
       ]}>
       <Text
         accessibilityLabel={l({
-          // The generated lexicon type does not declare these fields yet, so
-          // they arrive as `unknown`; useHasThreadItemPostNumber has already
-          // validated them as numbers >= 1.
+          // `shouldRender` has already validated these as numbers >= 1, but
+          // the field type stays `number | null | undefined` until the
+          // lexicon declares the fields.
           message: `Post ${Number(index)} of ${Number(count)}`,
           context: 'post-number-in-thread',
           comment:
@@ -93,7 +86,7 @@ export function ThreadItemPostNumber({
         <Trans
           context="post-number-in-thread"
           comment="Badge indicating post count in a thread, e.g., the 3rd post of 5 total is '3/5'">
-          {index}/{count}
+          {Number(index)}/{Number(count)}
         </Trans>
       </Text>
     </View>

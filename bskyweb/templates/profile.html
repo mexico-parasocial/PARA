@@ -1,6 +1,4 @@
-{% extends "base.html" %} {% block head_title %} {%- if profileView -%} @{{
-profileView.Handle }} on PARA {%- else -%} PARA {%- endif -%} {% endblock %} {%
-block html_head_extra -%}
+{% extends "base.html" %} {% block head_title %} {%- if profileView -%} @{{ profileView.Handle }} on PARA {%- else -%} PARA {%- endif -%} {% endblock %} {% block html_head_extra -%}
 <meta property="og:site_name" content="PARA" />
 <meta property="og:type" content="profile" />
 {%- if requestURI %}
@@ -28,15 +26,13 @@ block html_head_extra -%}
   rel="alternate"
   type="application/rss+xml"
   href="https://{{ requestHost }}/profile/{{ profileView.Did }}/rss" />
-{% endif %} {# Only show details if auth isn't required #} {% if not
-requiresAuth %} {%- if profileView.Description %}
+{% endif %} {# Only show details if auth isn't required #} {% if not requiresAuth %} {%- if profileView.Description %}
 <meta name="description" content="{{ profileView.Description }}" />
 <meta property="og:description" content="{{ profileView.Description }}" />
 {% endif -%} {%- if profileView.Banner %}
 <meta property="og:image" content="{{ profileView.Banner }}" />
 <meta name="twitter:card" content="summary_large_image" />
-{%- elif profileView.Avatar -%} {# Don't use avatar image in cards; usually
-looks bad #}
+{%- elif profileView.Avatar -%} {# Don't use avatar image in cards; usually looks bad #}
 <meta name="twitter:card" content="summary" />
 {% endif %} {% else %}
 <meta
@@ -50,44 +46,11 @@ looks bad #}
   content="This profile requires authentication to view." />
 {% endif %}
 
+{%- if profileJSONLD %}
 <script type="application/ld+json">
-  {
-    "@context": "https://schema.org",
-    "@type": "ProfilePage",
-    "dateCreated": "{{ profileView.CreatedAt }}",
-    "mainEntity": {
-      "@type": "Person",
-      {%- if profileView.DisplayName %}
-      "name": "{{ profileView.DisplayName }}",
-      "alternateName": "@{{ profileView.Handle }}",
-      {% else %}
-      "name": "@{{ profileView.Handle }}",
-      {% endif -%}
-      "identifier": "{{ profileView.Did }}",
-      "description": "{{ profileView.Description }}",
-      "image": "{{ profileView.Avatar }}",
-      "interactionStatistic": [
-        {
-          "@type": "InteractionCounter",
-          "interactionType": "https://schema.org/FollowAction",
-          "userInteractionCount": {{ profileView.FollowersCount }}
-        }
-      ],
-      "agentInteractionStatistic": [
-        {
-          "@type": "InteractionCounter",
-          "interactionType": "https://schema.org/FollowAction",
-          "userInteractionCount": {{ profileView.FollowsCount }}
-        },
-        {
-          "@type": "InteractionCounter",
-          "interactionType": "https://schema.org/WriteAction",
-          "userInteractionCount": {{ profileView.PostsCount }}
-        }
-      ]
-    }
-  }
+  {{ profileJSONLD|safe }}
 </script>
+{% endif %}
 {% endif -%} {%- endblock %} {% block noscript_extra -%} {%- if profileView -%}
 <div id="bsky_profile_summary">
   <h3>Profile</h3>

@@ -1,17 +1,27 @@
 import {useCallback, useState} from 'react'
-import {ActivityIndicator, StyleSheet, TouchableOpacity, View} from 'react-native'
+import {
+  ActivityIndicator,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native'
 
 import {atoms as a, useTheme} from '#/alf'
 import {PinLocation_Stroke2_Corner0_Rounded as MapPinIcon} from '#/components/icons/PinLocation'
 import {Text} from '#/components/Typography'
 import {
   fetchAccurateLocation,
+  fetchCoarseLocation,
   GEO_SCOPE_DESCRIPTIONS,
   GEO_SCOPE_LABELS,
+  geoForScope,
   type GeoScope,
   useM8IdentityLocation,
 } from '#/geolocation'
-import {findClosestDistrict, resolveStateFromCoordinate} from '#/geolocation/geoScope'
+import {
+  findClosestDistrict,
+  resolveStateFromCoordinate,
+} from '#/geolocation/geoScope'
 
 export type ResolvedGeoScope = {
   scope: GeoScope
@@ -62,18 +72,16 @@ export function GeoScopeSelector({value, onChange}: GeoScopeSelectorProps) {
         let resolved: ResolvedGeoScope
 
         if (scope === 'state') {
-          // State-level: use accurate location and resolve state
-          const loc = await fetchAccurateLocation()
+          // State-level: coarse fix used transiently to resolve the
+          // state name. No coordinates leave this function (see
+          // geoForScope) — only the region is stored.
+          const loc = await fetchCoarseLocation()
           const state = resolveStateFromCoordinate(loc.latitude, loc.longitude)
           if (!state) throw new Error('No se pudo resolver el estado')
           resolved = {
             scope,
             region: state,
-            geo: {
-              latE7: Math.round(loc.latitude * 1e7),
-              lngE7: Math.round(loc.longitude * 1e7),
-            },
-            positionalAccuracy: loc.positionalAccuracy,
+            ...geoForScope(scope, loc.latitude, loc.longitude),
           }
         } else if (scope === 'district') {
           const loc = await fetchAccurateLocation()
@@ -83,11 +91,12 @@ export function GeoScopeSelector({value, onChange}: GeoScopeSelectorProps) {
             scope,
             region: district.stateName,
             districtKey: district.districtKey,
-            geo: {
-              latE7: Math.round(loc.latitude * 1e7),
-              lngE7: Math.round(loc.longitude * 1e7),
-            },
-            positionalAccuracy: loc.positionalAccuracy,
+            ...geoForScope(
+              scope,
+              loc.latitude,
+              loc.longitude,
+              loc.positionalAccuracy,
+            ),
           }
         } else if (scope === 'city') {
           const loc = await fetchAccurateLocation()
@@ -102,11 +111,12 @@ export function GeoScopeSelector({value, onChange}: GeoScopeSelectorProps) {
             scope,
             region: state ?? 'Desconocido',
             city: cityName,
-            geo: {
-              latE7: Math.round(loc.latitude * 1e7),
-              lngE7: Math.round(loc.longitude * 1e7),
-            },
-            positionalAccuracy: loc.positionalAccuracy,
+            ...geoForScope(
+              scope,
+              loc.latitude,
+              loc.longitude,
+              loc.positionalAccuracy,
+            ),
           }
         } else if (scope === 'neighborhood') {
           // Neighborhood requires m8 INE data
@@ -119,11 +129,12 @@ export function GeoScopeSelector({value, onChange}: GeoScopeSelectorProps) {
             region: m8Location.state ?? 'Desconocido',
             city: m8Location.city,
             neighborhood: m8Location.neighborhood,
-            geo: {
-              latE7: Math.round(loc.latitude * 1e7),
-              lngE7: Math.round(loc.longitude * 1e7),
-            },
-            positionalAccuracy: loc.positionalAccuracy,
+            ...geoForScope(
+              scope,
+              loc.latitude,
+              loc.longitude,
+              loc.positionalAccuracy,
+            ),
           }
         } else {
           throw new Error('Scope no soportado')
@@ -147,11 +158,7 @@ export function GeoScopeSelector({value, onChange}: GeoScopeSelectorProps) {
   return (
     <View style={styles.container}>
       <View style={styles.headerRow}>
-        <MapPinIcon
-          width={18}
-          height={18}
-          fill={t.palette.primary_500}
-        />
+        <MapPinIcon width={18} height={18} fill={t.palette.primary_500} />
         <Text style={[a.text_sm, a.font_bold, t.atoms.text, a.ml_sm]}>
           Geographic scope
         </Text>
@@ -164,8 +171,8 @@ export function GeoScopeSelector({value, onChange}: GeoScopeSelectorProps) {
           a.mt_xs,
           {lineHeight: 18},
         ]}>
-        Choose how specific your proposal's location will be. This
-        affects where it will appear on the civic tree.
+        Choose how specific your proposal's location will be. This affects where
+        it will appear on the civic tree.
       </Text>
 
       {value ? (
@@ -206,8 +213,7 @@ export function GeoScopeSelector({value, onChange}: GeoScopeSelectorProps) {
           </Text>
 
           {value.positionalAccuracy && (
-            <Text
-              style={[a.text_2xs, t.atoms.text_contrast_medium, a.mt_2xs]}>
+            <Text style={[a.text_2xs, t.atoms.text_contrast_medium, a.mt_2xs]}>
               Accuracy: ±{Math.round(value.positionalAccuracy)}m
             </Text>
           )}

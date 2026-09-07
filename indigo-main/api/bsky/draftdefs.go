@@ -41,10 +41,43 @@ type DraftDefs_DraftEmbedExternal struct {
 	Uri string `json:"uri" cborgen:"uri"`
 }
 
+// DraftDefs_DraftEmbedGallery is a "draftEmbedGallery" in the app.bsky.draft.defs schema.
+type DraftDefs_DraftEmbedGallery struct {
+	Items []DraftDefs_DraftEmbedGalleryItems_Elem `json:"items" cborgen:"items"`
+}
+
+type DraftDefs_DraftEmbedGalleryItems_Elem struct {
+	DraftDefs_DraftEmbedImage *DraftDefs_DraftEmbedImage
+}
+
+func (t *DraftDefs_DraftEmbedGalleryItems_Elem) MarshalJSON() ([]byte, error) {
+	if t.DraftDefs_DraftEmbedImage != nil {
+		t.DraftDefs_DraftEmbedImage.LexiconTypeID = "app.bsky.draft.defs#draftEmbedImage"
+		return json.Marshal(t.DraftDefs_DraftEmbedImage)
+	}
+	return nil, fmt.Errorf("can not marshal empty union as JSON")
+}
+
+func (t *DraftDefs_DraftEmbedGalleryItems_Elem) UnmarshalJSON(b []byte) error {
+	typ, err := lexutil.TypeExtract(b)
+	if err != nil {
+		return err
+	}
+
+	switch typ {
+	case "app.bsky.draft.defs#draftEmbedImage":
+		t.DraftDefs_DraftEmbedImage = new(DraftDefs_DraftEmbedImage)
+		return json.Unmarshal(b, t.DraftDefs_DraftEmbedImage)
+	default:
+		return nil
+	}
+}
+
 // DraftDefs_DraftEmbedImage is a "draftEmbedImage" in the app.bsky.draft.defs schema.
 type DraftDefs_DraftEmbedImage struct {
-	Alt      *string                       `json:"alt,omitempty" cborgen:"alt,omitempty"`
-	LocalRef *DraftDefs_DraftEmbedLocalRef `json:"localRef" cborgen:"localRef"`
+	LexiconTypeID string                        `json:"$type" cborgen:"$type,const=app.bsky.draft.defs#draftEmbedImage"`
+	Alt           *string                       `json:"alt,omitempty" cborgen:"alt,omitempty"`
+	LocalRef      *DraftDefs_DraftEmbedLocalRef `json:"localRef" cborgen:"localRef"`
 }
 
 // DraftDefs_DraftEmbedLocalRef is a "draftEmbedLocalRef" in the app.bsky.draft.defs schema.
@@ -70,6 +103,7 @@ type DraftDefs_DraftEmbedVideo struct {
 // One of the posts that compose a draft.
 type DraftDefs_DraftPost struct {
 	EmbedExternals []*DraftDefs_DraftEmbedExternal `json:"embedExternals,omitempty" cborgen:"embedExternals,omitempty"`
+	EmbedGallery   *DraftDefs_DraftEmbedGallery    `json:"embedGallery,omitempty" cborgen:"embedGallery,omitempty"`
 	EmbedImages    []*DraftDefs_DraftEmbedImage    `json:"embedImages,omitempty" cborgen:"embedImages,omitempty"`
 	EmbedRecords   []*DraftDefs_DraftEmbedRecord   `json:"embedRecords,omitempty" cborgen:"embedRecords,omitempty"`
 	EmbedVideos    []*DraftDefs_DraftEmbedVideo    `json:"embedVideos,omitempty" cborgen:"embedVideos,omitempty"`

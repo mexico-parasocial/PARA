@@ -205,6 +205,15 @@ module.exports = function (_config) {
                 'NSPrivacyCollectedDataTypePurposeAppFunctionality',
               ],
             },
+            {
+              NSPrivacyCollectedDataType:
+                'NSPrivacyCollectedDataTypePreciseLocation',
+              NSPrivacyCollectedDataTypeLinked: true,
+              NSPrivacyCollectedDataTypeTracking: false,
+              NSPrivacyCollectedDataTypePurposes: [
+                'NSPrivacyCollectedDataTypePurposeAppFunctionality',
+              ],
+            },
           ],
           NSPrivacyAccessedAPITypes: [
             {
@@ -332,7 +341,8 @@ module.exports = function (_config) {
         // Disabled: Personal dev teams don't support App Clips
         // './plugins/starterPackAppClipExtension/withStarterPackAppClip.js',
         './plugins/withGradleJVMHeapSizeIncrease.js',
-        './plugins/withMapsPodfileFix.js',        './plugins/withAndroidManifestLargeHeapPlugin.js',
+        './plugins/withMapsPodfileFix.js',
+        './plugins/withAndroidManifestLargeHeapPlugin.js',
         './plugins/withAndroidManifestFCMIconPlugin.js',
         './plugins/withAndroidManifestIntentQueriesPlugin.js',
         './plugins/withAndroidStylesAccentColorPlugin.js',

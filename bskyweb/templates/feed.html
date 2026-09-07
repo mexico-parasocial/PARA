@@ -1,7 +1,4 @@
-{% extends "base.html" %} {% block head_title %} {%- if feedView -%} {{
-feedView.DisplayName }} by @{{ feedView.Creator.Handle }} | PARA Feed {%- else
--%} PARA {%- endif -%} {% endblock %} {% block html_head_extra -%} {%- if
-feedView -%}
+{% extends "base.html" %} {% block head_title %} {%- if feedView -%} {{ feedView.DisplayName }} by @{{ feedView.Creator.Handle }} | PARA Feed {%- else -%} PARA {%- endif -%} {% endblock %} {% block html_head_extra -%} {%- if feedView -%}
 <meta property="og:site_name" content="PARA" />
 <meta property="og:type" content="website" />
 {%- if requestURI %}

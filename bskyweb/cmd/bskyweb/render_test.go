@@ -91,7 +91,7 @@ func TestRenderPost_OGImageMatchesJSONLD(t *testing.T) {
 	})
 
 	// og:image and JSON-LD image[] must be byte-identical.
-	if !strings.Contains(html, `<meta property="og:image" content="`+thumb1+`">`) {
+	if !strings.Contains(html, `<meta property="og:image" content="`+thumb1+`" />`) {
 		t.Errorf("og:image[0] not found in rendered HTML")
 	}
 	body := extractJSONLD(t, html)
@@ -122,10 +122,10 @@ func TestRenderPost_OGImageMatchesJSONLD_Gallery(t *testing.T) {
 		"imgThumbUrls": thumbs,
 	})
 
-	if !strings.Contains(html, `<meta property="og:image" content="`+thumb1+`">`) {
+	if !strings.Contains(html, `<meta property="og:image" content="`+thumb1+`" />`) {
 		t.Errorf("og:image[0] not found in rendered HTML for gallery post")
 	}
-	if !strings.Contains(html, `<meta property="og:image" content="`+thumb2+`">`) {
+	if !strings.Contains(html, `<meta property="og:image" content="`+thumb2+`" />`) {
 		t.Errorf("og:image[1] not found in rendered HTML for gallery post")
 	}
 	body := extractJSONLD(t, html)
@@ -216,14 +216,14 @@ func TestRenderPost_OGUrlMatchesCanonical(t *testing.T) {
 		"canonicalURL": canonical,
 		"postJSONLD":   ld,
 	})
-	if !strings.Contains(html, `<meta property="og:url" content="`+canonical+`">`) {
+	if !strings.Contains(html, `<meta property="og:url" content="`+canonical+`" />`) {
 		t.Errorf("og:url should equal canonical URL when set; got:\n%s", html)
 	}
 	if !strings.Contains(html, `<link rel="canonical" href="`+canonical+`" />`) {
 		t.Errorf("canonical link missing or wrong:\n%s", html)
 	}
 	// DID-form request URI must not leak into og:url.
-	if strings.Contains(html, `<meta property="og:url" content="https://bsky.app/profile/did:plc:alice/post/abc123">`) {
+	if strings.Contains(html, `<meta property="og:url" content="https://bsky.app/profile/did:plc:alice/post/abc123" />`) {
 		t.Errorf("og:url should not echo DID-form request URI when canonical is set")
 	}
 }
@@ -243,10 +243,10 @@ func TestRenderPost_VideoWithoutThumbnailEmitsOGVideo(t *testing.T) {
 		"videoUrl":     videoURL,
 		"videoType":    "application/x-mpegURL",
 	})
-	if !strings.Contains(html, `<meta property="og:video" content="`+videoURL+`">`) {
+	if !strings.Contains(html, `<meta property="og:video" content="`+videoURL+`" />`) {
 		t.Errorf("og:video should emit even without imgThumbUrls; got:\n%s", html)
 	}
-	if !strings.Contains(html, `<meta property="og:video:type" content="application/x-mpegURL">`) {
+	if !strings.Contains(html, `<meta property="og:video:type" content="application/x-mpegURL" />`) {
 		t.Errorf("og:video:type should emit even without imgThumbUrls; got:\n%s", html)
 	}
 }

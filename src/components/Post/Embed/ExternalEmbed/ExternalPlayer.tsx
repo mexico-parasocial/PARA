@@ -36,6 +36,7 @@ import {KeepAwake} from '#/components/KeepAwake'
 import {PlayButtonIcon} from '#/components/video/PlayButtonIcon'
 import {useAnalytics} from '#/analytics'
 import {IS_NATIVE} from '#/env'
+import {type app} from '#/lexicons'
 
 interface ShouldStartLoadRequest {
   url: string

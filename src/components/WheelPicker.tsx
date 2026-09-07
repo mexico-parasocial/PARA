@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from 'react'
+import {type ComponentRef, useEffect, useRef, useState} from 'react'
 import {
   type NativeScrollEvent,
   type NativeSyntheticEvent,
@@ -30,7 +30,7 @@ export function WheelPicker({
   theme,
   visibleRowCount = DEFAULT_VISIBLE_ROW_COUNT,
 }: WheelPickerProps) {
-  const scrollViewRef = useRef<ScrollView>(null)
+  const scrollViewRef = useRef<ComponentRef<typeof ScrollView>>(null)
   const initialIndex = items.findIndex(item => item === selectedValue)
   const [selectedIndex, setSelectedIndex] = useState(
     initialIndex >= 0 ? initialIndex : 0,

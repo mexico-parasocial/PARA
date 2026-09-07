@@ -1,5 +1,10 @@
 import {type $Typed, type Client} from '@atproto/lex'
-import {AtUri, type AtUriString, toDatetimeString} from '@atproto/syntax'
+import {
+  type AtIdentifierString,
+  AtUri,
+  type AtUriString,
+  toDatetimeString,
+} from '@atproto/syntax'
 import {
   blockActorList,
   muteActorList,
@@ -301,7 +306,7 @@ export function useListDeleteMutation() {
       let listitemRecordUris: string[] = []
       for (let i = 0; i < 100; i++) {
         const res = await pdsClient.list(app.bsky.graph.listitem, {
-          repo: currentAccount.did,
+          repo: currentAccount.did as AtIdentifierString,
           cursor,
           limit: 100,
         })

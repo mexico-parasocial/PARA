@@ -13,6 +13,42 @@ export type CoarseLocation = {
 }
 
 /**
+ * Fetch coarse location at the moment it is needed (e.g. resolving a
+ * state without waking high-accuracy GPS). Transient use only — callers
+ * must not store or transmit the coordinates.
+ *
+ * - Accuracy: ~100m–1km (Balanced)
+ * - Time: <500ms typical
+ * - Battery: low
+ */
+export async function fetchCoarseLocation(): Promise<CoarseLocation> {
+  const {status} = await Location.requestForegroundPermissionsAsync()
+  if (status !== 'granted') {
+    throw new Error('Location permission denied')
+  }
+
+  const pos = await Location.getCurrentPositionAsync({
+    accuracy: Location.Accuracy.Balanced,
+  })
+
+  const locations = await Location.reverseGeocodeAsync({
+    latitude: pos.coords.latitude,
+    longitude: pos.coords.longitude,
+  })
+  const first = locations.at(0)
+  const normalized = first ? normalizeDeviceLocation(first) : undefined
+
+  return {
+    latitude: pos.coords.latitude,
+    longitude: pos.coords.longitude,
+    accuracy: pos.coords.accuracy ?? undefined,
+    timestamp: pos.timestamp,
+    countryCode: normalized?.countryCode,
+    regionCode: normalized?.regionCode,
+  }
+}
+
+/**
  * Coarse location for UI purposes (map centering, state pre-selection).
  *
  * - Accuracy: ~100m–1km

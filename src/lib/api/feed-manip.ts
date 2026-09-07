@@ -6,20 +6,31 @@ import {
   AppBskyFeedPost,
 } from '@atproto/api'
 
+import {type app} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 import {isPostInLanguage} from '../../locale/helpers'
 import {FALLBACK_MARKER_POST} from './feed/home'
 import {type ReasonFeedSource} from './feed/types'
 
-export type FeedPostNumbering = Pick<
-  app.bsky.unspecced.defs.ThreadItemPost,
-  'opThreadPostIndex' | 'opThreadPostCount'
->
+/*
+ * AppView adds these fields to feed and thread responses ahead of their feed
+ * lexicon, so the generated `ThreadItemPost`/`FeedViewPost` types do not
+ * declare them yet.
+ */
+export type FeedPostNumbering = {
+  opThreadPostIndex?: number | null
+  opThreadPostCount?: number | null
+}
 
-type ValidFeedPostNumbering = Required<FeedPostNumbering>
+export type ValidFeedPostNumbering = {
+  opThreadPostIndex: number
+  opThreadPostCount: number
+}
 
 // AppView adds these fields to feed responses ahead of their feed lexicon.
-type FeedViewPost = app.bsky.feed.defs.FeedViewPost & FeedPostNumbering
+// The pipeline is api-typed (`@atproto/api` query responses) with the
+// numbering fields injected, so the canonical shape is api-based.
+type FeedViewPost = AppBskyFeedDefs.FeedViewPost & FeedPostNumbering
 
 function getPostNumbering(
   value: FeedPostNumbering,
@@ -27,8 +38,8 @@ function getPostNumbering(
   const {opThreadPostIndex: index, opThreadPostCount: count} = value
 
   if (
-    index === undefined ||
-    count === undefined ||
+    index == null ||
+    count == null ||
     index < 1 ||
     count < 1 ||
     index > count
@@ -517,7 +528,14 @@ export class FeedTuner {
 
       const candidateSlices = slices.filter(slice => {
         for (const item of slice.items) {
-          if (isPostInLanguage(item.post, preferredLangsCode2)) {
+          // Feed slice items are api-typed; the helper reads the generated
+          // lexicon shape, which the runtime payload satisfies.
+          if (
+            isPostInLanguage(
+              item.post as unknown as app.bsky.feed.defs.PostView,
+              preferredLangsCode2,
+            )
+          ) {
             return true
           }
         }

@@ -72,6 +72,10 @@ lexgen: ## Run codegen tool for lexicons (lexicon JSON to Go packages)
 lexgen-ext: ## Run codegen tool for lexicons (lexicon JSON to Go packages)
 	go run ./cmd/lexgen/ --build-file cmd/lexgen/ext.json $(LEXDIR)
 
+.PHONY: lexgen-para
+lexgen-para: ## Run codegen for com.para lexicons (requires lexicons/com/para, see PARA.md)
+	go run ./cmd/lexgen/ --build-file cmd/lexgen/para.json $(LEXDIR)
+
 .PHONY: cborgen
 cborgen: ## Run codegen tool for CBOR serialization
 	go run ./gen

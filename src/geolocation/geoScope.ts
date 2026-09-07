@@ -14,10 +14,87 @@ export const GEO_SCOPE_LABELS: Record<GeoScope, string> = {
 }
 
 export const GEO_SCOPE_DESCRIPTIONS: Record<GeoScope, string> = {
-  state: 'Tu propuesta se asocia con el estado. Baja precisión, máxima privacidad.',
-  district: 'Tu propuesta se asocia con tu distrito electoral federal.',
-  city: 'Tu propuesta se asocia con tu ciudad o municipio.',
-  neighborhood: 'Tu propuesta se asocia con tu colonia. Alta precisión, requiere verificación INE.',
+  state:
+    'Tu propuesta se asocia solo con el estado. No se guardan coordenadas de tu ubicación.',
+  district:
+    'Tu propuesta se asocia con tu distrito electoral federal. La ubicación se aproxima a ~1 km.',
+  city: 'Tu propuesta se asocia con tu ciudad o municipio. La ubicación se aproxima a ~100 m.',
+  neighborhood:
+    'Tu propuesta se asocia con tu colonia. Alta precisión, requiere verificación INE.',
+}
+
+/**
+ * Grid size in degrees for the coordinates stored at each scope.
+ * `null` means no coordinates are stored at all; `0` means exact.
+ *
+ * Snapping uses floor (not round) so pins aggregate onto shared grid
+ * points, giving natural k-anonymity on the public heatmap.
+ */
+export const GEO_SCOPE_GRID: Record<GeoScope, number | null> = {
+  state: null,
+  district: 0.01, // ~1.1 km
+  city: 0.001, // ~110 m
+  neighborhood: 0,
+}
+
+/**
+ * Snap E7 coordinates onto the scope grid. Returns integers safe for
+ * the lexicon bounds.
+ */
+export function snapGeoToGridE7(
+  latE7: number,
+  lngE7: number,
+  grid: number,
+): {latE7: number; lngE7: number} {
+  if (grid <= 0) {
+    return {latE7: Math.round(latE7), lngE7: Math.round(lngE7)}
+  }
+  return {
+    latE7: Math.round(Math.floor(latE7 / 1e7 / grid) * grid * 1e7),
+    lngE7: Math.round(Math.floor(lngE7 / 1e7 / grid) * grid * 1e7),
+  }
+}
+
+export type ScopedGeo = {
+  geo?: {latE7: number; lngE7: number}
+  positionalAccuracy?: number
+}
+
+/**
+ * Single choke point for the scope → stored-coordinates policy.
+ * - state: region only. No coordinates, no accuracy — nothing that can
+ *   place the user on a map is stored or transmitted.
+ * - district/city: grid-snapped coordinates. The raw fix accuracy is
+ *   deliberately dropped so the stored value never implies more
+ *   precision than the grid carries.
+ * - neighborhood: exact coordinates (explicit INE-verified consent).
+ */
+export function geoForScope(
+  scope: GeoScope,
+  latitude: number,
+  longitude: number,
+  positionalAccuracy?: number,
+): ScopedGeo {
+  const grid = GEO_SCOPE_GRID[scope]
+  if (grid === null) {
+    return {}
+  }
+  if (grid === 0) {
+    return {
+      geo: {
+        latE7: Math.round(latitude * 1e7),
+        lngE7: Math.round(longitude * 1e7),
+      },
+      positionalAccuracy,
+    }
+  }
+  return {
+    geo: snapGeoToGridE7(
+      Math.round(latitude * 1e7),
+      Math.round(longitude * 1e7),
+      grid,
+    ),
+  }
 }
 
 /**

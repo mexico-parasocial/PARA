@@ -1,4 +1,4 @@
-import {useCallback, useMemo, useRef} from 'react'
+import {type ComponentRef, useCallback, useMemo, useRef} from 'react'
 import {ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import {msg} from '@lingui/core/macro'
@@ -46,10 +46,10 @@ export default function RAQMenuScreen() {
   const navigation = useNavigation<NavigationProp>()
   const insets = useSafeAreaInsets()
   const addDialogControl = Dialog.useDialogControl()
-  const officialScrollRef = useRef<ScrollView>(null)
-  const unofficialScrollRef = useRef<ScrollView>(null)
-  const proposedScrollRef = useRef<ScrollView>(null)
-  const openQuestionsScrollRef = useRef<ScrollView>(null)
+  const officialScrollRef = useRef<ComponentRef<typeof ScrollView>>(null)
+  const unofficialScrollRef = useRef<ComponentRef<typeof ScrollView>>(null)
+  const proposedScrollRef = useRef<ComponentRef<typeof ScrollView>>(null)
+  const openQuestionsScrollRef = useRef<ComponentRef<typeof ScrollView>>(null)
 
   const {mutate: voteOnProposal} = useVoteOnProposedQuestionMutation()
   const {mutate: answerProposal} = useAnswerProposedQuestionMutation()
@@ -271,7 +271,9 @@ export default function RAQMenuScreen() {
                             </Text>
                             <TouchableOpacity
                               accessibilityRole="button"
-                              onPress={() => voteOnAxis({axisId: item.id, value: 1})}
+                              onPress={() =>
+                                voteOnAxis({axisId: item.id, value: 1})
+                              }
                               style={{
                                 flexDirection: 'row',
                                 alignItems: 'center',
