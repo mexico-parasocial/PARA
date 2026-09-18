@@ -263,97 +263,30 @@ export function useQvlAuditTrailQuery(proposal: string) {
 
 // ─── Write Mutations ─────────────────────────────────────────────────────────
 
-export function useCastVoteMutation() {
-  const agent = useAgent()
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async ({
-      proposal,
-      community,
-      signal,
-    }: {
-      proposal: string
-      community: string
-      signal: number
-    }) => {
-      if (!agent.session) throw new Error('Not logged in')
-      const proof = await issueParaVoteProof(agent, {
-        subjectUri: proposal,
-        subjectType: 'community_proposal',
-      })
-      return agent.com.atproto.repo.createRecord({
-        repo: agent.session.did,
-        collection: 'com.para.community.vote',
-        record: {
-          $type: 'com.para.community.vote',
-          proposal,
-          community,
-          voter: agent.session.did,
-          signal,
-          voteNullifier: proof?.voteNullifier,
-          eligibilityProofRef: proof?.eligibilityProofRef,
-          createdAt: new Date().toISOString(),
-        },
-      })
-    },
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: qvlVotesQueryKey(variables.proposal),
-      })
-      queryClient.invalidateQueries({
-        queryKey: qvlTallySimulationQueryKey(variables.proposal),
-      })
-    },
-  })
-}
-
-export function useCastIntensityMutation() {
-  const agent = useAgent()
-  const queryClient = useQueryClient()
-
-  return useMutation({
-    mutationFn: async ({
-      proposal,
-      signal,
-      units,
-    }: {
-      proposal: string
-      signal: number
-      units: number
-      }) => {
-      if (!agent.session) throw new Error('Not logged in')
-      const proof = await issueParaVoteProof(agent, {
-        subjectUri: proposal,
-        subjectType: 'community_proposal',
-      })
-      return agent.com.atproto.repo.createRecord({
-        repo: agent.session.did,
-        collection: 'com.para.community.intensity',
-        record: {
-          $type: 'com.para.community.intensity',
-          proposal,
-          voter: agent.session.did,
-          signal,
-          units,
-          creditsSpent: units * units,
-          voteNullifier: proof?.voteNullifier,
-          eligibilityProofRef: proof?.eligibilityProofRef,
-          createdAt: new Date().toISOString(),
-        },
-      })
-    },
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({
-        queryKey: qvlIntensitiesQueryKey(variables.proposal),
-      })
-      queryClient.invalidateQueries({
-        queryKey: qvlTallySimulationQueryKey(variables.proposal),
-      })
-    },
-  })
-}
-
+/*
+ * `useCastVoteMutation` and `useCastIntensityMutation` were removed on
+ * 2026-09-18 (E0 of the ballot freeze). Both wrote a ballot into the voter's
+ * OWN public repo: `com.para.community.vote` carried `voter` (DID) beside
+ * `signal`, and `com.para.community.intensity` additionally published
+ * `units`, `creditsSpent`, `effectiveWeight` and `delegatedFrom` — the
+ * delegation graph that OD-7 §5b names as more re-identifying than the
+ * ballots themselves.
+ *
+ * Neither had a caller anywhere in the app. They are deleted rather than
+ * flagged off, so that wiring a binding ballot back up is a deliberate act
+ * that has to re-read this: a record written to a public repo and sequenced
+ * to the firehose cannot be unpublished, and both lexicons mark `voter` and
+ * `signal` as REQUIRED, so there is no privacy-preserving way to use them.
+ *
+ * The replacement is not a mutation in this file. Per OD-7 §5a/§5b a ballot
+ * must leave the voter's repo entirely: submitted to a tally endpoint, with a
+ * client-derived nullifier anchored to the credential, `signal` carried as a
+ * Pedersen commitment with a range proof, and the tally opened only in
+ * aggregate. See WatZappa/docs/OD-7-BALLOT-IDENTITY-REGISTRATION.md.
+ *
+ * Deliberation voting (`useCastDeliberationVoteMutation`, below) is
+ * deliberately untouched: debate is meant to be attributable.
+ */
 export function useCreateDelegationMutation() {
   const agent = useAgent()
   const queryClient = useQueryClient()
