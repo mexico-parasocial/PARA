@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Keyboard,
   LayoutAnimation,
+  Pressable,
   StyleSheet,
   type TextInput,
   View,
@@ -19,33 +20,30 @@ import {
   IS_LOCAL_DEV_MODE,
   LOCAL_DEV_SERVICE,
 } from '#/lib/constants'
-import {useRequestNotificationsPermission} from '#/lib/notifications/notifications'
-import {isBlueskyHostedUrl, toNiceHostingUrl} from '#/lib/strings/url-helpers'
-import {cleanError, isNetworkError} from '#/lib/strings/errors'
-import {createFullHandle} from '#/lib/strings/handles'
-import {useSessionApi} from '#/state/session'
-import {useSetHasCheckedForStarterPack} from '#/state/preferences/used-starter-packs'
 import {getM8AccessToken, restoreM8Session} from '#/lib/im8/api'
 import {authenticateBiometric} from '#/lib/im8/biometric'
 import {openM8Verification} from '#/lib/im8/linking'
+import {useRequestNotificationsPermission} from '#/lib/notifications/notifications'
+import {cleanError, isNetworkError} from '#/lib/strings/errors'
+import {createFullHandle} from '#/lib/strings/handles'
+import {isBlueskyHostedUrl, toNiceHostingUrl} from '#/lib/strings/url-helpers'
 import {logger} from '#/logger'
+import {useSetHasCheckedForStarterPack} from '#/state/preferences/used-starter-packs'
+import {useHostingProvider} from '#/state/queries/pds-detection'
+import {useSessionApi} from '#/state/session'
 import {useLoggedOutViewControls} from '#/state/shell/logged-out'
 import {atoms as a, native, useBreakpoints, useTheme} from '#/alf'
 import {Admonition} from '#/components/Admonition'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import {useDialogControl} from '#/components/Dialog'
+import * as SegmentedControl from '#/components/forms/SegmentedControl'
 import * as TextField from '#/components/forms/TextField'
 import {useTextFieldContext} from '#/components/forms/TextField'
-import {useHostingProvider} from '#/state/queries/pds-detection'
-import * as SegmentedControl from '#/components/forms/SegmentedControl'
 import {At_Stroke2_Corner0_Rounded as At} from '#/components/icons/At'
-import {
-  Eye_Stroke2_Corner0_Rounded as Eye,
-} from '#/components/icons/Eye'
-import {
-  EyeSlash_Stroke2_Corner0_Rounded as EyeSlash,
-} from '#/components/icons/EyeSlash'
+import {Eye_Stroke2_Corner0_Rounded as Eye} from '#/components/icons/Eye'
+import {EyeSlash_Stroke2_Corner0_Rounded as EyeSlash} from '#/components/icons/EyeSlash'
 import {Lock_Stroke2_Corner0_Rounded as Lock} from '#/components/icons/Lock'
+import {PencilLine_Stroke2_Corner0_Rounded as PencilLine} from '#/components/icons/Pencil'
 import {Ticket_Stroke2_Corner0_Rounded as Ticket} from '#/components/icons/Ticket'
 import {Loader} from '#/components/Loader'
 import {Text} from '#/components/Typography'
@@ -62,7 +60,6 @@ export const LoginForm = ({
   serviceDescription,
   initialHandle,
   setError,
-  setServiceUrl,
   onPressRetryConnect,
   onPressBack,
   onPressForgotPassword,
@@ -123,7 +120,6 @@ export const LoginForm = ({
 
   const {
     state: hostingProviderState,
-    service: hostingService,
     override: overrideHostingProvider,
     clearOverride: clearHostingOverride,
   } = useHostingProvider({
@@ -385,39 +381,29 @@ export const LoginForm = ({
   return (
     <FormContainer testID="loginForm" titleText={<Trans>Sign in</Trans>}>
       <View>
-        <View
-          style={[
-            a.flex_row,
-            a.align_center,
-            a.gap_md,
-            a.justify_between,
-          ]}>
-          <TextField.LabelText>
-            <Trans>Hosting provider</Trans>
-          </TextField.LabelText>
-          {hostingProviderState.status === 'overridden' ? (
-            <Button
-              testID="hostingProviderResetBtn"
-              label={_(msg`Change`)}
-              accessibilityHint={_(
-                msg`Resets the hosting provider to the default Bluesky service`,
-              )}
-              onPress={onPressSelectService}
-              hitSlop={HITSLOP_10}>
-              <ButtonText>
-                <Trans>Change</Trans>
-              </ButtonText>
-            </Button>
-          ) : null}
-        </View>
+        <TextField.LabelText>
+          <Trans>Hosting provider</Trans>
+        </TextField.LabelText>
 
-        <View
-          style={[
+        <Pressable
+          testID="hostingProviderSelectBtn"
+          accessibilityRole="button"
+          accessibilityLabel={_(msg`Change hosting provider`)}
+          accessibilityHint={_(
+            msg`Opens a dialog to change your hosting provider`,
+          )}
+          onPress={onPressSelectService}
+          style={({pressed}) => [
             a.rounded_md,
             a.border,
             t.atoms.border_contrast_medium,
             a.overflow_hidden,
-            {flexDirection: 'row', height: 56, alignItems: 'center'},
+            {
+              flexDirection: 'row',
+              height: 56,
+              alignItems: 'center',
+              opacity: pressed ? 0.7 : 1,
+            },
             t.atoms.bg_contrast_25,
           ]}>
           <View style={[{paddingLeft: 16}]}>
@@ -436,24 +422,33 @@ export const LoginForm = ({
           />
           <View style={[{flex: 1, paddingLeft: 12}]}>
             <Text numberOfLines={1} style={[t.atoms.text, a.text_md]}>
-              {hostingProviderState.status === 'overridden' && hostingProviderState.pdsUrl
+              {hostingProviderState.status === 'overridden' &&
+              hostingProviderState.pdsUrl
                 ? toNiceHostingUrl(hostingProviderState.pdsUrl)
                 : 'bsky.social'}
             </Text>
           </View>
-          <View style={[{paddingRight: 16}]}>
-            {hostingProviderState.status === 'overridden' && (
+          <View
+            style={[
+              {
+                paddingRight: 12,
+                alignItems: 'center',
+                justifyContent: 'center',
+              },
+            ]}>
+            {hostingProviderState.status === 'overridden' ? (
               <Text
                 style={[
                   a.text_xs,
                   t.atoms.text_contrast_low,
-                  {paddingRight: 10},
+                  {paddingRight: 6},
                 ]}>
                 <Trans>Custom</Trans>
               </Text>
-            )}
+            ) : null}
+            <PencilLine size="sm" style={[t.atoms.text_contrast_medium]} />
           </View>
-        </View>
+        </Pressable>
 
         {IS_LOCAL_DEV_MODE && (
           <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_sm]}>
@@ -565,7 +560,7 @@ export const LoginForm = ({
             type="tabs"
             label={_(msg`2FA method`)}
             value={authFactorMethod}
-            onChange={v => setAuthFactorMethod(v as 'email' | 'im8')}>
+            onChange={v => setAuthFactorMethod(v)}>
             <SegmentedControl.Item
               testID="authFactorEmail"
               value="email"
@@ -599,9 +594,7 @@ export const LoginForm = ({
                 </TextField.LabelText>
                 <Button
                   label={_(msg`Resend code`)}
-                  accessibilityHint={_(
-                    msg`Resends the 2FA code to your email`,
-                  )}
+                  accessibilityHint={_(msg`Resends the 2FA code to your email`)}
                   hitSlop={HITSLOP_10}>
                   <ButtonText>
                     <Trans>Resend</Trans>
@@ -633,8 +626,7 @@ export const LoginForm = ({
                   }}
                 />
               </TextField.Root>
-              <Text
-                style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_sm]}>
+              <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_sm]}>
                 <Trans>
                   Check your email for a sign in code and enter it here.
                 </Trans>
@@ -651,8 +643,8 @@ export const LoginForm = ({
                   <Admonition type="info">
                     <Trans>
                       One tap: confirm with FaceID and we'll use your iM8
-                      session on this device to finish signing in. No codes
-                      to type.
+                      session on this device to finish signing in. No codes to
+                      type.
                     </Trans>
                   </Admonition>
                   <Button
@@ -686,8 +678,8 @@ export const LoginForm = ({
         {isAuthFactorTokenNeeded && !error ? (
           <Admonition type="info">
             <Trans>
-              Enter the two-factor authentication code provided by your
-              identity provider.
+              Enter the two-factor authentication code provided by your identity
+              provider.
             </Trans>
           </Admonition>
         ) : null}
@@ -754,7 +746,8 @@ export const LoginForm = ({
       <HostingProviderDialog
         control={hostingProviderControl}
         currentOverride={
-          hostingProviderState.status === 'overridden' && hostingProviderState.pdsUrl
+          hostingProviderState.status === 'overridden' &&
+          hostingProviderState.pdsUrl
             ? hostingProviderState.pdsUrl
             : null
         }
@@ -765,9 +758,7 @@ export const LoginForm = ({
 
       <ConfirmHostingProviderDialog
         control={confirmHostingProviderControl}
-        host={
-          pendingConfirm ? toNiceHostingUrl(pendingConfirm.service) : ''
-        }
+        host={pendingConfirm ? toNiceHostingUrl(pendingConfirm.service) : ''}
         identifier={pendingConfirm?.identifier ?? identifierValueRef.current}
         passwordLength={
           pendingConfirm?.passwordLength ?? passwordValueRef.current.length
@@ -788,7 +779,6 @@ function RevealPasswordButton({
   onPress: () => void
 }) {
   const {_} = useLingui()
-  const {focused} = useTextFieldContext()
   const t = useTheme()
   return (
     <Button
@@ -816,18 +806,14 @@ function RevealPasswordIcon({revealPassword}: {revealPassword: boolean}) {
         <Eye
           size="sm"
           style={[
-            focused
-              ? t.atoms.text_contrast_high
-              : t.atoms.text_contrast_medium,
+            focused ? t.atoms.text_contrast_high : t.atoms.text_contrast_medium,
           ]}
         />
       ) : (
         <EyeSlash
           size="sm"
           style={[
-            focused
-              ? t.atoms.text_contrast_high
-              : t.atoms.text_contrast_medium,
+            focused ? t.atoms.text_contrast_high : t.atoms.text_contrast_medium,
           ]}
         />
       )}

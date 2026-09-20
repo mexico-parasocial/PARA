@@ -1,47 +1,20 @@
 import {type Insets, Platform} from 'react-native'
-import * as Device from 'expo-device'
-import {type AppBskyActorDefs, BSKY_LABELER_DID} from '@atproto/api'
 import {type Service} from '@atproto/lex'
+import {api} from '@bsky/sdk'
 
 import {BLUESKY_PROXY_DID, CHAT_PROXY_DID, IS_DEV} from '#/env'
-
-// Physical devices must set EXPO_PUBLIC_LOCAL_DEV_IP in .env.local to reach
-// the dev machine (localhost on a phone is the phone itself). The localhost
-// fallback is deliberately wrong for that case — a confusing connection
-// error beats silently pointing at a machine that may not be the dev Mac.
-const LOCAL_DEV_IP = process.env.EXPO_PUBLIC_LOCAL_DEV_IP || 'localhost'
-const LOCAL_DEV_SERVICE_OVERRIDE = process.env.EXPO_PUBLIC_LOCAL_DEV_SERVICE
-const DEFAULT_SERVICE_OVERRIDE = process.env.EXPO_PUBLIC_DEFAULT_SERVICE
-const USE_LOCAL_DEFAULT_SERVICE =
-  process.env.EXPO_PUBLIC_USE_LOCAL_DEV_SERVICE === '1'
-const USE_LOCAL_DEMO_DEFAULTS =
-  !DEFAULT_SERVICE_OVERRIDE && (USE_LOCAL_DEFAULT_SERVICE || __DEV__)
-const IS_IOS_SIMULATOR = Platform.OS === 'ios' && !Device.isDevice
+import {type app} from '#/lexicons'
 
 export const LOCAL_DEV_SERVICE =
-  LOCAL_DEV_SERVICE_OVERRIDE ||
-  (Platform.OS === 'android'
-    ? 'http://10.0.2.2:2583'
-    : Platform.OS === 'ios'
-      ? IS_IOS_SIMULATOR
-        ? 'http://localhost:2583'
-        : `http://${LOCAL_DEV_IP}:2583`
-      : 'http://localhost:2583')
+  Platform.OS === 'android' ? 'http://10.0.2.2:2583' : 'http://localhost:2583'
 export const STAGING_SERVICE = 'https://staging.bsky.dev'
 export const BSKY_SERVICE = 'https://bsky.social'
-export const CHAT_SERVICE = 'https://api.bsky.chat'
 export const BSKY_SERVICE_DID = 'did:web:bsky.social'
 export const PUBLIC_BSKY_SERVICE = 'https://public.api.bsky.app'
-// Local/dev builds should default to the local PDS for seeded demo accounts.
-// Production/staging can still force a service explicitly with
-// EXPO_PUBLIC_DEFAULT_SERVICE.
-export const DEFAULT_SERVICE =
-  DEFAULT_SERVICE_OVERRIDE ||
-  (USE_LOCAL_DEMO_DEFAULTS ? LOCAL_DEV_SERVICE : BSKY_SERVICE)
-export const IS_LOCAL_DEV_MODE = DEFAULT_SERVICE === LOCAL_DEV_SERVICE
-export const DEV_ENV_APPVIEW = `http://${LOCAL_DEV_IP}:2584` // always the same
-export const DEV_ENV_APPVIEW_DID = `did:plc:6gcjjmsoeyaq4xgvkofdklqc` // always the same
-export const HELP_DESK_URL = `https://para.social/support`
+export const DEFAULT_SERVICE = BSKY_SERVICE
+const HELP_DESK_LANG = 'en-us'
+export const HELP_DESK_URL = `https://blueskyweb.zendesk.com/hc/${HELP_DESK_LANG}`
+export const CHAT_SERVICE = 'https://api.bsky.chat'
 export const EMBED_SERVICE = 'https://embed.bsky.app'
 export const EMBED_SCRIPT = `${EMBED_SERVICE}/static/embed.js`
 export const BSKY_DOWNLOAD_URL = 'https://bsky.app/download'
@@ -55,22 +28,18 @@ export const CARD_ASPECT_RATIO = 1200 / 630
 // code and update this number with each release until we can get the
 // server route done.
 // -prf
-// MVP: only show in dev builds to avoid stale/misleading stats in production.
-export const JOINED_THIS_WEEK = __DEV__ ? 560000 : undefined // estimate as of 12/18/24
+export const JOINED_THIS_WEEK = 560000 // estimate as of 12/18/24
 
-// MVP: debug DIDs for Discover feed — only active in dev builds.
-export const DISCOVER_DEBUG_DIDS: Record<string, true> = __DEV__
-  ? {
-      'did:plc:oisofpd7lj26yvgiivf3lxsi': true, // hailey.at
-      'did:plc:p2cp5gopk7mgjegy6wadk3ep': true, // samuel.bsky.team
-      'did:plc:ragtjsm2j2vknwkz3zp4oxrd': true, // pfrazee.com
-      'did:plc:vpkhqolt662uhesyj6nxm7ys': true, // why.bsky.team
-      'did:plc:3jpt2mvvsumj2r7eqk4gzzjz': true, // esb.lol
-      'did:plc:vjug55kidv6sye7ykr5faxxn': true, // emilyliu.me
-      'did:plc:tgqseeot47ymot4zro244fj3': true, // iwsmith.bsky.social
-      'did:plc:2dzyut5lxna5ljiaasgeuffz': true, // darrin.bsky.team
-    }
-  : {}
+export const DISCOVER_DEBUG_DIDS: Record<string, true> = {
+  'did:plc:oisofpd7lj26yvgiivf3lxsi': true, // hailey.at
+  'did:plc:p2cp5gopk7mgjegy6wadk3ep': true, // samuel.bsky.team
+  'did:plc:ragtjsm2j2vknwkz3zp4oxrd': true, // pfrazee.com
+  'did:plc:vpkhqolt662uhesyj6nxm7ys': true, // why.bsky.team
+  'did:plc:3jpt2mvvsumj2r7eqk4gzzjz': true, // esb.lol
+  'did:plc:vjug55kidv6sye7ykr5faxxn': true, // emilyliu.me
+  'did:plc:tgqseeot47ymot4zro244fj3': true, // iwsmith.bsky.social
+  'did:plc:2dzyut5lxna5ljiaasgeuffz': true, // darrin.bsky.team
+}
 
 const BASE_FEEDBACK_FORM_URL = `${HELP_DESK_URL}/requests/new`
 export function FEEDBACK_FORM_URL({
@@ -94,8 +63,12 @@ export const MAX_DISPLAY_NAME = 64
 export const MAX_DESCRIPTION = 256
 
 export const MAX_GRAPHEME_LENGTH = 300
-export const MAX_GROUP_NAME_GRAPHEME_LENGTH = 50
+
+export const MAX_DRAFT_GRAPHEME_LENGTH = 1000
+
 export const MAX_DM_GRAPHEME_LENGTH = 1000
+
+export const MAX_GROUP_NAME_GRAPHEME_LENGTH = 50
 
 // Recommended is 100 per: https://www.w3.org/WAI/GL/WCAG20/tests/test3.html
 // but increasing limit per user feedback
@@ -126,12 +99,6 @@ export const STAGING_FEEDS = [
   `feedgen|${STAGING_DEFAULT_FEED('whats-hot')}`,
   `feedgen|${STAGING_DEFAULT_FEED('thevids')}`,
 ]
-
-export const POST_IMG_MAX = {
-  width: 2000,
-  height: 2000,
-  size: 1000000,
-}
 
 export const IMAGE_SIZE_CONFIG_POSTS = {
   maxDimension: 4000,
@@ -190,75 +157,26 @@ export const VIDEO_FEED_URI =
 export const STAGING_VIDEO_FEED_URI =
   'at://did:plc:yofh3kx63drvfljkibw5zuxo/app.bsky.feed.generator/thevids'
 export const VIDEO_FEED_URIS = [VIDEO_FEED_URI, STAGING_VIDEO_FEED_URI]
-export const TIMELINE_SAVED_FEED = {
-  type: 'timeline',
-  value: 'following',
-  pinned: true,
-}
-export const DEFAULT_DISCOVER_FEED_URI = IS_LOCAL_DEV_MODE
-  ? null
-  : DISCOVER_FEED_URI
-export const DEFAULT_DISCOVER_FEED_DESCRIPTOR = DEFAULT_DISCOVER_FEED_URI
-  ? `feedgen|${DEFAULT_DISCOVER_FEED_URI}`
-  : 'following'
-export const DEFAULT_VIDEO_FEED_URI = IS_LOCAL_DEV_MODE ? null : VIDEO_FEED_URI
-export const DEFAULT_VIDEO_FEED_DESCRIPTOR = DEFAULT_VIDEO_FEED_URI
-  ? `feedgen|${DEFAULT_VIDEO_FEED_URI}`
-  : null
-export const DEFAULT_VIDEO_FEED_URIS = DEFAULT_VIDEO_FEED_URI
-  ? [DEFAULT_VIDEO_FEED_URI, STAGING_VIDEO_FEED_URI]
-  : []
 export const DISCOVER_SAVED_FEED = {
   type: 'feed',
   value: DISCOVER_FEED_URI,
   pinned: true,
 }
-export const DEFAULT_DISCOVER_SAVED_FEED = DEFAULT_DISCOVER_FEED_URI
-  ? {
-      type: 'feed',
-      value: DEFAULT_DISCOVER_FEED_URI,
-      pinned: true,
-    }
-  : null
+export const TIMELINE_SAVED_FEED = {
+  type: 'timeline',
+  value: 'following',
+  pinned: true,
+}
 export const VIDEO_SAVED_FEED = {
   type: 'feed',
   value: VIDEO_FEED_URI,
   pinned: true,
 }
-export const DEFAULT_VIDEO_SAVED_FEED = DEFAULT_VIDEO_FEED_URI
-  ? {
-      type: 'feed',
-      value: DEFAULT_VIDEO_FEED_URI,
-      pinned: true,
-    }
-  : null
 
 export const RECOMMENDED_SAVED_FEEDS: Pick<
-  AppBskyActorDefs.SavedFeed,
+  app.bsky.actor.defs.SavedFeed,
   'type' | 'value' | 'pinned'
->[] = [TIMELINE_SAVED_FEED]
-
-export const DEFAULT_ONBOARDING_SAVED_FEEDS: Pick<
-  AppBskyActorDefs.SavedFeed,
-  'type' | 'value' | 'pinned'
->[] = [TIMELINE_SAVED_FEED]
-
-export function isDefaultDiscoverFeedUri(uri?: string | null) {
-  return Boolean(DEFAULT_DISCOVER_FEED_URI && uri === DEFAULT_DISCOVER_FEED_URI)
-}
-
-export function isDiscoverFeedUri(uri?: string | null) {
-  return Boolean(
-    uri &&
-    (uri === DISCOVER_FEED_URI ||
-      (DEFAULT_DISCOVER_FEED_URI !== null &&
-        uri === DEFAULT_DISCOVER_FEED_URI)),
-  )
-}
-
-export function isDefaultVideoFeedUri(uri?: string | null) {
-  return Boolean(uri && DEFAULT_VIDEO_FEED_URIS.includes(uri))
-}
+>[] = [DISCOVER_SAVED_FEED, TIMELINE_SAVED_FEED]
 
 export const KNOWN_SHUTDOWN_FEEDS = [
   'at://did:plc:wqowuobffl66jv3kpsvo7ak4/app.bsky.feed.generator/the-algorithm', // for you by skygaze
@@ -281,8 +199,8 @@ export const VIDEO_MAX_DURATION_MS = 10 * 60 * 1000 // 10 minutes in millisecond
  * Maximum size of a video in megabytes, _not_ mebibytes. Backend uses
  * ISO megabytes.
  */
-export const VIDEO_MAX_SIZE_REDUCED = 1000 * 1000 * 100 // 100mb
-export const VIDEO_MAX_SIZE = 3000 * 1000 * 100 // 300mb
+export const VIDEO_MAX_SIZE_MB = 300
+export const VIDEO_MAX_SIZE = VIDEO_MAX_SIZE_MB * 1000 * 1000 // 300mb
 
 export const SUPPORTED_MIME_TYPES = [
   'video/mp4',
@@ -315,18 +233,13 @@ export const PUBLIC_APPVIEW = 'https://api.bsky.app'
 export const PUBLIC_APPVIEW_DID = 'did:web:api.bsky.app'
 export const PUBLIC_STAGING_APPVIEW_DID = 'did:web:api.staging.bsky.dev'
 
-// Stable local dev chat DID published by watx/packages/dev-env/src/service-profile-chat.ts
-// for the default handle `chat.test` on the default chat port `2590`.
-export const DEV_ENV_CHAT_DID = 'did:plc:ztgydimgwegx72nfqbfgurrb'
+export const DEV_ENV_APPVIEW = `http://localhost:2584` // always the same
 
 // temp hack for e2e - esb
 export const BLUESKY_PROXY_HEADER = {
-  value: `${BLUESKY_PROXY_DID || ''}#bsky_appview`,
+  value: `${BLUESKY_PROXY_DID}#bsky_appview`,
   get() {
-    if (DEFAULT_SERVICE === LOCAL_DEV_SERVICE) {
-      return null
-    }
-    return (BLUESKY_PROXY_DID ? this.value : undefined) as unknown as Service
+    return this.value as Service
   },
   set(value: string) {
     this.value = value
@@ -345,13 +258,64 @@ export const BLUESKY_PROXY_HEADER = {
  */
 export const CHAT_PROXY_SERVICE: Service = `${CHAT_PROXY_DID}#bsky_chat`
 
-const LOCAL_DEV_APPVIEW_PROXY_DID =
+/**
+ * Bluesky's own moderation service, in the `did#service_id` form a lex client's
+ * per-call `service` option takes. Passing it emits `atproto-proxy: <this
+ * value>` on that one request, routing a `com.atproto.moderation.*` call to
+ * Bluesky's labeler.
+ *
+ * Reports and appeals aimed at a DIFFERENT labeler build their own value from
+ * that labeler's creator did instead, so this is a per-call option rather than a
+ * client-level one like {@link CHAT_PROXY_SERVICE}.
+ */
+export const MOD_PROXY_SERVICE: Service = `${api.moderation.did}#atproto_labeler`
+
+/**
+ * The notification service's proxy target, in the `did#service_id` form a lex
+ * client's per-call `service` option takes. Passing it emits `atproto-proxy:
+ * <this value>` on that one request, which is what routes push registration to
+ * the notification service (replaces the old
+ * `BLUESKY_NOTIF_SERVICE_HEADERS`).
+ */
+export const NOTIF_SERVICE: Service = `${BLUESKY_PROXY_DID}#bsky_notif`
+
+export const webLinks = {
+  tos: `https://para.social/tos`,
+  privacy: `https://para.social/privacy`,
+  community: `https://para.social/community-guidelines`,
+  communityDeprecated: `https://para.social/community-guidelines-deprecated`,
+}
+
+export const MOCK_COMMUNITY_LIST_URI =
+  'at://did:plc:mock/app.bsky.graph.list/community'
+export const MOCK_PARTY_LIST_URI = 'at://did:plc:mock/app.bsky.graph.list/party'
+
+/*
+ * Local-service URL detection. Consumed by session restore, login, and DM
+ * headers to treat local PDS URLs as first-class services. These were dropped
+ * in a constants rewrite but are still imported across the app.
+ */
+export const DEV_ENV_APPVIEW_DID = `did:plc:mdok2ef5oewozmds2zlhua5n`
+export const DEV_ENV_CHAT_DID = 'did:plc:ztgydimgwegx72nfqbfgurrb'
+/*
+ * Dev builds run against the local demo stack, so treat them as local-dev mode
+ * regardless of DEFAULT_SERVICE (which always points at prod here). Matches
+ * the pre-rewrite behavior where dev builds defaulted to the local PDS.
+ */
+export const IS_LOCAL_DEV_MODE: boolean =
+  __DEV__ || DEFAULT_SERVICE === (LOCAL_DEV_SERVICE as string)
+
+export const POST_IMG_MAX = {
+  width: 2000,
+  height: 2000,
+  size: 1000000,
+}
+
+export const LOCAL_DEV_APPVIEW_PROXY_DID =
   process.env.EXPO_PUBLIC_LOCAL_BSKY_PROXY_DID || DEV_ENV_APPVIEW_DID
 export const LOCAL_DEV_CHAT_PROXY_DID =
   process.env.EXPO_PUBLIC_LOCAL_CHAT_PROXY_DID || DEV_ENV_CHAT_DID
-const LOCAL_DEV_SERVICE_HOSTNAME = parseServiceHostname(
-  LOCAL_DEV_SERVICE_OVERRIDE || LOCAL_DEV_SERVICE,
-)
+const LOCAL_DEV_SERVICE_HOSTNAME = parseServiceHostname(LOCAL_DEV_SERVICE)
 
 function parseServiceHostname(serviceUrl?: string): string | null {
   if (!serviceUrl) return null
@@ -380,12 +344,7 @@ function isDirectLocalHostname(hostname: string): boolean {
       (firstOctet === 192 && secondOctet === 168) ||
       (firstOctet === 172 && secondOctet >= 16 && secondOctet <= 31))
 
-  return (
-    hostname === 'localhost' ||
-    hostname === '127.0.0.1' ||
-    hostname === LOCAL_DEV_IP ||
-    isPrivateIpv4
-  )
+  return hostname === 'localhost' || hostname === '127.0.0.1' || isPrivateIpv4
 }
 
 export function isLikelyLocalServiceUrl(serviceUrl?: string): boolean {
@@ -413,15 +372,6 @@ export function normalizeLocalServiceUrl(serviceUrl: string): string {
   }
 }
 
-export function getBskyProxyHeaderForServiceUrl(
-  serviceUrl?: string,
-): Service | null {
-  if (isLikelyLocalServiceUrl(serviceUrl)) {
-    return `${LOCAL_DEV_APPVIEW_PROXY_DID}#bsky_appview` as Service
-  }
-  return BLUESKY_PROXY_HEADER.get()
-}
-
 export function getDmServiceHeadersForServiceUrl(serviceUrl?: string) {
   const proxyDid = isLikelyLocalServiceUrl(serviceUrl)
     ? LOCAL_DEV_CHAT_PROXY_DID
@@ -432,40 +382,51 @@ export function getDmServiceHeadersForServiceUrl(serviceUrl?: string) {
   }
 }
 
-export const DM_SERVICE_HEADERS = getDmServiceHeadersForServiceUrl()
+/*
+ * Default saved feeds. In local dev mode the discover/video feeds resolve to
+ * null so onboarding doesn't pin feeds the local AppView can't serve.
+ */
+export const DEFAULT_DISCOVER_FEED_URI = IS_LOCAL_DEV_MODE
+  ? null
+  : DISCOVER_FEED_URI
+export const DEFAULT_DISCOVER_FEED_DESCRIPTOR = DEFAULT_DISCOVER_FEED_URI
+  ? `feedgen|${DEFAULT_DISCOVER_FEED_URI}`
+  : 'following'
+export const DEFAULT_VIDEO_FEED_URI = IS_LOCAL_DEV_MODE ? null : VIDEO_FEED_URI
+export const DEFAULT_VIDEO_FEED_DESCRIPTOR = DEFAULT_VIDEO_FEED_URI
+  ? `feedgen|${DEFAULT_VIDEO_FEED_URI}`
+  : null
+export const DEFAULT_VIDEO_FEED_URIS = DEFAULT_VIDEO_FEED_URI
+  ? [DEFAULT_VIDEO_FEED_URI, STAGING_VIDEO_FEED_URI]
+  : []
+export const DEFAULT_DISCOVER_SAVED_FEED = DEFAULT_DISCOVER_FEED_URI
+  ? {
+      type: 'feed',
+      value: DEFAULT_DISCOVER_FEED_URI,
+      pinned: true,
+    }
+  : null
+export const DEFAULT_VIDEO_SAVED_FEED = DEFAULT_VIDEO_FEED_URI
+  ? {
+      type: 'feed',
+      value: DEFAULT_VIDEO_FEED_URI,
+      pinned: true,
+    }
+  : null
 
-export const BLUESKY_MOD_SERVICE_HEADERS = {
-  'atproto-proxy': `${BSKY_LABELER_DID}#atproto_labeler`,
+export function isDefaultDiscoverFeedUri(uri?: string | null) {
+  return Boolean(DEFAULT_DISCOVER_FEED_URI && uri === DEFAULT_DISCOVER_FEED_URI)
 }
 
-/**
- * Bluesky's own moderation service, in the `did#service_id` form a lex client's
- * per-call `service` option takes. Passing it emits `atproto-proxy: <this
- * value>` on that one request, routing a `com.atproto.moderation.*` call to
- * Bluesky's labeler.
- *
- * Reports and appeals aimed at a DIFFERENT labeler build their own value from
- * that labeler's creator did instead, so this is a per-call option rather than a
- * client-level one like {@link CHAT_PROXY_SERVICE}.
- */
-export const MOD_PROXY_SERVICE: Service = `${BSKY_LABELER_DID}#atproto_labeler`
-
-/**
- * The notification service's proxy target, in the `did#service_id` form a lex
- * client's per-call `service` option takes. Passing it emits `atproto-proxy:
- * <this value>` on that one request, which is what routes push registration to
- * the notification service (replaces the old
- * `BLUESKY_NOTIF_SERVICE_HEADERS`).
- */
-export const NOTIF_SERVICE: Service = `${BLUESKY_PROXY_DID}#bsky_notif`
-
-export const webLinks = {
-  tos: `https://para.social/tos`,
-  privacy: `https://para.social/privacy`,
-  community: `https://para.social/community-guidelines`,
-  communityDeprecated: `https://para.social/community-guidelines-deprecated`,
+export function isDiscoverFeedUri(uri?: string | null) {
+  return Boolean(
+    uri &&
+    (uri === DISCOVER_FEED_URI ||
+      (DEFAULT_DISCOVER_FEED_URI !== null &&
+        uri === DEFAULT_DISCOVER_FEED_URI)),
+  )
 }
 
-export const MOCK_COMMUNITY_LIST_URI =
-  'at://did:plc:mock/app.bsky.graph.list/community'
-export const MOCK_PARTY_LIST_URI = 'at://did:plc:mock/app.bsky.graph.list/party'
+export function isDefaultVideoFeedUri(uri?: string | null) {
+  return Boolean(uri && DEFAULT_VIDEO_FEED_URIS.includes(uri))
+}

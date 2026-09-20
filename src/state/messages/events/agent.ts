@@ -8,6 +8,7 @@ import {
   isNetworkError,
 } from '#/lib/strings/errors'
 import {Logger} from '#/logger'
+import {emitSessionDropped} from '#/state/events'
 import {
   BACKGROUND_POLL_INTERVAL,
   DEFAULT_POLL_INTERVAL,
@@ -287,9 +288,16 @@ export class MessagesEventBus {
       this.dispatch({event: MessagesEventBusDispatchEvent.Ready})
     } catch (e: any) {
       if (!isNetworkError(e) && !isErrorMaybeAppPasswordPermissions(e)) {
-        logger.error(`init failed`, {
-          safeMessage: e.message,
-        })
+        if (/could not resolve iss did|identity unknown/i.test(e?.message)) {
+          logger.warn(`init failed: identity unresolvable`, {
+            safeMessage: e.message,
+          })
+          emitSessionDropped()
+        } else {
+          logger.error(`init failed`, {
+            safeMessage: e.message,
+          })
+        }
       }
 
       this.dispatch({

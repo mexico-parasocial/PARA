@@ -107,7 +107,7 @@ const STARTUP_MAX_BLOCK_MS = 1500
 function InnerApp() {
   const [isReady, setIsReady] = useState(false)
   const {currentAccount} = useSession()
-  const {resumeSession} = useSessionApi()
+  const {resumeSession, logoutCurrentAccount} = useSessionApi()
   const theme = useColorModeTheme()
   const {_} = useLingui()
   const hasCheckedReferrer = useStarterPackEntry()
@@ -144,8 +144,9 @@ function InnerApp() {
       Toast.show(_(msg`Sorry! Your session expired. Please sign in again.`), {
         type: 'info',
       })
+      logoutCurrentAccount('Settings')
     })
-  }, [_])
+  }, [_, logoutCurrentAccount])
 
   return (
     <Alf theme={theme}>

@@ -175,8 +175,24 @@ export function makeSessionHooks({
     onDeleted(data) {
       dispatch('expired', data)
     },
-    onUpdateFailure() {
-      dispatch('network-error')
+    onUpdateFailure(_data, err) {
+      /*
+       * The SDK routes refresh failures to here unless they match a refreshSession
+       * lexicon error (ExpiredToken/InvalidToken/AccountTakedown -> onDeleted).
+       * A PDS answers 400 `InvalidRequest` when the refresh token is valid but
+       * the account no longer exists on the server (dev reseeds do this) — an
+       * undeclared error, so without this check it would loop forever as a
+       * "network error" and never log the dead account out.
+       */
+      const status = (err as {response?: {status?: number}} | undefined)
+        ?.response?.status
+      const isTransient =
+        status == null || status >= 500 || status === 408 || status === 429
+      if (isTransient) {
+        dispatch('network-error')
+      } else {
+        dispatch('expired')
+      }
     },
   }
   return Object.assign(hooks, {

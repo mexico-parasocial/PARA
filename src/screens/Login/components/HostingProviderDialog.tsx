@@ -41,9 +41,10 @@ export function HostingProviderDialog({
   const ax = useAnalytics()
   const formRef = useRef<DialogInnerRef>(null)
 
-  const [fixedOption, setFixedOption] = useState<SegmentedControlOptions>(
-    currentOverride ? 'manual' : 'automatic',
-  )
+  // Always default to 'manual' so the text input is immediately shown when the
+  // user taps the hosting provider row — they came here to type/change the URL.
+  const [fixedOption, setFixedOption] =
+    useState<SegmentedControlOptions>('manual')
   const [previousCustomAddress, setPreviousCustomAddress] = useState(
     currentOverride ?? '',
   )
@@ -198,6 +199,7 @@ function DialogInner({
                 label="my-server.com"
                 accessibilityLabelledBy="address-input-label"
                 autoCapitalize="none"
+                autoFocus
                 keyboardType="url"
               />
             </TextField.Root>
