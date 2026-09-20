@@ -67,6 +67,26 @@ export type Events = {
   'router:navigate': {
     from?: string
   }
+  'web:list:size': {
+    itemCount: number
+    renderedRowCount: number
+    contentHeight: number
+    sessionAgeMs: number
+    milestone: 100 | 250 | 500 | 1000
+    heapUsedBytes?: number
+    heapLimitBytes?: number
+  }
+  'web:list:longTasks': {
+    itemCount: number
+    renderedRowCount: number
+    taskCount: number
+    totalDurationMs: number
+    maxDurationMs: number
+    intervalMs: number
+    sessionAgeMs: number
+    heapUsedBytes?: number
+    heapLimitBytes?: number
+  }
   'nav:click': {
     item:
       | 'home'
@@ -79,7 +99,12 @@ export type Events = {
       | 'saved'
       | 'settings'
       | 'menu'
-      // PARA-specific navigation items
+      /*
+       * PARA's own destinations. The union above came from upstream and never
+       * grew to cover them, so every nav item PARA added — including the
+       * communities entry the pilot runs through — failed to typecheck at its
+       * call site and was invisible in navigation metrics.
+       */
       | 'data'
       | 'communities'
       | 'compass'
@@ -108,7 +133,23 @@ export type Events = {
     activeStep: number
   }
   'signup:captchaSuccess': {}
-  'signup:captchaFailure': {}
+  'signup:captchaFailure': {
+    reason: 'state-mismatch' | 'webview-error' | 'http-error'
+    host?: string
+    statusCode?: number
+  }
+  'signup:captchaSlow': {}
+  'signup:captchaBlockedLoad': {
+    host: string
+    isTopFrame: boolean
+  }
+  'signup:captchaBackPress': {
+    phase?: 'attesting' | 'challenge'
+  }
+  'signup:attestTimeout': {}
+  'signup:createAccountFailure': {
+    reason: string
+  }
   'signup:fieldError': {
     field: string
     errorCount: number
@@ -142,6 +183,7 @@ export type Events = {
     selectedInterests: string[]
     selectedInterestsLength: number
   }
+  'onboarding:interests:disabledNextPressed': {}
   'onboarding:suggestedAccounts:tabPressed': {
     tab: string
   }
@@ -363,35 +405,6 @@ export type Events = {
     logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
     feedDescriptor?: string
   }
-  'postSubscription:enable': {
-    uri: string
-    authorDid: string
-    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
-    feedDescriptor?: string
-  }
-  'postSubscription:disable': {
-    uri: string
-    authorDid: string
-    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
-    feedDescriptor?: string
-  }
-  'community:create:ctaShown': {}
-  'community:create:eligibilityDenied': {}
-  'community:create:ctaClicked': {}
-  'community:create:submitStarted': {}
-  'community:create:submitSucceeded': {}
-  'community:create:submitFailed': {}
-  'community:create:wizardCompleted': {}
-  'search:paraFilter:applied': {
-    filter: string
-  }
-  'search:paraFilter:select': {
-    field: string
-    value: string
-  }
-  'search:paraFilter:clear': {
-    field: string
-  }
   'post:mute': {
     uri: string
     authorDid: string
@@ -472,7 +485,6 @@ export type Events = {
       | 'Hashtag'
       | 'Topic'
       | 'PostQuotes'
-      | 'FlairFeed'
     feedDescriptor?: string
     position?: number
   }
@@ -549,7 +561,7 @@ export type Events = {
       | 'ProgressGuide'
     location: 'Card' | 'Profile' | 'FollowAll'
     recSource?: 'Search'
-    recId?: string | number
+    recId?: string
     position: number
     suggestedDid: string
     category: string | null
@@ -562,7 +574,7 @@ export type Events = {
       | 'ProfileHeader'
       | 'Onboarding'
       | 'SeeMoreSuggestedUsers'
-    recId?: string | number
+    recId?: string
     position: number
     suggestedDid: string
     category: string | null
@@ -577,7 +589,7 @@ export type Events = {
       | 'SeeMoreSuggestedUsers'
       | 'ProgressGuide'
     recSource?: 'Search'
-    recId?: string | number
+    recId?: string
     position: number
     suggestedDid: string
     category: string | null
@@ -589,11 +601,11 @@ export type Events = {
       | 'ProfileInterstitial'
       | 'ProfileHeader'
       | 'Onboarding'
-    recId?: string | number
+    recId?: string
   }
   'suggestedUser:dismiss': {
     logContext: 'DiscoverInterstitial' | 'ProfileInterstitial' | 'ProfileHeader'
-    recId?: string | number
+    recId?: string
     position: number
     suggestedDid: string
   }
@@ -784,16 +796,16 @@ export type Events = {
   }
   'trendingTopic:seen': {
     context: 'sidebar' | 'interstitial' | 'explore'
-    recId?: string | number
+    feedUri?: string
+    recId?: string
     rank: number
     feedSliceIndex?: number
   }
   'trendingTopic:click': {
     context: 'sidebar' | 'interstitial' | 'explore'
-    recId?: string | number
-    // Optional here (required upstream) so PARA's existing call sites, which
-    // predate rank tracking, keep type-checking.
-    rank?: number
+    feedUri?: string
+    recId?: string
+    rank: number
     feedSliceIndex?: number
   }
   'trendingVideos:show': {
@@ -851,8 +863,6 @@ export type Events = {
 
   'search:advanced:press': {
     filterCount: number
-    paraFilterCount?: number
-    paraFilters?: string[]
   }
 
   'search:shareLink:press': {
@@ -861,8 +871,6 @@ export type Events = {
 
   'search:addFilter:press': {
     filterCount: number
-    field?: string
-    mode?: string
   }
 
   'progressGuide:hide': {}
@@ -1114,6 +1122,8 @@ export type Events = {
 
   'bot:label:toggle': {state: 'add' | 'remove'}
   'bot:badge:click': {}
+
+  'contentVisibility:algorithmicRecommendations:change': {hide: boolean}
 
   'live:create': {duration: number}
   'live:edit': {}
@@ -1455,7 +1465,7 @@ export type Events = {
   // === Video upload funnel (Frontend Spec section D) ===
   // Every event carries uploadId (client-generated UUID, ties one upload
   // session end-to-end) + engine (compression engine id, e.g.
-  // native:react-native-compressor@1.13.0). jobId is added once the server
+  // native:@bsky.app/video-compressor@0.2.0). jobId is added once the server
   // returns it. Sizes / codecs / dimensions / timings only - never content.
   'video:upload:picked': {
     uploadId: string
@@ -1474,7 +1484,7 @@ export type Events = {
   // Native-only. Raw container metadata returned by the new module's probe()
   // (bitrate, codec, HDR, frame rate, rotation, etc.). Fires once per upload
   // between compressStarted and the compressSkipped/compressCompleted decision.
-  // The web (mediabunny) and legacy rn-compressor engines do not surface this.
+  // The web mediabunny engine also emits this from its own probe.
   'video:upload:probed': {
     uploadId: string
     engine: string
@@ -1532,8 +1542,6 @@ export type Events = {
     engine: string
     bytes: number
     errorClass: string
-    /** Truncated to 256 chars */
-    errorMessage: string
     elapsedMs: number
   }
   'video:upload:processingStarted': {
@@ -1591,5 +1599,66 @@ export type Events = {
   'betaFeatures:feedback:submit': {
     betaFeatureKeys: string[]
     feedbackLength: number
+  }
+
+  /*
+   * Community creation funnel
+   *
+   * These were already being fired from CommunitiesScreen and
+   * CreateCommunityScreen but were never declared here, so every call site
+   * failed to typecheck and the funnel was untyped. All seven are emitted with
+   * an empty payload today; give them fields when there is something worth
+   * segmenting by.
+   */
+
+  // the create-community CTA was rendered for an eligible user
+  'community:create:ctaShown': {}
+  // the CTA was not offered because the user is not eligible to create one
+  'community:create:eligibilityDenied': {}
+  // user pressed the CTA and entered the wizard
+  'community:create:ctaClicked': {}
+  // user reached the end of the wizard
+  'community:create:wizardCompleted': {}
+  // submission started
+  'community:create:submitStarted': {}
+  // the community record was written successfully
+  'community:create:submitSucceeded': {}
+  // submission failed
+  'community:create:submitFailed': {}
+
+  /*
+   * Post subscriptions ("lobbying" follows)
+   *
+   * Same story as the community funnel above: fired from
+   * PostControls/PostMenu/PostMenuItems.tsx, never declared.
+   */
+  'postSubscription:enable': {
+    uri: string
+    authorDid: string
+    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
+    feedDescriptor?: string
+  }
+  'postSubscription:disable': {
+    uri: string
+    authorDid: string
+    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
+    feedDescriptor?: string
+  }
+
+  /*
+   * PARA-specific search filters
+   */
+  // a filter became active as a result of a filter change
+  'search:paraFilter:applied': {
+    filter: string
+  }
+  // user picked a value for one filter field
+  'search:paraFilter:select': {
+    field: string
+    value: string
+  }
+  // user cleared one filter field
+  'search:paraFilter:clear': {
+    field: string
   }
 }

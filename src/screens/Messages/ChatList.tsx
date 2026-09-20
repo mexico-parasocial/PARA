@@ -22,7 +22,7 @@ import {logger} from '#/logger'
 import {listenSoftReset} from '#/state/events'
 import {MESSAGE_SCREEN_POLL_INTERVAL} from '#/state/messages/convo/const'
 import {useMessagesEventBus} from '#/state/messages/events'
-import {useMatrixRoomsQuery} from '#/state/queries/matrix'
+import {useMatrixRoomsQuery, useUnreadCountQuery} from '#/state/queries/matrix'
 import {useChatActorStatusQuery} from '#/state/queries/messages/get-status'
 import {useUnreadCountsQuery} from '#/state/queries/messages/get-unread-counts'
 import {useListConvosQuery} from '#/state/queries/messages/list-conversations'
@@ -88,6 +88,9 @@ type ListItem =
       unread: number
       kind: 'main' | 'chamber-a' | 'chamber-b' | 'observers'
     }
+  | {
+      type: 'MATRIX_UNAVAILABLE'
+    }
 
 function renderItem({item}: {item: ListItem}) {
   switch (item.type) {
@@ -99,6 +102,8 @@ function renderItem({item}: {item: ListItem}) {
       return <ChatListItem convo={item.conversation} selected={item.selected} />
     case 'MATRIX_ROOM':
       return <ChatListItem type="matrix-room" room={item} />
+    case 'MATRIX_UNAVAILABLE':
+      return <MatrixUnavailableNotice />
   }
 }
 
@@ -112,6 +117,8 @@ function keyExtractor(item: ListItem) {
       return item.conversation.id
     case 'MATRIX_ROOM':
       return `MATRIX_ROOM:${item.roomId}`
+    case 'MATRIX_UNAVAILABLE':
+      return 'MATRIX_UNAVAILABLE'
   }
 }
 
@@ -350,13 +357,21 @@ export function ChatList({
     refetch: refetchMatrixRooms,
   } = useMatrixRoomsQuery({enabled: !!currentAccount?.did})
 
+  const {data: matrixUnreadData} = useUnreadCountQuery({
+    enabled: !!currentAccount?.did,
+  })
+  const matrixUnavailable = matrixUnreadData?.unavailable ?? false
+
   useRefreshOnFocus(refetch)
   useRefreshOnFocus(refetchInbox)
 
   const listItems = useMemo(() => {
     const items: ListItem[] = []
 
-    if (matrixRoomsData?.rooms.length) {
+    if (matrixUnavailable) {
+      items.push({type: 'SECTION', label: l`Comunidades`})
+      items.push({type: 'MATRIX_UNAVAILABLE'})
+    } else if (matrixRoomsData?.rooms.length) {
       items.push({type: 'SECTION', label: l`Comunidades`})
       items.push(
         ...matrixRoomsData.rooms.map(room => ({
@@ -388,7 +403,7 @@ export function ChatList({
     }
 
     return items
-  }, [data, l, matrixRoomsData, selectedChat])
+  }, [data, l, matrixRoomsData, matrixUnavailable, selectedChat])
 
   const hasListContent = listItems.some(
     item => item.type === 'CONVERSATION' || item.type === 'MATRIX_ROOM',
@@ -601,6 +616,34 @@ function ChatListEmptyState({
       }
       style={[a.h_full, {paddingTop: '20%'}]}
     />
+  )
+}
+
+/**
+ * The bridge being unreachable used to render as an empty Comunidades section
+ * and a zero badge — visually identical to "you are caught up". Say it instead.
+ */
+function MatrixUnavailableNotice() {
+  const t = useTheme()
+
+  return (
+    <View
+      style={[
+        a.flex_row,
+        a.align_center,
+        a.gap_sm,
+        a.px_lg,
+        a.py_md,
+        {backgroundColor: t.palette.contrast_0},
+      ]}>
+      <CircleInfoIcon size="sm" style={[t.atoms.text_contrast_medium]} />
+      <Text style={[a.flex_1, a.text_sm, t.atoms.text_contrast_medium]}>
+        <Trans>
+          No se pudo conectar con el chat de comunidades. Puede haber mensajes
+          sin leer que no se muestran aquí.
+        </Trans>
+      </Text>
+    </View>
   )
 }
 

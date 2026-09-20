@@ -8,18 +8,31 @@ import {useSession} from '#/state/session'
  * - Matrix community rooms
  *
  * Used for drawer badges and bottom-tab indicators.
+ *
+ * `hasNew` carries the DM query's meaning: something is unread but there is no
+ * number to show (a pending request), so the surface draws a dot. Matrix unread
+ * always has a count, so it never produces `hasNew`.
  */
-export function useTotalChatUnread(): {count: number; numUnread?: string} {
+export function useTotalChatUnread(): {
+  count: number
+  numUnread?: string
+  hasNew: boolean
+} {
   const {currentAccount} = useSession()
   const dmUnread = useUnreadMessageCount()
   const matrixUnread = useUnreadCountQuery({enabled: !!currentAccount?.did})
 
-  const dmCount = dmUnread?.count ?? 0
   const matrixCount = matrixUnread.data?.unread ?? 0
-  const total = dmCount + matrixCount
 
+  // With nothing unread on Matrix, pass the DM result through untouched — it
+  // carries its own overflow cap and the request-convo dot, and re-deriving
+  // either from the total would lose them.
+  if (matrixCount === 0) return dmUnread
+
+  const total = dmUnread.count + matrixCount
   return {
     count: total,
-    numUnread: total > 99 ? '99+' : total > 0 ? String(total) : undefined,
+    numUnread: total > 99 ? '99+' : String(total),
+    hasNew: false,
   }
 }
