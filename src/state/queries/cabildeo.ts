@@ -1,6 +1,7 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {
+  type CabildeoDelegationEntry,
   type CabildeoDelegationMode,
   type CabildeoDelegationSignal,
   castCabildeoVote,
@@ -9,6 +10,8 @@ import {
   fetchCabildeoPositions,
   fetchCabildeos,
   fetchDelegationCandidates,
+  listMyCabildeoDelegations,
+  revokeCabildeoDelegation,
 } from '#/lib/api/cabildeo'
 import {
   type CabildeoView,
@@ -27,6 +30,11 @@ import {useAgent} from '#/state/session'
 const RQKEY_ROOT = 'cabildeo'
 
 export const cabildeosQueryKey = [RQKEY_ROOT, 'list']
+export const myDelegationsQueryKey = (cabildeoUri?: string) => [
+  RQKEY_ROOT,
+  'my-delegations',
+  cabildeoUri ?? 'all',
+]
 export const cabildeoDetailQueryKey = (cabildeoUri: string) => [
   RQKEY_ROOT,
   'detail',
@@ -348,6 +356,39 @@ export function useVoteMutation() {
         queryKey: cabildeoPositionsQueryKey(cabildeoUri),
       })
       void queryClient.invalidateQueries({queryKey: cabildeosQueryKey})
+    },
+  })
+}
+
+export function useMyCabildeoDelegationsQuery(cabildeoUri?: string) {
+  const agent = useAgent()
+  return useQuery<CabildeoDelegationEntry[]>({
+    staleTime: STALE.SECONDS.THIRTY,
+    queryKey: myDelegationsQueryKey(cabildeoUri),
+    enabled: Boolean(agent.session),
+    queryFn: () => listMyCabildeoDelegations(agent, {cabildeo: cabildeoUri}),
+  })
+}
+
+export function useRevokeCabildeoDelegationMutation(cabildeoUri?: string) {
+  const agent = useAgent()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({uri}: {uri: string}) => revokeCabildeoDelegation(agent, uri),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({
+        queryKey: myDelegationsQueryKey(cabildeoUri),
+      })
+      void queryClient.invalidateQueries({queryKey: cabildeosQueryKey})
+      if (cabildeoUri) {
+        void queryClient.invalidateQueries({
+          queryKey: cabildeoDetailQueryKey(cabildeoUri),
+        })
+        void queryClient.invalidateQueries({
+          queryKey: [RQKEY_ROOT, 'delegation-candidates', cabildeoUri],
+        })
+      }
     },
   })
 }

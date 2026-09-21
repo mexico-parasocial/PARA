@@ -14,10 +14,7 @@ import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {type CabildeoPartyVoteSummary} from '#/lib/api/cabildeo'
-import {
-  type CabildeoOption,
-  type CabildeoPhase,
-} from '#/lib/api/para-lexicons'
+import {type CabildeoOption, type CabildeoPhase} from '#/lib/api/para-lexicons'
 import {fromCabildeoRouteParam} from '#/lib/cabildeo-client'
 import {REPRESENTATIVES} from '#/lib/mock-data'
 import {
@@ -59,6 +56,7 @@ import {
   SortitionStatusCard,
 } from '#/screens/Data/components/SortitionStatusCard'
 import {useTheme} from '#/alf'
+import {PublicBallotNotice} from '#/components/civic/PublicRecordNotice'
 import {useDialogControl} from '#/components/Dialog'
 import {SortitionConfigDialog} from '#/components/dialogs/SortitionConfigDialog'
 import * as Layout from '#/components/Layout'
@@ -454,6 +452,7 @@ export function CabildeoDetailScreen({route}: Props) {
   // Consensus synthesizer state removed — pending real backend implementation
   const [hasDismissedGracePeriod, setHasDismissedGracePeriod] = useState(false)
   const sortitionControl = useDialogControl()
+  const ballotNoticeControl = useDialogControl()
   const [mountedAt] = useState(() => Date.now())
   const [nowMs, setNowMs] = useState(() => Date.now())
   const [positionFilter, setPositionFilter] = useState<
@@ -636,6 +635,8 @@ export function CabildeoDetailScreen({route}: Props) {
 
   const phaseIndex = PHASE_ORDER.indexOf(cabildeo.phase)
 
+  // Casting publishes the ballot in the voter's own repo under their DID,
+  // permanently. They are told that first: OD-7 §5d.
   const handleVote = () => {
     if (selectedOption === null || !cabildeoUri) return
     if (!participationAccess.allowed) {
@@ -646,6 +647,11 @@ export function CabildeoDetailScreen({route}: Props) {
       Toast.show(i18n._(msg`Voting is not open for this proposal.`))
       return
     }
+    ballotNoticeControl.open()
+  }
+
+  const castVote = () => {
+    if (selectedOption === null || !cabildeoUri) return
     vote(
       {cabildeoUri, selectedOption, isDirect: true},
       {
@@ -655,14 +661,13 @@ export function CabildeoDetailScreen({route}: Props) {
         },
         onError: err => {
           const message =
-            err instanceof Error && err.message.includes('VoteEditWindowExpired')
+            err instanceof Error &&
+            err.message.includes('VoteEditWindowExpired')
               ? i18n._(msg`Vote edit window has expired`)
               : i18n._(
                   msg`Could not register vote. ${err instanceof Error ? err.message : 'Try again.'}`,
                 )
-          Toast.show(
-            message,
-          )
+          Toast.show(message)
         },
       },
     )
@@ -870,7 +875,8 @@ export function CabildeoDetailScreen({route}: Props) {
               />
             </View>
             {!participationAccess.allowed && (
-              <Text style={[styles.accessTierNotice, t.atoms.text_contrast_medium]}>
+              <Text
+                style={[styles.accessTierNotice, t.atoms.text_contrast_medium]}>
                 <Trans>
                   Puedes leer este cabildeo, pero necesitas el tier requerido
                   para votar, delegar o publicar posición.
@@ -1202,7 +1208,10 @@ export function CabildeoDetailScreen({route}: Props) {
               officialSignatures.map(signature => (
                 <View
                   key={signature.id}
-                  style={[styles.officialSignatureItem, t.atoms.bg_contrast_50]}>
+                  style={[
+                    styles.officialSignatureItem,
+                    t.atoms.bg_contrast_50,
+                  ]}>
                   <Text style={[styles.officialSignatureEntity, t.atoms.text]}>
                     {signature.entityName ?? signature.entityId}
                   </Text>
@@ -1272,7 +1281,9 @@ export function CabildeoDetailScreen({route}: Props) {
                 <TouchableOpacity
                   accessibilityRole="button"
                   accessibilityLabel={i18n._(msg`Confirm delegated vote`)}
-                  accessibilityHint={i18n._(msg`Accepts your delegate's vote as your own`)}
+                  accessibilityHint={i18n._(
+                    msg`Accepts your delegate's vote as your own`,
+                  )}
                   onPress={handleConfirmDelegateVote}
                   disabled={isVoting}
                   style={[
@@ -1293,7 +1304,9 @@ export function CabildeoDetailScreen({route}: Props) {
                 <TouchableOpacity
                   accessibilityRole="button"
                   accessibilityLabel={i18n._(msg`Override delegate vote`)}
-                  accessibilityHint={i18n._(msg`Opens interface to cast your own vote instead of delegate's`)}
+                  accessibilityHint={i18n._(
+                    msg`Opens interface to cast your own vote instead of delegate's`,
+                  )}
                   onPress={handleOverrideVoteStart}
                   style={[
                     styles.graceBtn,
@@ -1353,41 +1366,41 @@ export function CabildeoDetailScreen({route}: Props) {
           {cabildeo.phase === 'voting' &&
             !hasVoted &&
             participationAccess.allowed && (
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel={i18n._(msg`Cast your vote`)}
-              accessibilityHint={i18n._(
-                msg`Confirms your vote for the selected option`,
-              )}
-              onPress={handleVote}
-              disabled={selectedOption === null || isVoting}
-              style={[
-                styles.voteButton,
-                {
-                  backgroundColor:
-                    selectedOption !== null && !isVoting
-                      ? t.palette.primary_500
-                      : t.palette.contrast_200,
-                },
-              ]}>
-              <Text
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={i18n._(msg`Cast your vote`)}
+                accessibilityHint={i18n._(
+                  msg`Confirms your vote for the selected option`,
+                )}
+                onPress={handleVote}
+                disabled={selectedOption === null || isVoting}
                 style={[
-                  styles.voteButtonText,
-                  {color: t.palette.contrast_100},
+                  styles.voteButton,
+                  {
+                    backgroundColor:
+                      selectedOption !== null && !isVoting
+                        ? t.palette.primary_500
+                        : t.palette.contrast_200,
+                  },
                 ]}>
-                {isVoting
-                  ? i18n._(msg`⏳ Voting...`)
-                  : i18n._(msg`🗳️ Vote directly`)}
-              </Text>
-              <Text
-                style={[
-                  styles.voteButtonSub,
-                  {color: t.palette.contrast_100 + '90'},
-                ]}>
-                <Trans>Weight: 1.0 (direct vote)</Trans>
-              </Text>
-            </TouchableOpacity>
-          )}
+                <Text
+                  style={[
+                    styles.voteButtonText,
+                    {color: t.palette.contrast_100},
+                  ]}>
+                  {isVoting
+                    ? i18n._(msg`⏳ Voting...`)
+                    : i18n._(msg`🗳️ Vote directly`)}
+                </Text>
+                <Text
+                  style={[
+                    styles.voteButtonSub,
+                    {color: t.palette.contrast_100 + '90'},
+                  ]}>
+                  <Trans>Weight: 1.0 (direct vote)</Trans>
+                </Text>
+              </TouchableOpacity>
+            )}
 
           {hasVoted && (
             <View
@@ -1405,7 +1418,9 @@ export function CabildeoDetailScreen({route}: Props) {
                 <TouchableOpacity
                   accessibilityRole="button"
                   accessibilityLabel={i18n._(msg`Change your vote`)}
-                  accessibilityHint={i18n._(msg`Allows selecting a different option`)}
+                  accessibilityHint={i18n._(
+                    msg`Allows selecting a different option`,
+                  )}
                   onPress={() => {
                     if (!canEditVote) {
                       Toast.show(i18n._(msg`Vote edit window has expired`))
@@ -1445,20 +1460,23 @@ export function CabildeoDetailScreen({route}: Props) {
           {cabildeo.phase === 'voting' &&
             !hasVoted &&
             participationAccess.allowed && (
-            <TouchableOpacity
-              accessibilityRole="button"
-              onPress={() => navigation.navigate('DelegateVote', {cabildeoUri})}
-              style={[styles.delegateButton, t.atoms.bg_contrast_25]}>
-              <Text style={[styles.delegateText, t.atoms.text]}>
-                🤝 <Trans>Delegate my vote</Trans>
-              </Text>
-              <Text style={[styles.delegateSub, t.atoms.text_contrast_medium]}>
-                <Trans>
-                  Your representative will vote for you (√N weighting)
-                </Trans>
-              </Text>
-            </TouchableOpacity>
-          )}
+              <TouchableOpacity
+                accessibilityRole="button"
+                onPress={() =>
+                  navigation.navigate('DelegateVote', {cabildeoUri})
+                }
+                style={[styles.delegateButton, t.atoms.bg_contrast_25]}>
+                <Text style={[styles.delegateText, t.atoms.text]}>
+                  🤝 <Trans>Delegate my vote</Trans>
+                </Text>
+                <Text
+                  style={[styles.delegateSub, t.atoms.text_contrast_medium]}>
+                  <Trans>
+                    Your representative will vote for you (√N weighting)
+                  </Trans>
+                </Text>
+              </TouchableOpacity>
+            )}
 
           {/* ─── Outcome Details ─── */}
           {cabildeo.outcome && (
@@ -1777,6 +1795,7 @@ export function CabildeoDetailScreen({route}: Props) {
         onConfirm={handleConfigureSortition}
         isSubmitting={createSortitionRun.isPending}
       />
+      <PublicBallotNotice control={ballotNoticeControl} onConfirm={castVote} />
     </Layout.Screen>
   )
 }
