@@ -23,6 +23,17 @@ export type Device = {
   lastNuxDialog: string | undefined
 
   /**
+   * Set right before reloading into a freshly-downloaded OTA update, and
+   * cleared once the reload succeeds. A value still present on the next
+   * launch means the reload never completed.
+   */
+  pendingOTAUpdate?: {
+    attemptedAt: number
+    channel: string
+    updateId: string
+  }
+
+  /**
    * Geolocation config, fetched from the IP service. This previously did
    * double duty as the "status" for geolocation state, but that has since
    * moved here to the client.

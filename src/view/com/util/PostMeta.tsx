@@ -1,6 +1,5 @@
 import {memo, useCallback} from 'react'
 import {type StyleProp, View, type ViewStyle} from 'react-native'
-import {type AppBskyActorDefs} from '@atproto/api'
 import {type ModerationDecision} from '@bsky/sdk/moderation'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -16,7 +15,7 @@ import {sanitizeDisplayName} from '#/lib/strings/display-names'
 import {sanitizeHandle} from '#/lib/strings/handles'
 import {niceDate} from '#/lib/strings/time'
 import {useProfileShadow} from '#/state/cache/profile-shadow'
-import {precacheProfile} from '#/state/queries/profile'
+import {unstableCacheProfileView} from '#/state/queries/profile'
 import {atoms as a, platform, useTheme, web} from '#/alf'
 import {CivicInsignia} from '#/components/CivicInsignia'
 import {WebOnlyInlineLinkText} from '#/components/Link'
@@ -26,14 +25,16 @@ import {Text} from '#/components/Typography'
 import {useSimpleVerificationState} from '#/components/verification'
 import {VerificationCheck} from '#/components/verification/VerificationCheck'
 import {IS_ANDROID} from '#/env'
+import {type app} from '#/lexicons'
 import {TimeElapsed} from './TimeElapsed'
 import {PreviewableUserAvatar} from './UserAvatar'
 
 interface PostMetaOpts {
-  author: AppBskyActorDefs.ProfileViewBasic
+  author: app.bsky.actor.defs.ProfileViewBasic
   moderation: ModerationDecision | undefined
   postHref: string
   timestamp: string
+  linkDisabled?: boolean
   showAvatar?: boolean
   avatarSize?: number
   onOpenAuthor?: () => void
@@ -62,11 +63,11 @@ let PostMeta = (opts: PostMetaOpts): React.ReactNode => {
   const queryClient = useQueryClient()
   const onOpenAuthor = opts.onOpenAuthor
   const onBeforePressAuthor = useCallback(() => {
-    precacheProfile(queryClient, author)
+    unstableCacheProfileView(queryClient, author)
     onOpenAuthor?.()
   }, [queryClient, author, onOpenAuthor])
   const onBeforePressPost = useCallback(() => {
-    precacheProfile(queryClient, author)
+    unstableCacheProfileView(queryClient, author)
   }, [queryClient, author])
 
   const timestampLabel = niceDate(i18n, opts.timestamp)
@@ -74,6 +75,8 @@ let PostMeta = (opts: PostMetaOpts): React.ReactNode => {
   const {isActive: live} = useActorStatus(author)
   const postFlairs = opts.postFlairs || []
   const postFlairsBelow = opts.postFlairsBelow && postFlairs.length > 0
+
+  const MaybeLinkText = opts.linkDisabled ? Text : WebOnlyInlineLinkText
 
   return (
     <View
@@ -94,19 +97,20 @@ let PostMeta = (opts: PostMetaOpts): React.ReactNode => {
             type={author.associated?.labeler ? 'labeler' : 'user'}
             live={live}
             hideLiveBadge
+            disableNavigation={opts.linkDisabled}
           />
         </View>
       )}
       <View style={[a.flex_row, a.align_end, a.flex_shrink]}>
         <ProfileHoverCard did={author.did}>
           <View style={[a.flex_row, a.align_end, a.flex_shrink]}>
-            <WebOnlyInlineLinkText
+            <MaybeLinkText
               emoji
               numberOfLines={1}
               to={profileLink}
               label={_(msg`View profile`)}
               disableMismatchWarning
-              onPress={onBeforePressAuthor}
+              onPress={opts.linkDisabled ? undefined : onBeforePressAuthor}
               style={[
                 a.text_md,
                 a.font_semi_bold,
@@ -122,7 +126,7 @@ let PostMeta = (opts: PostMetaOpts): React.ReactNode => {
                   opts.moderation?.ui('displayName'),
                 ),
               )}
-            </WebOnlyInlineLinkText>
+            </MaybeLinkText>
             {verification.showBadge && (
               <View
                 style={[
@@ -138,14 +142,14 @@ let PostMeta = (opts: PostMetaOpts): React.ReactNode => {
                 />
               </View>
             )}
-            <WebOnlyInlineLinkText
+            <MaybeLinkText
               emoji
               numberOfLines={1}
               to={profileLink}
               label={_(msg`View profile`)}
               disableMismatchWarning
               disableUnderline
-              onPress={onBeforePressAuthor}
+              onPress={opts.linkDisabled ? undefined : onBeforePressAuthor}
               style={[
                 a.text_md,
                 t.atoms.text_contrast_medium,
@@ -153,7 +157,7 @@ let PostMeta = (opts: PostMetaOpts): React.ReactNode => {
                 {flexShrink: 10},
               ]}>
               {NON_BREAKING_SPACE + sanitizeHandle(handle, '@')}
-            </WebOnlyInlineLinkText>
+            </MaybeLinkText>
             {/* Civic insignia (party shield) */}
             {opts.partyShield && (
               <View style={[a.ml_xs, a.self_center]}>
@@ -191,13 +195,13 @@ let PostMeta = (opts: PostMetaOpts): React.ReactNode => {
 
         <TimeElapsed timestamp={opts.timestamp}>
           {({timeElapsed}) => (
-            <WebOnlyInlineLinkText
+            <MaybeLinkText
               to={opts.postHref}
               label={timestampLabel}
               title={timestampLabel}
               disableMismatchWarning
               disableUnderline
-              onPress={onBeforePressPost}
+              onPress={opts.linkDisabled ? undefined : onBeforePressPost}
               style={[
                 a.pl_xs,
                 a.text_md,
@@ -221,7 +225,7 @@ let PostMeta = (opts: PostMetaOpts): React.ReactNode => {
                 </Text>
               )}
               {timeElapsed}
-            </WebOnlyInlineLinkText>
+            </MaybeLinkText>
           )}
         </TimeElapsed>
       </View>

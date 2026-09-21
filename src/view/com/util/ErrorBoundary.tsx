@@ -11,6 +11,11 @@ interface Props {
   children?: ReactNode
   renderError?: (error: Error) => ReactNode
   style?: StyleProp<ViewStyle>
+  /**
+   * Extra fields to attach to the logged error, e.g. HLS diagnostics that
+   * only make sense for a subset of callers.
+   */
+  getErrorMetadata?: (error: Error) => Record<string, unknown>
 }
 
 interface State {
@@ -29,7 +34,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    logger.error(error, {errorInfo})
+    logger.error(error, {errorInfo, ...this.props.getErrorMetadata?.(error)})
   }
 
   public render() {

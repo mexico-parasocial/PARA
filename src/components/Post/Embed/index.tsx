@@ -145,7 +145,15 @@ function MediaEmbed({
         <ContentHider
           modui={rest.moderation?.ui('contentMedia')}
           activeStyle={[a.mt_sm]}>
-          <VideoEmbed embed={embed.view} post={rest.post} />
+          <VideoEmbed
+            /*
+             * The old-world arm's `playlist`/`thumbnail` are plain strings at
+             * this point, not the new world's branded template-literal type,
+             * but the runtime value is the same well-formed URL either way.
+             */
+            embed={embed.view as unknown as app.bsky.embed.video.View}
+            post={rest.post}
+          />
         </ContentHider>
       )
     }
@@ -179,7 +187,16 @@ function RecordEmbed({
     case 'starter_pack': {
       return (
         <View style={a.mt_sm}>
-          <StarterPackCard starterPack={embed.view} />
+          <StarterPackCard
+            /*
+             * The old-world arm's `uri` is a plain string at this point, not
+             * the new world's branded `AtUriString`, but the runtime value is
+             * a well-formed at-uri either way.
+             */
+            starterPack={
+              embed.view as unknown as bsky.starterPack.AnyStarterPackView
+            }
+          />
         </View>
       )
     }
@@ -265,12 +282,18 @@ export function QuoteEmbed({
 }) {
   const moderationOpts = useModerationOpts()
   const quote = useMemo<$Typed<app.bsky.feed.defs.PostView>>(
-    () => ({
-      ...embed.view,
-      $type: 'app.bsky.feed.defs#postView',
-      record: embed.view.value,
-      embed: embed.view.embeds?.[0],
-    }),
+    () =>
+      ({
+        ...embed.view,
+        $type: 'app.bsky.feed.defs#postView',
+        /*
+         * The old-world arm's `.value`/`.embeds` entries are the same
+         * runtime shapes as the new world's `record`/`embed`, just without
+         * the new world's stricter structural typing.
+         */
+        record: embed.view.value,
+        embed: embed.view.embeds?.[0],
+      }) as unknown as $Typed<app.bsky.feed.defs.PostView>,
     [embed],
   )
   const moderation = useMemo(() => {

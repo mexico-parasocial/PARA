@@ -2,6 +2,7 @@ import {useRef} from 'react'
 import {InteractionManager, View} from 'react-native'
 import {type AnimatedRef} from 'react-native-reanimated'
 import {Image} from 'expo-image'
+import {AppBskyEmbedGallery} from '@atproto/api'
 
 import {atoms as a, tokens} from '#/alf'
 import {AutoSizedImage} from '#/components/images/AutoSizedImage'
@@ -22,11 +23,25 @@ export function ImageEmbed({
   embed,
   ...rest
 }: CommonProps & {
-  embed: EmbedType<'images'>
+  embed: EmbedType<'images'> | EmbedType<'gallery'>
 }) {
   const ax = useAnalytics()
   const {openLightbox} = useLightboxControls()
-  const {images} = embed.view
+  /*
+   * `gallery` items carry the same picture as `images`, just under a
+   * differently-shaped view (`items` + `thumbnail` instead of `images` +
+   * `thumb`) - normalize to the `images` shape so the rest of this component
+   * doesn't need to branch on embed type.
+   */
+  const images =
+    embed.type === 'gallery'
+      ? embed.view.items.filter(AppBskyEmbedGallery.isViewImage).map(item => ({
+          thumb: item.thumbnail,
+          fullsize: item.fullsize,
+          alt: item.alt,
+          aspectRatio: item.aspectRatio,
+        }))
+      : embed.view.images
   const galleryEnabled = ax.features.enabled(ax.features.PostGalleryEmbedEnable)
 
   const layout: 'single' | 'grid' | 'carousel' =
