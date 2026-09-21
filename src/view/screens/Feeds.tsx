@@ -1,8 +1,7 @@
- 
 import {useCallback, useMemo, useRef, useState} from 'react'
 import {ActivityIndicator, Pressable, StyleSheet, View} from 'react-native'
 import {type AppBskyFeedDefs} from '@atproto/api'
-import {AtUri} from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'

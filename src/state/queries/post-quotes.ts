@@ -2,9 +2,8 @@ import {
   type AppBskyActorDefs,
   AppBskyEmbedRecord,
   type AppBskyFeedDefs,
-  AtUri,
 } from '@atproto/api'
-import {type AtUriString} from '@atproto/syntax'
+import {AtUri, type AtUriString} from '@atproto/syntax'
 import {
   type InfiniteData,
   type QueryClient,

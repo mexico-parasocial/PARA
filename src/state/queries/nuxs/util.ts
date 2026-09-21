@@ -1,4 +1,5 @@
-import {type AppBskyActorDefs, nuxSchema} from '@atproto/api'
+import {type AppBskyActorDefs} from '@atproto/api'
+import {nuxSchema} from '@bsky/sdk/utils'
 
 import {logger} from '#/logger'
 import {

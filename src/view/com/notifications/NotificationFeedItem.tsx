@@ -15,10 +15,9 @@ import {
   type AppBskyGraphDefs,
   AppBskyGraphFollow,
   AppBskyGraphStarterpack,
-  AtUri,
 } from '@atproto/api'
 import {TID} from '@atproto/common-web'
-import {type DidString} from '@atproto/syntax'
+import {AtUri, type DidString} from '@atproto/syntax'
 import {
   type ModerationDecision,
   type ModerationOpts,

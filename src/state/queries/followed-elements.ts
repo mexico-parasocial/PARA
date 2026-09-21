@@ -1,9 +1,6 @@
-import {
-  type AtpAgent,
-  AtUri,
-  type ComAtprotoRepoListRecords,
-} from '@atproto/api'
+import {type AtpAgent, type ComAtprotoRepoListRecords} from '@atproto/api'
 import {TID} from '@atproto/common-web'
+import {AtUri} from '@atproto/syntax'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {PARA_FOLLOWED_ELEMENT_COLLECTION} from '#/lib/api/para-lexicons'
@@ -129,7 +126,7 @@ async function listRemoteFollowedElements({
   agent,
   repo,
 }: {
-  agent: AtpAgent,
+  agent: AtpAgent
   repo: string
 }) {
   const items: FollowedItem[] = []

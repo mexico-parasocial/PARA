@@ -9,8 +9,8 @@ import {
   AppBskyFeedDefs,
   AppBskyFeedPost,
   type AppBskyFeedThreadgate,
-  AtUri,
 } from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 import {RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {Plural, Trans, useLingui} from '@lingui/react/macro'
 

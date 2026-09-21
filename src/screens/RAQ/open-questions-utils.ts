@@ -1,4 +1,5 @@
-import {type AppBskyFeedDefs, AtUri} from '@atproto/api'
+import {type AppBskyFeedDefs} from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 
 import {type OpenQuestion} from '#/lib/mock-data/types'
 

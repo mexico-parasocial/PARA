@@ -109,8 +109,8 @@ export function useOpenQuestionVoteMutation(questionUri: string) {
         record: {
           subject,
           value,
-          voteNullifier: proof?.voteNullifier,
-          eligibilityProofRef: proof?.eligibilityProofRef,
+          voteNullifier: proof.voteNullifier,
+          eligibilityProofRef: proof.eligibilityProofRef,
           createdAt: new Date().toISOString(),
         },
       })

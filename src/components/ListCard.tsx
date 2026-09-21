@@ -1,6 +1,7 @@
 import {useEffect, useMemo} from 'react'
 import {View} from 'react-native'
-import {type AppBskyGraphDefs, AtUri} from '@atproto/api'
+import {type AppBskyGraphDefs} from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 import {type ModerationUI} from '@bsky/sdk/moderation'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'

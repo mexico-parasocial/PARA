@@ -11,7 +11,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated'
-import {RichText as RichTextAPI} from '@atproto/api'
+import {RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {type RouteProp, useRoute} from '@react-navigation/native'

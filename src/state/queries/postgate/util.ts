@@ -3,9 +3,8 @@ import {
   AppBskyEmbedRecord,
   AppBskyEmbedRecordWithMedia,
   type AppBskyFeedDefs,
-  AtUri,
 } from '@atproto/api'
-import {type AtUriString, toDatetimeString} from '@atproto/syntax'
+import {AtUri, type AtUriString, toDatetimeString} from '@atproto/syntax'
 
 import {type app} from '#/lexicons'
 

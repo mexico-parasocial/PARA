@@ -5,8 +5,8 @@ import {
   AppBskyFeedDefs,
   AppBskyFeedPost,
   AppBskyFeedThreadgate,
-  AtUri,
 } from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 import {type ModerationDecision} from '@bsky/sdk/moderation'
 import {RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {useQueryClient} from '@tanstack/react-query'

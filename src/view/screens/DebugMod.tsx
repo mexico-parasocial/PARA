@@ -12,8 +12,8 @@ import {
   type AppBskyFeedDefs,
   type AppBskyFeedPost,
   type ComAtprotoLabelDefs,
-  mock,
 } from '@atproto/api'
+import {type DidString} from '@atproto/syntax'
 import {
   interpretLabelValueDefinition,
   type LabelPreference,
@@ -32,6 +32,7 @@ import {
   type CommonNavigatorParams,
   type NativeStackScreenProps,
 } from '#/lib/routes/types'
+import {mock} from '#/lib/sdk-mock'
 import {
   moderationOptsOverrideContext,
   useModerationOpts,
@@ -60,6 +61,7 @@ import {
 import * as Layout from '#/components/Layout'
 import * as ProfileCard from '#/components/ProfileCard'
 import {H1, H3, P, Text} from '#/components/Typography'
+import {type app} from '#/lexicons'
 import {ScreenHider} from '../../components/moderation/ScreenHider'
 import {NotificationFeedItem} from '../com/notifications/NotificationFeedItem'
 import {PagerHeaderProvider} from '../com/pager/PagerHeaderContext'
@@ -147,7 +149,7 @@ export const DebugModScreen = ({}: NativeStackScreenProps<
         blockingByList: undefined,
       }),
     })
-    mockedProfile.did = did
+    mockedProfile.did = did as DidString
     mockedProfile.avatar = 'https://bsky.social/about/images/favicon-32x32.png'
     // @ts-expect-error ProfileViewBasic is close enough -esb
     mockedProfile.banner =
@@ -233,7 +235,7 @@ export const DebugModScreen = ({}: NativeStackScreenProps<
     })
     const [item] = groupNotifications([notif])
     item.subject = mock.postView({
-      record: notif.record as AppBskyFeedPost.Record,
+      record: notif.record as app.bsky.feed.post.Main,
       author: profile,
       labels: notif.labels,
     })

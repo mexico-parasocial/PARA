@@ -1,6 +1,6 @@
 import {useCallback} from 'react'
-import {type AppBskyActorDefs, type AppBskyFeedDefs, AtUri} from '@atproto/api'
-import {type AtUriString} from '@atproto/syntax'
+import {type AppBskyActorDefs, type AppBskyFeedDefs} from '@atproto/api'
+import {AtUri, type AtUriString} from '@atproto/syntax'
 import {deleteLike, deletePost, deleteRepost, like, repost} from '@bsky/sdk'
 import {
   type QueryClient,

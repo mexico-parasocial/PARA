@@ -1,10 +1,7 @@
 import {memo, type ReactNode, useCallback, useMemo, useState} from 'react'
 import {View} from 'react-native'
-import {
-  type AppBskyFeedDefs,
-  type AppBskyFeedThreadgate,
-  AtUri,
-} from '@atproto/api'
+import {type AppBskyFeedDefs, type AppBskyFeedThreadgate} from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 import {RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {Trans} from '@lingui/react/macro'
 

@@ -143,8 +143,8 @@ export async function submitAxisVote(
   const record: ParaRaqAxisVoteRecord = {
     axisId,
     value,
-    voteNullifier: proof?.voteNullifier,
-    eligibilityProofRef: proof?.eligibilityProofRef,
+    voteNullifier: proof.voteNullifier,
+    eligibilityProofRef: proof.eligibilityProofRef,
     createdAt: new Date().toISOString(),
   }
 
@@ -169,8 +169,8 @@ export async function submitProposalVote(
   const record: ParaRaqProposalVoteRecord = {
     subject,
     value: value > 0 ? 1 : value < 0 ? -1 : 0,
-    voteNullifier: proof?.voteNullifier,
-    eligibilityProofRef: proof?.eligibilityProofRef,
+    voteNullifier: proof.voteNullifier,
+    eligibilityProofRef: proof.eligibilityProofRef,
     createdAt: new Date().toISOString(),
   }
 

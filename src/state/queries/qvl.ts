@@ -291,8 +291,8 @@ export function useCastVoteMutation() {
           community,
           voter: agent.session.did,
           signal,
-          voteNullifier: proof?.voteNullifier,
-          eligibilityProofRef: proof?.eligibilityProofRef,
+          voteNullifier: proof.voteNullifier,
+          eligibilityProofRef: proof.eligibilityProofRef,
           createdAt: new Date().toISOString(),
         },
       })
@@ -321,7 +321,7 @@ export function useCastIntensityMutation() {
       proposal: string
       signal: number
       units: number
-      }) => {
+    }) => {
       if (!agent.session) throw new Error('Not logged in')
       const proof = await issueParaVoteProof(agent, {
         subjectUri: proposal,
@@ -337,8 +337,8 @@ export function useCastIntensityMutation() {
           signal,
           units,
           creditsSpent: units * units,
-          voteNullifier: proof?.voteNullifier,
-          eligibilityProofRef: proof?.eligibilityProofRef,
+          voteNullifier: proof.voteNullifier,
+          eligibilityProofRef: proof.eligibilityProofRef,
           createdAt: new Date().toISOString(),
         },
       })
@@ -460,8 +460,8 @@ export function useCastDeliberationVoteMutation() {
           deliberation,
           voter: agent.session.did,
           direction,
-          voteNullifier: proof?.voteNullifier,
-          eligibilityProofRef: proof?.eligibilityProofRef,
+          voteNullifier: proof.voteNullifier,
+          eligibilityProofRef: proof.eligibilityProofRef,
           createdAt: new Date().toISOString(),
         },
       })

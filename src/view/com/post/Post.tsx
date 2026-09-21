@@ -1,6 +1,7 @@
 import {useCallback, useMemo, useState} from 'react'
 import {type StyleProp, StyleSheet, View, type ViewStyle} from 'react-native'
-import {type AppBskyFeedDefs, AppBskyFeedPost, AtUri} from '@atproto/api'
+import {type AppBskyFeedDefs, AppBskyFeedPost} from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 import {type ModerationDecision} from '@bsky/sdk/moderation'
 import {RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {useQueryClient} from '@tanstack/react-query'

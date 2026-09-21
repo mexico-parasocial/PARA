@@ -1,7 +1,8 @@
 /**
  * Type converters for Draft API - convert between ComposerState and server Draft types.
  */
-import {AppBskyDraftDefs, AtUri} from '@atproto/api'
+import {AppBskyDraftDefs} from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 import {RichText} from '@bsky/sdk/richtext'
 import {nanoid} from 'nanoid/non-secure'
 

@@ -1,5 +1,6 @@
 import {useCallback, useMemo, useRef} from 'react'
-import {type AppBskyFeedDefs, AtUri} from '@atproto/api'
+import {type AppBskyFeedDefs} from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 import {
   type InfiniteData,
   type QueryClient,

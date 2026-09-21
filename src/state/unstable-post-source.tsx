@@ -1,5 +1,6 @@
 import {useEffect, useId, useState} from 'react'
-import {type AppBskyFeedDefs, AtUri} from '@atproto/api'
+import {type AppBskyFeedDefs} from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 
 import {Logger} from '#/logger'
 import {type FeedSourceInfo} from '#/state/queries/feed'

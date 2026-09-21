@@ -1,4 +1,5 @@
-import {type AppBskyFeedDefs, type AtpAgent,AtUri} from '@atproto/api'
+import {type AppBskyFeedDefs, type AtpAgent} from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 
 import {
   PARA_HIGHLIGHT_COLLECTION,

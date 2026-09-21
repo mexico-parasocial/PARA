@@ -3,9 +3,8 @@ import {
   type AppBskyActorDefs,
   type AppBskyFeedDefs,
   type AppBskyGraphDefs,
-  AtUri,
 } from '@atproto/api'
-import {type AtUriString} from '@atproto/syntax'
+import {AtUri, type AtUriString} from '@atproto/syntax'
 import {RichText} from '@bsky/sdk/richtext'
 import {t} from '@lingui/core/macro'
 import {

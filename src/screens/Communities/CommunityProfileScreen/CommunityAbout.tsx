@@ -1,6 +1,6 @@
 import {useState} from 'react'
 import {TouchableOpacity, View} from 'react-native'
-import {AtUri} from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 // @ts-ignore - lingui macro types not available
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -8,7 +8,6 @@ import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {getCommunityInsignia} from '#/lib/civic-insignias'
-import {CIVIC_TREE_COPY,CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
 import {type CommunityGovernanceView} from '#/lib/community-governance'
 import {type UsePaletteValue} from '#/lib/hooks/usePalette'
 import {type NavigationProp} from '#/lib/routes/types'
@@ -19,6 +18,7 @@ import {useTheme} from '#/alf'
 import {CivicInsignia} from '#/components/CivicInsignia'
 import {PageText_Stroke2_Corner0_Rounded as PageTextIcon} from '#/components/icons/PageText'
 import {Tree_Stroke2_Corner0_Rounded as TreeIcon} from '#/components/icons/Tree'
+import {CIVIC_TREE_COPY, CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
 import {CommunityUriChip} from './CommunityUriChip'
 import {styles} from './styles'
 import {TableContent} from './TableContent'
@@ -92,18 +92,16 @@ export function CommunityAbout({
 }) {
   const t = useTheme()
   const navigation = useNavigation<NavigationProp>()
-  const { _} = useLingui()
+  const {_} = useLingui()
   const [showEstandarte, setShowEstandarte] = useState(true)
   const [showChildren, setShowChildren] = useState(false)
 
-  const {
-    data: relationsData,
-    isLoading: relationsLoading,
-  } = useCommunityRelationsQuery({
-    communityUri: board?.uri,
-    relation: 'parentChild',
-    limit: 50,
-  })
+  const {data: relationsData, isLoading: relationsLoading} =
+    useCommunityRelationsQuery({
+      communityUri: board?.uri,
+      relation: 'parentChild',
+      limit: 50,
+    })
 
   const rules = [
     'Be respectful and civil',
@@ -589,7 +587,9 @@ export function CommunityAbout({
               <TouchableOpacity
                 accessibilityRole="button"
                 accessibilityLabel={_(msg`View child communities`)}
-                accessibilityHint={_(msg`Expands or collapses the list of child communities`)}
+                accessibilityHint={_(
+                  msg`Expands or collapses the list of child communities`,
+                )}
                 onPress={() => setShowChildren(v => !v)}
                 style={{
                   flexDirection: 'row',

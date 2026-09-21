@@ -1,4 +1,4 @@
-import {BlobRef} from '@atproto/api'
+import {BlobRef} from '@atproto/lexicon'
 import {sha256} from 'js-sha256'
 import {CID} from 'multiformats/cid'
 import * as Hasher from 'multiformats/hashes/hasher'

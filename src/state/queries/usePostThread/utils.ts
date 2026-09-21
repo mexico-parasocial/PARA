@@ -4,8 +4,8 @@ import {
   AppBskyFeedThreadgate,
   AppBskyUnspeccedDefs,
   type AppBskyUnspeccedGetPostThreadV2,
-  AtUri,
 } from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 
 import {
   type ApiThreadItem,

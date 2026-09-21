@@ -1,7 +1,8 @@
 import {type Insets, Platform} from 'react-native'
 import * as Device from 'expo-device'
-import {type AppBskyActorDefs, BSKY_LABELER_DID} from '@atproto/api'
+import {type AppBskyActorDefs} from '@atproto/api'
 import {type Service} from '@atproto/lex'
+import {api} from '@bsky/sdk'
 
 import {BLUESKY_PROXY_DID, CHAT_PROXY_DID, IS_DEV} from '#/env'
 
@@ -435,7 +436,7 @@ export function getDmServiceHeadersForServiceUrl(serviceUrl?: string) {
 export const DM_SERVICE_HEADERS = getDmServiceHeadersForServiceUrl()
 
 export const BLUESKY_MOD_SERVICE_HEADERS = {
-  'atproto-proxy': `${BSKY_LABELER_DID}#atproto_labeler`,
+  'atproto-proxy': api.moderation.service,
 }
 
 /**
@@ -448,7 +449,7 @@ export const BLUESKY_MOD_SERVICE_HEADERS = {
  * that labeler's creator did instead, so this is a per-call option rather than a
  * client-level one like {@link CHAT_PROXY_SERVICE}.
  */
-export const MOD_PROXY_SERVICE: Service = `${BSKY_LABELER_DID}#atproto_labeler`
+export const MOD_PROXY_SERVICE: Service = api.moderation.service
 
 /**
  * The notification service's proxy target, in the `did#service_id` form a lex

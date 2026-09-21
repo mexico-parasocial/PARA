@@ -1,4 +1,5 @@
-import {type $Typed, AppBskyFeedDefs, AtUri} from '@atproto/api'
+import {type $Typed, AppBskyFeedDefs} from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 import {
   type InfiniteData,
   type QueryClient,

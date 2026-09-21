@@ -3,9 +3,8 @@ import {
   type AppBskyGraphDefs,
   type ComAtprotoRepoStrongRef,
 } from '@atproto/api'
-import {AtUri} from '@atproto/api'
 import {type Client} from '@atproto/lex'
-import {type AtUriString, type HandleString} from '@atproto/syntax'
+import {AtUri, type AtUriString, type HandleString} from '@atproto/syntax'
 
 import {IMAGE_SIZE_CONFIG_2K_1MB} from '#/lib/constants'
 import {getLinkMeta, type LinkMeta} from '#/lib/link-meta/link-meta'

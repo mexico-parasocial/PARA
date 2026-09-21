@@ -2,10 +2,11 @@
  * Types for draft display and local media tracking.
  * Server draft types come from @atproto/api.
  */
-import {type RichText as RichTextAPI} from '@atproto/api'
-import {type RichText as RichTextSDK} from '@bsky/sdk/richtext'
 
-/**
+import {
+  RichText as RichTextAPI,
+  type RichText as RichTextSDK,
+} from '@bsky/sdk/richtext' /**
  * Reference to locally cached media file for display
  */
 export type LocalMediaDisplay = {
@@ -55,7 +56,7 @@ export type DraftPostDisplay = {
     handle: string
   }
   /** RichText for display */
-  richtext: RichTextAPI | RichTextSDK
+  richtext: RichTextAPI
 }
 
 /**

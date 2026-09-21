@@ -1,16 +1,16 @@
-import {getAgeAssuranceRegionConfig} from '@atproto/api'
+import {getAgeAssuranceRegionConfig} from '@bsky/sdk/utils'
 
 import {getAgeAssuranceRegionConfigForGeolocation} from '#/ageAssurance/util'
 
 jest.mock('#/ageAssurance/data')
-jest.mock('@atproto/api', () => ({
-  ...jest.requireActual('@atproto/api'),
+jest.mock('@bsky/sdk/utils', () => ({
+  ...jest.requireActual('@bsky/sdk/utils'),
   getAgeAssuranceRegionConfig: jest.fn(),
 }))
 
 /*
  * Platform-based region filtering itself is implemented and tested in
- * `@atproto/api` (see `getAgeAssuranceRegionConfig`). What we own - and test
+ * `@bsky/sdk` (see `getAgeAssuranceRegionConfig`). What we own - and test
  * here - is that region resolution passes the current platform through. The
  * jest preset is `jest-expo/ios`, so `AGE_ASSURANCE_PLATFORM` resolves to
  * `ios` in these tests.

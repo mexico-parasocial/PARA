@@ -1,6 +1,6 @@
 import {useMemo, useRef} from 'react'
-import {type AppBskyActorDefs, AppBskyFeedDefs, AtUri} from '@atproto/api'
-import {type AtUriString} from '@atproto/syntax'
+import {type AppBskyActorDefs, AppBskyFeedDefs} from '@atproto/api'
+import {AtUri, type AtUriString} from '@atproto/syntax'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {

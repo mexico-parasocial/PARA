@@ -1,4 +1,5 @@
-import {type AppBskyActorDefs, AtUri} from '@atproto/api'
+import {type AppBskyActorDefs} from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 
 import {
   hydrateParaPostView,

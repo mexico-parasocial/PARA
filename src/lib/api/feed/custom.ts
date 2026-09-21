@@ -1,4 +1,4 @@
-import {type AppBskyFeedDefs, jsonStringToLex} from '@atproto/api'
+import {type AppBskyFeedDefs} from '@atproto/api'
 import {Client, type XrpcRequestParams} from '@atproto/lex'
 
 import {
@@ -140,7 +140,7 @@ async function loggedOutFetch({
    * is asserted here just as the old-world one was.
    */
   let data = res.ok
-    ? (jsonStringToLex(await res.text()) as app.bsky.feed.getFeed.$OutputBody)
+    ? (JSON.parse(await res.text()) as app.bsky.feed.getFeed.$OutputBody)
     : null
   if (data?.feed?.length) {
     return data
@@ -154,7 +154,7 @@ async function loggedOutFetch({
     {method: 'GET', headers: {'Accept-Language': '', ...labelersHeader}},
   )
   data = res.ok
-    ? (jsonStringToLex(await res.text()) as app.bsky.feed.getFeed.$OutputBody)
+    ? (JSON.parse(await res.text()) as app.bsky.feed.getFeed.$OutputBody)
     : null
   return data
 }
