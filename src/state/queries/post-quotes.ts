@@ -1,9 +1,4 @@
-import {
-  type AppBskyActorDefs,
-  AppBskyEmbedRecord,
-  type AppBskyFeedDefs,
-  AtUri,
-} from '@atproto/api'
+import {AtUri} from '@atproto/api'
 import {type AtUriString} from '@atproto/syntax'
 import {
   type InfiniteData,
@@ -14,6 +9,7 @@ import {
 
 import {useAppviewClient} from '#/state/session'
 import {app} from '#/lexicons'
+import * as bsky from '#/types/bsky'
 import {
   didOrHandleUriMatches,
   embedViewRecordToPostView,
@@ -54,8 +50,16 @@ export function usePostQuotesQuery(resolvedUri: string | undefined) {
           return {
             ...page,
             posts: page.posts.filter(post => {
-              if (post.embed && AppBskyEmbedRecord.isView(post.embed)) {
-                if (AppBskyEmbedRecord.isViewDetached(post.embed.record)) {
+              if (
+                post.embed &&
+                bsky.isType(app.bsky.embed.record.view, post.embed)
+              ) {
+                if (
+                  bsky.isType(
+                    app.bsky.embed.record.viewDetached,
+                    post.embed.record,
+                  )
+                ) {
                   return false
                 }
               }
@@ -71,7 +75,7 @@ export function usePostQuotesQuery(resolvedUri: string | undefined) {
 export function* findAllProfilesInQueryData(
   queryClient: QueryClient,
   did: string,
-): Generator<AppBskyActorDefs.ProfileViewBasic, void> {
+): Generator<app.bsky.actor.defs.ProfileViewBasic, void> {
   const queryDatas = queryClient.getQueriesData<
     InfiniteData<app.bsky.feed.getQuotes.$OutputBody>
   >({
@@ -98,7 +102,7 @@ export function* findAllProfilesInQueryData(
 export function* findAllPostsInQueryData(
   queryClient: QueryClient,
   uri: string,
-): Generator<AppBskyFeedDefs.PostView, undefined> {
+): Generator<app.bsky.feed.defs.PostView, undefined> {
   const queryDatas = queryClient.getQueriesData<
     InfiniteData<app.bsky.feed.getQuotes.$OutputBody>
   >({

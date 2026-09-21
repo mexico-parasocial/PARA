@@ -5,6 +5,7 @@ import {createEmbedViewRecordFromPost} from '#/state/queries/postgate/util'
 import {useResolveLinkQuery} from '#/state/queries/resolve-link'
 import {atoms as a, useTheme} from '#/alf'
 import {QuoteEmbed} from '#/components/Post/Embed'
+import {type app} from '#/lexicons'
 
 export function LazyQuoteEmbed({uri}: {uri: string}) {
   const t = useTheme()
@@ -12,7 +13,13 @@ export function LazyQuoteEmbed({uri}: {uri: string}) {
 
   const view = useMemo(() => {
     if (!data || data.type !== 'record' || data.kind !== 'post') return
-    return createEmbedViewRecordFromPost(data.view)
+    /*
+     * `resolve-link.ts` is still legacy-typed by design; the runtime shape is
+     * the same well-formed PostView either way.
+     */
+    return createEmbedViewRecordFromPost(
+      data.view as unknown as app.bsky.feed.defs.PostView,
+    )
   }, [data])
 
   return view ? (
