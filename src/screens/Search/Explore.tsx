@@ -54,6 +54,7 @@ import {SubtleHover} from '#/components/SubtleHover'
 import {Text} from '#/components/Typography'
 import {type Metrics, useAnalytics} from '#/analytics'
 import {ExploreScreenLiveEventFeedsBanner} from '#/features/liveEvents/components/ExploreScreenLiveEventFeedsBanner'
+import {type app} from '#/lexicons'
 import * as ModuleHeader from './components/ModuleHeader'
 import {SuggestedProfileCard} from './modules/ExploreSuggestedAccounts'
 
@@ -849,14 +850,22 @@ export function Explore({
           const subItem = slice.items[indexInSlice]
           return (
             <PostFeedItem
-              post={subItem.post}
-              record={subItem.record}
+              /*
+               * `FeedPostSliceItem` is still old-world (shared by every feed
+               * API class, not just this one) - the runtime shape is the
+               * same either way.
+               */
+              post={subItem.post as unknown as app.bsky.feed.defs.PostView}
+              record={subItem.record as unknown as app.bsky.feed.post.Main}
               postNumbering={subItem.postNumbering}
               reason={indexInSlice === 0 ? slice.reason : undefined}
               feedContext={slice.feedContext}
               reqId={slice.reqId}
               moderation={subItem.moderation}
-              parentAuthor={subItem.parentAuthor}
+              parentAuthor={
+                subItem.parentAuthor as unknown as
+                  app.bsky.actor.defs.ProfileViewBasic | undefined
+              }
               showReplyTo={item.showReplyTo}
               isThreadParent={isThreadParentAt(slice.items, indexInSlice)}
               isThreadChild={isThreadChildAt(slice.items, indexInSlice)}
@@ -867,7 +876,9 @@ export function Explore({
               isParentBlocked={subItem.isParentBlocked}
               isParentNotFound={subItem.isParentNotFound}
               hideTopBorder={item.hideTopBorder}
-              rootPost={slice.items[0].post}
+              rootPost={
+                slice.items[0].post as unknown as app.bsky.feed.defs.PostView
+              }
             />
           )
         }

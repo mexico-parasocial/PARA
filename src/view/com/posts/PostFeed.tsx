@@ -870,14 +870,22 @@ let PostFeed = ({
         const item = slice.items[indexInSlice]
         return (
           <PostFeedItem
-            post={item.post}
-            record={item.record}
+            /*
+             * `FeedPostSliceItem` is still old-world (shared by every feed
+             * API class, not just this one) - the runtime shape is the same
+             * either way.
+             */
+            post={item.post as unknown as app.bsky.feed.defs.PostView}
+            record={item.record as unknown as app.bsky.feed.post.Main}
             postNumbering={item.postNumbering}
             reason={indexInSlice === 0 ? slice.reason : undefined}
             feedContext={slice.feedContext}
             reqId={slice.reqId}
             moderation={item.moderation}
-            parentAuthor={item.parentAuthor}
+            parentAuthor={
+              item.parentAuthor as unknown as
+                app.bsky.actor.defs.ProfileViewBasic | undefined
+            }
             showReplyTo={row.showReplyTo}
             isThreadParent={isThreadParentAt(slice.items, indexInSlice)}
             isThreadChild={isThreadChildAt(slice.items, indexInSlice)}
@@ -888,7 +896,9 @@ let PostFeed = ({
             isParentBlocked={item.isParentBlocked}
             isParentNotFound={item.isParentNotFound}
             hideTopBorder={rowIndex === 0 && indexInSlice === 0}
-            rootPost={slice.items[0].post}
+            rootPost={
+              slice.items[0].post as unknown as app.bsky.feed.defs.PostView
+            }
             onShowLess={onPressShowLess}
           />
         )
@@ -1073,7 +1083,7 @@ let PostFeed = ({
         const slice = item.slice
         const indexInSlice = item.indexInSlice
         const postItem = slice.items[indexInSlice]
-        const post = postItem.post
+        const post = postItem.post as unknown as app.bsky.feed.defs.PostView
 
         onPostSeen(post)
 

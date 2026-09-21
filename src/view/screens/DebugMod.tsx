@@ -60,6 +60,7 @@ import {
 import * as Layout from '#/components/Layout'
 import * as ProfileCard from '#/components/ProfileCard'
 import {H1, H3, P, Text} from '#/components/Typography'
+import {type app} from '#/lexicons'
 import {ScreenHider} from '../../components/moderation/ScreenHider'
 import {NotificationFeedItem} from '../com/notifications/NotificationFeedItem'
 import {PagerHeaderProvider} from '../com/pager/PagerHeaderContext'
@@ -849,17 +850,22 @@ function MockPostFeedItem({
       </P>
     )
   }
+  /*
+   * `mock()`'s generated views are still old-world; the runtime shape is the
+   * same well-formed PostView either way.
+   */
+  const newWorldPost = post as unknown as app.bsky.feed.defs.PostView
   return (
     <PostFeedItem
-      post={post}
-      record={post.record as AppBskyFeedPost.Record}
+      post={newWorldPost}
+      record={post.record as unknown as app.bsky.feed.post.Main}
       moderation={moderation}
       parentAuthor={undefined}
       showReplyTo={false}
       reason={undefined}
       feedContext={''}
       reqId={undefined}
-      rootPost={post}
+      rootPost={newWorldPost}
     />
   )
 }
@@ -878,7 +884,7 @@ function MockPostThreadItem({
     depth: isReply ? 1 : 0,
     value: {
       $type: 'app.bsky.unspecced.defs#threadItemPost',
-      post,
+      post: post as unknown as app.bsky.feed.defs.PostView,
       moreParents: false,
       moreReplies: 0,
       opThread: false,
