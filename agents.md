@@ -21,6 +21,11 @@ PARA is a React Native mobile application built on the **AT Protocol (atproto)**
 
 ### React Query Notes
 
+- QV statistics must distinguish `BallotPrivacyUnavailable` / `FeatureNotEnabled`
+  from retryable network failures and partition viewer-dependent caches by DID.
+  Public delegation registration is not proof of effective electoral weight;
+  never infer voting power from candidate delegation counts in the UI.
+
 - **Persistence:** In Para, persisted React Query entries are still keyed off `PERSISTED_QUERY_ROOT` in [src/state/queries/index.ts](/Users/mlv/Desktop/TH1/PARA/src/state/queries/index.ts). If a query should survive app restarts, its query key needs that root at index `0`, and it should usually pair with `PERSISTED_QUERY_GCTIME`.
 - **Refresh behavior:** For paginated feeds and similar infinite queries, prefer `truncateAndInvalidate` from [src/state/queries/util.ts](/Users/mlv/Desktop/TH1/PARA/src/state/queries/util.ts) over a bare `refetch()` when the goal is “reload from the top.” That trims cached pages back to the first page before invalidation so pull-to-refresh actually fetches fresh leading data.
 - **Invalidation safety:** When a query key includes params, pass the full key shape during invalidation or truncation. Refresh bugs in feed surfaces often come from invalidating only the root feed descriptor while the live query also depends on `feedParams`.

@@ -1130,10 +1130,7 @@ export function CompassScreen({navigation, route}: Props) {
         {!isAffiliateMode && (
           <View
             pointerEvents="box-none"
-            style={[
-              styles.densitySelectorDock,
-              {bottom: 86 + insets.bottom},
-            ]}>
+            style={[styles.densitySelectorDock, {bottom: 86 + insets.bottom}]}>
             <View
               style={[
                 styles.densitySelectorWrap,

@@ -20,12 +20,7 @@ export type CommunityBoardView = {
   subdelegatesChatId: string
   memberCount: number
   viewerMembershipState:
-    | 'none'
-    | 'pending'
-    | 'active'
-    | 'left'
-    | 'removed'
-    | 'blocked'
+    'none' | 'pending' | 'active' | 'left' | 'removed' | 'blocked'
   viewerRoles?: string[]
   status?: 'draft' | 'active'
   visibility?: 'open' | 'closed' | 'secret'
@@ -409,9 +404,7 @@ function normalizeMember(json: unknown): CommunityMemberView {
       ? data.roles.filter(role => typeof role === 'string')
       : undefined,
     chamberAssignment: readString(data.chamberAssignment) as
-      | 'A'
-      | 'B'
-      | undefined,
+      'A' | 'B' | undefined,
     joinedAt: readString(data.joinedAt) ?? '',
     votesCast: normalizeNumber(data.votesCast),
     delegationsReceived: normalizeNumber(data.delegationsReceived),

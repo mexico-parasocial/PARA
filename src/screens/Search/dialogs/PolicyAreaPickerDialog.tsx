@@ -4,7 +4,7 @@ import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
-import {type CivicCategoryKey,useCivicCategories} from '#/lib/interests'
+import {type CivicCategoryKey, useCivicCategories} from '#/lib/interests'
 import {Button, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
 import {Text} from '#/components/Typography'
@@ -27,7 +27,11 @@ export function PolicyAreaPickerDialog({
       <Dialog.ScrollableInner
         label={_(msg`Filter by policy area`)}
         style={[{maxWidth: 500, width: '100%'}]}>
-        <Inner control={control} selectedTags={selectedTags} onConfirm={onConfirm} />
+        <Inner
+          control={control}
+          selectedTags={selectedTags}
+          onConfirm={onConfirm}
+        />
         <Dialog.Close />
       </Dialog.ScrollableInner>
     </Dialog.Outer>
@@ -73,9 +77,7 @@ function Inner({
         style={[{maxHeight: 480}]}
         contentContainerStyle={[{paddingBottom: 8}]}>
         <View style={[{gap: 16}]}>
-          {(
-            Object.keys(categories) as CivicCategoryKey[]
-          ).map(key => {
+          {(Object.keys(categories) as CivicCategoryKey[]).map(key => {
             const cat = categories[key]
             return (
               <View key={key} style={[{gap: 6}]}>
@@ -107,7 +109,8 @@ function Inner({
           })}
         </View>
       </ScrollView>
-      <View style={[{flexDirection: 'row', gap: 8, justifyContent: 'flex-end'}]}>
+      <View
+        style={[{flexDirection: 'row', gap: 8, justifyContent: 'flex-end'}]}>
         <Button
           variant="solid"
           color="primary"

@@ -319,7 +319,6 @@ export function ProfileFeedHeader({
                         </View>
                       </View>
 
-
                       <EllipsisIcon
                         size="md"
                         fill={t.atoms.text_contrast_high.color}
@@ -617,7 +616,7 @@ function DialogInner({
             )}
           </View>
         </>
-      ) : null }
+      ) : null}
     </View>
   )
 }

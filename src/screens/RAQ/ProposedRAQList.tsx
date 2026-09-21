@@ -28,7 +28,12 @@ export default function ProposedRAQListScreen() {
   const insets = useSafeAreaInsets()
   const addDialogControl = Dialog.useDialogControl()
 
-  const {data: questions = [], isLoading, isError, refetch} = useProposedQuestions()
+  const {
+    data: questions = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useProposedQuestions()
   const {mutate: voteOnProposal} = useVoteOnProposedQuestionMutation()
   const {mutate: answerProposal} = useAnswerProposedQuestionMutation()
 

@@ -231,7 +231,7 @@ export function Action({
       ) : (
         <>
           {icon ? <ButtonIcon icon={icon} /> : null}
-      <ButtonText>{cta || l`Confirm`}</ButtonText>
+          <ButtonText>{cta || l`Confirm`}</ButtonText>
         </>
       )}
     </Button>

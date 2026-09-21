@@ -149,15 +149,11 @@ export const NINTH_NAME_TO_COMPASS_COLOR: Record<string, string> = {
  * or if the color is already a gradient tuple.
  * Otherwise returns null.
  */
-export function getCrossGradientByColor(
-  color: string | string[],
-):
-  | {
-      colors: [string, string]
-      start: {x: number; y: number}
-      end: {x: number; y: number}
-    }
-  | null {
+export function getCrossGradientByColor(color: string | string[]): {
+  colors: [string, string]
+  start: {x: number; y: number}
+  end: {x: number; y: number}
+} | null {
   // If already a gradient array, use it directly with horizontal default
   if (Array.isArray(color) && color.length >= 2) {
     return {

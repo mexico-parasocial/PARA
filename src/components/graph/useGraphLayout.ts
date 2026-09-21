@@ -50,7 +50,10 @@ function initNodes(
 ): SimNode[] {
   const prevMap = new Map(prevNodes.map(n => [n.id, n]))
   const positions = generateDeterministicPositions(nodeIds, width, height)
-  const newNodeIds = findNewNodes(nodeIds, prevNodes.map(n => n.id))
+  const newNodeIds = findNewNodes(
+    nodeIds,
+    prevNodes.map(n => n.id),
+  )
 
   const positionMap = new Map(positions.map((p, i) => [nodeIds[i], p]))
   const entrancePositions =
@@ -165,9 +168,9 @@ function tick(
 
         let force: number
         if (a.group === b.group) {
-          force = groupGravity * 0.5 / dist
+          force = (groupGravity * 0.5) / dist
         } else {
-          force = -groupGravity * 0.3 / dist
+          force = (-groupGravity * 0.3) / dist
         }
 
         const fx = (dx / dist) * force
@@ -271,7 +274,9 @@ export function useGraphLayout(
     if (idKey === prevKey && nodes.length > 0) return
 
     prevNodeIdsRef.current = [...nodeIds]
-    setNodes(prev => initNodes(nodeIds, prev, width, height, groupMapRef.current))
+    setNodes(prev =>
+      initNodes(nodeIds, prev, width, height, groupMapRef.current),
+    )
     tickCount.current = 0
     settledRef.current = false
     setIsSettled(false)

@@ -116,7 +116,11 @@ export function CommunityCivicTreeOutline({
       childrenOf.set(edge.target, list)
     }
 
-    const build = (id: string, seen: Set<string>, viaRel?: string): Branch | null => {
+    const build = (
+      id: string,
+      seen: Set<string>,
+      viaRel?: string,
+    ): Branch | null => {
       if (seen.has(id)) return null // cycle guard
       const node = byId.get(id)
       if (!node) return null
@@ -183,7 +187,12 @@ export function CommunityCivicTreeOutline({
       ))}
 
       {loose.length > 0 ? (
-        <View style={[a.mt_lg, a.pt_md, {borderTopWidth: 1, borderTopColor: t.palette.contrast_100}]}>
+        <View
+          style={[
+            a.mt_lg,
+            a.pt_md,
+            {borderTopWidth: 1, borderTopColor: t.palette.contrast_100},
+          ]}>
           <Text
             style={[
               a.text_xs,
@@ -296,7 +305,10 @@ function OutlineBranch({
             <View style={[a.flex_row, a.gap_sm, a.mt_2xs, {paddingLeft: 10}]}>
               {support > 0 ? (
                 <Text style={[a.text_xs, {color: REL_META.supports?.color}]}>
-                  {plural(support, {one: '# supporting', other: '# supporting'})}
+                  {plural(support, {
+                    one: '# supporting',
+                    other: '# supporting',
+                  })}
                 </Text>
               ) : null}
               {oppose > 0 ? (

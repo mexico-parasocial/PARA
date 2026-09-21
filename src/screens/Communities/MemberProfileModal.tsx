@@ -162,7 +162,8 @@ export function MemberProfileModal({
                 </Text>
                 <View style={[a.flex_row, a.flex_wrap, a.gap_xs]}>
                   {SANCTION_PRESETS.map(preset => (
-                    <TouchableOpacity accessibilityRole="button"
+                    <TouchableOpacity
+                      accessibilityRole="button"
                       key={preset.minutes}
                       onPress={() => {
                         if (!myDid) return
@@ -194,7 +195,8 @@ export function MemberProfileModal({
             </Text>
             <View style={[a.flex_row, a.flex_wrap, a.gap_xs]}>
               {REPORT_REASONS.map(r => (
-                <TouchableOpacity accessibilityRole="button"
+                <TouchableOpacity
+                  accessibilityRole="button"
                   key={r.key}
                   onPress={() => setReportReason(r.key)}
                   style={[

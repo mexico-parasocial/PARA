@@ -34,7 +34,6 @@ export function EmojiReactionPicker({
   const [layout, setLayout] = useState({width: 0, height: 0})
   const {width: screenWidth} = useWindowDimensions()
 
-
   const position = useMemo(() => {
     return {
       x:

@@ -48,7 +48,7 @@ export class ParaFeedAPI implements FeedAPI {
     client,
     feedParams,
   }: {
-    client: Client,
+    client: Client
     feedParams: {actor: string}
   }) {
     this.client = client
@@ -73,7 +73,8 @@ export class ParaFeedAPI implements FeedAPI {
         const profile = await this.client.call(app.bsky.actor.getProfile, {
           actor: this.actor as AtIdentifierString,
         })
-        this.authorProfile = profile as unknown as AppBskyActorDefs.ProfileViewDetailed
+        this.authorProfile =
+          profile as unknown as AppBskyActorDefs.ProfileViewDetailed
       } catch (e) {
         if (isConcurrentSessionUpdateError(e)) throw e
         console.error('Failed to fetch author profile for Para feed', e)
@@ -210,7 +211,7 @@ export class ParaTimelineFeedAPI implements FeedAPI {
     client,
     filters,
   }: {
-    client: Client,
+    client: Client
     filters?: ParaTimelineFilters
   }) {
     this.client = client
@@ -410,4 +411,3 @@ export function isParaPostView(value: unknown): value is ParaPostView {
 
   return isValid
 }
-

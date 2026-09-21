@@ -12,7 +12,10 @@ const {withPodfile} = require('expo/config-plugins')
 module.exports = function withMapsPodfileFix(config) {
   return withPodfile(config, exportedConfig => {
     const contents = exportedConfig.modResults.contents
-    if (typeof contents === 'string' && contents.includes('react-native-google-maps')) {
+    if (
+      typeof contents === 'string' &&
+      contents.includes('react-native-google-maps')
+    ) {
       exportedConfig.modResults.contents = contents.replaceAll(
         "'react-native-google-maps'",
         "'react-native-maps'",

@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import {FlatList, Pressable, useWindowDimensions,View} from 'react-native'
+import {FlatList, Pressable, useWindowDimensions, View} from 'react-native'
 import Animated, {
   type AnimatedRef,
   useAnimatedRef,

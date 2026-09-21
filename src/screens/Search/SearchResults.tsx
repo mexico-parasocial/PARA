@@ -124,7 +124,9 @@ let SearchResults = ({
    * post-only, so they hide People/Feeds as well.
    */
   const hasPostFilters =
-    hasPostOnlyFilters(filters ?? {}) || hasParaSearchFilters(paraFilters) || fromMe
+    hasPostOnlyFilters(filters ?? {}) ||
+    hasParaSearchFilters(paraFilters) ||
+    fromMe
   const activePage = hasPostFilters && activeTab > 1 ? 0 : activeTab
   const tabShape = hasPostFilters ? 'filtered' : 'plain'
 
@@ -140,7 +142,9 @@ let SearchResults = ({
         title: l`Top`,
         component: (
           <SearchScreenPostResults
-            hasFilters={Boolean(hasFilters || hasParaSearchFilters(paraFilters))}
+            hasFilters={Boolean(
+              hasFilters || hasParaSearchFilters(paraFilters),
+            )}
             query={query}
             filters={filters}
             sort="top"
@@ -154,7 +158,9 @@ let SearchResults = ({
         title: l`Latest`,
         component: (
           <SearchScreenPostResults
-            hasFilters={Boolean(hasFilters || hasParaSearchFilters(paraFilters))}
+            hasFilters={Boolean(
+              hasFilters || hasParaSearchFilters(paraFilters),
+            )}
             query={query}
             filters={filters}
             sort="latest"
@@ -504,14 +510,10 @@ let SearchScreenPostResults = ({
 
   if (!hasSession) {
     return (
-      <SearchError
-        title={l`Search is currently unavailable when logged out`}>
+      <SearchError title={l`Search is currently unavailable when logged out`}>
         <Text style={[a.text_md, a.text_center, a.leading_snug]}>
           <Trans>
-            <InlineLinkText
-              label={l`Sign in`}
-              to={'#'}
-              onPress={showSignIn}>
+            <InlineLinkText label={l`Sign in`} to={'#'} onPress={showSignIn}>
               Sign in
             </InlineLinkText>
             <Text style={t.atoms.text_contrast_medium}> or </Text>
@@ -587,7 +589,9 @@ let SearchScreenPostResults = ({
             />
           ) : (
             <EmptyState
-              messageText={<NoResultsText hasFilters={hasFilters} query={query} />}
+              messageText={
+                <NoResultsText hasFilters={hasFilters} query={query} />
+              }
             />
           )}
         </>
@@ -808,7 +812,6 @@ function SearchFeedCard({
 
   return <FeedCard.Default view={view} onPress={handleOnPress} />
 }
-
 
 let SearchScreenStarterPackResults = ({
   query,

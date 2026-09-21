@@ -153,8 +153,8 @@ function mergeShadow(
         'bookmarked' in shadow ? shadow.bookmarked : post.viewer?.bookmarked,
       voteUri:
         'voteUri' in shadow
-        ? shadow.voteUri
-        : (post.viewer as {voteUri?: string} | undefined)?.voteUri,
+          ? shadow.voteUri
+          : (post.viewer as {voteUri?: string} | undefined)?.voteUri,
     },
   })
 }

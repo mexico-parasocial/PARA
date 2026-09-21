@@ -447,9 +447,7 @@ function buildMockPositions(
   cabildeo: CabildeoView,
   seed: number,
 ): CabildeoPositionRecord[] {
-  const createdAt = new Date(
-    Date.now() - (seed + 1) * 36e5,
-  ).toISOString()
+  const createdAt = new Date(Date.now() - (seed + 1) * 36e5).toISOString()
   return [
     {
       cabildeo: cabildeo.uri,

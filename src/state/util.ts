@@ -42,10 +42,5 @@ export function useCloseAllActiveElements() {
     closeComposer()
     closeAlfDialogs()
     setDrawerOpen(false)
-  }, [
-    closeLightbox,
-    closeComposer,
-    closeAlfDialogs,
-    setDrawerOpen,
-  ])
+  }, [closeLightbox, closeComposer, closeAlfDialogs, setDrawerOpen])
 }

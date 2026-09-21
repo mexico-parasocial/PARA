@@ -5,8 +5,7 @@ import {
 } from '@atproto/api'
 
 export type NotificationType =
-  | StarterPackNotificationType
-  | OtherNotificationType
+  StarterPackNotificationType | OtherNotificationType
 
 export type FeedNotification =
   | (FeedNotificationBase & {

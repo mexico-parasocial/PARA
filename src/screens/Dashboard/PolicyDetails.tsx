@@ -8,10 +8,7 @@ import {
   type CabildeoCommunityBreakdown,
   type CabildeoPositionRecord,
 } from '#/lib/api/para-lexicons'
-import {
-  type CabildeoView,
-  fromCabildeoRouteParam,
-} from '#/lib/cabildeo-client'
+import {type CabildeoView, fromCabildeoRouteParam} from '#/lib/cabildeo-client'
 import {
   getCabildeoBadge,
   getCabildeoCommunities,
@@ -201,7 +198,14 @@ export function PolicyDetailsScreen({route, navigation}: Props) {
       })
     }
     return null
-  }, [cabildeo, isLoggedIn, legacyItem, participationAccess.allowed, positions, t])
+  }, [
+    cabildeo,
+    isLoggedIn,
+    legacyItem,
+    participationAccess.allowed,
+    positions,
+    t,
+  ])
 
   const {gtMobile} = useBreakpoints()
 
@@ -470,7 +474,11 @@ export function PolicyDetailsScreen({route, navigation}: Props) {
                 </View>
               </View>
               {!participationAccess.allowed ? (
-                <Text style={[styles.accessCardNotice, t.atoms.text_contrast_medium]}>
+                <Text
+                  style={[
+                    styles.accessCardNotice,
+                    t.atoms.text_contrast_medium,
+                  ]}>
                   {isLoggedIn
                     ? 'Este cabildeo puede leerse, pero requiere otro tier para votar o publicar posición.'
                     : 'Inicia sesión para votar, ceder voto o publicar una posición.'}

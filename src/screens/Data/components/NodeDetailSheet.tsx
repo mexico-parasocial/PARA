@@ -1,5 +1,12 @@
 import {useMemo, useState} from 'react'
-import {Modal, ScrollView, StyleSheet, TextInput, TouchableOpacity, View} from 'react-native'
+import {
+  Modal,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native'
 import {Trans} from '@lingui/react/macro'
 
 import {COMMUNITY_CIVIC_TREE_RELATIONSHIP_TYPES} from '#/state/queries/community-civic-tree'
@@ -8,7 +15,10 @@ import {Text} from '#/components/Typography'
 import {VotingButtonHorizontal} from '#/components/VotingButtonHorizontal'
 import {CARD_TYPE_COLORS} from '#/features/civicTree/colors'
 import {type GraphEdge, type GraphNode} from '#/features/civicTree/types'
-import {computeSuggestedConnections, type SuggestedTarget} from './suggestion-engine'
+import {
+  computeSuggestedConnections,
+  type SuggestedTarget,
+} from './suggestion-engine'
 
 interface NodeDetail {
   id: string
@@ -117,7 +127,12 @@ export function NodeDetailSheet({
       relationship_type: e.relationship_type,
     }))
 
-    return computeSuggestedConnections(sourceNode, scoringNodes, scoringEdges, 3)
+    return computeSuggestedConnections(
+      sourceNode,
+      scoringNodes,
+      scoringEdges,
+      3,
+    )
   }, [node, availableNodes, availableEdges])
 
   // ── Filtered targets for manual search ──────────────────────────
@@ -166,344 +181,367 @@ export function NodeDetailSheet({
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
-          <View style={styles.metaRow}>
-            <View
-              style={[styles.badge, {backgroundColor: color + '20'}]}>
-              <Text style={[styles.badgeText, {color}]}>
-                {node.card_type}
-              </Text>
-            </View>
-            <Text style={[styles.meta, {color: t.palette.contrast_500}]}>
-              {node.author_did.slice(0, 24)}...
-            </Text>
-          </View>
-
-          {node.content && (
-            <Text
-              style={[styles.content, {color: t.palette.contrast_700}]}
-              numberOfLines={6}>
-              {node.content}
-            </Text>
-          )}
-
-          {node.source_url && (
-            <Text
-              style={[styles.url, {color: t.palette.primary_500}]}
-              numberOfLines={1}>
-              {node.source_url}
-            </Text>
-          )}
-
-          {/* Influence Section */}
-          <View
-            style={[
-              styles.influenceSection,
-              {borderTopColor: t.palette.contrast_100},
-            ]}>
-            <View style={styles.influenceHeader}>
-              <Text
-                style={[
-                  styles.influenceLabel,
-                  {color: t.palette.contrast_700},
-                ]}>
-                <Trans>Influence</Trans>
-              </Text>
-              <Text
-                style={[
-                  styles.influenceTotal,
-                  {
-                    color:
-                      totalInfluence > 0
-                        ? '#22c55e'
-                        : totalInfluence < 0
-                          ? '#ef4444'
-                          : t.palette.contrast_500,
-                  },
-                ]}>
-                {totalInfluence > 0 ? `+${totalInfluence}` : totalInfluence}
-              </Text>
-            </View>
-            {canVote ? (
-              <View style={styles.sliderRow}>
-                <VotingButtonHorizontal
-                  initialVote={userVote}
-                  onVoteChange={val => onVote(node.id, val)}
-                />
+            <View style={styles.metaRow}>
+              <View style={[styles.badge, {backgroundColor: color + '20'}]}>
+                <Text style={[styles.badgeText, {color}]}>
+                  {node.card_type}
+                </Text>
               </View>
-            ) : (
+              <Text style={[styles.meta, {color: t.palette.contrast_500}]}>
+                {node.author_did.slice(0, 24)}...
+              </Text>
+            </View>
+
+            {node.content && (
               <Text
-                style={[
-                  styles.influenceHint,
-                  {color: t.palette.contrast_400},
-                ]}>
-                <Trans>Sign in to influence this claim</Trans>
+                style={[styles.content, {color: t.palette.contrast_700}]}
+                numberOfLines={6}>
+                {node.content}
               </Text>
             )}
-          </View>
 
-          {canConnect && (
+            {node.source_url && (
+              <Text
+                style={[styles.url, {color: t.palette.primary_500}]}
+                numberOfLines={1}>
+                {node.source_url}
+              </Text>
+            )}
+
+            {/* Influence Section */}
             <View
               style={[
-                styles.connectSection,
+                styles.influenceSection,
                 {borderTopColor: t.palette.contrast_100},
               ]}>
-              <TouchableOpacity
-                accessibilityRole="button"
-                accessibilityLabel="Conectar con otro nodo"
-                accessibilityHint="Abre una herramienta opcional para relacionar este nodo con otro"
-                onPress={() => setShowConnect(prev => !prev)}
-                style={[
-                  styles.connectToggle,
-                  {borderColor: t.palette.contrast_200},
-                ]}>
+              <View style={styles.influenceHeader}>
                 <Text
                   style={[
-                    styles.connectToggleText,
-                    {color: t.palette.primary_500},
+                    styles.influenceLabel,
+                    {color: t.palette.contrast_700},
                   ]}>
-                  <Trans>Conectar con otro nodo</Trans>
+                  <Trans>Influence</Trans>
                 </Text>
-              </TouchableOpacity>
+                <Text
+                  style={[
+                    styles.influenceTotal,
+                    {
+                      color:
+                        totalInfluence > 0
+                          ? '#22c55e'
+                          : totalInfluence < 0
+                            ? '#ef4444'
+                            : t.palette.contrast_500,
+                    },
+                  ]}>
+                  {totalInfluence > 0 ? `+${totalInfluence}` : totalInfluence}
+                </Text>
+              </View>
+              {canVote ? (
+                <View style={styles.sliderRow}>
+                  <VotingButtonHorizontal
+                    initialVote={userVote}
+                    onVoteChange={val => onVote(node.id, val)}
+                  />
+                </View>
+              ) : (
+                <Text
+                  style={[
+                    styles.influenceHint,
+                    {color: t.palette.contrast_400},
+                  ]}>
+                  <Trans>Sign in to influence this claim</Trans>
+                </Text>
+              )}
+            </View>
 
-              {showConnect && (
-                <View style={styles.connectPanel}>
-                  <Text style={[styles.connectHint, t.atoms.text_contrast_medium]}>
-                    <Trans>Optional: create a relationship to help read the map.</Trans>
+            {canConnect && (
+              <View
+                style={[
+                  styles.connectSection,
+                  {borderTopColor: t.palette.contrast_100},
+                ]}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Conectar con otro nodo"
+                  accessibilityHint="Abre una herramienta opcional para relacionar este nodo con otro"
+                  onPress={() => setShowConnect(prev => !prev)}
+                  style={[
+                    styles.connectToggle,
+                    {borderColor: t.palette.contrast_200},
+                  ]}>
+                  <Text
+                    style={[
+                      styles.connectToggleText,
+                      {color: t.palette.primary_500},
+                    ]}>
+                    <Trans>Conectar con otro nodo</Trans>
                   </Text>
+                </TouchableOpacity>
 
-                  {/* ── Suggested Connections ──────────────────────── */}
-                  {showSuggestions && (
-                    <View style={styles.suggestionsSection}>
-                      <Text
-                        style={[
-                          styles.suggestionsSectionTitle,
-                          {color: t.palette.contrast_600},
-                        ]}>
-                        <Trans>Sugeridos</Trans>
-                      </Text>
-                      {suggestedTargets.map(suggestion => {
-                        const selected = suggestion.node.id === selectedTargetId
-                        const reasonColor =
-                          REASON_TYPE_COLORS[suggestion.reasonType] ||
-                          t.palette.primary_500
-                        const nodeColor =
-                          CARD_TYPE_COLORS[suggestion.node.card_type] || '#6b7280'
-                        return (
-                          <TouchableOpacity
-                            key={suggestion.node.id}
-                            accessibilityRole="button"
-                            accessibilityLabel={`Sugerido: ${suggestion.node.title}`}
-                            accessibilityHint={`${suggestion.reason}: ${suggestion.reasonDetail}`}
-                            accessibilityState={{selected}}
-                            onPress={() =>
-                              setSelectedTargetId(suggestion.node.id)
-                            }
-                            style={[
-                              styles.suggestionRow,
-                              {
-                                borderColor: selected
-                                  ? t.palette.primary_500
-                                  : reasonColor + '40',
-                                backgroundColor: selected
-                                  ? t.palette.primary_500 + '08'
-                                  : reasonColor + '06',
-                              },
-                            ]}>
-                            <View style={styles.suggestionLeft}>
-                              {/* Colored accent bar */}
-                              <View
-                                style={[
-                                  styles.suggestionAccent,
-                                  {backgroundColor: reasonColor},
-                                ]}
-                              />
-                              <View style={styles.suggestionTextWrap}>
-                                <Text
+                {showConnect && (
+                  <View style={styles.connectPanel}>
+                    <Text
+                      style={[
+                        styles.connectHint,
+                        t.atoms.text_contrast_medium,
+                      ]}>
+                      <Trans>
+                        Optional: create a relationship to help read the map.
+                      </Trans>
+                    </Text>
+
+                    {/* ── Suggested Connections ──────────────────────── */}
+                    {showSuggestions && (
+                      <View style={styles.suggestionsSection}>
+                        <Text
+                          style={[
+                            styles.suggestionsSectionTitle,
+                            {color: t.palette.contrast_600},
+                          ]}>
+                          <Trans>Sugeridos</Trans>
+                        </Text>
+                        {suggestedTargets.map(suggestion => {
+                          const selected =
+                            suggestion.node.id === selectedTargetId
+                          const reasonColor =
+                            REASON_TYPE_COLORS[suggestion.reasonType] ||
+                            t.palette.primary_500
+                          const nodeColor =
+                            CARD_TYPE_COLORS[suggestion.node.card_type] ||
+                            '#6b7280'
+                          return (
+                            <TouchableOpacity
+                              key={suggestion.node.id}
+                              accessibilityRole="button"
+                              accessibilityLabel={`Sugerido: ${suggestion.node.title}`}
+                              accessibilityHint={`${suggestion.reason}: ${suggestion.reasonDetail}`}
+                              accessibilityState={{selected}}
+                              onPress={() =>
+                                setSelectedTargetId(suggestion.node.id)
+                              }
+                              style={[
+                                styles.suggestionRow,
+                                {
+                                  borderColor: selected
+                                    ? t.palette.primary_500
+                                    : reasonColor + '40',
+                                  backgroundColor: selected
+                                    ? t.palette.primary_500 + '08'
+                                    : reasonColor + '06',
+                                },
+                              ]}>
+                              <View style={styles.suggestionLeft}>
+                                {/* Colored accent bar */}
+                                <View
                                   style={[
-                                    styles.suggestionTitle,
-                                    {color: t.palette.contrast_900},
+                                    styles.suggestionAccent,
+                                    {backgroundColor: reasonColor},
                                   ]}
-                                  numberOfLines={1}>
-                                  {suggestion.node.title}
-                                </Text>
-                                <View style={styles.suggestionMetaRow}>
-                                  {/* Card type chip */}
-                                  <View
+                                />
+                                <View style={styles.suggestionTextWrap}>
+                                  <Text
                                     style={[
-                                      styles.suggestionTypeChip,
-                                      {backgroundColor: nodeColor + '18'},
-                                    ]}>
-                                    <Text
+                                      styles.suggestionTitle,
+                                      {color: t.palette.contrast_900},
+                                    ]}
+                                    numberOfLines={1}>
+                                    {suggestion.node.title}
+                                  </Text>
+                                  <View style={styles.suggestionMetaRow}>
+                                    {/* Card type chip */}
+                                    <View
                                       style={[
-                                        styles.suggestionTypeText,
-                                        {color: nodeColor},
+                                        styles.suggestionTypeChip,
+                                        {backgroundColor: nodeColor + '18'},
                                       ]}>
-                                      {suggestion.node.card_type}
-                                    </Text>
-                                  </View>
-                                  {/* Reason badge */}
-                                  <View
-                                    style={[
-                                      styles.suggestionReasonBadge,
-                                      {backgroundColor: reasonColor + '15'},
-                                    ]}>
-                                    <Text
+                                      <Text
+                                        style={[
+                                          styles.suggestionTypeText,
+                                          {color: nodeColor},
+                                        ]}>
+                                        {suggestion.node.card_type}
+                                      </Text>
+                                    </View>
+                                    {/* Reason badge */}
+                                    <View
                                       style={[
-                                        styles.suggestionReasonText,
-                                        {color: reasonColor},
+                                        styles.suggestionReasonBadge,
+                                        {backgroundColor: reasonColor + '15'},
                                       ]}>
-                                      {suggestion.reason}
-                                    </Text>
+                                      <Text
+                                        style={[
+                                          styles.suggestionReasonText,
+                                          {color: reasonColor},
+                                        ]}>
+                                        {suggestion.reason}
+                                      </Text>
+                                    </View>
                                   </View>
                                 </View>
                               </View>
-                            </View>
-                            {selected ? (
-                              <Text style={{color: t.palette.primary_500}}>
-                                ✓
-                              </Text>
-                            ) : (
-                              <Text
-                                style={[
-                                  styles.suggestionScore,
-                                  {color: t.palette.contrast_400},
-                                ]}>
-                                {Math.round(suggestion.score)}
-                              </Text>
-                            )}
+                              {selected ? (
+                                <Text style={{color: t.palette.primary_500}}>
+                                  ✓
+                                </Text>
+                              ) : (
+                                <Text
+                                  style={[
+                                    styles.suggestionScore,
+                                    {color: t.palette.contrast_400},
+                                  ]}>
+                                  {Math.round(suggestion.score)}
+                                </Text>
+                              )}
+                            </TouchableOpacity>
+                          )
+                        })}
+                      </View>
+                    )}
+
+                    {/* ── Manual Search ─────────────────────────────── */}
+                    <TextInput
+                      value={targetQuery}
+                      onChangeText={setTargetQuery}
+                      accessibilityLabel="Buscar nodo para conectar"
+                      accessibilityHint="Filters available nodes by title"
+                      placeholder="Buscar nodo"
+                      placeholderTextColor={t.palette.contrast_400}
+                      style={[
+                        styles.connectInput,
+                        t.atoms.text,
+                        {borderColor: t.palette.contrast_100},
+                      ]}
+                    />
+
+                    {/* ── Relationship type chips ───────────────────── */}
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.relationshipTypes}>
+                      {COMMUNITY_CIVIC_TREE_RELATIONSHIP_TYPES.map(type => {
+                        const active = relationshipType === type.value
+                        return (
+                          <TouchableOpacity
+                            key={type.value}
+                            accessibilityRole="button"
+                            accessibilityLabel={`Relationship: ${type.label}`}
+                            accessibilityHint="Selects the connection type between nodes"
+                            accessibilityState={{selected: active}}
+                            onPress={() => setRelationshipType(type.value)}
+                            style={[
+                              styles.relationshipType,
+                              {
+                                borderColor: active
+                                  ? type.color
+                                  : t.palette.contrast_100,
+                                backgroundColor: active
+                                  ? type.color + '18'
+                                  : t.palette.contrast_25,
+                              },
+                            ]}>
+                            <Text
+                              style={[
+                                styles.relationshipTypeText,
+                                {
+                                  color: active
+                                    ? type.color
+                                    : t.palette.contrast_700,
+                                },
+                              ]}>
+                              {type.label}
+                            </Text>
                           </TouchableOpacity>
                         )
                       })}
-                    </View>
-                  )}
+                    </ScrollView>
 
-                  {/* ── Manual Search ─────────────────────────────── */}
-                  <TextInput
-                    value={targetQuery}
-                    onChangeText={setTargetQuery}
-                    accessibilityLabel="Buscar nodo para conectar"
-                    accessibilityHint="Filters available nodes by title"
-                    placeholder="Buscar nodo"
-                    placeholderTextColor={t.palette.contrast_400}
-                    style={[
-                      styles.connectInput,
-                      t.atoms.text,
-                      {borderColor: t.palette.contrast_100},
-                    ]}
-                  />
-
-                  {/* ── Relationship type chips ───────────────────── */}
-                  <ScrollView
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    contentContainerStyle={styles.relationshipTypes}>
-                    {COMMUNITY_CIVIC_TREE_RELATIONSHIP_TYPES.map(type => {
-                      const active = relationshipType === type.value
-                      return (
-                        <TouchableOpacity
-                          key={type.value}
-                          accessibilityRole="button"
-                          accessibilityLabel={`Relationship: ${type.label}`}
-                          accessibilityHint="Selects the connection type between nodes"
-                          accessibilityState={{selected: active}}
-                          onPress={() => setRelationshipType(type.value)}
+                    {/* ── Filtered target list (manual search results) ── */}
+                    <View style={styles.targetList}>
+                      {filteredTargets.length === 0 ? (
+                        <Text
                           style={[
-                            styles.relationshipType,
-                            {
-                              borderColor: active
-                                ? type.color
-                                : t.palette.contrast_100,
-                              backgroundColor: active
-                                ? type.color + '18'
-                                : t.palette.contrast_25,
-                            },
+                            styles.connectHint,
+                            t.atoms.text_contrast_medium,
                           ]}>
-                          <Text
-                            style={[
-                              styles.relationshipTypeText,
-                              {color: active ? type.color : t.palette.contrast_700},
-                            ]}>
-                            {type.label}
-                          </Text>
-                        </TouchableOpacity>
-                      )
-                    })}
-                  </ScrollView>
+                          <Trans>No hay nodos disponibles para conectar.</Trans>
+                        </Text>
+                      ) : (
+                        filteredTargets.map(candidate => {
+                          const selected = candidate.id === selectedTargetId
+                          return (
+                            <TouchableOpacity
+                              key={candidate.id}
+                              accessibilityRole="button"
+                              accessibilityLabel={`Seleccionar ${candidate.title}`}
+                              accessibilityHint="Choose this node as the connection destination"
+                              accessibilityState={{selected}}
+                              onPress={() => setSelectedTargetId(candidate.id)}
+                              style={[
+                                styles.targetRow,
+                                {
+                                  borderColor: selected
+                                    ? t.palette.primary_500
+                                    : t.palette.contrast_100,
+                                },
+                              ]}>
+                              <View style={styles.targetTextWrap}>
+                                <Text
+                                  style={[styles.targetTitle, t.atoms.text]}
+                                  numberOfLines={1}>
+                                  {candidate.title}
+                                </Text>
+                                <Text
+                                  style={[
+                                    styles.targetMeta,
+                                    t.atoms.text_contrast_medium,
+                                  ]}>
+                                  {candidate.card_type}
+                                </Text>
+                              </View>
+                              {selected ? (
+                                <Text style={{color: t.palette.primary_500}}>
+                                  ✓
+                                </Text>
+                              ) : null}
+                            </TouchableOpacity>
+                          )
+                        })
+                      )}
+                    </View>
 
-                  {/* ── Filtered target list (manual search results) ── */}
-                  <View style={styles.targetList}>
-                    {filteredTargets.length === 0 ? (
-                      <Text style={[styles.connectHint, t.atoms.text_contrast_medium]}>
-                        <Trans>No hay nodos disponibles para conectar.</Trans>
-                      </Text>
-                    ) : (
-                      filteredTargets.map(candidate => {
-                        const selected = candidate.id === selectedTargetId
-                        return (
-                          <TouchableOpacity
-                            key={candidate.id}
-                            accessibilityRole="button"
-                            accessibilityLabel={`Seleccionar ${candidate.title}`}
-                            accessibilityHint="Choose this node as the connection destination"
-                            accessibilityState={{selected}}
-                            onPress={() => setSelectedTargetId(candidate.id)}
-                            style={[
-                              styles.targetRow,
-                              {
-                                borderColor: selected
-                                  ? t.palette.primary_500
-                                  : t.palette.contrast_100,
-                              },
-                            ]}>
-                            <View style={styles.targetTextWrap}>
-                              <Text
-                                style={[styles.targetTitle, t.atoms.text]}
-                                numberOfLines={1}>
-                                {candidate.title}
-                              </Text>
-                              <Text
-                                style={[
-                                  styles.targetMeta,
-                                  t.atoms.text_contrast_medium,
-                                ]}>
-                                {candidate.card_type}
-                              </Text>
-                            </View>
-                            {selected ? (
-                              <Text style={{color: t.palette.primary_500}}>✓</Text>
-                            ) : null}
-                          </TouchableOpacity>
+                    {/* ── Create connection button ──────────────────── */}
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel="Create connection"
+                      accessibilityHint="Creates the selected relationship with the chosen node"
+                      disabled={!selectedTargetId || isCreatingRelationship}
+                      onPress={() => {
+                        if (!selectedTargetId || !onCreateRelationship) return
+                        onCreateRelationship(
+                          node.id,
+                          selectedTargetId,
+                          relationshipType,
                         )
-                      })
-                    )}
+                        setShowConnect(false)
+                        setSelectedTargetId(undefined)
+                        setTargetQuery('')
+                      }}
+                      style={[
+                        styles.createConnectionBtn,
+                        {backgroundColor: t.palette.primary_500},
+                        (!selectedTargetId || isCreatingRelationship) && {
+                          opacity: 0.5,
+                        },
+                      ]}>
+                      <Text style={styles.createConnectionText}>
+                        <Trans>Create connection</Trans>
+                      </Text>
+                    </TouchableOpacity>
                   </View>
-
-                  {/* ── Create connection button ──────────────────── */}
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    accessibilityLabel="Create connection"
-                    accessibilityHint="Creates the selected relationship with the chosen node"
-                    disabled={!selectedTargetId || isCreatingRelationship}
-                    onPress={() => {
-                      if (!selectedTargetId || !onCreateRelationship) return
-                      onCreateRelationship(node.id, selectedTargetId, relationshipType)
-                      setShowConnect(false)
-                      setSelectedTargetId(undefined)
-                      setTargetQuery('')
-                    }}
-                    style={[
-                      styles.createConnectionBtn,
-                      {backgroundColor: t.palette.primary_500},
-                      (!selectedTargetId || isCreatingRelationship) && {opacity: 0.5},
-                    ]}>
-                    <Text style={styles.createConnectionText}>
-                      <Trans>Create connection</Trans>
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              )}
-            </View>
-          )}
+                )}
+              </View>
+            )}
           </ScrollView>
 
           <TouchableOpacity

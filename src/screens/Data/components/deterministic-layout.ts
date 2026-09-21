@@ -35,7 +35,10 @@ export function generateDeterministicPositions(
     // Golden angle spiral for natural distribution
     const goldenAngle = Math.PI * (3 - Math.sqrt(5))
     const angle = index * goldenAngle + rng() * 0.5
-    const radius = Math.sqrt(index / Math.max(nodeIds.length, 1)) * maxRadius * (0.7 + rng() * 0.3)
+    const radius =
+      Math.sqrt(index / Math.max(nodeIds.length, 1)) *
+      maxRadius *
+      (0.7 + rng() * 0.3)
 
     return {
       x: cx + Math.cos(angle) * radius,

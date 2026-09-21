@@ -190,7 +190,7 @@ function isSimpleWord(word: string): boolean {
  * text instead of parsed. A bare `from:me` is pulled out into the `fromMe`
  * flag, which drives the "Me" author filter (the backend resolves `me` to the
  * viewer, so it never becomes a structured `author` value).
-*/
+ */
 function parseFreeText(raw: string): {
   query: string
   exactPhrase: string
@@ -207,7 +207,7 @@ function parseFreeText(raw: string): {
     if (token === 'from:me') {
       fromMe = true
       continue
-    }    
+    }
     // "phrase" -> "exact phrase", only if it has no inner quote.
     if (token.startsWith('"') && token.endsWith('"') && token.length > 1) {
       const inner = token.slice(1, -1)

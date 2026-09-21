@@ -98,11 +98,12 @@ export function buildBundle(
   const agent = storedPdsUrl
     ? routeSessionToPds(session, storedPdsUrl)
     : session
+  const serviceUrl = storedPdsUrl ?? deriveServiceUrl(session).toString()
   return {
     session,
-    appviewClient: buildAppviewClient(agent),
+    appviewClient: buildAppviewClient(agent, serviceUrl),
     pdsClient: buildPdsClient(agent),
-    chatClient: buildChatClient(agent),
+    chatClient: buildChatClient(agent, serviceUrl),
     get service() {
       return deriveServiceUrl(session)
     },

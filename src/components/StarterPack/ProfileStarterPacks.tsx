@@ -55,8 +55,7 @@ interface ProfileFeedgensProps {
   emptyStateMessage?: string
   emptyStateButton?: EmptyStateButtonProps
   emptyStateIcon?:
-    | React.ComponentType<Record<string, unknown>>
-    | React.ReactElement
+    React.ComponentType<Record<string, unknown>> | React.ReactElement
 }
 
 function keyExtractor(item: AppBskyGraphDefs.StarterPackViewBasic) {

@@ -29,7 +29,8 @@ export function CommunityCard({
   }
 
   return (
-    <TouchableOpacity accessibilityRole="button"
+    <TouchableOpacity
+      accessibilityRole="button"
       style={[
         styles.card,
         {

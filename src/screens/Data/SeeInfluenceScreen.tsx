@@ -15,14 +15,26 @@ type Props = NativeStackScreenProps<CommonNavigatorParams, 'SeeInfluence'>
 
 // Mock Data for MVP Frontend
 const MOCK_PROXIES = [
-  { did: 'did:plc:mock1', handle: 'alice.bsky.social', name: 'Alice Smith', power: 1, reason: 'Health & Science policy' },
-  { did: 'did:plc:mock2', handle: 'bob.bsky.social', name: 'Bob Jones', power: 1, reason: 'Economic policy' },
+  {
+    did: 'did:plc:mock1',
+    handle: 'alice.bsky.social',
+    name: 'Alice Smith',
+    power: 1,
+    reason: 'Health & Science policy',
+  },
+  {
+    did: 'did:plc:mock2',
+    handle: 'bob.bsky.social',
+    name: 'Bob Jones',
+    power: 1,
+    reason: 'Economic policy',
+  },
 ]
 
 const MOCK_CONSTITUENTS = [
-  { did: 'did:plc:mock3', handle: 'carol.bsky.social', name: 'Carol Williams' },
-  { did: 'did:plc:mock4', handle: 'dave.bsky.social', name: 'Dave Brown' },
-  { did: 'did:plc:mock5', handle: 'eve.bsky.social', name: 'Eve Davis' },
+  {did: 'did:plc:mock3', handle: 'carol.bsky.social', name: 'Carol Williams'},
+  {did: 'did:plc:mock4', handle: 'dave.bsky.social', name: 'Dave Brown'},
+  {did: 'did:plc:mock5', handle: 'eve.bsky.social', name: 'Eve Davis'},
 ]
 
 export function SeeInfluenceScreen({route}: Props) {
@@ -30,7 +42,9 @@ export function SeeInfluenceScreen({route}: Props) {
 
   const hasProfileScope = !!route.params?.did
 
-  const [activeTab, setActiveTab] = useState<'proxies' | 'constituents'>('constituents')
+  const [activeTab, setActiveTab] = useState<'proxies' | 'constituents'>(
+    'constituents',
+  )
 
   // Total Influence = Base (1) + Constituents (3) = 4
   const totalInfluence = 1 + MOCK_CONSTITUENTS.length
@@ -59,7 +73,9 @@ export function SeeInfluenceScreen({route}: Props) {
               {hasProfileScope ? (
                 <Trans>Influence data for this profile.</Trans>
               ) : (
-                <Trans>Manage your liquid democracy proxies and track your influence.</Trans>
+                <Trans>
+                  Manage your liquid democracy proxies and track your influence.
+                </Trans>
               )}
             </Text>
           </View>
@@ -79,25 +95,56 @@ export function SeeInfluenceScreen({route}: Props) {
                 {totalInfluence}x
               </Text>
               <Text style={[styles.heroSubtext, t.atoms.text_contrast_medium]}>
-                <Trans>Base voice (1) + {MOCK_CONSTITUENTS.length} constituents</Trans>
+                <Trans>
+                  Base voice (1) + {MOCK_CONSTITUENTS.length} constituents
+                </Trans>
               </Text>
             </View>
-            <CircleInfo size="lg" style={{color: t.palette.primary_500, opacity: 0.8}} />
+            <CircleInfo
+              size="lg"
+              style={{color: t.palette.primary_500, opacity: 0.8}}
+            />
           </View>
 
           {/* Tabs */}
           <View style={[styles.tabs, t.atoms.bg_contrast_25]}>
-            <TouchableOpacity accessibilityRole="button"
-              style={[styles.tab, activeTab === 'constituents' && styles.tabActive, activeTab === 'constituents' && {backgroundColor: t.palette.contrast_100}]}
+            <TouchableOpacity
+              accessibilityRole="button"
+              style={[
+                styles.tab,
+                activeTab === 'constituents' && styles.tabActive,
+                activeTab === 'constituents' && {
+                  backgroundColor: t.palette.contrast_100,
+                },
+              ]}
               onPress={() => setActiveTab('constituents')}>
-              <Text style={[styles.tabText, activeTab === 'constituents' ? t.atoms.text : t.atoms.text_contrast_medium]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === 'constituents'
+                    ? t.atoms.text
+                    : t.atoms.text_contrast_medium,
+                ]}>
                 <Trans>Mis Constituyentes ({MOCK_CONSTITUENTS.length})</Trans>
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity accessibilityRole="button"
-              style={[styles.tab, activeTab === 'proxies' && styles.tabActive, activeTab === 'proxies' && {backgroundColor: t.palette.contrast_100}]}
+            <TouchableOpacity
+              accessibilityRole="button"
+              style={[
+                styles.tab,
+                activeTab === 'proxies' && styles.tabActive,
+                activeTab === 'proxies' && {
+                  backgroundColor: t.palette.contrast_100,
+                },
+              ]}
               onPress={() => setActiveTab('proxies')}>
-              <Text style={[styles.tabText, activeTab === 'proxies' ? t.atoms.text : t.atoms.text_contrast_medium]}>
+              <Text
+                style={[
+                  styles.tabText,
+                  activeTab === 'proxies'
+                    ? t.atoms.text
+                    : t.atoms.text_contrast_medium,
+                ]}>
                 <Trans>Mis Proxies ({MOCK_PROXIES.length})</Trans>
               </Text>
             </TouchableOpacity>
@@ -107,14 +154,35 @@ export function SeeInfluenceScreen({route}: Props) {
           {activeTab === 'constituents' ? (
             <View style={styles.listContainer}>
               {MOCK_CONSTITUENTS.map((constituent, index) => (
-                <View key={constituent.did} style={[styles.listItem, t.atoms.border_contrast_low, index === 0 && {borderTopWidth: 0}]}>
+                <View
+                  key={constituent.did}
+                  style={[
+                    styles.listItem,
+                    t.atoms.border_contrast_low,
+                    index === 0 && {borderTopWidth: 0},
+                  ]}>
                   <UserAvatar type="user" avatar={undefined} size={40} />
                   <View style={styles.listInfo}>
-                    <Text style={[styles.listName, t.atoms.text]}>{constituent.name}</Text>
-                    <Text style={[styles.listHandle, t.atoms.text_contrast_medium]}>@{constituent.handle}</Text>
+                    <Text style={[styles.listName, t.atoms.text]}>
+                      {constituent.name}
+                    </Text>
+                    <Text
+                      style={[styles.listHandle, t.atoms.text_contrast_medium]}>
+                      @{constituent.handle}
+                    </Text>
                   </View>
-                  <View style={[styles.powerBadge, {backgroundColor: t.palette.primary_500 + '20'}]}>
-                    <Text style={[styles.powerBadgeText, {color: t.palette.primary_500}]}>+1x</Text>
+                  <View
+                    style={[
+                      styles.powerBadge,
+                      {backgroundColor: t.palette.primary_500 + '20'},
+                    ]}>
+                    <Text
+                      style={[
+                        styles.powerBadgeText,
+                        {color: t.palette.primary_500},
+                      ]}>
+                      +1x
+                    </Text>
                   </View>
                 </View>
               ))}
@@ -122,19 +190,47 @@ export function SeeInfluenceScreen({route}: Props) {
           ) : (
             <View style={styles.listContainer}>
               {MOCK_PROXIES.map((proxy, index) => (
-                <View key={proxy.did} style={[styles.listItem, t.atoms.border_contrast_low, index === 0 && {borderTopWidth: 0}]}>
+                <View
+                  key={proxy.did}
+                  style={[
+                    styles.listItem,
+                    t.atoms.border_contrast_low,
+                    index === 0 && {borderTopWidth: 0},
+                  ]}>
                   <UserAvatar type="user" avatar={undefined} size={40} />
                   <View style={styles.listInfo}>
-                    <Text style={[styles.listName, t.atoms.text]}>{proxy.name}</Text>
-                    <Text style={[styles.listHandle, t.atoms.text_contrast_medium]}>@{proxy.handle}</Text>
-                    <Text style={[styles.listReason, t.atoms.text_contrast_high]}>{proxy.reason}</Text>
+                    <Text style={[styles.listName, t.atoms.text]}>
+                      {proxy.name}
+                    </Text>
+                    <Text
+                      style={[styles.listHandle, t.atoms.text_contrast_medium]}>
+                      @{proxy.handle}
+                    </Text>
+                    <Text
+                      style={[styles.listReason, t.atoms.text_contrast_high]}>
+                      {proxy.reason}
+                    </Text>
                   </View>
-                  <TouchableOpacity accessibilityRole="button" style={styles.manageBtn}>
-                    <Text style={[styles.manageBtnText, {color: t.palette.primary_500}]}>Manage</Text>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    style={styles.manageBtn}>
+                    <Text
+                      style={[
+                        styles.manageBtnText,
+                        {color: t.palette.primary_500},
+                      ]}>
+                      Manage
+                    </Text>
                   </TouchableOpacity>
                 </View>
               ))}
-              <TouchableOpacity accessibilityRole="button" style={[styles.addProxyBtn, t.atoms.bg_contrast_25, {borderColor: t.palette.contrast_100}]}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                style={[
+                  styles.addProxyBtn,
+                  t.atoms.bg_contrast_25,
+                  {borderColor: t.palette.contrast_100},
+                ]}>
                 <Text style={[styles.addProxyText, t.atoms.text]}>
                   <Trans>Find new Proxy...</Trans>
                 </Text>
@@ -142,7 +238,6 @@ export function SeeInfluenceScreen({route}: Props) {
               </TouchableOpacity>
             </View>
           )}
-
         </ScrollView>
       </Layout.Content>
     </Layout.Screen>

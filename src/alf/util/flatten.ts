@@ -6,7 +6,7 @@ export function flatten<T>(
   return (StyleSheet.flatten(
     style as unknown as Parameters<typeof StyleSheet.flatten>[0],
   ) ?? {}) as T extends (infer U)[] ? U : T
-} 
+}
 
 /** Flatten React Native styles passed directly to a web-only DOM component. */
 export function flattenToCSS(style: unknown): React.CSSProperties {

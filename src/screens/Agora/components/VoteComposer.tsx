@@ -52,7 +52,21 @@ export function VoteComposer({
               onPress={() => setSignal(s)}
               accessibilityRole="radio"
               accessibilityState={{checked: isSelected}}
-              accessibilityLabel={s === -3 ? _(msg`Strongly Oppose`) : s === -2 ? _(msg`Oppose`) : s === -1 ? _(msg`Lean Oppose`) : s === 0 ? _(msg`Neutral`) : s === 1 ? _(msg`Lean Support`) : s === 2 ? _(msg`Support`) : _(msg`Strongly Support`)}
+              accessibilityLabel={
+                s === -3
+                  ? _(msg`Strongly Oppose`)
+                  : s === -2
+                    ? _(msg`Oppose`)
+                    : s === -1
+                      ? _(msg`Lean Oppose`)
+                      : s === 0
+                        ? _(msg`Neutral`)
+                        : s === 1
+                          ? _(msg`Lean Support`)
+                          : s === 2
+                            ? _(msg`Support`)
+                            : _(msg`Strongly Support`)
+              }
               accessibilityHint={_(msg`Selects this signal strength`)}
               style={[
                 a.align_center,
@@ -91,7 +105,19 @@ export function VoteComposer({
             fontSize: 14,
           },
         ]}>
-        {signal === -3 ? _(msg`Strongly Oppose`) : signal === -2 ? _(msg`Oppose`) : signal === -1 ? _(msg`Lean Oppose`) : signal === 0 ? _(msg`Neutral`) : signal === 1 ? _(msg`Lean Support`) : signal === 2 ? _(msg`Support`) : _(msg`Strongly Support`)}
+        {signal === -3
+          ? _(msg`Strongly Oppose`)
+          : signal === -2
+            ? _(msg`Oppose`)
+            : signal === -1
+              ? _(msg`Lean Oppose`)
+              : signal === 0
+                ? _(msg`Neutral`)
+                : signal === 1
+                  ? _(msg`Lean Support`)
+                  : signal === 2
+                    ? _(msg`Support`)
+                    : _(msg`Strongly Support`)}
       </Text>
 
       {/* Intensity stepper */}

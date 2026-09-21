@@ -1,8 +1,6 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
-import {
-  type ParaRaqAssessmentRecord,
-} from '#/lib/api/para-lexicons'
+import {type ParaRaqAssessmentRecord} from '#/lib/api/para-lexicons'
 import {
   fetchAxisVotes,
   fetchCommunityAlignment,

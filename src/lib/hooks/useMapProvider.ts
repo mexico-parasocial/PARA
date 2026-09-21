@@ -39,7 +39,7 @@ export function useMapProvider() {
 
   // Anonymous → always MapLibre for privacy
   const resolvedProvider: MapProvider = hasSession
-    ? storedProvider ?? 'google'
+    ? (storedProvider ?? 'google')
     : 'maplibre'
 
   const resolvedViewMode: MapViewMode = storedViewMode ?? 'standard'

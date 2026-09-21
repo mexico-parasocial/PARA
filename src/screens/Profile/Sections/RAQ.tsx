@@ -1,5 +1,5 @@
 import {forwardRef, useEffect, useImperativeHandle, useMemo} from 'react'
-import {findNodeHandle, type ListRenderItem,View} from 'react-native'
+import {findNodeHandle, type ListRenderItem, View} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 

@@ -37,8 +37,7 @@ export function useLocationPermission() {
   }, [])
 
   return {
-    hasPermissions:
-      status === Location.PermissionStatus.GRANTED,
+    hasPermissions: status === Location.PermissionStatus.GRANTED,
     requestPermissions,
   }
 }

@@ -36,10 +36,10 @@ export function SortitionProofList({
   const t = useTheme()
   const [expanded, setExpanded] = useState(false)
   const proofs = useMemo(() => {
-    const viewer = viewerCandidate
-      ? [viewerCandidate]
-      : []
-    const rest = selected.filter(candidate => candidate.did !== viewerCandidate?.did)
+    const viewer = viewerCandidate ? [viewerCandidate] : []
+    const rest = selected.filter(
+      candidate => candidate.did !== viewerCandidate?.did,
+    )
     return [...viewer, ...rest].slice(0, expanded ? 200 : 4)
   }, [expanded, selected, viewerCandidate])
 

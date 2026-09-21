@@ -76,9 +76,7 @@ function Inner({
           <Trans>Filter by cabildeo</Trans>
         </Text>
         <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-          <Trans>
-            Pick active civic deliberations to include posts from.
-          </Trans>
+          <Trans>Pick active civic deliberations to include posts from.</Trans>
         </Text>
       </View>
       <SearchInput

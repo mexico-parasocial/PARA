@@ -44,10 +44,7 @@ export type ViewSelectorProps<T> = {
   renderHeader?: () => JSX.Element
   renderItem: (item: T) => JSX.Element
   ListFooterComponent?:
-    | ComponentType<unknown>
-    | ReactElement<unknown>
-    | null
-    | undefined
+    ComponentType<unknown> | ReactElement<unknown> | null | undefined
   onSelectView?: (viewIndex: number) => void
   onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void
   onRefresh?: () => void

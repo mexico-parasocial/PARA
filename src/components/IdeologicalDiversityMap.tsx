@@ -1,4 +1,3 @@
-
 import {StyleSheet, View} from 'react-native'
 
 import {
@@ -37,7 +36,7 @@ export function IdeologicalDiversityMap({distribution, size = 180}: Props) {
               const density = getDensity(cellId)
               // Calculate opacity based on density (min 0.05, max 0.9)
               const opacity = 0.05 + (density / 100) * 0.85
-              
+
               return (
                 <View
                   key={cellId}
@@ -51,7 +50,12 @@ export function IdeologicalDiversityMap({distribution, size = 180}: Props) {
                     },
                   ]}>
                   {density > 15 && (
-                    <View style={[styles.pulse, {backgroundColor: '#fff', opacity: 0.3}]} />
+                    <View
+                      style={[
+                        styles.pulse,
+                        {backgroundColor: '#fff', opacity: 0.3},
+                      ]}
+                    />
                   )}
                 </View>
               )
@@ -61,15 +65,51 @@ export function IdeologicalDiversityMap({distribution, size = 180}: Props) {
       </View>
 
       {/* Crosshair / Axes */}
-      <View style={[styles.axis, styles.axisH, {top: size / 2, backgroundColor: t.palette.contrast_200}]} />
-      <View style={[styles.axis, styles.axisV, {left: size / 2, backgroundColor: t.palette.contrast_200}]} />
+      <View
+        style={[
+          styles.axis,
+          styles.axisH,
+          {top: size / 2, backgroundColor: t.palette.contrast_200},
+        ]}
+      />
+      <View
+        style={[
+          styles.axis,
+          styles.axisV,
+          {left: size / 2, backgroundColor: t.palette.contrast_200},
+        ]}
+      />
 
       {/* Legend / Labels */}
       <View style={styles.labels}>
-        <Text style={[styles.label, styles.labelTop, t.atoms.text_contrast_medium]}>AUTH</Text>
-        <Text style={[styles.label, styles.labelBottom, t.atoms.text_contrast_medium]}>LIB</Text>
-        <Text style={[styles.label, styles.labelLeft, t.atoms.text_contrast_medium]}>LEFT</Text>
-        <Text style={[styles.label, styles.labelRight, t.atoms.text_contrast_medium]}>RIGHT</Text>
+        <Text
+          style={[styles.label, styles.labelTop, t.atoms.text_contrast_medium]}>
+          AUTH
+        </Text>
+        <Text
+          style={[
+            styles.label,
+            styles.labelBottom,
+            t.atoms.text_contrast_medium,
+          ]}>
+          LIB
+        </Text>
+        <Text
+          style={[
+            styles.label,
+            styles.labelLeft,
+            t.atoms.text_contrast_medium,
+          ]}>
+          LEFT
+        </Text>
+        <Text
+          style={[
+            styles.label,
+            styles.labelRight,
+            t.atoms.text_contrast_medium,
+          ]}>
+          RIGHT
+        </Text>
       </View>
     </View>
   )

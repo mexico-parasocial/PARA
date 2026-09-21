@@ -145,11 +145,7 @@ export interface ParaIdentityRecord {
 }
 
 export type OfficialCivicEntityKind =
-  | 'representative'
-  | 'office'
-  | 'community'
-  | 'party'
-  | 'ngo'
+  'representative' | 'office' | 'community' | 'party' | 'ngo'
 
 export type OfficialCivicEntityStatus = 'unclaimed' | 'verified' | 'retired'
 
@@ -166,9 +162,7 @@ export type OfficialControllerStatus = 'pending' | 'active' | 'revoked'
 export type OfficialControllerVisibility = 'entity_default' | 'revealed'
 
 export type OfficialActionType =
-  | 'pajareo.response'
-  | 'post.write'
-  | 'cabildeo.signature'
+  'pajareo.response' | 'post.write' | 'cabildeo.signature'
 
 export type CabildeoAccessTier =
   | 'public'
@@ -248,21 +242,18 @@ export interface CommunityGovernancePerson {
   avatar?: string
 }
 
-export interface CommunityGovernanceModerator
-  extends CommunityGovernancePerson {
+export interface CommunityGovernanceModerator extends CommunityGovernancePerson {
   role: string
   badge: string
   capabilities: CommunityGovernanceCapability[]
 }
 
-export interface CommunityGovernanceOfficialRepresentative
-  extends CommunityGovernancePerson {
+export interface CommunityGovernanceOfficialRepresentative extends CommunityGovernancePerson {
   office: string
   mandate: string
 }
 
-export interface CommunityGovernanceApplicant
-  extends CommunityGovernancePerson {
+export interface CommunityGovernanceApplicant extends CommunityGovernancePerson {
   appliedAt: string
   status: 'applied' | 'approved' | 'rejected'
   note?: string
@@ -320,15 +311,12 @@ export type CommunityCivicTreeStance = 'pro' | 'con' | 'neutral'
 export type CommunityCivicTreeRelationshipType = string
 
 export type CommunityCivicTreeContributionStatus =
-  | 'pending'
-  | 'approved'
-  | 'rejected'
+  'pending' | 'approved' | 'rejected'
 
 export type CommunityCivicTreeContributionVoteValue = 'approve' | 'reject'
 
 export type CommunityCivicTreeGovernanceMode =
-  | 'votes_sortition'
-  | 'moderator_gate'
+  'votes_sortition' | 'moderator_gate'
 
 export interface CommunityCivicTreeCardRecord {
   communityUri: string
@@ -441,11 +429,7 @@ export const PARA_CIVIC_VOTE_COLLECTION = 'com.para.civic.vote'
 export const PARA_CIVIC_DELEGATION_COLLECTION = 'com.para.civic.delegation'
 
 export type CabildeoPhase =
-  | 'draft'
-  | 'open'
-  | 'deliberating'
-  | 'voting'
-  | 'resolved'
+  'draft' | 'open' | 'deliberating' | 'voting' | 'resolved'
 
 export interface CabildeoOption {
   label: string

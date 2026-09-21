@@ -111,8 +111,7 @@ export function MyBaseHero({
                 {profileHandleText}
               </Text>
 
-              <View
-                style={[styles.affiliationBadge, t.atoms.bg_contrast_25]}>
+              <View style={[styles.affiliationBadge, t.atoms.bg_contrast_25]}>
                 <Text
                   style={[
                     styles.affiliationText,

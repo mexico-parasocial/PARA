@@ -180,7 +180,6 @@ describe('isTrustedUrl', () => {
   })
 })
 
-
 describe('getChatInviteCodeFromUrl', () => {
   type Case = [string, string | undefined]
 

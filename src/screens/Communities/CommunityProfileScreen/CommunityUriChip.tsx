@@ -31,7 +31,8 @@ export function CommunityUriChip({
     }
   }
 
-  const displayName = board?.name || communityUri.split('/').pop() || communityUri
+  const displayName =
+    board?.name || communityUri.split('/').pop() || communityUri
 
   return (
     <TouchableOpacity

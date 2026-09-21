@@ -1,9 +1,6 @@
 import {type CivicTreeItem} from '#/state/queries/collection-items'
 
-import {
-  canContributeItem,
-  contributionFromItem,
-} from '../contribution'
+import {canContributeItem, contributionFromItem} from '../contribution'
 
 const item = (over: Partial<CivicTreeItem> = {}): CivicTreeItem => ({
   addedAt: '2026-01-01T00:00:00.000Z',

@@ -454,7 +454,7 @@ export const LoginForm = ({
           <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_sm]}>
             <Trans>
               Local demo login: use provider {LOCAL_DEV_SERVICE}, account{' '}
-              active-a.test, password hunter2.
+              alice.test, password para-test-pw.
             </Trans>
           </Text>
         )}

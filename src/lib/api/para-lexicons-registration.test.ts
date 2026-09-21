@@ -164,7 +164,13 @@ describe('registerParaLexicons', () => {
     ).toMatchObject({
       type: 'record',
       record: {
-        required: ['communityUri', 'authorDid', 'title', 'cardType', 'createdAt'],
+        required: [
+          'communityUri',
+          'authorDid',
+          'title',
+          'cardType',
+          'createdAt',
+        ],
       },
     })
     expect(
@@ -202,7 +208,9 @@ describe('registerParaLexicons', () => {
 
     registerParaLexicons(agent)
 
-    expect(agent.lex.getDef('com.para.highlight.getHighlight#main')).toMatchObject({
+    expect(
+      agent.lex.getDef('com.para.highlight.getHighlight#main'),
+    ).toMatchObject({
       type: 'query',
       parameters: {
         required: ['highlight'],

@@ -31,7 +31,9 @@ function CommunityDirectoryCard({
   onPress: () => void
 }) {
   const t = useTheme()
-  const quadrantColor = COMPASS_COLORS[board.quadrant as keyof typeof COMPASS_COLORS] ?? t.palette.primary_500
+  const quadrantColor =
+    COMPASS_COLORS[board.quadrant as keyof typeof COMPASS_COLORS] ??
+    t.palette.primary_500
 
   return (
     <PressableScale
@@ -44,10 +46,7 @@ function CommunityDirectoryCard({
       ]}>
       <View style={styles.cardHeader}>
         <View
-          style={[
-            styles.iconWrap,
-            {backgroundColor: quadrantColor + '15'},
-          ]}>
+          style={[styles.iconWrap, {backgroundColor: quadrantColor + '15'}]}>
           <TreeIcon size="md" style={{color: quadrantColor}} />
         </View>
         <View style={a.flex_1}>
@@ -90,7 +89,10 @@ export function CommunityDirectoryScreen() {
   } = useCommunityBoardsQuery({limit: 100})
 
   const myBoards = useMemo(() => {
-    return boardsData?.boards?.filter(b => b.viewerMembershipState === 'active') ?? []
+    return (
+      boardsData?.boards?.filter(b => b.viewerMembershipState === 'active') ??
+      []
+    )
   }, [boardsData])
 
   const handlePressCommunity = (board: CommunityBoardView) => {

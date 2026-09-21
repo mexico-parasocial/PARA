@@ -55,7 +55,11 @@ export function useRequestAlphaAccessMutation() {
   const agent = useAgent()
   const queryClient = useQueryClient()
 
-  return useMutation<AlphaRequestAccessResponse, Error, AlphaRequestAccessInput>({
+  return useMutation<
+    AlphaRequestAccessResponse,
+    Error,
+    AlphaRequestAccessInput
+  >({
     mutationFn: async input => {
       const res = await agent.call('com.para.alpha.requestAccess', {
         state: input.state,
@@ -65,7 +69,9 @@ export function useRequestAlphaAccessMutation() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({queryKey: alphaAccessQueryKey()})
-      void queryClient.invalidateQueries({queryKey: alphaRolloutStatusQueryKey()})
+      void queryClient.invalidateQueries({
+        queryKey: alphaRolloutStatusQueryKey(),
+      })
     },
   })
 }

@@ -1,5 +1,5 @@
 import {TouchableOpacity, View} from 'react-native'
-import  {type AppBskyFeedDefs} from '@atproto/api'
+import {type AppBskyFeedDefs} from '@atproto/api'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 

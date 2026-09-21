@@ -29,7 +29,8 @@ export function EmptyState({
   button,
 }: {
   testID?: string
-  icon?: React.ComponentType<{[key: string]: unknown}> | React.ReactElement | null
+  icon?:
+    React.ComponentType<{[key: string]: unknown}> | React.ReactElement | null
   iconSize?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl'
   iconColor?: string
   message: string
@@ -37,7 +38,6 @@ export function EmptyState({
   textStyle?: StyleProp<TextStyle>
   button?: EmptyStateButtonProps
 }) {
-
   const t = useTheme()
   const {gtMobile, gtTablet} = useBreakpoints()
 

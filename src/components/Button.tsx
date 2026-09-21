@@ -49,7 +49,7 @@ export type ButtonColor =
   | 'primary_subtle'
   | 'negative_subtle'
 export type ButtonSize = 'tiny' | 'small' | 'medium' | 'large'
-  export type ButtonShape = 'round' | 'square' | 'rectangular' | 'default'
+export type ButtonShape = 'round' | 'square' | 'rectangular' | 'default'
 export type VariantProps = {
   /**
    * The style variation of the button
@@ -85,8 +85,7 @@ export type ButtonState = {
 export type ButtonContext = VariantProps & ButtonState
 
 type NonTextElements =
-  | ReactElement
-  | Iterable<ReactElement | null | undefined | boolean>
+  ReactElement | Iterable<ReactElement | null | undefined | boolean>
 
 export type ButtonProps = Pick<
   PressableProps,
@@ -162,7 +161,7 @@ export const Button = forwardRef<React.ComponentRef<typeof View>, ButtonProps>(
      */
     let variant: VariantProps['variant'] = variantProp
     if (!variantProp && color) {
-    variant = 'solid'
+      variant = 'solid'
     }
 
     const t = useTheme()

@@ -683,14 +683,23 @@ const communityCivicTreeCard = {
       key: 'tid',
       record: {
         type: 'object' as const,
-        required: ['communityUri', 'authorDid', 'title', 'cardType', 'createdAt'],
+        required: [
+          'communityUri',
+          'authorDid',
+          'title',
+          'cardType',
+          'createdAt',
+        ],
         properties: {
           communityUri: {type: 'string' as const, format: 'at-uri'},
           authorDid: {type: 'string' as const, format: 'did'},
           title: {type: 'string' as const, maxLength: 500},
           content: {type: 'string' as const, maxLength: 10000},
           cardType: {type: 'string' as const, maxLength: 64},
-          stance: {type: 'string' as const, knownValues: ['pro', 'con', 'neutral']},
+          stance: {
+            type: 'string' as const,
+            knownValues: ['pro', 'con', 'neutral'],
+          },
           compassQuadrant: {type: 'string' as const, maxLength: 64},
           sourceUri: {type: 'string' as const, format: 'at-uri'},
           sourceUrl: {type: 'string' as const, format: 'uri'},
@@ -1754,7 +1763,8 @@ const getTopology = {
   defs: {
     main: {
       type: 'query' as const,
-      description: 'Get structural discourse topology for a community. Replaces ambiguous emotional sentiment with ideologically-grounded metrics.',
+      description:
+        'Get structural discourse topology for a community. Replaces ambiguous emotional sentiment with ideologically-grounded metrics.',
       parameters: {
         type: 'params' as const,
         properties: {
@@ -2179,14 +2189,29 @@ const getUserAlignment = {
       properties: {
         results: {
           type: 'array' as const,
-          items: {type: 'ref' as const, ref: 'lex:com.para.raq.defs#axisResult'},
+          items: {
+            type: 'ref' as const,
+            ref: 'lex:com.para.raq.defs#axisResult',
+          },
         },
-        compass: {type: 'ref' as const, ref: 'lex:com.para.raq.defs#compassPosition'},
-        ideology: {type: 'ref' as const, ref: 'lex:com.para.raq.defs#ideologyMatch'},
-        secondaryIdeology: {type: 'ref' as const, ref: 'lex:com.para.raq.defs#ideologyMatch'},
+        compass: {
+          type: 'ref' as const,
+          ref: 'lex:com.para.raq.defs#compassPosition',
+        },
+        ideology: {
+          type: 'ref' as const,
+          ref: 'lex:com.para.raq.defs#ideologyMatch',
+        },
+        secondaryIdeology: {
+          type: 'ref' as const,
+          ref: 'lex:com.para.raq.defs#ideologyMatch',
+        },
         partyMatches: {
           type: 'array' as const,
-          items: {type: 'ref' as const, ref: 'lex:com.para.raq.defs#partyMatch'},
+          items: {
+            type: 'ref' as const,
+            ref: 'lex:com.para.raq.defs#partyMatch',
+          },
         },
         completedAt: {type: 'string' as const, format: 'datetime'},
       },
@@ -2222,9 +2247,15 @@ const getCommunityAlignment = {
           properties: {
             axes: {
               type: 'array' as const,
-              items: {type: 'ref' as const, ref: 'lex:com.para.raq.defs#axisResult'},
+              items: {
+                type: 'ref' as const,
+                ref: 'lex:com.para.raq.defs#axisResult',
+              },
             },
-            compass: {type: 'ref' as const, ref: 'lex:com.para.raq.defs#compassPosition'},
+            compass: {
+              type: 'ref' as const,
+              ref: 'lex:com.para.raq.defs#compassPosition',
+            },
             participantCount: {type: 'integer' as const, minimum: 0},
             cursor: {type: 'string' as const},
           },
@@ -2284,12 +2315,18 @@ const getProposals = {
   defs: {
     main: {
       type: 'query' as const,
-      description: 'Get proposed RAQ questions with vote and answer aggregations.',
+      description:
+        'Get proposed RAQ questions with vote and answer aggregations.',
       parameters: {
         type: 'params' as const,
         properties: {
           community: {type: 'string' as const, maxLength: 128},
-          limit: {type: 'integer' as const, minimum: 1, maximum: 100, default: 50},
+          limit: {
+            type: 'integer' as const,
+            minimum: 1,
+            maximum: 100,
+            default: 50,
+          },
           cursor: {type: 'string' as const},
         },
       },
@@ -2310,7 +2347,15 @@ const getProposals = {
     },
     proposalView: {
       type: 'object' as const,
-      required: ['uri', 'cid', 'creator', 'text', 'upvotes', 'downvotes', 'createdAt'],
+      required: [
+        'uri',
+        'cid',
+        'creator',
+        'text',
+        'upvotes',
+        'downvotes',
+        'createdAt',
+      ],
       properties: {
         uri: {type: 'string' as const, format: 'at-uri'},
         cid: {type: 'string' as const, format: 'cid'},

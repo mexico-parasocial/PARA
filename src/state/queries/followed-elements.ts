@@ -129,7 +129,7 @@ async function listRemoteFollowedElements({
   agent,
   repo,
 }: {
-  agent: AtpAgent,
+  agent: AtpAgent
   repo: string
 }) {
   const items: FollowedItem[] = []

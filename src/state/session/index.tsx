@@ -12,7 +12,11 @@ import {
 import {type Client} from '@atproto/lex'
 import {type SessionData} from '@atproto/lex-password-session'
 
-import {BLUESKY_PROXY_HEADER, isLikelyLocalServiceUrl} from '#/lib/constants'
+import {
+  BLUESKY_PROXY_HEADER,
+  getAppviewServiceForServiceUrl,
+  isLikelyLocalServiceUrl,
+} from '#/lib/constants'
 import {logger} from '#/logger'
 import * as persisted from '#/state/persisted'
 import * as userActionHistory from '#/state/userActionHistory'
@@ -883,7 +887,12 @@ export function useAgent(): BskyAppAgent {
       service: bundle.service.toString(),
     }),
   )
-  agent.configureProxy(BLUESKY_PROXY_HEADER.get())
+  const service = bundle.service.toString()
+  agent.configureProxy(
+    isLikelyLocalServiceUrl(service)
+      ? getAppviewServiceForServiceUrl(service)
+      : BLUESKY_PROXY_HEADER.get(),
+  )
   bridgeAgents.set(bundle, agent)
   return agent
 }

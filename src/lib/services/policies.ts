@@ -30,11 +30,7 @@ import {USE_MOCK_DATA} from './config'
 import {type PaginationParams, type ServiceResponse} from './types'
 
 export type PolicyFeed =
-  | 'featured'
-  | 'community'
-  | 'party'
-  | 'state'
-  | 'recommended'
+  'featured' | 'community' | 'party' | 'state' | 'recommended'
 
 export interface PoliciesQueryParams extends PaginationParams {
   feed: PolicyFeed
@@ -52,9 +48,9 @@ export async function fetchPolicies(
     await simulateNetworkDelay()
 
     const useMatters = params.type === 'Matter'
-    const cabildeoItems = MOCK_CABILDEO_VIEWS.map(mapCabildeoToPolicyItem).filter(
-      item => item.type === (params.type || 'Policy'),
-    )
+    const cabildeoItems = MOCK_CABILDEO_VIEWS.map(
+      mapCabildeoToPolicyItem,
+    ).filter(item => item.type === (params.type || 'Policy'))
 
     // Select the appropriate feed based on type
     let data: PolicyItem[]

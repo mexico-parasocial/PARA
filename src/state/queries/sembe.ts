@@ -18,9 +18,7 @@ type SembleConnectionType =
   | 'LEADS_TO'
   | 'SUPPLEMENTS'
 
-function mapRelationKindToConnectionType(
-  kind: string,
-): SembleConnectionType {
+function mapRelationKindToConnectionType(kind: string): SembleConnectionType {
   switch (kind) {
     case 'supports':
     case 'evidence_for':
@@ -57,7 +55,11 @@ export function useExportCollectionToSembleMutation() {
   const agent = useAgent()
   const {currentAccount} = useSession()
 
-  return useMutation<SembleExportResult, Error, {collection: CivicTreeCollection}>({
+  return useMutation<
+    SembleExportResult,
+    Error,
+    {collection: CivicTreeCollection}
+  >({
     mutationFn: async ({collection}) => {
       const did = currentAccount?.did
       if (!did) throw new Error('Not authenticated')
@@ -88,10 +90,7 @@ export function useExportCollectionToSembleMutation() {
 
       // 2. Create cards for each item that has a URL or note
       const cardUris: string[] = []
-      const itemKeyToCardRef = new Map<
-        string,
-        {uri: string; cid: string}
-      >()
+      const itemKeyToCardRef = new Map<string, {uri: string; cid: string}>()
 
       for (const item of collection.items) {
         const itemUrl = getItemUrl(item)

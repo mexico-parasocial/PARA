@@ -8,7 +8,7 @@ import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {getCommunityInsignia} from '#/lib/civic-insignias'
-import {CIVIC_TREE_COPY,CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
+import {CIVIC_TREE_COPY, CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
 import {type CommunityGovernanceView} from '#/lib/community-governance'
 import {type UsePaletteValue} from '#/lib/hooks/usePalette'
 import {type NavigationProp} from '#/lib/routes/types'
@@ -92,18 +92,16 @@ export function CommunityAbout({
 }) {
   const t = useTheme()
   const navigation = useNavigation<NavigationProp>()
-  const { _} = useLingui()
+  const {_} = useLingui()
   const [showEstandarte, setShowEstandarte] = useState(true)
   const [showChildren, setShowChildren] = useState(false)
 
-  const {
-    data: relationsData,
-    isLoading: relationsLoading,
-  } = useCommunityRelationsQuery({
-    communityUri: board?.uri,
-    relation: 'parentChild',
-    limit: 50,
-  })
+  const {data: relationsData, isLoading: relationsLoading} =
+    useCommunityRelationsQuery({
+      communityUri: board?.uri,
+      relation: 'parentChild',
+      limit: 50,
+    })
 
   const rules = [
     'Be respectful and civil',
@@ -589,7 +587,9 @@ export function CommunityAbout({
               <TouchableOpacity
                 accessibilityRole="button"
                 accessibilityLabel={_(msg`View child communities`)}
-                accessibilityHint={_(msg`Expands or collapses the list of child communities`)}
+                accessibilityHint={_(
+                  msg`Expands or collapses the list of child communities`,
+                )}
                 onPress={() => setShowChildren(v => !v)}
                 style={{
                   flexDirection: 'row',

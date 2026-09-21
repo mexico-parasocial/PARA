@@ -131,8 +131,7 @@ export class Convo {
       id: string
       message: chat.bsky.convo.defs.MessageInput
       optimisticEmbedView?:
-        | $Typed<AppBskyEmbedRecord.View>
-        | $Typed<ChatBskyEmbedJoinLink.View>
+        $Typed<AppBskyEmbedRecord.View> | $Typed<ChatBskyEmbedJoinLink.View>
       optimisticReplyTo?: $Typed<ChatBskyConvoDefs.MessageView>
     }
   > = new Map()
@@ -716,8 +715,7 @@ export class Convo {
   }
 
   private pendingFetchConvo:
-    | Promise<{convo: ChatBskyConvoDefs.ConvoView}>
-    | undefined
+    Promise<{convo: ChatBskyConvoDefs.ConvoView}> | undefined
   async fetchConvo() {
     if (this.pendingFetchConvo) return this.pendingFetchConvo
 
@@ -1033,8 +1031,7 @@ export class Convo {
   sendMessage(
     message: chat.bsky.convo.defs.MessageInput,
     optimisticEmbedView?:
-      | $Typed<AppBskyEmbedRecord.View>
-      | $Typed<ChatBskyEmbedJoinLink.View>,
+      $Typed<AppBskyEmbedRecord.View> | $Typed<ChatBskyEmbedJoinLink.View>,
     optimisticReplyTo?: $Typed<ChatBskyConvoDefs.MessageView>,
   ) {
     // Ignore empty messages for now since they have no other purpose atm

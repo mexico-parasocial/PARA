@@ -7,11 +7,7 @@ const RQKEY_ROOT = 'community-shared-content'
 const COMMUNITY_BOARDS_RQKEY_ROOT = 'community-boards'
 
 export type SharedContentType =
-  | 'post'
-  | 'cabildeo'
-  | 'collection'
-  | 'mapInitiative'
-  | 'external'
+  'post' | 'cabildeo' | 'collection' | 'mapInitiative' | 'external'
 
 export type SharedContentSubject = {
   uri: string
@@ -158,8 +154,8 @@ export function useCommunityRelationsQuery(
     staleTime: STALE.SECONDS.THIRTY,
     enabled: Boolean(
       options.communityUri ||
-        options.parentCommunityUri ||
-        options.childCommunityUri,
+      options.parentCommunityUri ||
+      options.childCommunityUri,
     ),
     queryKey: communityRelationsQueryKey(options),
     queryFn: async () => {

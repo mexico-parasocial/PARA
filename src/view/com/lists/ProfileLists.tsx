@@ -161,10 +161,7 @@ export function ProfileLists({
   // =
 
   const renderItem = useCallback(
-    ({
-      item,
-      index,
-    }: ListRenderItemInfo<Item>) => {
+    ({item, index}: ListRenderItemInfo<Item>) => {
       if (item === EMPTY) {
         return (
           <EmptyState

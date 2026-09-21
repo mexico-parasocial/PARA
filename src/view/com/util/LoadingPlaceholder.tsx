@@ -260,16 +260,36 @@ export function FeedLoadingPlaceholder({
           style={[styles.avatar, {borderRadius: 8}]}
         />
         <View style={[s.flex1, {gap: 6}]}>
-          <LoadingPlaceholder width="60%" height={12} style={{borderRadius: 4}} />
-          <LoadingPlaceholder width="40%" height={10} style={{borderRadius: 4}} />
+          <LoadingPlaceholder
+            width="60%"
+            height={12}
+            style={{borderRadius: 4}}
+          />
+          <LoadingPlaceholder
+            width="40%"
+            height={10}
+            style={{borderRadius: 4}}
+          />
         </View>
         <LoadingPlaceholder width={80} height={28} style={{borderRadius: 6}} />
       </View>
       {showLowerPlaceholder && (
         <View style={{marginTop: 10, gap: 6}}>
-          <LoadingPlaceholder width="95%" height={10} style={{borderRadius: 4}} />
-          <LoadingPlaceholder width="80%" height={10} style={{borderRadius: 4}} />
-          <LoadingPlaceholder width={100} height={10} style={{borderRadius: 4, marginTop: 4}} />
+          <LoadingPlaceholder
+            width="95%"
+            height={10}
+            style={{borderRadius: 4}}
+          />
+          <LoadingPlaceholder
+            width="80%"
+            height={10}
+            style={{borderRadius: 4}}
+          />
+          <LoadingPlaceholder
+            width={100}
+            height={10}
+            style={{borderRadius: 4, marginTop: 4}}
+          />
         </View>
       )}
     </View>

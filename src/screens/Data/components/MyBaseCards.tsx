@@ -13,7 +13,8 @@ export function ActionCard({
 }) {
   const t = useTheme()
   return (
-    <TouchableOpacity accessibilityRole="button"
+    <TouchableOpacity
+      accessibilityRole="button"
       style={[
         styles.actionCard,
         t.atoms.bg_contrast_25,
@@ -39,7 +40,8 @@ export function LedgerCard({
 }) {
   const t = useTheme()
   return (
-    <TouchableOpacity accessibilityRole="button"
+    <TouchableOpacity
+      accessibilityRole="button"
       style={[styles.ledgerCard, t.atoms.bg_contrast_25]}
       onPress={onPress}>
       <Text style={[styles.ledgerCardTitle, t.atoms.text]} numberOfLines={1}>

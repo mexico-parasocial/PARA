@@ -232,16 +232,13 @@ describe('VS entity helpers', () => {
 
     expect(options.some(option => option.id === 'p/Jalisco')).toBe(true)
     expect(options.some(option => option.id === 'p/Morena')).toBe(true)
-    expect(
-      options.find(option => option.id === 'p/Morena')?.group,
-    ).toBe('Partidos')
+    expect(options.find(option => option.id === 'p/Morena')?.group).toBe(
+      'Partidos',
+    )
   })
 
   it('normalizes party aliases into canonical comparison entities', () => {
-    expect(resolveVsEntities(['MORENA', 'PAN'])).toEqual([
-      'p/Morena',
-      'p/PAN',
-    ])
+    expect(resolveVsEntities(['MORENA', 'PAN'])).toEqual(['p/Morena', 'p/PAN'])
   })
 
   it('dedupes route entities before applying the fallback side', () => {
@@ -252,10 +249,7 @@ describe('VS entity helpers', () => {
   })
 
   it('accepts comma-delimited web route params', () => {
-    expect(resolveVsEntities('p/CDMX,p/Morena')).toEqual([
-      'p/CDMX',
-      'p/Morena',
-    ])
+    expect(resolveVsEntities('p/CDMX,p/Morena')).toEqual(['p/CDMX', 'p/Morena'])
   })
 
   it('prevents selecting the same entity on both sides', () => {

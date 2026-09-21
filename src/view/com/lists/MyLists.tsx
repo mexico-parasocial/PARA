@@ -28,7 +28,8 @@ const LOADING = {_reactKey: '__loading__' as const}
 const EMPTY = {_reactKey: '__empty__' as const}
 const ERROR_ITEM = {_reactKey: '__error__' as const}
 
-type Item = GraphDefs.ListView | typeof LOADING | typeof EMPTY | typeof ERROR_ITEM
+type Item =
+  GraphDefs.ListView | typeof LOADING | typeof EMPTY | typeof ERROR_ITEM
 
 function isListView(item: Item): item is GraphDefs.ListView {
   return !('_reactKey' in item)
@@ -105,13 +106,7 @@ export function MyLists({
   // =
 
   const renderItemInner = useCallback(
-    ({
-      item,
-      index,
-    }: {
-      item: Item
-      index: number
-    }) => {
+    ({item, index}: {item: Item; index: number}) => {
       if (item === EMPTY) {
         return (
           <View style={[a.flex_1, a.align_center, a.gap_sm, a.px_xl, a.pt_3xl]}>

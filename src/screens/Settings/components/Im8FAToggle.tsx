@@ -57,9 +57,7 @@ export function Im8FAToggle() {
 
   if (emailOn && !im8On) {
     return (
-      <SettingsList.BadgeText>
-        {_(msg`Email 2FA on`)}
-      </SettingsList.BadgeText>
+      <SettingsList.BadgeText>{_(msg`Email 2FA on`)}</SettingsList.BadgeText>
     )
   }
 

@@ -1,7 +1,5 @@
 export type ChatIdentityMode =
-  | 'civic_pseudonym'
-  | 'isolated_anonymous'
-  | 'public_profile'
+  'civic_pseudonym' | 'isolated_anonymous' | 'public_profile'
 
 export type ChatIdentitySurface =
   | 'matrix_community'

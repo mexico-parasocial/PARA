@@ -173,7 +173,10 @@ function SaveToCollectionDialogInner({
       <View style={styles.list}>
         {collections.length === 0 && !showCreate ? (
           <Text style={[styles.empty, t.atoms.text_contrast_medium]}>
-            <Trans>You do not have any collections yet. Create one to start your personal civic tree.</Trans>
+            <Trans>
+              You do not have any collections yet. Create one to start your
+              personal civic tree.
+            </Trans>
           </Text>
         ) : (
           collections.map(col => (
@@ -181,7 +184,9 @@ function SaveToCollectionDialogInner({
               key={col.id}
               accessibilityRole="button"
               accessibilityLabel={_(msg`Add to ${col.name}`)}
-              accessibilityHint={_(msg`Adds this item to the selected collection`)}
+              accessibilityHint={_(
+                msg`Adds this item to the selected collection`,
+              )}
               onPress={() => onSelect(col.id)}
               disabled={addMutation.isPending}
               style={[
@@ -236,7 +241,8 @@ function SaveToCollectionDialogInner({
               numberOfLines={2}
             />
             <View style={styles.createActions}>
-              <TouchableOpacity accessibilityRole="button"
+              <TouchableOpacity
+                accessibilityRole="button"
                 onPress={() => {
                   setShowCreate(false)
                   setNewName('')
@@ -246,7 +252,8 @@ function SaveToCollectionDialogInner({
                   <Trans>Cancel</Trans>
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity accessibilityRole="button"
+              <TouchableOpacity
+                accessibilityRole="button"
                 onPress={onCreate}
                 disabled={!newName.trim() || createMutation.isPending}>
                 <Text

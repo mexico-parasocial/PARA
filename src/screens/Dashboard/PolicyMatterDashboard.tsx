@@ -103,10 +103,7 @@ export function PolicyMatterDashboard({
   const routeMode = route.params?.mode as PolicyMatterMode | undefined
   const mode = forcedMode || routeMode
   const filterMode = route.params?.filter as
-    | 'Communities'
-    | 'Parties'
-    | 'Both'
-    | undefined
+    'Communities' | 'Parties' | 'Both' | undefined
 
   const onPressItem = (item: PolicyItem) => {
     navigation.navigate('PolicyDetails', {

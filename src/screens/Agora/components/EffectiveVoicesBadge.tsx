@@ -21,7 +21,10 @@ export function EffectiveVoicesBadge({
     rawVotes > 0 ? Math.round((effectiveVoices / rawVotes) * 100) : 0
 
   return (
-    <Pressable accessibilityRole="button" onPress={() => setShowTip(!showTip)} style={styles.wrap}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={() => setShowTip(!showTip)}
+      style={styles.wrap}>
       <View style={[a.flex_row, a.align_center, a.gap_xs]}>
         <View
           style={[

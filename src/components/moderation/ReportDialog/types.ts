@@ -9,7 +9,7 @@ import {
 import type * as Dialog from '#/components/Dialog'
 
 export type ReportSubjectConvoMessage = {
-view: 'convo' | 'message'
+  view: 'convo' | 'message'
   convoId: string
   message: ChatBskyConvoDefs.MessageView
 }

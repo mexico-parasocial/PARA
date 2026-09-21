@@ -210,7 +210,7 @@ export function MessageComposer({
                   nextFocusRef={() =>
                     composerInternalApiRef.current?.input
                       ?.element as unknown as
-                      {focus: () => void} | null | undefined                    
+                      {focus: () => void} | null | undefined
                   }>
                   <EmojiPicker.Trigger label={l`Open emoji picker`}>
                     {({props, state, control}) => (
@@ -276,7 +276,7 @@ export function MessageComposer({
                     (isBskyPostUrl(facet.value) ||
                       isBskyChatInviteUrl(facet.value))
                   ) {
-                  setEmbed(facet.value)
+                    setEmbed(facet.value)
                   }
                 }}
                 onRequestSubmit={req => {

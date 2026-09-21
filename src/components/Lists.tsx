@@ -152,8 +152,7 @@ let ListMaybePlaceholder = ({
   sideBorders?: boolean
   topBorder?: boolean
   emptyStateIcon?:
-    | React.ComponentType<Record<string, unknown>>
-    | React.ReactElement
+    React.ComponentType<Record<string, unknown>> | React.ReactElement
   emptyStateButton?: EmptyStateButtonProps
   useEmptyState?: boolean
 }): React.ReactNode => {

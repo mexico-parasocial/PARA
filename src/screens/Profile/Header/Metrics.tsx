@@ -86,7 +86,10 @@ export function ProfileHeaderMetrics({
           }>
           <InfluenceIcon size="md" style={[t.atoms.text, {top: 3}]} />
           <Text style={[a.font_semi_bold, t.atoms.text, a.text_md]}>
-            {formatCount(i18n, (profile as {influenceScore?: number}).influenceScore || 0)}{' '}
+            {formatCount(
+              i18n,
+              (profile as {influenceScore?: number}).influenceScore || 0,
+            )}{' '}
             <Text
               style={[t.atoms.text_contrast_medium, a.font_normal, a.text_md]}>
               influence
@@ -102,7 +105,10 @@ export function ProfileHeaderMetrics({
           onPress={() => navigation.navigate('SeeVotes', {did: profile.did})}>
           <VoteIcon size="md" style={[t.atoms.text]} />
           <Text style={[a.font_semi_bold, t.atoms.text, a.text_md]}>
-            {formatCount(i18n, (profile as {votesCount?: number}).votesCount || 0)}{' '}
+            {formatCount(
+              i18n,
+              (profile as {votesCount?: number}).votesCount || 0,
+            )}{' '}
             <Text
               style={[t.atoms.text_contrast_medium, a.font_normal, a.text_md]}>
               votes

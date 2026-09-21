@@ -95,7 +95,11 @@ export function useCreateRepresentativeNominationMutation() {
     onSuccess: nomination => {
       void queryClient.invalidateQueries({queryKey: [participationRoot]})
       void queryClient.invalidateQueries({
-        queryKey: [participationRoot, 'nominations', nomination.representativeId],
+        queryKey: [
+          participationRoot,
+          'nominations',
+          nomination.representativeId,
+        ],
       })
     },
   })
@@ -108,10 +112,7 @@ export function useUpdateRepresentativeNominationStatusMutation() {
       nominationId: string
       status: 'accepted' | 'declined' | 'expired'
     }) =>
-      updateRepresentativeNominationStatus(
-        input.nominationId,
-        input.status,
-      ),
+      updateRepresentativeNominationStatus(input.nominationId, input.status),
     onSuccess: () => {
       void queryClient.invalidateQueries({queryKey: [participationRoot]})
     },
@@ -128,12 +129,13 @@ export function useCreateRepresentativePajareoEntryMutation() {
       body: string
       subject?: RepresentativePajareoSubject
       jurisdiction?: RepresentativePajareoJurisdiction
-    }) => postPajareoEntry(input.representativeId, {
-      type: input.type,
-      body: input.body,
-      subject: input.subject,
-      jurisdiction: input.jurisdiction,
-    }).then(result => result.entry),
+    }) =>
+      postPajareoEntry(input.representativeId, {
+        type: input.type,
+        body: input.body,
+        subject: input.subject,
+        jurisdiction: input.jurisdiction,
+      }).then(result => result.entry),
     onSuccess: entry => {
       void queryClient.invalidateQueries({queryKey: [participationRoot]})
       void queryClient.invalidateQueries({
@@ -173,7 +175,10 @@ export function useCreateOfficialPajareoResponseMutation() {
       entityName?: string
       controllerDid?: string
       body: string
-    }) => postPajareoResponse(input.entryId, {body: input.body}).then(result => result.response),
+    }) =>
+      postPajareoResponse(input.entryId, {body: input.body}).then(
+        result => result.response,
+      ),
     onSuccess: response => {
       void queryClient.invalidateQueries({queryKey: [participationRoot]})
       void queryClient.invalidateQueries({

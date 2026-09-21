@@ -21,7 +21,8 @@ const CATEGORIES = [
 
 export function ArgumentStructureChart({balance}: Props) {
   const t = useTheme()
-  const total = balance.claims + balance.evidence + balance.questions + balance.rebuttals
+  const total =
+    balance.claims + balance.evidence + balance.questions + balance.rebuttals
 
   return (
     <View style={styles.container}>

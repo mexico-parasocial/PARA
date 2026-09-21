@@ -83,7 +83,8 @@ export function CommunityMembersScreen() {
           </Text>
         </Layout.Header.Content>
         <Layout.Header.Slot>
-          <TouchableOpacity accessibilityRole="button"
+          <TouchableOpacity
+            accessibilityRole="button"
             onPress={() => {
               if (!currentAccount?.did) return
               updatePrefs.mutate({
@@ -110,7 +111,8 @@ export function CommunityMembersScreen() {
         style={[a.px_md, a.py_sm]}
         contentContainerStyle={[a.gap_sm]}>
         {filters.map(f => (
-          <TouchableOpacity accessibilityRole="button"
+          <TouchableOpacity
+            accessibilityRole="button"
             key={f.key}
             onPress={() => setFilter(f.key)}
             style={[
@@ -188,16 +190,17 @@ function MemberRow({
   const t = useTheme()
 
   const riskBadge = member.badges.find(
-    (b) =>
+    b =>
       b.visibleInChat &&
       (b.severity === 'warning' || b.severity === 'critical'),
   )
   const contextBadge = member.badges.find(
-    (b) => b.visibleInChat && b.severity === 'info',
+    b => b.visibleInChat && b.severity === 'info',
   )
 
   return (
-    <TouchableOpacity accessibilityRole="button"
+    <TouchableOpacity
+      accessibilityRole="button"
       onPress={onPress}
       style={[
         styles.row,
@@ -219,7 +222,7 @@ function MemberRow({
             style={[a.text_md, a.font_bold, t.atoms.text]}
             numberOfLines={1}>
             {member.matrixUserId?.split(':')[0]?.replace('@', '') ??
-                member.did.slice(-8)}
+              member.did.slice(-8)}
           </Text>
 
           {contextBadge && (
@@ -243,10 +246,10 @@ function MemberRow({
       </View>
 
       {/* Positive badges count */}
-      {member.badges.filter((b) => !b.visibleInChat).length > 0 && (
+      {member.badges.filter(b => !b.visibleInChat).length > 0 && (
         <View style={styles.badgePill}>
           <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-            {member.badges.filter((b) => !b.visibleInChat).length} 🏅
+            {member.badges.filter(b => !b.visibleInChat).length} 🏅
           </Text>
         </View>
       )}

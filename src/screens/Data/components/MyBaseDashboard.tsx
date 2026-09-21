@@ -49,221 +49,228 @@ export function MyBaseDashboard({
         style={styles.container}
         contentContainerStyle={styles.contentContainer}>
         <View style={styles.section}>
-        <View style={styles.sectionHeaderRow}>
-          <Text style={[styles.sectionTitle, t.atoms.text]}>
-            <Trans>Your Affiliations</Trans>
-          </Text>
-          <View style={[styles.sectionCount, t.atoms.bg_contrast_25]}>
-            <Text style={[styles.sectionCountText, t.atoms.text_contrast_high]}>
-              {affiliations.length}
+          <View style={styles.sectionHeaderRow}>
+            <Text style={[styles.sectionTitle, t.atoms.text]}>
+              <Trans>Your Affiliations</Trans>
             </Text>
+            <View style={[styles.sectionCount, t.atoms.bg_contrast_25]}>
+              <Text
+                style={[styles.sectionCountText, t.atoms.text_contrast_high]}>
+                {affiliations.length}
+              </Text>
+            </View>
           </View>
-        </View>
-        <Text style={[styles.sectionSubtitle, t.atoms.text_contrast_medium]}>
-          <Trans>Your selected party and compass position.</Trans>
-        </Text>
+          <Text style={[styles.sectionSubtitle, t.atoms.text_contrast_medium]}>
+            <Trans>Your selected party and compass position.</Trans>
+          </Text>
 
-        <View
-          style={[
-            styles.affiliationCard,
-            t.atoms.bg_contrast_25,
-            t.atoms.border_contrast_low,
-          ]}>
-          {visibleAffiliations.length > 0 ? (
-            <View style={styles.affiliationList}>
-              {visibleAffiliations.map(affiliation => (
-                <View
-                  key={affiliation.id}
-                  style={[
-                    styles.affiliationRow,
-                    {
-                      borderColor: affiliation.color,
-                      backgroundColor: affiliation.color + '18',
-                    },
-                  ]}>
+          <View
+            style={[
+              styles.affiliationCard,
+              t.atoms.bg_contrast_25,
+              t.atoms.border_contrast_low,
+            ]}>
+            {visibleAffiliations.length > 0 ? (
+              <View style={styles.affiliationList}>
+                {visibleAffiliations.map(affiliation => (
                   <View
+                    key={affiliation.id}
                     style={[
-                      styles.affiliationDot,
-                      {backgroundColor: affiliation.color},
-                    ]}
-                  />
-                  <View style={styles.affiliationTextWrap}>
-                    <Text style={[styles.affiliationName, t.atoms.text]}>
-                      {affiliation.name}
-                    </Text>
-                    <Text
+                      styles.affiliationRow,
+                      {
+                        borderColor: affiliation.color,
+                        backgroundColor: affiliation.color + '18',
+                      },
+                    ]}>
+                    <View
                       style={[
-                        styles.affiliationType,
-                        t.atoms.text_contrast_medium,
-                      ]}>
-                      {formatAffiliationType(affiliation.type, _)}
-                    </Text>
+                        styles.affiliationDot,
+                        {backgroundColor: affiliation.color},
+                      ]}
+                    />
+                    <View style={styles.affiliationTextWrap}>
+                      <Text style={[styles.affiliationName, t.atoms.text]}>
+                        {affiliation.name}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.affiliationType,
+                          t.atoms.text_contrast_medium,
+                        ]}>
+                        {formatAffiliationType(affiliation.type, _)}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-              ))}
-            </View>
-          ) : (
-            <Text style={[styles.emptyAffiliationText, t.atoms.text]}>
-              <Trans>No affiliations selected yet.</Trans>
+                ))}
+              </View>
+            ) : (
+              <Text style={[styles.emptyAffiliationText, t.atoms.text]}>
+                <Trans>No affiliations selected yet.</Trans>
+              </Text>
+            )}
+
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={onPressAffiliations}
+              style={[
+                styles.secondaryAction,
+                t.atoms.bg_contrast_25,
+                {
+                  borderWidth: 1,
+                  borderColor: t.atoms.border_contrast_low.borderColor,
+                },
+              ]}>
+              <ShapesIcon size="md" style={t.atoms.text_contrast_medium} />
+              <Text style={[styles.secondaryActionText, t.atoms.text]}>
+                <Trans>Update compass position</Trans>
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.ledgerSection}>
+          <View style={styles.ledgerHeaderRow}>
+            <Text style={[styles.sectionTitle, t.atoms.text]}>
+              <Trans>Your Civic Ledger</Trans>
             </Text>
-          )}
+          </View>
+
+          <View style={styles.grid}>
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={onPressSeeVotes}
+              style={[
+                styles.widgetCard,
+                t.atoms.bg_contrast_25,
+                t.atoms.border_contrast_low,
+              ]}>
+              <View
+                style={[
+                  styles.widgetIconWrap,
+                  {backgroundColor: t.palette.primary_500 + '25'},
+                ]}>
+                <ListIcon size="lg" style={{color: t.palette.primary_400}} />
+              </View>
+              <View style={styles.widgetContent}>
+                <Text style={[styles.widgetTitle, t.atoms.text]}>
+                  <Trans>Votes</Trans>
+                </Text>
+                <Text style={[styles.widgetDesc, t.atoms.text_contrast_medium]}>
+                  <Trans>{votedCount} policy decisions</Trans>
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={onPressSeePosts}
+              style={[
+                styles.widgetCard,
+                t.atoms.bg_contrast_25,
+                t.atoms.border_contrast_low,
+              ]}>
+              <View
+                style={[
+                  styles.widgetIconWrap,
+                  {backgroundColor: t.palette.yellow + '15'},
+                ]}>
+                <DocumentIcon size="lg" style={{color: t.palette.yellow}} />
+              </View>
+              <View style={styles.widgetContent}>
+                <Text style={[styles.widgetTitle, t.atoms.text]}>
+                  <Trans>Posts</Trans>
+                </Text>
+                <Text style={[styles.widgetDesc, t.atoms.text_contrast_medium]}>
+                  <Trans>Public activity and highlights</Trans>
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={onPressRAQ}
+              style={[
+                styles.widgetCard,
+                t.atoms.bg_contrast_25,
+                t.atoms.border_contrast_low,
+              ]}>
+              <View
+                style={[
+                  styles.widgetIconWrap,
+                  {backgroundColor: t.palette.positive_500 + '15'},
+                ]}>
+                <TrendingIcon
+                  size="lg"
+                  style={{color: t.palette.positive_500}}
+                />
+              </View>
+              <View style={styles.widgetContent}>
+                <Text style={[styles.widgetTitle, t.atoms.text]}>
+                  <Trans>RAQs</Trans>
+                </Text>
+                <Text style={[styles.widgetDesc, t.atoms.text_contrast_medium]}>
+                  <Trans>Open questions and readiness</Trans>
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        <View style={styles.exploreGrid}>
+          <TouchableOpacity
+            accessibilityRole="button"
+            style={[
+              styles.policyTreeButton,
+              {backgroundColor: t.palette.primary_500},
+            ]}
+            onPress={onPressCivicTree}
+            activeOpacity={0.8}>
+            <TreeIcon size="xl" style={{color: 'white'}} />
+            <View style={styles.policyTreeCopy}>
+              <Text style={styles.policyTreeText}>
+                {CIVIC_TREE_LABELS.personal}
+              </Text>
+              <Text style={styles.policyTreeDesc}>
+                {CIVIC_TREE_COPY.personalPrivate}
+              </Text>
+            </View>
+          </TouchableOpacity>
 
           <TouchableOpacity
             accessibilityRole="button"
-            onPress={onPressAffiliations}
-            style={[
-              styles.secondaryAction,
-              t.atoms.bg_contrast_25,
-              {
-                borderWidth: 1,
-                borderColor: t.atoms.border_contrast_low.borderColor,
-              },
-            ]}>
-            <ShapesIcon size="md" style={t.atoms.text_contrast_medium} />
-            <Text style={[styles.secondaryActionText, t.atoms.text]}>
-              <Trans>Update compass position</Trans>
-            </Text>
+            style={[styles.policyTreeButton, {backgroundColor: '#5b5f97'}]}
+            onPress={onPressSpatialDeliberation}
+            activeOpacity={0.8}>
+            <ShapesIcon size="xl" style={{color: 'white'}} />
+            <View style={styles.policyTreeCopy}>
+              <Text style={styles.policyTreeText}>
+                {CIVIC_TREE_LABELS.community}
+              </Text>
+              <Text style={styles.policyTreeDesc}>
+                {CIVIC_TREE_COPY.communityPublic}
+              </Text>
+            </View>
           </TouchableOpacity>
         </View>
-      </View>
 
-      <View style={styles.ledgerSection}>
-        <View style={styles.ledgerHeaderRow}>
-          <Text style={[styles.sectionTitle, t.atoms.text]}>
-            <Trans>Your Civic Ledger</Trans>
-          </Text>
-        </View>
-
-        <View style={styles.grid}>
-          <TouchableOpacity
-            accessibilityRole="button"
-            onPress={onPressSeeVotes}
-            style={[
-              styles.widgetCard,
-              t.atoms.bg_contrast_25,
-              t.atoms.border_contrast_low,
-            ]}>
-            <View
-              style={[
-                styles.widgetIconWrap,
-                {backgroundColor: t.palette.primary_500 + '25'},
-              ]}>
-              <ListIcon size="lg" style={{color: t.palette.primary_400}} />
-            </View>
-            <View style={styles.widgetContent}>
-              <Text style={[styles.widgetTitle, t.atoms.text]}>
-                <Trans>Votes</Trans>
-              </Text>
-              <Text style={[styles.widgetDesc, t.atoms.text_contrast_medium]}>
-                <Trans>{votedCount} policy decisions</Trans>
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            accessibilityRole="button"
-            onPress={onPressSeePosts}
-            style={[
-              styles.widgetCard,
-              t.atoms.bg_contrast_25,
-              t.atoms.border_contrast_low,
-            ]}>
-            <View
-              style={[
-                styles.widgetIconWrap,
-                {backgroundColor: t.palette.yellow + '15'},
-              ]}>
-              <DocumentIcon size="lg" style={{color: t.palette.yellow}} />
-            </View>
-            <View style={styles.widgetContent}>
-              <Text style={[styles.widgetTitle, t.atoms.text]}>
-                <Trans>Posts</Trans>
-              </Text>
-              <Text style={[styles.widgetDesc, t.atoms.text_contrast_medium]}>
-                <Trans>Public activity and highlights</Trans>
-              </Text>
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            accessibilityRole="button"
-            onPress={onPressRAQ}
-            style={[
-              styles.widgetCard,
-              t.atoms.bg_contrast_25,
-              t.atoms.border_contrast_low,
-            ]}>
-            <View
-              style={[
-                styles.widgetIconWrap,
-                {backgroundColor: t.palette.positive_500 + '15'},
-              ]}>
-              <TrendingIcon size="lg" style={{color: t.palette.positive_500}} />
-            </View>
-            <View style={styles.widgetContent}>
-              <Text style={[styles.widgetTitle, t.atoms.text]}>
-                <Trans>RAQs</Trans>
-              </Text>
-              <Text style={[styles.widgetDesc, t.atoms.text_contrast_medium]}>
-                <Trans>Open questions and readiness</Trans>
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <View style={styles.exploreGrid}>
         <TouchableOpacity
           accessibilityRole="button"
           style={[
-            styles.policyTreeButton,
-            {backgroundColor: t.palette.primary_500},
+            styles.viewProfileLink,
+            t.atoms.bg_contrast_25,
+            {
+              borderWidth: 1,
+              borderColor: t.atoms.border_contrast_low.borderColor,
+            },
           ]}
-          onPress={onPressCivicTree}
-          activeOpacity={0.8}>
-          <TreeIcon size="xl" style={{color: 'white'}} />
-          <View style={styles.policyTreeCopy}>
-            <Text style={styles.policyTreeText}>
-              {CIVIC_TREE_LABELS.personal}
+          onPress={onPressViewProfile}>
+          <View style={styles.viewProfileRow}>
+            <Text style={[styles.viewProfileText, t.atoms.text]}>
+              <Trans>View public passport</Trans>
             </Text>
-            <Text style={styles.policyTreeDesc}>
-              {CIVIC_TREE_COPY.personalPrivate}
-            </Text>
+            <ArrowRightIcon size="sm" style={t.atoms.text_contrast_medium} />
           </View>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          accessibilityRole="button"
-          style={[styles.policyTreeButton, {backgroundColor: '#5b5f97'}]}
-          onPress={onPressSpatialDeliberation}
-          activeOpacity={0.8}>
-          <ShapesIcon size="xl" style={{color: 'white'}} />
-          <View style={styles.policyTreeCopy}>
-            <Text style={styles.policyTreeText}>
-              {CIVIC_TREE_LABELS.community}
-            </Text>
-            <Text style={styles.policyTreeDesc}>
-              {CIVIC_TREE_COPY.communityPublic}
-            </Text>
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity
-        accessibilityRole="button"
-        style={[
-          styles.viewProfileLink,
-          t.atoms.bg_contrast_25,
-          {borderWidth: 1, borderColor: t.atoms.border_contrast_low.borderColor},
-        ]}
-        onPress={onPressViewProfile}>
-        <View style={styles.viewProfileRow}>
-          <Text style={[styles.viewProfileText, t.atoms.text]}>
-            <Trans>View public passport</Trans>
-          </Text>
-          <ArrowRightIcon size="sm" style={t.atoms.text_contrast_medium} />
-        </View>
-      </TouchableOpacity>
       </ScrollView>
     </Layout.Center>
   )

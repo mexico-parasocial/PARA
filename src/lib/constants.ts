@@ -5,13 +5,35 @@ import {api} from '@bsky/sdk'
 import {BLUESKY_PROXY_DID, CHAT_PROXY_DID, IS_DEV} from '#/env'
 import {type app} from '#/lexicons'
 
+/*
+ * A physical device cannot reach the dev machine on localhost, so the host is
+ * overridable. EXPO_PUBLIC_LOCAL_DEV_SERVICE replaces the whole URL;
+ * EXPO_PUBLIC_LOCAL_DEV_IP only swaps the hostname (ipconfig getifaddr en0).
+ */
+const LOCAL_DEV_IP = process.env.EXPO_PUBLIC_LOCAL_DEV_IP
+const LOCAL_DEV_SERVICE_OVERRIDE = process.env.EXPO_PUBLIC_LOCAL_DEV_SERVICE
+
 export const LOCAL_DEV_SERVICE =
-  Platform.OS === 'android' ? 'http://10.0.2.2:2583' : 'http://localhost:2583'
+  LOCAL_DEV_SERVICE_OVERRIDE ||
+  (LOCAL_DEV_IP
+    ? `http://${LOCAL_DEV_IP}:2583`
+    : Platform.OS === 'android'
+      ? 'http://10.0.2.2:2583'
+      : 'http://localhost:2583')
 export const STAGING_SERVICE = 'https://staging.bsky.dev'
 export const BSKY_SERVICE = 'https://bsky.social'
 export const BSKY_SERVICE_DID = 'did:web:bsky.social'
 export const PUBLIC_BSKY_SERVICE = 'https://public.api.bsky.app'
-export const DEFAULT_SERVICE = BSKY_SERVICE
+/*
+ * Opt-in so a dev build signs in and signs up against the local PDS instead of
+ * production, where the seeded .test accounts do not exist and signup runs the
+ * real captcha gate.
+ */
+const USE_LOCAL_DEV_SERVICE =
+  process.env.EXPO_PUBLIC_USE_LOCAL_DEV_SERVICE === '1'
+export const DEFAULT_SERVICE: string = USE_LOCAL_DEV_SERVICE
+  ? LOCAL_DEV_SERVICE
+  : BSKY_SERVICE
 const HELP_DESK_LANG = 'en-us'
 export const HELP_DESK_URL = `https://blueskyweb.zendesk.com/hc/${HELP_DESK_LANG}`
 export const CHAT_SERVICE = 'https://api.bsky.chat'
@@ -303,7 +325,7 @@ export const DEV_ENV_CHAT_DID = 'did:plc:ztgydimgwegx72nfqbfgurrb'
  * the pre-rewrite behavior where dev builds defaulted to the local PDS.
  */
 export const IS_LOCAL_DEV_MODE: boolean =
-  __DEV__ || DEFAULT_SERVICE === (LOCAL_DEV_SERVICE as string)
+  __DEV__ || DEFAULT_SERVICE === LOCAL_DEV_SERVICE
 
 export const POST_IMG_MAX = {
   width: 2000,
@@ -370,6 +392,39 @@ export function normalizeLocalServiceUrl(serviceUrl: string): string {
   } catch {
     return serviceUrl
   }
+}
+
+/**
+ * The appview's proxy target for an account on `serviceUrl`, in the
+ * `did#service_id` form a lex client's `service` option takes.
+ *
+ * A local dev PDS can only mint service auth for its own AppView, so proxying
+ * `app.bsky.*` to the production DID there fails every call with a 401 and the
+ * app reads that as an expired session. Point local accounts at the dev-env
+ * AppView instead (override with `EXPO_PUBLIC_LOCAL_BSKY_PROXY_DID`, whose DID
+ * is minted per dev-env data directory).
+ */
+export function getAppviewServiceForServiceUrl(serviceUrl?: string): Service {
+  const proxyDid = isLikelyLocalServiceUrl(serviceUrl)
+    ? LOCAL_DEV_APPVIEW_PROXY_DID
+    : BLUESKY_PROXY_DID
+  return `${proxyDid}#bsky_appview` as Service
+}
+
+/**
+ * The chat service's proxy target for an account on `serviceUrl`, in the
+ * `did#service_id` form a lex client's `service` option takes.
+ *
+ * The production chat service cannot resolve a DID minted on a local PLC, and
+ * answers `could not resolve iss did`, which the chat event bus reads as a lost
+ * session and logs the account out. Local accounts proxy to the dev-env chat
+ * service instead.
+ */
+export function getChatServiceForServiceUrl(serviceUrl?: string): Service {
+  const proxyDid = isLikelyLocalServiceUrl(serviceUrl)
+    ? LOCAL_DEV_CHAT_PROXY_DID
+    : CHAT_PROXY_DID
+  return `${proxyDid}#bsky_chat` as Service
 }
 
 export function getDmServiceHeadersForServiceUrl(serviceUrl?: string) {

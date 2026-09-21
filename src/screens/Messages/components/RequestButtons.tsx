@@ -130,7 +130,9 @@ export function RejectMenu({
               label={triggerProps.accessibilityLabel}
               color={color}
               size={size}>
-              {icon ? <ButtonIcon icon={CircleX_Stroke2_Corner0_Rounded} /> : null}
+              {icon ? (
+                <ButtonIcon icon={CircleX_Stroke2_Corner0_Rounded} />
+              ) : null}
               <ButtonText>
                 {label || (
                   <Trans comment="Reject a chat request, this opens a menu with options">

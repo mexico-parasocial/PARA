@@ -1,4 +1,4 @@
-import { createHash } from 'crypto'
+import {createHash} from 'crypto'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -73,12 +73,15 @@ export function registerIssuer(record: IssuerRecord): void {
 /**
  * Update an existing issuer record.
  */
-export function updateIssuer(did: string, updates: Partial<IssuerRecord>): void {
+export function updateIssuer(
+  did: string,
+  updates: Partial<IssuerRecord>,
+): void {
   const existing = REGISTRY.get(did)
   if (!existing) {
     throw new Error(`Issuer ${did} not found`)
   }
-  REGISTRY.set(did, { ...existing, ...updates })
+  REGISTRY.set(did, {...existing, ...updates})
 }
 
 /**
@@ -98,7 +101,10 @@ export function lookupIssuer(did: string): IssuerRecord | null {
 /**
  * List all registered issuers.
  */
-export function listIssuers(filter?: { country?: string; status?: string }): IssuerRecord[] {
+export function listIssuers(filter?: {
+  country?: string
+  status?: string
+}): IssuerRecord[] {
   let issuers = Array.from(REGISTRY.values())
   if (filter?.country) {
     issuers = issuers.filter(i => i.country === filter.country)
@@ -124,7 +130,7 @@ export function isIssuerActive(did: string): boolean {
  */
 export function evaluateTrust(
   issuerDid: string,
-  policy: TrustPolicy = DEFAULT_TRUST_POLICY
+  policy: TrustPolicy = DEFAULT_TRUST_POLICY,
 ): TrustPolicyResult {
   const errors: string[] = []
   const warnings: string[] = []
@@ -134,11 +140,11 @@ export function evaluateTrust(
   if (!issuer) {
     if (policy.allowedIssuers.length > 0) {
       errors.push(`Issuer ${issuerDid} not in allowed list`)
-      return { allowed: false, issuer: null, errors, warnings }
+      return {allowed: false, issuer: null, errors, warnings}
     }
     // Unknown issuer, but no whitelist — warn but allow
     warnings.push(`Unknown issuer: ${issuerDid}`)
-    return { allowed: true, issuer: null, errors, warnings }
+    return {allowed: true, issuer: null, errors, warnings}
   }
 
   // Check explicit blocklist
@@ -147,12 +153,18 @@ export function evaluateTrust(
   }
 
   // Check explicit allowlist
-  if (policy.allowedIssuers.length > 0 && !policy.allowedIssuers.includes(issuerDid)) {
+  if (
+    policy.allowedIssuers.length > 0 &&
+    !policy.allowedIssuers.includes(issuerDid)
+  ) {
     errors.push(`Issuer ${issuerDid} not in allowed list`)
   }
 
   // Check country restriction
-  if (policy.allowedCountries.length > 0 && !policy.allowedCountries.includes(issuer.country)) {
+  if (
+    policy.allowedCountries.length > 0 &&
+    !policy.allowedCountries.includes(issuer.country)
+  ) {
     errors.push(`Issuer country ${issuer.country} not allowed`)
   }
 
@@ -163,7 +175,9 @@ export function evaluateTrust(
 
   // Check key strength (mock — real would parse PEM)
   if (issuer.keyType === 'RSA' && policy.minKeyBits > 2048) {
-    warnings.push(`RSA key strength not verified (require ${policy.minKeyBits} bits)`)
+    warnings.push(
+      `RSA key strength not verified (require ${policy.minKeyBits} bits)`,
+    )
   }
 
   // Check issuer status
@@ -186,7 +200,7 @@ export function evaluateTrust(
  */
 export function createWhitelistPolicy(
   trustedDids: string[],
-  overrides: Partial<TrustPolicy> = {}
+  overrides: Partial<TrustPolicy> = {},
 ): TrustPolicy {
   return {
     ...DEFAULT_TRUST_POLICY,
@@ -200,7 +214,7 @@ export function createWhitelistPolicy(
  */
 export function createCountryPolicy(
   countries: string[],
-  overrides: Partial<TrustPolicy> = {}
+  overrides: Partial<TrustPolicy> = {},
 ): TrustPolicy {
   return {
     ...DEFAULT_TRUST_POLICY,
@@ -246,7 +260,8 @@ export function seedMexicanIssuers(): void {
       did: 'did:m8:ine:emisor-001',
       name: 'Instituto Nacional Electoral',
       country: 'MX',
-      publicKey: '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END PUBLIC KEY-----',
+      publicKey:
+        '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END PUBLIC KEY-----',
       keyType: 'RSA',
       addedAt: '2026-01-01T00:00:00Z',
       status: 'active',
@@ -258,7 +273,8 @@ export function seedMexicanIssuers(): void {
       did: 'did:m8:renapo:emisor-001',
       name: 'RENAPO',
       country: 'MX',
-      publicKey: '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END PUBLIC KEY-----',
+      publicKey:
+        '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END PUBLIC KEY-----',
       keyType: 'RSA',
       addedAt: '2026-01-01T00:00:00Z',
       status: 'active',
@@ -270,7 +286,8 @@ export function seedMexicanIssuers(): void {
       did: 'did:m8:cdmx:emisor-001',
       name: 'Gobierno CDMX',
       country: 'MX',
-      publicKey: '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END PUBLIC KEY-----',
+      publicKey:
+        '-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END PUBLIC KEY-----',
       keyType: 'Ed25519',
       addedAt: '2026-02-01T00:00:00Z',
       status: 'active',
