@@ -1,6 +1,7 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {issueParaVoteProof} from '#/lib/api/vote-proof'
+import {isQvlUnavailable} from '#/lib/qvl-status'
 import {STALE} from '#/state/queries'
 import {useAgent} from '#/state/session'
 
@@ -92,6 +93,11 @@ export interface QvlDeliberation {
   agreeCount: number
   disagreeCount: number
   passCount: number
+  /**
+   * The requesting viewer's own position, and only theirs — the AppView does
+   * not serve anyone else's side on an argument.
+   */
+  viewerDirection?: 'agree' | 'disagree' | 'pass'
   createdAt: string
 }
 
@@ -230,7 +236,13 @@ export function useQvlTallySimulationQuery(proposal: string) {
   const agent = useAgent()
   return useQuery<TallySimulation>({
     staleTime: STALE.SECONDS.THIRTY,
-    queryKey: qvlTallySimulationQueryKey(proposal),
+    queryKey: [
+      ...qvlTallySimulationQueryKey(proposal),
+      agent.session?.did ?? null,
+    ],
+    enabled: Boolean(proposal),
+    retry: (failureCount, error) =>
+      !isQvlUnavailable(error) && failureCount < 2,
     queryFn: async () => {
       const res = await agent.call('com.para.community.getTallySimulation', {
         proposal,

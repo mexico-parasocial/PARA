@@ -10,17 +10,24 @@ import {
   type NativeStackScreenProps,
   type NavigationProp,
 } from '#/lib/routes/types'
+import {
+  type QvlDeliberation,
+  useCastDeliberationVoteMutation,
+  useQvlDeliberationsQuery,
+} from '#/state/queries/qvl'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import * as SegmentedControl from '#/components/forms/SegmentedControl'
 import * as Layout from '#/components/Layout'
+import {Loader} from '#/components/Loader'
+import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {
   CommunityChip,
   EmptyState,
   ParticipationBar,
   PhaseBadge,
-  ShadowTallyChart,
+  QuadraticTallyPanel,
   SignalBadge,
   VoteComposer,
 } from './components'
@@ -54,16 +61,6 @@ interface Proposal {
     signal: number
     units: number
   }
-}
-
-interface DeliberationStatement {
-  uri: string
-  body: string
-  stance: 'for' | 'against' | 'neutral'
-  agreeCount: number
-  disagreeCount: number
-  passCount: number
-  yourVote?: 'agree' | 'disagree' | 'pass'
 }
 
 interface Delegation {
@@ -149,53 +146,6 @@ const MOCK_PROPOSALS: Proposal[] = [
     effectiveParticipants: '62.1',
     phase: 'open',
     closesAt: '2026-05-15T00:00:00Z',
-  },
-]
-
-const MOCK_DELIBERATIONS: DeliberationStatement[] = [
-  {
-    uri: 'at://did:web:local/delib/1',
-    body: 'Solar panels reduce long-term energy costs and create local green jobs.',
-    stance: 'for',
-    agreeCount: 89,
-    disagreeCount: 12,
-    passCount: 8,
-    yourVote: 'agree',
-  },
-  {
-    uri: 'at://did:web:local/delib/2',
-    body: 'The upfront capital requirement could strain the municipal budget for 3 years.',
-    stance: 'against',
-    agreeCount: 34,
-    disagreeCount: 67,
-    passCount: 15,
-    yourVote: 'agree',
-  },
-  {
-    uri: 'at://did:web:local/delib/3',
-    body: 'Maintenance contracts should be awarded locally, not to national chains.',
-    stance: 'for',
-    agreeCount: 112,
-    disagreeCount: 4,
-    passCount: 3,
-  },
-  {
-    uri: 'at://did:web:local/delib/4',
-    body: 'There is insufficient data on roof load capacity for older buildings.',
-    stance: 'neutral',
-    agreeCount: 45,
-    disagreeCount: 23,
-    passCount: 31,
-    yourVote: 'pass',
-  },
-  {
-    uri: 'at://did:web:local/delib/5',
-    body: 'Neighboring districts have seen 20% energy savings after similar installations.',
-    stance: 'for',
-    agreeCount: 156,
-    disagreeCount: 8,
-    passCount: 2,
-    yourVote: 'agree',
   },
 ]
 
@@ -334,10 +284,12 @@ function StanceBadge({stance}: {stance: 'for' | 'against' | 'neutral'}) {
 
 function StatementCard({
   statement,
-  onVote,
+  onTakeSide,
+  disabled,
 }: {
-  statement: DeliberationStatement
-  onVote: (uri: string, vote: 'agree' | 'disagree' | 'pass') => void
+  statement: QvlDeliberation
+  onTakeSide: (uri: string, direction: 'agree' | 'disagree' | 'pass') => void
+  disabled?: boolean
 }) {
   const t = useTheme()
   const total =
@@ -356,25 +308,26 @@ function StatementCard({
         t.atoms.border_contrast_low,
       ]}>
       <View style={[a.flex_row, a.align_center, a.gap_sm]}>
-        <StanceBadge stance={statement.stance} />
+        <StanceBadge stance={badgeStance(statement.stance)} />
       </View>
 
       <Text style={[a.text_sm, a.leading_snug, t.atoms.text]}>
         {statement.body}
       </Text>
 
-      {/* Vote bar */}
+      {/* Counts, and only counts: a position on an argument carries no
+          magnitude, so nobody can press harder than anybody else. */}
       <View style={[a.flex_row, a.gap_xs, a.mt_xs]}>
         <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-          <Trans>Agree</Trans> {statement.agreeCount}
+          <Trans>De acuerdo</Trans> {statement.agreeCount}
         </Text>
         <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>|</Text>
         <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-          <Trans>Disagree</Trans> {statement.disagreeCount}
+          <Trans>En contra</Trans> {statement.disagreeCount}
         </Text>
         <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>|</Text>
         <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-          <Trans>Pass</Trans> {statement.passCount}
+          <Trans>Leído</Trans> {statement.passCount}
         </Text>
       </View>
 
@@ -409,39 +362,34 @@ function StatementCard({
         />
       </View>
 
-      {/* Vote pills */}
+      {/* For or against, unweighted. `pass` records having read an argument
+          without taking a side. */}
       <View style={[a.flex_row, a.gap_sm, a.mt_xs]}>
-        {(['agree', 'disagree', 'pass'] as const).map(vote => {
-          const isActive = statement.yourVote === vote
-          const colors = {
-            agree: {
-              bg: t.palette.positive_500,
-              text: '#fff',
-            },
-            disagree: {
-              bg: t.palette.negative_500,
-              text: '#fff',
-            },
-            pass: {
-              bg: t.atoms.bg_contrast_100.backgroundColor,
-              text: t.atoms.text_contrast_medium.color,
-            },
-          }
+        {(['agree', 'disagree', 'pass'] as const).map(side => {
+          const isActive = statement.viewerDirection === side
+          const activeBg = {
+            agree: t.palette.positive_500,
+            disagree: t.palette.negative_500,
+            pass: t.atoms.bg_contrast_100.backgroundColor,
+          }[side]
+          const activeText = side === 'pass' ? t.atoms.text.color : '#fff'
           return (
             <Pressable
               accessibilityRole="button"
-              key={vote}
-              onPress={() => onVote(statement.uri, vote)}
+              key={side}
+              disabled={disabled}
+              onPress={() => onTakeSide(statement.uri, side)}
               style={[
                 a.flex_1,
                 a.align_center,
                 a.justify_center,
                 a.rounded_md,
                 {
-                  paddingVertical: 6,
+                  paddingVertical: 10,
                   backgroundColor: isActive
-                    ? colors[vote].bg
+                    ? activeBg
                     : t.atoms.bg_contrast_100.backgroundColor,
+                  opacity: disabled ? 0.6 : 1,
                 },
               ]}>
               <Text
@@ -450,13 +398,13 @@ function StatementCard({
                   a.text_xs,
                   {
                     color: isActive
-                      ? colors[vote].text
+                      ? activeText
                       : t.atoms.text_contrast_medium.color,
                   },
                 ]}>
-                {vote === 'agree' && <Trans>Agree</Trans>}
-                {vote === 'disagree' && <Trans>Disagree</Trans>}
-                {vote === 'pass' && <Trans>Pass</Trans>}
+                {side === 'agree' && <Trans>De acuerdo</Trans>}
+                {side === 'disagree' && <Trans>En contra</Trans>}
+                {side === 'pass' && <Trans>Leído</Trans>}
               </Text>
             </Pressable>
           )
@@ -464,6 +412,15 @@ function StatementCard({
       </View>
     </View>
   )
+}
+
+/**
+ * The lexicon also knows `amendment` and `question`, which the badge has no
+ * colour for; they read as neutral rather than being forced onto a side.
+ */
+function badgeStance(stance: string): 'for' | 'against' | 'neutral' {
+  if (stance === 'for' || stance === 'against') return stance
+  return 'neutral'
 }
 
 function DelegationCard({
@@ -538,47 +495,6 @@ function DelegationCard({
           </Button>
         </View>
       )}
-    </View>
-  )
-}
-
-function MetricCard({
-  label,
-  value,
-  color,
-}: {
-  label: string
-  value: string
-  color: string
-}) {
-  const t = useTheme()
-
-  return (
-    <View
-      style={[
-        a.flex_1,
-        a.rounded_md,
-        a.p_md,
-        a.align_center,
-        a.gap_xs,
-        {
-          backgroundColor: t.atoms.bg_contrast_100.backgroundColor,
-          minWidth: 120,
-        },
-      ]}>
-      <Text style={[a.font_bold, a.text_lg, {color}]}>{value}</Text>
-      <Text
-        style={[
-          a.text_xs,
-          a.text_center,
-          t.atoms.text_contrast_medium,
-          {
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
-          },
-        ]}>
-        {label}
-      </Text>
     </View>
   )
 }
@@ -752,8 +668,11 @@ export function ProposalDetailScreen({route}: Props) {
     [],
   )
 
+  const deliberations = useQvlDeliberationsQuery(route.params.proposalUri)
+  const takeSide = useCastDeliberationVoteMutation()
+
   const sortedDeliberations = useMemo(() => {
-    const sorted = [...MOCK_DELIBERATIONS]
+    const sorted = [...(deliberations.data ?? [])]
     if (deliberationSort === 'consensus') {
       sorted.sort((a, b) => {
         const aTotal = a.agreeCount + a.disagreeCount + a.passCount
@@ -764,7 +683,21 @@ export function ProposalDetailScreen({route}: Props) {
       })
     }
     return sorted
-  }, [deliberationSort])
+  }, [deliberationSort, deliberations.data])
+
+  const onTakeSide = useCallback(
+    (uri: string, direction: 'agree' | 'disagree' | 'pass') => {
+      takeSide.mutate(
+        {deliberation: uri, direction},
+        {
+          onError: () => {
+            Toast.show(_(msg`No se pudo registrar tu postura.`))
+          },
+        },
+      )
+    },
+    [takeSide, _],
+  )
 
   const tabLabel = useCallback(
     (tab: DetailTab): string => {
@@ -1044,7 +977,7 @@ export function ProposalDetailScreen({route}: Props) {
               {/* Header row */}
               <View style={[a.flex_row, a.align_center, a.justify_between]}>
                 <Text style={[a.font_semi_bold, a.text_sm, t.atoms.text]}>
-                  {MOCK_DELIBERATIONS.length} <Trans>Statements</Trans>
+                  {sortedDeliberations.length} <Trans>Statements</Trans>
                 </Text>
                 <View style={[a.flex_row, a.gap_xs]}>
                   <Pressable
@@ -1112,15 +1045,28 @@ export function ProposalDetailScreen({route}: Props) {
               </Button>
 
               {/* Statements */}
-              {sortedDeliberations.map(statement => (
-                <StatementCard
-                  key={statement.uri}
-                  statement={statement}
-                  onVote={() => {
-                    // TODO: wire to qvl hooks
-                  }}
+              {deliberations.isPending ? (
+                <View style={[a.py_xl, a.align_center]}>
+                  <Loader size="lg" />
+                </View>
+              ) : sortedDeliberations.length === 0 ? (
+                <EmptyState
+                  icon="💬"
+                  title={_(msg`Todavía no hay argumentos`)}
+                  message={_(
+                    msg`Sé quien abra el debate sobre esta propuesta.`,
+                  )}
                 />
-              ))}
+              ) : (
+                sortedDeliberations.map(statement => (
+                  <StatementCard
+                    key={statement.uri}
+                    statement={statement}
+                    onTakeSide={onTakeSide}
+                    disabled={takeSide.isPending}
+                  />
+                ))
+              )}
             </View>
           )}
 
@@ -1210,49 +1156,7 @@ export function ProposalDetailScreen({route}: Props) {
 
           {activeTab === 'tally' && (
             <View style={[a.gap_lg]}>
-              {/* Shadow Tally Chart */}
-              <View
-                style={[
-                  a.p_lg,
-                  a.rounded_md,
-                  a.border,
-                  a.gap_md,
-                  t.atoms.bg,
-                  t.atoms.border_contrast_low,
-                ]}>
-                <Text style={[a.font_semi_bold, a.text_sm, t.atoms.text]}>
-                  <Trans>Shadow Tally Comparison</Trans>
-                </Text>
-                <ShadowTallyChart
-                  flat={proposal.flatAvg}
-                  sqrtN={proposal.sqrtNAvg}
-                  correlation={proposal.correlationAvg}
-                />
-              </View>
-
-              {/* Metrics Grid */}
-              <View style={[a.flex_row, a.flex_wrap, a.gap_sm]}>
-                <MetricCard
-                  label={_(msg`Max Weight Ratio`)}
-                  value={`${Math.round(Number(proposal.maxWeightRatio) * 100)}%`}
-                  color={t.palette.yellow}
-                />
-                <MetricCard
-                  label={_(msg`Effective Participants`)}
-                  value={proposal.effectiveParticipants}
-                  color={t.palette.positive_500}
-                />
-                <MetricCard
-                  label={_(msg`Direct Vote %`)}
-                  value={`${Math.round(Number(proposal.maxWeightRatio) * 100)}%`}
-                  color={t.palette.primary_500}
-                />
-                <MetricCard
-                  label={_(msg`Revocation Rate`)}
-                  value="2.1%"
-                  color={t.palette.negative_500}
-                />
-              </View>
+              <QuadraticTallyPanel proposalUri={route.params.proposalUri} />
 
               {/* Vote Distribution */}
               <View

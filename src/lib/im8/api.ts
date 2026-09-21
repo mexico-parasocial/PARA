@@ -315,7 +315,6 @@ export async function postIdentityVerify(
 export async function postCivicVoteProof(payload: {
   subjectUri: string
   subjectType: M8CivicVoteProof['subjectType']
-  aliasDid?: string
 }): Promise<M8CivicVoteProof> {
   const res = await m8Fetch('/identity/civic-vote-proof', {
     method: 'POST',
