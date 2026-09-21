@@ -1,5 +1,4 @@
 import {type CivicTreeItem} from '#/state/queries/collection-items'
-
 import {canContributeItem, contributionFromItem} from '../contribution'
 
 const item = (over: Partial<CivicTreeItem> = {}): CivicTreeItem => ({

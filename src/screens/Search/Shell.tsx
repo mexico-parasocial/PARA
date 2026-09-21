@@ -67,7 +67,6 @@ import {account, useStorage} from '#/storage'
 import type * as bsky from '#/types/bsky'
 import {AdvancedSearchDialog} from './components/AdvancedSearchDialog'
 import {AutocompleteResults} from './components/AutocompleteResults'
-import {DetectedLanguagesAdmonition} from './components/DetectedLanguagesAdmonition'
 import {SearchAutocompleteInput} from './components/SearchAutocompleteInput'
 import {SearchHistory} from './components/SearchHistory'
 import {Explore} from './Explore'
@@ -129,7 +128,7 @@ export function SearchScreenShell({
    * advanced dialog promotes it to a structured `from=me` filter and removes
    * it from `q`; the API layer reconstructs the operator for post search.
    */
-  const {query, fromMe, filters, setFilters, hasFilters} = useQueryManager({
+  const {query, fromMe, filters, hasFilters} = useQueryManager({
     initialQuery: queryParam,
     fixedParams,
   })
@@ -212,13 +211,6 @@ export function SearchScreenShell({
   )
 
   const showFilters = Boolean((query || hasFilters) && !showAutocomplete)
-
-  const onChangeLang = useCallback(
-    (lang: string) => {
-      setFilters({...filters, lang: lang || undefined})
-    },
-    [filters, setFilters],
-  )
 
   // web only - measure header height for sticky positioning
   const [headerHeight, setHeaderHeight] = useState(0)

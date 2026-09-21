@@ -4,13 +4,13 @@ import {Trans, useLingui} from '@lingui/react/macro'
 
 import {Text} from '#/view/com/util/text/Text'
 import {atoms as a, useTheme} from '#/alf'
+import {CARD_TYPE_COLORS} from '#/features/civicTree/colors'
 import {
   buildTopicClusters,
   type TopicCluster,
   type TopicGraphData,
   untopicedNodes,
 } from '#/features/communityCivicTree/topics'
-import {CARD_TYPE_COLORS} from '#/features/civicTree/colors'
 
 /*
  * What the community is working on, ordered by how many members are working on
@@ -63,6 +63,7 @@ export function CommunityTopicRail({
             <TouchableOpacity
               accessibilityRole="button"
               accessibilityLabel={l`Propose a topic`}
+              accessibilityHint={l`Opens the form to propose a topic`}
               onPress={onAddTopic}>
               <Text
                 style={[

@@ -1,5 +1,5 @@
 import {useRef, useState} from 'react'
-import {type TextInput, View} from 'react-native'
+import {View} from 'react-native'
 import {useLingui} from '@lingui/react/macro'
 
 import {atoms as a, useTheme} from '#/alf'

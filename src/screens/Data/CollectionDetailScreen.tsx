@@ -13,10 +13,6 @@ import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation, useRoute} from '@react-navigation/native'
 
-import {
-  canContributeItem,
-  contributionFromItem,
-} from '#/features/civicTree/contribution'
 import {buildPersonalCivicTreeVaultManifest} from '#/lib/civic-export/obsidian'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
@@ -33,9 +29,6 @@ import {useExportCollectionToSembleMutation} from '#/state/queries/sembe'
 import {useSession} from '#/state/session'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
-import {AddTreeItemDialog} from '#/features/personalCivicTree/components/AddTreeItemDialog'
-import {ConnectTreeItemsDialog} from '#/features/personalCivicTree/components/ConnectTreeItemsDialog'
-import {ContributeToCommunityTreeDialog} from '#/features/communityCivicTree/components/ContributeToCommunityTreeDialog'
 import * as Dialog from '#/components/Dialog'
 import {ArrowCornerDownRight_Stroke2_Corner2_Rounded as ConnectIcon} from '#/components/icons/ArrowCornerDownRight'
 import {
@@ -45,11 +38,18 @@ import {
 import {Pencil_Stroke2_Corner0_Rounded as PencilIcon} from '#/components/icons/Pencil'
 import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/Plus'
 import {SquareArrowTopRight_Stroke2_Corner0_Rounded as ExportIcon} from '#/components/icons/SquareArrowTopRight'
-import {Tree_Stroke2_Corner0_Rounded as TreeIcon} from '#/components/icons/Tree'
 import {Trash_Stroke2_Corner0_Rounded as TrashIcon} from '#/components/icons/Trash'
+import {Tree_Stroke2_Corner0_Rounded as TreeIcon} from '#/components/icons/Tree'
 import * as Layout from '#/components/Layout'
 import * as Prompt from '#/components/Prompt'
 import * as Toast from '#/components/Toast'
+import {
+  canContributeItem,
+  contributionFromItem,
+} from '#/features/civicTree/contribution'
+import {ContributeToCommunityTreeDialog} from '#/features/communityCivicTree/components/ContributeToCommunityTreeDialog'
+import {AddTreeItemDialog} from '#/features/personalCivicTree/components/AddTreeItemDialog'
+import {ConnectTreeItemsDialog} from '#/features/personalCivicTree/components/ConnectTreeItemsDialog'
 
 export function CollectionDetailScreen() {
   const {_} = useLingui()

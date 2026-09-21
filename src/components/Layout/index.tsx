@@ -11,8 +11,8 @@ import Animated, {
 } from 'react-native-reanimated'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
 
-import {useShellLayout} from '#/state/shell/shell-layout'
 import {useEnableMinimalShellModeForScreen} from '#/state/shell'
+import {useShellLayout} from '#/state/shell/shell-layout'
 import {useIsWithinSplitView} from '#/screens/Messages/components/splitView/context'
 import {
   atoms as a,

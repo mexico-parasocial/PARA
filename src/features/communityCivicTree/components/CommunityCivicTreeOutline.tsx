@@ -200,7 +200,8 @@ export function CommunityCivicTreeOutline({
               a.mb_sm,
               t.atoms.text_contrast_medium,
             ]}
-            accessibilityLabel={l`Unconnected cards`}>
+            accessibilityLabel={l`Unconnected cards`}
+            accessibilityHint={l`Lists cards that are not yet connected to the tree`}>
             <Trans>Not yet connected</Trans>
           </Text>
           {loose.map(branch => (
@@ -253,6 +254,11 @@ function OutlineBranch({
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel={isCollapsed ? l`Expand` : l`Collapse`}
+            accessibilityHint={
+              isCollapsed
+                ? l`Shows this branch's children`
+                : l`Hides this branch's children`
+            }
             onPress={() => onToggle(node.id)}
             hitSlop={8}
             style={[a.pt_sm, {width: 20}]}>
@@ -267,6 +273,7 @@ function OutlineBranch({
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel={node.title}
+          accessibilityHint={l`Opens this node's details`}
           onPress={() => onNodePress(node.id)}
           style={[
             a.flex_1,

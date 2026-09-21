@@ -12,14 +12,7 @@ import {useQueryClient} from '@tanstack/react-query'
 
 import {useAppState} from '#/lib/appState'
 import {Convo} from '#/state/messages/convo/agent'
-import {
-  type ConvoParams,
-  type ConvoState,
-  type ConvoStateBackgrounded,
-  type ConvoStateDisabled,
-  type ConvoStateReady,
-  type ConvoStateSuspended,
-} from '#/state/messages/convo/types'
+import {type ConvoParams, type ConvoState} from '#/state/messages/convo/types'
 import {isConvoActive} from '#/state/messages/convo/util'
 import {useMessagesEventBus} from '#/state/messages/events'
 import {

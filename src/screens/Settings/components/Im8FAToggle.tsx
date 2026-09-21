@@ -5,11 +5,11 @@ import {useLingui} from '@lingui/react'
 import {getM8AccessToken, restoreM8Session} from '#/lib/im8/api'
 import {authenticateBiometric} from '#/lib/im8/biometric'
 import {openM8Verification} from '#/lib/im8/linking'
-import {useSession} from '#/state/session'
 import {
   useAuthFactorQuery,
   useSetAuthFactorMutation,
 } from '#/state/queries/auth-factor'
+import {useSession} from '#/state/session'
 import * as SettingsList from './SettingsList'
 
 export function Im8FAToggle() {

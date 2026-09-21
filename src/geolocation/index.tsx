@@ -24,8 +24,8 @@ export {
   geoForScope,
   type GeoScope,
   resolveStateFromCoordinate,
-  snapGeoToGridE7,
   type ScopedGeo,
+  snapGeoToGridE7,
 } from '#/geolocation/geoScope'
 export {
   type AccurateLocation,

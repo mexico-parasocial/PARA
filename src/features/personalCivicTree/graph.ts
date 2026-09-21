@@ -5,7 +5,6 @@ import {
   getCivicTreeItemKind,
   getCivicTreeItemTitle,
 } from '#/state/queries/collection-items'
-
 import {
   getCollectionColor,
   PERSONAL_ITEM_KIND_COLORS,

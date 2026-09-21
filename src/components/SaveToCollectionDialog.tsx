@@ -4,7 +4,6 @@ import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
-import {CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
 import {
   useAddToCollectionMutation,
   useCollectionsQuery,
@@ -16,6 +15,7 @@ import * as Dialog from '#/components/Dialog'
 import {Bookmark as BookmarkIcon} from '#/components/icons/Bookmark'
 import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/Plus'
 import * as Toast from '#/components/Toast'
+import {CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
 
 export function SaveToCollectionDialog({
   control,

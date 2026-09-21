@@ -3,7 +3,7 @@ import {AppBskyDraftCreateDraft, type AppBskyDraftDefs} from '@atproto/api'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {isNetworkError} from '#/lib/strings/errors'
-import {useAppviewClient, useChatClient, useAgent} from '#/state/session'
+import {useAgent, useAppviewClient, useChatClient} from '#/state/session'
 import {type ComposerState} from '#/view/com/composer/state/composer'
 import {useAnalytics} from '#/analytics'
 import {

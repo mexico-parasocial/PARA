@@ -4,7 +4,6 @@ import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
-import {CIVIC_TREE_COPY, CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
 import {type PoliticalAffiliation} from '#/lib/political-affiliations'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
@@ -15,6 +14,7 @@ import {PageText_Stroke2_Corner0_Rounded as DocumentIcon} from '#/components/ico
 import {Shapes_Stroke2_Corner0_Rounded as ShapesIcon} from '#/components/icons/Shapes'
 import {Tree_Stroke2_Corner0_Rounded as TreeIcon} from '#/components/icons/Tree'
 import * as Layout from '#/components/Layout'
+import {CIVIC_TREE_COPY, CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
 
 export function MyBaseDashboard({
   votedCount,

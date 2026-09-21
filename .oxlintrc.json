@@ -49,6 +49,7 @@
     }
   },
   "ignorePatterns": [
+    "indigo-main/**",
     "**/__mocks__/*.ts",
     "ios/**",
     "android/**",

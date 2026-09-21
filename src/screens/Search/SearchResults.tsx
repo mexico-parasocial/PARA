@@ -29,8 +29,8 @@ import {TabBar} from '#/view/com/pager/TabBar'
 import {Post} from '#/view/com/post/Post'
 import {ProfileCardWithFollowBtn} from '#/view/com/profile/ProfileCard'
 import {List} from '#/view/com/util/List'
-import {StarterPackCard} from '#/screens/Search/components/StarterPackCard'
 import {DetectedLanguagesAdmonition} from '#/screens/Search/components/DetectedLanguagesAdmonition'
+import {StarterPackCard} from '#/screens/Search/components/StarterPackCard'
 import {
   getActiveParaFilterNames,
   hasPostOnlyFilters,

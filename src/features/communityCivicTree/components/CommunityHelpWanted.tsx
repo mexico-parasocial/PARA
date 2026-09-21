@@ -5,13 +5,13 @@ import {Trans, useLingui} from '@lingui/react/macro'
 
 import {Text} from '#/view/com/util/text/Text'
 import {atoms as a, useTheme} from '#/alf'
+import {CARD_TYPE_COLORS} from '#/features/civicTree/colors'
 import {
   buildTopicClusters,
   type TopicGraphData,
   type TopicGraphNode,
   untopicedNodes,
 } from '#/features/communityCivicTree/topics'
-import {CARD_TYPE_COLORS} from '#/features/civicTree/colors'
 
 /*
  * The two smallest useful things a member can do, surfaced as work rather than
@@ -118,6 +118,7 @@ function HelpSection({
   accent: string
   onNodePress: (nodeId: string) => void
 }) {
+  const {t: l} = useLingui()
   const t = useTheme()
 
   /*
@@ -141,6 +142,7 @@ function HelpSection({
             key={node.id}
             accessibilityRole="button"
             accessibilityLabel={node.title}
+            accessibilityHint={l`Opens this card`}
             onPress={() => onNodePress(node.id)}
             style={[
               a.rounded_sm,

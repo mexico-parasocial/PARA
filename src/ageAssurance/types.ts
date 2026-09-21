@@ -1,5 +1,5 @@
-import {type computeAgeAssuranceRegionAccess} from '@atproto/api'
 import type * as AgeRange from 'expo-age-range'
+import {type computeAgeAssuranceRegionAccess} from '@atproto/api'
 
 import {logger} from '#/ageAssurance/logger'
 

@@ -11,6 +11,12 @@ import {type AppBskyActorDefs} from '@atproto/api'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
+import {
+  COMPASS_COLORS,
+  COMPASS_GRID_ROWS,
+  COMPASS_POSITION_NAMES,
+  type CompassPositionId,
+} from '#/lib/compass/compassColors'
 import {useHorizontalGovernanceEnabled} from '#/lib/hooks/useHorizontalGovernance'
 import {type NavigationProp} from '#/lib/routes/types'
 import {cleanError} from '#/lib/strings/errors'
@@ -23,14 +29,8 @@ import {
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import * as SegmentedControl from '#/components/forms/SegmentedControl'
-import * as Layout from '#/components/Layout'
-import {
-  COMPASS_COLORS,
-  COMPASS_GRID_ROWS,
-  COMPASS_POSITION_NAMES,
-  type CompassPositionId,
-} from '#/lib/compass/compassColors'
 import {ChevronBottom_Stroke2_Corner0_Rounded as ChevronDownIcon} from '#/components/icons/Chevron'
+import * as Layout from '#/components/Layout'
 import * as Menu from '#/components/Menu'
 import {useAnalytics} from '#/analytics'
 

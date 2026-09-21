@@ -3,9 +3,9 @@ import {describe, expect, it} from '@jest/globals'
 import {
   appendFromMe,
   buildSearchPostsV2Filters,
+  extractedOperatorsToSearchFilters,
   extractFromMe,
   extractSearchPostsParams,
-  extractedOperatorsToSearchFilters,
 } from '#/state/queries/search-posts-params'
 
 describe('extractSearchPostsParams', () => {

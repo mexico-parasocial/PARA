@@ -16,7 +16,6 @@ import {
   getCabildeoTotalParticipants,
   getViewerParticipation,
 } from '#/lib/cabildeo-display'
-import {CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
 import {REPRESENTATIVES} from '#/lib/mock-data'
 import {
   evaluateCabildeoAccess,
@@ -36,7 +35,6 @@ import {Text} from '#/view/com/util/text/Text'
 import {atoms as a, useBreakpoints, useTheme, web} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import {CompassMini} from '#/components/CompassMini'
-import {ContributeToCommunityTreeDialog} from '#/features/communityCivicTree/components/ContributeToCommunityTreeDialog'
 import * as Dialog from '#/components/Dialog'
 import {ArrowShareRight_Stroke2_Corner2_Rounded as ShareIcon} from '#/components/icons/ArrowShareRight'
 import {Bookmark as BookmarkIcon} from '#/components/icons/Bookmark'
@@ -45,6 +43,8 @@ import * as Layout from '#/components/Layout'
 import {LinearGradientBackground} from '#/components/LinearGradientBackground'
 import {ListMaybePlaceholder} from '#/components/Lists'
 import {SaveToCollectionDialog} from '#/components/SaveToCollectionDialog'
+import {CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
+import {ContributeToCommunityTreeDialog} from '#/features/communityCivicTree/components/ContributeToCommunityTreeDialog'
 import {type PolicyItem} from './types'
 
 type Props = NativeStackScreenProps<CommonNavigatorParams, 'PolicyDetails'>

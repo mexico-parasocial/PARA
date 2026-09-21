@@ -1,10 +1,10 @@
 import {type Client} from '@atproto/lex'
 
-import {app} from '#/lexicons'
 import {
   buildParaTimelineFilterParams,
   ParaTimelineFeedAPI,
 } from '#/lib/api/feed/para'
+import {app} from '#/lexicons'
 
 describe('ParaTimelineFeedAPI', () => {
   it('omits empty filter params', () => {
