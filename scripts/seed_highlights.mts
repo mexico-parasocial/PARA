@@ -1,21 +1,26 @@
-import {AtpAgent, RichText} from '@atproto/api'
+import type {NsidString} from '@atproto/syntax'
+import {app, com} from '@bsky/sdk/lexicons'
+import {RichText} from '@bsky/sdk/richtext'
 
 // We need to use relative imports because ts-node with paths can be tricky without extra config
-// Assuming this script is run from project root: ts-node scripts/seed_highlights.ts
+// Assuming this script is run from project root: pnpm exec tsx scripts/seed_highlights.mts
 import {MOCK_HIGHLIGHTS} from '../src/lib/mock-highlights'
+import {createParaClient} from './lib/para-client.mjs'
 
 const SERVICE = process.env.HIGHLIGHT_SEED_SERVICE || 'http://localhost:2583'
 // Default local dev credentials (replace if you have different ones)
 const HANDLE = process.env.HIGHLIGHT_SEED_HANDLE || 'bob.test'
 const PASSWORD = process.env.HIGHLIGHT_SEED_PASSWORD || 'hunter2'
-const HIGHLIGHT_COLLECTION = 'com.para.highlight.annotation'
+const HIGHLIGHT_COLLECTION: NsidString = 'com.para.highlight.annotation'
 
 async function main() {
-  const agent = new AtpAgent({service: SERVICE})
-
-  console.log(`Connecting to ${SERVICE}...`)
+  let client
   try {
-    await agent.login({identifier: HANDLE, password: PASSWORD})
+    client = await createParaClient({
+      service: SERVICE,
+      identifier: HANDLE,
+      password: PASSWORD,
+    })
     console.log(`Logged in as ${HANDLE}`)
   } catch (e) {
     console.error(
@@ -36,11 +41,13 @@ async function main() {
     const fullText =
       `${h.postPreview || h.text}\n\n${cleanState} ${cleanCommunity}`.trim()
 
+    // RichText from @bsky/sdk/richtext replaces the old AtpAgent RichText:
+    // detectFacets accepts the lex Client directly.
     const rt = new RichText({text: fullText})
-    await rt.detectFacets(agent)
+    await rt.detectFacets(client)
 
     try {
-      const postRes = await agent.post({
+      const postRes = await client.create(app.bsky.feed.post, {
         text: rt.text,
         facets: rt.facets,
         createdAt: new Date().toISOString(),
@@ -50,8 +57,8 @@ async function main() {
       const safeStart = start >= 0 ? start : 0
       const safeEnd = start >= 0 ? start + h.text.length : h.text.length
 
-      await agent.com.atproto.repo.createRecord({
-        repo: agent.session!.did,
+      await client.call(com.atproto.repo.createRecord, {
+        repo: client.assertDid,
         collection: HIGHLIGHT_COLLECTION,
         record: {
           subjectUri: postRes.uri,

@@ -1,5 +1,9 @@
 #!/usr/bin/env node
-import {AtpAgent} from '@atproto/api'
+import {
+  clientForSession,
+  createParaAccountSession,
+  loginParaSession,
+} from '../lib/para-client.mjs'
 
 import {
   applySeedOperations,
@@ -163,23 +167,19 @@ function safeJsonParse(value) {
 }
 
 async function ensureActorSession({service, actor, createAccounts, verbose}) {
-  const agent = new AtpAgent({service})
   const identifier = actor.identifier || actor.handle
 
+  let session = null
   try {
-    await agent.login({identifier, password: actor.password})
-    if (!agent.session) {
-      throw new Error(`No session after login for ${identifier}`)
-    }
+    session = await loginParaSession({
+      service,
+      identifier,
+      password: actor.password,
+    })
     if (verbose) {
-      console.log(`login ok: ${actor.alias} (${agent.session.did})`)
+      console.log(`login ok: ${actor.alias} (${session.did})`)
     }
-    return {
-      agent,
-      did: agent.session.did,
-      handle: agent.session.handle,
-      accessJwt: agent.session.accessJwt,
-    }
+    return toSessionHandle(session)
   } catch (loginErr) {
     if (!createAccounts || actor.createAccount === false) {
       throw new Error(
@@ -197,7 +197,8 @@ async function ensureActorSession({service, actor, createAccounts, verbose}) {
   }
 
   try {
-    await agent.createAccount({
+    session = await createParaAccountSession({
+      service,
       handle: actor.handle,
       email: actor.email,
       password: actor.password,
@@ -222,18 +223,27 @@ async function ensureActorSession({service, actor, createAccounts, verbose}) {
     }
   }
 
-  await agent.login({identifier, password: actor.password})
-  if (!agent.session) {
-    throw new Error(`No session after create/login for ${identifier}`)
+  if (!session) {
+    // The account already existed (or creation did not yield a session):
+    // log in with the credentials instead.
+    session = await loginParaSession({
+      service,
+      identifier,
+      password: actor.password,
+    })
   }
   if (verbose) {
-    console.log(`login after create ok: ${actor.alias} (${agent.session.did})`)
+    console.log(`login after create ok: ${actor.alias} (${session.did})`)
   }
+  return toSessionHandle(session)
+}
+
+function toSessionHandle(session) {
   return {
-    agent,
-    did: agent.session.did,
-    handle: agent.session.handle,
-    accessJwt: agent.session.accessJwt,
+    client: clientForSession(session),
+    did: session.did,
+    handle: session.handle,
+    accessJwt: session.session.accessJwt,
   }
 }
 

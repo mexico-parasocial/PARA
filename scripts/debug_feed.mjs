@@ -1,4 +1,6 @@
-import {AtpAgent} from '@atproto/api'
+import {app, com} from '@bsky/sdk/lexicons'
+
+import {createParaClient} from './lib/para-client.mjs'
 
 const SERVICE = 'http://localhost:2583'
 const USER = 'alice.test'
@@ -6,36 +8,39 @@ const PASS = 'hunter2'
 
 async function main() {
   console.log('--- Debugging Feed Visibility ---')
-  const agent = new AtpAgent({service: SERVICE})
+  const client = await createParaClient({
+    service: SERVICE,
+    identifier: USER,
+    password: PASS,
+  })
 
   try {
-    await agent.login({identifier: USER, password: PASS})
-    const did = agent.session!.did
+    const did = client.assertDid
     console.log(`✅ Logged in as ${USER} (${did})`)
 
     // 1. Check Public Posts
     console.log('\n--- Public Posts (app.bsky.feed.post) ---')
-    const publicRes = await agent.api.com.atproto.repo.listRecords({
+    const publicRes = await client.call(com.atproto.repo.listRecords, {
       repo: did,
       collection: 'app.bsky.feed.post',
       limit: 5,
       reverse: true,
     })
-    console.log(`Found ${publicRes.data.records.length} recent public posts.`)
-    publicRes.data.records.forEach((r: any) => {
+    console.log(`Found ${publicRes.records.length} recent public posts.`)
+    publicRes.records.forEach(r => {
       console.log(`- [${r.value.createdAt}] ${r.value.text}`)
     })
 
     // 2. Check Private Posts
     console.log('\n--- Private Posts (com.para.post) ---')
-    const privateRes = await agent.api.com.atproto.repo.listRecords({
+    const privateRes = await client.call(com.atproto.repo.listRecords, {
       repo: did,
       collection: 'com.para.post',
       limit: 5,
       reverse: true,
     })
-    console.log(`Found ${privateRes.data.records.length} recent private posts.`)
-    privateRes.data.records.forEach((r: any) => {
+    console.log(`Found ${privateRes.records.length} recent private posts.`)
+    privateRes.records.forEach(r => {
       console.log(
         `- [${r.value.createdAt}] ${r.value.text} ($type: ${r.value.$type})`,
       )
@@ -43,10 +48,13 @@ async function main() {
 
     // 3. Check Author Feed (What the API returns)
     console.log('\n--- Author Feed (getAuthorFeed) ---')
-    const feedRes = await agent.getAuthorFeed({actor: did, limit: 5})
-    console.log(`API returned ${feedRes.data.feed.length} items.`)
-    feedRes.data.feed.forEach(item => {
-      const record = item.post.record as any
+    const feedRes = await client.call(app.bsky.feed.getAuthorFeed, {
+      actor: did,
+      limit: 5,
+    })
+    console.log(`API returned ${feedRes.feed.length} items.`)
+    feedRes.feed.forEach(item => {
+      const record = item.post.record
       console.log(
         `- [${record.createdAt}] ${record.text} (URI: ${item.post.uri})`,
       )
@@ -54,10 +62,12 @@ async function main() {
     // 4. Check Timeline (getTimeline)
     console.log('\n--- Timeline (getTimeline) ---')
     try {
-      const timelineRes = await agent.getTimeline({limit: 5})
-      console.log(`Timeline returned ${timelineRes.data.feed.length} items.`)
-      timelineRes.data.feed.forEach(item => {
-        const record = item.post.record as any
+      const timelineRes = await client.call(app.bsky.feed.getTimeline, {
+        limit: 5,
+      })
+      console.log(`Timeline returned ${timelineRes.feed.length} items.`)
+      timelineRes.feed.forEach(item => {
+        const record = item.post.record
         console.log(`- [${item.post.author.handle}] ${record.text}`)
       })
     } catch (e) {

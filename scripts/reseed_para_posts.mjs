@@ -1,15 +1,20 @@
-import {AtpAgent} from '@atproto/api'
+import {com} from '@bsky/sdk/lexicons'
+
+import {createParaClient} from './lib/para-client.mjs'
 
 const SERVICE = 'http://localhost:2583'
 const USER = 'alice.test'
 const PASS = 'hunter2'
 
 async function main() {
-  const agent = new AtpAgent({service: SERVICE})
+  const client = await createParaClient({
+    service: SERVICE,
+    identifier: USER,
+    password: PASS,
+  })
 
   try {
-    await agent.login({identifier: USER, password: PASS})
-    const did = agent.session!.did
+    const did = client.assertDid
     console.log(`✅ Logged in as ${USER} (${did})`)
 
     const posts = [
@@ -19,7 +24,7 @@ async function main() {
     ]
 
     for (const text of posts) {
-      await agent.api.com.atproto.repo.createRecord({
+      await client.call(com.atproto.repo.createRecord, {
         repo: did,
         collection: 'com.para.post',
         record: {

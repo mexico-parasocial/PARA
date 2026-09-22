@@ -1,26 +1,35 @@
-import {AtpAgent} from '@atproto/api'
+import {app} from '@bsky/sdk/lexicons'
+
+import {createParaClient} from './lib/para-client.mjs'
 
 const SERVICE = 'http://localhost:2583'
 const USER = 'alice.test'
 const PASS = 'hunter2'
 
 async function main() {
-  const agent = new AtpAgent({service: SERVICE})
+  const client = await createParaClient({
+    service: SERVICE,
+    identifier: USER,
+    password: PASS,
+  })
 
   try {
-    await agent.login({identifier: USER, password: PASS})
-    const did = agent.session!.did
+    const did = client.assertDid
     console.log(`✅ Logged in as ${USER} (${did})`)
 
     console.log('--- Checking Follows ---')
     // Check if we already follow ourselves
-    let cursor: string | undefined
+    let cursor
     let followsSelf = false
 
     do {
-      const res = await agent.getFollows({actor: did, cursor, limit: 100})
-      cursor = res.data.cursor
-      const found = res.data.follows.find(f => f.did === did)
+      const res = await client.call(app.bsky.graph.getFollows, {
+        actor: did,
+        cursor,
+        limit: 100,
+      })
+      cursor = res.cursor
+      const found = res.follows.find(f => f.did === did)
       if (found) {
         followsSelf = true
         console.log('✅ User already follows self.')
@@ -32,15 +41,18 @@ async function main() {
       console.log('Skipping follow creation.')
     } else {
       console.log('⚠️ User does NOT follow self. Creating follow...')
-      await agent.follow(did)
+      await client.create(app.bsky.graph.follow, {
+        subject: did,
+        createdAt: new Date().toISOString(),
+      })
       console.log('✅ Created follow record for self.')
     }
 
     // Also check Timeline again debug
-    const timeline = await agent.getTimeline({limit: 5})
+    const timeline = await client.call(app.bsky.feed.getTimeline, {limit: 5})
     console.log('--- Timeline Check (Top 5) ---')
-    timeline.data.feed.forEach((item, i) => {
-      const record = item.post.record as any
+    timeline.feed.forEach((item, i) => {
+      const record = item.post.record
       console.log(`[${i}] ${record.text} (date: ${record.createdAt})`)
     })
   } catch (e) {

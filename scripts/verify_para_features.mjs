@@ -1,4 +1,6 @@
-import {AtpAgent} from '@atproto/api'
+import {app, com} from '@bsky/sdk/lexicons'
+
+import {createParaClient} from './lib/para-client.mjs'
 
 const SERVICE = 'http://localhost:2583'
 const USER = 'alice.test'
@@ -7,11 +9,15 @@ const PARA_COLLECTION = 'com.para.post'
 
 async function main() {
   console.log('--- Verifying Para Privacy Features ---')
-  const agent = new AtpAgent({service: SERVICE})
 
   // 1. Login
+  let client
   try {
-    await agent.login({identifier: USER, password: PASS})
+    client = await createParaClient({
+      service: SERVICE,
+      identifier: USER,
+      password: PASS,
+    })
     console.log(`✅ Logged in as ${USER}`)
   } catch (e) {
     console.error(
@@ -21,13 +27,15 @@ async function main() {
     process.exit(1)
   }
 
+  const did = client.assertDid
   const uniqueText = `Private Para Post ${Date.now()}`
 
   // 2. Create Private Post
   console.log(`\nCreating Private Post with text: "${uniqueText}"...`)
+  let createdUri
   try {
-    const res = await agent.api.com.atproto.repo.createRecord({
-      repo: agent.session!.did,
+    const res = await client.call(com.atproto.repo.createRecord, {
+      repo: did,
       collection: PARA_COLLECTION,
       record: {
         text: uniqueText,
@@ -35,7 +43,8 @@ async function main() {
         $type: PARA_COLLECTION,
       },
     })
-    console.log(`✅ Created post: ${res.data.uri}`)
+    createdUri = res.uri
+    console.log(`✅ Created post: ${createdUri}`)
   } catch (e) {
     console.error('❌ Failed to create private post.')
     console.error(e)
@@ -45,9 +54,9 @@ async function main() {
   // 3. Verify Isolation (Should NOT be in Bsky feed)
   console.log('\nChecking Public Bsky Feed (getAuthorFeed)...')
   try {
-    const feed = await agent.getAuthorFeed({actor: agent.session!.did})
-    const found = feed.data.feed.find(item => {
-      const record = item.post.record as any
+    const feed = await client.call(app.bsky.feed.getAuthorFeed, {actor: did})
+    const found = feed.feed.find(item => {
+      const record = item.post.record
       return record.text === uniqueText
     })
 
@@ -65,16 +74,17 @@ async function main() {
   // 4. Verify Presence in Para Collection (listRecords)
   console.log('\nChecking Private Para Collection (listRecords)...')
   try {
-    const res = await agent.api.com.atproto.repo.listRecords({
-      repo: agent.session!.did,
+    const res = await client.call(com.atproto.repo.listRecords, {
+      repo: did,
       collection: PARA_COLLECTION,
     })
-    const found = res.data.records.find((r: any) => r.value.text === uniqueText)
+    const found = res.records.find(r => r.value.text === uniqueText)
     if (found) {
       console.log('✅ Success: Post found in com.para.post collection.')
       console.log('URI:', found.uri)
     } else {
       console.error('❌ FAILURE: Private post NOT found in Para Collection!')
+      console.error('(Created URI was:', createdUri, ')')
       process.exit(1)
     }
   } catch (e) {

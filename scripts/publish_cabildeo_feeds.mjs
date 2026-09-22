@@ -1,15 +1,20 @@
-import {AtpAgent} from '@atproto/api'
+import {app, com} from '@bsky/sdk/lexicons'
+
+import {createParaClient} from './lib/para-client.mjs'
 
 const SERVICE = 'http://localhost:2583'
 const USER = 'alice.test'
 const PASS = 'hunter2'
 
 async function main() {
-  const agent = new AtpAgent({service: SERVICE})
+  const client = await createParaClient({
+    service: SERVICE,
+    identifier: USER,
+    password: PASS,
+  })
 
   try {
-    await agent.login({identifier: USER, password: PASS})
-    const did = agent.session!.did
+    const did = client.assertDid
     console.log(`✅ Logged in as ${USER} (${did})`)
 
     const feeds = [
@@ -32,11 +37,12 @@ async function main() {
 
     for (const feed of feeds) {
       const uri = `at://${did}/app.bsky.feed.generator/${feed.rkey}`
-      await agent.api.com.atproto.repo.putRecord({
+      await client.call(com.atproto.repo.putRecord, {
         repo: did,
         collection: 'app.bsky.feed.generator',
         rkey: feed.rkey,
         record: {
+          $type: 'app.bsky.feed.generator',
           did: did, // Service DID usually, using user DID for local dev
           displayName: feed.name,
           description: feed.desc,

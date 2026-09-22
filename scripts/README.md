@@ -4,6 +4,48 @@
 
 Updates the extensions in `/modules` with the current iOS/Android project changes.
 
+## AT Protocol client helper (`lib/para-client.mjs`)
+
+Shared login/client factory for the seed & verification utilities below. All
+of these scripts were migrated off the removed `AtpAgent` package onto the lex
+stack the app itself uses (`@atproto/lex` + `@atproto/lex-password-session`):
+
+```js
+import {createParaClient} from './lib/para-client.mjs'
+const client = await createParaClient({service, identifier, password})
+const body = await client.call(com.atproto.repo.createRecord, {...})
+```
+
+Notes:
+
+- `client.call(ns, paramsOrBody)` resolves to the response BODY directly (the
+  old agent resolved to `{data: body}`).
+- `agent.session.did` becomes `client.assertDid` (or `client.did`).
+- Lexicon schemas come from `@bsky/sdk/lexicons` (plain JS, usable from
+  `.mjs` under plain node). Do NOT import `src/lexicons` from scripts: those
+  generated TS files are CJS-format for tsx, and any graph that reaches the
+  ESM-only `@atproto/lex` through them crashes under tsx with
+  `ERR_PACKAGE_PATH_NOT_EXPORTED` (multiformats/cid).
+
+## Local PDS seed & verification utilities
+
+These target the local dev PDS at `http://localhost:2583` (alice.test /
+bob.test). Runners:
+
+- Plain node (`.mjs`): `reseed_public_posts`, `reseed_para_posts`,
+  `verify_author_feed`, `ensure_follow_self`, `verify_para_features`,
+  `publish_cabildeo_feeds`, `debug_feed`, `verify_para_api`,
+  `test_validation`, `debug_pipeline`.
+  ```bash
+  node scripts/reseed_public_posts.mjs
+  ```
+- tsx (`.mts` — they import TS mock data from `src/lib/mock-*`):
+  `seed_representatives`, `seed_highlights`.
+  ```bash
+  pnpm exec tsx scripts/seed_representatives.mts
+  pnpm exec tsx scripts/seed_highlights.mts
+  ```
+
 ## Civic Seed (Community Hub Demo)
 
 Idempotent seed CLI for civic demo data (governance, cabildeos, positions, votes, delegations, open questions, badge-driving posts, PARA public-figure identity records, and optional verification records).

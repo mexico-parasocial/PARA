@@ -1,14 +1,35 @@
-import {AtpAgent} from '@atproto/api'
+import {app} from '@bsky/sdk/lexicons'
 
-// Relative import for ts-node
+// Relative import for tsx
 import {MOCK_REPS} from '../src/lib/mock-representatives'
+import {
+  createParaAccountClient,
+  createParaClient,
+  type ParaLexClient,
+} from './lib/para-client.mjs'
 
 const SERVICE = 'http://localhost:2583'
 const DEFAULT_PASSWORD = 'password'
 
-async function main() {
-  const agent = new AtpAgent({service: SERVICE})
+type ProfileUpdate = (profile: Record<string, any>) => Record<string, any>
 
+// Replacement for the old AtpAgent#upsertProfile: fetch the current profile
+// record (if any), apply the update callback, and put it back at rkey 'self'.
+async function upsertProfile(client: ParaLexClient, update: ProfileUpdate) {
+  let current: Record<string, any> = {}
+  try {
+    const res = await client.get(app.bsky.actor.profile, {rkey: 'self'})
+    current = res.value as Record<string, any>
+  } catch {
+    // No profile yet — start from scratch.
+  }
+  const updated = update(current)
+  await client.put(app.bsky.actor.profile, {...updated} as any, {
+    rkey: 'self',
+  })
+}
+
+async function main() {
   console.log(`Connecting to ${SERVICE}...`)
   console.log(`Seeding ${MOCK_REPS.length} representative accounts...`)
 
@@ -24,31 +45,31 @@ async function main() {
     const handle = `${rawHandle}.test`
     const email = `${rawHandle}@test.com`
 
+    const profileUpdate: ProfileUpdate = profile => {
+      const p = profile || {}
+      p.displayName = rep.name
+      p.description = `${rep.category} - ${rep.affiliate} (${rep.state})`
+      return p
+    }
+
     try {
       console.log(`Creating account: ${handle}...`)
 
-      const {data: account} = await agent.createAccount({
+      // Creates the account and returns an authenticated client for it.
+      const accountClient = await createParaAccountClient({
+        service: SERVICE,
         handle,
         email,
         password: DEFAULT_PASSWORD,
       })
 
-      console.log(`  -> Created! DID: ${account.did}`)
+      console.log(`  -> Created! DID: ${accountClient.assertDid}`)
 
-      // 2. Login as new user to set profile
-      const userAgent = new AtpAgent({service: SERVICE})
-      await userAgent.login({identifier: handle, password: DEFAULT_PASSWORD})
-
-      // 3. Set Profile
+      // 2. Set Profile
       // We can't easily upload images in this simple script without local file checking,
       // so we'll just set the display name and description.
       // Avatar color logic is client-side, but we could upload a placeholder if we had one.
-      await userAgent.upsertProfile(profile => {
-        const p: Record<string, any> = profile || {}
-        p.displayName = rep.name
-        p.description = `${rep.category} - ${rep.affiliate} (${rep.state})`
-        return p
-      })
+      await upsertProfile(accountClient, profileUpdate)
 
       console.log(`  -> Profile updated for ${rep.name}`)
     } catch (e: any) {
@@ -59,20 +80,14 @@ async function main() {
         e.error === 'HandleDate'
       ) {
         console.log(`  -> Account ${handle} already exists. Skipping creation.`)
-        // Potentially update profile even if exists?
-        // We'd need to login.
+        // Potentially update profile even if exists, so login and retry.
         try {
-          const userAgent = new AtpAgent({service: SERVICE})
-          await userAgent.login({
+          const userAgent = await createParaClient({
+            service: SERVICE,
             identifier: handle,
             password: DEFAULT_PASSWORD,
           })
-          await userAgent.upsertProfile(profile => {
-            const p: Record<string, any> = profile || {}
-            p.displayName = rep.name
-            p.description = `${rep.category} - ${rep.affiliate} (${rep.state})`
-            return p
-          })
+          await upsertProfile(userAgent, profileUpdate)
           console.log(`  -> Profile updated for existing user ${rep.name}`)
         } catch (loginErr: any) {
           console.log(
