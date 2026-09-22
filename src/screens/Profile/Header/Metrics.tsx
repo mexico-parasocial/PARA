@@ -1,5 +1,4 @@
 import {TouchableOpacity, View} from 'react-native'
-import {type AppBskyActorDefs} from '@atproto/api'
 import {msg, plural} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {useNavigation} from '@react-navigation/native'
@@ -13,11 +12,12 @@ import {Influence_Stroke_Icon as InfluenceIcon} from '#/components/icons/Influen
 import {RaisingHand4Finger_Stroke2_Corner2_Rounded as VoteIcon} from '#/components/icons/RaisingHand'
 import {InlineLinkText} from '#/components/Link'
 import {Text} from '#/components/Typography'
+import {app} from '#/lexicons'
 
 export function ProfileHeaderMetrics({
   profile,
 }: {
-  profile: Shadow<AppBskyActorDefs.ProfileViewDetailed>
+  profile: Shadow<app.bsky.actor.defs.ProfileViewDetailed>
 }) {
   const t = useTheme()
   const {_, i18n} = useLingui()
@@ -86,7 +86,10 @@ export function ProfileHeaderMetrics({
           }>
           <InfluenceIcon size="md" style={[t.atoms.text, {top: 3}]} />
           <Text style={[a.font_semi_bold, t.atoms.text, a.text_md]}>
-            {formatCount(i18n, (profile as {influenceScore?: number}).influenceScore || 0)}{' '}
+            {formatCount(
+              i18n,
+              (profile as {influenceScore?: number}).influenceScore || 0,
+            )}{' '}
             <Text
               style={[t.atoms.text_contrast_medium, a.font_normal, a.text_md]}>
               influence
@@ -102,7 +105,10 @@ export function ProfileHeaderMetrics({
           onPress={() => navigation.navigate('SeeVotes', {did: profile.did})}>
           <VoteIcon size="md" style={[t.atoms.text]} />
           <Text style={[a.font_semi_bold, t.atoms.text, a.text_md]}>
-            {formatCount(i18n, (profile as {votesCount?: number}).votesCount || 0)}{' '}
+            {formatCount(
+              i18n,
+              (profile as {votesCount?: number}).votesCount || 0,
+            )}{' '}
             <Text
               style={[t.atoms.text_contrast_medium, a.font_normal, a.text_md]}>
               votes

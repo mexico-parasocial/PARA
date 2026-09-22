@@ -1,15 +1,12 @@
 import {useMemo} from 'react'
-import {
-  type $Typed,
-  type AppBskyActorDefs,
-  AppBskyEmbedExternal,
-} from '@atproto/api'
+import {type $Typed} from '@atproto/lex'
 import {isAfter, parseISO} from 'date-fns'
 
 import {useMaybeProfileShadow} from '#/state/cache/profile-shadow'
 import {type LiveNowConfig, useLiveNowConfig} from '#/state/service-config'
 import {useTickEveryMinute} from '#/state/shell'
-import type * as bsky from '#/types/bsky'
+import {app} from '#/lexicons'
+import * as bsky from '#/types/bsky'
 
 export function useActorStatus(actor?: bsky.profile.AnyProfileView) {
   const shadowed = useMaybeProfileShadow(actor)
@@ -30,10 +27,10 @@ export function useActorStatus(actor?: bsky.profile.AnyProfileView) {
           isDisabled: false,
           isActive: true,
           status: 'app.bsky.actor.status#live',
-          embed: shadowed.status.embed as $Typed<AppBskyEmbedExternal.View>, // temp_isStatusValid asserts this
+          embed: shadowed.status.embed as $Typed<app.bsky.embed.external.View>, // temp_isStatusValid asserts this
           expiresAt: shadowed.status.expiresAt!, // isStatusStillActive asserts this
           record: shadowed.status.record,
-        } satisfies AppBskyActorDefs.StatusView
+        } satisfies app.bsky.actor.defs.StatusView
       }
       return {
         uri: shadowed.status.uri,
@@ -41,17 +38,17 @@ export function useActorStatus(actor?: bsky.profile.AnyProfileView) {
         isDisabled,
         isActive: false,
         status: 'app.bsky.actor.status#live',
-        embed: shadowed.status.embed as $Typed<AppBskyEmbedExternal.View>, // temp_isStatusValid asserts this
+        embed: shadowed.status.embed as $Typed<app.bsky.embed.external.View>, // temp_isStatusValid asserts this
         expiresAt: shadowed.status.expiresAt!, // isStatusStillActive asserts this
         record: shadowed.status.record,
-      } satisfies AppBskyActorDefs.StatusView
+      } satisfies app.bsky.actor.defs.StatusView
     } else {
       return {
         status: '',
         isDisabled: false,
         isActive: false,
         record: {},
-      } satisfies AppBskyActorDefs.StatusView
+      } satisfies app.bsky.actor.defs.StatusView
     }
   }, [shadowed, config, tick])
 }
@@ -65,12 +62,12 @@ export function isStatusStillActive(timeStr: string | undefined) {
 }
 
 export function validateStatus(
-  status: AppBskyActorDefs.StatusView,
+  status: app.bsky.actor.defs.StatusView,
   config: LiveNowConfig,
 ) {
   if (status.status !== 'app.bsky.actor.status#live') return false
   try {
-    if (AppBskyEmbedExternal.isView(status.embed)) {
+    if (bsky.isType(app.bsky.embed.external.view, status.embed)) {
       const url = new URL(status.embed.external.uri)
       return config.allowedDomains.has(url.hostname)
     } else {

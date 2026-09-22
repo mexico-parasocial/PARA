@@ -1,4 +1,4 @@
-import {type AppBskyActorDefs} from '@atproto/api'
+import {type app} from '#/lexicons'
 
 jest.mock('#/state/queries/nuxs/definitions', () => {
   const actual = jest.requireActual('#/state/queries/nuxs/definitions')
@@ -16,7 +16,7 @@ jest.mock('#/state/queries/nuxs/definitions', () => {
 import {Nux} from '#/state/queries/nuxs/definitions'
 import {parseAppNux} from '#/state/queries/nuxs/util'
 
-function makeNux(data?: string): AppBskyActorDefs.Nux {
+function makeNux(data?: string): app.bsky.actor.defs.Nux {
   return {
     id: Nux.NeueTypography,
     completed: true,

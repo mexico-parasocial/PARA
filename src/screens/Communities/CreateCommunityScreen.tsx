@@ -7,10 +7,15 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import {type AppBskyActorDefs} from '@atproto/api'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
+import {
+  COMPASS_COLORS,
+  COMPASS_GRID_ROWS,
+  COMPASS_POSITION_NAMES,
+  type CompassPositionId,
+} from '#/lib/compass/compassColors'
 import {useHorizontalGovernanceEnabled} from '#/lib/hooks/useHorizontalGovernance'
 import {type NavigationProp} from '#/lib/routes/types'
 import {cleanError} from '#/lib/strings/errors'
@@ -23,16 +28,11 @@ import {
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import * as SegmentedControl from '#/components/forms/SegmentedControl'
-import * as Layout from '#/components/Layout'
-import {
-  COMPASS_COLORS,
-  COMPASS_GRID_ROWS,
-  COMPASS_POSITION_NAMES,
-  type CompassPositionId,
-} from '#/lib/compass/compassColors'
 import {ChevronBottom_Stroke2_Corner0_Rounded as ChevronDownIcon} from '#/components/icons/Chevron'
+import * as Layout from '#/components/Layout'
 import * as Menu from '#/components/Menu'
 import {useAnalytics} from '#/analytics'
+import {app} from '#/lexicons'
 
 export function CreateCommunityScreen() {
   const t = useTheme()
@@ -46,10 +46,12 @@ export function CreateCommunityScreen() {
   const [quadrant, setQuadrant] = useState('')
   const [description, setDescription] = useState('')
   const [founderStarterPackName, setFounderStarterPackName] = useState('')
-  const [governanceMode, setGovernanceMode] = useState<'hierarchical' | 'horizontal'>('hierarchical')
+  const [governanceMode, setGovernanceMode] = useState<
+    'hierarchical' | 'horizontal'
+  >('hierarchical')
   const [foundingMembersQuery, setFoundingMembersQuery] = useState('')
   const [selectedFoundingMembers, setSelectedFoundingMembers] = useState<
-    AppBskyActorDefs.ProfileViewBasic[]
+    app.bsky.actor.defs.ProfileViewBasic[]
   >([])
   const [parentCommunityUri, setParentCommunityUri] = useState<string>('')
   const [parentSearchQuery, setParentSearchQuery] = useState('')
@@ -118,7 +120,9 @@ export function CreateCommunityScreen() {
         quadrant: quadrant.trim(),
         description: description.trim() || undefined,
         founderStarterPackName: founderStarterPackName.trim() || undefined,
-        governanceMode: isHorizontalGovernanceEnabled ? governanceMode : undefined,
+        governanceMode: isHorizontalGovernanceEnabled
+          ? governanceMode
+          : undefined,
         parentCommunityUri: parentCommunityUri || undefined,
       })
       setCreatedUri(result.uri)
@@ -148,7 +152,7 @@ export function CreateCommunityScreen() {
     quadrant.trim().length === 0
 
   const onSelectFoundingMember = (
-    profile: AppBskyActorDefs.ProfileViewBasic,
+    profile: app.bsky.actor.defs.ProfileViewBasic,
   ) => {
     setSelectedFoundingMembers(prev => {
       if (prev.some(item => item.did === profile.did)) {
@@ -361,9 +365,7 @@ export function CreateCommunityScreen() {
                       type="radio"
                       label="Governance model"
                       value={governanceMode}
-                      onChange={v =>
-                        setGovernanceMode(v)
-                      }>
+                      onChange={v => setGovernanceMode(v)}>
                       <SegmentedControl.Item
                         label="Hierarchical"
                         value="hierarchical">
@@ -694,7 +696,9 @@ function NonantPicker({
                     ? theme.atoms.text
                     : {color: theme.palette.contrast_400},
                 ]}>
-                {selected ? COMPASS_POSITION_NAMES[selected] : 'Select a nonant'}
+                {selected
+                  ? COMPASS_POSITION_NAMES[selected]
+                  : 'Select a nonant'}
               </Text>
               <ChevronDownIcon size="sm" fill={theme.palette.contrast_500} />
             </TouchableOpacity>
@@ -834,7 +838,16 @@ function ParentCommunityPicker({
   onClear,
 }: {
   theme: ReturnType<typeof useTheme>
-  boardsData: {boards: Array<{uri: string; name: string; quadrant?: string; memberCount?: number}>} | undefined
+  boardsData:
+    | {
+        boards: Array<{
+          uri: string
+          name: string
+          quadrant?: string
+          memberCount?: number
+        }>
+      }
+    | undefined
   selectedUri: string
   searchQuery: string
   onChangeSearchQuery: (q: string) => void
@@ -860,13 +873,9 @@ function ParentCommunityPicker({
       <Text style={[styles.fieldLabel, theme.atoms.text]}>
         Parent community (optional)
       </Text>
-      <Text
-        style={[
-          styles.fieldDescription,
-          theme.atoms.text_contrast_medium,
-        ]}>
-        Link this new community under an existing parent community.
-        This appears in the About tab and helps users navigate between related communities.
+      <Text style={[styles.fieldDescription, theme.atoms.text_contrast_medium]}>
+        Link this new community under an existing parent community. This appears
+        in the About tab and helps users navigate between related communities.
       </Text>
 
       {selectedBoard ? (
@@ -953,8 +962,7 @@ function ParentCommunityPicker({
                   style={styles.suggestionRow}>
                   <View style={styles.suggestionIdentity}>
                     <View style={styles.suggestionTextBlock}>
-                      <Text
-                        style={[styles.suggestionTitle, theme.atoms.text]}>
+                      <Text style={[styles.suggestionTitle, theme.atoms.text]}>
                         {board.name}
                       </Text>
                       <Text

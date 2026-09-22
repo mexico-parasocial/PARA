@@ -1,4 +1,3 @@
-import {type ChatBskyGroupRequestJoin} from '@atproto/api'
 import {useMutation, useQueryClient} from '@tanstack/react-query'
 
 import {logger} from '#/logger'
@@ -6,7 +5,7 @@ import {useChatClient, useSession} from '#/state/session'
 import {chat} from '#/lexicons'
 import {RQKEY_ROOT as REQUESTS_RQKEY_ROOT} from './list-conversation-requests'
 
-type Output = ChatBskyGroupRequestJoin.OutputSchema
+type Output = chat.bsky.group.requestJoin.$OutputBody
 
 export function useRequestJoinGroupChat({
   onSuccess,

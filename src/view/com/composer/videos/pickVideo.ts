@@ -1,12 +1,11 @@
-import {getVideoMetaData} from 'react-native-compressor'
 import {
   type ImagePickerAsset,
   launchImageLibraryAsync,
   UIImagePickerPreferredAssetRepresentationMode,
 } from 'expo-image-picker'
+import {probe} from '@bsky.app/video-compressor'
 
 import {VIDEO_MAX_DURATION_MS} from '#/lib/constants'
-import {extToMime} from '#/lib/media/video/util'
 
 export async function pickVideo() {
   return await launchImageLibraryAsync({
@@ -32,10 +31,10 @@ export async function getVideoMetadata(
     throw new Error(
       'getVideoMetadata was passed a File, when on native it should be a uri',
     )
-  const metadata = await getVideoMetaData(file)
+  const metadata = await probe(file)
   return {
     uri: file,
-    mimeType: extToMime(metadata.extension),
+    mimeType: metadata.mimeType,
     width: metadata.width,
     height: metadata.height,
     duration: metadata.duration,

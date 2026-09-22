@@ -1,4 +1,7 @@
-import {AtUri, AtpAgent} from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
+import {com} from '@bsky/sdk/lexicons'
+
+import {createParaClient} from './lib/para-client.mjs'
 
 const SERVICE = process.env.PARA_PDS_URL || 'http://localhost:2583'
 const PASSWORD = process.env.PARA_TEST_PASSWORD || 'hunter2'
@@ -152,28 +155,28 @@ const POSTS = [
   },
 ]
 
-async function listRecords(agent, collection) {
+async function listRecords(client, collection) {
   const records = []
   let cursor
 
   do {
-    const res = await agent.api.com.atproto.repo.listRecords({
-      repo: agent.assertDid,
+    const res = await client.call(com.atproto.repo.listRecords, {
+      repo: client.assertDid,
       collection,
       limit: 100,
       cursor,
       reverse: true,
     })
-    records.push(...res.data.records)
-    cursor = res.data.cursor
+    records.push(...res.records)
+    cursor = res.cursor
   } while (cursor)
 
   return records
 }
 
-async function cleanupSeedRecords(agent) {
-  const privatePosts = await listRecords(agent, 'com.para.post')
-  const publicPosts = await listRecords(agent, 'app.bsky.feed.post')
+async function cleanupSeedRecords(client) {
+  const privatePosts = await listRecords(client, 'com.para.post')
+  const publicPosts = await listRecords(client, 'app.bsky.feed.post')
 
   const deletions = []
 
@@ -198,8 +201,8 @@ async function cleanupSeedRecords(agent) {
 
   for (const deletion of deletions) {
     try {
-      await agent.api.com.atproto.repo.deleteRecord({
-        repo: agent.assertDid,
+      await client.call(com.atproto.repo.deleteRecord, {
+        repo: client.assertDid,
         collection: deletion.collection,
         rkey: deletion.rkey,
       })
@@ -211,7 +214,7 @@ async function cleanupSeedRecords(agent) {
   }
 }
 
-async function createPost(agent, post) {
+async function createPost(client, post) {
   const record = {
     $type:
       post.visibility === 'private' ? 'com.para.post' : 'app.bsky.feed.post',
@@ -227,22 +230,22 @@ async function createPost(agent, post) {
       : {}),
   }
 
-  const res = await agent.api.com.atproto.repo.createRecord({
-    repo: agent.assertDid,
+  const res = await client.call(com.atproto.repo.createRecord, {
+    repo: client.assertDid,
     collection:
       post.visibility === 'private' ? 'com.para.post' : 'app.bsky.feed.post',
     record,
   })
 
   if (post.visibility === 'private' && post.createMeta && post.postType) {
-    const rkey = new AtUri(res.data.uri).rkey
-    await agent.api.com.atproto.repo.createRecord({
-      repo: agent.assertDid,
+    const rkey = new AtUri(res.uri).rkey
+    await client.call(com.atproto.repo.createRecord, {
+      repo: client.assertDid,
       collection: 'com.para.social.postMeta',
       rkey,
       record: {
         $type: 'com.para.social.postMeta',
-        post: res.data.uri,
+        post: res.uri,
         postType: post.postType,
         official: post.official || undefined,
         party: post.party,
@@ -254,37 +257,37 @@ async function createPost(agent, post) {
     })
   }
 
-  return res.data.uri
+  return res.uri
 }
 
 async function login(account) {
-  const agent = new AtpAgent({service: SERVICE})
-  await agent.login({
+  const client = await createParaClient({
+    service: SERVICE,
     identifier: account.handle,
     password: account.password,
   })
-  return agent
+  return client
 }
 
 async function main() {
-  const agents = new Map()
+  const clients = new Map()
 
   for (const account of ACCOUNTS) {
-    const agent = await login(account)
-    agents.set(account.handle, agent)
-    await cleanupSeedRecords(agent)
+    const client = await login(account)
+    clients.set(account.handle, client)
+    await cleanupSeedRecords(client)
     console.log(`Logged in and cleaned seed records for ${account.handle}`)
   }
 
   const created = []
 
   for (const post of POSTS) {
-    const agent = agents.get(post.account)
-    if (!agent) {
-      throw new Error(`Missing logged-in agent for ${post.account}`)
+    const client = clients.get(post.account)
+    if (!client) {
+      throw new Error(`Missing logged-in client for ${post.account}`)
     }
 
-    const uri = await createPost(agent, post)
+    const uri = await createPost(client, post)
     created.push({
       account: post.account,
       party: post.party,

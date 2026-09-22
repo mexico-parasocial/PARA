@@ -1,6 +1,7 @@
-import {type AppBskyFeedDefs, AtUri} from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 
 import {type OpenQuestion} from '#/lib/mock-data/types'
+import {app} from '#/lexicons'
 
 export type OpenQuestionListItem = {
   id: string
@@ -15,7 +16,7 @@ export type OpenQuestionListItem = {
 }
 
 export function mapOpenQuestionPosts(
-  posts: AppBskyFeedDefs.PostView[],
+  posts: app.bsky.feed.defs.PostView[],
 ): OpenQuestionListItem[] {
   return posts.map(post => ({
     id: post.uri,

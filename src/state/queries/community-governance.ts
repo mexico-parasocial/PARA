@@ -1,3 +1,4 @@
+import {type AtIdentifierString} from '@atproto/syntax'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {
@@ -15,6 +16,7 @@ import {
 } from '#/lib/community-governance'
 import {STALE} from '#/state/queries'
 import {useAgent, useSession} from '#/state/session'
+import {com} from '#/lexicons'
 
 const RQKEY_ROOT = 'community-governance'
 
@@ -92,14 +94,13 @@ export function useCommunityGovernanceMutation({
         repoDid: currentAccount.did,
       })
 
-      await agent.com.atproto.repo.putRecord({
-        repo: currentAccount.did,
+      await agent.pdsClient.call(com.atproto.repo.putRecord, {
+        repo: currentAccount.did as AtIdentifierString,
         collection: PARA_COMMUNITY_GOVERNANCE_COLLECTION,
         rkey: communityGovernanceRkey(communityName),
-        record: createCommunityGovernanceRecord(next) as unknown as Record<
-          string,
-          unknown
-        >,
+        record: createCommunityGovernanceRecord(
+          next,
+        ) as unknown as com.atproto.repo.putRecord.$InputBody['record'],
       })
 
       return {
@@ -211,29 +212,15 @@ async function fetchGovernanceFromXrpc({
   communityName: string
   communityId?: string
 }) {
-  const params = new URLSearchParams()
-  params.set('community', communityName)
-  if (communityId) {
-    params.set('communityId', communityId)
-  }
-
   try {
-    const res = await agent.fetchHandler(
-      `/xrpc/com.para.community.getGovernance?${params.toString()}`,
+    const res = await agent.appviewClient.call(
+      com.para.community.getGovernance,
       {
-        method: 'GET',
-        headers: {
-          accept: 'application/json',
-        },
+        community: communityName,
+        communityId,
       },
     )
-
-    if (!res.ok) {
-      return null
-    }
-
-    const json = await res.json()
-    return normalizeCommunityGovernance(json, communityName, communityId)
+    return normalizeCommunityGovernance(res, communityName, communityId)
   } catch {
     return null
   }

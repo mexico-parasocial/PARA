@@ -1,8 +1,5 @@
 import {useEffect, useMemo, useState} from 'react'
-import {
-  type AppBskyAgeassuranceDefs,
-  computeAgeAssuranceRegionAccess,
-} from '@atproto/api'
+import {computeAgeAssuranceRegionAccess} from '@bsky/sdk/utils'
 
 import {getAge} from '#/lib/strings/time'
 import {useSession} from '#/state/session'
@@ -26,6 +23,7 @@ import {
   getAgeAssuranceRegionConfigWithFallback,
 } from '#/ageAssurance/util'
 import {type Geolocation, useGeolocation} from '#/geolocation'
+import {type app} from '#/lexicons'
 import {device} from '#/storage'
 
 /**
@@ -42,8 +40,8 @@ function computeAgeAssuranceState({
 }: {
   hasSession: boolean
   geolocation: Geolocation
-  config?: AppBskyAgeassuranceDefs.Config
-  state?: AppBskyAgeassuranceDefs.State
+  config?: app.bsky.ageassurance.defs.Config
+  state?: app.bsky.ageassurance.defs.State
   metadata?: AgeAssuranceMetadata
 }) {
   /**

@@ -8,13 +8,12 @@ import {
   useRef,
   useState,
 } from 'react'
-import {FlatList, Pressable, useWindowDimensions,View} from 'react-native'
+import {FlatList, Pressable, useWindowDimensions, View} from 'react-native'
 import Animated, {
   type AnimatedRef,
   useAnimatedRef,
 } from 'react-native-reanimated'
 import {Image} from 'expo-image'
-import {type AppBskyEmbedImages} from '@atproto/api'
 import {utils} from '@bsky.app/alf'
 import {Trans, useLingui} from '@lingui/react/macro'
 import debounce from 'lodash.debounce'
@@ -41,12 +40,13 @@ import {PostEmbedViewContext} from '#/components/Post/Embed/types'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
 import {IS_ANDROID, IS_WEB} from '#/env'
+import {app} from '#/lexicons'
 
 export * from './const'
 export * from './maybeApplyGalleryOffsetStyles'
 
 interface GalleryProps {
-  images: AppBskyEmbedImages.ViewImage[]
+  images: app.bsky.embed.images.ViewImage[]
   onPress?: (
     index: number,
     containerRefs: AnimatedRef<any>[],
@@ -403,7 +403,7 @@ function GalleryImage({
   onPreviewPress,
 }: {
   contentHeight: number
-  image: AppBskyEmbedImages.ViewImage
+  image: app.bsky.embed.images.ViewImage
   index: number
   imageCount: number
   onWidthChange: (index: number, width: number) => void

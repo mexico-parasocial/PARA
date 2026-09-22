@@ -18,6 +18,7 @@ import {isStandardSiteEmbed} from '#/components/Post/Embed/StandardSiteEmbed/uti
 import {Embed as StarterPackEmbed} from '#/components/StarterPack/StarterPackCard'
 import {Text} from '#/components/Typography'
 import {type Gif} from '#/features/gifPicker/types'
+import {app} from '#/lexicons'
 
 export const ExternalEmbedGif = ({
   onRemove,
@@ -30,12 +31,13 @@ export const ExternalEmbedGif = ({
   const {data, error} = useResolveGifQuery(gif)
   const linkInfo = useMemo(
     () =>
-      data && {
+      data &&
+      ({
         title: data.title ?? data.uri,
         uri: data.uri,
         description: data.description ?? '',
         thumb: data.thumb?.source.path,
-      },
+      } as app.bsky.embed.external.ViewExternal),
     [data],
   )
 
@@ -93,26 +95,30 @@ export const ExternalEmbedLink = ({
           return (
             <StandardSiteEmbed
               preview
-              view={{
-                ...data.view?.external,
-                title: data.view?.external?.title || data.title || uri,
-                uri,
-                description:
-                  data.view?.external?.description || data.description,
-                // prefer opengraph data to atproto record-derived image
-                thumb: data.thumb?.source.path || data.view?.external?.thumb,
-              }}
+              view={
+                {
+                  ...data.view?.external,
+                  title: data.view?.external?.title || data.title || uri,
+                  uri,
+                  description:
+                    data.view?.external?.description || data.description,
+                  // prefer opengraph data to atproto record-derived image
+                  thumb: data.thumb?.source.path || data.view?.external?.thumb,
+                } as app.bsky.embed.external.ViewExternal
+              }
             />
           )
         }
         return (
           <ExternalEmbed
-            link={{
-              title: data.title || uri,
-              uri,
-              description: data.description,
-              thumb: data.thumb?.source.path,
-            }}
+            link={
+              {
+                title: data.title || uri,
+                uri,
+                description: data.description,
+                thumb: data.thumb?.source.path,
+              } as app.bsky.embed.external.ViewExternal
+            }
             hideAlt
           />
         )

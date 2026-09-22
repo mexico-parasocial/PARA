@@ -1,9 +1,5 @@
 import {useCallback, useMemo, useState} from 'react'
 import {type ListRenderItem, View} from 'react-native'
-import {
-  type ChatBskyConvoDefs,
-  type ChatBskyConvoListConvos,
-} from '@atproto/api'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -44,6 +40,7 @@ import {ListFooter} from '#/components/Lists'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {IS_NATIVE} from '#/env'
+import {chat} from '#/lexicons'
 import {RequestListItem} from './components/RequestListItem'
 import {useIsWithinSplitView} from './components/splitView/context'
 
@@ -107,10 +104,10 @@ function RequestList({
   conversations,
 }: {
   listConvosQuery: UseInfiniteQueryResult<
-    InfiniteData<ChatBskyConvoListConvos.OutputSchema>,
+    InfiniteData<chat.bsky.convo.listConvos.$OutputBody>,
     Error
   >
-  conversations: ChatBskyConvoDefs.ConvoView[]
+  conversations: chat.bsky.convo.defs.ConvoView[]
 }) {
   const {_} = useLingui()
   const t = useTheme()
@@ -277,11 +274,11 @@ function RequestList({
   )
 }
 
-function keyExtractor(item: ChatBskyConvoDefs.ConvoView) {
+function keyExtractor(item: chat.bsky.convo.defs.ConvoView) {
   return item.id
 }
 
-function renderItem({item}: {item: ChatBskyConvoDefs.ConvoView}) {
+function renderItem({item}: {item: chat.bsky.convo.defs.ConvoView}) {
   return <RequestListItem convo={item} />
 }
 

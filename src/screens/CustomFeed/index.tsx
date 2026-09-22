@@ -49,7 +49,10 @@ export function CustomFeedScreen(props: Props) {
   const {rkey, name: handleOrDid} = props.route.params
 
   const feedParams: FeedParams | undefined = props.route.params.feedCacheKey
-    ? {feedCacheKey: props.route.params.feedCacheKey}
+    ? {
+        feedCacheKey: props.route.params
+          .feedCacheKey as FeedParams['feedCacheKey'],
+      }
     : undefined
   const {t: l} = useLingui()
 

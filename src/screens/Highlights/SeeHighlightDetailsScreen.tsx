@@ -1,6 +1,5 @@
 import {useCallback, useMemo} from 'react'
 import {Image, StyleSheet, View} from 'react-native'
-import {type AppBskyFeedDefs, AppBskyFeedPost} from '@atproto/api'
 import {RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {Trans} from '@lingui/react/macro'
 import {type NativeStackScreenProps} from '@react-navigation/native-stack'
@@ -43,6 +42,8 @@ import {
 } from '#/components/PostControls/PostControlButton'
 import {PostMenuButton} from '#/components/PostControls/PostMenu'
 import * as Toast from '#/components/Toast'
+import {app} from '#/lexicons'
+import * as bsky from '#/types/bsky'
 
 type Props = NativeStackScreenProps<
   CommonNavigatorParams,
@@ -143,12 +144,12 @@ export function SeeHighlightDetailsScreen({route}: Props) {
     if (
       anchorItem &&
       anchorItem.type === 'threadPost' &&
-      AppBskyFeedPost.isRecord(anchorItem.value.post.record)
+      bsky.isType(app.bsky.feed.post, anchorItem.value.post.record)
     ) {
       const p = anchorItem.value.post
       const r = anchorItem.value.post.record
       return {
-        post: p as unknown as Shadow<AppBskyFeedDefs.PostView>,
+        post: p as unknown as Shadow<app.bsky.feed.defs.PostView>,
         record: r,
         richText: new RichTextAPI({
           text: r.text,
@@ -677,7 +678,7 @@ export function SeeHighlightDetailsScreen({route}: Props) {
             <List
               data={slices}
               renderItem={renderItem}
-              ListHeaderComponent={header}
+              ListHeaderComponent={header || undefined}
               keyExtractor={(item: unknown) => (item as ThreadPostItem).key}
               initialNumToRender={initialNumToRender}
               contentContainerStyle={{paddingBottom: 40}}

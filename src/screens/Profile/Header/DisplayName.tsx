@@ -1,5 +1,4 @@
 import {View} from 'react-native'
-import {type AppBskyActorDefs} from '@atproto/api'
 import {type ModerationDecision} from '@bsky/sdk/moderation'
 
 import {useAnonymousMode} from '#/lib/im8/hooks/useAnonymousMode'
@@ -9,12 +8,13 @@ import {useSession} from '#/state/session'
 import {atoms as a, useBreakpoints, useTheme} from '#/alf'
 import {Text} from '#/components/Typography'
 import {useSimpleVerificationState} from '#/components/verification'
+import {app} from '#/lexicons'
 
 export function ProfileHeaderDisplayName({
   profile,
   moderation,
 }: {
-  profile: Shadow<AppBskyActorDefs.ProfileViewDetailed>
+  profile: Shadow<app.bsky.actor.defs.ProfileViewDetailed>
   moderation: ModerationDecision
 }) {
   const t = useTheme()

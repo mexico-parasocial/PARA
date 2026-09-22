@@ -12,7 +12,7 @@ import {
 import {type Client} from '@atproto/lex'
 import {type SessionData} from '@atproto/lex-password-session'
 
-import {BLUESKY_PROXY_HEADER, isLikelyLocalServiceUrl} from '#/lib/constants'
+import {isLikelyLocalServiceUrl} from '#/lib/constants'
 import {logger} from '#/logger'
 import * as persisted from '#/state/persisted'
 import * as userActionHistory from '#/state/userActionHistory'
@@ -22,7 +22,6 @@ import {AnalyticsContext, useAnalyticsBase, utils} from '#/analytics'
 import {IS_WEB} from '#/env'
 import {com} from '#/lexicons'
 import {emitSessionDropped} from '../events'
-import {BskyAppAgent, PasswordSessionManager} from './bridge-agent'
 import {getPublicAppviewClient} from './clients'
 import {createSessionBundleAndCreateAccount} from './create-account'
 import {pickExpiryRescueCandidate} from './expiry-rescue'
@@ -856,34 +855,18 @@ export function usePublicAppviewClient(): Client {
 /*
  * Compat shim for the pre-lex-client `useAgent()`.
  *
- * Upstream deleted the bridge agent once every call site had moved to the lex
- * clients (appview/pds/chat). This app is only part-way through that migration
- * - 50+ modules, including the PARA-specific civic queries, still expect an
- * `AtpAgent` - and `registerParaLexicons` only knows how to attach PARA's
- * custom lexicons to an agent. So the bridge stays until those call sites move.
+ * Upstream deleted the bridge agent and re-pointed every call site to the lex
+ * clients. This app keeps the `useAgent()` name but now returns the session
+ * bundle itself: `session` (null when logged out), plus `appviewClient`,
+ * `pdsClient` and `chatClient` for typed `.call(schema, ...)` requests.
  *
- * The agent is derived from the bundle rather than stored in it, which keeps
- * `session-core` free of the agent it just shed. One agent is memoized per
- * bundle: bundles are replaced wholesale on login/logout/refresh, so a new
- * bundle yields a new agent and the old one becomes unreachable with it.
- *
- * Delete this (and `bridge-agent.ts`) once nothing imports `useAgent`.
+ * Delete this shim once every consumer has moved to `useSession()` /
+ * the client hooks directly.
  */
-const bridgeAgents = new WeakMap<object, BskyAppAgent>()
-
-export function useAgent(): BskyAppAgent {
+export function useAgent(): SessionBundle | PublicSessionBundle {
   const bundle = useContext(BundleContext)
   if (!bundle) {
     throw Error('useAgent() must be below <SessionProvider>.')
   }
-  const existing = bridgeAgents.get(bundle)
-  if (existing) return existing
-  const agent = new BskyAppAgent(
-    new PasswordSessionManager(bundle.session, {
-      service: bundle.service.toString(),
-    }),
-  )
-  agent.configureProxy(BLUESKY_PROXY_HEADER.get())
-  bridgeAgents.set(bundle, agent)
-  return agent
+  return bundle
 }

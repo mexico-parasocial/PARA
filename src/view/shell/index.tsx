@@ -255,7 +255,7 @@ export function Shell() {
         <Deactivated />
       ) : (
         <>
-          {aa.state.error === 'account-data' ? (
+          {(aa.state.error as string | undefined) === 'account-data' ? (
             <DataUnavailableScreen />
           ) : aa.state.access === aa.Access.None ? (
             <NoAccessScreen />

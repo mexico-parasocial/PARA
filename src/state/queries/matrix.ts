@@ -1,6 +1,11 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {matrixBridgeFetch} from '#/lib/matrix/bridge'
+import {
+  BRIDGE_AUDIENCES,
+  bridgeCallWithProof,
+  MatrixProofUnavailableError,
+} from '#/lib/matrix/proofs'
 import {logger} from '#/logger'
 
 interface CommunitySpaceResponse {
@@ -11,8 +16,29 @@ interface CommunitySpaceResponse {
 interface MatrixTokenResponse {
   accessToken: string
   deviceId: string
+  sessionId: string
   userId: string
   homeServer: string
+}
+
+export interface MatrixIdentityResponse {
+  userId: string
+  homeServer: string
+  loginFlow: 'oidc'
+}
+
+export interface MatrixAttestResponse {
+  userId: string
+  sessionId: string
+  deviceId: string
+  attested: boolean
+}
+
+export interface CommunityJoinResponse {
+  userId: string
+  spaceId: string
+  joinedRoomIds: string[]
+  chamber: 'A' | 'B' | null
 }
 
 interface UnreadResponse {
@@ -86,7 +112,9 @@ export function useCommunitySpaceQuery(communityUri: string | undefined) {
         `/api/space-for-community?uri=${encodeURIComponent(communityUri)}`,
       )
       if (!res.ok) {
-        throw new Error(await getBridgeErrorMessage(res, 'Failed to fetch space'))
+        throw new Error(
+          await getBridgeErrorMessage(res, 'Failed to fetch space'),
+        )
       }
       return res.json()
     },
@@ -95,24 +123,99 @@ export function useCommunitySpaceQuery(communityUri: string | undefined) {
   })
 }
 
-export function useMatrixTokenQuery({enabled = true}: {enabled?: boolean} = {}) {
-  return useQuery<MatrixTokenResponse>({
-    queryKey: ['matrix-token'],
-    queryFn: async () => {
-      const res = await matrixBridgeFetch('/api/matrix-token', {
-        method: 'POST',
-      })
-      if (!res.ok) {
-        throw new Error(await getBridgeErrorMessage(res, 'Failed to fetch token'))
-      }
-      return res.json()
-    },
+/**
+ * CD-M6: the caller's Matrix identity, derived from the identity key the
+ * app just proved possession of. No mapping is read server-side; this is the
+ * derivation cross-check plus the point where the Synapse account is
+ * ensured. Mints nothing. (The old GET variant is gone — 410 server-side.)
+ */
+export function useMatrixIdentityQuery({
+  enabled = true,
+}: {enabled?: boolean} = {}) {
+  return useQuery<MatrixIdentityResponse>({
+    queryKey: ['matrix-identity'],
+    queryFn: () =>
+      bridgeCallWithProof(BRIDGE_AUDIENCES.identity, '/api/matrix-identity'),
     enabled,
-    staleTime: 1000 * 60 * 60, // 1 hour — tokens are long-lived in Synapse
+    staleTime: Infinity,
+    retry: (failureCount, error) =>
+      !(error instanceof MatrixProofUnavailableError) && failureCount < 2,
   })
 }
 
-export function useUnreadCountQuery({enabled = true}: {enabled?: boolean} = {}) {
+/**
+ * CD-M6 session attestation for MAS-native logins: registers the client's
+ * MAS device against the derived MXID so attribution, moderation,
+ * revocation and role projection reach it. Idempotent per device — call on
+ * every login with a stable per-install deviceId.
+ */
+export function useMatrixAttestMutation() {
+  return useMutation<
+    MatrixAttestResponse,
+    Error,
+    {deviceId: string; friendlyName?: string}
+  >({
+    mutationFn: ({deviceId, friendlyName}) =>
+      bridgeCallWithProof(BRIDGE_AUDIENCES.attest, '/api/matrix-attest', {
+        deviceId,
+        friendlyName,
+      }),
+  })
+}
+
+/**
+ * The verified join (CD-M6): re-join the caller's account into a
+ * community's rooms after a proof of possession. Idempotent — call it on
+ * membership.changed→active, on foreground, and whenever sync reports the
+ * account left a room it should still be in (the bridge's membership lease
+ * evicts inactive accounts; active members are re-admitted here).
+ */
+export function useCommunityJoinMutation() {
+  const queryClient = useQueryClient()
+  return useMutation<CommunityJoinResponse, Error, {communityUri: string}>({
+    mutationFn: ({communityUri}) =>
+      bridgeCallWithProof(BRIDGE_AUDIENCES.join, '/api/community-join', {
+        communityUri,
+      }),
+    onSuccess: (_data, {communityUri}) => {
+      void queryClient.invalidateQueries({queryKey: ['matrix-rooms']})
+      void queryClient.invalidateQueries({queryKey: ['matrix-unread']})
+      void queryClient.invalidateQueries({
+        queryKey: ['matrix-space', communityUri],
+      })
+    },
+  })
+}
+
+export function useMatrixTokenQuery({
+  enabled = true,
+  deviceId,
+  friendlyName,
+}: {
+  enabled?: boolean
+  deviceId?: string
+  friendlyName?: string
+} = {}) {
+  return useQuery<MatrixTokenResponse>({
+    queryKey: ['matrix-token', deviceId ?? null],
+    queryFn: () =>
+      // Appservice-login deployments only; the current MAS deployment
+      // answers 503 MATRIX_CLIENT_LOGIN_REQUIRED, which the caller surfaces
+      // by switching to the native authorization-code flow.
+      bridgeCallWithProof(BRIDGE_AUDIENCES.session, '/api/matrix-token', {
+        deviceId,
+        friendlyName,
+      }),
+    enabled,
+    staleTime: 1000 * 60 * 60, // 1 hour — tokens are long-lived in Synapse
+    retry: (failureCount, error) =>
+      !(error instanceof MatrixProofUnavailableError) && failureCount < 2,
+  })
+}
+
+export function useUnreadCountQuery({
+  enabled = true,
+}: {enabled?: boolean} = {}) {
   return useQuery<UnreadResponse>({
     queryKey: ['matrix-unread'],
     queryFn: async () => {
@@ -128,7 +231,7 @@ export function useUnreadCountQuery({enabled = true}: {enabled?: boolean} = {}) 
         return res.json()
       } catch (err) {
         logger.warn('matrix: bridge unavailable, defaulting unread to 0', {
-          safeMessage: `${err}`,
+          safeMessage: String(err),
         })
         return {unread: 0, communities: []}
       }
@@ -146,7 +249,9 @@ export function useMatrixRoomsQuery({
     queryFn: async () => {
       const res = await matrixBridgeFetch('/api/rooms')
       if (!res.ok) {
-        throw new Error(await getBridgeErrorMessage(res, 'Failed to fetch rooms'))
+        throw new Error(
+          await getBridgeErrorMessage(res, 'Failed to fetch rooms'),
+        )
       }
       return res.json()
     },
@@ -286,10 +391,14 @@ export function useSortitionRunQuery(
       if (!cabildeoUri) throw new Error('No Cabildeo URI')
       const params = new URLSearchParams({cabildeo: cabildeoUri})
       if (viewerDid) params.set('viewerDid', viewerDid)
-      const res = await matrixBridgeFetch(`/api/sortition/runs?${params.toString()}`)
+      const res = await matrixBridgeFetch(
+        `/api/sortition/runs?${params.toString()}`,
+      )
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `Failed to fetch sortition run: ${res.status}`)
+        throw new Error(
+          err.error || `Failed to fetch sortition run: ${res.status}`,
+        )
       }
       return res.json() as Promise<SortitionRunResponse>
     },
@@ -316,7 +425,9 @@ export function useCreateSortitionRunMutation() {
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `Failed to create sortition run: ${res.status}`)
+        throw new Error(
+          err.error || `Failed to create sortition run: ${res.status}`,
+        )
       }
       return res.json() as Promise<{run: SortitionRun}>
     },
@@ -440,7 +551,9 @@ export function useChatMemberListQuery(
         limit: String(limit),
         offset: String(offset),
       })
-      const res = await matrixBridgeFetch(`/api/chat-member-list?${params.toString()}`)
+      const res = await matrixBridgeFetch(
+        `/api/chat-member-list?${params.toString()}`,
+      )
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         throw new Error(
@@ -476,7 +589,9 @@ export function useModerationDashboardQuery(
         community: communityUri,
         modDid,
       })
-      const res = await matrixBridgeFetch(`/api/moderation-dashboard?${params.toString()}`)
+      const res = await matrixBridgeFetch(
+        `/api/moderation-dashboard?${params.toString()}`,
+      )
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         throw new Error(err.error || `Failed to fetch dashboard: ${res.status}`)
@@ -657,7 +772,9 @@ export function useProcessSortitionRunMutation() {
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `Failed to process sortition: ${res.status}`)
+        throw new Error(
+          err.error || `Failed to process sortition: ${res.status}`,
+        )
       }
     },
     onSuccess: () => {
@@ -694,7 +811,9 @@ export function useVerifySortitionMutation() {
       })
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `Failed to verify sortition: ${res.status}`)
+        throw new Error(
+          err.error || `Failed to verify sortition: ${res.status}`,
+        )
       }
       return res.json()
     },

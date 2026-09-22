@@ -4,18 +4,24 @@
  * Handles fetching and filtering political representatives.
  */
 
-import {type AtpAgent} from '@atproto/api'
-
 import {normalizeCommunityGovernance} from '#/lib/community-governance'
 import {type RepresentativeItem} from '#/lib/mock-data'
 import {filterRepsByState, REPRESENTATIVES} from '#/lib/mock-data'
 import {normalizeRepresentative} from '#/lib/representatives/participation'
+import {
+  type PublicSessionBundle,
+  type SessionBundle,
+} from '#/state/session/session-core'
+import {com} from '#/lexicons'
 import {USE_MOCK_DATA} from './config'
 import {
   type FilterParams,
   type PaginationParams,
   type ServiceResponse,
 } from './types'
+
+/** Any `useAgent()` result: authenticated session or public (logged-out). */
+type RepresentativesServiceAgent = SessionBundle | PublicSessionBundle
 
 export interface RepresentativesQueryParams
   extends FilterParams, PaginationParams {}
@@ -49,7 +55,7 @@ const NATIONAL_PARTY_BOARDS: NonNullable<CommunityBoardListResponse['boards']> =
  * Fetch representatives with optional filtering and pagination
  */
 export async function fetchRepresentatives(
-  agent: AtpAgent,
+  agent: RepresentativesServiceAgent,
   params?: RepresentativesQueryParams,
 ): Promise<ServiceResponse<RepresentativeItem[]>> {
   if (USE_MOCK_DATA) {
@@ -100,7 +106,7 @@ export async function fetchRepresentatives(
  * Fetch a single representative by ID
  */
 export async function fetchRepresentativeById(
-  agent: AtpAgent,
+  agent: RepresentativesServiceAgent,
   id: string,
 ): Promise<RepresentativeItem | null> {
   if (USE_MOCK_DATA) {
@@ -120,7 +126,7 @@ function simulateNetworkDelay(): Promise<void> {
 }
 
 async function fetchRepresentativesFromGovernance(
-  agent: AtpAgent,
+  agent: RepresentativesServiceAgent,
   params?: RepresentativesQueryParams,
 ): Promise<RepresentativeItem[]> {
   const boards = dedupeBoards([
@@ -179,73 +185,39 @@ async function fetchRepresentativesFromGovernance(
 }
 
 async function fetchCommunityBoards(
-  agent: AtpAgent,
+  agent: RepresentativesServiceAgent,
   params?: RepresentativesQueryParams,
 ) {
-  const search = new URLSearchParams()
-  search.set('limit', String(GOVERNANCE_FETCH_LIMIT))
-  if (params?.state && params.state !== 'All') {
-    search.set('state', params.state)
-  }
-  if (params?.cursor) {
-    search.set('cursor', params.cursor)
-  }
-
   try {
-    const res = await agent.fetchHandler(
-      `/xrpc/com.para.community.listBoards?${search.toString()}`,
-      {
-        method: 'GET',
-        headers: {
-          accept: 'application/json',
-        },
-      },
-    )
+    const res = await agent.appviewClient.call(com.para.community.listBoards, {
+      state: params?.state && params.state !== 'All' ? params.state : undefined,
+      limit: GOVERNANCE_FETCH_LIMIT,
+      cursor: params?.cursor,
+    })
 
-    if (!res.ok) {
-      return []
-    }
-
-    const json = (await res.json()) as CommunityBoardListResponse
-    return Array.isArray(json.boards) ? json.boards : []
+    return res.boards ?? []
   } catch {
     return []
   }
 }
 
 async function fetchCommunityGovernance(
-  agent: AtpAgent,
+  agent: RepresentativesServiceAgent,
   board: NonNullable<CommunityBoardListResponse['boards']>[number],
 ) {
   const communityName = board.name || board.slug || board.communityId
   if (!communityName) return null
 
-  const params = new URLSearchParams()
-  params.set('community', communityName)
-  if (board.communityId) {
-    params.set('communityId', board.communityId)
-  }
-
   try {
-    const res = await agent.fetchHandler(
-      `/xrpc/com.para.community.getGovernance?${params.toString()}`,
+    const res = await agent.appviewClient.call(
+      com.para.community.getGovernance,
       {
-        method: 'GET',
-        headers: {
-          accept: 'application/json',
-        },
+        community: communityName,
+        communityId: board.communityId,
       },
     )
 
-    if (!res.ok) {
-      return null
-    }
-
-    return normalizeCommunityGovernance(
-      await res.json(),
-      communityName,
-      board.communityId,
-    )
+    return normalizeCommunityGovernance(res, communityName, board.communityId)
   } catch {
     return null
   }

@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native'
 import {LinearGradient} from 'expo-linear-gradient'
+import {type DidString} from '@atproto/syntax'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -23,6 +24,7 @@ import {atoms as a, useTheme as useNewTheme} from '#/alf'
 import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfo} from '#/components/icons/CircleInfo'
 import {Text as NewText} from '#/components/Typography'
 import {IS_ANDROID, IS_WEB} from '#/env'
+import {chat, com} from '#/lexicons'
 import {resetToTab} from '../../../Navigation'
 import {ErrorMessage} from '../util/error/ErrorMessage'
 import {Text} from '../util/text/Text'
@@ -39,7 +41,7 @@ export function Component({}: {}) {
   const agent = useAgent()
   const {removeAccount} = useSessionApi()
   const dmServiceHeaders = getDmServiceHeadersForServiceUrl(
-    agent.serviceUrl.toString(),
+    agent.service.toString(),
   )
   const {_} = useLingui()
   const {closeModal} = useModalControls()
@@ -53,7 +55,7 @@ export function Component({}: {}) {
     setError('')
     setIsProcessing(true)
     try {
-      await agent.com.atproto.server.requestAccountDelete()
+      await agent.pdsClient.call(com.atproto.server.requestAccountDelete)
       setIsEmailSent(true)
     } catch (e: unknown) {
       setError(cleanError(e))
@@ -71,17 +73,11 @@ export function Component({}: {}) {
 
     try {
       // inform chat service of intent to delete account
-      const {success} = await agent.api.chat.bsky.actor.deleteAccount(
-        undefined,
-        {
-          headers: dmServiceHeaders,
-        },
-      )
-      if (!success) {
-        throw new Error('Failed to inform chat service of account deletion')
-      }
-      await agent.com.atproto.server.deleteAccount({
-        did: currentAccount.did,
+      await agent.chatClient.call(chat.bsky.actor.deleteAccount, undefined, {
+        headers: dmServiceHeaders,
+      })
+      await agent.pdsClient.call(com.atproto.server.deleteAccount, {
+        did: currentAccount.did as DidString,
         password,
         token,
       })
@@ -169,7 +165,8 @@ export function Component({}: {}) {
                   accessibilityRole="button"
                   accessibilityLabel={_(msg`Cancel account deletion`)}
                   accessibilityHint=""
-                  onAccessibilityEscape={onCancel}>
+                  /* escape hatch: prop missing from the strict RN type but supported at runtime */
+                  {...{onAccessibilityEscape: onCancel}}>
                   <Text type="button-lg" style={pal.textLight}>
                     <Trans context="action">Cancel</Trans>
                   </Text>
@@ -277,7 +274,7 @@ export function Component({}: {}) {
                   accessibilityRole="button"
                   accessibilityLabel={_(msg`Cancel account deletion`)}
                   accessibilityHint={_(msg`Exits account deletion process`)}
-                  onAccessibilityEscape={onCancel}>
+                  {...{onAccessibilityEscape: onCancel}}>
                   <Text type="button-lg" style={pal.textLight}>
                     <Trans context="action">Cancel</Trans>
                   </Text>
@@ -308,7 +305,9 @@ const styles = StyleSheet.create({
   titleDesktop: {
     textAlign: 'center',
     overflow: 'hidden',
+    // @ts-ignore web-only style props
     whiteSpace: 'nowrap',
+    // @ts-ignore web-only style props
     textOverflow: 'ellipsis',
     // @ts-ignore only rendered on web
     maxWidth: '400px',

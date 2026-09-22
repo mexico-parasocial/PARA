@@ -56,7 +56,7 @@ let HighlightableRichText = ({
   const {enterHighlightMode, exitHighlightMode} = useHighlightMode()
   const {highlights, addHighlight, removeHighlight, updateHighlightData} =
     useHighlights(postUri)
-  const inputRef = useRef<TextInput>(null)
+  const inputRef = useRef<React.ComponentRef<typeof TextInput> | null>(null)
 
   // Selection state
   const [selection, setSelection] = useState<{

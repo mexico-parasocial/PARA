@@ -3,6 +3,7 @@ import {
   type ForwardRefExoticComponent,
   type RefAttributes,
 } from 'react'
+import {type Ref} from 'react'
 import Svg, {Path} from 'react-native-svg'
 
 import {type Props, useCommonSVGProps} from '#/components/icons/common'
@@ -16,7 +17,7 @@ export type IconWithSvgMeta = ForwardRefExoticComponent<
 }
 
 export const IconTemplate_Stroke2_Corner0_Rounded = forwardRef(
-  function LogoImpl(props: Props, ref) {
+  function LogoImpl(props: Props, ref: Ref<Svg>) {
     const {fill, size, style, ...rest} = useCommonSVGProps(props)
 
     return (

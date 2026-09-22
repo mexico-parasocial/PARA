@@ -1,5 +1,4 @@
 import {useEffect, useMemo, useState} from 'react'
-import {type AppBskyActorDefs, type AppBskyNotificationDefs} from '@atproto/api'
 import {type QueryClient} from '@tanstack/react-query'
 import {EventEmitter} from 'eventemitter3'
 
@@ -31,6 +30,7 @@ import {findAllProfilesInQueryData as findAllProfilesInSuggestedUsersForExploreQ
 import {findAllProfilesInQueryData as findAllProfilesInSuggestedUsersForSeeMoreQueryData} from '#/state/queries/trending/useGetSuggestedUsersForSeeMoreQuery'
 import {findAllProfilesInQueryData as findAllProfilesInSuggestedUsersQueryData} from '#/state/queries/trending/useGetSuggestedUsersQuery'
 import {findAllProfilesInQueryData as findAllProfilesInPostThreadV2QueryData} from '#/state/queries/usePostThread/queryCache'
+import {app} from '#/lexicons'
 import type * as bsky from '#/types/bsky'
 import {castAsShadow, type Shadow} from './types'
 
@@ -41,9 +41,10 @@ export interface ProfileShadow {
   muted: boolean | undefined
   mutedOnlyReposts: boolean | undefined
   blockingUri: string | undefined
-  verification: AppBskyActorDefs.VerificationState
-  status: AppBskyActorDefs.StatusView | undefined
-  activitySubscription: AppBskyNotificationDefs.ActivitySubscription | undefined
+  verification: app.bsky.actor.defs.VerificationState
+  status: app.bsky.actor.defs.StatusView | undefined
+  activitySubscription:
+    app.bsky.notification.defs.ActivitySubscription | undefined
 }
 
 const shadows: WeakMap<
@@ -292,9 +293,18 @@ function* findProfilesInCache(
   yield* findAllProfilesInListMembersQueryData(queryClient, did)
   yield* findAllProfilesInMyBlockedAccountsQueryData(queryClient, did)
   yield* findAllProfilesInMyMutedAccountsQueryData(queryClient, did)
-  yield* findAllProfilesInPostLikedByQueryData(queryClient, did)
-  yield* findAllProfilesInPostRepostedByQueryData(queryClient, did)
-  yield* findAllProfilesInPostQuotesQueryData(queryClient, did)
+  yield* findAllProfilesInPostLikedByQueryData(queryClient, did) as Generator<
+    bsky.profile.AnyProfileView,
+    void
+  >
+  yield* findAllProfilesInPostRepostedByQueryData(
+    queryClient,
+    did,
+  ) as Generator<bsky.profile.AnyProfileView, void>
+  yield* findAllProfilesInPostQuotesQueryData(queryClient, did) as Generator<
+    bsky.profile.AnyProfileView,
+    void
+  >
   yield* findAllProfilesInProfileQueryData(queryClient, did)
   yield* findAllProfilesInProfileFollowersQueryData(queryClient, did)
   yield* findAllProfilesInProfileFollowsQueryData(queryClient, did)

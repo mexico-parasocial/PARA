@@ -32,13 +32,13 @@ export function richTextToString(rt: RichText, loose: boolean): string {
 }
 
 /**
- * Widens facets typed by the legacy `@atproto/api` codegen into the shape the
+ * Widens facets typed by the legacy `the legacy SDK` codegen into the shape the
  * SDK's `RichText` accepts.
  *
  * The two are the same lexicon and identical at runtime; they differ only in
  * that the SDK brands `did`/`uri` as template literal types, which makes the
  * legacy `string` versions unassignable. Call this where facets read off an
- * `@atproto/api` view type are handed to `new RichText(...)`.
+ * `the legacy SDK` view type are handed to `new RichText(...)`.
  *
  * Transitional: it goes away once the view types come from the SDK too.
  */

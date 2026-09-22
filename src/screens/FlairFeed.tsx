@@ -1,10 +1,6 @@
 import {useCallback, useMemo, useState} from 'react'
 import {type ListRenderItemInfo, View} from 'react-native'
-import {
-  type AppBskyActorDefs,
-  type AppBskyFeedDefs,
-  type AtpAgent,
-} from '@atproto/api'
+import {type AtIdentifierString} from '@atproto/syntax'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -36,6 +32,7 @@ import {InlineLinkText} from '#/components/Link'
 import {ListFooter, ListMaybePlaceholder} from '#/components/Lists'
 import {SearchError} from '#/components/SearchError'
 import {Text} from '#/components/Typography'
+import {app, com} from '#/lexicons'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -58,11 +55,13 @@ function getFlairAxis(
 
 // ─── Renderers ───────────────────────────────────────────────────────────────
 
-const renderItem = ({item}: ListRenderItemInfo<AppBskyFeedDefs.PostView>) => {
+const renderItem = ({
+  item,
+}: ListRenderItemInfo<app.bsky.feed.defs.PostView>) => {
   return <Post post={item} />
 }
 
-const keyExtractor = (item: AppBskyFeedDefs.PostView, index: number) => {
+const keyExtractor = (item: app.bsky.feed.defs.PostView, index: number) => {
   return `${item.uri}-${index}`
 }
 
@@ -196,16 +195,15 @@ function FlairFeedTab({
   } = useInfiniteQuery({
     queryKey: ['para-flair-feed', flairTag, sort],
     queryFn: async ({pageParam}: {pageParam?: string}) => {
-      const res = await agent.call('com.para.feed.getTimeline', {
+      const res = await agent.appviewClient.call(com.para.feed.getTimeline, {
         limit: 25,
         cursor: pageParam,
         flairTag,
       })
-      const payload = res.data as {cursor?: string; feed?: unknown[]}
-      const feed = (payload.feed ?? []).filter(isParaPostView)
+      const feed = res.feed.filter(isParaPostView)
       const posts = await hydrateParaPosts(agent, feed)
       return {
-        cursor: payload.cursor,
+        cursor: res.cursor,
         posts,
       }
     },
@@ -311,17 +309,19 @@ function FlairFeedTab({
 }
 
 async function hydrateParaPosts(
-  agent: AtpAgent,
+  agent: ReturnType<typeof useAgent>,
   feed: ParaPostView[],
-): Promise<AppBskyFeedDefs.PostView[]> {
-  const profiles = new Map<string, AppBskyActorDefs.ProfileViewDetailed>()
-  const posts: AppBskyFeedDefs.PostView[] = []
+): Promise<app.bsky.feed.defs.PostView[]> {
+  const profiles = new Map<string, app.bsky.actor.defs.ProfileViewDetailed>()
+  const posts: app.bsky.feed.defs.PostView[] = []
 
   for (const item of feed) {
     let profile = profiles.get(item.author)
     if (!profile) {
-      const res = await agent.getProfile({actor: item.author})
-      profile = res.data
+      const res = await agent.appviewClient.call(app.bsky.actor.getProfile, {
+        actor: item.author as AtIdentifierString,
+      })
+      profile = res
       profiles.set(item.author, profile)
     }
     posts.push(hydrateParaPostView(item, profile).post)

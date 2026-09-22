@@ -37,7 +37,7 @@ function isPARATag(tagStr: string) {
 }
 
 /**
- * Structural shape of a legacy `@atproto/api` RichText, which is not
+ * Structural shape of a legacy `the legacy SDK` RichText, which is not
  * `instanceof` the SDK class. See the unwrap in {@link RichText}.
  */
 type LegacyRichTextLike = {text: string; facets?: unknown[]}
@@ -103,14 +103,14 @@ export function RichText({
     }
     /*
      * The app is mid-migration to `@bsky/sdk`, and many call sites still
-     * hold a `RichText` from `@atproto/api`. Those are a different class, so
+     * hold a `RichText` from `the legacy SDK`. Those are a different class, so
      * the `instanceof` above misses them - passing one straight through as
      * `text` would nest the object inside `UnicodeString`, and every later
      * `.replace()` on `richText.text` would throw. Rebuild from its already
      * resolved text/facets instead (the facet JSON shape is identical), and
      * skip detection so server-resolved mentions survive.
      *
-     * Remove this branch once nothing imports `RichText` from `@atproto/api`.
+     * Remove this branch once nothing imports `RichText` from `the legacy SDK`.
      */
     if (typeof value !== 'string') {
       return new RichTextAPI({

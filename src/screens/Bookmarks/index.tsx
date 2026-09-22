@@ -1,10 +1,6 @@
 import {useCallback, useMemo, useState} from 'react'
 import {View} from 'react-native'
-import {
-  type $Typed,
-  type AppBskyBookmarkDefs,
-  AppBskyFeedDefs,
-} from '@atproto/api'
+import {type $Typed} from '@atproto/lex'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -39,6 +35,8 @@ import * as Skele from '#/components/Skeleton'
 import * as toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {IS_IOS} from '#/env'
+import {app} from '#/lexicons'
+import * as bsky from '#/types/bsky'
 
 type Props = NativeStackScreenProps<CommonNavigatorParams, 'Bookmarks'>
 
@@ -80,15 +78,15 @@ type ListItem =
   | {
       type: 'bookmark'
       key: string
-      bookmark: Omit<AppBskyBookmarkDefs.BookmarkView, 'item'> & {
-        item: $Typed<AppBskyFeedDefs.PostView>
+      bookmark: Omit<app.bsky.bookmark.defs.BookmarkView, 'item'> & {
+        item: $Typed<app.bsky.feed.defs.PostView>
       }
     }
   | {
       type: 'bookmarkNotFound'
       key: string
-      bookmark: Omit<AppBskyBookmarkDefs.BookmarkView, 'item'> & {
-        item: $Typed<AppBskyFeedDefs.NotFoundPost>
+      bookmark: Omit<app.bsky.bookmark.defs.BookmarkView, 'item'> & {
+        item: $Typed<app.bsky.feed.defs.NotFoundPost>
       }
     }
 
@@ -139,7 +137,7 @@ function BookmarksInner() {
 
       if (bookmarks.length > 0) {
         for (const bookmark of bookmarks) {
-          if (AppBskyFeedDefs.isNotFoundPost(bookmark.item)) {
+          if (bsky.isType(app.bsky.feed.defs.notFoundPost, bookmark.item)) {
             i.push({
               type: 'bookmarkNotFound',
               key: bookmark.item.uri,
@@ -149,7 +147,7 @@ function BookmarksInner() {
               },
             })
           }
-          if (AppBskyFeedDefs.isPostView(bookmark.item)) {
+          if (bsky.isType(app.bsky.feed.defs.postView, bookmark.item)) {
             i.push({
               type: 'bookmark',
               key: bookmark.item.uri,
@@ -206,7 +204,7 @@ function BookmarkNotFound({
   post,
 }: {
   hideTopBorder: boolean
-  post: $Typed<AppBskyFeedDefs.NotFoundPost>
+  post: $Typed<app.bsky.feed.defs.NotFoundPost>
 }) {
   const t = useTheme()
   const {_} = useLingui()

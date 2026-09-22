@@ -1,4 +1,4 @@
-import {RichText} from '@atproto/api'
+import {RichText} from '@bsky/sdk/richtext'
 
 import {parseEmbedPlayerFromUrl} from '#/lib/strings/embed-player'
 import {
@@ -6,7 +6,6 @@ import {
   createStarterPackLinkFromAndroidReferrer,
   parseStarterPackUri,
 } from '#/lib/strings/starter-pack'
-import {klipyUrlToBskyGifUrl} from '#/state/queries/tenor'
 import {cleanError} from '../../src/lib/strings/errors'
 import {createFullHandle, makeValidHandle} from '../../src/lib/strings/handles'
 import {enforceLen} from '../../src/lib/strings/helpers'

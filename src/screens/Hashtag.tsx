@@ -1,6 +1,5 @@
 import {useCallback, useMemo, useState} from 'react'
 import {type ListRenderItemInfo, View} from 'react-native'
-import {type AppBskyFeedDefs} from '@atproto/api'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {useFocusEffect} from '@react-navigation/native'
 import {type NativeStackScreenProps} from '@react-navigation/native-stack'
@@ -30,12 +29,15 @@ import {InlineLinkText} from '#/components/Link'
 import {ListFooter, ListMaybePlaceholder} from '#/components/Lists'
 import {SearchError} from '#/components/SearchError'
 import {Text} from '#/components/Typography'
+import {app} from '#/lexicons'
 
-const renderItem = ({item}: ListRenderItemInfo<AppBskyFeedDefs.PostView>) => {
+const renderItem = ({
+  item,
+}: ListRenderItemInfo<app.bsky.feed.defs.PostView>) => {
   return <Post post={item} />
 }
 
-const keyExtractor = (item: AppBskyFeedDefs.PostView, index: number) => {
+const keyExtractor = (item: app.bsky.feed.defs.PostView, index: number) => {
   return `${item.uri}-${index}`
 }
 

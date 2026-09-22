@@ -1,5 +1,3 @@
-import {AppBskyFeedPost} from '@atproto/api'
-
 import {app} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 
@@ -45,8 +43,8 @@ describe('types/bsky lexicon schema helpers (#/lexicons)', () => {
 
     it('accepts an invalid body that has the right $type (dangerous semantics)', () => {
       /*
-       * Mirrors `dangerousIsType`: only the `$type` is checked, so a
-       * structurally invalid record still passes.
+       * Only the `$type` is checked, so a structurally invalid record still
+       * passes.
        */
       expect(bsky.isType(app.bsky.feed.post, invalidPost)).toBe(true)
     })
@@ -64,8 +62,7 @@ describe('types/bsky lexicon schema helpers (#/lexicons)', () => {
 
     it('returns false (does not throw) for null, undefined and non-objects', () => {
       /*
-       * Mirrors the `dangerousIsType`/`is$typed` behavior - call sites pass
-       * e.g. `post.record` which may be undefined.
+       * Call sites pass e.g. `post.record` which may be undefined.
        */
       expect(bsky.isType(app.bsky.feed.post, null)).toBe(false)
       expect(bsky.isType(app.bsky.feed.post, undefined)).toBe(false)
@@ -165,44 +162,5 @@ describe('types/bsky lexicon schema helpers (#/lexicons)', () => {
         'hello world',
       )
     })
-  })
-})
-
-describe('types/bsky validator helpers (@atproto/api)', () => {
-  it('dangerousIsType accepts the right $type without validating the body', () => {
-    expect(
-      bsky.dangerousIsType<AppBskyFeedPost.Record>(
-        validPost,
-        AppBskyFeedPost.isRecord,
-      ),
-    ).toBe(true)
-    // Right $type, invalid body - still passes the fast guard.
-    expect(
-      bsky.dangerousIsType<AppBskyFeedPost.Record>(
-        invalidPost,
-        AppBskyFeedPost.isRecord,
-      ),
-    ).toBe(true)
-    expect(
-      bsky.dangerousIsType<AppBskyFeedPost.Record>(
-        wrongType,
-        AppBskyFeedPost.isRecord,
-      ),
-    ).toBe(false)
-  })
-
-  it('validate fully validates the body', () => {
-    expect(
-      bsky.validate<AppBskyFeedPost.Record>(
-        validPost,
-        AppBskyFeedPost.validateRecord,
-      ),
-    ).toBe(true)
-    expect(
-      bsky.validate<AppBskyFeedPost.Record>(
-        invalidPost,
-        AppBskyFeedPost.validateRecord,
-      ),
-    ).toBe(false)
   })
 })

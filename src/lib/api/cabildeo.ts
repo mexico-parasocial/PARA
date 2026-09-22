@@ -1,4 +1,5 @@
-import {type AtpAgent} from '@atproto/api'
+import {type LexMap} from '@atproto/lex'
+import {type AtUriString} from '@atproto/syntax'
 
 import {
   type CabildeoAccessTier,
@@ -11,6 +12,14 @@ import {
   type CabildeoVoteVisibility,
 } from '#/lib/api/para-lexicons'
 import {issueParaVoteProof} from '#/lib/api/vote-proof'
+import {
+  type PublicSessionBundle,
+  type SessionBundle,
+} from '#/state/session/session-core'
+import {com} from '#/lexicons'
+
+/** Any `useAgent()` result: authenticated session or public (logged-out). */
+export type CabildeoServiceAgent = SessionBundle | PublicSessionBundle
 
 /**
  * Cabildeo API service for writes + AppView-backed reads.
@@ -19,7 +28,7 @@ import {issueParaVoteProof} from '#/lib/api/vote-proof'
 // ─── Writes ──────────────────────────────────────────────────────────────────
 
 export async function publishCabildeo(
-  agent: AtpAgent,
+  agent: CabildeoServiceAgent,
   record: Omit<CabildeoRecord, 'author' | 'createdAt'>,
 ) {
   if (!agent.session) throw new Error('Not logged in')
@@ -31,31 +40,31 @@ export async function publishCabildeo(
     createdAt: now,
   }
 
-  return await agent.com.atproto.repo.createRecord({
+  return await agent.pdsClient.call(com.atproto.repo.createRecord, {
     repo: agent.session.did,
     collection: 'com.para.civic.cabildeo',
-    record: fullRecord as unknown as Record<string, unknown>,
+    record: fullRecord as unknown as LexMap,
   })
 }
 
 export async function publishCabildeoPosition(
-  agent: AtpAgent,
+  agent: CabildeoServiceAgent,
   record: Omit<CabildeoPositionRecord, 'createdAt'>,
 ) {
   if (!agent.session) throw new Error('Not logged in')
 
-  return await agent.com.atproto.repo.createRecord({
+  return await agent.pdsClient.call(com.atproto.repo.createRecord, {
     repo: agent.session.did,
     collection: 'com.para.civic.position',
     record: {
       ...record,
       createdAt: new Date().toISOString(),
-    } as unknown as Record<string, unknown>,
+    },
   })
 }
 
 export async function castCabildeoVote(
-  agent: AtpAgent,
+  agent: CabildeoServiceAgent,
   record: Omit<
     CabildeoVoteRecord,
     'createdAt' | 'delegatedFrom' | 'effectivePower'
@@ -66,35 +75,31 @@ export async function castCabildeoVote(
   const proof = await issueParaVoteProof(agent, {
     subjectUri: record.cabildeo,
     subjectType: 'cabildeo',
+    selectedOption: record.selectedOption,
   })
 
-  return await agent.call(
-    'com.para.civic.castVote',
-    undefined,
-    {
-      cabildeo: record.cabildeo,
-      selectedOption: record.selectedOption,
-      voteNullifier: proof?.voteNullifier,
-      eligibilityProofRef: proof?.eligibilityProofRef,
-    },
-    {encoding: 'application/json'},
-  )
+  return await agent.appviewClient.call(com.para.civic.castVote, {
+    cabildeo: record.cabildeo as AtUriString,
+    selectedOption: record.selectedOption ?? 0,
+    voteNullifier: proof.voteNullifier,
+    eligibilityProofRef: proof.eligibilityProofRef,
+  })
 }
 
 export async function delegateCabildeoVote(
-  agent: AtpAgent,
+  agent: CabildeoServiceAgent,
   record: Omit<CabildeoDelegationRecord, 'createdAt'>,
 ) {
   if (!agent.session) throw new Error('Not logged in')
   assertValidCession(record)
 
-  return await agent.com.atproto.repo.createRecord({
+  return await agent.pdsClient.call(com.atproto.repo.createRecord, {
     repo: agent.session.did,
     collection: 'com.para.civic.delegation',
     record: {
       ...record,
       createdAt: new Date().toISOString(),
-    } as unknown as Record<string, unknown>,
+    },
   })
 }
 
@@ -220,20 +225,6 @@ export type CabildeoPositionReadView = {
   createdAt: string
 }
 
-type ListCabildeosResponse = {
-  cabildeos?: CabildeoReadView[]
-  cursor?: string
-}
-
-type GetCabildeoResponse = {
-  cabildeo?: CabildeoReadView
-}
-
-type ListCabildeoPositionsResponse = {
-  positions?: CabildeoPositionReadView[]
-  cursor?: string
-}
-
 export type DelegationCandidateReadView = {
   did: string
   handle?: string
@@ -251,15 +242,10 @@ export type CabildeoDelegationMode = 'active' | 'passive'
 
 export type CabildeoDelegationSignal = -3 | -2 | -1 | 0 | 1 | 2 | 3
 
-type ListDelegationCandidatesResponse = {
-  candidates?: DelegationCandidateReadView[]
-  cursor?: string
-}
-
 const MAX_PAGINATION_PAGES = 20
 
 export async function fetchCabildeosPage(
-  agent: AtpAgent,
+  agent: CabildeoServiceAgent,
   opts?: {
     community?: string
     phase?: CabildeoPhase
@@ -267,24 +253,20 @@ export async function fetchCabildeosPage(
     cursor?: string
   },
 ): Promise<{cabildeos: CabildeoReadView[]; cursor?: string}> {
-  const res = await requestCivic<ListCabildeosResponse>(
-    agent,
-    'com.para.civic.listCabildeos',
-    {
-      community: opts?.community,
-      phase: opts?.phase,
-      limit: opts?.limit ? String(opts.limit) : undefined,
-      cursor: opts?.cursor,
-    },
-  )
+  const res = await agent.appviewClient.call(com.para.civic.listCabildeos, {
+    community: opts?.community,
+    phase: opts?.phase,
+    limit: opts?.limit,
+    cursor: opts?.cursor,
+  })
   return {
-    cabildeos: res.cabildeos ?? [],
+    cabildeos: (res.cabildeos ?? []) as unknown as CabildeoReadView[],
     cursor: res.cursor,
   }
 }
 
 export async function fetchCabildeos(
-  agent: AtpAgent,
+  agent: CabildeoServiceAgent,
   opts?: {
     community?: string
     phase?: CabildeoPhase
@@ -311,14 +293,14 @@ export async function fetchCabildeos(
 }
 
 export async function fetchCabildeo(
-  agent: AtpAgent,
+  agent: CabildeoServiceAgent,
   cabildeoUri: string,
 ): Promise<CabildeoReadView | null> {
   try {
-    const res = await agent.call('com.para.civic.getCabildeo', {
-      cabildeo: cabildeoUri,
+    const res = await agent.appviewClient.call(com.para.civic.getCabildeo, {
+      cabildeo: cabildeoUri as AtUriString,
     })
-    return (res.data as GetCabildeoResponse).cabildeo ?? null
+    return (res.cabildeo as unknown as CabildeoReadView) ?? null
   } catch (err: unknown) {
     const error =
       err && typeof err === 'object'
@@ -332,7 +314,7 @@ export async function fetchCabildeo(
 }
 
 export async function fetchCabildeoPositionsPage(
-  agent: AtpAgent,
+  agent: CabildeoServiceAgent,
   opts: {
     cabildeoUri: string
     stance?: CabildeoPositionRecord['stance']
@@ -340,25 +322,24 @@ export async function fetchCabildeoPositionsPage(
     cursor?: string
   },
 ): Promise<{positions: CabildeoPositionReadView[]; cursor?: string}> {
-  const res = await requestCivic<ListCabildeoPositionsResponse>(
-    agent,
-    'com.para.civic.listCabildeoPositions',
+  const res = await agent.appviewClient.call(
+    com.para.civic.listCabildeoPositions,
     {
-      cabildeo: opts.cabildeoUri,
+      cabildeo: opts.cabildeoUri as AtUriString,
       stance: opts.stance,
-      limit: opts.limit ? String(opts.limit) : undefined,
+      limit: opts.limit,
       cursor: opts.cursor,
     },
   )
 
   return {
-    positions: res.positions ?? [],
+    positions: (res.positions ?? []) as unknown as CabildeoPositionReadView[],
     cursor: res.cursor,
   }
 }
 
 export async function fetchCabildeoPositions(
-  agent: AtpAgent,
+  agent: CabildeoServiceAgent,
   opts: {
     cabildeoUri: string
     stance?: CabildeoPositionRecord['stance']
@@ -385,7 +366,7 @@ export async function fetchCabildeoPositions(
 }
 
 export async function fetchDelegationCandidates(
-  agent: AtpAgent,
+  agent: CabildeoServiceAgent,
   opts: {
     cabildeoUri: string
     communityId?: string
@@ -393,28 +374,19 @@ export async function fetchDelegationCandidates(
     cursor?: string
   },
 ): Promise<{candidates: DelegationCandidateReadView[]; cursor?: string}> {
-  const res = await requestCivic<ListDelegationCandidatesResponse>(
-    agent,
-    'com.para.civic.listDelegationCandidates',
+  const res = await agent.appviewClient.call(
+    com.para.civic.listDelegationCandidates,
     {
-      cabildeo: opts.cabildeoUri,
+      cabildeo: opts.cabildeoUri as AtUriString,
       communityId: opts.communityId,
-      limit: opts.limit ? String(opts.limit) : undefined,
+      limit: opts.limit,
       cursor: opts.cursor,
     },
   )
 
   return {
-    candidates: res.candidates ?? [],
+    candidates: (res.candidates ??
+      []) as unknown as DelegationCandidateReadView[],
     cursor: res.cursor,
   }
-}
-
-async function requestCivic<T>(
-  agent: AtpAgent,
-  endpoint: string,
-  params: Record<string, string | number | undefined>,
-): Promise<T> {
-  const res = await agent.call(endpoint, params)
-  return res.data as T
 }

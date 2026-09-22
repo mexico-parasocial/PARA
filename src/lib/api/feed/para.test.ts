@@ -1,10 +1,10 @@
 import {type Client} from '@atproto/lex'
 
-import {app} from '#/lexicons'
 import {
   buildParaTimelineFilterParams,
   ParaTimelineFeedAPI,
 } from '#/lib/api/feed/para'
+import {app, com} from '#/lexicons'
 
 describe('ParaTimelineFeedAPI', () => {
   it('omits empty filter params', () => {
@@ -23,13 +23,13 @@ describe('ParaTimelineFeedAPI', () => {
     })
   })
 
-  it('calls the Bluesky timeline fallback with no filter params by default', async () => {
+  it('calls the Para timeline with no filter params by default', async () => {
     const client = createClient()
     const api = new ParaTimelineFeedAPI({client: client as unknown as Client})
 
     await api.fetch({cursor: undefined, limit: 30})
 
-    expect(client.call).toHaveBeenCalledWith(app.bsky.feed.getTimeline, {
+    expect(client.call).toHaveBeenCalledWith(com.para.feed.getTimeline, {
       limit: 30,
       cursor: undefined,
     })
@@ -93,7 +93,7 @@ describe('ParaTimelineFeedAPI', () => {
 
     const result = await api.fetch({cursor: 'cursor-1', limit: 30})
 
-    expect(client.call).toHaveBeenCalledWith(app.bsky.feed.getTimeline, {
+    expect(client.call).toHaveBeenCalledWith(com.para.feed.getTimeline, {
       cursor: 'cursor-1',
       limit: 30,
     })

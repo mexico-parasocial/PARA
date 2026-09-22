@@ -12,6 +12,7 @@ import {
 import {useAgent} from '#/state/session'
 import {type HighlightActionPayload} from '#/components/HighlightOptionsModal'
 import * as Toast from '#/components/Toast'
+import {com} from '#/lexicons'
 
 const HIGHLIGHT_AGENT_ID = COMMUNITY_AGENT_PROFILE.id
 const HIGHLIGHT_COLLECTION_NAME = 'Highlighted Notes'
@@ -37,9 +38,8 @@ export function useHighlightQuickActions({
     async (payload: HighlightActionPayload) => {
       try {
         await persistHighlight(payload)
-        await agent.call(
-          'com.para.agent.sendMessage',
-          undefined,
+        await agent.appviewClient.call(
+          com.para.agent.sendMessage,
           {
             agentId: HIGHLIGHT_AGENT_ID,
             text: buildAgentMessage(payload, postUri),
@@ -65,7 +65,7 @@ export function useHighlightQuickActions({
         const collection = await getHighlightCollection(agent)
         const item = buildCivicTreeItem(payload, postUri, highlight?.text)
 
-        await agent.call('com.para.collection.updateCollection', undefined, {
+        await agent.appviewClient.call(com.para.collection.updateCollection, {
           id: collection.id,
           collection: {
             id: collection.id,
@@ -75,7 +75,7 @@ export function useHighlightQuickActions({
             items: [...collection.items, item],
             relations: collection.relations || [],
           },
-        })
+        } as com.para.collection.updateCollection.$InputBody)
         void queryClient.invalidateQueries({queryKey: ['collections', 'list']})
         void queryClient.invalidateQueries({
           queryKey: ['collections', 'get', collection.id],
@@ -93,24 +93,29 @@ export function useHighlightQuickActions({
 }
 
 async function getHighlightCollection(agent: ReturnType<typeof useAgent>) {
-  const listRes = await agent.call('com.para.collection.listCollections', {})
-  const listData = listRes.data as {collections?: CivicTreeCollection[]}
+  const listRes = await agent.appviewClient.call(
+    com.para.collection.listCollections,
+    {},
+  )
+  const listData = listRes as {collections?: CivicTreeCollection[]}
   const collections = listData.collections || []
   const existing = collections.find(
     collection => collection.name === HIGHLIGHT_COLLECTION_NAME,
   )
 
   if (existing) {
-    const latest = await agent.call('com.para.collection.getCollection', {
-      id: existing.id,
-    })
-    const latestData = latest.data as {collection: CivicTreeCollection}
+    const latest = await agent.appviewClient.call(
+      com.para.collection.getCollection,
+      {
+        id: existing.id,
+      },
+    )
+    const latestData = latest as {collection: CivicTreeCollection}
     return latestData.collection
   }
 
-  const created = await agent.call(
-    'com.para.collection.createCollection',
-    undefined,
+  const created = await agent.appviewClient.call(
+    com.para.collection.createCollection,
     {
       name: HIGHLIGHT_COLLECTION_NAME,
       description:
@@ -118,7 +123,7 @@ async function getHighlightCollection(agent: ReturnType<typeof useAgent>) {
       color: '#3B82F6',
     },
   )
-  const id = (created.data as {id: string}).id
+  const id = created.id
   return {
     id,
     name: HIGHLIGHT_COLLECTION_NAME,

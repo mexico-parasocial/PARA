@@ -1,6 +1,6 @@
 import {useCallback, useEffect, useMemo, useState} from 'react'
 import {LayoutAnimation, View} from 'react-native'
-import {AppBskyFeedPost, AtUri} from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 import {RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {type RouteProp, useNavigation, useRoute} from '@react-navigation/native'
@@ -163,13 +163,7 @@ function MessageInputPostEmbed({
   )
 
   const {rt, record} = useMemo(() => {
-    if (
-      post &&
-      bsky.dangerousIsType<AppBskyFeedPost.Record>(
-        post.record,
-        AppBskyFeedPost.isRecord,
-      )
-    ) {
+    if (post && bsky.isType(app.bsky.feed.post, post.record)) {
       return {
         rt: new RichTextAPI({
           text: post.record.text,

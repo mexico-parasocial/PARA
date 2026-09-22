@@ -315,7 +315,6 @@ export function QuoteEmbed({
         showAvatar
         postHref={itemHref}
         timestamp={quote.indexedAt}
-        linkDisabled
       />
       {moderation ? (
         <PostAlerts

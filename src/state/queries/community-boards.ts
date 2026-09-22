@@ -1,7 +1,9 @@
+import {type AtUriString} from '@atproto/syntax'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {STALE} from '#/state/queries'
 import {useAgent} from '#/state/session'
+import {com} from '#/lexicons'
 
 const RQKEY_ROOT = 'community-boards'
 
@@ -20,12 +22,7 @@ export type CommunityBoardView = {
   subdelegatesChatId: string
   memberCount: number
   viewerMembershipState:
-    | 'none'
-    | 'pending'
-    | 'active'
-    | 'left'
-    | 'removed'
-    | 'blocked'
+    'none' | 'pending' | 'active' | 'left' | 'removed' | 'blocked'
   viewerRoles?: string[]
   status?: 'draft' | 'active'
   visibility?: 'open' | 'closed' | 'secret'
@@ -286,7 +283,7 @@ async function fetchCommunityBoards({
   agent: ReturnType<typeof useAgent>
   opts: CommunityBoardsQueryOptions
 }): Promise<CommunityBoardsResponse> {
-  const res = await agent.call('com.para.community.listBoards', {
+  const res = await agent.appviewClient.call(com.para.community.listBoards, {
     limit: opts.limit ?? 12,
     query: opts.query,
     state: opts.state,
@@ -297,7 +294,7 @@ async function fetchCommunityBoards({
     cursor: opts.cursor,
   })
 
-  return normalizeCommunityBoardsResponse(res.data)
+  return normalizeCommunityBoardsResponse(res)
 }
 
 async function fetchCommunityMembers({
@@ -307,7 +304,7 @@ async function fetchCommunityMembers({
   agent: ReturnType<typeof useAgent>
   opts: CommunityMembersQueryOptions
 }): Promise<CommunityMembersResponse> {
-  const res = await agent.call('com.para.community.listMembers', {
+  const res = await agent.appviewClient.call(com.para.community.listMembers, {
     communityId: opts.communityId ?? '',
     limit: opts.limit ?? 50,
     membershipState: opts.membershipState,
@@ -316,7 +313,7 @@ async function fetchCommunityMembers({
     cursor: opts.cursor,
   })
 
-  return normalizeCommunityMembersResponse(res.data)
+  return normalizeCommunityMembersResponse(res)
 }
 
 async function fetchCommunityBoard({
@@ -328,12 +325,12 @@ async function fetchCommunityBoard({
   communityId?: string
   uri?: string
 }): Promise<CommunityBoardResponse> {
-  const res = await agent.call('com.para.community.getBoard', {
+  const res = await agent.appviewClient.call(com.para.community.getBoard, {
     communityId,
-    uri,
+    uri: uri as AtUriString | undefined,
   })
 
-  return normalizeCommunityBoardResponse(res.data)
+  return normalizeCommunityBoardResponse(res)
 }
 
 async function createCommunity({
@@ -343,13 +340,12 @@ async function createCommunity({
   agent: ReturnType<typeof useAgent>
   input: CreateCommunityInput
 }): Promise<CreateCommunityResponse> {
-  const res = await agent.call(
-    'com.para.community.createBoard',
-    undefined,
-    input,
+  const res = await agent.appviewClient.call(
+    com.para.community.createBoard,
+    input as com.para.community.createBoard.$InputBody,
   )
 
-  const json = asRecord(res.data)
+  const json = asRecord(res)
   return {
     uri: readString(json?.uri) ?? '',
     cid: readString(json?.cid) ?? '',
@@ -409,9 +405,7 @@ function normalizeMember(json: unknown): CommunityMemberView {
       ? data.roles.filter(role => typeof role === 'string')
       : undefined,
     chamberAssignment: readString(data.chamberAssignment) as
-      | 'A'
-      | 'B'
-      | undefined,
+      'A' | 'B' | undefined,
     joinedAt: readString(data.joinedAt) ?? '',
     votesCast: normalizeNumber(data.votesCast),
     delegationsReceived: normalizeNumber(data.delegationsReceived),
@@ -547,9 +541,12 @@ async function joinCommunity({
   agent: ReturnType<typeof useAgent>
   input: JoinCommunityInput
 }): Promise<JoinCommunityResponse> {
-  const res = await agent.call('com.para.community.join', undefined, input)
+  const res = await agent.appviewClient.call(
+    com.para.community.join,
+    input as com.para.community.join.$InputBody,
+  )
 
-  const json = asRecord(res.data)
+  const json = asRecord(res)
   return {
     uri: readString(json?.uri) ?? '',
     cid: readString(json?.cid) ?? '',
@@ -568,9 +565,12 @@ async function leaveCommunity({
   agent: ReturnType<typeof useAgent>
   input: LeaveCommunityInput
 }): Promise<LeaveCommunityResponse> {
-  const res = await agent.call('com.para.community.leave', undefined, input)
+  const res = await agent.appviewClient.call(
+    com.para.community.leave,
+    input as com.para.community.leave.$InputBody,
+  )
 
-  const json = asRecord(res.data)
+  const json = asRecord(res)
   return {
     uri: readString(json?.uri) ?? '',
     cid: readString(json?.cid) ?? '',
@@ -589,13 +589,12 @@ async function acceptDraftInvite({
   agent: ReturnType<typeof useAgent>
   input: AcceptDraftInviteInput
 }): Promise<AcceptDraftInviteResponse> {
-  const res = await agent.call(
-    'com.para.community.acceptDraftInvite',
-    undefined,
-    input,
+  const res = await agent.appviewClient.call(
+    com.para.community.acceptDraftInvite,
+    input as com.para.community.acceptDraftInvite.$InputBody,
   )
 
-  const json = asRecord(res.data)
+  const json = asRecord(res)
   return {
     status: (readString(json?.status) as 'draft' | 'active') ?? 'draft',
     memberCount: typeof json?.memberCount === 'number' ? json.memberCount : 0,

@@ -1,8 +1,6 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
-import {
-  type ParaRaqAssessmentRecord,
-} from '#/lib/api/para-lexicons'
+import {type ParaRaqAssessmentRecord} from '#/lib/api/para-lexicons'
 import {
   fetchAxisVotes,
   fetchCommunityAlignment,
@@ -118,7 +116,7 @@ export function usePublishRaqAssessmentMutation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: RAQ_USER_ALIGNMENT_QUERY_KEY(agent.assertDid),
+        queryKey: RAQ_USER_ALIGNMENT_QUERY_KEY(agent.session?.did ?? ''),
       })
     },
   })
@@ -142,7 +140,7 @@ export function useSubmitProposedQuestionMutation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: RAQ_PROPOSED_QUESTIONS_QUERY_KEY(agent.assertDid),
+        queryKey: RAQ_PROPOSED_QUESTIONS_QUERY_KEY(agent.session?.did ?? ''),
       })
     },
   })
@@ -158,7 +156,7 @@ export function useSubmitAxisVoteMutation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: RAQ_AXIS_VOTES_QUERY_KEY(agent.assertDid),
+        queryKey: RAQ_AXIS_VOTES_QUERY_KEY(agent.session?.did ?? ''),
       })
     },
   })

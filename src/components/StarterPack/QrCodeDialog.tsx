@@ -6,7 +6,6 @@ import {
   saveToLibraryAsync,
 } from 'expo-media-library/legacy'
 import * as Sharing from 'expo-sharing'
-import {type AppBskyGraphDefs, AppBskyGraphStarterpack} from '@atproto/api'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -23,6 +22,7 @@ import {Loader} from '#/components/Loader'
 import {QrCode} from '#/components/StarterPack/QrCode'
 import * as Toast from '#/components/Toast'
 import {IS_NATIVE, IS_WEB} from '#/env'
+import {app} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 
 export function QrCodeDialog({
@@ -30,7 +30,7 @@ export function QrCodeDialog({
   link,
   control,
 }: {
-  starterPack: AppBskyGraphDefs.StarterPackView
+  starterPack: app.bsky.graph.defs.StarterPackView
   link?: string
   control: DialogControlProps
 }) {
@@ -88,12 +88,7 @@ export function QrCodeDialog({
       } else {
         setIsSaveProcessing(true)
 
-        if (
-          !bsky.validate(
-            starterPack.record,
-            AppBskyGraphStarterpack.validateRecord,
-          )
-        ) {
+        if (!bsky.matches(app.bsky.graph.starterpack, starterPack.record)) {
           return
         }
 

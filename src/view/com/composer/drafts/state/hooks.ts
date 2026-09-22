@@ -1,11 +1,12 @@
 import {useCallback} from 'react'
-import {AppBskyDraftCreateDraft, type AppBskyDraftDefs} from '@atproto/api'
+import {XrpcResponseError} from '@atproto/lex'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {isNetworkError} from '#/lib/strings/errors'
-import {useAppviewClient, useChatClient, useAgent} from '#/state/session'
+import {useAgent, useAppviewClient, useChatClient} from '#/state/session'
 import {type ComposerState} from '#/view/com/composer/state/composer'
 import {useAnalytics} from '#/analytics'
+import {app} from '#/lexicons'
 import {
   composerStateToDraft,
   draftToComposerPosts,
@@ -30,8 +31,8 @@ export function useDrafts() {
     queryFn: async () => {
       // Ensure media cache is populated before checking which media exists
       await storage.ensureMediaCachePopulated()
-      const res = await agent.app.bsky.draft.getDrafts({})
-      return res.data.drafts.map(view => draftViewToSummary({view, analytics}))
+      const res = await agent.appviewClient.call(app.bsky.draft.getDrafts, {})
+      return res.drafts.map(view => draftViewToSummary({view, analytics}))
     },
   })
 }
@@ -46,12 +47,12 @@ export function useLoadDraft() {
     async (
       draftId: string,
     ): Promise<{
-      draft: AppBskyDraftDefs.Draft
+      draft: app.bsky.draft.defs.Draft
       loadedMedia: Map<string, string>
     } | null> => {
       // Fetch the draft from server
-      const res = await agent.app.bsky.draft.getDrafts({})
-      const draftView = res.data.drafts.find(d => d.id === draftId)
+      const res = await agent.appviewClient.call(app.bsky.draft.getDrafts, {})
+      const draftView = res.drafts.find(d => d.id === draftId)
 
       if (!draftView) {
         return null
@@ -129,7 +130,7 @@ export function useSaveDraft() {
 
       if (existingDraftId) {
         // Update existing draft
-        await agent.app.bsky.draft.updateDraft({
+        await agent.appviewClient.call(app.bsky.draft.updateDraft, {
           draft: {
             id: existingDraftId,
             draft,
@@ -138,8 +139,10 @@ export function useSaveDraft() {
         return existingDraftId
       } else {
         // Create new draft
-        const res = await agent.app.bsky.draft.createDraft({draft})
-        return res.data.id
+        const res = await agent.appviewClient.call(app.bsky.draft.createDraft, {
+          draft,
+        })
+        return res.id
       }
     },
     onSuccess: () => {
@@ -147,7 +150,10 @@ export function useSaveDraft() {
     },
     onError: error => {
       // Check for draft limit error
-      if (error instanceof AppBskyDraftCreateDraft.DraftLimitReachedError) {
+      if (
+        error instanceof XrpcResponseError &&
+        error.error === 'DraftLimitReached'
+      ) {
         logger.error('Draft limit reached', {safeMessage: error.message})
         // Error will be handled by caller
       } else if (!isNetworkError(error)) {
@@ -169,8 +175,8 @@ export function useDeleteDraft() {
   return useMutation({
     mutationFn: async (draftId: string) => {
       // First fetch the draft to get media paths for cleanup
-      const res = await agent.app.bsky.draft.getDrafts({})
-      const draftView = res.data.drafts.find(d => d.id === draftId)
+      const res = await agent.appviewClient.call(app.bsky.draft.getDrafts, {})
+      const draftView = res.drafts.find(d => d.id === draftId)
 
       if (draftView) {
         // Delete local media files
@@ -189,7 +195,7 @@ export function useDeleteDraft() {
       }
 
       // Delete from server
-      await agent.app.bsky.draft.deleteDraft({id: draftId})
+      await agent.appviewClient.call(app.bsky.draft.deleteDraft, {id: draftId})
     },
     onSuccess: () => {
       queryClient.invalidateQueries({queryKey: DRAFTS_QUERY_KEY})
@@ -219,7 +225,7 @@ export function useCleanupPublishedDraftMutation() {
         mediaFileCount: originalLocalRefs.size,
       })
       // Delete from server first
-      await agent.app.bsky.draft.deleteDraft({id: draftId})
+      await agent.appviewClient.call(app.bsky.draft.deleteDraft, {id: draftId})
       logger.debug('deleted draft from server', {draftId})
     },
     onSuccess: async (_, {originalLocalRefs}) => {

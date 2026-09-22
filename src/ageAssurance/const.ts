@@ -1,8 +1,3 @@
-import {
-  ageAssuranceRuleIDs as ids,
-  type AppBskyAgeassuranceDefs,
-} from '@atproto/api'
-
 import {AgeAssuranceAccess} from '#/ageAssurance/types'
 import {
   ANDROID_API_LEVEL,
@@ -11,6 +6,7 @@ import {
   IS_IOS,
   IS_WEB,
 } from '#/env'
+import {type app} from '#/lexicons'
 /**
  * Minimum age required to access the app at all.
  */
@@ -43,18 +39,18 @@ export const AGE_ASSURANCE_PLATFORM: 'web' | 'ios' | 'android' = IS_WEB
 export const DEVICE_SIGNALS_SUPPORTED: boolean =
   (IS_IOS && IOS_MAJOR_VERSION >= 26) || (IS_ANDROID && ANDROID_API_LEVEL >= 23)
 
-export const FALLBACK_REGION_CONFIG: AppBskyAgeassuranceDefs.ConfigRegion = {
+export const FALLBACK_REGION_CONFIG: app.bsky.ageassurance.defs.ConfigRegion = {
   countryCode: '*',
   regionCode: undefined,
   minAccessAge: MIN_ACCESS_AGE,
   rules: [
     {
-      $type: ids.IfDeclaredOverAge,
+      $type: 'app.bsky.ageassurance.defs#configRegionRuleIfDeclaredOverAge',
       age: MIN_ACCESS_AGE,
       access: AgeAssuranceAccess.Full,
     },
     {
-      $type: ids.Default,
+      $type: 'app.bsky.ageassurance.defs#configRegionRuleDefault',
       access: AgeAssuranceAccess.Full, // LOCAL DEV: bypass (PDS lacks ageassurance endpoints)
     },
   ],

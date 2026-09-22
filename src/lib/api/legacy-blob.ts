@@ -1,5 +1,5 @@
-import {BlobRef} from '@atproto/api'
 import {type BlobRef as LexBlobRef} from '@atproto/lex'
+import {BlobRef} from '@atproto/lexicon'
 
 /**
  * Bridge a lex blob ref (the plain-JSON `{$type: 'blob', ref, mimeType, size}`

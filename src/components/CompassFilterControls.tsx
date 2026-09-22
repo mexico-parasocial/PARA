@@ -475,7 +475,9 @@ export function CommunityFilterList({
   const navigation = useNavigation<NavigationProp>()
   const {viewMode, selectedFilters, toggleFilter, showCommunities} =
     useCompassFilter()
-  const scrollViewRef = useRef<ScrollView>(null)
+  const scrollViewRef = useRef<React.ComponentRef<typeof ScrollView> | null>(
+    null,
+  )
   const {_} = useLingui()
 
   if (!showCommunities) return null

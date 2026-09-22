@@ -282,8 +282,15 @@ export function useApplyPullRequestOTAUpdate() {
     }
   }
 
+  /*
+   * "Revert to embedded" reloads the app from the default channel, undoing a
+   * manually applied pull-request deployment.
+   */
+  const revertToEmbedded = restoreDefaultChannel
+
   return {
     tryApplyUpdate,
+    revertToEmbedded,
     restoreDefaultChannel,
     isCurrentlyRunningPullRequestDeployment,
     isCurrentlyRunningNonStandardChannel,

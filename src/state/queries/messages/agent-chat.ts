@@ -1,6 +1,7 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {useAgent} from '#/state/session'
+import {com} from '#/lexicons'
 
 export interface AgentChatMessage {
   id: string
@@ -17,9 +18,12 @@ export function useAgentChatQuery(agentId: string) {
   return useQuery({
     queryKey: RQKEY(agentId),
     queryFn: async () => {
-      const {data} = await agent.call('com.para.agent.getConversation', {
-        agentId,
-      })
+      const data = await agent.appviewClient.call(
+        com.para.agent.getConversation,
+        {
+          agentId,
+        },
+      )
       return (data.messages ?? []) as AgentChatMessage[]
     },
     staleTime: 1000 * 30, // 30 seconds
@@ -32,9 +36,8 @@ export function useSendAgentMessageMutation(agentId: string) {
 
   return useMutation({
     mutationFn: async (text: string) => {
-      const {data} = await agent.call(
-        'com.para.agent.sendMessage',
-        undefined,
+      const data = await agent.appviewClient.call(
+        com.para.agent.sendMessage,
         {agentId, text},
         {encoding: 'application/json'},
       )

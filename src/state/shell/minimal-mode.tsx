@@ -98,6 +98,22 @@ export function useMinimalShellModeSetters() {
   return context
 }
 
+export function useSetMinimalShellMode() {
+  const {footerMode} = useMinimalShellMode()
+  return useCallback(
+    (v: boolean) => {
+      'worklet'
+      footerMode.set(
+        withSpring(v ? 1 : 0, {
+          ...Reanimated3DefaultSpringConfig,
+          overshootClamping: true,
+        }),
+      )
+    },
+    [footerMode],
+  )
+}
+
 export function useEnableMinimalShellMode({enabled} = {enabled: true}) {
   const setters = useMinimalShellModeSetters()
   useEffect(() => {

@@ -461,37 +461,57 @@ export function DelegateVoteScreen({route, navigation}: Props) {
                 <View style={styles.repList}>
                   {/* Flair selection for active delegation */}
                   <View style={[a.mb_md, a.px_sm]}>
-                    <Text style={[a.font_bold, a.mb_xs]}>Alcance de la cesión</Text>
+                    <Text style={[a.font_bold, a.mb_xs]}>
+                      Alcance de la cesión
+                    </Text>
                     <View style={[a.flex_row, a.flex_wrap, a.gap_xs]}>
-                      <TouchableOpacity accessibilityRole="button"
+                      <TouchableOpacity
+                        accessibilityRole="button"
                         onPress={() => setActiveFlairs([])}
                         style={[
                           styles.filterPill,
-                          activeFlairs.length === 0 && {backgroundColor: t.palette.primary_500},
+                          activeFlairs.length === 0 && {
+                            backgroundColor: t.palette.primary_500,
+                          },
                           t.atoms.bg_contrast_25,
                         ]}>
-                        <Text style={[activeFlairs.length === 0 ? {color: 'white'} : t.atoms.text, {fontSize: 12}]}>
+                        <Text
+                          style={[
+                            activeFlairs.length === 0
+                              ? {color: 'white'}
+                              : t.atoms.text,
+                            {fontSize: 12},
+                          ]}>
                           Este cabildeo
                         </Text>
                       </TouchableOpacity>
                       {cabildeo.flairs?.map(f => {
                         const isSelected = activeFlairs.includes(f)
                         return (
-                          <TouchableOpacity accessibilityRole="button"
+                          <TouchableOpacity
+                            accessibilityRole="button"
                             key={f}
                             onPress={() => {
                               if (isSelected) {
-                                setActiveFlairs(activeFlairs.filter(x => x !== f))
+                                setActiveFlairs(
+                                  activeFlairs.filter(x => x !== f),
+                                )
                               } else {
                                 setActiveFlairs([...activeFlairs, f])
                               }
                             }}
                             style={[
                               styles.filterPill,
-                              isSelected && {backgroundColor: t.palette.primary_500},
+                              isSelected && {
+                                backgroundColor: t.palette.primary_500,
+                              },
                               t.atoms.bg_contrast_25,
                             ]}>
-                            <Text style={[isSelected ? {color: 'white'} : t.atoms.text, {fontSize: 12}]}>
+                            <Text
+                              style={[
+                                isSelected ? {color: 'white'} : t.atoms.text,
+                                {fontSize: 12},
+                              ]}>
                               Todo en "{f}"
                             </Text>
                           </TouchableOpacity>
@@ -742,13 +762,17 @@ export function DelegateVoteScreen({route, navigation}: Props) {
                   </View>
                   <TextInput
                     accessibilityRole="text"
-                    style={[styles.reasonInput, t.atoms.bg, t.atoms.text]}
+                    style={[
+                      styles.reasonInput,
+                      t.atoms.bg,
+                      t.atoms.text,
+                      {textAlignVertical: 'top'},
+                    ]}
                     placeholder="Razón o condición de tu cesión"
                     placeholderTextColor={t.palette.contrast_500}
                     value={reason}
                     onChangeText={setReason}
                     multiline
-                    textAlignVertical="top"
                   />
                   <View style={styles.signalRow}>
                     {SIGNALS.map(item => (

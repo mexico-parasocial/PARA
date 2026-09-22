@@ -23,10 +23,9 @@ import {useTheme} from '#/alf'
 import splashImagePointer from '../assets/illustrations/illustration-mobile.png'
 // @ts-ignore
 import darkSplashImagePointer from '../assets/illustrations/illustration-mobile-dark.png'
-const splashImageUri = RNImage.resolveAssetSource(splashImagePointer).uri
-const darkSplashImageUri = RNImage.resolveAssetSource(
-  darkSplashImagePointer,
-).uri
+const splashImageUri = RNImage.resolveAssetSource(splashImagePointer)?.uri ?? ''
+const darkSplashImageUri =
+  RNImage.resolveAssetSource(darkSplashImagePointer)?.uri ?? ''
 
 type Props = {
   isReady: boolean

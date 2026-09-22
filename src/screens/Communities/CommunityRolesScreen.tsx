@@ -43,6 +43,7 @@ import {Verified_Stroke2_Corner2_Rounded as VerifiedIcon} from '#/components/ico
 import * as Layout from '#/components/Layout'
 import {ListMaybePlaceholder} from '#/components/Lists'
 import {Text} from '#/components/Typography'
+import {type AnyProfileView} from '#/types/bsky/profile'
 
 type CommunityRolesParams = {
   communityId: string
@@ -333,7 +334,7 @@ export function CommunityRolesScreen() {
           handle: currentAccount.handle,
           status: 'applied',
           appliedAt: new Date().toISOString(),
-        } as CommunityGovernanceApplicant,
+        },
         viewerDid || '',
         viewerHandle,
       ),
@@ -1395,7 +1396,7 @@ export function CommunityRolesScreen() {
                         ]}>
                         <PreviewableUserAvatar
                           size={38}
-                          profile={holder.author}
+                          profile={holder.author as AnyProfileView}
                           type={
                             holder.author.associated?.labeler
                               ? 'labeler'

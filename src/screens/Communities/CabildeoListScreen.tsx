@@ -102,7 +102,9 @@ export function CabildeoListScreen() {
         refreshControl={
           <RefreshControl
             refreshing={isFetching}
-            onRefresh={refetch}
+            onRefresh={async () => {
+              await refetch()
+            }}
             tintColor={t.palette.primary_500}
           />
         }>

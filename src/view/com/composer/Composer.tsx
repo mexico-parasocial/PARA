@@ -50,9 +50,8 @@ import Animated, {
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import * as FileSystem from 'expo-file-system'
 import {type ImagePickerAsset} from 'expo-image-picker'
-import {AppBskyUnspeccedDefs, AtUri, ChatBskyGroupDefs} from '@atproto/api'
 import {type Client} from '@atproto/lex'
-import {type AtUriString} from '@atproto/syntax'
+import {AtUri, type AtUriString} from '@atproto/syntax'
 import {RichText} from '@bsky/sdk/richtext'
 import {msg, plural} from '@lingui/core/macro'
 import {Trans, useLingui} from '@lingui/react/macro'
@@ -177,7 +176,8 @@ import {
   IS_WEB_SAFARI,
 } from '#/env'
 import {type Gif} from '#/features/gifPicker/types'
-import {app, com} from '#/lexicons'
+import {app, chat, com} from '#/lexicons'
+import * as bsky from '#/types/bsky'
 import {BottomSheetPortalProvider} from '../../../../modules/bottom-sheet'
 import {DraftsButton} from './drafts/DraftsButton'
 import {
@@ -1037,7 +1037,7 @@ export const ComposePost = ({
   const hasUnavailableChatInvite = linkQueries.some(
     q =>
       q.data?.type === 'chat-invite' &&
-      !ChatBskyGroupDefs.isJoinLinkPreviewView(q.data.view),
+      !bsky.isType(chat.bsky.group.defs.joinLinkPreviewView, q.data.view),
   )
 
   const canPost =
@@ -1279,7 +1279,7 @@ export const ComposePost = ({
               }
               if (
                 !res.thread.every(p =>
-                  AppBskyUnspeccedDefs.isThreadItemPost(p.value),
+                  bsky.isType(app.bsky.unspecced.defs.threadItemPost, p.value),
                 )
               ) {
                 throw new Error(`composer: app view returned non-post items`)
@@ -1350,7 +1350,7 @@ export const ComposePost = ({
           const resolved = q.data
           if (
             resolved?.type === 'chat-invite' &&
-            ChatBskyGroupDefs.isJoinLinkPreviewView(resolved.view)
+            bsky.isType(chat.bsky.group.defs.joinLinkPreviewView, resolved.view)
           ) {
             ax.metric('groupchat:inviteLink:shared', {
               convoId: resolved.view.convoId,
@@ -1389,7 +1389,7 @@ export const ComposePost = ({
       void whenAppViewReady(client, initQuote.uri, res => {
         const anchor = res?.thread.at(0)
         if (
-          AppBskyUnspeccedDefs.isThreadItemPost(anchor?.value) &&
+          bsky.isType(app.bsky.unspecced.defs.threadItemPost, anchor?.value) &&
           anchor.value.post.quoteCount !== initQuote.quoteCount
         ) {
           onPost?.(postUri)
@@ -2309,7 +2309,7 @@ function ComposerPills({
   const t = useTheme()
   const {i18n} = useLingui()
 
-  const scrollRef = useRef<ScrollView>(null)
+  const scrollRef = useRef<React.ComponentRef<typeof ScrollView> | null>(null)
   const [scrollState, setScrollState] = useState({left: false, right: false})
 
   const checkScroll = useCallback(() => {

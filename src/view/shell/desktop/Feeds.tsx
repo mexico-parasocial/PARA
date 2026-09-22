@@ -172,7 +172,7 @@ function FeedItem({
   onPress: () => void
 }) {
   const t = useTheme()
-  const {t: l} = useLingui()
+  const {t: l, i18n} = useLingui()
   const {
     state: hovered,
     onIn: onHoverIn,

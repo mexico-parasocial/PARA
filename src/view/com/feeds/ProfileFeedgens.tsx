@@ -12,7 +12,6 @@ import {
   View,
   type ViewStyle,
 } from 'react-native'
-import {type AppBskyFeedDefs} from '@atproto/api'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {useNavigation} from '@react-navigation/native'
@@ -34,6 +33,7 @@ import * as FeedCard from '#/components/FeedCard'
 import {HashtagWide_Stroke1_Corner0_Rounded as HashtagWideIcon} from '#/components/icons/Hashtag'
 import {ListFooter} from '#/components/Lists'
 import {IS_IOS, IS_NATIVE, IS_WEB} from '#/env'
+import {app} from '#/lexicons'
 
 const LOADING = {_reactKey: '__loading__' as const}
 const EMPTY = {_reactKey: '__empty__' as const}
@@ -41,13 +41,13 @@ const ERROR_ITEM = {_reactKey: '__error__' as const}
 const LOAD_MORE_ERROR_ITEM = {_reactKey: '__load_more_error__' as const}
 
 type Item =
-  | AppBskyFeedDefs.GeneratorView
+  | app.bsky.feed.defs.GeneratorView
   | typeof LOADING
   | typeof EMPTY
   | typeof ERROR_ITEM
   | typeof LOAD_MORE_ERROR_ITEM
 
-function isGeneratorView(item: Item): item is AppBskyFeedDefs.GeneratorView {
+function isGeneratorView(item: Item): item is app.bsky.feed.defs.GeneratorView {
   return !('_reactKey' in item)
 }
 

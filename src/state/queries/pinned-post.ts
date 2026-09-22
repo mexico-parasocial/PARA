@@ -1,3 +1,4 @@
+import {type AtIdentifierString} from '@atproto/syntax'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {useMutation, useQueryClient} from '@tanstack/react-query'
@@ -54,7 +55,7 @@ export function usePinnedPostMutation() {
         // get the currently pinned post so we can optimistically remove the pin from it
         assertSignedIn(currentAccount)
         const profile = await client.call(app.bsky.actor.getProfile, {
-          actor: currentAccount.did,
+          actor: currentAccount.did as AtIdentifierString,
         })
         prevPinnedPost = getPinnedPostUri(profile)
         if (prevPinnedPost) {

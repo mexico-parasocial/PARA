@@ -1,10 +1,7 @@
 import {useCallback, useMemo} from 'react'
 import {View} from 'react-native'
-import {
-  type AppBskyActorDefs,
-  AppBskyFeedGetAuthorFeed,
-  AtUri,
-} from '@atproto/api'
+import {XrpcResponseError} from '@atproto/lex'
+import {AtUri} from '@atproto/syntax'
 import {msg as msgLingui} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -19,6 +16,7 @@ import {useRemoveFeedMutation} from '#/state/queries/preferences'
 import {useSessionApi} from '#/state/session'
 import {Warning_Stroke2_Corner0_Rounded as WarningIcon} from '#/components/icons/Warning'
 import * as Prompt from '#/components/Prompt'
+import {app} from '#/lexicons'
 import {EmptyState} from '../util/EmptyState'
 import {ErrorMessage} from '../util/error/ErrorMessage'
 import {Button} from '../util/forms/Button'
@@ -47,7 +45,7 @@ export function PostFeedErrorMessage({
   feedDesc: FeedDescriptor
   error?: Error
   onPressTryAgain: () => void
-  savedFeedConfig?: AppBskyActorDefs.SavedFeed
+  savedFeedConfig?: app.bsky.actor.defs.SavedFeed
 }) {
   const {_: _l} = useLingui()
   const knownError = useMemo(
@@ -98,7 +96,7 @@ function FeedgenErrorMessage({
   feedDesc: FeedDescriptor
   knownError: KnownError
   rawError?: Error
-  savedFeedConfig?: AppBskyActorDefs.SavedFeed
+  savedFeedConfig?: app.bsky.actor.defs.SavedFeed
 }) {
   const pal = usePalette('default')
   const {_: _l} = useLingui()
@@ -264,8 +262,8 @@ function detectKnownError(
     return undefined
   }
   if (
-    error instanceof AppBskyFeedGetAuthorFeed.BlockedActorError ||
-    error instanceof AppBskyFeedGetAuthorFeed.BlockedByActorError
+    error instanceof XrpcResponseError &&
+    (error.error === 'BlockedActor' || error.error === 'BlockedByActor')
   ) {
     return KnownError.Block
   }

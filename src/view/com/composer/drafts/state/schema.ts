@@ -1,11 +1,11 @@
 /**
  * Types for draft display and local media tracking.
- * Server draft types come from @atproto/api.
+ * Server draft types come from the generated '#/lexicons' types.
  */
-import {type RichText as RichTextAPI} from '@atproto/api'
-import {type RichText as RichTextSDK} from '@bsky/sdk/richtext'
 
-/**
+import {type RichText as RichTextAPI} from '@bsky/sdk/richtext'
+
+import {type app} from '#/lexicons' /**
  * Reference to locally cached media file for display
  */
 export type LocalMediaDisplay = {
@@ -55,7 +55,7 @@ export type DraftPostDisplay = {
     handle: string
   }
   /** RichText for display */
-  richtext: RichTextAPI | RichTextSDK
+  richtext: RichTextAPI
 }
 
 /**
@@ -82,8 +82,7 @@ export type DraftSummary = {
   /** All posts in the draft for full display */
   posts: DraftPostDisplay[]
   /** The full server draft object for restoration */
-  /** The full server draft object for restoration */
-  draft: import('@atproto/api').AppBskyDraftDefs.Draft
+  draft: app.bsky.draft.defs.Draft
   /** Metadata about the draft for display purposes */
   meta: {
     /** Whether this device is the originating device for the draft */

@@ -4,7 +4,8 @@
  * Real API integration — no mock data.
  */
 
-import {type AtpAgent} from '@atproto/api'
+import {type LexMap} from '@atproto/lex'
+import {type AtIdentifierString, type DidString} from '@atproto/syntax'
 
 import {
   PARA_RAQ_ASSESSMENT_COLLECTION,
@@ -21,7 +22,15 @@ import {
 } from '#/lib/api/para-lexicons'
 import {issueParaVoteProof} from '#/lib/api/vote-proof'
 import {RAQ_AXES} from '#/lib/mock-data'
+import {
+  type PublicSessionBundle,
+  type SessionBundle,
+} from '#/state/session/session-core'
+import {com} from '#/lexicons'
 import {type PaginationParams, type ServiceResponse} from './types'
+
+/** Any `useAgent()` result: authenticated session or public (logged-out). */
+export type ParaServiceAgent = SessionBundle | PublicSessionBundle
 
 // ------------------------------------------------------------------
 // Static questionnaire definition (this is app config, not server data)
@@ -35,11 +44,20 @@ export async function fetchRAQAxes() {
 // Open Question (creates a standard Bluesky post with #?OpenQuestion tag)
 // ------------------------------------------------------------------
 
-export async function submitOpenQuestion(agent: AtpAgent, text: string) {
-  await agent.post({
-    text,
-    tags: ['?OpenQuestion'],
-    createdAt: new Date().toISOString(),
+export async function submitOpenQuestion(
+  agent: ParaServiceAgent,
+  text: string,
+) {
+  if (!agent.session) throw new Error('Not logged in')
+  await agent.pdsClient.call(com.atproto.repo.createRecord, {
+    repo: agent.session.did,
+    collection: 'app.bsky.feed.post',
+    record: {
+      $type: 'app.bsky.feed.post',
+      text,
+      tags: ['?OpenQuestion'],
+      createdAt: new Date().toISOString(),
+    },
   })
 }
 
@@ -47,9 +65,11 @@ export async function submitOpenQuestion(agent: AtpAgent, text: string) {
 // User Alignment
 // ------------------------------------------------------------------
 
-export async function fetchUserAlignment(agent: AtpAgent, did: string) {
-  const res = await agent.call('com.para.raq.getUserAlignment', {did})
-  return res.data.assessment
+export async function fetchUserAlignment(agent: ParaServiceAgent, did: string) {
+  const res = await agent.appviewClient.call(com.para.raq.getUserAlignment, {
+    did: did as DidString,
+  })
+  return res.assessment
 }
 
 // ------------------------------------------------------------------
@@ -57,13 +77,14 @@ export async function fetchUserAlignment(agent: AtpAgent, did: string) {
 // ------------------------------------------------------------------
 
 export async function fetchCommunityAlignment(
-  agent: AtpAgent,
+  agent: ParaServiceAgent,
   community: string,
 ) {
-  const res = await agent.call('com.para.raq.getCommunityAlignment', {
-    community,
-  })
-  return res.data
+  const res = await agent.appviewClient.call(
+    com.para.raq.getCommunityAlignment,
+    {community},
+  )
+  return res
 }
 
 // ------------------------------------------------------------------
@@ -71,26 +92,28 @@ export async function fetchCommunityAlignment(
 // ------------------------------------------------------------------
 
 export async function fetchProposedQuestions(
-  agent: AtpAgent,
+  agent: ParaServiceAgent,
   _did: string,
   params?: PaginationParams & {community?: string},
 ): Promise<ServiceResponse<ParaRaqProposalView[]>> {
-  const res = await agent.call('com.para.raq.getProposals', {
+  const res = await agent.appviewClient.call(com.para.raq.getProposals, {
     community: params?.community,
     limit: params?.limit || 50,
     cursor: params?.cursor,
   })
 
-  const proposals = (res.data.proposals as ParaRaqProposalView[]) || []
-  return {data: proposals, cursor: res.data.cursor}
+  const proposals = (res.proposals as ParaRaqProposalView[]) || []
+  return {data: proposals, cursor: res.cursor}
 }
 
 export async function submitProposedQuestion(
-  agent: AtpAgent,
+  agent: ParaServiceAgent,
   text: string,
   targetAxis?: string,
   targetCommunity?: string,
 ) {
+  const did = agent.session?.did
+  if (!did) throw new Error('Not logged in')
   const record: ParaRaqProposalRecord = {
     text,
     targetAxis,
@@ -98,11 +121,11 @@ export async function submitProposedQuestion(
     createdAt: new Date().toISOString(),
   }
 
-  await agent.com.atproto.repo.putRecord({
-    repo: agent.assertDid,
+  await agent.pdsClient.call(com.atproto.repo.putRecord, {
+    repo: did,
     collection: PARA_RAQ_PROPOSAL_COLLECTION,
     rkey: await generateTid(),
-    record: record as unknown as Record<string, unknown>,
+    record: record as unknown as LexMap,
     validate: false,
   })
 }
@@ -112,30 +135,32 @@ export async function submitProposedQuestion(
 // ------------------------------------------------------------------
 
 export async function fetchAxisVotes(
-  agent: AtpAgent,
+  agent: ParaServiceAgent,
   did: string,
   params?: PaginationParams,
 ): Promise<ServiceResponse<ParaRaqAxisVoteRecord[]>> {
-  const res = await agent.com.atproto.repo.listRecords({
-    repo: did,
+  const res = await agent.pdsClient.call(com.atproto.repo.listRecords, {
+    repo: did as AtIdentifierString,
     collection: PARA_RAQ_AXIS_VOTE_COLLECTION,
     limit: params?.limit || 20,
     cursor: params?.cursor,
   })
 
   const records =
-    res.data.records
+    res.records
       ?.map(r => r.value as unknown as ParaRaqAxisVoteRecord)
       .filter(Boolean) || []
 
-  return {data: records, cursor: res.data.cursor}
+  return {data: records, cursor: res.cursor}
 }
 
 export async function submitAxisVote(
-  agent: AtpAgent,
+  agent: ParaServiceAgent,
   axisId: string,
   value: number,
 ) {
+  const did = agent.session?.did
+  if (!did) throw new Error('Not logged in')
   const proof = await issueParaVoteProof(agent, {
     subjectUri: axisId,
     subjectType: 'raq_axis',
@@ -143,25 +168,27 @@ export async function submitAxisVote(
   const record: ParaRaqAxisVoteRecord = {
     axisId,
     value,
-    voteNullifier: proof?.voteNullifier,
-    eligibilityProofRef: proof?.eligibilityProofRef,
+    voteNullifier: proof.voteNullifier,
+    eligibilityProofRef: proof.eligibilityProofRef,
     createdAt: new Date().toISOString(),
   }
 
-  await agent.com.atproto.repo.putRecord({
-    repo: agent.assertDid,
+  await agent.pdsClient.call(com.atproto.repo.putRecord, {
+    repo: did,
     collection: PARA_RAQ_AXIS_VOTE_COLLECTION,
     rkey: await generateTid(),
-    record: record as unknown as Record<string, unknown>,
+    record: record as unknown as LexMap,
     validate: false,
   })
 }
 
 export async function submitProposalVote(
-  agent: AtpAgent,
+  agent: ParaServiceAgent,
   subject: string,
   value: number,
 ) {
+  const did = agent.session?.did
+  if (!did) throw new Error('Not logged in')
   const proof = await issueParaVoteProof(agent, {
     subjectUri: subject,
     subjectType: 'raq_proposal',
@@ -169,36 +196,38 @@ export async function submitProposalVote(
   const record: ParaRaqProposalVoteRecord = {
     subject,
     value: value > 0 ? 1 : value < 0 ? -1 : 0,
-    voteNullifier: proof?.voteNullifier,
-    eligibilityProofRef: proof?.eligibilityProofRef,
+    voteNullifier: proof.voteNullifier,
+    eligibilityProofRef: proof.eligibilityProofRef,
     createdAt: new Date().toISOString(),
   }
 
-  await agent.com.atproto.repo.putRecord({
-    repo: agent.assertDid,
+  await agent.pdsClient.call(com.atproto.repo.putRecord, {
+    repo: did,
     collection: PARA_RAQ_PROPOSAL_VOTE_COLLECTION,
     rkey: await generateTid(),
-    record: record as unknown as Record<string, unknown>,
+    record: record as unknown as LexMap,
     validate: false,
   })
 }
 
 export async function submitProposalAnswer(
-  agent: AtpAgent,
+  agent: ParaServiceAgent,
   subject: string,
   value: number,
 ) {
+  const did = agent.session?.did
+  if (!did) throw new Error('Not logged in')
   const record: ParaRaqProposalAnswerRecord = {
     subject,
     value: Math.max(-3, Math.min(3, value)),
     createdAt: new Date().toISOString(),
   }
 
-  await agent.com.atproto.repo.putRecord({
-    repo: agent.assertDid,
+  await agent.pdsClient.call(com.atproto.repo.putRecord, {
+    repo: did,
     collection: PARA_RAQ_PROPOSAL_ANSWER_COLLECTION,
     rkey: await generateTid(),
-    record: record as unknown as Record<string, unknown>,
+    record: record as unknown as LexMap,
     validate: false,
   })
 }
@@ -208,14 +237,16 @@ export async function submitProposalAnswer(
 // ------------------------------------------------------------------
 
 export async function publishRaqAssessment(
-  agent: AtpAgent,
+  agent: ParaServiceAgent,
   assessment: ParaRaqAssessmentRecord,
 ) {
-  await agent.com.atproto.repo.putRecord({
-    repo: agent.assertDid,
+  const did = agent.session?.did
+  if (!did) throw new Error('Not logged in')
+  await agent.pdsClient.call(com.atproto.repo.putRecord, {
+    repo: did,
     collection: PARA_RAQ_ASSESSMENT_COLLECTION,
     rkey: await generateTid(),
-    record: assessment as unknown as Record<string, unknown>,
+    record: assessment as unknown as LexMap,
     validate: false,
   })
 }

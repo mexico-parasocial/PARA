@@ -27,7 +27,9 @@ export function CommunitySelector({
 }: CommunitySelectorProps) {
   const t = useTheme()
   const navigation = useNavigation<NavigationProp>()
-  const scrollViewRef = useRef<ScrollView>(null)
+  const scrollViewRef = useRef<React.ComponentRef<typeof ScrollView> | null>(
+    null,
+  )
 
   const {selectedCommunities, toggleCommunity} = useGlobalFilter()
 

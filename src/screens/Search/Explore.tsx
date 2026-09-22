@@ -1,6 +1,5 @@
 import {useCallback, useMemo, useRef, useState} from 'react'
 import {View} from 'react-native'
-import {type AppBskyActorDefs, type AppBskyFeedDefs} from '@atproto/api'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {type ViewabilityConfig} from '@react-native/virtualized-lists'
 import {useQueryClient} from '@tanstack/react-query'
@@ -54,6 +53,7 @@ import {SubtleHover} from '#/components/SubtleHover'
 import {Text} from '#/components/Typography'
 import {type Metrics, useAnalytics} from '#/analytics'
 import {ExploreScreenLiveEventFeedsBanner} from '#/features/liveEvents/components/ExploreScreenLiveEventFeedsBanner'
+import {app} from '#/lexicons'
 import * as ModuleHeader from './components/ModuleHeader'
 import {SuggestedProfileCard} from './modules/ExploreSuggestedAccounts'
 
@@ -134,7 +134,7 @@ type ExploreScreenItems =
   | {
       type: 'profile'
       key: string
-      profile: AppBskyActorDefs.ProfileView
+      profile: app.bsky.actor.defs.ProfileView
       recId?: number
     }
   | {
@@ -144,7 +144,7 @@ type ExploreScreenItems =
   | {
       type: 'feed'
       key: string
-      feed: AppBskyFeedDefs.GeneratorView
+      feed: app.bsky.feed.defs.GeneratorView
     }
   | {
       type: 'loadMore'

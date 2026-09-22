@@ -1,6 +1,5 @@
 import {useCallback, useMemo, useState} from 'react'
 import {StyleSheet, View} from 'react-native'
-import {type AppBskyActorDefs} from '@atproto/api'
 import {plural} from '@lingui/core/macro'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {useNavigation, useNavigationState} from '@react-navigation/native'
@@ -98,6 +97,7 @@ import {Text} from '#/components/Typography'
 import {useAgeAssurance} from '#/ageAssurance'
 import {useAnalytics} from '#/analytics'
 import {type Events} from '#/analytics/metrics/types'
+import {app} from '#/lexicons'
 import {router} from '#/routes'
 import {PlatformInfo} from '../../../../modules/expo-bluesky-swiss-army'
 
@@ -250,7 +250,7 @@ function SwitchMenuItems({
   accounts:
     | {
         account: SessionAccount
-        profile?: AppBskyActorDefs.ProfileViewDetailed
+        profile?: app.bsky.actor.defs.ProfileViewDetailed
       }[]
     | undefined
   signOutPromptControl: DialogControlProps
@@ -361,7 +361,7 @@ function SwitchMenuItem({
   profile,
 }: {
   account: SessionAccount
-  profile: AppBskyActorDefs.ProfileViewDetailed | undefined
+  profile: app.bsky.actor.defs.ProfileViewDetailed | undefined
 }) {
   const {t: l} = useLingui()
   const {onPressSwitchAccount, pendingDid} = useAccountSwitcher()

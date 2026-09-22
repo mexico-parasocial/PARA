@@ -1,11 +1,15 @@
-import {type AppBskyActorDefs, type AppBskyFeedDefs} from '@atproto/api'
+import {type Client} from '@atproto/lex'
+import {
+  type AtIdentifierString,
+  type DidString,
+  type HandleString,
+} from '@atproto/syntax'
 
 import {hydrateParaPostView, type ParaPostView} from '#/lib/api/feed/para'
+import {app} from '#/lexicons'
 
 export type CommunityPostHydrationAgent = {
-  getProfile: (opts: {
-    actor: string
-  }) => Promise<{data: AppBskyActorDefs.ProfileViewDetailed}>
+  appviewClient: Client
 }
 
 export async function hydrateCommunityPosts({
@@ -15,8 +19,8 @@ export async function hydrateCommunityPosts({
 }: {
   agent: CommunityPostHydrationAgent
   posts: ParaPostView[]
-  profileCache: Map<string, AppBskyActorDefs.ProfileViewDetailed>
-}): Promise<AppBskyFeedDefs.PostView[]> {
+  profileCache: Map<string, app.bsky.actor.defs.ProfileViewDetailed>
+}): Promise<app.bsky.feed.defs.PostView[]> {
   return Promise.all(
     posts.map(async post => {
       const author = await getAuthorProfile({
@@ -36,19 +40,21 @@ async function getAuthorProfile({
 }: {
   agent: CommunityPostHydrationAgent
   actor: string
-  profileCache: Map<string, AppBskyActorDefs.ProfileViewDetailed>
+  profileCache: Map<string, app.bsky.actor.defs.ProfileViewDetailed>
 }) {
   const cached = profileCache.get(actor)
   if (cached) return cached
 
   try {
-    const res = await agent.getProfile({actor})
-    profileCache.set(actor, res.data)
-    return res.data
+    const profile = await agent.appviewClient.call(app.bsky.actor.getProfile, {
+      actor: actor as AtIdentifierString,
+    })
+    profileCache.set(actor, profile)
+    return profile
   } catch {
-    const fallback: AppBskyActorDefs.ProfileViewDetailed = {
-      did: actor,
-      handle: actor,
+    const fallback: app.bsky.actor.defs.ProfileViewDetailed = {
+      did: actor as DidString,
+      handle: actor as HandleString,
       displayName: actor,
       labels: [],
     }

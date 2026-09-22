@@ -1,6 +1,6 @@
 import {useCallback, useMemo, useState} from 'react'
 import {View} from 'react-native'
-import {AtUri} from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 import {Plural, Trans, useLingui} from '@lingui/react/macro'
 
 import {TRENDING_HANDLE} from '#/lib/constants'
@@ -319,7 +319,6 @@ export function ProfileFeedHeader({
                         </View>
                       </View>
 
-
                       <EllipsisIcon
                         size="md"
                         fill={t.atoms.text_contrast_high.color}
@@ -617,7 +616,7 @@ function DialogInner({
             )}
           </View>
         </>
-      ) : null }
+      ) : null}
     </View>
   )
 }

@@ -1,7 +1,7 @@
 import {useCallback, useMemo, useRef} from 'react'
 import {useWindowDimensions, View} from 'react-native'
 import Animated, {useAnimatedStyle} from 'react-native-reanimated'
-import {type AppBskyActorDefs} from '@atproto/api'
+import {type DidString, type HandleString} from '@atproto/syntax'
 import {Trans} from '@lingui/react/macro'
 import {type RouteProp, useRoute} from '@react-navigation/native'
 
@@ -22,6 +22,7 @@ import {atoms as a, useBreakpoints, web} from '#/alf'
 import * as Layout from '#/components/Layout'
 import {ListFooter} from '#/components/Lists'
 import {Text} from '#/components/Typography'
+import {app} from '#/lexicons'
 import {
   flattenReplies,
   OpenQuestionAnchor,
@@ -67,8 +68,8 @@ export default function OpenQuestionThreadScreen(_props: Props) {
   const voteMutation = useOpenQuestionVoteMutation(id)
 
   const listRef = useRef<ListMethods>(null)
-  const headerRef = useRef<View | null>(null)
-  const anchorRef = useRef<View | null>(null)
+  const headerRef = useRef<React.ComponentRef<typeof View> | null>(null)
+  const anchorRef = useRef<React.ComponentRef<typeof View> | null>(null)
 
   const question = useMemo(
     () => (thread.data ? mapThreadQuestion(thread.data) : undefined),
@@ -283,10 +284,10 @@ function findReply(
   }
 }
 
-function didAuthor(did: string): AppBskyActorDefs.ProfileViewBasic {
+function didAuthor(did: string): app.bsky.actor.defs.ProfileViewBasic {
   return {
-    did,
-    handle: did,
+    did: did as DidString,
+    handle: did as HandleString,
     displayName: did,
     avatar: undefined,
   }

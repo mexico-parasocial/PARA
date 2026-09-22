@@ -1195,7 +1195,7 @@ export function DistrictsDataOverlay({
   const t = useTheme()
   const navRef = useNavigation<NavigationProp>()
   const {data: allCabildeos = []} = useCabildeosQuery()
-  const scrollRef = useRef<ScrollView>(null)
+  const scrollRef = useRef<React.ComponentRef<typeof ScrollView> | null>(null)
   const districts = useMemo(
     () =>
       selectedState

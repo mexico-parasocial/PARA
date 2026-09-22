@@ -1,6 +1,5 @@
 import {View} from 'react-native'
 import Animated, {FadeInDown, FadeOut} from 'react-native-reanimated'
-import {type AppBskyActorDefs} from '@atproto/api'
 import {Trans} from '@lingui/react/macro'
 
 import {PressableScale} from '#/lib/custom-animations/PressableScale'
@@ -12,6 +11,7 @@ import {atoms as a, platform, useTheme} from '#/alf'
 import {Text} from '#/components/Typography'
 import {useSimpleVerificationState} from '#/components/verification'
 import {VerificationCheck} from '#/components/verification/VerificationCheck'
+import {app} from '#/lexicons'
 import {
   type CivicAutocompleteItem,
   type ComposerAutocompleteContext,
@@ -21,7 +21,7 @@ import {
 type NativeAutocompleteItem =
   | {
       type: 'mention'
-      profile: AppBskyActorDefs.ProfileViewBasic
+      profile: app.bsky.actor.defs.ProfileViewBasic
     }
   | CivicAutocompleteItem
 
@@ -124,7 +124,7 @@ function AutocompleteProfileCard({
   totalItems,
   onPress,
 }: {
-  profile: AppBskyActorDefs.ProfileViewBasic
+  profile: app.bsky.actor.defs.ProfileViewBasic
   itemIndex: number
   totalItems: number
   onPress: () => void

@@ -17,7 +17,7 @@ import {
 import {IS_WEB} from '#/env'
 
 interface WebScrollControlsProps {
-  scrollViewRef: React.RefObject<ScrollView | null>
+  scrollViewRef: React.RefObject<React.ComponentRef<typeof ScrollView> | null>
   direction?: 'horizontal' | 'vertical'
   scrollAmount?: number
   iconSize?: number
@@ -50,9 +50,16 @@ export function WebScrollControls({
       // We don't know 'x' without state.
 
       // Solution: Access the DOM node directly for web-specific logic
-      // @ts-ignore
-      const node = scrollViewRef.current?.getScrollableNode()
-      if (node) {
+      const node = scrollViewRef.current?.getScrollableNode() as
+        | {
+            scrollBy?: (opts: {
+              left?: number
+              top?: number
+              behavior?: string
+            }) => void
+          }
+        | undefined
+      if (node?.scrollBy) {
         if (direction === 'horizontal') {
           node.scrollBy({
             left: dir === 'forward' ? scrollAmount : -scrollAmount,

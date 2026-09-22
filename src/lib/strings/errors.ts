@@ -1,5 +1,4 @@
-import {XRPCError} from '@atproto/api'
-import {LexError} from '@atproto/lex'
+import {LexError, XrpcResponseError} from '@atproto/lex'
 import {t} from '@lingui/core/macro'
 
 /**
@@ -39,7 +38,7 @@ export function cleanError(e: unknown): string {
     return t`Unable to connect. Please check your internet connection and try again.`
   }
   /*
-   * `@atproto/api` names these with spaces ("Upstream Failure"); lexicon error
+   * `the legacy SDK` names these with spaces ("Upstream Failure"); lexicon error
    * codes are space-free ("UpstreamFailure"). Match both while the app throws
    * both shapes.
    */
@@ -99,7 +98,12 @@ export function isNetworkError(e: unknown) {
 }
 
 export function isErrorMaybeAppPasswordPermissions(e: unknown) {
-  if (e instanceof XRPCError && e.error === 'TokenInvalid') {
+  /*
+   * `InvalidToken` is the code the PDS actually sends for a revoked or
+   * out-of-scope app password session. The pre-SDK check matched
+   * `TokenInvalid`, which no server response ever carries.
+   */
+  if (e instanceof XrpcResponseError && e.error === 'InvalidToken') {
     return true
   }
   const str = String(e)
@@ -125,5 +129,5 @@ export function isRetryableHttpStatus(status: number) {
 }
 
 export function shouldRetryError(e: unknown) {
-  return e instanceof XRPCError && RETRYABLE_ERRORS.includes(e.status)
+  return e instanceof XrpcResponseError && RETRYABLE_ERRORS.includes(e.status)
 }

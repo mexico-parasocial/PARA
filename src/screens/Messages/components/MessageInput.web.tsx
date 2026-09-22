@@ -1,6 +1,6 @@
 import {useCallback, useRef, useState} from 'react'
 import {Pressable, View} from 'react-native'
-import {type $Typed, type ChatBskyConvoDefs} from '@atproto/api'
+import {type $Typed} from '@atproto/lex'
 import {useLingui} from '@lingui/react/macro'
 import {flushSync} from 'react-dom'
 import TextareaAutosize from 'react-textarea-autosize'
@@ -21,6 +21,7 @@ import {EmojiArc_Stroke2_Corner0_Rounded as EmojiSmile} from '#/components/icons
 import {PaperPlane_Stroke2_Corner0_Rounded as PaperPlane} from '#/components/icons/PaperPlane'
 import * as Toast from '#/components/Toast'
 import {IS_WEB_SAFARI, IS_WEB_TOUCH_DEVICE} from '#/env'
+import {chat} from '#/lexicons'
 import {
   type MessageEmbedState,
   useExtractEmbedFromFacets,
@@ -36,7 +37,7 @@ export function MessageInput({
   onSendMessage: (
     message: string,
     embed?: MessageEmbedState,
-    replyTo?: $Typed<ChatBskyConvoDefs.MessageView>,
+    replyTo?: $Typed<chat.bsky.convo.defs.MessageView>,
   ) => void
   messageEmbed: MessageEmbedState | undefined
   setEmbed: (embedUrl: string | undefined) => void
@@ -164,7 +165,6 @@ export function MessageInput({
           isHovered && inputStyles.chromeHover,
           isFocused && inputStyles.chromeFocus,
         ]}
-        // @ts-expect-error web only
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}>
         {loading ? null : (

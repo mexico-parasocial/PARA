@@ -98,11 +98,9 @@ export type M8CivicVoteProof = {
     | 'community_proposal'
     | 'community_deliberation'
     | 'open_question_reply'
-  aliasDid: string
   voteNullifier: string
   eligibilityProofRef: string
   issuedAt: string
-  aliasDids: string[]
 }
 
 export type IneAddress = {

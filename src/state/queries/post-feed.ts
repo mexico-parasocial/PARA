@@ -1,10 +1,5 @@
 import {useCallback, useMemo, useRef} from 'react'
 import {AppState} from 'react-native'
-import {
-  type AppBskyActorDefs,
-  type AppBskyFeedDefs,
-  type AppBskyFeedPost,
-} from '@atproto/api'
 import {type Client} from '@atproto/lex'
 import {type AtIdentifierString, AtUri, type AtUriString} from '@atproto/syntax'
 import {
@@ -80,7 +75,7 @@ export interface FeedParams {
   mergeFeedEnabled?: boolean
   mergeFeedSources?: string[]
   feedCacheKey?: 'discover' | 'explore' | undefined
-  paraTimelineFilters?: {party: string}
+  paraTimelineFilters?: {party?: string}
 }
 
 type RQPageParam = {cursor: string | undefined; api: FeedAPI} | undefined
@@ -93,11 +88,11 @@ export function RQKEY(feedDesc: FeedDescriptor, params?: FeedParams) {
 export interface FeedPostSliceItem {
   _reactKey: string
   uri: string
-  post: AppBskyFeedDefs.PostView
-  record: AppBskyFeedPost.Record
+  post: app.bsky.feed.defs.PostView
+  record: app.bsky.feed.post.Main
   postNumbering?: FeedPostNumbering
   moderation: ModerationDecision
-  parentAuthor?: AppBskyActorDefs.ProfileViewBasic
+  parentAuthor?: app.bsky.actor.defs.ProfileViewBasic
   isParentBlocked?: boolean
   isParentNotFound?: boolean
 }
@@ -121,7 +116,7 @@ export interface FeedPostSlice {
 export interface FeedPageUnselected {
   api: FeedAPI
   cursor: string | undefined
-  feed: AppBskyFeedDefs.FeedViewPost[]
+  feed: app.bsky.feed.defs.FeedViewPost[]
   fetchedAt: number
 }
 
@@ -305,12 +300,7 @@ export function usePostFeedQuery(
                   const moderations = slice.items.map(item =>
                     // The sdk moderation pipeline reads its own generated
                     // PostView shape; the runtime payload is api-typed.
-                    moderatePost(
-                      item.post as unknown as Parameters<
-                        typeof moderatePost
-                      >[0],
-                      moderationOpts!,
-                    ),
+                    moderatePost(item.post, moderationOpts!),
                   )
 
                   // apply moderation filter
@@ -506,7 +496,7 @@ export function* findAllPostsInQueryData(
     for (const page of queryData?.pages) {
       for (const item of page.feed) {
         if (didOrHandleUriMatches(atUri, item.post)) {
-          yield item.post as unknown as app.bsky.feed.defs.PostView
+          yield item.post
         }
 
         const quotedPost = getEmbeddedPost(item.post.embed)
@@ -585,8 +575,7 @@ export function* findAllProfilesInQueryData(
     for (const page of queryData?.pages) {
       for (const item of page.feed) {
         if (item.post.author.did === did) {
-          yield item.post
-            .author as unknown as app.bsky.actor.defs.ProfileViewBasic
+          yield item.post.author
         }
         const quotedPost = getEmbeddedPost(item.post.embed)
         if (quotedPost?.author.did === did) {
@@ -610,7 +599,7 @@ export function* findAllProfilesInQueryData(
 }
 
 function assertSomePostsPassModeration(
-  feed: AppBskyFeedDefs.FeedViewPost[],
+  feed: app.bsky.feed.defs.FeedViewPost[],
   moderationPrefs: ModerationPrefs,
 ) {
   // no posts in this feed
@@ -620,13 +609,10 @@ function assertSomePostsPassModeration(
   let somePostsPassModeration = false
 
   for (const item of feed) {
-    const moderation = moderatePost(
-      item.post as unknown as Parameters<typeof moderatePost>[0],
-      {
-        userDid: undefined,
-        prefs: moderationPrefs,
-      },
-    )
+    const moderation = moderatePost(item.post, {
+      userDid: undefined,
+      prefs: moderationPrefs,
+    })
 
     if (!moderation.ui('contentList').filter) {
       // we have a sfw post

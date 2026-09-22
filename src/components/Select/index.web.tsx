@@ -1,9 +1,9 @@
 import {createContext, forwardRef, Fragment, useContext, useMemo} from 'react'
-import {View} from 'react-native'
+import {type TextStyle, View} from 'react-native'
 import {Select as RadixSelect} from 'radix-ui'
 
 import {useA11y} from '#/state/a11y'
-import {atoms as a, flatten, flattenToCSS, useTheme, web} from '#/alf'
+import {atoms as a, flattenToCSS, useTheme, web} from '#/alf'
 import {useInteractionState} from '#/components/hooks/useInteractionState'
 import {Check_Stroke2_Corner0_Rounded as CheckIcon} from '#/components/icons/Check'
 import {
@@ -297,7 +297,13 @@ export function Item({ref, value, style, children}: ItemProps) {
 export const ItemText = function ItemText({children, style}: ItemTextProps) {
   return (
     <RadixSelect.ItemText asChild>
-      <Text style={flattenToCSS([style, web({pointerEvents: 'inherit'})])}>
+      <Text
+        style={
+          flattenToCSS([
+            style,
+            web({pointerEvents: 'inherit'}),
+          ]) as unknown as TextStyle
+        }>
         {children}
       </Text>
     </RadixSelect.ItemText>

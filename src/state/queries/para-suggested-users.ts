@@ -1,14 +1,14 @@
-import {type AppBskyActorDefs} from '@atproto/api'
 import {useQuery} from '@tanstack/react-query'
 
 import {type CivicCategoryKey} from '#/lib/interests'
 import {STALE} from '#/state/queries'
 import {useAgent} from '#/state/session'
+import {app, com} from '#/lexicons'
 
 const RQKEY_ROOT = 'para-suggested-users'
 
 export type ParaSuggestedUsersResponse = {
-  actors: AppBskyActorDefs.ProfileView[]
+  actors: app.bsky.actor.defs.ProfileView[]
   cursor?: string
 }
 
@@ -32,12 +32,15 @@ export function useParaSuggestedUsersQuery(params: ParaSuggestedUsersParams) {
     placeholderData: previous => previous,
     queryKey: queryKey(params),
     queryFn: async () => {
-      const res = await agent.call('com.para.actor.getSuggestedUsers', {
-        category: params.category,
-        interests: params.interests,
-        limit: params.limit ?? 25,
-      })
-      return res.data as ParaSuggestedUsersResponse
+      const res = await agent.appviewClient.call(
+        com.para.actor.getSuggestedUsers,
+        {
+          category: params.category,
+          interests: params.interests,
+          limit: params.limit ?? 25,
+        },
+      )
+      return res
     },
   })
 }

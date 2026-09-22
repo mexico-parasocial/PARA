@@ -1,4 +1,4 @@
-import {type AppBskyActorDefs, nuxSchema} from '@atproto/api'
+import {nuxSchema} from '@bsky/sdk/utils'
 
 import {logger} from '#/logger'
 import {
@@ -7,8 +7,9 @@ import {
   nuxNames,
   NuxSchemas,
 } from '#/state/queries/nuxs/definitions'
+import {app} from '#/lexicons'
 
-export function parseAppNux(nux: AppBskyActorDefs.Nux): AppNux | undefined {
+export function parseAppNux(nux: app.bsky.actor.defs.Nux): AppNux | undefined {
   if (!nuxNames.has(nux.id as Nux)) return
   if (!nuxSchema.safeParse(nux).success) return
 
@@ -42,11 +43,11 @@ export function parseAppNux(nux: AppBskyActorDefs.Nux): AppNux | undefined {
   } as AppNux
 }
 
-export function serializeAppNux(nux: AppNux): AppBskyActorDefs.Nux {
+export function serializeAppNux(nux: AppNux): app.bsky.actor.defs.Nux {
   const {data, ...rest} = nux
   const schema = NuxSchemas[nux.id]
 
-  const result: AppBskyActorDefs.Nux = {
+  const result: app.bsky.actor.defs.Nux = {
     ...rest,
     data: undefined,
   }

@@ -1,3 +1,4 @@
+import {type AtIdentifierString, type AtUriString} from '@atproto/syntax'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {
@@ -6,6 +7,7 @@ import {
   PARA_COMMUNITY_BRIEFING_PACK_COLLECTION,
 } from '#/lib/api/para-lexicons'
 import {useAgent, useSession} from '#/state/session'
+import {com} from '#/lexicons'
 
 export type PartyLobbyingBriefingPackView = CommunityBriefingPackRecord & {
   uri: string
@@ -50,16 +52,17 @@ export function usePartyLobbyingBriefingPacksQuery(input: {
     queryKey: getBriefingPacksQueryKey(input),
     queryFn: async () => {
       try {
-        const res = await agent.call('com.para.community.listBriefingPacks', {
-          community: input.communityUri,
-          party: input.party,
-          cabildeo: input.cabildeoUri,
-          civicTreeCard: input.civicTreeCardId,
-          status: input.status,
-        })
-        return (
-          (res.data as {packs?: PartyLobbyingBriefingPackView[]}).packs ?? []
+        const res = await agent.appviewClient.call(
+          com.para.community.listBriefingPacks,
+          {
+            community: input.communityUri as AtUriString,
+            party: input.party,
+            cabildeo: input.cabildeoUri as AtUriString,
+            civicTreeCard: input.civicTreeCardId,
+            status: input.status,
+          },
         )
+        return (res as {packs?: PartyLobbyingBriefingPackView[]}).packs ?? []
       } catch {
         return []
       }
@@ -94,11 +97,14 @@ export function useBriefingPacksListQuery(input: {
   return useQuery<BriefingPacksListResponse>({
     queryKey: ['briefing-packs', 'list', input.status ?? '', limit],
     queryFn: async () => {
-      const res = await agent.call('com.para.community.listBriefingPacks', {
-        status: input.status,
-        limit,
-      })
-      const data = res.data as Partial<BriefingPacksListResponse>
+      const res = await agent.appviewClient.call(
+        com.para.community.listBriefingPacks,
+        {
+          status: input.status,
+          limit,
+        },
+      )
+      const data = res as Partial<BriefingPacksListResponse>
       return {packs: data.packs ?? [], cursor: data.cursor}
     },
     staleTime: 1000 * 30,
@@ -128,24 +134,27 @@ export function useCreatePartyLobbyingBriefingPackMutation() {
       }
 
       try {
-        const res = await agent.call(
-          'com.para.community.createBriefingPack',
-          undefined,
-          record,
+        const res = await agent.appviewClient.call(
+          com.para.community.createBriefingPack,
+          record as com.para.community.createBriefingPack.$InputBody,
           {encoding: 'application/json'},
         )
-        return res.data as {pack: PartyLobbyingBriefingPackView}
+        return res as {pack: PartyLobbyingBriefingPackView}
       } catch (err) {
-        const created = await agent.com.atproto.repo.createRecord({
-          repo: currentAccount.did,
-          collection: PARA_COMMUNITY_BRIEFING_PACK_COLLECTION,
-          record: record as unknown as Record<string, unknown>,
-        })
+        const created = await agent.pdsClient.call(
+          com.atproto.repo.createRecord,
+          {
+            repo: currentAccount.did as AtIdentifierString,
+            collection: PARA_COMMUNITY_BRIEFING_PACK_COLLECTION,
+            record:
+              record as unknown as com.atproto.repo.createRecord.$InputBody['record'],
+          },
+        )
         return {
           pack: {
             ...record,
-            uri: created.data.uri,
-            cid: created.data.cid,
+            uri: created.uri,
+            cid: created.cid,
           },
         }
       }
@@ -171,20 +180,19 @@ export function useUpdatePartyLobbyingBriefingPackMutation() {
     UpdatePartyLobbyingBriefingPackInput
   >({
     mutationFn: async input => {
-      const res = await agent.call(
-        'com.para.community.updateBriefingPack',
-        undefined,
+      const res = await agent.appviewClient.call(
+        com.para.community.updateBriefingPack,
         {
-          uri: input.uri,
+          uri: input.uri as AtUriString,
           cid: input.cid,
           pack: {
             ...input.pack,
             updatedAt: new Date().toISOString(),
           },
-        },
+        } as com.para.community.updateBriefingPack.$InputBody,
         {encoding: 'application/json'},
       )
-      return res.data as {pack: PartyLobbyingBriefingPackView}
+      return res as {pack: PartyLobbyingBriefingPackView}
     },
     onSuccess: data => {
       void queryClient.invalidateQueries({queryKey: ['briefing-packs']})

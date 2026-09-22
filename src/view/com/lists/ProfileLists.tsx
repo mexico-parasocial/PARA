@@ -12,7 +12,6 @@ import {
   View,
   type ViewStyle,
 } from 'react-native'
-import {type AppBskyGraphDefs} from '@atproto/api'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {useNavigation} from '@react-navigation/native'
@@ -34,6 +33,7 @@ import {BulletList_Stroke1_Corner0_Rounded as ListIcon} from '#/components/icons
 import * as ListCard from '#/components/ListCard'
 import {ListFooter} from '#/components/Lists'
 import {IS_IOS, IS_NATIVE, IS_WEB} from '#/env'
+import {app} from '#/lexicons'
 
 const LOADING = {_reactKey: '__loading__' as const}
 const EMPTY = {_reactKey: '__empty__' as const}
@@ -41,13 +41,13 @@ const ERROR_ITEM = {_reactKey: '__error__' as const}
 const LOAD_MORE_ERROR_ITEM = {_reactKey: '__load_more_error__' as const}
 
 type Item =
-  | AppBskyGraphDefs.ListView
+  | app.bsky.graph.defs.ListView
   | typeof LOADING
   | typeof EMPTY
   | typeof ERROR_ITEM
   | typeof LOAD_MORE_ERROR_ITEM
 
-function isListView(item: Item): item is AppBskyGraphDefs.ListView {
+function isListView(item: Item): item is app.bsky.graph.defs.ListView {
   return !('_reactKey' in item)
 }
 
@@ -161,10 +161,7 @@ export function ProfileLists({
   // =
 
   const renderItem = useCallback(
-    ({
-      item,
-      index,
-    }: ListRenderItemInfo<Item>) => {
+    ({item, index}: ListRenderItemInfo<Item>) => {
       if (item === EMPTY) {
         return (
           <EmptyState

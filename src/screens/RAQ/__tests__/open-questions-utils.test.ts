@@ -1,11 +1,10 @@
-import {type AppBskyFeedDefs} from '@atproto/api'
-
 import {
   mapOpenQuestionPosts,
   toPostThreadParamsFromUri,
 } from '#/screens/RAQ/open-questions-utils'
+import {app} from '#/lexicons'
 
-function buildPost(overrides: Partial<AppBskyFeedDefs.PostView>) {
+function buildPost(overrides: Partial<app.bsky.feed.defs.PostView>) {
   return {
     uri: 'at://did:plc:abc/app.bsky.feed.post/3jztest',
     cid: 'bafyreicid',
@@ -27,7 +26,7 @@ function buildPost(overrides: Partial<AppBskyFeedDefs.PostView>) {
     viewer: null,
     labels: [],
     ...overrides,
-  } as AppBskyFeedDefs.PostView
+  } as app.bsky.feed.defs.PostView
 }
 
 describe('open question utils', () => {

@@ -208,13 +208,13 @@ export function CreateCabildeoScreen(_props: Props) {
                   t.atoms.bg_contrast_25,
                   t.atoms.text,
                   {minHeight: 100},
+                  {textAlignVertical: 'top'},
                 ]}
                 placeholder="Contexto, implicaciones y urgencia de la propuesta..."
                 placeholderTextColor={t.palette.contrast_500}
                 value={description}
                 onChangeText={setDescription}
                 multiline
-                textAlignVertical="top"
               />
             </View>
 

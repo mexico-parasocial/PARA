@@ -1,9 +1,11 @@
+import {type AtUriString} from '@atproto/syntax'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {PARA_OPEN_QUESTION_VOTE_COLLECTION} from '#/lib/api/para-lexicons'
 import {issueParaVoteProof} from '#/lib/api/vote-proof'
 import {getOpenQuestionSearchQuery} from '#/lib/tags'
 import {useAgent} from '#/state/session'
+import {app, com} from '#/lexicons'
 
 export const OPEN_QUESTIONS_QUERY_KEY = ['open-questions']
 export const OPEN_QUESTION_THREAD_QUERY_KEY = ['open-question-thread']
@@ -51,13 +53,16 @@ export function useOpenQuestions() {
       const searchQuery = getOpenQuestionSearchQuery()
 
       try {
-        const result = await agent.api.app.bsky.feed.searchPostsV2({
-          query: searchQuery,
-          limit: 50,
-          sort: 'recent',
-        })
+        const result = await agent.appviewClient.call(
+          app.bsky.feed.searchPostsV2,
+          {
+            query: searchQuery,
+            limit: 50,
+            sort: 'recent',
+          },
+        )
 
-        return result.data.posts || []
+        return result.posts || []
       } catch (error) {
         console.warn('Failed to search for Open Questions:', error)
         throw error
@@ -74,12 +79,11 @@ export function useOpenQuestionThread(uri: string) {
   return useQuery({
     queryKey: [...OPEN_QUESTION_THREAD_QUERY_KEY, uri],
     queryFn: async () => {
-      const result = await agent.call(
-        'com.para.civic.getOpenQuestionThread',
-        {uri, depth: 6},
-        undefined,
+      const result = await agent.appviewClient.call(
+        com.para.civic.getOpenQuestionThread,
+        {uri: uri as AtUriString, depth: 6},
       )
-      return result.data as OpenQuestionThread
+      return result as OpenQuestionThread
     },
     enabled: Boolean(uri),
     staleTime: 1000 * 60,
@@ -103,14 +107,14 @@ export function useOpenQuestionVoteMutation(questionUri: string) {
         subjectUri: subject,
         subjectType: 'open_question_reply',
       })
-      return agent.com.atproto.repo.createRecord({
+      return agent.pdsClient.call(com.atproto.repo.createRecord, {
         repo: agent.session.did,
         collection: PARA_OPEN_QUESTION_VOTE_COLLECTION,
         record: {
           subject,
           value,
-          voteNullifier: proof?.voteNullifier,
-          eligibilityProofRef: proof?.eligibilityProofRef,
+          voteNullifier: proof.voteNullifier,
+          eligibilityProofRef: proof.eligibilityProofRef,
           createdAt: new Date().toISOString(),
         },
       })

@@ -1,6 +1,13 @@
-import {type AppBskyActorDefs, type AppBskyFeedDefs} from '@atproto/api'
-import {type Client} from '@atproto/lex'
-import {type AtIdentifierString, type NsidString} from '@atproto/syntax'
+import {type Client, type LexMap} from '@atproto/lex'
+import {
+  type AtIdentifierString,
+  type AtUriString,
+  type DatetimeString,
+  type DidString,
+  type HandleString,
+  type NsidString,
+  type UriString,
+} from '@atproto/syntax'
 
 import {DEFAULT_SERVICE} from '#/lib/constants'
 import {app, com} from '#/lexicons'
@@ -42,20 +49,20 @@ type ParaRecordValue = Record<string, unknown> & {
 export class ParaFeedAPI implements FeedAPI {
   client: Client
   actor: string
-  authorProfile: AppBskyActorDefs.ProfileViewDetailed | null = null
+  authorProfile: app.bsky.actor.defs.ProfileViewDetailed | null = null
 
   constructor({
     client,
     feedParams,
   }: {
-    client: Client,
+    client: Client
     feedParams: {actor: string}
   }) {
     this.client = client
     this.actor = feedParams.actor
   }
 
-  async peekLatest(): Promise<AppBskyFeedDefs.FeedViewPost> {
+  async peekLatest(): Promise<app.bsky.feed.defs.FeedViewPost> {
     const res = await this.fetch({limit: 1, cursor: undefined})
     return res.feed[0]
   }
@@ -73,7 +80,7 @@ export class ParaFeedAPI implements FeedAPI {
         const profile = await this.client.call(app.bsky.actor.getProfile, {
           actor: this.actor as AtIdentifierString,
         })
-        this.authorProfile = profile as unknown as AppBskyActorDefs.ProfileViewDetailed
+        this.authorProfile = profile
       } catch (e) {
         if (isConcurrentSessionUpdateError(e)) throw e
         console.error('Failed to fetch author profile for Para feed', e)
@@ -85,14 +92,14 @@ export class ParaFeedAPI implements FeedAPI {
     try {
       const res = await this.client.call(com.atproto.repo.listRecords, {
         repo: this.actor as AtIdentifierString,
-        collection: PARA_POST_COLLECTION as NsidString,
+        collection: PARA_POST_COLLECTION,
         limit,
         cursor,
         reverse: true, // Newest first
       })
 
       const records = res.records
-      const feed: AppBskyFeedDefs.FeedViewPost[] = []
+      const feed: app.bsky.feed.defs.FeedViewPost[] = []
       for (const record of records) {
         try {
           feed.push(this.hydrateRecord(record, this.authorProfile))
@@ -114,8 +121,8 @@ export class ParaFeedAPI implements FeedAPI {
 
   hydrateRecord(
     record: ListRecordsItem,
-    author: AppBskyActorDefs.ProfileViewDetailed,
-  ): AppBskyFeedDefs.FeedViewPost {
+    author: app.bsky.actor.defs.ProfileViewDetailed,
+  ): app.bsky.feed.defs.FeedViewPost {
     const val = JSON.parse(JSON.stringify(record.value)) as ParaRecordValue
     // HACK: Alias com.para.post to app.bsky.feed.post to pass client-side validation
     // The UI handles rendering, but the feed slicer enforces strict types.
@@ -124,7 +131,7 @@ export class ParaFeedAPI implements FeedAPI {
     }
 
     // Hydrate Images (Basic)
-    let embed: AppBskyFeedDefs.PostView['embed'] = undefined
+    let embed: app.bsky.feed.defs.PostView['embed'] = undefined
     const rawEmbed = isObjectRecord(val.embed) ? val.embed : undefined
     if (rawEmbed?.$type === 'app.bsky.embed.images') {
       const rawImages = Array.isArray(rawEmbed.images) ? rawEmbed.images : []
@@ -135,7 +142,8 @@ export class ParaFeedAPI implements FeedAPI {
         // MVP: single-PDS deployment, so the default service always hosts the blob.
         const serviceUrl = DEFAULT_SERVICE.replace(/\/$/, '')
         const cid = readBlobRefString(image.image)
-        const thumb = `${serviceUrl}/xrpc/com.atproto.sync.getBlob?did=${this.actor}&cid=${cid}`
+        const thumb =
+          `${serviceUrl}/xrpc/com.atproto.sync.getBlob?did=${this.actor}&cid=${cid}` as UriString
         return {
           thumb,
           fullsize: thumb,
@@ -164,7 +172,7 @@ export class ParaFeedAPI implements FeedAPI {
         ? val.createdAt
         : new Date().toISOString()
 
-    const postView: AppBskyFeedDefs.PostView = {
+    const postView: app.bsky.feed.defs.PostView = {
       uri: record.uri,
       cid: record.cid,
       author: {
@@ -181,8 +189,8 @@ export class ParaFeedAPI implements FeedAPI {
         flairs: paraFlairs,
         postType: paraPostType,
         tags: paraTags,
-      },
-      indexedAt: createdAt,
+      } as unknown as LexMap,
+      indexedAt: createdAt as DatetimeString,
       likeCount: 0, // MVP: No counts
       replyCount: 0,
       repostCount: 0,
@@ -204,20 +212,20 @@ export class ParaFeedAPI implements FeedAPI {
 export class ParaTimelineFeedAPI implements FeedAPI {
   client: Client
   filters: ParaTimelineFilters
-  profiles = new Map<string, AppBskyActorDefs.ProfileViewDetailed>()
+  profiles = new Map<string, app.bsky.actor.defs.ProfileViewDetailed>()
 
   constructor({
     client,
     filters,
   }: {
-    client: Client,
+    client: Client
     filters?: ParaTimelineFilters
   }) {
     this.client = client
     this.filters = filters ?? {}
   }
 
-  async peekLatest(): Promise<AppBskyFeedDefs.FeedViewPost> {
+  async peekLatest(): Promise<app.bsky.feed.defs.FeedViewPost> {
     const res = await this.fetch({limit: 1, cursor: undefined})
     return res.feed[0]
   }
@@ -229,49 +237,45 @@ export class ParaTimelineFeedAPI implements FeedAPI {
     cursor: string | undefined
     limit: number
   }): Promise<FeedAPIResponse> {
-    /*
-     * `com.para.feed.getTimeline` is a custom lexicon that has never been
-     * added to the codegen pipeline (no lexicons/com/para/*.json), so it has
-     * no typed binding on the new lex Client and can't be called until that
-     * migration happens. Always fall back to the stock Bluesky timeline for
-     * now rather than reach for an endpoint the client can't express.
-     */
-    return this.fetchBlueskyTimeline({cursor, limit})
-  }
-
-  private async fetchBlueskyTimeline({
-    cursor,
-    limit,
-  }: {
-    cursor: string | undefined
-    limit: number
-  }): Promise<FeedAPIResponse> {
     try {
-      const res = await this.client.call(app.bsky.feed.getTimeline, {
+      const res = await this.client.call(com.para.feed.getTimeline, {
         cursor,
         limit,
+        ...buildParaTimelineFilterParams(this.filters),
       })
+
+      // The timeline returns PARA's lightweight post views; hydrate each one
+      // into a full Bluesky FeedViewPost (author profiles are cached).
+      const feed: app.bsky.feed.defs.FeedViewPost[] = []
+      for (const item of res.feed) {
+        try {
+          feed.push(await this.hydrateTimelinePost(item))
+        } catch (e) {
+          console.error('Failed to hydrate Para timeline post', item.uri, e)
+        }
+      }
+
       return {
         cursor: res.cursor,
-        feed: res.feed as unknown as AppBskyFeedDefs.FeedViewPost[],
+        feed,
       }
     } catch (e) {
       if (isConcurrentSessionUpdateError(e)) throw e
-      console.error('Error fetching Bluesky timeline fallback', e)
+      console.error('Error fetching Para timeline', e)
+      return {feed: []}
     }
-    return {feed: []}
   }
 
   async hydrateTimelinePost(
     paraPost: ParaPostView,
-  ): Promise<AppBskyFeedDefs.FeedViewPost> {
+  ): Promise<app.bsky.feed.defs.FeedViewPost> {
     const author = await this.getAuthorProfile(paraPost.author)
     return hydrateParaPostView(paraPost, author)
   }
 
   private async getAuthorProfile(
     actor: string,
-  ): Promise<AppBskyActorDefs.ProfileViewDetailed> {
+  ): Promise<app.bsky.actor.defs.ProfileViewDetailed> {
     const cached = this.profiles.get(actor)
     if (cached) return cached
 
@@ -279,15 +283,15 @@ export class ParaTimelineFeedAPI implements FeedAPI {
       const profile = await this.client.call(app.bsky.actor.getProfile, {
         actor: actor as AtIdentifierString,
       })
-      const res = profile as unknown as AppBskyActorDefs.ProfileViewDetailed
+      const res = profile
       this.profiles.set(actor, res)
       return res
     } catch (e) {
       if (isConcurrentSessionUpdateError(e)) throw e
       console.error('Failed to fetch author profile for Para timeline', e)
       return {
-        did: actor,
-        handle: actor,
+        did: actor as DidString,
+        handle: actor as HandleString,
         displayName: actor,
         labels: [],
       }
@@ -305,9 +309,9 @@ export function buildParaTimelineFilterParams(filters: ParaTimelineFilters) {
 
 export function hydrateParaPostView(
   paraPost: ParaPostView,
-  author: AppBskyActorDefs.ProfileViewDetailed,
-): AppBskyFeedDefs.FeedViewPost {
-  const authorView: AppBskyActorDefs.ProfileViewBasic = {
+  author: app.bsky.actor.defs.ProfileViewDetailed,
+): app.bsky.feed.defs.FeedViewPost {
+  const authorView: app.bsky.actor.defs.ProfileViewBasic = {
     did: author.did,
     handle: author.handle,
     displayName: author.displayName,
@@ -337,11 +341,11 @@ export function hydrateParaPostView(
 
   return {
     post: {
-      uri: paraPost.uri,
+      uri: paraPost.uri as AtUriString,
       cid: paraPost.cid,
       author: authorView,
-      record,
-      indexedAt: paraPost.createdAt,
+      record: record,
+      indexedAt: paraPost.createdAt as DatetimeString,
       likeCount: 0,
       replyCount: 0,
       repostCount: 0,
@@ -410,4 +414,3 @@ export function isParaPostView(value: unknown): value is ParaPostView {
 
   return isValid
 }
-

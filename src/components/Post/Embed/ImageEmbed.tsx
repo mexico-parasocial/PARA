@@ -15,15 +15,37 @@ import {type Dimensions} from '#/components/Lightbox/types'
 import {ImageContextMenu} from '#/components/Post/Embed/ImageContextMenu'
 import {PostEmbedViewContext} from '#/components/Post/Embed/types'
 import {useAnalytics} from '#/analytics'
+import {app} from '#/lexicons'
 import {type EmbedType} from '#/types/bsky/post'
 import {type CommonProps} from './types'
 
 export function ImageEmbed({
-  embed,
+  embed: rawEmbed,
   ...rest
 }: CommonProps & {
-  embed: EmbedType<'images'>
+  embed: EmbedType<'images'> | EmbedType<'gallery'>
 }) {
+  const embed =
+    rawEmbed.type === 'images'
+      ? rawEmbed
+      : ({
+          type: 'images',
+          view: {
+            $type: 'app.bsky.embed.images#view',
+            images: rawEmbed.view.items.flatMap(item => {
+              const img = item as app.bsky.embed.gallery.ViewImage
+              return [
+                {
+                  $type: 'app.bsky.embed.images#viewImage' as const,
+                  thumb: img.thumbnail,
+                  fullsize: img.fullsize,
+                  alt: img.alt,
+                  aspectRatio: img.aspectRatio,
+                },
+              ]
+            }),
+          },
+        } as EmbedType<'images'>)
   const ax = useAnalytics()
   const {openLightbox} = useLightboxControls()
   const {images} = embed.view

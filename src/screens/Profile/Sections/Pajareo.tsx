@@ -43,13 +43,15 @@ import {Text} from '#/components/Typography'
 import {IS_IOS} from '#/env'
 import {type SectionRef} from './types'
 
-const ENTRY_TYPES: Array<{value: RepresentativePajareoEntryType; label: string}> =
-  [
-    {value: 'firma', label: 'Firma'},
-    {value: 'pregunta', label: 'Pregunta'},
-    {value: 'señal', label: 'Señal'},
-    {value: 'testimonio', label: 'Testimonio'},
-  ]
+const ENTRY_TYPES: Array<{
+  value: RepresentativePajareoEntryType
+  label: string
+}> = [
+  {value: 'firma', label: 'Firma'},
+  {value: 'pregunta', label: 'Pregunta'},
+  {value: 'señal', label: 'Señal'},
+  {value: 'testimonio', label: 'Testimonio'},
+]
 
 const SUBJECT_TYPES: Array<{
   value: RepresentativePajareoSubjectKind
@@ -115,7 +117,8 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
     const createOfficialResponse = useCreateOfficialPajareoResponseMutation()
     const supportEntry = useSupportRepresentativePajareoEntryMutation()
     const reportEntry = useReportRepresentativePajareoEntryMutation()
-    const isolatedIdentityMode = getDefaultChatIdentityMode('isolated_testimony')
+    const isolatedIdentityMode =
+      getDefaultChatIdentityMode('isolated_testimony')
     const defaultAreaLabel = getDefaultAreaLabel(representative)
 
     const entries = data?.entries ?? []
@@ -154,16 +157,18 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
       if (IS_IOS && isFocused && scrollElRef.current) {
         // @ts-ignore
         const nativeTag = findNodeHandle(scrollElRef.current)
-        setScrollViewTag(nativeTag)
+        setScrollViewTag(nativeTag ?? null)
       }
     }, [isFocused, scrollElRef, setScrollViewTag])
 
     useEffect(() => {
-      setJurisdictionLabel(getDefaultJurisdictionLabel(
-        jurisdictionLevel,
-        defaultAreaLabel,
-        representative,
-      ))
+      setJurisdictionLabel(
+        getDefaultJurisdictionLabel(
+          jurisdictionLevel,
+          defaultAreaLabel,
+          representative,
+        ),
+      )
     }, [defaultAreaLabel, jurisdictionLevel, representative])
 
     const submit = () => {
@@ -178,7 +183,8 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
           subject: {
             kind: subjectKind,
             personId: subjectKind === 'institution' ? null : representative.id,
-            personName: subjectKind === 'institution' ? null : representative.name,
+            personName:
+              subjectKind === 'institution' ? null : representative.name,
             institutionId: selectedInstitutionName
               ? `institution:${slugify(selectedInstitutionName)}`
               : null,
@@ -262,7 +268,9 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
                 : t.atoms.text_contrast_medium,
             ]}>
             {eligibility?.eligible ? (
-              <Trans>Elegibilidad verificada para {eligibility.areaLabel}</Trans>
+              <Trans>
+                Elegibilidad verificada para {eligibility.areaLabel}
+              </Trans>
             ) : (
               <Trans>Solo lectura: verifica residencia para participar.</Trans>
             )}
@@ -329,7 +337,9 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
             {subjectKind !== 'person' && (
               <TextInput
                 accessibilityLabel={_(msg`Institution name`)}
-                accessibilityHint={_(msg`Name the public institution this Pajareo entry is about.`)}
+                accessibilityHint={_(
+                  msg`Name the public institution this Pajareo entry is about.`,
+                )}
                 value={institutionName}
                 onChangeText={setInstitutionName}
                 placeholder={_(msg`Nombre de la institución pública`)}
@@ -375,7 +385,9 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
             {jurisdictionLevel !== 'nation' && (
               <TextInput
                 accessibilityLabel={_(msg`Pajareo geographic scope`)}
-                accessibilityHint={_(msg`Name the zone, state, district, or represented area this entry applies to.`)}
+                accessibilityHint={_(
+                  msg`Name the zone, state, district, or represented area this entry applies to.`,
+                )}
                 value={jurisdictionLabel}
                 onChangeText={setJurisdictionLabel}
                 placeholder={_(msg`Ej. colonia, municipio, estado o distrito`)}
@@ -423,7 +435,9 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
             )}
             <TextInput
               accessibilityLabel={_(msg`Pajareo entry input`)}
-              accessibilityHint={_(msg`Write an anonymous local signature, question, signal, or testimony.`)}
+              accessibilityHint={_(
+                msg`Write an anonymous local signature, question, signal, or testimony.`,
+              )}
               value={body}
               onChangeText={setBody}
               placeholder={_(msg`Escribe una firma, pregunta o señal local...`)}
@@ -513,16 +527,15 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
                   styles.officialResponseLabel,
                   {color: t.palette.primary_500},
                 ]}>
-                <Trans>Respuesta oficial de {entry.officialResponse.entityName}</Trans>
+                <Trans>
+                  Respuesta oficial de {entry.officialResponse.entityName}
+                </Trans>
               </Text>
               <Text style={[styles.officialResponseBody, t.atoms.text]}>
                 {entry.officialResponse.body}
               </Text>
               <Text
-                style={[
-                  styles.officialAudit,
-                  t.atoms.text_contrast_medium,
-                ]}>
+                style={[styles.officialAudit, t.atoms.text_contrast_medium]}>
                 {entry.officialResponse.controllerHash} ·{' '}
                 {new Date(entry.officialResponse.createdAt).toLocaleDateString(
                   'es-MX',
@@ -543,7 +556,8 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
                   t.atoms.text_contrast_medium,
                 ]}>
                 <Trans>
-                  Respuesta de {response.responderDisplayName ?? response.responderDid}
+                  Respuesta de{' '}
+                  {response.responderDisplayName ?? response.responderDid}
                 </Trans>
               </Text>
               <Text style={[styles.officialResponseBody, t.atoms.text]}>
@@ -551,56 +565,56 @@ export const ProfilePajareoSection = forwardRef<SectionRef, Props>(
               </Text>
             </View>
           ))}
-          {canRespond &&
-            respondingEntryId === entry.id && (
-              <View style={styles.officialComposer}>
-                <TextInput
-                  accessibilityLabel={_(msg`Pajareo response input`)}
-                  accessibilityHint={_(msg`Write a public response to this Pajareo entry.`)}
-                  value={officialResponseBody}
-                  onChangeText={setOfficialResponseBody}
-                  placeholder={
-                    canRespondOfficially
-                      ? _(msg`Responder oficialmente...`)
-                      : _(msg`Responder públicamente...`)
-                  }
-                  placeholderTextColor={t.palette.contrast_400}
-                  multiline
-                  style={[
-                    styles.input,
-                    t.atoms.text,
-                    {
-                      borderColor: t.palette.primary_500 + '55',
-                      backgroundColor: t.palette.contrast_0,
-                    },
-                  ]}
-                />
-                <Button
-                  label={_(msg`Publicar respuesta`)}
-                  variant="solid"
-                  color="primary"
-                  size="small"
-                  disabled={
-                    !officialResponseBody.trim() ||
-                    createOfficialResponse.isPending
-                  }
-                  onPress={() => submitResponse(entry)}>
-                  <ButtonText>
-                    {canRespondOfficially ? (
-                      <Trans>Responder oficialmente</Trans>
-                    ) : (
-                      <Trans>Responder</Trans>
-                    )}
-                  </ButtonText>
-                </Button>
-              </View>
-            )}
+          {canRespond && respondingEntryId === entry.id && (
+            <View style={styles.officialComposer}>
+              <TextInput
+                accessibilityLabel={_(msg`Pajareo response input`)}
+                accessibilityHint={_(
+                  msg`Write a public response to this Pajareo entry.`,
+                )}
+                value={officialResponseBody}
+                onChangeText={setOfficialResponseBody}
+                placeholder={
+                  canRespondOfficially
+                    ? _(msg`Responder oficialmente...`)
+                    : _(msg`Responder públicamente...`)
+                }
+                placeholderTextColor={t.palette.contrast_400}
+                multiline
+                style={[
+                  styles.input,
+                  t.atoms.text,
+                  {
+                    borderColor: t.palette.primary_500 + '55',
+                    backgroundColor: t.palette.contrast_0,
+                  },
+                ]}
+              />
+              <Button
+                label={_(msg`Publicar respuesta`)}
+                variant="solid"
+                color="primary"
+                size="small"
+                disabled={
+                  !officialResponseBody.trim() ||
+                  createOfficialResponse.isPending
+                }
+                onPress={() => submitResponse(entry)}>
+                <ButtonText>
+                  {canRespondOfficially ? (
+                    <Trans>Responder oficialmente</Trans>
+                  ) : (
+                    <Trans>Responder</Trans>
+                  )}
+                </ButtonText>
+              </Button>
+            </View>
+          )}
           <View style={styles.entryActions}>
             <TouchableOpacity
               accessibilityRole="button"
               onPress={() => supportEntry.mutate(entry.id)}>
-              <Text
-                style={[styles.actionText, {color: t.palette.primary_500}]}>
+              <Text style={[styles.actionText, {color: t.palette.primary_500}]}>
                 {entry.supportCount} <Trans>apoyos</Trans>
               </Text>
             </TouchableOpacity>

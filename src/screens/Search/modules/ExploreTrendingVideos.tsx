@@ -1,6 +1,6 @@
 import {useMemo} from 'react'
 import {ScrollView, View} from 'react-native'
-import {AppBskyEmbedVideo, AtUri} from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -28,6 +28,8 @@ import {
   CompactVideoPostCard,
   CompactVideoPostCardPlaceholder,
 } from '#/components/VideoPostCard'
+import {app} from '#/lexicons'
+import * as bsky from '#/types/bsky'
 
 const CARD_WIDTH = 100
 
@@ -175,7 +177,7 @@ function VideoCards({
       .flatMap(page => page.slices)
       .map(slice => slice.items[0])
       .filter(Boolean)
-      .filter(item => AppBskyEmbedVideo.isView(item.post.embed))
+      .filter(item => bsky.isType(app.bsky.embed.video.view, item.post.embed))
       .slice(0, 8)
   }, [data])
   const href = useMemo(() => {

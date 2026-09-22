@@ -1,5 +1,4 @@
 import {useCallback, useMemo, useState} from 'react'
-import {type AppBskyActorDefs} from '@atproto/api'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {useFocusEffect} from '@react-navigation/native'
@@ -19,12 +18,13 @@ import {List} from '#/view/com/util/List'
 import {ViewHeader} from '#/view/com/util/ViewHeader'
 import * as Layout from '#/components/Layout'
 import {ListFooter, ListMaybePlaceholder} from '#/components/Lists'
+import {app} from '#/lexicons'
 
 function renderItem({
   item,
   index,
 }: {
-  item: AppBskyActorDefs.ProfileView
+  item: app.bsky.actor.defs.ProfileView
   index: number
 }) {
   return (
@@ -36,7 +36,7 @@ function renderItem({
   )
 }
 
-function keyExtractor(item: AppBskyActorDefs.ProfileView) {
+function keyExtractor(item: app.bsky.actor.defs.ProfileView) {
   return item.did
 }
 

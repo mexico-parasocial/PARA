@@ -1,4 +1,4 @@
-import {type $Typed, ChatBskyActorDefs, ChatBskyConvoDefs} from '@atproto/api'
+import {type $Typed} from '@atproto/lex'
 import {type ModerationOpts} from '@bsky/sdk/moderation'
 
 import {EMOJI_REACTION_LIMIT} from '#/lib/constants'
@@ -9,6 +9,7 @@ import {type Shadow} from '#/state/cache/types'
 import {type ConvoState, ConvoStatus} from '#/state/messages/convo/types'
 import {platform} from '#/alf'
 import {type ReportSubject} from '#/components/moderation/ReportDialog/types'
+import {chat} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 
 export const CLUSTERED_MESSAGE_THRESHOLD_MS = 5 * 60 * 1000
@@ -74,7 +75,7 @@ export function localDateString(date: Date) {
 }
 
 export function hasAlreadyReacted(
-  message: ChatBskyConvoDefs.MessageView,
+  message: chat.bsky.convo.defs.MessageView,
   myDid: string | undefined,
   emoji: string,
 ): boolean {
@@ -95,9 +96,9 @@ export function hasAlreadyReacted(
  * already render anonymously ("Someone reacted").
  */
 export function filterBlockedReactions(
-  reactions: ChatBskyConvoDefs.ReactionView[] | undefined,
-  relatedProfiles: Map<string, ChatBskyActorDefs.ProfileViewBasic>,
-): ChatBskyConvoDefs.ReactionView[] {
+  reactions: chat.bsky.convo.defs.ReactionView[] | undefined,
+  relatedProfiles: Map<string, chat.bsky.actor.defs.ProfileViewBasic>,
+): chat.bsky.convo.defs.ReactionView[] {
   if (!reactions) return []
   return reactions.filter(reaction => {
     const profile = relatedProfiles.get(reaction.sender.did)
@@ -106,7 +107,7 @@ export function filterBlockedReactions(
 }
 
 export function hasReachedReactionLimit(
-  message: ChatBskyConvoDefs.MessageView,
+  message: chat.bsky.convo.defs.MessageView,
   myDid: string | undefined,
 ): boolean {
   if (!message.reactions) {
@@ -167,25 +168,25 @@ export function canReact({
   return true
 }
 
-export type GroupConvoMember = ChatBskyActorDefs.ProfileViewBasic & {
+export type GroupConvoMember = chat.bsky.actor.defs.ProfileViewBasic & {
   // can be missing if account deleted
-  kind?: $Typed<ChatBskyActorDefs.GroupConvoMember>
+  kind?: $Typed<chat.bsky.actor.defs.GroupConvoMember>
 }
 
-export type DirectConvoMember = ChatBskyActorDefs.ProfileViewBasic & {
-  kind: $Typed<ChatBskyActorDefs.DirectConvoMember>
+export type DirectConvoMember = chat.bsky.actor.defs.ProfileViewBasic & {
+  kind: $Typed<chat.bsky.actor.defs.DirectConvoMember>
 }
 
-export type ConvoWithDetails = {view: ChatBskyConvoDefs.ConvoView} & (
+export type ConvoWithDetails = {view: chat.bsky.convo.defs.ConvoView} & (
   | {
       kind: 'group'
-      details: $Typed<ChatBskyConvoDefs.GroupConvo>
+      details: $Typed<chat.bsky.convo.defs.GroupConvo>
       primaryMember?: GroupConvoMember // the owner - may have left, thus optional
       members: Array<GroupConvoMember>
     }
   | {
       kind: 'direct'
-      details: $Typed<ChatBskyConvoDefs.DirectConvo>
+      details: $Typed<chat.bsky.convo.defs.DirectConvo>
       primaryMember: DirectConvoMember // the other user
       members: Array<DirectConvoMember>
     }
@@ -196,25 +197,19 @@ export type ConvoWithDetails = {view: ChatBskyConvoDefs.ConvoView} & (
  * and enforces the correct type for convo members.
  */
 export function parseConvoView(
-  convoView: ChatBskyConvoDefs.ConvoView,
+  convoView: chat.bsky.convo.defs.ConvoView,
   ownDid: string | undefined,
 ): ConvoWithDetails | null {
-  if (
-    bsky.dangerousIsType<ChatBskyConvoDefs.GroupConvo>(
-      convoView.kind,
-      ChatBskyConvoDefs.isGroupConvo,
-    )
-  ) {
+  const kind = convoView.kind
+  if (bsky.isType(chat.bsky.convo.defs.groupConvo, kind)) {
+    // the guard only asserts the `$type` tag, so re-assert the typed shape
+    const details = kind
     let owner: GroupConvoMember | undefined = undefined
 
     for (const member of convoView.members) {
-      if (
-        bsky.dangerousIsType<ChatBskyActorDefs.GroupConvoMember>(
-          member.kind,
-          ChatBskyActorDefs.isGroupConvoMember,
-        )
-      ) {
-        if (member.kind.role === 'owner') {
+      if (bsky.isType(chat.bsky.actor.defs.groupConvoMember, member.kind)) {
+        const memberKind = member.kind
+        if (memberKind.role === 'owner') {
           // have to do a type assertion here
           // this works: {...member, kind: member.kind}
           // however that's creating a new object for no good reason
@@ -231,16 +226,13 @@ export function parseConvoView(
     return {
       view: convoView,
       kind: 'group',
-      details: convoView.kind,
+      details,
       primaryMember: owner,
       members: convoView.members as Array<GroupConvoMember>,
     }
-  } else if (
-    bsky.dangerousIsType<ChatBskyConvoDefs.DirectConvo>(
-      convoView.kind,
-      ChatBskyConvoDefs.isDirectConvo,
-    )
-  ) {
+  } else if (bsky.isType(chat.bsky.convo.defs.directConvo, kind)) {
+    // the guard only asserts the `$type` tag, so re-assert the typed shape
+    const details = kind
     const otherUser = convoView.members.find(m => m.did !== ownDid)
 
     if (!otherUser) {
@@ -251,7 +243,7 @@ export function parseConvoView(
     return {
       view: convoView,
       kind: 'direct',
-      details: convoView.kind,
+      details,
       primaryMember: otherUser as DirectConvoMember,
       members: convoView.members as Array<DirectConvoMember>,
     }
@@ -283,7 +275,7 @@ export function getConvoReportSubject(
 
   const lastMessage = convo.view.lastMessage
   const reportableMessage =
-    ChatBskyConvoDefs.isMessageView(lastMessage) &&
+    bsky.isType(chat.bsky.convo.defs.messageView, lastMessage) &&
     lastMessage.sender?.did !== ownDid
       ? lastMessage
       : null

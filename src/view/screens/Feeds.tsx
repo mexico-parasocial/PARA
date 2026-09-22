@@ -1,8 +1,6 @@
- 
 import {useCallback, useMemo, useRef, useState} from 'react'
 import {ActivityIndicator, Pressable, StyleSheet, View} from 'react-native'
-import {type AppBskyFeedDefs} from '@atproto/api'
-import {AtUri} from '@atproto/api'
+import {AtUri} from '@atproto/syntax'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -68,6 +66,7 @@ import {Link} from '#/components/Link'
 import * as ListCard from '#/components/ListCard'
 import * as Toast from '#/components/Toast'
 import {IS_NATIVE, IS_WEB} from '#/env'
+import {app} from '#/lexicons'
 
 type Props = NativeStackScreenProps<CommonNavigatorParams, 'Feeds'>
 
@@ -92,7 +91,7 @@ const BLOCKED_FEED_DISPLAY_NAMES = new Set([
   'Videos',
 ])
 
-function isUnofficialFeed(feed: AppBskyFeedDefs.GeneratorView): boolean {
+function isUnofficialFeed(feed: app.bsky.feed.defs.GeneratorView): boolean {
   try {
     const uri = new AtUri(feed.uri)
     return BSKY_FEED_OWNER_DIDS.includes(uri.host)
@@ -111,12 +110,13 @@ function usePartyFeedsQuery() {
   return useQuery({
     queryKey: ['partyFeeds'],
     queryFn: async () => {
-      const res = await agent.app.bsky.unspecced.getPopularFeedGenerators({
-        limit: 100,
-      })
-      return res.data.feeds.filter(feed =>
-        PARTY_FEED_NAMES.has(feed.displayName),
+      const res = await agent.appviewClient.call(
+        app.bsky.unspecced.getPopularFeedGenerators,
+        {
+          limit: 100,
+        },
       )
+      return res.feeds.filter(feed => PARTY_FEED_NAMES.has(feed.displayName))
     },
     staleTime: 60_000,
   })
@@ -156,7 +156,7 @@ type FlatlistSlice =
   | {
       type: 'partyFeedsSection'
       key: string
-      partyFeeds?: AppBskyFeedDefs.GeneratorView[]
+      partyFeeds?: app.bsky.feed.defs.GeneratorView[]
     }
   | {
       type: 'followedElements'
@@ -174,7 +174,7 @@ type FlatlistSlice =
       type: 'popularFeed'
       key: string
       feedUri: string
-      feed: AppBskyFeedDefs.GeneratorView
+      feed: app.bsky.feed.defs.GeneratorView
     }
   | {
       type: 'popularFeedsLoadingMore'
@@ -958,14 +958,13 @@ function FollowedElementCard({
       accessibilityLabel={`Open ${item.displayName} followed element settings`}
       accessibilityHint="Opens settings to manage this followed element"
       onPress={onPress}
-      style={({pressed, hovered}) => [
+      style={({pressed}: {pressed: boolean}) => [
         styles.followedElementCard,
         t.atoms.bg,
         t.atoms.border_contrast_low,
         {
           borderLeftColor: color,
           opacity: pressed ? 0.82 : 1,
-          backgroundColor: hovered ? `${color}0F` : undefined,
         },
       ]}>
       <View style={[styles.followedElementIcon, {backgroundColor: color}]}>
@@ -1012,12 +1011,12 @@ function getFeedRkey(uri: string): string | null {
 function PartyFeedsSection({
   partyFeeds,
 }: {
-  partyFeeds?: AppBskyFeedDefs.GeneratorView[]
+  partyFeeds?: app.bsky.feed.defs.GeneratorView[]
 }) {
   const t = useTheme()
 
   const feedByRkey = useMemo(() => {
-    const map = new Map<string, AppBskyFeedDefs.GeneratorView>()
+    const map = new Map<string, app.bsky.feed.defs.GeneratorView>()
     partyFeeds?.forEach(feed => {
       const rkey = getFeedRkey(feed.uri)
       if (rkey) map.set(rkey, feed)
@@ -1074,7 +1073,7 @@ function PartyCard({
   feed,
 }: {
   party: PartyFeedProfile
-  feed?: AppBskyFeedDefs.GeneratorView
+  feed?: app.bsky.feed.defs.GeneratorView
 }) {
   const t = useTheme()
   const canonicalTint = `${party.color}14`
@@ -1160,7 +1159,7 @@ function PartyFeedPinButton({
   feed,
   partyColor,
 }: {
-  feed: AppBskyFeedDefs.GeneratorView
+  feed: app.bsky.feed.defs.GeneratorView
   partyColor: string
 }) {
   const {_} = useLingui()

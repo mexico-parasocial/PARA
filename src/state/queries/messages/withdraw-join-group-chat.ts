@@ -1,4 +1,3 @@
-import {type ChatBskyGroupWithdrawJoinRequest} from '@atproto/api'
 import {useMutation, useQueryClient} from '@tanstack/react-query'
 
 import {logger} from '#/logger'
@@ -10,7 +9,7 @@ import {
   RQKEY_ROOT as REQUESTS_RQKEY_ROOT,
 } from './list-conversation-requests'
 
-type Output = ChatBskyGroupWithdrawJoinRequest.OutputSchema
+type Output = chat.bsky.group.withdrawJoinRequest.$OutputBody
 
 export function useWithdrawJoinGroupChatRequest({
   onSuccess,

@@ -7,7 +7,7 @@
 jest.unmock('multiformats/cid')
 jest.unmock('multiformats/hashes/hasher')
 
-import {BlobRef} from '@atproto/api'
+import {BlobRef} from '@atproto/lexicon'
 import {CID} from 'multiformats/cid'
 
 import {computeCid} from '#/lib/api/computeCid'
