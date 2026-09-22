@@ -44,16 +44,15 @@ function initNodes(
 ): SimNode[] {
   const prevMap = new Map(prevNodes.map(n => [n.id, n]))
   const positions = generateDeterministicPositions(nodeIds, width, height)
-  const newNodeIds = findNewNodes(nodeIds, prevNodes.map(n => n.id))
+  const newNodeIds = findNewNodes(
+    nodeIds,
+    prevNodes.map(n => n.id),
+  )
 
   // New nodes get entrance positions from the edge
   const entrancePositions =
     newNodeIds.size > 0 && prevNodes.length > 0
-      ? generateEntrancePositions(
-          Array.from(newNodeIds),
-          width,
-          height,
-        )
+      ? generateEntrancePositions(Array.from(newNodeIds), width, height)
       : new Map()
 
   return nodeIds.map((id, i) => {
@@ -96,7 +95,14 @@ function tick(
   height: number,
   config: Required<SimulationConfig>,
 ): void {
-  const {repulsionStrength, springStrength, springLength, centerStrength, damping, ideologicalGravity} = config
+  const {
+    repulsionStrength,
+    springStrength,
+    springLength,
+    centerStrength,
+    damping,
+    ideologicalGravity,
+  } = config
   const cx = width / 2
   const cy = height / 2
 
@@ -161,10 +167,10 @@ function tick(
         let force: number
         if (a.stance === b.stance) {
           // Same stance: gentle attraction (pull together)
-          force = ideologicalGravity * 0.5 / dist
+          force = (ideologicalGravity * 0.5) / dist
         } else {
           // Opposite stance: repulsion (push apart)
-          force = -ideologicalGravity * 1.2 / dist
+          force = (-ideologicalGravity * 1.2) / dist
         }
 
         const fx = (dx / dist) * force

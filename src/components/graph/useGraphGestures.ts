@@ -19,7 +19,11 @@ export function useGraphGestures(
   onDoubleTap: () => void,
 ) {
   const viewportRef = useRef<GraphViewport>({panX: 0, panY: 0, scale: 1})
-  const gestureRef = useRef<GraphGestureState>({isPanning: false, isPinching: false, lastTapTime: 0})
+  const gestureRef = useRef<GraphGestureState>({
+    isPanning: false,
+    isPinching: false,
+    lastTapTime: 0,
+  })
   const panOffsetRef = useRef({x: 0, y: 0})
   const pinchStartDistRef = useRef(0)
   const pinchStartScaleRef = useRef(1)
@@ -53,27 +57,37 @@ export function useGraphGestures(
     }
   }, [])
 
-  const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    if (Platform.OS !== 'web') return
-    e.preventDefault()
-    
-    const touches = e.touches
-    if (touches.length === 1 && gestureRef.current.isPanning) {
-      const newPanX = touches[0].clientX - panOffsetRef.current.x
-      const newPanY = touches[0].clientY - panOffsetRef.current.y
-      viewportRef.current.panX = newPanX
-      viewportRef.current.panY = newPanY
-      onPan(newPanX, newPanY)
-    } else if (touches.length === 2 && gestureRef.current.isPinching) {
-      const dx = touches[0].clientX - touches[1].clientX
-      const dy = touches[0].clientY - touches[1].clientY
-      const dist = Math.sqrt(dx * dx + dy * dy)
-      const scaleDelta = dist / pinchStartDistRef.current
-      const newScale = Math.min(Math.max(pinchStartScaleRef.current * scaleDelta, 0.5), 3)
-      viewportRef.current.scale = newScale
-      onZoom(newScale - viewportRef.current.scale, pinchCenterRef.current.x, pinchCenterRef.current.y)
-    }
-  }, [onPan, onZoom])
+  const handleTouchMove = useCallback(
+    (e: React.TouchEvent) => {
+      if (Platform.OS !== 'web') return
+      e.preventDefault()
+
+      const touches = e.touches
+      if (touches.length === 1 && gestureRef.current.isPanning) {
+        const newPanX = touches[0].clientX - panOffsetRef.current.x
+        const newPanY = touches[0].clientY - panOffsetRef.current.y
+        viewportRef.current.panX = newPanX
+        viewportRef.current.panY = newPanY
+        onPan(newPanX, newPanY)
+      } else if (touches.length === 2 && gestureRef.current.isPinching) {
+        const dx = touches[0].clientX - touches[1].clientX
+        const dy = touches[0].clientY - touches[1].clientY
+        const dist = Math.sqrt(dx * dx + dy * dy)
+        const scaleDelta = dist / pinchStartDistRef.current
+        const newScale = Math.min(
+          Math.max(pinchStartScaleRef.current * scaleDelta, 0.5),
+          3,
+        )
+        viewportRef.current.scale = newScale
+        onZoom(
+          newScale - viewportRef.current.scale,
+          pinchCenterRef.current.x,
+          pinchCenterRef.current.y,
+        )
+      }
+    },
+    [onPan, onZoom],
+  )
 
   const handleTouchEnd = useCallback(() => {
     gestureRef.current.isPanning = false
@@ -83,7 +97,7 @@ export function useGraphGestures(
   // Mouse wheel zoom for web
   useEffect(() => {
     if (Platform.OS !== 'web') return
-    
+
     // Mouse wheel zoom is handled by the canvas element listener
     return () => {}
   }, [onZoom])
@@ -91,7 +105,7 @@ export function useGraphGestures(
   // Keyboard shortcuts for web
   useEffect(() => {
     if (Platform.OS !== 'web') return
-    
+
     const handler = (e: KeyboardEvent) => {
       if (e.key === '+' || e.key === '=') {
         const newScale = Math.min(viewportRef.current.scale + 0.3, 3)

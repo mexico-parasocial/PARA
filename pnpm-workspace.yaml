@@ -26,10 +26,16 @@ overrides:
   'react-native-screens': '4.26.2'
 allowBuilds:
   '@sentry/cli': true
+  '@unomed/react-native-matrix-sdk': true
   'core-js': false
   'core-js-pure': false
   dtrace-provider: true
   'esbuild': false
+  # false because true provably fails here: its run.js shells out to
+  # `npm run postinstall`, and package.json pins devEngines.packageManager to
+  # pnpm, so npm exits with EBADDEVENGINES. The package exists for npm users;
+  # pnpm runs the repo's own postinstall directly and does not need it.
+  postinstall-postinstall: false
   'unrs-resolver': true
 patchedDependencies:
   '@sentry/expo-upload-sourcemaps@8.18.0': patches/@sentry__expo-upload-sourcemaps@8.18.0.patch

@@ -4,7 +4,6 @@ import {
   type GestureResponderEvent,
   type NativeSyntheticEvent,
   type NativeTouchEvent,
-
   type StyleProp,
   StyleSheet,
   type TextStyle,

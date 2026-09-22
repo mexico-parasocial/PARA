@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Keyboard,
   LayoutAnimation,
+  Pressable,
   StyleSheet,
   type TextInput,
   View,
@@ -41,6 +42,7 @@ import {At_Stroke2_Corner0_Rounded as At} from '#/components/icons/At'
 import {Eye_Stroke2_Corner0_Rounded as Eye} from '#/components/icons/Eye'
 import {EyeSlash_Stroke2_Corner0_Rounded as EyeSlash} from '#/components/icons/EyeSlash'
 import {Lock_Stroke2_Corner0_Rounded as Lock} from '#/components/icons/Lock'
+import {PencilLine_Stroke2_Corner0_Rounded as PencilLine} from '#/components/icons/Pencil'
 import {Ticket_Stroke2_Corner0_Rounded as Ticket} from '#/components/icons/Ticket'
 import {Loader} from '#/components/Loader'
 import {Text} from '#/components/Typography'
@@ -58,7 +60,6 @@ export const LoginForm = ({
   serviceDescription,
   initialHandle,
   setError,
-  setServiceUrl: _setServiceUrl,
   onPressRetryConnect,
   onPressBack,
   onPressForgotPassword,
@@ -380,33 +381,29 @@ export const LoginForm = ({
   return (
     <FormContainer testID="loginForm" titleText={<Trans>Sign in</Trans>}>
       <View>
-        <View style={[a.flex_row, a.align_center, a.gap_md, a.justify_between]}>
-          <TextField.LabelText>
-            <Trans>Hosting provider</Trans>
-          </TextField.LabelText>
-          {hostingProviderState.status === 'overridden' ? (
-            <Button
-              testID="hostingProviderResetBtn"
-              label={_(msg`Change`)}
-              accessibilityHint={_(
-                msg`Resets the hosting provider to the default Bluesky service`,
-              )}
-              onPress={onPressSelectService}
-              hitSlop={HITSLOP_10}>
-              <ButtonText>
-                <Trans>Change</Trans>
-              </ButtonText>
-            </Button>
-          ) : null}
-        </View>
+        <TextField.LabelText>
+          <Trans>Hosting provider</Trans>
+        </TextField.LabelText>
 
-        <View
-          style={[
+        <Pressable
+          testID="hostingProviderSelectBtn"
+          accessibilityRole="button"
+          accessibilityLabel={_(msg`Change hosting provider`)}
+          accessibilityHint={_(
+            msg`Opens a dialog to change your hosting provider`,
+          )}
+          onPress={onPressSelectService}
+          style={({pressed}) => [
             a.rounded_md,
             a.border,
             t.atoms.border_contrast_medium,
             a.overflow_hidden,
-            {flexDirection: 'row', height: 56, alignItems: 'center'},
+            {
+              flexDirection: 'row',
+              height: 56,
+              alignItems: 'center',
+              opacity: pressed ? 0.7 : 1,
+            },
             t.atoms.bg_contrast_25,
           ]}>
           <View style={[{paddingLeft: 16}]}>
@@ -431,25 +428,33 @@ export const LoginForm = ({
                 : 'bsky.social'}
             </Text>
           </View>
-          <View style={[{paddingRight: 16}]}>
-            {hostingProviderState.status === 'overridden' && (
+          <View
+            style={[
+              {
+                paddingRight: 12,
+                alignItems: 'center',
+                justifyContent: 'center',
+              },
+            ]}>
+            {hostingProviderState.status === 'overridden' ? (
               <Text
                 style={[
                   a.text_xs,
                   t.atoms.text_contrast_low,
-                  {paddingRight: 10},
+                  {paddingRight: 6},
                 ]}>
                 <Trans>Custom</Trans>
               </Text>
-            )}
+            ) : null}
+            <PencilLine size="sm" style={[t.atoms.text_contrast_medium]} />
           </View>
-        </View>
+        </Pressable>
 
         {IS_LOCAL_DEV_MODE && (
           <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_sm]}>
             <Trans>
               Local demo login: use provider {LOCAL_DEV_SERVICE}, account{' '}
-              active-a.test, password hunter2.
+              alice.test, password para-test-pw.
             </Trans>
           </Text>
         )}

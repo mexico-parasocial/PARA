@@ -12,6 +12,11 @@ export async function issueParaVoteProof(
     subjectType: M8CivicVoteProof['subjectType']
   },
 ) {
+  /*
+   * The account DID is deliberately not sent. m8 binds a cabildeo
+   * authorization to the DID it already holds for this session, so a DID from
+   * the client could only be a claim it must not trust. OD-7 5a.4, mubEZ CD-12.
+   */
   if (!agent.session) throw new Error('Not logged in')
   const proof = await postCivicVoteProof(input)
   if (

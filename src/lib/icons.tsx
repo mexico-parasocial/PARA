@@ -184,7 +184,6 @@ export function RectTallIcon({
   )
 }
 
-
 export function InfoCircleIcon({
   style,
   size,

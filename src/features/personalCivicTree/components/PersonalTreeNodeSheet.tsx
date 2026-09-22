@@ -89,6 +89,7 @@ export function PersonalTreeNodeSheet({
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel={l`Close`}
+          accessibilityHint={l`Dismisses this panel`}
           onPress={onClose}
           hitSlop={10}>
           <Text style={[a.text_md, t.atoms.text_contrast_medium]}>✕</Text>

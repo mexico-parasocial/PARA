@@ -57,9 +57,7 @@ export function useM8IdentityLocation() {
       if (districtGrant) {
         // The district hash is typically encoded in the proof artifact reference
         const districtProof = session.proofs.find(
-          p =>
-            p.grantId === districtGrant.id &&
-            p.outcome === 'verified',
+          p => p.grantId === districtGrant.id && p.outcome === 'verified',
         )
         if (districtProof?.reference?.startsWith('district:')) {
           districtHash = districtProof.reference

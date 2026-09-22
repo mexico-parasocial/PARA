@@ -28,6 +28,28 @@ export function LinkWarningDialog() {
   )
 }
 
+/**
+ * Self-contained variant for one-off call sites that own their dialog control
+ * (e.g. GermButton) instead of the global link-warning control.
+ */
+export function CustomLinkWarningDialog({
+  control,
+  link,
+}: {
+  control: Dialog.DialogControlProps
+  link: {href: string; displayText: string; share?: boolean}
+}) {
+  return (
+    <Dialog.Outer
+      control={control}
+      nativeOptions={{preventExpansion: true}}
+      webOptions={{alignCenter: true}}>
+      <Dialog.Handle />
+      <InAppBrowserConsentInner link={link} />
+    </Dialog.Outer>
+  )
+}
+
 function InAppBrowserConsentInner({
   link,
 }: {

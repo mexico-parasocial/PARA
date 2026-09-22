@@ -151,7 +151,9 @@ export function M8SessionBanner() {
           autoCapitalize="none"
           autoCorrect={false}
           accessibilityLabel={_(msg`Handle or DID`)}
-          accessibilityHint={_(msg`Enter the account to connect to the identity wallet`)}
+          accessibilityHint={_(
+            msg`Enter the account to connect to the identity wallet`,
+          )}
           style={[
             a.flex_1,
             a.px_md,

@@ -29,7 +29,6 @@ export function DateField({
   const t = useTheme()
   const [open, setOpen] = useState(false)
 
-
   /*
    * The picker requires a valid date, so when value is empty we open at
    * maximumDate (if set) or today. Normalize through toSimpleDateString so a

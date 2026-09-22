@@ -27,6 +27,7 @@ import {
 } from '#/state/queries/matrix'
 import {useAgent} from '#/state/session'
 import {atoms as a, useTheme} from '#/alf'
+import {ChatEncryptionNotice} from '#/components/chat/ChatEncryptionNotice'
 import {ChatIdentityPill} from '#/components/chat/ChatIdentityPill'
 import {type Props as SVGIconProps} from '#/components/icons/common'
 import {Group3_Stroke2_Corner0_Rounded as MembersIcon} from '#/components/icons/Group'
@@ -36,7 +37,9 @@ import {Sparkle_Stroke2_Corner0_Rounded as SummarizeIcon} from '#/components/ico
 import * as Layout from '#/components/Layout'
 import {SorteoBadge} from '#/components/SorteoBadge'
 import {Text} from '#/components/Typography'
+import {CHAT_ENGINE} from '#/env'
 import {buildClientHtml, buildConfigScript} from './matrix-client'
+import {NativeChatRoom} from './NativeChatRoom'
 
 export function CommunityChatScreen() {
   const route = useRoute<{
@@ -248,6 +251,11 @@ export function CommunityChatScreen() {
           },
         ]}>
         <ChatIdentityPill mode={identityMode} />
+        <View style={[a.mt_xs]}>
+          <ChatEncryptionNotice
+            policy={CHAT_ENGINE === 'native' ? 'e2ee' : 'unencrypted'}
+          />
+        </View>
         {civicBadges.length > 0 && (
           <View style={[a.flex_row, a.flex_wrap, a.gap_xs, a.mt_xs]}>
             {civicBadges.slice(0, 4).map(badge => (
@@ -316,20 +324,24 @@ export function CommunityChatScreen() {
           }
         />
       </View>
-      <WebView
-        source={{
-          html: buildClientHtml(sdkBundle),
-          baseUrl: 'https://chat.para.social',
-        }}
-        style={styles.webview}
-        startInLoadingState
-        renderLoading={renderLoading}
-        injectedJavaScript={injectedJavaScript}
-        onError={syntheticEvent => {
-          const {nativeEvent} = syntheticEvent
-          console.warn('[CommunityChat] WebView error:', nativeEvent)
-        }}
-      />
+      {CHAT_ENGINE === 'native' ? (
+        <NativeChatRoom roomId={activeRoomId} />
+      ) : (
+        <WebView
+          source={{
+            html: buildClientHtml(sdkBundle),
+            baseUrl: 'https://chat.para.social',
+          }}
+          style={styles.webview}
+          startInLoadingState
+          renderLoading={renderLoading}
+          injectedJavaScript={injectedJavaScript}
+          onError={syntheticEvent => {
+            const {nativeEvent} = syntheticEvent
+            console.warn('[CommunityChat] WebView error:', nativeEvent)
+          }}
+        />
+      )}
     </Layout.Screen>
   )
 }

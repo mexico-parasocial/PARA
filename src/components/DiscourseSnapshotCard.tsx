@@ -33,7 +33,11 @@ export function DiscourseSnapshotCard({
           <Text style={[styles.title, t.atoms.text]}>
             <Trans>Snapshot de Discurso</Trans>
           </Text>
-          <View style={[styles.statusBadge, {backgroundColor: t.palette.primary_500 + '20'}]}>
+          <View
+            style={[
+              styles.statusBadge,
+              {backgroundColor: t.palette.primary_500 + '20'},
+            ]}>
             <Text style={[styles.statusText, {color: t.palette.primary_500}]}>
               {status}
             </Text>
@@ -41,7 +45,9 @@ export function DiscourseSnapshotCard({
         </View>
         <View style={styles.stats}>
           <Text style={[styles.statValue, t.atoms.text]}>{totalVoices}</Text>
-          <Text style={[styles.statLabel, t.atoms.text_contrast_medium]}>Voces</Text>
+          <Text style={[styles.statLabel, t.atoms.text_contrast_medium]}>
+            Voces
+          </Text>
         </View>
       </View>
 
@@ -53,7 +59,12 @@ export function DiscourseSnapshotCard({
           </Text>
           {keyTakeaways.map((item, i) => (
             <View key={i} style={styles.takeawayItem}>
-              <View style={[styles.bullet, {backgroundColor: t.palette.primary_500}]} />
+              <View
+                style={[
+                  styles.bullet,
+                  {backgroundColor: t.palette.primary_500},
+                ]}
+              />
               <Text style={[styles.takeawayText, t.atoms.text]}>{item}</Text>
             </View>
           ))}
@@ -63,26 +74,37 @@ export function DiscourseSnapshotCard({
               Nivel de Consenso
             </Text>
             <View style={[styles.meterBg, t.atoms.bg_contrast_50]}>
-              <View 
+              <View
                 style={[
-                  styles.meterFill, 
+                  styles.meterFill,
                   {
                     width: `${consensusLevel}%`,
-                    backgroundColor: consensusLevel > 70 ? '#34C759' : '#FF9500'
-                  }
-                ]} 
+                    backgroundColor:
+                      consensusLevel > 70 ? '#34C759' : '#FF9500',
+                  },
+                ]}
               />
             </View>
-            <Text style={[styles.consensusValue, t.atoms.text]}>{consensusLevel}%</Text>
+            <Text style={[styles.consensusValue, t.atoms.text]}>
+              {consensusLevel}%
+            </Text>
           </View>
         </View>
 
         {/* Right: Diversity Map */}
         <View style={styles.mapContainer}>
-          <Text style={[styles.sectionTitle, t.atoms.text_contrast_medium, {textAlign: 'center'}]}>
+          <Text
+            style={[
+              styles.sectionTitle,
+              t.atoms.text_contrast_medium,
+              {textAlign: 'center'},
+            ]}>
             <Trans>DIVERSIDAD</Trans>
           </Text>
-          <IdeologicalDiversityMap distribution={compassDistribution} size={140} />
+          <IdeologicalDiversityMap
+            distribution={compassDistribution}
+            size={140}
+          />
           <Text style={styles.mapHint}>Origen del consenso</Text>
         </View>
       </View>

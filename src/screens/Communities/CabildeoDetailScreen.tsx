@@ -56,6 +56,7 @@ import {
   SortitionStatusCard,
 } from '#/screens/Data/components/SortitionStatusCard'
 import {useTheme} from '#/alf'
+import {PublicBallotNotice} from '#/components/civic/PublicRecordNotice'
 import {useDialogControl} from '#/components/Dialog'
 import {SortitionConfigDialog} from '#/components/dialogs/SortitionConfigDialog'
 import * as Layout from '#/components/Layout'
@@ -451,6 +452,7 @@ export function CabildeoDetailScreen({route}: Props) {
   // Consensus synthesizer state removed — pending real backend implementation
   const [hasDismissedGracePeriod, setHasDismissedGracePeriod] = useState(false)
   const sortitionControl = useDialogControl()
+  const ballotNoticeControl = useDialogControl()
   const [mountedAt] = useState(() => Date.now())
   const [nowMs, setNowMs] = useState(() => Date.now())
   const [positionFilter, setPositionFilter] = useState<
@@ -633,6 +635,8 @@ export function CabildeoDetailScreen({route}: Props) {
 
   const phaseIndex = PHASE_ORDER.indexOf(cabildeo.phase)
 
+  // Casting publishes the ballot in the voter's own repo under their DID,
+  // permanently. They are told that first: OD-7 §5d.
   const handleVote = () => {
     if (selectedOption === null || !cabildeoUri) return
     if (!participationAccess.allowed) {
@@ -643,6 +647,11 @@ export function CabildeoDetailScreen({route}: Props) {
       Toast.show(i18n._(msg`Voting is not open for this proposal.`))
       return
     }
+    ballotNoticeControl.open()
+  }
+
+  const castVote = () => {
+    if (selectedOption === null || !cabildeoUri) return
     vote(
       {cabildeoUri, selectedOption, isDirect: true},
       {
@@ -1786,6 +1795,7 @@ export function CabildeoDetailScreen({route}: Props) {
         onConfirm={handleConfigureSortition}
         isSubmitting={createSortitionRun.isPending}
       />
+      <PublicBallotNotice control={ballotNoticeControl} onConfirm={castVote} />
     </Layout.Screen>
   )
 }

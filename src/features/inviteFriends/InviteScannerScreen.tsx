@@ -120,9 +120,7 @@ export function InviteScannerScreen() {
   // Active scanner ------------------------------------------------------------
 
   return (
-    <Layout.Screen
-      noInsetTop
-      style={{backgroundColor: t.palette.black}}>
+    <Layout.Screen noInsetTop style={{backgroundColor: t.palette.black}}>
       <CameraView
         style={[a.absolute, a.inset_0]}
         facing="back"

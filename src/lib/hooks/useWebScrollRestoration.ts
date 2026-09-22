@@ -34,10 +34,7 @@ export function useWebScrollRestoration() {
     // https://twitter.com/satya164/status/1737301243519725803
     navigation.addListener('__unsafe_action__' as never, onDispatch)
     return () => {
-      navigation.removeListener(
-        '__unsafe_action__' as never,
-        onDispatch,
-      )
+      navigation.removeListener('__unsafe_action__' as never, onDispatch)
     }
   }, [state, navigation])
 

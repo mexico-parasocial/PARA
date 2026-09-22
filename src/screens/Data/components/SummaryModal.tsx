@@ -1,4 +1,10 @@
-import {Modal, ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native'
+import {
+  Modal,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native'
 import {Trans} from '@lingui/react/macro'
 
 import {type DeliberationSummary} from '#/state/queries/community-civic-tree'
@@ -70,18 +76,22 @@ export function SummaryModal({
               {/* Stats bar */}
               <View style={styles.statsRow}>
                 <View style={styles.statBox}>
-                  <Text style={[styles.statNum, {color: t.palette.primary_500}]}>
+                  <Text
+                    style={[styles.statNum, {color: t.palette.primary_500}]}>
                     {summary.totalClaims}
                   </Text>
-                  <Text style={[styles.statLabel, {color: t.palette.contrast_500}]}>
+                  <Text
+                    style={[styles.statLabel, {color: t.palette.contrast_500}]}>
                     <Trans>Claims</Trans>
                   </Text>
                 </View>
                 <View style={styles.statBox}>
-                  <Text style={[styles.statNum, {color: t.palette.primary_500}]}>
+                  <Text
+                    style={[styles.statNum, {color: t.palette.primary_500}]}>
                     {summary.totalRelationships}
                   </Text>
-                  <Text style={[styles.statLabel, {color: t.palette.contrast_500}]}>
+                  <Text
+                    style={[styles.statLabel, {color: t.palette.contrast_500}]}>
                     <Trans>Relationships</Trans>
                   </Text>
                 </View>
@@ -89,7 +99,11 @@ export function SummaryModal({
 
               {summary.normalizedClaims?.length > 0 && (
                 <View style={styles.section}>
-                  <Text style={[styles.sectionTitle, {color: t.palette.contrast_900}]}>
+                  <Text
+                    style={[
+                      styles.sectionTitle,
+                      {color: t.palette.contrast_900},
+                    ]}>
                     <Trans>Claims And Stances</Trans>
                   </Text>
                   {summary.normalizedClaims.map((claim, i) => {
@@ -210,37 +224,53 @@ export function SummaryModal({
 
               {/* Stance distribution */}
               <View style={styles.section}>
-                <Text style={[styles.sectionTitle, {color: t.palette.contrast_900}]}>
+                <Text
+                  style={[
+                    styles.sectionTitle,
+                    {color: t.palette.contrast_900},
+                  ]}>
                   <Trans>Stance Distribution</Trans>
                 </Text>
                 <View style={styles.barContainer}>
                   <View
                     style={[
                       styles.barSegment,
-                      {backgroundColor: '#22c55e', flex: summary.stanceDistribution.pro},
+                      {
+                        backgroundColor: '#22c55e',
+                        flex: summary.stanceDistribution.pro,
+                      },
                     ]}
                   />
                   <View
                     style={[
                       styles.barSegment,
-                      {backgroundColor: '#ef4444', flex: summary.stanceDistribution.con},
+                      {
+                        backgroundColor: '#ef4444',
+                        flex: summary.stanceDistribution.con,
+                      },
                     ]}
                   />
                   <View
                     style={[
                       styles.barSegment,
-                      {backgroundColor: '#9ca3af', flex: summary.stanceDistribution.neutral},
+                      {
+                        backgroundColor: '#9ca3af',
+                        flex: summary.stanceDistribution.neutral,
+                      },
                     ]}
                   />
                 </View>
                 <View style={styles.barLabels}>
-                  <Text style={{color: '#22c55e', fontSize: 12, fontWeight: '600'}}>
+                  <Text
+                    style={{color: '#22c55e', fontSize: 12, fontWeight: '600'}}>
                     Pro {summary.stanceDistribution.pro}%
                   </Text>
-                  <Text style={{color: '#ef4444', fontSize: 12, fontWeight: '600'}}>
+                  <Text
+                    style={{color: '#ef4444', fontSize: 12, fontWeight: '600'}}>
                     Con {summary.stanceDistribution.con}%
                   </Text>
-                  <Text style={{color: '#9ca3af', fontSize: 12, fontWeight: '600'}}>
+                  <Text
+                    style={{color: '#9ca3af', fontSize: 12, fontWeight: '600'}}>
                     Neutral {summary.stanceDistribution.neutral}%
                   </Text>
                 </View>
@@ -260,7 +290,10 @@ export function SummaryModal({
                         {backgroundColor: t.palette.contrast_50},
                       ]}>
                       <Text
-                        style={[styles.areaTitle, {color: t.palette.contrast_900}]}>
+                        style={[
+                          styles.areaTitle,
+                          {color: t.palette.contrast_900},
+                        ]}>
                         {area.topic}
                       </Text>
                       {area.claims.map((claim, j) => (
@@ -292,7 +325,10 @@ export function SummaryModal({
                         {backgroundColor: t.palette.contrast_50},
                       ]}>
                       <Text
-                        style={[styles.areaTitle, {color: t.palette.contrast_900}]}>
+                        style={[
+                          styles.areaTitle,
+                          {color: t.palette.contrast_900},
+                        ]}>
                         {conflict.topic}
                       </Text>
                       {conflict.opposingClaims.map((claim, j) => (

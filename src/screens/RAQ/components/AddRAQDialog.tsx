@@ -22,7 +22,8 @@ export function AddRAQDialog({
   const [community, setCommunity] = useState('')
   const [error, setError] = useState('')
 
-  const {mutate: submitProposal, isPending} = useSubmitProposedQuestionMutation()
+  const {mutate: submitProposal, isPending} =
+    useSubmitProposedQuestionMutation()
 
   const onSubmit = useCallback(() => {
     const trimmed = question.trim()

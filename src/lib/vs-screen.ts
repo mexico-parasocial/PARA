@@ -269,8 +269,7 @@ export function resolveVsEntities(
   input: string[] | string | undefined,
 ): [string, string] {
   const seen = new Set<string>()
-  const rawEntities =
-    typeof input === 'string' ? input.split(',') : input || []
+  const rawEntities = typeof input === 'string' ? input.split(',') : input || []
   const normalized = rawEntities.reduce<string[]>((result, value) => {
     const entity = normalizeVsEntity(value)
     if (!entity) return result
@@ -912,13 +911,7 @@ function entityOptionFromMeta(
   return {
     id,
     ...meta,
-    searchText: [
-      id,
-      meta.name,
-      meta.plainName,
-      meta.subtitle,
-      meta.group,
-    ]
+    searchText: [id, meta.name, meta.plainName, meta.subtitle, meta.group]
       .join(' ')
       .toLowerCase(),
   }

@@ -62,7 +62,7 @@ export function AltBadgeWithDialog({
             opacity: 0.8,
           },
           pos,
-          (hovered || pressed)
+          hovered || pressed
             ? [
                 {
                   opacity: 1,

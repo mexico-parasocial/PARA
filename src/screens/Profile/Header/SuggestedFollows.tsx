@@ -1,4 +1,3 @@
-import type * as bsky from '#/types/bsky'
 import {useCallback, useMemo} from 'react'
 import {useQueryClient} from '@tanstack/react-query'
 
@@ -7,6 +6,7 @@ import {
   suggestedFollowsByActorQueryKey,
   useSuggestedFollowsByActorQuery,
 } from '#/state/queries/suggested-follows'
+import type * as bsky from '#/types/bsky'
 
 type SuggestedFollowsByActorQueryData = ReturnType<
   typeof useSuggestedFollowsByActorQuery

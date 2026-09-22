@@ -264,8 +264,8 @@ export function SeeVotesScreen({route}: Props) {
             <Text style={[styles.subtitle, t.atoms.text_contrast_medium]}>
               {profileName ? (
                 <Trans>
-                  Policy votes for {profileName}. Tap a card to review or
-                  change your stance.
+                  Policy votes for {profileName}. Tap a card to review or change
+                  your stance.
                 </Trans>
               ) : (
                 <Trans>

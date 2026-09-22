@@ -20,6 +20,8 @@ type StateContext = {
 type SetContext = {
   add: () => void
   subtract: () => void
+  /** Idempotent boolean claim; see useSetMinimalShellMode. */
+  set: (v: boolean) => void
 }
 
 const stateContext = createContext<StateContext | null>(null)
@@ -45,6 +47,9 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
 
   // defaults to "visible", if the count is >0 it gets hidden
   const countRef = useRef(0)
+  // Whether the imperative `set` (see useSetMinimalShellMode) currently holds
+  // one claim, so repeated set(true) calls don't creep the refcount up.
+  const setClaimedRef = useRef(false)
   const add = useCallback(() => {
     // 0 -> 1 = hide
     if (countRef.current === 0) setModeWorklet(true)
@@ -58,13 +63,30 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
     // count must never go below 0
     if (countRef.current > 0) countRef.current -= 1
   }, [setModeWorklet])
+  const set = useCallback(
+    (v: boolean) => {
+      // Idempotent boolean setter on top of the refcount: holds at most one
+      // claim so it coexists with the useEnableMinimalShellMode claimants.
+      if (v && !setClaimedRef.current) {
+        setClaimedRef.current = true
+        if (countRef.current === 0) setModeWorklet(true)
+        countRef.current += 1
+      } else if (!v && setClaimedRef.current) {
+        setClaimedRef.current = false
+        countRef.current = Math.max(0, countRef.current - 1)
+        if (countRef.current === 0) setModeWorklet(false)
+      }
+    },
+    [setModeWorklet],
+  )
 
   const setters = useMemo(
     () => ({
       add,
       subtract,
+      set,
     }),
-    [add, subtract],
+    [add, subtract, set],
   )
 
   const value = useMemo(
@@ -98,20 +120,13 @@ export function useMinimalShellModeSetters() {
   return context
 }
 
+/**
+ * Pre-refcounting (#10319) boolean API, still imported by ~30 screens:
+ * `set(true)` hides the footer, `set(false)` shows it. Idempotent.
+ */
 export function useSetMinimalShellMode() {
-  const {footerMode} = useMinimalShellMode()
-  return useCallback(
-    (v: boolean) => {
-      'worklet'
-      footerMode.set(
-        withSpring(v ? 1 : 0, {
-          ...Reanimated3DefaultSpringConfig,
-          overshootClamping: true,
-        }),
-      )
-    },
-    [footerMode],
-  )
+  const setters = useMinimalShellModeSetters()
+  return setters.set
 }
 
 export function useEnableMinimalShellMode({enabled} = {enabled: true}) {

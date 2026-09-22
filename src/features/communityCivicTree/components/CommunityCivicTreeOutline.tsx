@@ -116,7 +116,11 @@ export function CommunityCivicTreeOutline({
       childrenOf.set(edge.target, list)
     }
 
-    const build = (id: string, seen: Set<string>, viaRel?: string): Branch | null => {
+    const build = (
+      id: string,
+      seen: Set<string>,
+      viaRel?: string,
+    ): Branch | null => {
       if (seen.has(id)) return null // cycle guard
       const node = byId.get(id)
       if (!node) return null
@@ -183,7 +187,12 @@ export function CommunityCivicTreeOutline({
       ))}
 
       {loose.length > 0 ? (
-        <View style={[a.mt_lg, a.pt_md, {borderTopWidth: 1, borderTopColor: t.palette.contrast_100}]}>
+        <View
+          style={[
+            a.mt_lg,
+            a.pt_md,
+            {borderTopWidth: 1, borderTopColor: t.palette.contrast_100},
+          ]}>
           <Text
             style={[
               a.text_xs,
@@ -191,7 +200,8 @@ export function CommunityCivicTreeOutline({
               a.mb_sm,
               t.atoms.text_contrast_medium,
             ]}
-            accessibilityLabel={l`Unconnected cards`}>
+            accessibilityLabel={l`Unconnected cards`}
+            accessibilityHint={l`Lists cards that are not yet connected to the tree`}>
             <Trans>Not yet connected</Trans>
           </Text>
           {loose.map(branch => (
@@ -244,6 +254,11 @@ function OutlineBranch({
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel={isCollapsed ? l`Expand` : l`Collapse`}
+            accessibilityHint={
+              isCollapsed
+                ? l`Shows this branch's children`
+                : l`Hides this branch's children`
+            }
             onPress={() => onToggle(node.id)}
             hitSlop={8}
             style={[a.pt_sm, {width: 20}]}>
@@ -258,6 +273,7 @@ function OutlineBranch({
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel={node.title}
+          accessibilityHint={l`Opens this node's details`}
           onPress={() => onNodePress(node.id)}
           style={[
             a.flex_1,
@@ -296,7 +312,10 @@ function OutlineBranch({
             <View style={[a.flex_row, a.gap_sm, a.mt_2xs, {paddingLeft: 10}]}>
               {support > 0 ? (
                 <Text style={[a.text_xs, {color: REL_META.supports?.color}]}>
-                  {plural(support, {one: '# supporting', other: '# supporting'})}
+                  {plural(support, {
+                    one: '# supporting',
+                    other: '# supporting',
+                  })}
                 </Text>
               ) : null}
               {oppose > 0 ? (

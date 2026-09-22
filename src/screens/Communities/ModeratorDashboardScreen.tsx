@@ -45,7 +45,7 @@ export function ModeratorDashboardScreen() {
 
   const {
     data: dashboard,
-    
+
     refetch,
   } = useModerationDashboardQuery(communityUri, modDid)
   const {data: memberList} = useChatMemberListQuery(communityUri, 20, 0)
@@ -60,7 +60,7 @@ export function ModeratorDashboardScreen() {
   const reportedMembers =
     memberList?.members.filter(m =>
       m.badges.some(
-        (b) =>
+        b =>
           b.visibleInChat &&
           (b.type === 'reported' ||
             b.type === 'contentious' ||
@@ -190,8 +190,8 @@ export function ModeratorDashboardScreen() {
                     </Text>
                     <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
                       {member.badges
-                        .filter((b) => b.visibleInChat)
-                        .map((b) => `${b.icon} ${b.label}`)
+                        .filter(b => b.visibleInChat)
+                        .map(b => `${b.icon} ${b.label}`)
                         .join(' · ')}
                     </Text>
                   </View>
@@ -200,7 +200,8 @@ export function ModeratorDashboardScreen() {
                   <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                     <View style={[a.flex_row, a.gap_xs]}>
                       {SANCTION_PRESETS.map(preset => (
-                        <TouchableOpacity accessibilityRole="button"
+                        <TouchableOpacity
+                          accessibilityRole="button"
                           key={preset.minutes}
                           onPress={() => {
                             sanctionMutation.mutate({

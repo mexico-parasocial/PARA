@@ -1,4 +1,4 @@
-import { createHash } from 'crypto'
+import {createHash} from 'crypto'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -58,7 +58,9 @@ const W3C_CONTEXT_V2 = [
  * Convert an m8 credential to W3C Verifiable Credentials 2.0 format.
  * This enables interoperability with any W3C-compliant verifier.
  */
-export function exportToW3CVC2(input: M8CredentialInput): W3CVerifiableCredential {
+export function exportToW3CVC2(
+  input: M8CredentialInput,
+): W3CVerifiableCredential {
   return {
     '@context': W3C_CONTEXT_V2,
     id: `urn:uuid:${input.id}`,
@@ -89,7 +91,7 @@ export function exportToW3CVC2(input: M8CredentialInput): W3CVerifiableCredentia
 export function createW3CPresentation(
   credentials: W3CVerifiableCredential[],
   holderDid?: string,
-  challenge?: string
+  challenge?: string,
 ): W3CVerifiablePresentation {
   const presentation: W3CVerifiablePresentation = {
     '@context': W3C_CONTEXT_V2,
@@ -116,7 +118,9 @@ export function createW3CPresentation(
  * Parse a W3C VC 2.0 credential back to m8 internal format.
  * Validates required fields and context.
  */
-export function importFromW3CVC2(vc: W3CVerifiableCredential): M8CredentialInput {
+export function importFromW3CVC2(
+  vc: W3CVerifiableCredential,
+): M8CredentialInput {
   // Validate context
   if (!vc['@context'].includes('https://www.w3.org/ns/credentials/v2')) {
     throw new Error('Invalid @context: missing W3C VC 2.0 context')
@@ -128,7 +132,7 @@ export function importFromW3CVC2(vc: W3CVerifiableCredential): M8CredentialInput
   }
 
   // Extract claims (everything except 'id' in credentialSubject)
-  const { id: _subjectId, ...claims } = vc.credentialSubject
+  const {id: _subjectId, ...claims} = vc.credentialSubject
 
   return {
     id: vc.id.replace('urn:uuid:', ''),
@@ -152,7 +156,7 @@ export function importFromW3CVC2(vc: W3CVerifiableCredential): M8CredentialInput
  */
 export function canonicalize(vc: W3CVerifiableCredential): string {
   // Remove proof before canonicalization
-  const { proof: _, ...withoutProof } = vc
+  const {proof: _, ...withoutProof} = vc
   return JSON.stringify(withoutProof, Object.keys(withoutProof).sort())
 }
 
@@ -168,17 +172,23 @@ export function credentialDigest(vc: W3CVerifiableCredential): string {
 /**
  * Validate a W3C VC 2.0 credential structure.
  */
-export function validateW3CVC2(vc: unknown): { valid: boolean; errors: string[] } {
+export function validateW3CVC2(vc: unknown): {
+  valid: boolean
+  errors: string[]
+} {
   const errors: string[] = []
 
   if (typeof vc !== 'object' || vc === null) {
     errors.push('Credential must be an object')
-    return { valid: false, errors }
+    return {valid: false, errors}
   }
 
   const c = vc as Record<string, unknown>
 
-  if (!Array.isArray(c['@context']) || !c['@context'].includes('https://www.w3.org/ns/credentials/v2')) {
+  if (
+    !Array.isArray(c['@context']) ||
+    !c['@context'].includes('https://www.w3.org/ns/credentials/v2')
+  ) {
     errors.push('Missing or invalid @context')
   }
 
@@ -203,10 +213,11 @@ export function validateW3CVC2(vc: unknown): { valid: boolean; errors: string[] 
   } else {
     const proof = c.proof as Record<string, unknown>
     if (!proof.jws) errors.push('Missing proof.jws')
-    if (!proof.verificationMethod) errors.push('Missing proof.verificationMethod')
+    if (!proof.verificationMethod)
+      errors.push('Missing proof.verificationMethod')
   }
 
-  return { valid: errors.length === 0, errors }
+  return {valid: errors.length === 0, errors}
 }
 
 // ─── Re-export ─────────────────────────────────────────────────────────────

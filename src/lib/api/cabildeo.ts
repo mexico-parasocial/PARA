@@ -103,6 +103,66 @@ export async function delegateCabildeoVote(
   })
 }
 
+/**
+ * The delegator's own cessions, read from their repo rather than the AppView:
+ * the record is written there directly, so it is the only place that holds the
+ * uri revoking one needs.
+ */
+export async function listMyCabildeoDelegations(
+  agent: CabildeoServiceAgent,
+  opts: {cabildeo?: string} = {},
+): Promise<CabildeoDelegationEntry[]> {
+  if (!agent.session) throw new Error('Not logged in')
+
+  const res = await agent.pdsClient.call(com.atproto.repo.listRecords, {
+    repo: agent.session.did,
+    collection: 'com.para.civic.delegation',
+    limit: 100,
+  })
+
+  return res.records
+    .map(item => ({
+      uri: item.uri,
+      cid: item.cid,
+      record: item.value as unknown as CabildeoDelegationRecord,
+    }))
+    .filter(entry =>
+      opts.cabildeo ? entry.record.cabildeo === opts.cabildeo : true,
+    )
+}
+
+/**
+ * Revoking deletes the record rather than stamping `revokedAt` on it.
+ *
+ * Two reasons, and they agree. The AppView's `com.para.civic.delegation`
+ * indexer does not read `revokedAt` at all — it recomputes a cabildeo's
+ * aggregates from `deleteFn`, so a stamped record would still be counted and
+ * the screen would be telling the user something untrue. And deleting is the
+ * privacy-preserving option: a cession left standing as revoked keeps
+ * publishing who trusted whom, which is the linkage OD-7 §5b is about.
+ */
+export async function revokeCabildeoDelegation(
+  agent: CabildeoServiceAgent,
+  uri: string,
+) {
+  if (!agent.session) throw new Error('Not logged in')
+
+  const rkey = uri.split('/').pop()
+  if (!rkey) throw new Error('Cesión no encontrada')
+
+  return await agent.pdsClient.call(com.atproto.repo.deleteRecord, {
+    repo: agent.session.did,
+    collection: 'com.para.civic.delegation',
+    rkey,
+  })
+}
+
+export type CabildeoDelegationEntry = {
+  uri: string
+  cid: string
+  record: CabildeoDelegationRecord
+}
+
 function assertValidCession(
   record: Omit<CabildeoDelegationRecord, 'createdAt'>,
 ) {

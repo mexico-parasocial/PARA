@@ -119,7 +119,7 @@ export function hasActiveFilters(filters: SearchFilters): boolean {
  * history. Each set key counts once (a multi-value field like author counts as
  * one filter regardless of how many handles it holds). Raw query operators do
  * not count until the advanced dialog promotes them to structured params.
-*/
+ */
 export function countActiveFilters(filters: SearchFilters): number {
   return FILTER_PARAM_KEYS.filter(key => filters[key]).length
 }

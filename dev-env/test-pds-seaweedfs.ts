@@ -17,8 +17,7 @@ export {type TestPDS} from './test-pds'
 const S3_CONFIG = {
   blobstoreDiskLocation: undefined as string | undefined,
   blobstoreS3Bucket: process.env.DEV_ENV_PDS_BLOBSTORE_S3_BUCKET,
-  blobstoreS3Region:
-    process.env.DEV_ENV_PDS_BLOBSTORE_S3_REGION || 'us-east-1',
+  blobstoreS3Region: process.env.DEV_ENV_PDS_BLOBSTORE_S3_REGION || 'us-east-1',
   blobstoreS3Endpoint: process.env.DEV_ENV_PDS_BLOBSTORE_S3_ENDPOINT,
   blobstoreS3ForcePathStyle:
     process.env.DEV_ENV_PDS_BLOBSTORE_S3_FORCE_PATH_STYLE === 'true',

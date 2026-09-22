@@ -20,7 +20,6 @@ export const HEADER_SLOT_SIZE = 33
  */
 export const CENTER_COLUMN_OFFSET = -105
 
-
 /**
  * How wide the center column is
  */

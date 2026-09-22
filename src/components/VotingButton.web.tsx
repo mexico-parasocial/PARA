@@ -64,8 +64,6 @@ export function VotingButton({
     [haptics],
   )
 
-
-
   const onVoteUp = () => {
     const newVote = Math.min(3, currentVote + 1)
     upFlash.value = withSequence(
@@ -173,74 +171,71 @@ export function VotingButton({
       style={styles.container}
       {...webEventBlockers}
       onPress={e => e.stopPropagation()}>
-        <Animated.View
-          style={[
-            styles.control,
-            animatedStyle,
-            {
-              backgroundColor: t.palette.contrast_25 + '30',
-              borderColor: t.palette.contrast_50 + '40',
-            },
-            Platform.OS === 'web' &&
-              ({
-                userSelect: 'none',
-                touchAction: 'none',
-              } as any),
-          ]}>
-          <Pressable
-            accessibilityRole="button"
-            onPress={onVoteUp}
-            hitSlop={8}
-            style={({pressed}) => ({opacity: pressed ? 0.7 : 1})}>
-            <View style={styles.arrowContainer}>
-              <Animated.View style={upArrowStyle}>
-                <ArrowUp
-                  size="sm"
-                  style={{
-                    color:
-                      currentVote > initialVote ? AGREE : t.atoms.text.color,
-                  }}
-                />
-              </Animated.View>
-              <Animated.View
-                style={[styles.flashOverlay, upFlashOpacity]}
-                pointerEvents="none">
-                <ArrowUp size="sm" style={{color: '#FFFFFF'}} />
-              </Animated.View>
-            </View>
-          </Pressable>
-
-          <View style={styles.textWrapper}>
-            <Animated.Text style={[styles.voteText, voteTextStyle]}>
-              {currentVote > 0 ? `+${currentVote}` : `${currentVote}`}
-            </Animated.Text>
+      <Animated.View
+        style={[
+          styles.control,
+          animatedStyle,
+          {
+            backgroundColor: t.palette.contrast_25 + '30',
+            borderColor: t.palette.contrast_50 + '40',
+          },
+          Platform.OS === 'web' &&
+            ({
+              userSelect: 'none',
+              touchAction: 'none',
+            } as any),
+        ]}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onVoteUp}
+          hitSlop={8}
+          style={({pressed}) => ({opacity: pressed ? 0.7 : 1})}>
+          <View style={styles.arrowContainer}>
+            <Animated.View style={upArrowStyle}>
+              <ArrowUp
+                size="sm"
+                style={{
+                  color: currentVote > initialVote ? AGREE : t.atoms.text.color,
+                }}
+              />
+            </Animated.View>
+            <Animated.View
+              style={[styles.flashOverlay, upFlashOpacity]}
+              pointerEvents="none">
+              <ArrowUp size="sm" style={{color: '#FFFFFF'}} />
+            </Animated.View>
           </View>
+        </Pressable>
 
-          <Pressable
-            accessibilityRole="button"
-            onPress={onVoteDown}
-            hitSlop={8}
-            style={({pressed}) => ({opacity: pressed ? 0.7 : 1})}>
-            <View style={styles.arrowContainer}>
-              <Animated.View style={downArrowStyle}>
-                <ArrowDown
-                  size="sm"
-                  style={{
-                    color:
-                      currentVote < initialVote
-                        ? DISAGREE
-                        : t.atoms.text.color,
-                  }}
-                />
-              </Animated.View>
-              <Animated.View
-                style={[styles.flashOverlay, downFlashOpacity]}
-                pointerEvents="none">
-                <ArrowDown size="sm" style={{color: '#FFFFFF'}} />
-              </Animated.View>
-            </View>
-          </Pressable>
-        </Animated.View>
+        <View style={styles.textWrapper}>
+          <Animated.Text style={[styles.voteText, voteTextStyle]}>
+            {currentVote > 0 ? `+${currentVote}` : `${currentVote}`}
+          </Animated.Text>
+        </View>
+
+        <Pressable
+          accessibilityRole="button"
+          onPress={onVoteDown}
+          hitSlop={8}
+          style={({pressed}) => ({opacity: pressed ? 0.7 : 1})}>
+          <View style={styles.arrowContainer}>
+            <Animated.View style={downArrowStyle}>
+              <ArrowDown
+                size="sm"
+                style={{
+                  color:
+                    currentVote < initialVote ? DISAGREE : t.atoms.text.color,
+                }}
+              />
+            </Animated.View>
+            <Animated.View
+              style={[styles.flashOverlay, downFlashOpacity]}
+              pointerEvents="none">
+              <ArrowDown size="sm" style={{color: '#FFFFFF'}} />
+            </Animated.View>
+          </View>
+        </Pressable>
+      </Animated.View>
     </Pressable>
   )
 }

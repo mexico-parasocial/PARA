@@ -120,6 +120,19 @@ export type Events = {
     activeStep: number
   }
   'signup:captchaSuccess': {}
+  'onboarding:interests:disabledNextPressed': {}
+  'signup:attestTimeout': {}
+  'signup:captchaBackPress': {
+    phase?: 'attesting' | 'challenge'
+  }
+  'signup:captchaBlockedLoad': {
+    host: string
+    isTopFrame: boolean
+  }
+  'signup:captchaSlow': {}
+  'signup:createAccountFailure': {
+    reason: string
+  }
   'signup:captchaFailure': {}
   'signup:fieldError': {
     field: string

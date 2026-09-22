@@ -10,9 +10,8 @@ import {atoms as a, flatten, useBreakpoints, useTheme} from '#/alf'
 const BOTTOM_BAR_HEIGHT = 61
 
 export function Composer() {
-const state = useComposerState()
+  const state = useComposerState()
   const isActive = !!state
-
 
   if (!isActive) {
     return null

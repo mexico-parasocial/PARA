@@ -7,11 +7,7 @@
  * Types of items that can be followed
  */
 export type FollowedItemType =
-  | 'hashtag'
-  | 'policy'
-  | 'matter'
-  | 'post'
-  | 'thread'
+  'hashtag' | 'policy' | 'matter' | 'post' | 'thread'
 
 /**
  * Represents a followed item (topic, policy, matter, etc.)

@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from 'react'
-import {useWindowDimensions,View} from 'react-native'
+import {useWindowDimensions, View} from 'react-native'
 import Animated, {Easing, ZoomIn} from 'react-native-reanimated'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
 
@@ -15,7 +15,7 @@ import {useIsKeyboardVisible} from '#/lib/hooks/useIsKeyboardVisible'
 import {GlobalGestureEventsProvider} from '#/state/global-gesture-events'
 import {atoms as a, useTheme} from '#/alf'
 import {useOnGesture} from '#/components/hooks/useOnGesture'
-import {createPortalGroup,Portal as RootPortal} from '#/components/Portal'
+import {createPortalGroup, Portal as RootPortal} from '#/components/Portal'
 import {
   ARROW_HALF_SIZE,
   ARROW_SIZE,

@@ -1,5 +1,10 @@
 import {useState} from 'react'
-import {ActivityIndicator, StyleSheet, TouchableOpacity,View} from 'react-native'
+import {
+  ActivityIndicator,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native'
 import {WebView, type WebViewMessageEvent} from 'react-native-webview'
 
 import {Text} from '#/view/com/util/text/Text'
@@ -46,8 +51,13 @@ export default function ZkpProverWebView({
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity accessibilityRole="button" onPress={onClose} style={styles.closeButton}>
-          <Text style={[styles.closeText, {color: t.palette.primary_500}]}>✕ Close</Text>
+        <TouchableOpacity
+          accessibilityRole="button"
+          onPress={onClose}
+          style={styles.closeButton}>
+          <Text style={[styles.closeText, {color: t.palette.primary_500}]}>
+            ✕ Close
+          </Text>
         </TouchableOpacity>
         <Text style={[styles.title, t.atoms.text]}>Privacy Proof</Text>
         <View style={styles.placeholder} />

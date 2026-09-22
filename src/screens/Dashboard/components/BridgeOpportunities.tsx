@@ -30,7 +30,11 @@ export function BridgeOpportunities({opportunities}: Props) {
       {opportunities.map((opp, i) => (
         <View
           key={i}
-          style={[styles.card, t.atoms.bg_contrast_25, {borderLeftColor: t.palette.primary_500}]}>
+          style={[
+            styles.card,
+            t.atoms.bg_contrast_25,
+            {borderLeftColor: t.palette.primary_500},
+          ]}>
           {/* Compass position badges */}
           <View style={styles.badgeRow}>
             {opp.positionsInvolved.map(pos => {
@@ -68,11 +72,7 @@ export function BridgeOpportunities({opportunities}: Props) {
                   styles.pill,
                   {backgroundColor: t.palette.primary_500 + '12'},
                 ]}>
-                <Text
-                  style={[
-                    styles.pillText,
-                    {color: t.palette.primary_500},
-                  ]}>
+                <Text style={[styles.pillText, {color: t.palette.primary_500}]}>
                   {topic}
                 </Text>
               </View>

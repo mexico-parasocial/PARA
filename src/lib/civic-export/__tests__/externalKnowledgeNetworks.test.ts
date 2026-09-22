@@ -59,9 +59,7 @@ describe('external knowledge networks', () => {
     expect(getProviderFromUri('at://did/x/network.cosmik.card/1')).toBe(
       'semble',
     )
-    expect(getProviderFromUri('at://did/x/at.margin.bookmark/1')).toBe(
-      'margin',
-    )
+    expect(getProviderFromUri('at://did/x/at.margin.bookmark/1')).toBe('margin')
     expect(getExternalKnowledgeNetworkLabel('obsidian')).toBe('Obsidian')
   })
 })

@@ -72,10 +72,7 @@ export function VotingButton({
       scale.value = withSpring(1.1)
     })
     .onUpdate(event => {
-      const clampedTranslation = Math.max(
-        -40,
-        Math.min(40, event.translationY),
-      )
+      const clampedTranslation = Math.max(-40, Math.min(40, event.translationY))
       translateY.value = clampedTranslation
 
       const dragDistance = -clampedTranslation
@@ -265,9 +262,7 @@ export function VotingButton({
                   size="sm"
                   style={{
                     color:
-                      currentVote < initialVote
-                        ? DISAGREE
-                        : t.atoms.text.color,
+                      currentVote < initialVote ? DISAGREE : t.atoms.text.color,
                   }}
                 />
               </Animated.View>

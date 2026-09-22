@@ -37,9 +37,7 @@ export function LocationPermissionGate({
     return fallback
   }
 
-  return (
-    <DefaultPermissionPrompt onRequest={requestPermissions} />
-  )
+  return <DefaultPermissionPrompt onRequest={requestPermissions} />
 }
 
 function DefaultPermissionPrompt({
@@ -51,13 +49,7 @@ function DefaultPermissionPrompt({
 
   return (
     <View
-      style={[
-        a.flex_1,
-        a.align_center,
-        a.justify_center,
-        a.p_xl,
-        a.gap_md,
-      ]}>
+      style={[a.flex_1, a.align_center, a.justify_center, a.p_xl, a.gap_md]}>
       <Text style={[a.text_xl, a.font_bold, t.atoms.text]}>
         Ubicación requerida
       </Text>

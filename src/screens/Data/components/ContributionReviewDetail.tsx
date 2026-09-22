@@ -7,7 +7,7 @@ import {Text} from '#/components/Typography'
 
 type ContributionVoteHandler = (
   contribution: CommunityTreeContribution,
-  vote: 'approve' | 'reject'
+  vote: 'approve' | 'reject',
 ) => void
 
 export function ContributionReviewDetail({
@@ -64,7 +64,8 @@ export function ContributionReviewDetail({
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.detailBody}>
         <View style={styles.detailMetaRow}>
-          <View style={[styles.detailBadge, {borderColor: t.palette.contrast_200}]}>
+          <View
+            style={[styles.detailBadge, {borderColor: t.palette.contrast_200}]}>
             <Text style={[styles.detailBadgeText, t.atoms.text]}>
               {contribution.source_type}
             </Text>
@@ -75,7 +76,8 @@ export function ContributionReviewDetail({
         </View>
 
         {contribution.content ? (
-          <View style={[styles.detailBlock, {borderColor: t.palette.contrast_100}]}>
+          <View
+            style={[styles.detailBlock, {borderColor: t.palette.contrast_100}]}>
             <Text style={[styles.detailLabel, t.atoms.text_contrast_medium]}>
               <Trans>Contexto del aporte</Trans>
             </Text>
@@ -91,7 +93,10 @@ export function ContributionReviewDetail({
             accessibilityLabel="Abrir fuente del aporte"
             accessibilityHint="Abre el enlace original en el navegador"
             onPress={() => onOpenSource(contribution.source_url!)}
-            style={[styles.sourceButton, {borderColor: t.palette.contrast_100}]}>
+            style={[
+              styles.sourceButton,
+              {borderColor: t.palette.contrast_100},
+            ]}>
             <View style={styles.sourceTextWrap}>
               <Text style={[styles.detailLabel, t.atoms.text_contrast_medium]}>
                 <Trans>Fuente</Trans>
@@ -105,7 +110,8 @@ export function ContributionReviewDetail({
           </TouchableOpacity>
         ) : null}
 
-        <View style={[styles.consensusBox, {borderColor: t.palette.contrast_100}]}>
+        <View
+          style={[styles.consensusBox, {borderColor: t.palette.contrast_100}]}>
           <Text style={[styles.detailLabel, t.atoms.text_contrast_medium]}>
             <Trans>Consenso requerido</Trans>
           </Text>

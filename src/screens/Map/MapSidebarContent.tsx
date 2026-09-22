@@ -62,7 +62,8 @@ function MiniAction({
           : t.atoms.border_contrast_low,
         web({cursor: 'pointer'}),
         web({transition: 'background-color 0.1s ease'}),
-        !active && web({':hover': {backgroundColor: t.palette.contrast_100 + '30'}}),
+        !active &&
+          web({':hover': {backgroundColor: t.palette.contrast_100 + '30'}}),
       ]}>
       <Text
         style={[
@@ -377,9 +378,7 @@ export function MapSidebarLayers({
           <LayersIcon fill={t.palette.primary_500} width={17} height={17} />
         </View>
         <View style={[a.flex_1]}>
-          <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
-            Map view
-          </Text>
+          <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>Map view</Text>
           <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
             Choose the geography shown on the map
           </Text>
@@ -524,9 +523,7 @@ export function MapSidebarZoneFilters({
           <FilterIcon fill={lensColor} width={17} height={17} />
         </View>
         <View style={[a.flex_1]}>
-          <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
-            Civic lens
-          </Text>
+          <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>Civic lens</Text>
           <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
             Tint states by matter or policy activity
           </Text>
@@ -650,9 +647,7 @@ export function MapSidebarZoneFilters({
               width: 36,
               height: 36,
               backgroundColor:
-                active || pickerExpanded
-                  ? '#FF5A3620'
-                  : t.palette.contrast_100,
+                active || pickerExpanded ? '#FF5A3620' : t.palette.contrast_100,
             },
           ]}>
           <FilterIcon
@@ -985,7 +980,13 @@ export function DistrictsSidebar({
                   : [t.atoms.bg_contrast_25, t.atoms.border_contrast_low],
                 web({cursor: 'pointer'}),
                 web({transition: 'transform 0.1s ease, box-shadow 0.1s ease'}),
-                !isSelected && web({':hover': {transform: 'translateY(-1px)', boxShadow: '0 2px 8px rgba(0,0,0,0.06)'}}),
+                !isSelected &&
+                  web({
+                    ':hover': {
+                      transform: 'translateY(-1px)',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
+                    },
+                  }),
               ]}>
               <View
                 style={[

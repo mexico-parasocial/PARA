@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import {describe, it, expect, beforeEach} from 'vitest'
 import {
   registerIssuer,
   updateIssuer,
@@ -42,12 +42,12 @@ describe('listIssuers', () => {
   })
 
   it('filters by country', () => {
-    const issuers = listIssuers({ country: 'MX' })
+    const issuers = listIssuers({country: 'MX'})
     expect(issuers.every(i => i.country === 'MX')).toBe(true)
   })
 
   it('filters by status', () => {
-    const issuers = listIssuers({ status: 'active' })
+    const issuers = listIssuers({status: 'active'})
     expect(issuers.every(i => i.status === 'active')).toBe(true)
   })
 })
@@ -98,17 +98,17 @@ describe('registerIssuer', () => {
 
 describe('updateIssuer', () => {
   it('updates issuer status', () => {
-    updateIssuer('did:m8:ine:emisor-001', { status: 'suspended' })
+    updateIssuer('did:m8:ine:emisor-001', {status: 'suspended'})
     const issuer = lookupIssuer('did:m8:ine:emisor-001')
     expect(issuer!.status).toBe('suspended')
 
     // Restore for other tests
-    updateIssuer('did:m8:ine:emisor-001', { status: 'active' })
+    updateIssuer('did:m8:ine:emisor-001', {status: 'active'})
   })
 
   it('throws for unknown DID', () => {
     expect(() => {
-      updateIssuer('did:m8:unknown', { name: 'New Name' })
+      updateIssuer('did:m8:unknown', {name: 'New Name'})
     }).toThrow('not found')
   })
 })
@@ -148,11 +148,15 @@ describe('evaluateTrust', () => {
     const policy = createWhitelistPolicy(['did:m8:ine:emisor-001'])
     const result = evaluateTrust('did:m8:unknown:issuer', policy)
     expect(result.allowed).toBe(false)
-    expect(result.errors).toContain('Issuer did:m8:unknown:issuer not in allowed list')
+    expect(result.errors).toContain(
+      'Issuer did:m8:unknown:issuer not in allowed list',
+    )
   })
 
   it('blocks explicitly blocked issuer', () => {
-    const policy = createWhitelistPolicy([], { blockedIssuers: ['did:m8:ine:emisor-001'] })
+    const policy = createWhitelistPolicy([], {
+      blockedIssuers: ['did:m8:ine:emisor-001'],
+    })
     const result = evaluateTrust('did:m8:ine:emisor-001', policy)
     expect(result.allowed).toBe(false)
     expect(result.errors).toContain('Issuer did:m8:ine:emisor-001 is blocked')
@@ -172,19 +176,23 @@ describe('evaluateTrust', () => {
   })
 
   it('blocks revoked issuer', () => {
-    updateIssuer('did:m8:ine:emisor-001', { status: 'revoked' })
+    updateIssuer('did:m8:ine:emisor-001', {status: 'revoked'})
     const result = evaluateTrust('did:m8:ine:emisor-001')
     expect(result.allowed).toBe(false)
-    expect(result.errors).toContain('Issuer did:m8:ine:emisor-001 has been revoked')
-    updateIssuer('did:m8:ine:emisor-001', { status: 'active' })
+    expect(result.errors).toContain(
+      'Issuer did:m8:ine:emisor-001 has been revoked',
+    )
+    updateIssuer('did:m8:ine:emisor-001', {status: 'active'})
   })
 
   it('warns on suspended issuer', () => {
-    updateIssuer('did:m8:ine:emisor-001', { status: 'suspended' })
+    updateIssuer('did:m8:ine:emisor-001', {status: 'suspended'})
     const result = evaluateTrust('did:m8:ine:emisor-001')
     expect(result.allowed).toBe(true) // suspended = warning, not block
-    expect(result.warnings).toContain('Issuer did:m8:ine:emisor-001 is suspended')
-    updateIssuer('did:m8:ine:emisor-001', { status: 'active' })
+    expect(result.warnings).toContain(
+      'Issuer did:m8:ine:emisor-001 is suspended',
+    )
+    updateIssuer('did:m8:ine:emisor-001', {status: 'active'})
   })
 })
 
@@ -216,16 +224,18 @@ describe('exportRegistry / importRegistry', () => {
     expect(exported.length).toBeGreaterThanOrEqual(3)
 
     // Import a new one
-    importRegistry([{
-      did: 'did:m8:test:imported',
-      name: 'Imported Issuer',
-      country: 'CA',
-      publicKey: 'pk-imported',
-      keyType: 'Ed25519',
-      addedAt: '2026-01-01T00:00:00Z',
-      status: 'active',
-      revocationEndpoint: 'https://imported.example/revocation',
-    }])
+    importRegistry([
+      {
+        did: 'did:m8:test:imported',
+        name: 'Imported Issuer',
+        country: 'CA',
+        publicKey: 'pk-imported',
+        keyType: 'Ed25519',
+        addedAt: '2026-01-01T00:00:00Z',
+        status: 'active',
+        revocationEndpoint: 'https://imported.example/revocation',
+      },
+    ])
 
     expect(lookupIssuer('did:m8:test:imported')).not.toBeNull()
   })

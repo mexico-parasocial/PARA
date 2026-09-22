@@ -187,9 +187,7 @@ function deltaToZoom(latDelta: number): number {
   return Math.max(1, Math.min(20, Math.log2(360 / latDelta)))
 }
 
-function computeCentroid(
-  coordinates: Coordinate[],
-): [number, number] | null {
+function computeCentroid(coordinates: Coordinate[]): [number, number] | null {
   if (coordinates.length === 0) return null
   let sumLat = 0
   let sumLng = 0
@@ -225,7 +223,9 @@ export const MapLibreWeb = forwardRef<MapLibreWebRef, Props>(
     const polygonsRef = useRef<NonNullable<Props['polygons']>>([])
     const civicPointsRef = useRef<NonNullable<Props['civicPoints']>>([])
     const cityMarkersRef = useRef<NonNullable<Props['cityMarkers']>>([])
-    const districtCentroidsRef = useRef<NonNullable<Props['districtCentroids']>>([])
+    const districtCentroidsRef = useRef<
+      NonNullable<Props['districtCentroids']>
+    >([])
 
     // Keep latest refs for click handlers
     polygonsRef.current = polygons || []
@@ -329,7 +329,8 @@ export const MapLibreWeb = forwardRef<MapLibreWebRef, Props>(
           }
 
           if (
-            (layerId === 'city-marker-circle' || layerId === 'city-marker-label') &&
+            (layerId === 'city-marker-circle' ||
+              layerId === 'city-marker-label') &&
             name
           ) {
             const city = cityMarkersRef.current.find(c => c.name === name)
@@ -889,7 +890,10 @@ export const MapLibreWeb = forwardRef<MapLibreWebRef, Props>(
     )
 
     const addDistrictCentroidsToMap = useCallback(
-      (map: maplibregl.Map, centroids: NonNullable<Props['districtCentroids']>) => {
+      (
+        map: maplibregl.Map,
+        centroids: NonNullable<Props['districtCentroids']>,
+      ) => {
         if (map.getLayer('district-centroid-circle')) {
           map.removeLayer('district-centroid-circle')
         }

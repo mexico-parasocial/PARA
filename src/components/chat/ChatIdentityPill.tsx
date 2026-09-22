@@ -1,9 +1,6 @@
 import {StyleSheet, View} from 'react-native'
 
-import {
-  CHAT_IDENTITY_COPY,
-  type ChatIdentityMode,
-} from '#/lib/chat/identity'
+import {CHAT_IDENTITY_COPY, type ChatIdentityMode} from '#/lib/chat/identity'
 import {atoms as a, useTheme} from '#/alf'
 import {Text} from '#/components/Typography'
 

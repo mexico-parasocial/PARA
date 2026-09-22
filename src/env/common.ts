@@ -134,3 +134,20 @@ export const LIVE_EVENTS_PROD_URL = `https://live-events.workers.bsky.app`
 export const LIVE_EVENTS_URL = IS_DEV
   ? (LIVE_EVENTS_DEV_URL ?? LIVE_EVENTS_PROD_URL)
   : LIVE_EVENTS_PROD_URL
+
+/**
+ * Which engine renders community chat.
+ *
+ * `webview`  the bundled matrix-js-sdk page (no E2EE, no crypto store)
+ * `native`   the Matrix Rust SDK adapter in `src/features/encryptedChat`
+ *
+ * Defaults to `webview`: the native engine is end-to-end encrypted and will
+ * refuse to open an unencrypted room at all, so switching is a behaviour
+ * change, not a rendering detail. Opt in explicitly with
+ * `EXPO_PUBLIC_CHAT_ENGINE=native`.
+ *
+ * Not gated on `__DEV__` — two-device interoperability has to be testable from
+ * a TestFlight build, which `__DEV__` would prevent.
+ */
+export const CHAT_ENGINE: 'native' | 'webview' =
+  process.env.EXPO_PUBLIC_CHAT_ENGINE === 'native' ? 'native' : 'webview'

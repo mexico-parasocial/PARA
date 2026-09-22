@@ -9,7 +9,7 @@ jest.mock('#/state/preferences/languages', () => ({
 
 jest.mock('./utils', () => ({
   createBskyTopicsHeader: () => ({}),
-  isBlueskyOwnedFeed: () => false,
+  isPARAOwnedFeed: () => false,
 }))
 
 describe('CustomFeedAPI', () => {

@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest'
+import {describe, it, expect, beforeAll} from 'vitest'
 import {
   generateDeviceKeyPair,
   createIssuerKeys,
@@ -26,17 +26,20 @@ describe('m8 Identity Credentials', () => {
       const kp1 = generateDeviceKeyPair()
       const kp2 = generateDeviceKeyPair()
       expect(kp1.fingerprint).not.toBe(kp2.fingerprint)
-      expect(kp1.publicKey.toString('hex')).not.toBe(kp2.publicKey.toString('hex'))
+      expect(kp1.publicKey.toString('hex')).not.toBe(
+        kp2.publicKey.toString('hex'),
+      )
     })
 
     it('creates issuer keys with rotation schedule', () => {
       expect(issuerKeys.did).toBe('did:m8:issuer:ine-proxy-1')
       expect(issuerKeys.signingKey.fingerprint).toHaveLength(16)
       expect(issuerKeys.revocationKey.fingerprint).toHaveLength(16)
-      
+
       const created = new Date(issuerKeys.createdAt)
       const expires = new Date(issuerKeys.expiresAt)
-      const daysDiff = (expires.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)
+      const daysDiff =
+        (expires.getTime() - created.getTime()) / (1000 * 60 * 60 * 24)
       expect(daysDiff).toBe(90)
     })
   })
@@ -64,10 +67,13 @@ describe('m8 Identity Credentials', () => {
       const credential = createCredential({
         issuerDid: issuerKeys.did,
         issuerPrivateKey: issuerKeys.signingKey.privateKey,
-        claims: { ageOver18: true },
+        claims: {ageOver18: true},
       })
 
-      const result = verifyCredential(credential, issuerKeys.signingKey.publicKey)
+      const result = verifyCredential(
+        credential,
+        issuerKeys.signingKey.publicKey,
+      )
       expect(result.valid).toBe(true)
       expect(result.claims?.ageOver18).toBe(true)
     })
@@ -76,11 +82,14 @@ describe('m8 Identity Credentials', () => {
       const credential = createCredential({
         issuerDid: issuerKeys.did,
         issuerPrivateKey: issuerKeys.signingKey.privateKey,
-        claims: { ageOver18: true },
+        claims: {ageOver18: true},
       })
 
       // Tamper with claims
-      const tampered = { ...credential, claims: { ...credential.claims, ageOver18: false } }
+      const tampered = {
+        ...credential,
+        claims: {...credential.claims, ageOver18: false},
+      }
       const result = verifyCredential(tampered, issuerKeys.signingKey.publicKey)
       expect(result.valid).toBe(false)
       expect(result.reason).toBe('Invalid signature')
@@ -90,11 +99,14 @@ describe('m8 Identity Credentials', () => {
       const credential = createCredential({
         issuerDid: issuerKeys.did,
         issuerPrivateKey: issuerKeys.signingKey.privateKey,
-        claims: { ageOver18: true },
+        claims: {ageOver18: true},
         validityDays: -1, // Expired yesterday
       })
 
-      const result = verifyCredential(credential, issuerKeys.signingKey.publicKey)
+      const result = verifyCredential(
+        credential,
+        issuerKeys.signingKey.publicKey,
+      )
       expect(result.valid).toBe(false)
       expect(result.reason).toBe('Credential expired')
     })
@@ -125,7 +137,9 @@ describe('m8 Identity Credentials', () => {
       })
 
       expect(presentation.disclosedClaims).toEqual(['ageOver18', 'citizenship'])
-      expect(presentation.deviceBinding.deviceKeyFingerprint).toBe(deviceKeys.fingerprint)
+      expect(presentation.deviceBinding.deviceKeyFingerprint).toBe(
+        deviceKeys.fingerprint,
+      )
       expect(presentation.deviceBinding.signature).toBeTruthy()
     })
 
@@ -173,7 +187,7 @@ describe('m8 Identity Credentials', () => {
       const credential = createCredential({
         issuerDid: issuerKeys.did,
         issuerPrivateKey: issuerKeys.signingKey.privateKey,
-        claims: { ageOver18: true },
+        claims: {ageOver18: true},
       })
 
       const credentialHash = require('crypto')
@@ -190,14 +204,21 @@ describe('m8 Identity Credentials', () => {
       }
 
       // Mock signature for test
-      const { createSign } = require('crypto')
+      const {createSign} = require('crypto')
       const sign = createSign('SHA256')
-      const { signature, ...listWithoutSig } = revocationList
+      const {signature, ...listWithoutSig} = revocationList
       sign.update(JSON.stringify(listWithoutSig))
       sign.end()
-      revocationList.signature = sign.sign(issuerKeys.signingKey.privateKey, 'base64url')
+      revocationList.signature = sign.sign(
+        issuerKeys.signingKey.privateKey,
+        'base64url',
+      )
 
-      const isRevoked = checkRevocation(credential, revocationList, issuerKeys.signingKey.publicKey)
+      const isRevoked = checkRevocation(
+        credential,
+        revocationList,
+        issuerKeys.signingKey.publicKey,
+      )
       expect(isRevoked).toBe(true)
     })
   })

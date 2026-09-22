@@ -13,7 +13,9 @@ export function useScrollHandlers(): ScrollHandlers<Record<string, unknown>> {
   return useContext(ScrollContext)
 }
 
-type ProviderProps = {children: React.ReactNode} & ScrollHandlers<Record<string, unknown>>
+type ProviderProps = {children: React.ReactNode} & ScrollHandlers<
+  Record<string, unknown>
+>
 
 // Note: this completely *overrides* the parent handlers.
 // It's up to you to compose them with the parent ones via useScrollHandlers() if needed.

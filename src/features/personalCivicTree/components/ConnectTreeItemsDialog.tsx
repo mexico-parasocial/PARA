@@ -173,6 +173,7 @@ function ConnectTreeItemsDialogInner({
               key={option}
               accessibilityRole="button"
               accessibilityLabel={label}
+              accessibilityHint={l`Sets the relationship type`}
               accessibilityState={{selected: active}}
               onPress={() => setKind(option)}
               style={[
@@ -221,6 +222,7 @@ function ConnectTreeItemsDialogInner({
                 key={key}
                 accessibilityRole="button"
                 accessibilityLabel={getCivicTreeItemTitle(item)}
+                accessibilityHint={l`Selects the item to connect to`}
                 accessibilityState={{selected: active, disabled: already}}
                 disabled={already}
                 onPress={() => {
@@ -276,6 +278,7 @@ function ConnectTreeItemsDialogInner({
       <TouchableOpacity
         accessibilityRole="button"
         accessibilityLabel={l`Connect`}
+        accessibilityHint={l`Links the two items`}
         onPress={onConnect}
         disabled={addRelation.isPending || targets.length === 0}
         style={[

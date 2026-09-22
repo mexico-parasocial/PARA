@@ -29,7 +29,10 @@ export function TripleSignalIndicator({
     maxAbs > 0.3 && values.some(v => Math.abs(v.value - values[0].value) > 0.3)
 
   return (
-    <Pressable accessibilityRole="button" onPress={() => setShowTip(!showTip)} style={styles.wrap}>
+    <Pressable
+      accessibilityRole="button"
+      onPress={() => setShowTip(!showTip)}
+      style={styles.wrap}>
       <View style={styles.bars}>
         {values.map(v => {
           const rounded = Math.max(-3, Math.min(3, Math.round(v.value)))

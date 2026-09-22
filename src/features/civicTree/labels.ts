@@ -7,7 +7,8 @@ export const CIVIC_TREE_LABELS = {
 } as const
 
 export const CIVIC_TREE_COPY = {
-  personalPrivate: 'Tu árbol privado de políticas, temas, evidencia y referencias.',
+  personalPrivate:
+    'Tu árbol privado de políticas, temas, evidencia y referencias.',
   communityPublic:
     'Un árbol público de argumentos, evidencia, propuestas, votos y referencias compartidas que una comunidad conecta mediante los lexicons de PARA.',
   contributionPrivacy:

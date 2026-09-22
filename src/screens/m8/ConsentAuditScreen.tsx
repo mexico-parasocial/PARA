@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import {useCallback, useEffect, useState} from 'react'
 import {
   Alert,
   RefreshControl,
@@ -9,11 +9,11 @@ import {
 } from 'react-native'
 // @ts-ignore - lingui macro types not available
 import {msg} from '@lingui/core/macro'
-import { useLingui } from '@lingui/react'
+import {useLingui} from '@lingui/react'
 
-import { m8Fetch, postGrantRevoke } from '#/lib/im8'
-import { useTheme } from '#/alf'
-import { Text } from '#/components/Typography'
+import {m8Fetch, postGrantRevoke} from '#/lib/im8'
+import {useTheme} from '#/alf'
+import {Text} from '#/components/Typography'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -32,7 +32,11 @@ interface Grant {
   appName: string
   appKind: string
   surface: string
-  requestedClaims: Array<{ type: string; disclosure: string; requestedValue?: string }>
+  requestedClaims: Array<{
+    type: string
+    disclosure: string
+    requestedValue?: string
+  }>
   proofMode: string
   status: string
   reason: string
@@ -67,7 +71,7 @@ interface AuditSummary {
 
 export default function ConsentAuditScreen() {
   const t = useTheme()
-  const { _ } = useLingui()
+  const {_} = useLingui()
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [ledger, setLedger] = useState<LedgerEntry[]>([])
@@ -114,7 +118,9 @@ export default function ConsentAuditScreen() {
     loadAudit().then(() => {
       if (!cancelled) setLoading(false)
     })
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [loadAudit])
 
   const handleRevoke = useCallback(
@@ -123,23 +129,26 @@ export default function ConsentAuditScreen() {
         _(msg`Revoke Grant`),
         _(msg`Are you sure you want to revoke access for ${grant.appName}?`),
         [
-          { text: _(msg`Cancel`), style: 'cancel' },
+          {text: _(msg`Cancel`), style: 'cancel'},
           {
             text: _(msg`Revoke`),
             style: 'destructive',
             onPress: async () => {
               try {
-                await postGrantRevoke(grant.id, 'User revoked from consent audit')
+                await postGrantRevoke(
+                  grant.id,
+                  'User revoked from consent audit',
+                )
                 await loadAudit()
               } catch (err) {
                 Alert.alert(_(msg`Error`), _(msg`Failed to revoke grant`))
               }
             },
           },
-        ]
+        ],
       )
     },
-    [_, loadAudit]
+    [_, loadAudit],
   )
 
   if (loading) {
@@ -187,18 +196,18 @@ export default function ConsentAuditScreen() {
 
         {/* Active Grants Section */}
         <Text style={[styles.sectionTitle, t.atoms.text]}>Active Grants</Text>
-        {grants.filter((g) => g.status === 'approved').length === 0 ? (
+        {grants.filter(g => g.status === 'approved').length === 0 ? (
           <Text style={[styles.emptyText, t.atoms.text_contrast_medium]}>
             No active grants. Apps will appear here when you approve access.
           </Text>
         ) : (
           grants
-            .filter((g) => g.status === 'approved')
-            .map((grant) => (
+            .filter(g => g.status === 'approved')
+            .map(grant => (
               <GrantCard
                 key={grant.id}
                 grant={grant}
-                proofs={proofs.filter((p) => p.grantId === grant.id)}
+                proofs={proofs.filter(p => p.grantId === grant.id)}
                 onRevoke={() => handleRevoke(grant)}
               />
             ))
@@ -211,9 +220,7 @@ export default function ConsentAuditScreen() {
             No audit entries yet.
           </Text>
         ) : (
-          ledger.map((entry) => (
-            <LedgerEntryCard key={entry.id} entry={entry} />
-          ))
+          ledger.map(entry => <LedgerEntryCard key={entry.id} entry={entry} />)
         )}
       </ScrollView>
     </View>
@@ -233,9 +240,16 @@ function SummaryCard({
 }) {
   const t = useTheme()
   return (
-    <View style={[styles.metricCard, t.atoms.bg_contrast_25, { borderColor: t.palette.contrast_100 }]}>
-      <Text style={[styles.metricValue, { color }]}>{value}</Text>
-      <Text style={[styles.metricLabel, t.atoms.text_contrast_medium]}>{label}</Text>
+    <View
+      style={[
+        styles.metricCard,
+        t.atoms.bg_contrast_25,
+        {borderColor: t.palette.contrast_100},
+      ]}>
+      <Text style={[styles.metricValue, {color}]}>{value}</Text>
+      <Text style={[styles.metricLabel, t.atoms.text_contrast_medium]}>
+        {label}
+      </Text>
     </View>
   )
 }
@@ -253,7 +267,12 @@ function GrantCard({
   const {_} = useLingui()
 
   return (
-    <View style={[styles.card, t.atoms.bg_contrast_25, { borderColor: t.palette.contrast_100 }]}>
+    <View
+      style={[
+        styles.card,
+        t.atoms.bg_contrast_25,
+        {borderColor: t.palette.contrast_100},
+      ]}>
       <View style={styles.cardHeader}>
         <View>
           <Text style={[styles.cardTitle, t.atoms.text]}>{grant.appName}</Text>
@@ -261,16 +280,30 @@ function GrantCard({
             {grant.appKind} • {grant.surface}
           </Text>
         </View>
-        <View style={[styles.badge, { backgroundColor: t.palette.primary_500 + '20' }]}>
-          <Text style={[styles.badgeText, { color: t.palette.primary_500 }]}>Active</Text>
+        <View
+          style={[
+            styles.badge,
+            {backgroundColor: t.palette.primary_500 + '20'},
+          ]}>
+          <Text style={[styles.badgeText, {color: t.palette.primary_500}]}>
+            Active
+          </Text>
         </View>
       </View>
 
-      <Text style={[styles.claimsLabel, t.atoms.text_contrast_medium]}>Requested claims:</Text>
+      <Text style={[styles.claimsLabel, t.atoms.text_contrast_medium]}>
+        Requested claims:
+      </Text>
       <View style={styles.claimsRow}>
         {grant.requestedClaims.map((claim, i) => (
-          <View key={i} style={[styles.claimChip, { backgroundColor: t.palette.primary_500 + '15' }]}>
-            <Text style={[styles.claimChipText, { color: t.palette.primary_500 }]}>
+          <View
+            key={i}
+            style={[
+              styles.claimChip,
+              {backgroundColor: t.palette.primary_500 + '15'},
+            ]}>
+            <Text
+              style={[styles.claimChipText, {color: t.palette.primary_500}]}>
               {claim.type}
             </Text>
           </View>
@@ -279,8 +312,10 @@ function GrantCard({
 
       {proofs.length > 0 && (
         <>
-          <Text style={[styles.claimsLabel, t.atoms.text_contrast_medium]}>Disclosed proofs:</Text>
-          {proofs.map((proof) => (
+          <Text style={[styles.claimsLabel, t.atoms.text_contrast_medium]}>
+            Disclosed proofs:
+          </Text>
+          {proofs.map(proof => (
             <View key={proof.id} style={styles.proofRow}>
               <Text style={[styles.proofText, t.atoms.text]}>
                 {proof.claimType}: {proof.statement}
@@ -295,15 +330,21 @@ function GrantCard({
 
       <View style={styles.cardFooter}>
         <Text style={[styles.cardDate, t.atoms.text_contrast_medium]}>
-          Granted: {new Date(grant.issuedAt ?? grant.requestedAt).toLocaleDateString()}
+          Granted:{' '}
+          {new Date(grant.issuedAt ?? grant.requestedAt).toLocaleDateString()}
         </Text>
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel={_(msg`Revoke access for ${grant.appName}`)}
-          accessibilityHint={_(msg`Revokes this app's access to your credential data`)}
+          accessibilityHint={_(
+            msg`Revokes this app's access to your credential data`,
+          )}
           onPress={onRevoke}
-          style={[styles.revokeBtn, { backgroundColor: t.palette.negative_400 + '15' }]}>
-          <Text style={[styles.revokeBtnText, { color: t.palette.negative_400 }]}>
+          style={[
+            styles.revokeBtn,
+            {backgroundColor: t.palette.negative_400 + '15'},
+          ]}>
+          <Text style={[styles.revokeBtnText, {color: t.palette.negative_400}]}>
             Revoke
           </Text>
         </TouchableOpacity>
@@ -312,7 +353,7 @@ function GrantCard({
   )
 }
 
-function LedgerEntryCard({ entry }: { entry: LedgerEntry }) {
+function LedgerEntryCard({entry}: {entry: LedgerEntry}) {
   const t = useTheme()
 
   const actionColors: Record<string, string> = {
@@ -322,8 +363,21 @@ function LedgerEntryCard({ entry }: { entry: LedgerEntry }) {
   }
 
   return (
-    <View style={[styles.timelineItem, t.atoms.bg_contrast_25, { borderColor: t.palette.contrast_100 }]}>
-      <View style={[styles.timelineDot, { backgroundColor: actionColors[entry.action] ?? t.palette.contrast_400 }]} />
+    <View
+      style={[
+        styles.timelineItem,
+        t.atoms.bg_contrast_25,
+        {borderColor: t.palette.contrast_100},
+      ]}>
+      <View
+        style={[
+          styles.timelineDot,
+          {
+            backgroundColor:
+              actionColors[entry.action] ?? t.palette.contrast_400,
+          },
+        ]}
+      />
       <View style={styles.timelineContent}>
         <Text style={[styles.timelineAction, t.atoms.text]}>
           {entry.action} {entry.targetType}

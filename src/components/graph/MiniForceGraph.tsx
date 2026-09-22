@@ -45,11 +45,7 @@ function hashString(str: string): number {
 
 // ─── Generate deterministic mock graph ───────────────────────────────────────
 
-function generateGraph(
-  nodeCount: number,
-  edgeCount: number,
-  seedStr: string,
-) {
+function generateGraph(nodeCount: number, edgeCount: number, seedStr: string) {
   const rng = mulberry32(hashString(seedStr))
   const nodes = Array.from({length: Math.min(nodeCount, 12)}, (_, i) => ({
     id: `n-${i}`,
@@ -159,42 +155,42 @@ export function MiniForceGraph({
     <Animated.View style={[{width, height}, animatedStyle]}>
       <Svg width={width} height={height} viewBox={`0 0 ${width} ${height}`}>
         <G>
-        {/* Edges */}
-        {edges.map(edge => {
-          const sp = nodePositions.get(edge.source)
-          const tp = nodePositions.get(edge.target)
-          if (!sp || !tp) return null
-          return (
-            <Line
-              key={`${edge.source}-${edge.target}`}
-              x1={sp.x}
-              y1={sp.y}
-              x2={tp.x}
-              y2={tp.y}
-              stroke={color}
-              strokeWidth={1.2}
-              strokeOpacity={0.35}
-            />
-          )
-        })}
+          {/* Edges */}
+          {edges.map(edge => {
+            const sp = nodePositions.get(edge.source)
+            const tp = nodePositions.get(edge.target)
+            if (!sp || !tp) return null
+            return (
+              <Line
+                key={`${edge.source}-${edge.target}`}
+                x1={sp.x}
+                y1={sp.y}
+                x2={tp.x}
+                y2={tp.y}
+                stroke={color}
+                strokeWidth={1.2}
+                strokeOpacity={0.35}
+              />
+            )
+          })}
 
-        {/* Nodes */}
-        {nodes.map(node => {
-          const pos = nodePositions.get(node.id)
-          if (!pos) return null
-          const r = nodeRadius.get(node.id) ?? 3.5
-          return (
-            <Circle
-              key={node.id}
-              cx={pos.x}
-              cy={pos.y}
-              r={r}
-              fill={color}
-              opacity={0.9}
-            />
-          )
-        })}
-      </G>
+          {/* Nodes */}
+          {nodes.map(node => {
+            const pos = nodePositions.get(node.id)
+            if (!pos) return null
+            const r = nodeRadius.get(node.id) ?? 3.5
+            return (
+              <Circle
+                key={node.id}
+                cx={pos.x}
+                cy={pos.y}
+                r={r}
+                fill={color}
+                opacity={0.9}
+              />
+            )
+          })}
+        </G>
       </Svg>
     </Animated.View>
   )

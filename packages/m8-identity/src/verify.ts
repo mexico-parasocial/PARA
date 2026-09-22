@@ -1,4 +1,4 @@
-import { createHash, createVerify, randomBytes } from 'crypto'
+import {createHash, createVerify, randomBytes} from 'crypto'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -58,7 +58,7 @@ const DEFAULT_VERIFY_URL = 'https://verify.paramx.social'
  */
 export async function verifyOffline(
   presentationBundle: string,
-  options: VerifyOptions = {}
+  options: VerifyOptions = {},
 ): Promise<VerificationResult> {
   const errors: string[] = []
   const warnings: string[] = []
@@ -66,7 +66,8 @@ export async function verifyOffline(
 
   try {
     const bundle = JSON.parse(presentationBundle)
-    const { credentialId, encryptedPayload, nonce, expiresAt, revealedClaims } = bundle
+    const {credentialId, encryptedPayload, nonce, expiresAt, revealedClaims} =
+      bundle
 
     // 1. Check presentation expiry
     if (expiresAt < verifiedAt) {
@@ -92,7 +93,10 @@ export async function verifyOffline(
     }
 
     // 5. Check issuer trust
-    if (options.trustedIssuers && !options.trustedIssuers.includes(payload.issuerDid)) {
+    if (
+      options.trustedIssuers &&
+      !options.trustedIssuers.includes(payload.issuerDid)
+    ) {
       errors.push(`Untrusted issuer: ${payload.issuerDid}`)
     }
 
@@ -101,7 +105,9 @@ export async function verifyOffline(
     const claimKeys = Object.keys(claims)
 
     if (options.minClaims && claimKeys.length < options.minClaims) {
-      errors.push(`Insufficient claims: ${claimKeys.length} < ${options.minClaims}`)
+      errors.push(
+        `Insufficient claims: ${claimKeys.length} < ${options.minClaims}`,
+      )
     }
 
     if (options.requiredClaims) {
@@ -137,7 +143,7 @@ export async function verifyOffline(
       verifiedClaims,
       errors,
       warnings,
-      'offline'
+      'offline',
     )
   } catch (e) {
     errors.push(`Parse error: ${e instanceof Error ? e.message : 'unknown'}`)
@@ -154,7 +160,7 @@ export async function verifyOffline(
 export async function verifyOnline(
   presentationBundle: string,
   options: VerifyOptions = {},
-  verifyUrl: string = DEFAULT_VERIFY_URL
+  verifyUrl: string = DEFAULT_VERIFY_URL,
 ): Promise<VerificationResult> {
   // Start with offline checks
   const offlineResult = await verifyOffline(presentationBundle, options)
@@ -168,12 +174,12 @@ export async function verifyOnline(
     // Fetch revocation status
     const revocationResult = await checkRevocationOnline(
       offlineResult.credentialId,
-      verifyUrl
+      verifyUrl,
     )
 
     if (revocationResult.revoked) {
       offlineResult.errors.push(
-        `Credential revoked at ${revocationResult.revokedAt} by ${revocationResult.revokedBy}`
+        `Credential revoked at ${revocationResult.revokedAt} by ${revocationResult.revokedBy}`,
       )
       offlineResult.valid = false
     }
@@ -190,7 +196,7 @@ export async function verifyOnline(
     return offlineResult
   } catch (e) {
     offlineResult.warnings.push(
-      `Online revocation check failed: ${e instanceof Error ? e.message : 'unknown'}. Falling back to offline.`
+      `Online revocation check failed: ${e instanceof Error ? e.message : 'unknown'}. Falling back to offline.`,
     )
     offlineResult.mode = 'offline'
     return offlineResult
@@ -204,15 +210,18 @@ export async function verifyOnline(
  */
 export async function checkRevocationOnline(
   credentialId: string,
-  verifyUrl: string = DEFAULT_VERIFY_URL
+  verifyUrl: string = DEFAULT_VERIFY_URL,
 ): Promise<RevocationCheckResult> {
   const revocationHash = createHash('sha256').update(credentialId).digest('hex')
 
   try {
-    const response = await fetch(`${verifyUrl}/revocation-check/${revocationHash}`, {
-      method: 'GET',
-      headers: { 'Accept': 'application/json' },
-    })
+    const response = await fetch(
+      `${verifyUrl}/revocation-check/${revocationHash}`,
+      {
+        method: 'GET',
+        headers: {Accept: 'application/json'},
+      },
+    )
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`)
@@ -230,7 +239,11 @@ export async function checkRevocationOnline(
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'unknown'
     // Network errors should propagate so caller can fallback
-    if (msg.includes('fetch') || msg.includes('Network') || msg.includes('ECONNREFUSED')) {
+    if (
+      msg.includes('fetch') ||
+      msg.includes('Network') ||
+      msg.includes('ECONNREFUSED')
+    ) {
       throw e
     }
     // HTTP errors (404 etc) = not in revocation list = not revoked
@@ -251,14 +264,16 @@ export async function checkRevocationOnline(
 export function verifyMerkleProof(
   leafHash: string,
   expectedRoot: string,
-  proof: string[]
+  proof: string[],
 ): boolean {
   let current = leafHash
 
   for (const sibling of proof) {
     // Sort to ensure deterministic ordering
     const pair = [current, sibling].sort()
-    current = createHash('sha256').update(pair[0] + pair[1]).digest('hex')
+    current = createHash('sha256')
+      .update(pair[0] + pair[1])
+      .digest('hex')
   }
 
   return current === expectedRoot
@@ -312,7 +327,7 @@ function result(
   verifiedClaims: Record<string, unknown>,
   errors: string[],
   warnings: string[],
-  mode: 'offline' | 'online'
+  mode: 'offline' | 'online',
 ): VerificationResult {
   return {
     valid,
@@ -333,16 +348,16 @@ function result(
  */
 export async function verifyBatch(
   presentationBundles: string[],
-  options: VerifyOptions = {}
+  options: VerifyOptions = {},
 ): Promise<VerificationResult[]> {
   return Promise.all(
-    presentationBundles.map(bundle => verifyOffline(bundle, options))
+    presentationBundles.map(bundle => verifyOffline(bundle, options)),
   )
 }
 
 // ─── Re-export for convenience ────────────────────────────────────────────
 
-export { createHash }
+export {createHash}
 export default {
   verifyOffline,
   verifyOnline,

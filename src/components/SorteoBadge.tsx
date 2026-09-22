@@ -34,7 +34,8 @@ export function SorteoBadge({communityUri}: {communityUri: string}) {
 
   return (
     <>
-      <TouchableOpacity accessibilityRole="button"
+      <TouchableOpacity
+        accessibilityRole="button"
         onPress={openModal}
         style={[
           styles.badge,

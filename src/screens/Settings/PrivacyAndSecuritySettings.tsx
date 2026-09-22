@@ -14,10 +14,13 @@ import * as Admonition from '#/components/Admonition'
 import {BellRinging_Stroke2_Corner0_Rounded as BellRingingIcon} from '#/components/icons/BellRinging'
 import {EyeSlash_Stroke2_Corner0_Rounded as EyeSlashIcon} from '#/components/icons/EyeSlash'
 import {Key_Stroke2_Corner2_Rounded as KeyIcon} from '#/components/icons/Key'
+import {MagnifyingGlass_Stroke2_Corner0_Rounded as MagnifyingGlassIcon} from '#/components/icons/MagnifyingGlass'
 import {ShieldCheck_Stroke2_Corner0_Rounded as ShieldIcon} from '#/components/icons/Shield'
 import * as Layout from '#/components/Layout'
 import {InlineLinkText} from '#/components/Link'
+import {useAnalytics} from '#/analytics'
 import {app} from '#/lexicons'
+import {AlgoVisibilityOptOut} from './components/AlgoVisibilityOptOut'
 import {Email2FAToggle} from './components/Email2FAToggle'
 import {Im8FAToggle} from './components/Im8FAToggle'
 import {PwiOptOut} from './components/PwiOptOut'
@@ -30,6 +33,10 @@ type Props = NativeStackScreenProps<
 export function PrivacyAndSecuritySettingsScreen({}: Props) {
   const {_} = useLingui()
   const t = useTheme()
+  const ax = useAnalytics()
+  const isContentVisibilityEnabled = ax.features.enabled(
+    ax.features.ContentVisibilitySettingsEnable,
+  )
   const {data: appPasswords} = useAppPasswordsQuery()
   const {currentAccount} = useSession()
   const {data: authFactor, isError: authFactorError} = useAuthFactorQuery()
@@ -124,6 +131,12 @@ export function PrivacyAndSecuritySettingsScreen({}: Props) {
             />
           </SettingsList.LinkItem>
           <SettingsList.Divider />
+          {isContentVisibilityEnabled && (
+            <SettingsList.Item style={[a.align_start]}>
+              <SettingsList.ItemIcon icon={MagnifyingGlassIcon} />
+              <AlgoVisibilityOptOut />
+            </SettingsList.Item>
+          )}
           <SettingsList.Group>
             <SettingsList.ItemIcon icon={EyeSlashIcon} />
             <SettingsList.ItemText>
