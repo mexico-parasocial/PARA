@@ -1,5 +1,5 @@
 /**
- * RAQ (Rapid Alignment Questions) Service
+ * RAQ (Rightfully Asked Questions) Service
  *
  * Real API integration — no mock data.
  */
@@ -10,17 +10,14 @@ import {type AtIdentifierString, type DidString} from '@atproto/syntax'
 import {
   PARA_RAQ_ASSESSMENT_COLLECTION,
   PARA_RAQ_AXIS_VOTE_COLLECTION,
-  PARA_RAQ_PROPOSAL_ANSWER_COLLECTION,
   PARA_RAQ_PROPOSAL_COLLECTION,
   PARA_RAQ_PROPOSAL_VOTE_COLLECTION,
   type ParaRaqAssessmentRecord,
   type ParaRaqAxisVoteRecord,
-  type ParaRaqProposalAnswerRecord,
   type ParaRaqProposalRecord,
   type ParaRaqProposalView,
   type ParaRaqProposalVoteRecord,
 } from '#/lib/api/para-lexicons'
-import {issueParaVoteProof} from '#/lib/api/vote-proof'
 import {RAQ_AXES} from '#/lib/mock-data'
 import {
   type PublicSessionBundle,
@@ -161,15 +158,11 @@ export async function submitAxisVote(
 ) {
   const did = agent.session?.did
   if (!did) throw new Error('Not logged in')
-  const proof = await issueParaVoteProof(agent, {
-    subjectUri: axisId,
-    subjectType: 'raq_axis',
-  })
+  // A public reaction: its count decides nothing, so it asks m8 for no proof,
+  // and the PDS refuses one that carries it (OD-7 §5h).
   const record: ParaRaqAxisVoteRecord = {
     axisId,
     value,
-    voteNullifier: proof.voteNullifier,
-    eligibilityProofRef: proof.eligibilityProofRef,
     createdAt: new Date().toISOString(),
   }
 
@@ -189,15 +182,10 @@ export async function submitProposalVote(
 ) {
   const did = agent.session?.did
   if (!did) throw new Error('Not logged in')
-  const proof = await issueParaVoteProof(agent, {
-    subjectUri: subject,
-    subjectType: 'raq_proposal',
-  })
+  // A public reaction, as above: no m8 proof (OD-7 §5h).
   const record: ParaRaqProposalVoteRecord = {
     subject,
     value: value > 0 ? 1 : value < 0 ? -1 : 0,
-    voteNullifier: proof.voteNullifier,
-    eligibilityProofRef: proof.eligibilityProofRef,
     createdAt: new Date().toISOString(),
   }
 
@@ -210,27 +198,13 @@ export async function submitProposalVote(
   })
 }
 
-export async function submitProposalAnswer(
-  agent: ParaServiceAgent,
-  subject: string,
-  value: number,
-) {
-  const did = agent.session?.did
-  if (!did) throw new Error('Not logged in')
-  const record: ParaRaqProposalAnswerRecord = {
-    subject,
-    value: Math.max(-3, Math.min(3, value)),
-    createdAt: new Date().toISOString(),
-  }
-
-  await agent.pdsClient.call(com.atproto.repo.putRecord, {
-    repo: did,
-    collection: PARA_RAQ_PROPOSAL_ANSWER_COLLECTION,
-    rkey: await generateTid(),
-    record: record as unknown as LexMap,
-    validate: false,
-  })
-}
+/*
+ * `submitProposalAnswer` was removed on 2026-09-22. It wrote
+ * `com.para.raq.proposalAnswer`, a -3..+3 answer from strongly disagree to
+ * strongly agree, into the author's public repo: a position with a magnitude,
+ * which is what the ballot freeze refuses everywhere else. The collection is now
+ * frozen at the PDS and the AppView (OD-7 §5h).
+ */
 
 // ------------------------------------------------------------------
 // Assessment Publishing (com.para.raq.assessment record)

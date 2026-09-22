@@ -4,10 +4,7 @@ import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
-import {
-  useAnswerProposedQuestionMutation,
-  useVoteOnProposedQuestionMutation,
-} from '#/state/mutations/raq'
+import {useVoteOnProposedQuestionMutation} from '#/state/mutations/raq'
 import {
   type ProposedQuestionView,
   useProposedQuestions,
@@ -19,7 +16,6 @@ import * as Dialog from '#/components/Dialog'
 import * as Layout from '#/components/Layout'
 import {ListMaybePlaceholder} from '#/components/Lists'
 import {RedditVoteButton} from '#/components/PostControls/VoteButton'
-import {VotingButtonHorizontal} from '#/components/VotingButtonHorizontal'
 import {AddRAQDialog} from './components/AddRAQDialog'
 
 export default function ProposedRAQListScreen() {
@@ -35,7 +31,6 @@ export default function ProposedRAQListScreen() {
     refetch,
   } = useProposedQuestions()
   const {mutate: voteOnProposal} = useVoteOnProposedQuestionMutation()
-  const {mutate: answerProposal} = useAnswerProposedQuestionMutation()
 
   const renderItem = ({item}: {item: ProposedQuestionView}) => (
     <View style={[styles.itemCard, t.atoms.bg, t.atoms.border_contrast_low]}>
@@ -49,10 +44,10 @@ export default function ProposedRAQListScreen() {
       </View>
 
       <View style={styles.controlsRow}>
-        {/* Promotion Vote */}
+        {/* Support vote: shown as a count, promotes nothing (OD-7 §5h) */}
         <View style={styles.group}>
           <Text style={[t.atoms.text_contrast_medium, styles.label]}>
-            <Trans>Promote:</Trans>
+            <Trans>Support:</Trans>
           </Text>
           <RedditVoteButton
             score={item.upvotes - item.downvotes}
@@ -66,17 +61,6 @@ export default function ProposedRAQListScreen() {
             hasBeenToggled={false}
             onUpvote={() => voteOnProposal({uri: item.id, direction: 'up'})}
             onDownvote={() => voteOnProposal({uri: item.id, direction: 'down'})}
-          />
-        </View>
-
-        {/* Answer Vote */}
-        <View style={styles.group}>
-          <Text style={[t.atoms.text_contrast_medium, styles.label]}>
-            <Trans>Your Answer:</Trans>
-          </Text>
-          <VotingButtonHorizontal
-            initialVote={item.viewerAnswer || 0}
-            onVoteChange={value => answerProposal({uri: item.id, value})}
           />
         </View>
       </View>

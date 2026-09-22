@@ -12,7 +12,6 @@ import {
 } from '#/lib/mock-data'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
-  useAnswerProposedQuestionMutation,
   useVoteOnCommunityAxisMutation,
   useVoteOnProposedQuestionMutation,
 } from '#/state/mutations/raq'
@@ -30,7 +29,6 @@ import {Button, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
 import * as Layout from '#/components/Layout'
 import {RedditVoteButton} from '#/components/PostControls/VoteButton'
-import {VotingButtonHorizontal} from '#/components/VotingButtonHorizontal'
 import {WebScrollControls} from '#/components/WebScrollControls'
 
 // Helper for chunking data
@@ -52,7 +50,6 @@ export default function RAQMenuScreen() {
   const openQuestionsScrollRef = useRef<ComponentRef<typeof ScrollView>>(null)
 
   const {mutate: voteOnProposal} = useVoteOnProposedQuestionMutation()
-  const {mutate: answerProposal} = useAnswerProposedQuestionMutation()
   const {mutate: voteOnAxis} = useVoteOnCommunityAxisMutation()
 
   const {data: communityAxes = []} = useCommunityAxes()
@@ -318,8 +315,8 @@ export default function RAQMenuScreen() {
                     t.atoms.text_contrast_medium,
                   ]}>
                   <Trans>
-                    Vote on questions proposed by the community. Upvote to help
-                    them become mainstream.
+                    Vote on questions proposed by the community. A vote shows
+                    support; it does not make a question official.
                   </Trans>
                 </Text>
               </View>
@@ -413,23 +410,6 @@ export default function RAQMenuScreen() {
                         }
                         onDownvote={() =>
                           voteOnProposal({uri: item.id, direction: 'down'})
-                        }
-                      />
-                    </View>
-
-                    {/* Answer Vote */}
-                    <View style={{marginTop: 'auto'}}>
-                      <Text
-                        style={[
-                          t.atoms.text_contrast_medium,
-                          {fontSize: 10, marginBottom: 4},
-                        ]}>
-                        <Trans>Your Answer:</Trans>
-                      </Text>
-                      <VotingButtonHorizontal
-                        initialVote={item.viewerAnswer || 0}
-                        onVoteChange={val =>
-                          answerProposal({uri: item.id, value: val})
                         }
                       />
                     </View>

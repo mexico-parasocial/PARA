@@ -3,7 +3,6 @@ import {useMutation, useQueryClient} from '@tanstack/react-query'
 import {
   submitAxisVote,
   submitOpenQuestion,
-  submitProposalAnswer,
   submitProposalVote,
   submitProposedQuestion,
 } from '#/lib/services/raq'
@@ -107,20 +106,6 @@ export function useVoteOnProposedQuestionMutation() {
   })
 }
 
-// ------------------------------------------------------------------
-// Answer a proposed question (com.para.raq.proposalAnswer record)
-// ------------------------------------------------------------------
-
-export function useAnswerProposedQuestionMutation() {
-  const queryClient = useQueryClient()
-  const agent = useAgent()
-
-  return useMutation({
-    mutationFn: async ({uri, value}: {uri: string; value: number}) => {
-      await submitProposalAnswer(agent, uri, value)
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({queryKey: ['raq_proposed_questions']})
-    },
-  })
-}
+// `useAnswerProposedQuestionMutation` was removed with `submitProposalAnswer`:
+// its -3..+3 answer is a position with a magnitude, and
+// `com.para.raq.proposalAnswer` is frozen (OD-7 §5h).
