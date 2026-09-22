@@ -1,7 +1,12 @@
 import {Platform} from 'react-native'
 
 import {tokens} from '#/alf'
-import {darkPalette, dimPalette, lightPalette} from '#/alf/themes'
+import {
+  DARK_SCHEME_LINK_COLOR,
+  darkPalette,
+  dimPalette,
+  lightPalette,
+} from '#/alf/themes'
 import {fontWeight} from '#/alf/tokens'
 import {colors} from './styles'
 import {type Theme} from './ThemeContext'
@@ -301,7 +306,7 @@ export const darkTheme: Theme = {
       text: darkPalette.white,
       textLight: darkPalette.contrast_600,
       textInverted: darkPalette.black,
-      link: darkPalette.primary_500,
+      link: DARK_SCHEME_LINK_COLOR,
       border: darkPalette.contrast_100,
       borderDark: darkPalette.contrast_200,
       icon: darkPalette.contrast_500,
@@ -350,7 +355,7 @@ export const dimTheme: Theme = {
       text: dimPalette.white,
       textLight: dimPalette.contrast_700,
       textInverted: dimPalette.black,
-      link: dimPalette.primary_500,
+      link: DARK_SCHEME_LINK_COLOR,
       border: dimPalette.contrast_100,
       borderDark: dimPalette.contrast_200,
       icon: dimPalette.contrast_500,
