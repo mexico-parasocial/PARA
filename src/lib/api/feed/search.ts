@@ -1,4 +1,3 @@
-import {type AppBskyFeedDefs, type AppBskyFeedSearchPostsV2} from '@atproto/api'
 import {type Client} from '@atproto/lex'
 
 import {logger} from '#/logger'
@@ -7,21 +6,21 @@ import {type FeedAPI, type FeedAPIResponse} from './types'
 
 export class SearchPostsFeedAPI implements FeedAPI {
   client: Client
-  params: AppBskyFeedSearchPostsV2.QueryParams
-  peek: AppBskyFeedDefs.FeedViewPost | null = null
+  params: app.bsky.feed.searchPostsV2.$Params
+  peek: app.bsky.feed.defs.FeedViewPost | null = null
 
   constructor({
     client,
     feedParams,
   }: {
     client: Client
-    feedParams: AppBskyFeedSearchPostsV2.QueryParams
+    feedParams: app.bsky.feed.searchPostsV2.$Params
   }) {
     this.client = client
     this.params = feedParams
   }
 
-  async peekLatest(): Promise<AppBskyFeedDefs.FeedViewPost> {
+  async peekLatest(): Promise<app.bsky.feed.defs.FeedViewPost> {
     if (this.peek) return this.peek
     throw new Error('Has not fetched yet')
   }
@@ -42,8 +41,8 @@ export class SearchPostsFeedAPI implements FeedAPI {
         cursor,
       })
 
-      const feed: AppBskyFeedDefs.FeedViewPost[] = res.posts.map(post => ({
-        post: post as unknown as AppBskyFeedDefs.PostView,
+      const feed: app.bsky.feed.defs.FeedViewPost[] = res.posts.map(post => ({
+        post: post,
       }))
       this.peek = feed[0] ?? null
       return {

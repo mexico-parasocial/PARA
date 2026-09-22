@@ -11,9 +11,7 @@ import {
   RAQ_AXIS_VOTES_QUERY_KEY,
   RAQ_PROPOSED_QUESTIONS_QUERY_KEY,
 } from '#/state/queries/raq'
-import {
-  OPEN_QUESTIONS_QUERY_KEY,
-} from '#/state/queries/useOpenQuestions'
+import {OPEN_QUESTIONS_QUERY_KEY} from '#/state/queries/useOpenQuestions'
 import {useAgent} from '#/state/session'
 
 // ------------------------------------------------------------------
@@ -56,7 +54,9 @@ export function useSubmitProposedQuestionMutation() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({
-        queryKey: RAQ_PROPOSED_QUESTIONS_QUERY_KEY(agent.assertDid),
+        queryKey: RAQ_PROPOSED_QUESTIONS_QUERY_KEY(
+          agent.appviewClient.assertDid,
+        ),
       })
     },
   })
@@ -76,7 +76,7 @@ export function useVoteOnCommunityAxisMutation() {
     },
     onSettled: () => {
       queryClient.invalidateQueries({
-        queryKey: RAQ_AXIS_VOTES_QUERY_KEY(agent.assertDid),
+        queryKey: RAQ_AXIS_VOTES_QUERY_KEY(agent.appviewClient.assertDid),
       })
     },
   })

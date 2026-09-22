@@ -1,5 +1,5 @@
-import {type AppBskyFeedDefs, type AtpAgent} from '@atproto/api'
-import {AtUri} from '@atproto/syntax'
+import {type LexMap} from '@atproto/lex'
+import {AtUri, type AtUriString, type DidString} from '@atproto/syntax'
 
 import {
   PARA_HIGHLIGHT_COLLECTION,
@@ -7,10 +7,18 @@ import {
 } from '#/lib/api/para-lexicons'
 import {NINTHS_COMMUNITIES} from '#/lib/communities'
 import {
+  type PublicSessionBundle,
+  type SessionBundle,
+} from '#/state/session/session-core'
+import {app, com} from '#/lexicons'
+import {
   type FilterParams,
   type PaginationParams,
   type ServiceResponse,
 } from './types'
+
+/** Any `useAgent()` result: authenticated session or public (logged-out). */
+type HighlightsServiceAgent = SessionBundle | PublicSessionBundle
 
 export interface Highlight {
   id: string
@@ -62,20 +70,6 @@ export type HighlightReadView = {
   createdAt: string
 }
 
-type ListHighlightsResponse = {
-  highlights?: HighlightReadView[]
-  cursor?: string
-}
-
-type GetHighlightResponse = {
-  highlight?: HighlightReadView
-}
-
-type XrpcErrorResponse = {
-  error?: string
-  message?: string
-}
-
 type CreateRecordResult = {
   uri: string
   cid: string
@@ -85,10 +79,38 @@ const MAX_PAGINATION_PAGES = 20
 const GET_POSTS_BATCH_SIZE = 25
 
 /**
+ * Adapt a generated `com.para.highlight.defs#highlightView` to the plain
+ * string-based {@link HighlightReadView} the app consumes. `cid` arrives as a
+ * CID link instance on the wire, so normalize it to its string form.
+ */
+function toHighlightReadView(
+  view: com.para.highlight.defs.HighlightView,
+): HighlightReadView {
+  return {
+    uri: view.uri,
+    cid: String(view.cid),
+    creator: view.creator,
+    indexedAt: view.indexedAt,
+    subjectUri: view.subjectUri,
+    subjectCid: view.subjectCid ? String(view.subjectCid) : undefined,
+    text: view.text,
+    start: view.start,
+    end: view.end,
+    color: view.color,
+    tag: view.tag,
+    community: view.community,
+    state: view.state,
+    party: view.party,
+    visibility: view.visibility,
+    createdAt: view.createdAt,
+  }
+}
+
+/**
  * Fetch highlights with optional filtering and pagination
  */
 export async function fetchHighlights(
-  agent: AtpAgent,
+  agent: HighlightsServiceAgent,
   params?: HighlightsQueryParams & {community?: string},
 ): Promise<ServiceResponse<Highlight[]>> {
   const {highlights: allViews, cursor} = await fetchHighlightViews(
@@ -106,40 +128,36 @@ export async function fetchHighlights(
  * Fetch a single highlight by ID
  */
 export async function fetchHighlightById(
-  agent: AtpAgent,
+  agent: HighlightsServiceAgent,
   id: string,
 ): Promise<Highlight | null> {
-  const params = new URLSearchParams()
-  params.set('highlight', id)
-  const res = await agent.fetchHandler(
-    `/xrpc/com.para.highlight.getHighlight?${params.toString()}`,
-    {
-      method: 'GET',
-      headers: {
-        accept: 'application/json',
+  let view: com.para.highlight.defs.HighlightView
+  try {
+    const res = await agent.appviewClient.call(
+      com.para.highlight.getHighlight,
+      {
+        highlight: id as AtUriString,
       },
-    },
-  )
-
-  if (!res.ok) {
-    const error = await safeJson(res)
-    if (
-      (res.status === 400 && error?.error === 'NotFound') ||
-      res.status === 404
-    ) {
+    )
+    if (!res.highlight) return null
+    view = res.highlight
+  } catch (err: unknown) {
+    const error =
+      err && typeof err === 'object'
+        ? (err as {error?: string; message?: string})
+        : null
+    if (error?.error === 'NotFound') {
       return null
     }
     throw new Error(error?.message || 'Unable to fetch highlight.')
   }
 
-  const json = (await res.json()) as GetHighlightResponse
-  if (!json.highlight) return null
-  const [hydrated] = await hydrateHighlights(agent, [json.highlight])
+  const [hydrated] = await hydrateHighlights(agent, [toHighlightReadView(view)])
   return hydrated || null
 }
 
 export async function fetchHighlightViews(
-  agent: AtpAgent,
+  agent: HighlightsServiceAgent,
   params?: HighlightsQueryParams & {community?: string},
 ): Promise<{highlights: HighlightReadView[]; cursor?: string}> {
   const allViews: HighlightReadView[] = []
@@ -147,24 +165,23 @@ export async function fetchHighlightViews(
   const limit = params?.limit ?? 30
 
   for (let page = 0; page < MAX_PAGINATION_PAGES; page++) {
-    const result = await requestHighlights<ListHighlightsResponse>(
-      agent,
-      'com.para.highlight.listHighlights',
+    const res = await agent.appviewClient.call(
+      com.para.highlight.listHighlights,
       {
         community: params?.community,
         state: params?.state,
-        subject: params?.subject,
-        creator: params?.creator,
-        limit: String(limit),
+        subject: params?.subject as AtUriString | undefined,
+        creator: params?.creator as DidString | undefined,
+        limit,
         cursor,
       },
     )
-    allViews.push(...(result.highlights ?? []))
-    if (!result.cursor) {
+    allViews.push(...(res.highlights ?? []).map(toHighlightReadView))
+    if (!res.cursor) {
       cursor = undefined
       break
     }
-    cursor = result.cursor
+    cursor = res.cursor
   }
 
   return {highlights: allViews, cursor}
@@ -184,7 +201,7 @@ export async function toggleSaveHighlight(_id: string): Promise<void> {
 }
 
 export async function publishHighlightAnnotation(
-  agent: AtpAgent,
+  agent: HighlightsServiceAgent,
   record: Omit<ParaHighlightRecord, 'createdAt'> & {createdAt?: string},
 ): Promise<CreateRecordResult> {
   if (!agent.session) {
@@ -196,20 +213,20 @@ export async function publishHighlightAnnotation(
     createdAt: record.createdAt || new Date().toISOString(),
   }
 
-  const res = await agent.com.atproto.repo.createRecord({
+  const res = await agent.pdsClient.call(com.atproto.repo.createRecord, {
     repo: agent.session.did,
     collection: PARA_HIGHLIGHT_COLLECTION,
-    record: fullRecord as unknown as Record<string, unknown>,
+    record: fullRecord as unknown as LexMap,
   })
 
   return {
-    uri: res.data.uri,
-    cid: res.data.cid,
+    uri: res.uri,
+    cid: String(res.cid),
   }
 }
 
 export async function deleteHighlightAnnotation(
-  agent: AtpAgent,
+  agent: HighlightsServiceAgent,
   highlightUri: string,
 ) {
   if (!agent.session) {
@@ -221,7 +238,7 @@ export async function deleteHighlightAnnotation(
     throw new Error(`Unsupported highlight uri: ${highlightUri}`)
   }
 
-  return await agent.com.atproto.repo.deleteRecord({
+  return await agent.pdsClient.call(com.atproto.repo.deleteRecord, {
     repo: agent.session.did,
     collection: urip.collection,
     rkey: urip.rkey,
@@ -229,7 +246,7 @@ export async function deleteHighlightAnnotation(
 }
 
 export async function updateHighlightAnnotation(
-  agent: AtpAgent,
+  agent: HighlightsServiceAgent,
   highlightUri: string,
   record: ParaHighlightRecord,
 ) {
@@ -242,57 +259,30 @@ export async function updateHighlightAnnotation(
     throw new Error(`Unsupported highlight uri: ${highlightUri}`)
   }
 
-  return await agent.com.atproto.repo.putRecord({
+  return await agent.pdsClient.call(com.atproto.repo.putRecord, {
     repo: agent.session.did,
     collection: urip.collection,
     rkey: urip.rkey,
-    record: record as unknown as Record<string, unknown>,
+    record: record as unknown as LexMap,
   })
-}
-
-async function requestHighlights<T>(
-  agent: AtpAgent,
-  endpoint: string,
-  params: Record<string, string | undefined>,
-): Promise<T> {
-  const search = new URLSearchParams()
-  for (const [key, value] of Object.entries(params)) {
-    if (value && value.length > 0) {
-      search.set(key, value)
-    }
-  }
-  const query = search.toString()
-  const url = query.length ? `/xrpc/${endpoint}?${query}` : `/xrpc/${endpoint}`
-
-  const res = await agent.fetchHandler(url, {
-    method: 'GET',
-    headers: {
-      accept: 'application/json',
-    },
-  })
-
-  if (!res.ok) {
-    const error = await safeJson(res)
-    throw new Error(error?.message || `Unable to fetch ${endpoint}.`)
-  }
-
-  return (await res.json()) as T
 }
 
 async function hydrateHighlights(
-  agent: AtpAgent,
+  agent: HighlightsServiceAgent,
   views: HighlightReadView[],
 ): Promise<Highlight[]> {
   const subjectUris = Array.from(
     new Set(views.map(view => view.subjectUri).filter(Boolean)),
   )
 
-  const postsByUri = new Map<string, AppBskyFeedDefs.PostView>()
+  const postsByUri = new Map<string, app.bsky.feed.defs.PostView>()
   for (let i = 0; i < subjectUris.length; i += GET_POSTS_BATCH_SIZE) {
     const batch = subjectUris.slice(i, i + GET_POSTS_BATCH_SIZE)
     if (!batch.length) continue
-    const res = await agent.getPosts({uris: batch})
-    for (const post of res.data.posts) {
+    const res = await agent.appviewClient.call(app.bsky.feed.getPosts, {
+      uris: batch as AtUriString[],
+    })
+    for (const post of res.posts) {
       postsByUri.set(post.uri, post)
     }
   }
@@ -302,7 +292,7 @@ async function hydrateHighlights(
 
 function mapHighlightViewToHighlight(
   view: HighlightReadView,
-  postsByUri: Map<string, AppBskyFeedDefs.PostView>,
+  postsByUri: Map<string, app.bsky.feed.defs.PostView>,
 ): Highlight {
   const post = postsByUri.get(view.subjectUri)
   const postRecord = post?.record as {text?: string} | undefined
@@ -376,12 +366,4 @@ function inferStateFromPost(text?: string) {
     if (!isCommunity) return cleanTag
   }
   return ''
-}
-
-async function safeJson(res: Response): Promise<XrpcErrorResponse | undefined> {
-  try {
-    return (await res.json()) as XrpcErrorResponse
-  } catch {
-    return undefined
-  }
 }

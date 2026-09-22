@@ -22,7 +22,7 @@ export function useCommunityAxes() {
   return useQuery({
     queryKey: COMMUNITY_AXES_QUERY_KEY,
     queryFn: async () => {
-      const res = await fetchAxisVotes(agent, agent.assertDid)
+      const res = await fetchAxisVotes(agent, agent.appviewClient.assertDid)
       // Transform axis votes into community axis views
       // NOTE: axis names are not stored on-chain; we use axisId as the name
       // for now. A proper axis definition record type should be added later.

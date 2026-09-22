@@ -1,9 +1,8 @@
-import {getVideoMetaData, Video} from 'react-native-compressor'
 import {type ImagePickerAsset} from 'expo-image-picker'
+import {compress, probe} from '@bsky.app/video-compressor'
 
 import {SUPPORTED_MIME_TYPES, type SupportedMimeTypes} from '#/lib/constants'
 import {type CompressedVideo} from './types'
-import {extToMime} from './util'
 
 const MIN_SIZE_FOR_COMPRESSION_BYTES = 25 * 1024 * 1024 // 25mb
 
@@ -45,31 +44,25 @@ export async function compressVideo(
     }
   }
 
-  const compressed = await Video.compress(
+  const result = await compress(
     file.uri,
     {
-      compressionMethod: 'manual',
-      bitrate: 3_000_000, // 3mbps
+      targetBitrate: 3_000_000, // 3mbps
       maxSize: 1920,
-      // Force a transcode for unacceptable-format files regardless of size.
-      // rnc's default minimumFileSizeForCompress would otherwise pass small
-      // unacceptable-format files through unchanged and the server would
-      // reject them. Acceptable formats are already short-circuited above so
-      // they never reach this call.
-      // WARNING: this ONE SPECIFIC ARG is in MB -sfn
-      minimumFileSizeForCompress: 0,
-      getCancellationId: id => {
-        if (signal) {
-          signal.addEventListener('abort', () => {
-            Video.cancelCompression(id)
-          })
-        }
-      },
     },
-    onProgress,
+    {onProgress, signal},
   )
 
-  const info = await getVideoMetaData(compressed)
+  if (result.mimeType) {
+    return {
+      uri: result.uri,
+      size: result.size,
+      mimeType: result.mimeType,
+      passthroughReason: result.passthroughReason,
+    }
+  }
 
-  return {uri: compressed, size: info.size, mimeType: extToMime(info.extension)}
+  const info = await probe(result.uri)
+
+  return {uri: result.uri, size: info.fileSize, mimeType: info.mimeType}
 }

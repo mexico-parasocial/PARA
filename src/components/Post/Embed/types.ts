@@ -1,6 +1,7 @@
 import {type StyleProp, type ViewStyle} from 'react-native'
-import {type AppBskyFeedDefs} from '@atproto/api'
 import {type ModerationDecision} from '@bsky/sdk/moderation'
+
+import {app} from '#/lexicons'
 
 export enum PostEmbedViewContext {
   ThreadHighlighted = 'ThreadHighlighted',
@@ -25,10 +26,10 @@ export type CommonProps = {
    * events (post:photoEmbed:*). When the embed has no owning post (e.g.
    * composer previews), leave this undefined and no events will be emitted.
    */
-  post?: AppBskyFeedDefs.PostView
+  post?: app.bsky.feed.defs.PostView
   feedDescriptor?: string
 }
 
 export type EmbedProps = CommonProps & {
-  embed?: AppBskyFeedDefs.PostView['embed']
+  embed?: app.bsky.feed.defs.PostView['embed']
 }

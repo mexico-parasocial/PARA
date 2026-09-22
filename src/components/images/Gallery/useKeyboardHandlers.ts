@@ -1,8 +1,9 @@
 import {type FlatList} from 'react-native'
-import {type AppBskyEmbedImages} from '@atproto/api'
+
+import {app} from '#/lexicons'
 
 export function useKeyboardHandlers(_args: {
-  flatListRef: React.RefObject<FlatList<AppBskyEmbedImages.ViewImage> | null>
+  flatListRef: React.RefObject<FlatList<app.bsky.embed.images.ViewImage> | null>
   itemWidthsRef: React.RefObject<Map<number, number>>
   currentIndexRef: React.RefObject<number>
   scrollTo: (offset: number) => void

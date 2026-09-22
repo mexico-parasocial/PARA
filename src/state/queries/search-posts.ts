@@ -1,5 +1,5 @@
 import {useRef} from 'react'
-import {type AppBskyActorDefs, type AppBskyFeedDefs} from '@atproto/api'
+import {type AtUriString} from '@atproto/syntax'
 import {
   type InfiniteData,
   type QueryKey,
@@ -11,6 +11,7 @@ import {hydrateCommunityPosts} from '#/lib/community-posts'
 import {moderatePost} from '#/lib/moderation/subjects'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
 import {useAgent} from '#/state/session'
+import {app, com} from '#/lexicons'
 
 const paraSearchPostsQueryKeyRoot = 'para-search-posts'
 
@@ -30,7 +31,7 @@ export type ParaSearchPostsFilters = {
 
 type ParaSearchPostsPage = {
   cursor?: string
-  posts: AppBskyFeedDefs.PostView[]
+  posts: app.bsky.feed.defs.PostView[]
 }
 
 const paraSearchPostsQueryKey = ({
@@ -108,7 +109,7 @@ export function useParaSearchPostsQuery({
   const agent = useAgent()
   const moderationOpts = useModerationOpts()
   const profileCache = useRef(
-    new Map<string, AppBskyActorDefs.ProfileViewDetailed>(),
+    new Map<string, app.bsky.actor.defs.ProfileViewDetailed>(),
   )
 
   return useInfiniteQuery<
@@ -137,14 +138,14 @@ export function useParaSearchPostsQuery({
     initialPageParam: undefined,
     getNextPageParam: lastPage => lastPage.cursor,
     queryFn: async ({pageParam}) => {
-      const res = await agent.call('com.para.feed.searchPosts', {
+      const res = await agent.appviewClient.call(com.para.feed.searchPosts, {
         q: query,
         tag,
         sort,
         limit: 25,
         cursor: pageParam,
-        communityUris,
-        cabildeoUris,
+        communityUris: communityUris as AtUriString[],
+        cabildeoUris: cabildeoUris as AtUriString[],
         politicalCompassPositions,
         postType,
         flairs,
@@ -154,11 +155,11 @@ export function useParaSearchPostsQuery({
         districtKey,
         cabildeoPhase,
       })
-      const data = res.data as {cursor?: string; posts?: unknown[]}
+      const data = res as {cursor?: string; posts?: unknown[]}
       const paraPosts = (data.posts ?? []).filter(isParaPostView)
 
       const posts = await hydrateCommunityPosts({
-        agent,
+        agent: {appviewClient: agent.appviewClient},
         posts: paraPosts,
         profileCache: profileCache.current,
       })

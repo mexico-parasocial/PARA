@@ -152,14 +152,18 @@ export function CreatePositionScreen(_props: Props) {
               <Text style={[styles.label, t.atoms.text]}>Tu Argumento *</Text>
               <TextInput
                 accessibilityRole="text"
-                style={[styles.input, t.atoms.bg_contrast_25, t.atoms.text]}
+                style={[
+                  styles.input,
+                  t.atoms.bg_contrast_25,
+                  t.atoms.text,
+                  {textAlignVertical: 'top'},
+                ]}
                 placeholder="Explica tu reasoning para esta postura. Trata de mantener un tono constructivo e informativo."
                 placeholderTextColor={t.palette.contrast_500}
                 value={text}
                 onChangeText={setText}
                 multiline
                 maxLength={3000}
-                textAlignVertical="top"
               />
               <Text style={[styles.charCount, t.atoms.text_contrast_medium]}>
                 {text.length} / 3000

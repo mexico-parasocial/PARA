@@ -1,5 +1,4 @@
 import {type ImagePickerAsset} from 'expo-image-picker'
-import {type AppBskyActorDefs, type AppBskyDraftDefs} from '@atproto/api'
 import {type AtUriString, toDatetimeString} from '@atproto/syntax'
 import {RichText} from '@bsky/sdk/richtext'
 import {nanoid} from 'nanoid/non-secure'
@@ -152,8 +151,8 @@ export type ComposerAction =
       type: 'restore_from_draft'
       draftId: string
       posts: PostDraft[]
-      threadgateAllow: AppBskyDraftDefs.Draft['threadgateAllow']
-      postgateEmbeddingRules: AppBskyDraftDefs.Draft['postgateEmbeddingRules']
+      threadgateAllow: app.bsky.draft.defs.Draft['threadgateAllow']
+      postgateEmbeddingRules: app.bsky.draft.defs.Draft['postgateEmbeddingRules']
 
       /** Map of localRefPath -> loaded media path/URL */
       loadedMedia: Map<string, string>
@@ -163,7 +162,7 @@ export type ComposerAction =
   | {
       type: 'clear'
       initInteractionSettings:
-        AppBskyActorDefs.PostInteractionSettingsPref | undefined
+        app.bsky.actor.defs.PostInteractionSettingsPref | undefined
     }
   | {
       type: 'mark_saved'
@@ -335,14 +334,13 @@ export function composerReducer(
              * Draft records are still typed against the legacy client, so the
              * stored rules arrive unbranded. Wave B migrates the draft types.
              */
-            embeddingRules:
-              postgateEmbeddingRules as app.bsky.feed.postgate.Main['embeddingRules'],
+            embeddingRules: postgateEmbeddingRules,
           }),
           threadgate: threadgateRecordToAllowUISetting({
             $type: 'app.bsky.feed.threadgate',
             post: '' as AtUriString,
             createdAt: toDatetimeString(new Date()),
-            allow: threadgateAllow as app.bsky.feed.threadgate.Main['allow'],
+            allow: threadgateAllow,
           }),
         },
       }
@@ -665,7 +663,7 @@ export function createComposerState({
   initImageUris: ComposerOpts['imageUris']
   initQuoteUri: string | undefined
   initInteractionSettings:
-    AppBskyActorDefs.PostInteractionSettingsPref | undefined
+    app.bsky.actor.defs.PostInteractionSettingsPref | undefined
 }): ComposerState {
   let media: ImagesMedia | GalleryMedia | undefined
   if (initImageUris?.length) {
@@ -785,15 +783,13 @@ export function createComposerState({
          * Preferences are still typed against the legacy client, so the stored
          * rules arrive unbranded. Wave B migrates `getPreferences`.
          */
-        embeddingRules: (initInteractionSettings?.postgateEmbeddingRules ||
-          []) as app.bsky.feed.postgate.Main['embeddingRules'],
+        embeddingRules: initInteractionSettings?.postgateEmbeddingRules || [],
       }),
       threadgate: threadgateRecordToAllowUISetting({
         $type: 'app.bsky.feed.threadgate',
         post: '' as AtUriString,
         createdAt: toDatetimeString(new Date()),
-        allow:
-          initInteractionSettings?.threadgateAllowRules as app.bsky.feed.threadgate.Main['allow'],
+        allow: initInteractionSettings?.threadgateAllowRules,
       }),
     },
   }

@@ -4,9 +4,7 @@
  * Handles fetching policy and matter records from live civic debates.
  */
 
-import {type AtpAgent} from '@atproto/api'
-
-import {fetchCabildeos} from '#/lib/api/cabildeo'
+import {type CabildeoServiceAgent, fetchCabildeos} from '#/lib/api/cabildeo'
 import {mapCabildeosToView} from '#/lib/cabildeo-client'
 import {
   getCabildeoBadge,
@@ -30,11 +28,7 @@ import {USE_MOCK_DATA} from './config'
 import {type PaginationParams, type ServiceResponse} from './types'
 
 export type PolicyFeed =
-  | 'featured'
-  | 'community'
-  | 'party'
-  | 'state'
-  | 'recommended'
+  'featured' | 'community' | 'party' | 'state' | 'recommended'
 
 export interface PoliciesQueryParams extends PaginationParams {
   feed: PolicyFeed
@@ -45,16 +39,16 @@ export interface PoliciesQueryParams extends PaginationParams {
  * Fetch policies from a specific feed
  */
 export async function fetchPolicies(
-  agent: AtpAgent,
+  agent: CabildeoServiceAgent,
   params: PoliciesQueryParams,
 ): Promise<ServiceResponse<PolicyItem[]>> {
   if (USE_MOCK_DATA) {
     await simulateNetworkDelay()
 
     const useMatters = params.type === 'Matter'
-    const cabildeoItems = MOCK_CABILDEO_VIEWS.map(mapCabildeoToPolicyItem).filter(
-      item => item.type === (params.type || 'Policy'),
-    )
+    const cabildeoItems = MOCK_CABILDEO_VIEWS.map(
+      mapCabildeoToPolicyItem,
+    ).filter(item => item.type === (params.type || 'Policy'))
 
     // Select the appropriate feed based on type
     let data: PolicyItem[]
@@ -110,7 +104,7 @@ export async function fetchPolicies(
  * Fetch a single policy by ID
  */
 export async function fetchPolicyById(
-  agent: AtpAgent,
+  agent: CabildeoServiceAgent,
   id: string,
 ): Promise<PolicyItem | null> {
   if (USE_MOCK_DATA) {

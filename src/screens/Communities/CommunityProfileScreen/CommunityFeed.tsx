@@ -1,5 +1,4 @@
 import {TouchableOpacity, View} from 'react-native'
-import  {type AppBskyFeedDefs} from '@atproto/api'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 
@@ -10,6 +9,7 @@ import {PostFeedLoadingPlaceholder} from '#/view/com/util/LoadingPlaceholder'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import {ListFooter} from '#/components/Lists'
+import {app} from '#/lexicons'
 import {styles} from './styles'
 
 export function CommunityFeed({
@@ -24,7 +24,7 @@ export function CommunityFeed({
   fetchNextPage,
   pal,
 }: {
-  posts: AppBskyFeedDefs.PostView[]
+  posts: app.bsky.feed.defs.PostView[]
   isLoading: boolean
   isFetched: boolean
   isError: boolean

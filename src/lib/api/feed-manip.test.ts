@@ -9,6 +9,7 @@ jest.mock('./feed/home', () => ({
   },
 }))
 
+import {type app} from '#/lexicons'
 import {FeedTuner} from './feed-manip'
 
 // Mock data
@@ -72,7 +73,12 @@ describe('FeedTuner Debug', () => {
     const tuner = new FeedTuner(feedTuners)
 
     console.log('Running tune in TEST...')
-    const slices = tuner.tune([mockFeedItemRaw], {dryRun: false})
+    const slices = tuner.tune(
+      [mockFeedItemRaw as app.bsky.feed.defs.FeedViewPost],
+      {
+        dryRun: false,
+      },
+    )
 
     console.log('Test Result slices:', slices.length)
     expect(slices.length).toBeGreaterThan(0)

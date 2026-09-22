@@ -32,7 +32,7 @@ export function Forms() {
   const [phoneNumber, setPhoneNumber] = useState('')
   const [lang, setLang] = useState('en')
 
-  const inputRef = useRef<TextInput>(null)
+  const inputRef = useRef<React.ComponentRef<typeof TextInput> | null>(null)
 
   return (
     <View style={[a.gap_4xl, a.align_start]}>

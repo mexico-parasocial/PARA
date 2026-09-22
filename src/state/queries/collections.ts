@@ -5,16 +5,14 @@ import {
   PERSISTED_QUERY_ROOT,
 } from '#/state/queries/index'
 import {useAgent} from '#/state/session'
+import {com} from '#/lexicons'
 import {
   type CivicTreeItem,
   type CivicTreeRelation,
   getCivicTreeItemKey,
 } from './collection-items'
 
-export type {
-  CivicTreeItem,
-  CivicTreeRelation,
-} from './collection-items'
+export type {CivicTreeItem, CivicTreeRelation} from './collection-items'
 export {
   createCivicTreeItemId,
   createCivicTreeRelationId,
@@ -50,8 +48,11 @@ export function useCollectionsQuery() {
   return useQuery<CivicTreeCollection[]>({
     queryKey: getListQueryKey(),
     queryFn: async () => {
-      const res = await agent.call('com.para.collection.listCollections', {})
-      return (res.data.collections || []) as CivicTreeCollection[]
+      const res = await agent.appviewClient.call(
+        com.para.collection.listCollections,
+        {},
+      )
+      return (res.collections || []) as CivicTreeCollection[]
     },
     staleTime: STALE_TIME,
     gcTime: PERSISTED_QUERY_GCTIME,
@@ -64,10 +65,13 @@ export function useCollectionQuery(id: string | undefined) {
     queryKey: id ? getDetailQueryKey(id) : ['collections', 'get', 'disabled'],
     queryFn: async () => {
       if (!id) throw new Error('No collection id')
-      const res = await agent.call('com.para.collection.getCollection', {
-        id,
-      })
-      return res.data.collection as CivicTreeCollection
+      const res = await agent.appviewClient.call(
+        com.para.collection.getCollection,
+        {
+          id,
+        },
+      )
+      return res.collection as CivicTreeCollection
     },
     enabled: !!id,
     staleTime: STALE_TIME,
@@ -94,18 +98,16 @@ export function useCreateCollectionMutation() {
     ListContext
   >({
     mutationFn: async input => {
-      const res = await agent.call(
-        'com.para.collection.createCollection',
-        undefined,
+      const res = await agent.appviewClient.call(
+        com.para.collection.createCollection,
         input,
       )
-      return res.data as {id: string}
+      return res
     },
     onMutate: async input => {
       await queryClient.cancelQueries({queryKey: getListQueryKey()})
-      const previousList = queryClient.getQueryData<CivicTreeCollection[]>(
-        getListQueryKey(),
-      )
+      const previousList =
+        queryClient.getQueryData<CivicTreeCollection[]>(getListQueryKey())
       const optimisticCollection: CivicTreeCollection = {
         id: `optimistic-${Date.now()}`,
         name: input.name,
@@ -116,9 +118,8 @@ export function useCreateCollectionMutation() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
-      queryClient.setQueryData<CivicTreeCollection[]>(
-        getListQueryKey(),
-        old => (old ? [optimisticCollection, ...old] : [optimisticCollection]),
+      queryClient.setQueryData<CivicTreeCollection[]>(getListQueryKey(), old =>
+        old ? [optimisticCollection, ...old] : [optimisticCollection],
       )
       return {previousList}
     },
@@ -143,10 +144,9 @@ export function useUpdateCollectionMutation() {
     DetailListContext
   >({
     mutationFn: async input => {
-      await agent.call(
-        'com.para.collection.updateCollection',
-        undefined,
-        input,
+      await agent.appviewClient.call(
+        com.para.collection.updateCollection,
+        input as com.para.collection.updateCollection.$InputBody,
       )
     },
     onMutate: async input => {
@@ -155,12 +155,10 @@ export function useUpdateCollectionMutation() {
       await queryClient.cancelQueries({queryKey: detailKey})
       await queryClient.cancelQueries({queryKey: listKey})
 
-      const previousDetail = queryClient.getQueryData<CivicTreeCollection>(
-        detailKey,
-      )
-      const previousList = queryClient.getQueryData<CivicTreeCollection[]>(
-        listKey,
-      )
+      const previousDetail =
+        queryClient.getQueryData<CivicTreeCollection>(detailKey)
+      const previousList =
+        queryClient.getQueryData<CivicTreeCollection[]>(listKey)
 
       const optimisticCollection: CivicTreeCollection = {
         ...(previousDetail ?? {
@@ -177,7 +175,10 @@ export function useUpdateCollectionMutation() {
         updatedAt: new Date().toISOString(),
       }
 
-      queryClient.setQueryData<CivicTreeCollection>(detailKey, optimisticCollection)
+      queryClient.setQueryData<CivicTreeCollection>(
+        detailKey,
+        optimisticCollection,
+      )
       queryClient.setQueryData<CivicTreeCollection[]>(listKey, old =>
         old
           ? old.map(c => (c.id === input.id ? optimisticCollection : c))
@@ -209,20 +210,17 @@ export function useDeleteCollectionMutation() {
   const agent = useAgent()
   return useMutation<void, Error, {id: string}, ListContext>({
     mutationFn: async input => {
-      await agent.call(
-        'com.para.collection.deleteCollection',
-        undefined,
+      await agent.appviewClient.call(
+        com.para.collection.deleteCollection,
         input,
       )
     },
     onMutate: async input => {
       await queryClient.cancelQueries({queryKey: getListQueryKey()})
-      const previousList = queryClient.getQueryData<CivicTreeCollection[]>(
-        getListQueryKey(),
-      )
-      queryClient.setQueryData<CivicTreeCollection[]>(
-        getListQueryKey(),
-        old => (old ? old.filter(c => c.id !== input.id) : old),
+      const previousList =
+        queryClient.getQueryData<CivicTreeCollection[]>(getListQueryKey())
+      queryClient.setQueryData<CivicTreeCollection[]>(getListQueryKey(), old =>
+        old ? old.filter(c => c.id !== input.id) : old,
       )
       return {previousList}
     },
@@ -248,45 +246,42 @@ export function useDuplicateCollectionMutation() {
   >({
     mutationFn: async input => {
       const {sourceId, newName} = input
-      const {data} = await agent.call('com.para.collection.getCollection', {
-        id: sourceId,
-      })
-      const source = data.collection
+      const res0 = await agent.appviewClient.call(
+        com.para.collection.getCollection,
+        {
+          id: sourceId,
+        },
+      )
+      const source = res0.collection
       if (!source) throw new Error('Source collection not found')
-      const res = await agent.call(
-        'com.para.collection.createCollection',
-        undefined,
+      const res = await agent.appviewClient.call(
+        com.para.collection.createCollection,
         {
           name: newName,
           description: source.description,
           color: source.color,
         },
       )
-      const newId = (res.data as {id: string}).id
+      const newId = res.id
       if (source.items.length > 0 || (source.relations || []).length > 0) {
-        await agent.call(
-          'com.para.collection.updateCollection',
-          undefined,
-          {
+        await agent.appviewClient.call(com.para.collection.updateCollection, {
+          id: newId,
+          collection: {
             id: newId,
-            collection: {
-              id: newId,
-              name: newName,
-              description: source.description,
-              color: source.color,
-              items: source.items,
-              relations: source.relations || [],
-            },
+            name: newName,
+            description: source.description,
+            color: source.color,
+            items: source.items,
+            relations: source.relations || [],
           },
-        )
+        })
       }
       return {id: newId}
     },
     onMutate: async input => {
       await queryClient.cancelQueries({queryKey: getListQueryKey()})
-      const previousList = queryClient.getQueryData<CivicTreeCollection[]>(
-        getListQueryKey(),
-      )
+      const previousList =
+        queryClient.getQueryData<CivicTreeCollection[]>(getListQueryKey())
       const source = previousList?.find(c => c.id === input.sourceId)
       const optimisticCollection: CivicTreeCollection = {
         id: `optimistic-${Date.now()}`,
@@ -298,9 +293,8 @@ export function useDuplicateCollectionMutation() {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
-      queryClient.setQueryData<CivicTreeCollection[]>(
-        getListQueryKey(),
-        old => (old ? [optimisticCollection, ...old] : [optimisticCollection]),
+      queryClient.setQueryData<CivicTreeCollection[]>(getListQueryKey(), old =>
+        old ? [optimisticCollection, ...old] : [optimisticCollection],
       )
       return {previousList}
     },
@@ -331,26 +325,22 @@ export function useAddToCollectionMutation() {
       if (existingItems.some(i => getCivicTreeItemKey(i) === itemKey)) {
         return
       }
-      const collection = await agent.call(
-        'com.para.collection.getCollection',
+      const collection = await agent.appviewClient.call(
+        com.para.collection.getCollection,
         {id: collectionId},
       )
-      const view = collection.data.collection as CivicTreeCollection
-      await agent.call(
-        'com.para.collection.updateCollection',
-        undefined,
-        {
-          id: collectionId,
-          collection: {
-            id: view.id,
-            name: view.name,
-            description: view.description,
-            color: view.color,
-            items: [...view.items, item],
-            relations: view.relations || [],
-          },
+      const view = collection.collection as CivicTreeCollection
+      await agent.appviewClient.call(com.para.collection.updateCollection, {
+        id: collectionId,
+        collection: {
+          id: view.id,
+          name: view.name,
+          description: view.description,
+          color: view.color,
+          items: [...view.items, item],
+          relations: view.relations || [],
         },
-      )
+      } as com.para.collection.updateCollection.$InputBody)
     },
     onMutate: async input => {
       const detailKey = getDetailQueryKey(input.collectionId)
@@ -358,12 +348,10 @@ export function useAddToCollectionMutation() {
       await queryClient.cancelQueries({queryKey: detailKey})
       await queryClient.cancelQueries({queryKey: listKey})
 
-      const previousDetail = queryClient.getQueryData<CivicTreeCollection>(
-        detailKey,
-      )
-      const previousList = queryClient.getQueryData<CivicTreeCollection[]>(
-        listKey,
-      )
+      const previousDetail =
+        queryClient.getQueryData<CivicTreeCollection>(detailKey)
+      const previousList =
+        queryClient.getQueryData<CivicTreeCollection[]>(listKey)
 
       const itemKey = getCivicTreeItemKey(input.item)
       const shouldAdd = !input.existingItems.some(
@@ -419,30 +407,25 @@ export function useRemoveFromCollectionMutation() {
   >({
     mutationFn: async input => {
       const {collectionId, itemKey} = input
-      const collection = await agent.call(
-        'com.para.collection.getCollection',
+      const collection = await agent.appviewClient.call(
+        com.para.collection.getCollection,
         {id: collectionId},
       )
-      const view = collection.data.collection as CivicTreeCollection
-      await agent.call(
-        'com.para.collection.updateCollection',
-        undefined,
-        {
-          id: collectionId,
-          collection: {
-            id: view.id,
-            name: view.name,
-            description: view.description,
-            color: view.color,
-            items: view.items.filter(i => getCivicTreeItemKey(i) !== itemKey),
-            relations: (view.relations || []).filter(
-              relation =>
-                relation.fromItemId !== itemKey &&
-                relation.toItemId !== itemKey,
-            ),
-          },
+      const view = collection.collection as CivicTreeCollection
+      await agent.appviewClient.call(com.para.collection.updateCollection, {
+        id: collectionId,
+        collection: {
+          id: view.id,
+          name: view.name,
+          description: view.description,
+          color: view.color,
+          items: view.items.filter(i => getCivicTreeItemKey(i) !== itemKey),
+          relations: (view.relations || []).filter(
+            relation =>
+              relation.fromItemId !== itemKey && relation.toItemId !== itemKey,
+          ),
         },
-      )
+      } as com.para.collection.updateCollection.$InputBody)
     },
     onMutate: async input => {
       const detailKey = getDetailQueryKey(input.collectionId)
@@ -450,18 +433,18 @@ export function useRemoveFromCollectionMutation() {
       await queryClient.cancelQueries({queryKey: detailKey})
       await queryClient.cancelQueries({queryKey: listKey})
 
-      const previousDetail = queryClient.getQueryData<CivicTreeCollection>(
-        detailKey,
-      )
-      const previousList = queryClient.getQueryData<CivicTreeCollection[]>(
-        listKey,
-      )
+      const previousDetail =
+        queryClient.getQueryData<CivicTreeCollection>(detailKey)
+      const previousList =
+        queryClient.getQueryData<CivicTreeCollection[]>(listKey)
 
       const updater = (old: CivicTreeCollection | undefined) => {
         if (!old) return old
         return {
           ...old,
-          items: old.items.filter(i => getCivicTreeItemKey(i) !== input.itemKey),
+          items: old.items.filter(
+            i => getCivicTreeItemKey(i) !== input.itemKey,
+          ),
           relations: (old.relations || []).filter(
             relation =>
               relation.fromItemId !== input.itemKey &&
@@ -509,30 +492,26 @@ export function useAddCivicTreeRelationMutation() {
   >({
     mutationFn: async input => {
       const {collectionId, relation} = input
-      const collection = await agent.call(
-        'com.para.collection.getCollection',
+      const collection = await agent.appviewClient.call(
+        com.para.collection.getCollection,
         {id: collectionId},
       )
-      const view = collection.data.collection as CivicTreeCollection
+      const view = collection.collection as CivicTreeCollection
       const relations = view.relations || []
       if (relations.some(existing => existing.id === relation.id)) {
         return
       }
-      await agent.call(
-        'com.para.collection.updateCollection',
-        undefined,
-        {
-          id: collectionId,
-          collection: {
-            id: view.id,
-            name: view.name,
-            description: view.description,
-            color: view.color,
-            items: view.items,
-            relations: [...relations, relation],
-          },
+      await agent.appviewClient.call(com.para.collection.updateCollection, {
+        id: collectionId,
+        collection: {
+          id: view.id,
+          name: view.name,
+          description: view.description,
+          color: view.color,
+          items: view.items,
+          relations: [...relations, relation],
         },
-      )
+      } as com.para.collection.updateCollection.$InputBody)
     },
     onMutate: async input => {
       const detailKey = getDetailQueryKey(input.collectionId)
@@ -540,12 +519,10 @@ export function useAddCivicTreeRelationMutation() {
       await queryClient.cancelQueries({queryKey: detailKey})
       await queryClient.cancelQueries({queryKey: listKey})
 
-      const previousDetail = queryClient.getQueryData<CivicTreeCollection>(
-        detailKey,
-      )
-      const previousList = queryClient.getQueryData<CivicTreeCollection[]>(
-        listKey,
-      )
+      const previousDetail =
+        queryClient.getQueryData<CivicTreeCollection>(detailKey)
+      const previousList =
+        queryClient.getQueryData<CivicTreeCollection[]>(listKey)
 
       const updater = (old: CivicTreeCollection | undefined) => {
         if (!old) return old
@@ -597,28 +574,24 @@ export function useRemoveCivicTreeRelationMutation() {
   >({
     mutationFn: async input => {
       const {collectionId, relationId} = input
-      const collection = await agent.call(
-        'com.para.collection.getCollection',
+      const collection = await agent.appviewClient.call(
+        com.para.collection.getCollection,
         {id: collectionId},
       )
-      const view = collection.data.collection as CivicTreeCollection
-      await agent.call(
-        'com.para.collection.updateCollection',
-        undefined,
-        {
-          id: collectionId,
-          collection: {
-            id: view.id,
-            name: view.name,
-            description: view.description,
-            color: view.color,
-            items: view.items,
-            relations: (view.relations || []).filter(
-              relation => relation.id !== relationId,
-            ),
-          },
+      const view = collection.collection as CivicTreeCollection
+      await agent.appviewClient.call(com.para.collection.updateCollection, {
+        id: collectionId,
+        collection: {
+          id: view.id,
+          name: view.name,
+          description: view.description,
+          color: view.color,
+          items: view.items,
+          relations: (view.relations || []).filter(
+            relation => relation.id !== relationId,
+          ),
         },
-      )
+      } as com.para.collection.updateCollection.$InputBody)
     },
     onMutate: async input => {
       const detailKey = getDetailQueryKey(input.collectionId)
@@ -626,12 +599,10 @@ export function useRemoveCivicTreeRelationMutation() {
       await queryClient.cancelQueries({queryKey: detailKey})
       await queryClient.cancelQueries({queryKey: listKey})
 
-      const previousDetail = queryClient.getQueryData<CivicTreeCollection>(
-        detailKey,
-      )
-      const previousList = queryClient.getQueryData<CivicTreeCollection[]>(
-        listKey,
-      )
+      const previousDetail =
+        queryClient.getQueryData<CivicTreeCollection>(detailKey)
+      const previousList =
+        queryClient.getQueryData<CivicTreeCollection[]>(listKey)
 
       const updater = (old: CivicTreeCollection | undefined) => {
         if (!old) return old

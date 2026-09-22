@@ -88,7 +88,7 @@ export function useHighlightVoteMutation() {
                         like: newHasLiked ? 'at://fake/like/uri' : undefined,
                       },
                     },
-                  }
+                  } as typeof item
                 }),
               })),
             })),

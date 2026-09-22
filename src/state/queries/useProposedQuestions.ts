@@ -25,9 +25,13 @@ export function useProposedQuestions(community?: string) {
   return useQuery({
     queryKey: [...PROPOSED_QUESTIONS_QUERY_KEY, community],
     queryFn: async () => {
-      const res = await fetchProposedQuestions(agent, agent.assertDid, {
-        community,
-      })
+      const res = await fetchProposedQuestions(
+        agent,
+        agent.session?.did ?? '',
+        {
+          community,
+        },
+      )
       // Transform proposal views into the shape the UI expects.
       const views: ProposedQuestionView[] = res.data.map(p => ({
         id: p.uri,

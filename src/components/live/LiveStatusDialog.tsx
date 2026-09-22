@@ -1,7 +1,6 @@
 import {useCallback} from 'react'
 import {View} from 'react-native'
 import {Image} from 'expo-image'
-import {type AppBskyActorDefs, type AppBskyEmbedExternal} from '@atproto/api'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -23,6 +22,7 @@ import {createStaticClick, SimpleInlineLinkText} from '#/components/Link'
 import {useGlobalReportDialogControl} from '#/components/moderation/ReportDialog'
 import * as ProfileCard from '#/components/ProfileCard'
 import {Text} from '#/components/Typography'
+import {app} from '#/lexicons'
 import type * as bsky from '#/types/bsky'
 import {Globe_Stroke2_Corner0_Rounded} from '../icons/Globe'
 import {SquareArrowTopRight_Stroke2_Corner0_Rounded as SquareArrowTopRightIcon} from '../icons/SquareArrowTopRight'
@@ -36,8 +36,8 @@ export function LiveStatusDialog({
 }: {
   control: Dialog.DialogControlProps
   profile: bsky.profile.AnyProfileView
-  status: AppBskyActorDefs.StatusView
-  embed: AppBskyEmbedExternal.View
+  status: app.bsky.actor.defs.StatusView
+  embed: app.bsky.embed.external.View
 }) {
   const navigation = useNavigation<NavigationProp>()
   return (
@@ -60,9 +60,9 @@ function DialogInner({
   status,
 }: {
   profile: bsky.profile.AnyProfileView
-  embed: AppBskyEmbedExternal.View
+  embed: app.bsky.embed.external.View
   navigation: NavigationProp
-  status: AppBskyActorDefs.StatusView
+  status: app.bsky.actor.defs.StatusView
 }) {
   const {_} = useLingui()
   const control = Dialog.useDialogContext()
@@ -98,9 +98,9 @@ export function LiveStatus({
   padding = 'xl',
   onPressOpenProfile,
 }: {
-  status: AppBskyActorDefs.StatusView
+  status: app.bsky.actor.defs.StatusView
   profile: bsky.profile.AnyProfileView
-  embed: AppBskyEmbedExternal.View
+  embed: app.bsky.embed.external.View
   padding?: 'lg' | 'xl'
   onPressOpenProfile: () => void
 }) {

@@ -1,6 +1,5 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 import {type ListRenderItem, View} from 'react-native'
-import {type ChatBskyActorGetStatus, type ChatBskyConvoDefs} from '@atproto/api'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {
   useFocusEffect,
@@ -59,13 +58,14 @@ import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {useAgeAssurance} from '#/ageAssurance'
 import {IS_NATIVE, IS_WEB} from '#/env'
+import {chat} from '#/lexicons'
 import {AgentSelection} from './components/AgentSelection'
 import {ChatDisabled} from './components/ChatDisabled'
 import {ChatListItem} from './components/ChatListItem'
 import {InboxRequests} from './components/InboxRequests'
 import {useIsWithinSplitView} from './components/splitView/context'
 
-type ChatStatus = ChatBskyActorGetStatus.OutputSchema
+type ChatStatus = chat.bsky.actor.getStatus.$OutputBody
 
 type ListItem =
   | {
@@ -77,7 +77,7 @@ type ListItem =
     }
   | {
       type: 'CONVERSATION'
-      conversation: ChatBskyConvoDefs.ConvoView
+      conversation: chat.bsky.convo.defs.ConvoView
       selected: boolean
     }
   | {

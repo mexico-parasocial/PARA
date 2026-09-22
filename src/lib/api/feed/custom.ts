@@ -1,4 +1,3 @@
-import {type AppBskyFeedDefs} from '@atproto/api'
 import {Client, type XrpcRequestParams} from '@atproto/lex'
 
 import {
@@ -30,7 +29,7 @@ export class CustomFeedAPI implements FeedAPI {
     this.userInterests = userInterests
   }
 
-  async peekLatest(): Promise<AppBskyFeedDefs.FeedViewPost> {
+  async peekLatest(): Promise<app.bsky.feed.defs.FeedViewPost> {
     const contentLangs = getContentLanguages().join(',')
     const data = await this.client.call(
       app.bsky.feed.getFeed,

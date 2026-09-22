@@ -1,7 +1,3 @@
-import {
-  type AppBskyActorDefs,
-  type AppBskyUnspeccedGetSuggestedUsers,
-} from '@atproto/api'
 import {type QueryClient, useQuery} from '@tanstack/react-query'
 
 import {
@@ -13,6 +9,7 @@ import {getContentLanguages} from '#/state/preferences/languages'
 import {STALE} from '#/state/queries'
 import {usePreferencesQuery} from '#/state/queries/preferences'
 import {useAgent} from '#/state/session'
+import {app} from '#/lexicons'
 
 export type QueryProps = {
   category?: string | null
@@ -48,7 +45,8 @@ export function useGetSuggestedUsersQuery(props: QueryProps) {
           : userInterests
 
       try {
-        const {data} = await agent.app.bsky.unspecced.getSuggestedUsers(
+        const data = await agent.appviewClient.call(
+          app.bsky.unspecced.getSuggestedUsers,
           {
             category: props.category ?? undefined,
             limit,
@@ -66,17 +64,17 @@ export function useGetSuggestedUsersQuery(props: QueryProps) {
           logger.error(
             `Did not get any suggested users, falling back - interests: ${interests}`,
           )
-          const {data: fallbackData} =
-            await agent.app.bsky.unspecced.getSuggestedUsers(
-              {
-                limit,
+          const fallbackData = await agent.appviewClient.call(
+            app.bsky.unspecced.getSuggestedUsers,
+            {
+              limit,
+            },
+            {
+              headers: {
+                'Accept-Language': contentLangs,
               },
-              {
-                headers: {
-                  'Accept-Language': contentLangs,
-                },
-              },
-            )
+            },
+          )
           return fallbackData
         }
 
@@ -91,7 +89,8 @@ export function useGetSuggestedUsersQuery(props: QueryProps) {
         )
       }
 
-      const {data} = await agent.app.bsky.unspecced.getSuggestedUsers(
+      const data = await agent.appviewClient.call(
+        app.bsky.unspecced.getSuggestedUsers,
         {
           limit,
         },
@@ -110,11 +109,13 @@ export function useGetSuggestedUsersQuery(props: QueryProps) {
 export function* findAllProfilesInQueryData(
   queryClient: QueryClient,
   did: string,
-): Generator<AppBskyActorDefs.ProfileView, void> {
+): Generator<app.bsky.actor.defs.ProfileView, void> {
   const responses =
-    queryClient.getQueriesData<AppBskyUnspeccedGetSuggestedUsers.OutputSchema>({
-      queryKey: [getSuggestedUsersQueryKeyRoot],
-    })
+    queryClient.getQueriesData<app.bsky.unspecced.getSuggestedUsers.$OutputBody>(
+      {
+        queryKey: [getSuggestedUsersQueryKeyRoot],
+      },
+    )
   for (const [_key, response] of responses) {
     if (!response) {
       continue

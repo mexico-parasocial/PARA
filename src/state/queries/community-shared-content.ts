@@ -1,17 +1,15 @@
+import {type AtUriString} from '@atproto/syntax'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {STALE} from '#/state/queries'
 import {useAgent} from '#/state/session'
+import {com} from '#/lexicons'
 
 const RQKEY_ROOT = 'community-shared-content'
 const COMMUNITY_BOARDS_RQKEY_ROOT = 'community-boards'
 
 export type SharedContentType =
-  | 'post'
-  | 'cabildeo'
-  | 'collection'
-  | 'mapInitiative'
-  | 'external'
+  'post' | 'cabildeo' | 'collection' | 'mapInitiative' | 'external'
 
 export type SharedContentSubject = {
   uri: string
@@ -135,15 +133,18 @@ export function useCommunitySharedContentQuery(
     enabled: Boolean(options.communityUri),
     queryKey: communitySharedContentQueryKey(options),
     queryFn: async () => {
-      const res = await agent.call('com.para.community.listSharedContent', {
-        communityUri: options.communityUri,
-        contentType: options.contentType,
-        includeRemoved: options.includeRemoved,
-        includeChildren: options.includeChildren,
-        limit: options.limit,
-        cursor: options.cursor,
-      })
-      return normalizeSharedContentResponse(res.data)
+      const res = await agent.appviewClient.call(
+        com.para.community.listSharedContent,
+        {
+          communityUri: options.communityUri as AtUriString,
+          contentType: options.contentType,
+          includeRemoved: options.includeRemoved,
+          includeChildren: options.includeChildren,
+          limit: options.limit,
+          cursor: options.cursor,
+        },
+      )
+      return normalizeSharedContentResponse(res)
     },
   })
 }
@@ -158,23 +159,25 @@ export function useCommunityRelationsQuery(
     staleTime: STALE.SECONDS.THIRTY,
     enabled: Boolean(
       options.communityUri ||
-        options.parentCommunityUri ||
-        options.childCommunityUri,
+      options.parentCommunityUri ||
+      options.childCommunityUri,
     ),
     queryKey: communityRelationsQueryKey(options),
     queryFn: async () => {
-      const res = await agent.call(
-        'com.para.community.listCommunityRelations',
+      const res = await agent.appviewClient.call(
+        com.para.community.listCommunityRelations,
         {
-          communityUri: options.communityUri,
-          parentCommunityUri: options.parentCommunityUri,
-          childCommunityUri: options.childCommunityUri,
+          communityUri: options.communityUri as AtUriString | undefined,
+          parentCommunityUri: options.parentCommunityUri as
+            AtUriString | undefined,
+          childCommunityUri: options.childCommunityUri as
+            AtUriString | undefined,
           relation: options.relation,
           limit: options.limit,
           cursor: options.cursor,
         },
       )
-      return normalizeRelationsResponse(res.data)
+      return normalizeRelationsResponse(res)
     },
   })
 }
@@ -185,12 +188,11 @@ export function useShareContentToCommunityMutation() {
 
   return useMutation({
     mutationFn: async (input: ShareContentToCommunityInput) => {
-      const res = await agent.call(
-        'com.para.community.shareContent',
-        undefined,
-        input,
+      const res = await agent.appviewClient.call(
+        com.para.community.shareContent,
+        input as com.para.community.shareContent.$InputBody,
       )
-      return normalizeShareContentResponse(res.data)
+      return normalizeShareContentResponse(res)
     },
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({queryKey: [RQKEY_ROOT]})
@@ -210,12 +212,11 @@ export function useRemoveSharedContentMutation() {
 
   return useMutation({
     mutationFn: async (input: ModerateSharedContentInput) => {
-      const res = await agent.call(
-        'com.para.community.removeSharedContent',
-        undefined,
-        input,
+      const res = await agent.appviewClient.call(
+        com.para.community.removeSharedContent,
+        input as com.para.community.removeSharedContent.$InputBody,
       )
-      return normalizeSharedContentActionResponse(res.data)
+      return normalizeSharedContentActionResponse(res)
     },
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({queryKey: [RQKEY_ROOT]})
@@ -232,12 +233,11 @@ export function useRestoreSharedContentMutation() {
 
   return useMutation({
     mutationFn: async (input: ModerateSharedContentInput) => {
-      const res = await agent.call(
-        'com.para.community.restoreSharedContent',
-        undefined,
-        input,
+      const res = await agent.appviewClient.call(
+        com.para.community.restoreSharedContent,
+        input as com.para.community.restoreSharedContent.$InputBody,
       )
-      return normalizeSharedContentActionResponse(res.data)
+      return normalizeSharedContentActionResponse(res)
     },
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({queryKey: [RQKEY_ROOT]})

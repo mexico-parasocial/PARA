@@ -1,10 +1,10 @@
 import {type Insets, Platform} from 'react-native'
 import * as Device from 'expo-device'
-import {type AppBskyActorDefs} from '@atproto/api'
 import {type Service} from '@atproto/lex'
 import {api} from '@bsky/sdk'
 
 import {BLUESKY_PROXY_DID, CHAT_PROXY_DID, IS_DEV} from '#/env'
+import {app} from '#/lexicons'
 
 // Physical devices must set EXPO_PUBLIC_LOCAL_DEV_IP in .env.local to reach
 // the dev machine (localhost on a phone is the phone itself). The localhost
@@ -235,12 +235,12 @@ export const DEFAULT_VIDEO_SAVED_FEED = DEFAULT_VIDEO_FEED_URI
   : null
 
 export const RECOMMENDED_SAVED_FEEDS: Pick<
-  AppBskyActorDefs.SavedFeed,
+  app.bsky.actor.defs.SavedFeed,
   'type' | 'value' | 'pinned'
 >[] = [TIMELINE_SAVED_FEED]
 
 export const DEFAULT_ONBOARDING_SAVED_FEEDS: Pick<
-  AppBskyActorDefs.SavedFeed,
+  app.bsky.actor.defs.SavedFeed,
   'type' | 'value' | 'pinned'
 >[] = [TIMELINE_SAVED_FEED]
 

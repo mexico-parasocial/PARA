@@ -1,15 +1,19 @@
-import * as React from 'react'
 import {useCallback, useState} from 'react'
 import {View} from 'react-native'
 import type Animated from 'react-native-reanimated'
 import {useAnimatedRef, useScrollOffset} from 'react-native-reanimated'
-import {type AppBskyActorDefs} from '@atproto/api'
 import {TID} from '@atproto/common-web'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import {useFocusEffect, useNavigation} from '@react-navigation/native'
 import {type NativeStackScreenProps} from '@react-navigation/native-stack'
+import {
+  type Dispatch,
+  type ReactNode,
+  type Ref,
+  type SetStateAction,
+} from 'react'
 
 import {RECOMMENDED_SAVED_FEEDS, TIMELINE_SAVED_FEED} from '#/lib/constants'
 import {useHaptics} from '#/lib/haptics'
@@ -52,6 +56,7 @@ import {InlineLinkText} from '#/components/Link'
 import {Loader} from '#/components/Loader'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
+import {type app} from '#/lexicons'
 
 type Props = NativeStackScreenProps<CommonNavigatorParams, 'SavedFeeds'>
 export function SavedFeeds({}: Props) {
@@ -145,7 +150,7 @@ function SavedFeedsInner({
       </Layout.Header.Outer>
 
       <Layout.Content
-        ref={scrollRef as unknown as React.Ref<Animated.ScrollView>}
+        ref={scrollRef as unknown as Ref<Animated.ScrollView>}
         scrollEnabled={!isDragging}>
         {noSavedFeedsOfAnyType && (
           <View style={[t.atoms.border_contrast_low, a.border_b]}>
@@ -471,12 +476,10 @@ function PinnedFeedItem({
   onMoveUp,
   onMoveDown,
 }: {
-  feed: AppBskyActorDefs.SavedFeed
-  currentFeeds: AppBskyActorDefs.SavedFeed[]
-  setCurrentFeeds: React.Dispatch<
-    React.SetStateAction<AppBskyActorDefs.SavedFeed[]>
-  >
-  dragHandle?: React.ReactNode
+  feed: app.bsky.actor.defs.SavedFeed
+  currentFeeds: app.bsky.actor.defs.SavedFeed[]
+  setCurrentFeeds: Dispatch<SetStateAction<app.bsky.actor.defs.SavedFeed[]>>
+  dragHandle?: ReactNode
   index?: number
   total?: number
   onMoveUp?: () => void
@@ -554,11 +557,9 @@ function UnpinnedFeedItem({
   currentFeeds,
   setCurrentFeeds,
 }: {
-  feed: AppBskyActorDefs.SavedFeed
-  currentFeeds: AppBskyActorDefs.SavedFeed[]
-  setCurrentFeeds: React.Dispatch<
-    React.SetStateAction<AppBskyActorDefs.SavedFeed[]>
-  >
+  feed: app.bsky.actor.defs.SavedFeed
+  currentFeeds: app.bsky.actor.defs.SavedFeed[]
+  setCurrentFeeds: Dispatch<SetStateAction<app.bsky.actor.defs.SavedFeed[]>>
 }) {
   const {_} = useLingui()
   const t = useTheme()
@@ -615,7 +616,7 @@ function UnpinnedFeedItem({
   )
 }
 
-function SectionHeaderText({children}: {children: React.ReactNode}) {
+function SectionHeaderText({children}: {children: ReactNode}) {
   const t = useTheme()
   // eslint-disable-next-line bsky-internal/avoid-unwrapped-text
   return (

@@ -1,10 +1,5 @@
 import {useMemo, useState} from 'react'
 import {View} from 'react-native'
-import {
-  type AppBskyActorDefs,
-  AppBskyActorStatus,
-  type AppBskyEmbedExternal,
-} from '@atproto/api'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -29,6 +24,8 @@ import {
   useUpsertLiveStatusMutation,
 } from '#/features/liveNow'
 import {LinkPreview} from '#/features/liveNow/components/LinkPreview'
+import {app} from '#/lexicons'
+import * as bsky from '#/types/bsky'
 
 export function EditLiveDialog({
   control,
@@ -36,8 +33,8 @@ export function EditLiveDialog({
   embed,
 }: {
   control: Dialog.DialogControlProps
-  status: AppBskyActorDefs.StatusView
-  embed: AppBskyEmbedExternal.View
+  status: app.bsky.actor.defs.StatusView
+  embed: app.bsky.embed.external.View
 }) {
   return (
     <Dialog.Outer control={control} nativeOptions={{preventExpansion: true}}>
@@ -51,14 +48,14 @@ function DialogInner({
   status,
   embed,
 }: {
-  status: AppBskyActorDefs.StatusView
-  embed: AppBskyEmbedExternal.View
+  status: app.bsky.actor.defs.StatusView
+  embed: app.bsky.embed.external.View
 }) {
   const control = Dialog.useDialogContext()
   const {_, i18n} = useLingui()
   const t = useTheme()
 
-  const [liveLink, setLiveLink] = useState(embed.external.uri)
+  const [liveLink, setLiveLink] = useState<string>(embed.external.uri)
   const [liveLinkError, setLiveLinkError] = useState('')
   const tick = useTickEveryMinute()
 
@@ -75,10 +72,9 @@ function DialogInner({
   } = useLiveLinkMetaQuery(debouncedUrl)
 
   const record = useMemo(() => {
-    if (!AppBskyActorStatus.isRecord(status.record)) return null
-    const validation = AppBskyActorStatus.validateRecord(status.record)
-    if (validation.success) {
-      return validation.value
+    if (!bsky.isType(app.bsky.actor.status, status.record)) return null
+    if (bsky.matches(app.bsky.actor.status, status.record)) {
+      return status.record
     }
     return null
   }, [status])

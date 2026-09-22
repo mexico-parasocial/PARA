@@ -1,9 +1,4 @@
-import {
-  AppBskyEmbedImages,
-  AppBskyEmbedRecordWithMedia,
-  AppBskyEmbedVideo,
-  type AppBskyFeedDefs,
-} from '@atproto/api'
+import {deleteLike, like} from '@bsky/sdk'
 import {
   type InfiniteData,
   useInfiniteQuery,
@@ -18,6 +13,8 @@ import {
 import {useAgent} from '#/state/session'
 import {type MemeMediaItem} from '#/screens/Dashboard/MemesScreen/types'
 import * as Toast from '#/components/Toast'
+import {app, com} from '#/lexicons'
+import * as bsky from '#/types/bsky'
 
 const STALE_TIME = 60 * 1000 // 1 minute
 const RQKEY_ROOT = 'para-memes'
@@ -47,17 +44,13 @@ export function useMemesFeedQuery() {
     initialPageParam: undefined,
     getNextPageParam: lastPage => lastPage.cursor,
     queryFn: async ({pageParam}) => {
-      const res = await agent.call('com.para.feed.getMemes', {
+      const res = await agent.appviewClient.call(com.para.feed.getMemes, {
         limit: 25,
         cursor: pageParam,
       })
-      const data = res.data as {
-        cursor?: string
-        feed?: unknown[]
-      }
-      const feed = (data.feed ?? []).filter(isMemeView)
+      const feed = (res.feed ?? []).filter(isMemeView)
       return {
-        cursor: data.cursor,
+        cursor: res.cursor,
         items: feed.map(toMemeMediaItem),
       }
     },
@@ -65,7 +58,7 @@ export function useMemesFeedQuery() {
 }
 
 interface MemeView {
-  post: AppBskyFeedDefs.PostView
+  post: app.bsky.feed.defs.PostView
   meta?: {
     uri?: string
     postType?: 'policy' | 'matter' | 'meme'
@@ -118,24 +111,24 @@ function toMemeMediaItem(view: MemeView): MemeMediaItem {
 }
 
 function getMemeThumbnailUri(
-  embed: AppBskyFeedDefs.PostView['embed'],
+  embed: app.bsky.feed.defs.PostView['embed'],
 ): string | undefined {
   if (!embed) return undefined
 
-  if (AppBskyEmbedImages.isView(embed)) {
+  if (bsky.isType(app.bsky.embed.images.view, embed)) {
     return embed.images[0]?.thumb
   }
 
-  if (AppBskyEmbedVideo.isView(embed)) {
+  if (bsky.isType(app.bsky.embed.video.view, embed)) {
     return embed.thumbnail
   }
 
-  if (AppBskyEmbedRecordWithMedia.isView(embed)) {
+  if (bsky.isType(app.bsky.embed.recordWithMedia.view, embed)) {
     const media = embed.media
-    if (AppBskyEmbedImages.isView(media)) {
+    if (bsky.isType(app.bsky.embed.images.view, media)) {
       return media.images[0]?.thumb
     }
-    if (AppBskyEmbedVideo.isView(media)) {
+    if (bsky.isType(app.bsky.embed.video.view, media)) {
       return media.thumbnail
     }
   }
@@ -150,17 +143,20 @@ export function useMemeVoteMutation() {
   return useMutation<
     void,
     Error,
-    {post: AppBskyFeedDefs.PostView; vote: 1 | -1 | 0}
+    {post: app.bsky.feed.defs.PostView; vote: 1 | -1 | 0}
   >({
     mutationFn: async ({post, vote}) => {
       const likeUri = post.viewer?.like
       if (vote === 1) {
         if (!likeUri) {
-          await agent.like(post.uri, post.cid)
+          await agent.pdsClient.call(like, {
+            uri: post.uri,
+            cid: post.cid,
+          })
         }
       } else {
         if (likeUri) {
-          await agent.deleteLike(likeUri)
+          await agent.pdsClient.call(deleteLike, likeUri)
         }
       }
     },

@@ -1,3 +1,4 @@
+import {type AtUriString, type DidString} from '@atproto/syntax'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {useAgent} from '#/state/session'
@@ -8,6 +9,7 @@ import {
   type GraphNode,
   type Stance,
 } from '#/features/civicTree/types'
+import {com} from '#/lexicons'
 
 export type {GraphData, GraphEdge, GraphNode, Stance}
 
@@ -336,11 +338,14 @@ export function useCommunityCivicTreeGraphQuery(
     queryKey: getCommunityCivicTreeGraphQueryKey(communityUri),
     queryFn: async () => {
       if (!communityUri) throw new Error('No community URI')
-      const res = await agent.call('com.para.community.getCivicTree', {
-        community: communityUri,
-      })
-      return isCommunityCivicTreeGraphResponse(res.data)
-        ? res.data
+      const res = await agent.appviewClient.call(
+        com.para.community.getCivicTree,
+        {
+          community: communityUri as AtUriString,
+        },
+      )
+      return isCommunityCivicTreeGraphResponse(res)
+        ? res
         : {nodes: [], edges: []}
     },
     enabled: !!communityUri,
@@ -371,13 +376,13 @@ export function useCommunityTreeContributionsQuery(
         status,
       }
       if (viewerDid) params.viewer = viewerDid
-      const res = await agent.call(
-        'com.para.community.civicTree.listContributions',
-        params,
+      const res = await agent.appviewClient.call(
+        com.para.community.civicTree.listContributions,
+        params as com.para.community.civicTree.listContributions.$Params,
       )
       return (
-        (res.data as {contributions?: CommunityTreeContribution[]})
-          .contributions ?? []
+        (res as {contributions?: CommunityTreeContribution[]}).contributions ??
+        []
       )
     },
     enabled: !!communityUri,
@@ -394,12 +399,11 @@ export function useCreateCommunityTreeContributionMutation() {
     CreateCommunityTreeContributionInput
   >({
     mutationFn: async input => {
-      const res = await agent.call(
-        'com.para.community.civicTree.submitContribution',
-        undefined,
-        input,
+      const res = await agent.appviewClient.call(
+        com.para.community.civicTree.submitContribution,
+        input as com.para.community.civicTree.submitContribution.$InputBody,
       )
-      return res.data as {contribution: CommunityTreeContribution}
+      return res as {contribution: CommunityTreeContribution}
     },
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({
@@ -432,16 +436,15 @@ export function useVoteCommunityTreeContributionMutation() {
     }
   >({
     mutationFn: async input => {
-      const res = await agent.call(
-        'com.para.community.civicTree.voteContribution',
-        undefined,
+      const res = await agent.appviewClient.call(
+        com.para.community.civicTree.voteContribution,
         {
           contribution: input.contributionId,
-          voterDid: input.voterDid,
+          voterDid: input.voterDid as DidString,
           vote: input.vote,
         },
       )
-      return res.data as {contribution: CommunityTreeContribution}
+      return res as {contribution: CommunityTreeContribution}
     },
     onSuccess: (data, variables) => {
       void queryClient.invalidateQueries({
@@ -477,12 +480,11 @@ export function useCreateCommunityCivicTreeRelationshipMutation() {
     CreateRelationshipInput
   >({
     mutationFn: async input => {
-      const res = await agent.call(
-        'com.para.community.civicTree.createRelationship',
-        undefined,
-        input,
+      const res = await agent.appviewClient.call(
+        com.para.community.civicTree.createRelationship,
+        input as com.para.community.civicTree.createRelationship.$InputBody,
       )
-      return res.data as {relationship: CommunityCivicTreeRelationship}
+      return res
     },
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({
@@ -504,11 +506,14 @@ export function useCommunityCivicTreeCardVoteQuery(
     queryKey: ['community-civic-tree', 'card-vote', cardId, voterDid],
     queryFn: async () => {
       if (!cardId || !voterDid) throw new Error('Missing card or voter')
-      const res = await agent.call('com.para.community.civicTree.getCardVote', {
-        card: cardId,
-        voter: voterDid,
-      })
-      return res.data as {vote: {influence: number} | null}
+      const res = await agent.appviewClient.call(
+        com.para.community.civicTree.getCardVote,
+        {
+          card: cardId,
+          voter: voterDid as DidString,
+        },
+      )
+      return res as {vote: {influence: number} | null}
     },
     enabled: !!cardId && !!voterDid,
     staleTime: 1000 * 30,
@@ -524,16 +529,15 @@ export function useCastCommunityCivicTreeVoteMutation() {
     {cardId: string; voterDid: string; influence: number; communityUri?: string}
   >({
     mutationFn: async input => {
-      const res = await agent.call(
-        'com.para.community.civicTree.castCardVote',
-        undefined,
+      const res = await agent.appviewClient.call(
+        com.para.community.civicTree.castCardVote,
         {
           card: input.cardId,
-          voterDid: input.voterDid,
+          voterDid: input.voterDid as DidString,
           influence: input.influence,
         },
       )
-      return res.data as {
+      return res as {
         success: boolean
         totalInfluence: number
         voteCount: number
@@ -575,10 +579,11 @@ export function useCommunityCivicTreeSummaryQuery(
     queryKey: getCommunityCivicTreeSummaryQueryKey(communityUri),
     queryFn: async () => {
       if (!communityUri) throw new Error('No community URI')
-      const res = await agent.call('com.para.community.civicTree.getSummary', {
-        community: communityUri,
-      })
-      return res.data as DeliberationSummary
+      const res = await agent.appviewClient.call(
+        com.para.community.civicTree.getSummary,
+        {community: communityUri as AtUriString},
+      )
+      return res as DeliberationSummary
     },
     enabled: !!communityUri,
     staleTime: 1000 * 60 * 5,
@@ -598,10 +603,11 @@ export function useCommunityCivicTreePulseQuery(
         community: communityUri,
       }
       if (voterDid) params.voter = voterDid
-      const res = await agent.call('com.para.community.civicTree.getPulse', {
-        ...params,
-      })
-      return res.data as CommunityPulse
+      const res = await agent.appviewClient.call(
+        com.para.community.civicTree.getPulse,
+        params as com.para.community.civicTree.getPulse.$Params,
+      )
+      return res as CommunityPulse
     },
     enabled: !!communityUri,
     staleTime: 1000 * 60 * 2,
@@ -616,12 +622,13 @@ export function useCommunityCivicTreeSuggestionsQuery(
     queryKey: ['community-civic-tree', 'suggestions', communityUri],
     queryFn: async () => {
       if (!communityUri) throw new Error('No community URI')
-      const res = await agent.call(
-        'com.para.community.civicTree.listSuggestions',
-        {community: communityUri, status: 'pending'},
+      const res = await agent.appviewClient.call(
+        com.para.community.civicTree.listSuggestions,
+        {community: communityUri as AtUriString, status: 'pending'},
       )
       return (
-        (res.data as {suggestions?: SuggestedRelationship[]}).suggestions ?? []
+        (res as unknown as {suggestions?: SuggestedRelationship[]})
+          .suggestions ?? []
       )
     },
     enabled: !!communityUri,
@@ -638,10 +645,9 @@ export function useAcceptCommunityCivicTreeSuggestionMutation() {
     {id: string; communityUri?: string; authorDid: string}
   >({
     mutationFn: async input => {
-      await agent.call(
-        'com.para.community.civicTree.acceptSuggestion',
-        undefined,
-        input,
+      await agent.appviewClient.call(
+        com.para.community.civicTree.acceptSuggestion,
+        input as com.para.community.civicTree.acceptSuggestion.$InputBody,
       )
     },
     onSuccess: (_data, variables) => {
@@ -666,10 +672,9 @@ export function useRejectCommunityCivicTreeSuggestionMutation() {
   const agent = useAgent()
   return useMutation<void, Error, {id: string; communityUri?: string}>({
     mutationFn: async input => {
-      await agent.call(
-        'com.para.community.civicTree.rejectSuggestion',
-        undefined,
-        input,
+      await agent.appviewClient.call(
+        com.para.community.civicTree.rejectSuggestion,
+        input as com.para.community.civicTree.rejectSuggestion.$InputBody,
       )
     },
     onSuccess: (_data, variables) => {

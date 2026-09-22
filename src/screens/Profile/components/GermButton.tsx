@@ -14,7 +14,7 @@ import {useAppviewClient, usePdsClient, useSession} from '#/state/session'
 import {atoms as a, useTheme, web} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
-import {CustomLinkWarningDialog} from '#/components/dialogs/LinkWarning'
+import {useGlobalDialogsControlContext} from '#/components/dialogs/Context'
 import {ArrowTopRight_Stroke2_Corner0_Rounded as ArrowTopRightIcon} from '#/components/icons/Arrow'
 import {Link} from '#/components/Link'
 import {Loader} from '#/components/Loader'
@@ -35,7 +35,7 @@ export function GermButton({
   const ax = useAnalytics()
   const {_} = useLingui()
   const {currentAccount} = useSession()
-  const linkWarningControl = Dialog.useDialogControl()
+  const {linkWarningDialogControl} = useGlobalDialogsControlContext()
 
   // exclude `none` and all unknown values
   if (!(
@@ -66,7 +66,11 @@ export function GermButton({
           ax.metric('profile:associated:germ:click-to-chat', {})
           if (isCustomGermDomain(url)) {
             evt.preventDefault()
-            linkWarningControl.open()
+            linkWarningDialogControl.open({
+              href: url,
+              displayText: '',
+              share: false,
+            })
             return false
           }
         }}
@@ -85,14 +89,6 @@ export function GermButton({
         </Text>
         <ArrowTopRightIcon style={[t.atoms.text, a.mx_2xs]} width={14} />
       </Link>
-      <CustomLinkWarningDialog
-        control={linkWarningControl}
-        link={{
-          href: url,
-          displayText: '',
-          share: false,
-        }}
-      />
     </>
   )
 }

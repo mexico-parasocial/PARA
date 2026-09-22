@@ -1,5 +1,4 @@
 import {ScrollView, View} from 'react-native'
-import {type ChatBskyActorDefs} from '@atproto/api'
 import {type ModerationOpts} from '@bsky/sdk/moderation'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -23,6 +22,7 @@ import {type ConvoWithDetails, parseConvoView} from '#/components/dms/util'
 import {ProfileBadges} from '#/components/ProfileBadges'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
+import {chat} from '#/lexicons'
 
 export function RecentChats({
   postUri,
@@ -114,7 +114,7 @@ function RecentChatItem({
   onPress: () => void
   moderationOpts: ModerationOpts
   convo: ConvoWithDetails
-  primaryMember: ChatBskyActorDefs.ProfileViewBasic
+  primaryMember: chat.bsky.actor.defs.ProfileViewBasic
 }) {
   const {_} = useLingui()
   const t = useTheme()

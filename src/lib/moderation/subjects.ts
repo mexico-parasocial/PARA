@@ -1,12 +1,4 @@
 import {
-  type AppBskyActorDefs,
-  type AppBskyFeedDefs,
-  type AppBskyGraphDefs,
-  type AppBskyNotificationListNotifications,
-  type AppBskyRichtextFacet,
-  type ChatBskyActorDefs,
-} from '@atproto/api'
-import {
   hasMutedWord as sdkHasMutedWord,
   moderateFeedGenerator as sdkModerateFeedGenerator,
   moderateNotification as sdkModerateNotification,
@@ -25,7 +17,7 @@ import {type app, type chat} from '#/lexicons'
  * `@bsky/sdk/moderation`, whose subject types are the generated
  * `#/lexicons` views - so their `did`/`uri`/`cid` fields are branded
  * (`DidString`, `AtUriString`). Many read paths still emit the identically
- * shaped `@atproto/api` views, whose same fields are plain `string`.
+ * shaped `the legacy SDK` views, whose same fields are plain `string`.
  *
  * A plain `string` is not assignable to a branded template-literal type, so
  * every `moderate*` call taking an unmigrated view fails to typecheck even
@@ -34,7 +26,7 @@ import {type app, type chat} from '#/lexicons'
  *
  * These wrappers widen each subject parameter to accept a view from either
  * world and drop the brand on the way in. Delete this module once every
- * producer emits `#/lexicons` views (the `@atproto/api` removal pass) and point
+ * producer emits `#/lexicons` views (the `the legacy SDK` removal pass) and point
  * callers back at `@bsky/sdk/moderation` directly.
  */
 
@@ -43,72 +35,57 @@ type AnyProfileSubject =
   | app.bsky.actor.defs.ProfileView
   | app.bsky.actor.defs.ProfileViewDetailed
   | chat.bsky.actor.defs.ProfileViewBasic
-  | AppBskyActorDefs.ProfileViewBasic
-  | AppBskyActorDefs.ProfileView
-  | AppBskyActorDefs.ProfileViewDetailed
-  | ChatBskyActorDefs.ProfileViewBasic
 
-type AnyPostSubject = app.bsky.feed.defs.PostView | AppBskyFeedDefs.PostView
+type AnyPostSubject = app.bsky.feed.defs.PostView
 
 type AnyUserListSubject =
-  | app.bsky.graph.defs.ListViewBasic
-  | app.bsky.graph.defs.ListView
-  | AppBskyGraphDefs.ListViewBasic
-  | AppBskyGraphDefs.ListView
+  app.bsky.graph.defs.ListViewBasic | app.bsky.graph.defs.ListView
 
-type AnyFeedGeneratorSubject =
-  app.bsky.feed.defs.GeneratorView | AppBskyFeedDefs.GeneratorView
+type AnyFeedGeneratorSubject = app.bsky.feed.defs.GeneratorView
 
 type AnyNotificationSubject =
-  | app.bsky.notification.listNotifications.Notification
-  | AppBskyNotificationListNotifications.Notification
+  app.bsky.notification.listNotifications.Notification
 
 export function moderateProfile(
   subject: AnyProfileSubject,
   opts: ModerationOpts,
 ): ModerationDecision {
-  return sdkModerateProfile(subject as app.bsky.actor.defs.ProfileView, opts)
+  return sdkModerateProfile(subject, opts)
 }
 
 export function moderateStatus(
   subject: AnyProfileSubject,
   opts: ModerationOpts,
 ): ModerationDecision {
-  return sdkModerateStatus(subject as app.bsky.actor.defs.ProfileView, opts)
+  return sdkModerateStatus(subject, opts)
 }
 
 export function moderatePost(
   subject: AnyPostSubject,
   opts: ModerationOpts,
 ): ModerationDecision {
-  return sdkModeratePost(subject as app.bsky.feed.defs.PostView, opts)
+  return sdkModeratePost(subject, opts)
 }
 
 export function moderateUserList(
   subject: AnyUserListSubject,
   opts: ModerationOpts,
 ): ModerationDecision {
-  return sdkModerateUserList(subject as app.bsky.graph.defs.ListView, opts)
+  return sdkModerateUserList(subject, opts)
 }
 
 export function moderateFeedGenerator(
   subject: AnyFeedGeneratorSubject,
   opts: ModerationOpts,
 ): ModerationDecision {
-  return sdkModerateFeedGenerator(
-    subject as app.bsky.feed.defs.GeneratorView,
-    opts,
-  )
+  return sdkModerateFeedGenerator(subject, opts)
 }
 
 export function moderateNotification(
   subject: AnyNotificationSubject,
   opts: ModerationOpts,
 ): ModerationDecision {
-  return sdkModerateNotification(
-    subject as app.bsky.notification.listNotifications.Notification,
-    opts,
-  )
+  return sdkModerateNotification(subject, opts)
 }
 
 /**
@@ -119,14 +96,14 @@ export function moderateNotification(
 export function hasMutedWord(params: {
   mutedWords: app.bsky.actor.defs.MutedWord[]
   text: string
-  facets?: app.bsky.richtext.facet.Main[] | AppBskyRichtextFacet.Main[]
+  facets?: app.bsky.richtext.facet.Main[]
   outlineTags?: string[]
   languages?: string[]
   actor?: AnyProfileSubject
 }): boolean {
   return sdkHasMutedWord({
     ...params,
-    facets: params.facets as app.bsky.richtext.facet.Main[] | undefined,
+    facets: params.facets,
     actor: params.actor as app.bsky.actor.defs.ProfileView | undefined,
   })
 }

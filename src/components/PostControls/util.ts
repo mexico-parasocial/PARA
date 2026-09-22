@@ -1,9 +1,10 @@
 import {useCallback} from 'react'
-import {type AppBskyFeedDefs} from '@atproto/api'
 import {useLingui} from '@lingui/react'
 
+import {app} from '#/lexicons'
+
 type ParaSummaryPost = Pick<
-  AppBskyFeedDefs.PostView,
+  app.bsky.feed.defs.PostView,
   'likeCount' | 'replyCount' | 'quoteCount' | 'bookmarkCount'
 >
 

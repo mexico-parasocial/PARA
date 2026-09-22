@@ -1,8 +1,12 @@
-import {type AppBskyFeedDefs} from '@atproto/api'
 import {type Client} from '@atproto/lex'
-import {type AtUriString} from '@atproto/syntax'
+import {
+  type AtUriString,
+  type DatetimeString,
+  type DidString,
+} from '@atproto/syntax'
 
 import {DEFAULT_DISCOVER_FEED_URI, IS_LOCAL_DEV_MODE} from '#/lib/constants'
+import {app} from '#/lexicons'
 import {CustomFeedAPI} from './custom'
 import {FollowingFeedAPI} from './following'
 import {type FeedAPI, type FeedAPIResponse} from './types'
@@ -15,16 +19,16 @@ import {type FeedAPI, type FeedAPIResponse} from './types'
 // we use this fallback marker post to drive this instead. see Feed.tsx
 // for the usage.
 // -prf
-export const FALLBACK_MARKER_POST: AppBskyFeedDefs.FeedViewPost = {
+export const FALLBACK_MARKER_POST: app.bsky.feed.defs.FeedViewPost = {
   post: {
-    uri: 'fallback-marker-post',
+    uri: 'fallback-marker-post' as AtUriString,
     cid: 'fake',
     record: {},
     author: {
-      did: 'did:fake',
+      did: 'did:fake' as DidString,
       handle: 'fake.com',
     },
-    indexedAt: new Date().toISOString(),
+    indexedAt: new Date().toISOString() as DatetimeString,
   },
 }
 
@@ -63,7 +67,7 @@ export class HomeFeedAPI implements FeedAPI {
     this.itemCursor = 0
   }
 
-  async peekLatest(): Promise<AppBskyFeedDefs.FeedViewPost> {
+  async peekLatest(): Promise<app.bsky.feed.defs.FeedViewPost> {
     if (this.usingDiscover) {
       return this.discover.peekLatest()
     }
@@ -82,7 +86,7 @@ export class HomeFeedAPI implements FeedAPI {
     }
 
     let returnCursor
-    let posts: AppBskyFeedDefs.FeedViewPost[] = []
+    let posts: app.bsky.feed.defs.FeedViewPost[] = []
 
     if (!this.usingDiscover) {
       const res = await this.following.fetch({cursor, limit})

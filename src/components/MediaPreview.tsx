@@ -1,6 +1,5 @@
 import {type StyleProp, StyleSheet, View, type ViewStyle} from 'react-native'
 import {Image} from 'expo-image'
-import {type AppBskyEmbedImages, type AppBskyFeedDefs} from '@atproto/api'
 import {Trans, useLingui} from '@lingui/react/macro'
 
 import {shareImageModal} from '#/lib/media/manip'
@@ -13,6 +12,7 @@ import {MediaInsetBorder} from '#/components/MediaInsetBorder'
 import * as PeekMenu from '#/components/PeekMenu'
 import {Text} from '#/components/Typography'
 import {PlayButtonIcon} from '#/components/video/PlayButtonIcon'
+import {app} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 
 /**
@@ -23,7 +23,7 @@ export function Embed({
   style,
   peekable = false,
 }: {
-  embed: AppBskyFeedDefs.PostView['embed']
+  embed: app.bsky.feed.defs.PostView['embed']
   style?: StyleProp<ViewStyle>
   peekable?: boolean
 }) {
@@ -75,7 +75,12 @@ export function Embed({
     // ignore any unknowns
     e.media.view !== null
   ) {
-    return <Embed embed={e.media.view} style={style} />
+    return (
+      <Embed
+        embed={e.media.view as app.bsky.feed.defs.PostView['embed']}
+        style={style}
+      />
+    )
   }
 
   return null
@@ -168,7 +173,7 @@ export function VideoItem({
   )
 }
 
-function PeekableImageItem({image}: {image: AppBskyEmbedImages.ViewImage}) {
+function PeekableImageItem({image}: {image: app.bsky.embed.images.ViewImage}) {
   const {t: l} = useLingui()
   const saveImage = useSaveImageToMediaLibrary()
 

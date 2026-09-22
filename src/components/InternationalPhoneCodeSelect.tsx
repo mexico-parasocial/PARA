@@ -1,5 +1,5 @@
 import {Fragment, useMemo} from 'react'
-import {type ImageSourcePropType, Text as RNText} from 'react-native'
+import {Text as RNText} from 'react-native'
 import {Image} from 'expo-image'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -103,13 +103,7 @@ export function InternationalPhoneCodeSelect({
   )
 }
 
-function Flag({
-  unicodeFlag,
-  svgFlag,
-}: {
-  unicodeFlag: string
-  svgFlag: ImageSourcePropType
-}) {
+function Flag({unicodeFlag, svgFlag}: {unicodeFlag: string; svgFlag: number}) {
   if (IS_WEB) {
     return (
       <Image

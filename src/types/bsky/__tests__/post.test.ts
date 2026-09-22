@@ -1,8 +1,3 @@
-import {
-  type $Typed as $TypedApi,
-  type AppBskyEmbedRecord,
-  type AppBskyFeedDefs,
-} from '@atproto/api'
 import {type $Typed} from '@atproto/lex'
 
 import {type app} from '#/lexicons'
@@ -109,10 +104,9 @@ const starterPackViewBasic = {
 const asEmbed = (v: unknown) => v as app.bsky.feed.defs.PostView['embed']
 
 /*
- * Type-level assertions for the dual-world widening. These are compile-time
- * only: each widened arm must accept both the `#/lexicons` view and the
- * `@atproto/api` view, and `parseEmbed` must accept a `PostView.embed` from
- * either world, because both worlds have live producers.
+ * Type-level assertions for the `#/lexicons` world. These are compile-time
+ * only: each arm must accept the `#/lexicons` view, and `parseEmbed` must
+ * accept a `PostView.embed` from the generated types.
  */
 type Assignable<From, To> = From extends To ? true : false
 type Expect<T extends true> = T
@@ -123,21 +117,9 @@ type _PostArmAcceptsNewWorld = Expect<
     EmbedType<'post'>
   >
 >
-type _PostArmAcceptsOldWorld = Expect<
-  Assignable<
-    {type: 'post'; view: $TypedApi<AppBskyEmbedRecord.ViewRecord>},
-    EmbedType<'post'>
-  >
->
 type _ParseEmbedAcceptsNewWorld = Expect<
   Assignable<
     app.bsky.feed.defs.PostView['embed'],
-    Parameters<typeof parseEmbed>[0]
-  >
->
-type _ParseEmbedAcceptsOldWorld = Expect<
-  Assignable<
-    AppBskyFeedDefs.PostView['embed'],
     Parameters<typeof parseEmbed>[0]
   >
 >
@@ -262,8 +244,8 @@ describe('types/bsky/post parseEmbedRecordView', () => {
   })
 })
 
-describe('types/bsky/post Embed dual-world types', () => {
-  it('has the compile-time dual-world assertions above satisfied', () => {
+describe('types/bsky/post Embed types', () => {
+  it('has the compile-time assertions above satisfied', () => {
     /*
      * The assertions are the `_*` types declared at module scope; a failure
      * surfaces as a typecheck error, not a test failure. This case exists so the

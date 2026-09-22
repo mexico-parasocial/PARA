@@ -103,7 +103,7 @@ describe('cleanError', () => {
   it('surfaces the authentication-required code of a lex error', () => {
     /*
      * The lex client derives `AuthenticationRequired` from a 401 with no XRPC
-     * payload, where `@atproto/api` used the spaced "Authentication Required".
+     * payload, where `the legacy SDK` used the spaced "Authentication Required".
      * Neither is special-cased in `cleanError`, so what matters is that the
      * class- and code-prefixed stringification does not reach the user.
      */

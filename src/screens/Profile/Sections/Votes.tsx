@@ -98,7 +98,7 @@ export const ProfileVotesSection = forwardRef<SectionRef, Props>(
       if (IS_IOS && isFocused && scrollElRef.current) {
         // @ts-ignore
         const nativeTag = findNodeHandle(scrollElRef.current)
-        setScrollViewTag(nativeTag)
+        setScrollViewTag(nativeTag ?? null)
       }
     }, [isFocused, scrollElRef, setScrollViewTag])
 

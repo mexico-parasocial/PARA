@@ -1,3 +1,4 @@
+import {type AtIdentifierString} from '@atproto/syntax'
 import {useMutation} from '@tanstack/react-query'
 
 import {
@@ -7,6 +8,7 @@ import {
   getCivicTreeItemTitle,
 } from '#/state/queries/collections'
 import {useAgent, useSession} from '#/state/session'
+import {com} from '#/lexicons'
 
 type SembleConnectionType =
   | 'SUPPORTS'
@@ -18,9 +20,7 @@ type SembleConnectionType =
   | 'LEADS_TO'
   | 'SUPPLEMENTS'
 
-function mapRelationKindToConnectionType(
-  kind: string,
-): SembleConnectionType {
+function mapRelationKindToConnectionType(kind: string): SembleConnectionType {
   switch (kind) {
     case 'supports':
     case 'evidence_for':
@@ -57,7 +57,11 @@ export function useExportCollectionToSembleMutation() {
   const agent = useAgent()
   const {currentAccount} = useSession()
 
-  return useMutation<SembleExportResult, Error, {collection: CivicTreeCollection}>({
+  return useMutation<
+    SembleExportResult,
+    Error,
+    {collection: CivicTreeCollection}
+  >({
     mutationFn: async ({collection}) => {
       const did = currentAccount?.did
       if (!did) throw new Error('Not authenticated')
@@ -75,23 +79,23 @@ export function useExportCollectionToSembleMutation() {
         updatedAt: now,
       }
 
-      const collectionRes = await agent.com.atproto.repo.createRecord({
-        repo: did,
-        collection: 'network.cosmik.collection',
-        record: collectionRecord,
-      })
+      const collectionRes = await agent.pdsClient.call(
+        com.atproto.repo.createRecord,
+        {
+          repo: did as AtIdentifierString,
+          collection: 'network.cosmik.collection',
+          record: collectionRecord,
+        },
+      )
 
       const collectionRef: {uri: string; cid: string} = {
-        uri: collectionRes.data.uri,
-        cid: collectionRes.data.cid,
+        uri: collectionRes.uri,
+        cid: collectionRes.cid,
       }
 
       // 2. Create cards for each item that has a URL or note
       const cardUris: string[] = []
-      const itemKeyToCardRef = new Map<
-        string,
-        {uri: string; cid: string}
-      >()
+      const itemKeyToCardRef = new Map<string, {uri: string; cid: string}>()
 
       for (const item of collection.items) {
         const itemUrl = getItemUrl(item)
@@ -130,23 +134,27 @@ export function useExportCollectionToSembleMutation() {
           }
         }
 
-        const cardRes = await agent.com.atproto.repo.createRecord({
-          repo: did,
-          collection: 'network.cosmik.card',
-          record: cardRecord,
-        })
+        const cardRes = await agent.pdsClient.call(
+          com.atproto.repo.createRecord,
+          {
+            repo: did as AtIdentifierString,
+            collection: 'network.cosmik.card',
+            record:
+              cardRecord as unknown as com.atproto.repo.createRecord.$InputBody['record'],
+          },
+        )
 
         const cardRef = {
-          uri: cardRes.data.uri,
-          cid: cardRes.data.cid,
+          uri: cardRes.uri,
+          cid: cardRes.cid,
         }
 
         itemKeyToCardRef.set(itemKey, cardRef)
         cardUris.push(cardRef.uri)
 
         // 3. Link card to collection
-        await agent.com.atproto.repo.createRecord({
-          repo: did,
+        await agent.pdsClient.call(com.atproto.repo.createRecord, {
+          repo: did as AtIdentifierString,
           collection: 'network.cosmik.collectionLink',
           record: {
             $type: 'network.cosmik.collectionLink',
@@ -178,21 +186,24 @@ export function useExportCollectionToSembleMutation() {
 
         if (!fromUrl || !toUrl) continue
 
-        const connectionRes = await agent.com.atproto.repo.createRecord({
-          repo: did,
-          collection: 'network.cosmik.connection',
-          record: {
-            $type: 'network.cosmik.connection',
-            source: fromUrl,
-            target: toUrl,
-            connectionType: mapRelationKindToConnectionType(relation.kind),
-            note: relation.note,
-            createdAt: relation.createdAt || now,
-            updatedAt: now,
+        const connectionRes = await agent.pdsClient.call(
+          com.atproto.repo.createRecord,
+          {
+            repo: did as AtIdentifierString,
+            collection: 'network.cosmik.connection',
+            record: {
+              $type: 'network.cosmik.connection',
+              source: fromUrl,
+              target: toUrl,
+              connectionType: mapRelationKindToConnectionType(relation.kind),
+              note: relation.note,
+              createdAt: relation.createdAt || now,
+              updatedAt: now,
+            },
           },
-        })
+        )
 
-        connectionUris.push(connectionRes.data.uri)
+        connectionUris.push(connectionRes.uri)
       }
 
       return {

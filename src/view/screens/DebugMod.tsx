@@ -7,12 +7,6 @@ import {
 } from 'react'
 import {View} from 'react-native'
 import {useSharedValue} from 'react-native-reanimated'
-import {
-  type AppBskyActorDefs,
-  type AppBskyFeedDefs,
-  type AppBskyFeedPost,
-  type ComAtprotoLabelDefs,
-} from '@atproto/api'
 import {type DidString} from '@atproto/syntax'
 import {
   interpretLabelValueDefinition,
@@ -61,7 +55,7 @@ import {
 import * as Layout from '#/components/Layout'
 import * as ProfileCard from '#/components/ProfileCard'
 import {H1, H3, P, Text} from '#/components/Typography'
-import {type app} from '#/lexicons'
+import {type app, type com} from '#/lexicons'
 import {ScreenHider} from '../../components/moderation/ScreenHider'
 import {NotificationFeedItem} from '../com/notifications/NotificationFeedItem'
 import {PagerHeaderProvider} from '../com/pager/PagerHeaderContext'
@@ -82,7 +76,7 @@ export const DebugModScreen = ({}: NativeStackScreenProps<
   const [target, setTarget] = useState<string[]>(['account'])
   const [visibility, setVisiblity] = useState<string[]>(['warn'])
   const [customLabelDef, setCustomLabelDef] =
-    useState<ComAtprotoLabelDefs.LabelValueDefinition>({
+    useState<com.atproto.label.defs.LabelValueDefinition>({
       identifier: 'custom',
       blurs: 'content',
       severity: 'alert',
@@ -641,8 +635,8 @@ function CustomLabelForm({
   def,
   setDef,
 }: {
-  def: ComAtprotoLabelDefs.LabelValueDefinition
-  setDef: Dispatch<SetStateAction<ComAtprotoLabelDefs.LabelValueDefinition>>
+  def: com.atproto.label.defs.LabelValueDefinition
+  setDef: Dispatch<SetStateAction<com.atproto.label.defs.LabelValueDefinition>>
 }) {
   const t = useTheme()
   return (
@@ -840,7 +834,7 @@ function MockPostFeedItem({
   post,
   moderation,
 }: {
-  post: AppBskyFeedDefs.PostView
+  post: app.bsky.feed.defs.PostView
   moderation: ModerationDecision
 }) {
   const t = useTheme()
@@ -854,7 +848,7 @@ function MockPostFeedItem({
   return (
     <PostFeedItem
       post={post}
-      record={post.record as AppBskyFeedPost.Record}
+      record={post.record as app.bsky.feed.post.Main}
       moderation={moderation}
       parentAuthor={undefined}
       showReplyTo={false}
@@ -871,7 +865,7 @@ function MockPostThreadItem({
   moderationOpts,
   isReply,
 }: {
-  post: AppBskyFeedDefs.PostView
+  post: app.bsky.feed.defs.PostView
   moderationOpts: ModerationOpts
   isReply?: boolean
 }) {
@@ -926,7 +920,7 @@ function MockAccountCard({
   profile,
   moderation,
 }: {
-  profile: AppBskyActorDefs.ProfileViewBasic
+  profile: app.bsky.actor.defs.ProfileViewBasic
   moderation: ModerationDecision
 }) {
   const t = useTheme()
@@ -950,7 +944,7 @@ function MockAccountScreen({
   moderation,
   moderationOpts,
 }: {
-  profile: AppBskyActorDefs.ProfileViewBasic
+  profile: app.bsky.actor.defs.ProfileViewBasic
   moderation: ModerationDecision
   moderationOpts: ModerationOpts
 }) {

@@ -8,14 +8,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import {
-  type AppBskyActorDefs,
-  type AppBskyFeedDefs,
-  AppBskyFeedPost,
-  type AppBskyGraphDefs,
-  AppBskyGraphFollow,
-  AppBskyGraphStarterpack,
-} from '@atproto/api'
 import {TID} from '@atproto/common-web'
 import {AtUri, type DidString} from '@atproto/syntax'
 import {
@@ -75,13 +67,13 @@ import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
 import {IS_WEB} from '#/env'
-import {chat} from '#/lexicons'
+import {app, chat} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 
 const MAX_AUTHORS = 5
 
 interface Author {
-  profile: AppBskyActorDefs.ProfileView
+  profile: app.bsky.actor.defs.ProfileView
   href: string
   moderation: ModerationDecision
 }
@@ -194,10 +186,7 @@ let NotificationFeedItem = ({
     if (item.type !== 'follow') return false
     if (
       item.notification.author.viewer?.following &&
-      bsky.dangerousIsType<AppBskyGraphFollow.Record>(
-        item.notification.record,
-        AppBskyGraphFollow.isRecord,
-      )
+      bsky.isType(app.bsky.graph.follow, item.notification.record)
     ) {
       let followingTimestamp
       try {
@@ -733,7 +722,7 @@ export {NotificationFeedItem}
 function FollowedViaStarterPack({
   starterPack,
 }: {
-  starterPack: AppBskyGraphDefs.StarterPackViewBasic
+  starterPack: app.bsky.graph.defs.StarterPackViewBasic
 }) {
   const t = useTheme()
   const link = useStarterPackLink({view: starterPack})
@@ -767,12 +756,9 @@ function FollowedViaStarterPack({
 }
 
 function getStarterPackName(
-  starterPack: AppBskyGraphDefs.StarterPackViewBasic,
+  starterPack: app.bsky.graph.defs.StarterPackViewBasic,
 ) {
-  return bsky.dangerousIsType<AppBskyGraphStarterpack.Record>(
-    starterPack.record,
-    AppBskyGraphStarterpack.isRecord,
-  )
+  return bsky.isType(app.bsky.graph.starterpack, starterPack.record)
     ? starterPack.record.name
     : undefined
 }
@@ -806,7 +792,11 @@ function ExpandListPressable({
   }
 }
 
-function FollowBackButton({profile}: {profile: AppBskyActorDefs.ProfileView}) {
+function FollowBackButton({
+  profile,
+}: {
+  profile: app.bsky.actor.defs.ProfileView
+}) {
   const {t: l} = useLingui()
   const {currentAccount, hasSession} = useSession()
   const profileShadow = useProfileShadow(profile)
@@ -912,7 +902,7 @@ function FollowBackButton({profile}: {profile: AppBskyActorDefs.ProfileView}) {
   )
 }
 
-function SayHelloBtn({profile}: {profile: AppBskyActorDefs.ProfileView}) {
+function SayHelloBtn({profile}: {profile: app.bsky.actor.defs.ProfileView}) {
   const {t: l} = useLingui()
   const client = useChatClient()
   const {currentAccount} = useSession()
@@ -1145,15 +1135,9 @@ function ExpandedAuthorProfileCard({
   )
 }
 
-function AdditionalPostText({post}: {post?: AppBskyFeedDefs.PostView}) {
+function AdditionalPostText({post}: {post?: app.bsky.feed.defs.PostView}) {
   const t = useTheme()
-  if (
-    post &&
-    bsky.dangerousIsType<AppBskyFeedPost.Record>(
-      post?.record,
-      AppBskyFeedPost.isRecord,
-    )
-  ) {
+  if (post && bsky.isType(app.bsky.feed.post, post?.record)) {
     const text = post.record.text
 
     return (

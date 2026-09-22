@@ -11,6 +11,7 @@ import {
   useState,
 } from 'react'
 import {
+  type ListRenderItem,
   type NativeScrollEvent,
   type NativeSyntheticEvent,
   Pressable,
@@ -44,10 +45,7 @@ export type ViewSelectorProps<T> = {
   renderHeader?: () => JSX.Element
   renderItem: (item: T) => JSX.Element
   ListFooterComponent?:
-    | ComponentType<unknown>
-    | ReactElement<unknown>
-    | null
-    | undefined
+    ComponentType<unknown> | ReactElement<unknown> | null | undefined
   onSelectView?: (viewIndex: number) => void
   onScroll?: (event: NativeSyntheticEvent<NativeScrollEvent>) => void
   onRefresh?: () => void
@@ -124,12 +122,12 @@ export const ViewSelector = forwardRef(function ViewSelectorImpl<T>(
   const data = useMemo(() => [HEADER_ITEM, SELECTOR_ITEM, ...items], [items])
   return (
     <FlatList_INTERNAL
-      // @ts-expect-error FlatList_INTERNAL ref type is wrong -sfn
+      // FlatList_INTERNAL ref type is wrong -sfn
       ref={flatListRef}
       data={data}
-      keyExtractor={keyExtractor}
-      renderItem={renderItemInternal}
-      ListFooterComponent={ListFooterComponent}
+      keyExtractor={keyExtractor as (item: unknown, index: number) => string}
+      renderItem={renderItemInternal as unknown as ListRenderItem<unknown>}
+      ListFooterComponent={ListFooterComponent ?? undefined}
       // NOTE sticky header disabled on android due to major performance issues -prf
       stickyHeaderIndices={IS_ANDROID ? undefined : STICKY_HEADER_INDICES}
       onScroll={onScroll}

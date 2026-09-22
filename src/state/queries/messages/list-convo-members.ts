@@ -1,5 +1,4 @@
 import {useEffect} from 'react'
-import {type ChatBskyActorDefs, ChatBskyConvoDefs} from '@atproto/api'
 import {type QueryClient, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {useMessagesEventBus} from '#/state/messages/events'
@@ -21,7 +20,7 @@ export function useListConvoMembersQuery({
   placeholderData,
 }: {
   convoId: string
-  placeholderData?: ChatBskyActorDefs.ProfileViewBasic[]
+  placeholderData?: chat.bsky.actor.defs.ProfileViewBasic[]
 }) {
   const client = useChatClient()
   const queryClient = useQueryClient()
@@ -34,10 +33,10 @@ export function useListConvoMembersQuery({
 
         function mutateList(
           fn: (
-            update: ChatBskyActorDefs.ProfileViewBasic[],
-          ) => ChatBskyActorDefs.ProfileViewBasic[],
+            update: chat.bsky.actor.defs.ProfileViewBasic[],
+          ) => chat.bsky.actor.defs.ProfileViewBasic[],
         ) {
-          queryClient.setQueryData<ChatBskyActorDefs.ProfileViewBasic[]>(
+          queryClient.setQueryData<chat.bsky.actor.defs.ProfileViewBasic[]>(
             listConvoMembersQueryKey(convoId),
             old => {
               if (!old) return // query doesn't exist yet, skip
@@ -47,13 +46,10 @@ export function useListConvoMembersQuery({
         }
 
         for (const log of ev.logs) {
-          if (ChatBskyConvoDefs.isLogAddMember(log)) {
+          if (bsky.isType(chat.bsky.convo.defs.logAddMember, log)) {
             const data = log.message.data
             if (
-              bsky.dangerousIsType<ChatBskyConvoDefs.SystemMessageDataAddMember>(
-                data,
-                ChatBskyConvoDefs.isSystemMessageDataAddMember,
-              )
+              bsky.isType(chat.bsky.convo.defs.systemMessageDataAddMember, data)
             ) {
               const newMember = log.relatedProfiles.find(
                 r => r.did === data.member.did,
@@ -66,22 +62,22 @@ export function useListConvoMembersQuery({
                 )
               }
             }
-          } else if (ChatBskyConvoDefs.isLogRemoveMember(log)) {
+          } else if (bsky.isType(chat.bsky.convo.defs.logRemoveMember, log)) {
             const data = log.message.data
             if (
-              bsky.dangerousIsType<ChatBskyConvoDefs.SystemMessageDataRemoveMember>(
+              bsky.isType(
+                chat.bsky.convo.defs.systemMessageDataRemoveMember,
                 data,
-                ChatBskyConvoDefs.isSystemMessageDataRemoveMember,
               )
             ) {
               mutateList(list => list.filter(m => m.did !== data.member.did))
             }
-          } else if (ChatBskyConvoDefs.isLogMemberJoin(log)) {
+          } else if (bsky.isType(chat.bsky.convo.defs.logMemberJoin, log)) {
             const data = log.message.data
             if (
-              bsky.dangerousIsType<ChatBskyConvoDefs.SystemMessageDataMemberJoin>(
+              bsky.isType(
+                chat.bsky.convo.defs.systemMessageDataMemberJoin,
                 data,
-                ChatBskyConvoDefs.isSystemMessageDataMemberJoin,
               )
             ) {
               const newMember = log.relatedProfiles.find(
@@ -95,12 +91,12 @@ export function useListConvoMembersQuery({
                 )
               }
             }
-          } else if (ChatBskyConvoDefs.isLogMemberLeave(log)) {
+          } else if (bsky.isType(chat.bsky.convo.defs.logMemberLeave, log)) {
             const data = log.message.data
             if (
-              bsky.dangerousIsType<ChatBskyConvoDefs.SystemMessageDataMemberLeave>(
+              bsky.isType(
+                chat.bsky.convo.defs.systemMessageDataMemberLeave,
                 data,
-                ChatBskyConvoDefs.isSystemMessageDataMemberLeave,
               )
             ) {
               mutateList(list => list.filter(m => m.did !== data.member.did))
@@ -123,7 +119,7 @@ export function useListConvoMembersQuery({
        * `members` with the exported profile type also keeps the hook's result
        * type unchanged for consumers.
        */
-      const members: ChatBskyActorDefs.ProfileViewBasic[] = []
+      const members: chat.bsky.actor.defs.ProfileViewBasic[] = []
       let cursor: string | undefined
 
       do {
@@ -146,9 +142,9 @@ export function useListConvoMembersQuery({
 export function* findAllProfilesInQueryData(
   queryClient: QueryClient,
   did: string,
-): Generator<ChatBskyActorDefs.ProfileViewBasic, void> {
+): Generator<chat.bsky.actor.defs.ProfileViewBasic, void> {
   const queryDatas = queryClient.getQueriesData<
-    ChatBskyActorDefs.ProfileViewBasic[]
+    chat.bsky.actor.defs.ProfileViewBasic[]
   >({
     queryKey: [RQKEY_ROOT],
   })

@@ -1,5 +1,4 @@
 import {type Insets, View} from 'react-native'
-import {type ComAtprotoLabelDefs} from '@atproto/api'
 import {useLingui} from '@lingui/react/macro'
 
 import {atoms as a, useTheme} from '#/alf'
@@ -7,11 +6,12 @@ import {BotAccountAlert} from '#/components/BotAccountAlert'
 import {Button} from '#/components/Button'
 import {useDialogControl} from '#/components/Dialog'
 import {Bot_Filled as RobotIcon} from '#/components/icons/Bot'
+import {com} from '#/lexicons'
 import type * as bsky from '#/types/bsky'
 
 export function isBotAccount(profile: {
   did: string
-  labels?: ComAtprotoLabelDefs.Label[]
+  labels?: com.atproto.label.defs.Label[]
 }): boolean {
   return (
     profile.labels?.some(l => l.val === 'bot' && l.src === profile.did) ?? false

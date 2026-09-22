@@ -1,7 +1,6 @@
 import {useRef} from 'react'
 import {type ListRenderItemInfo} from 'react-native'
 import {View} from 'react-native'
-import {type AppBskyActorDefs, type AppBskyFeedDefs} from '@atproto/api'
 import {type ModerationOpts} from '@bsky/sdk/moderation'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -22,9 +21,10 @@ import {
 } from '#/components/StarterPack/Wizard/WizardListCard'
 import {Text} from '#/components/Typography'
 import {IS_WEB} from '#/env'
+import {app} from '#/lexicons'
 
 function keyExtractor(
-  item: AppBskyActorDefs.ProfileViewBasic | AppBskyFeedDefs.GeneratorView,
+  item: app.bsky.actor.defs.ProfileViewBasic | app.bsky.feed.defs.GeneratorView,
   index: number,
 ) {
   return `${item.did}-${index}`
@@ -41,7 +41,7 @@ export function WizardEditListDialog({
   state: WizardState
   dispatch: (action: WizardAction) => void
   moderationOpts: ModerationOpts
-  profile: AppBskyActorDefs.ProfileViewDetailed
+  profile: app.bsky.actor.defs.ProfileViewDetailed
 }) {
   const {_} = useLingui()
   const t = useTheme()
@@ -58,11 +58,11 @@ export function WizardEditListDialog({
   const renderItem = ({
     item,
   }: ListRenderItemInfo<
-    AppBskyActorDefs.ProfileViewDetailed | AppBskyFeedDefs.GeneratorView
+    app.bsky.actor.defs.ProfileViewDetailed | app.bsky.feed.defs.GeneratorView
   >) =>
     state.currentStep === 'Profiles' ? (
       <WizardProfileCard
-        profile={item as AppBskyActorDefs.ProfileViewDetailed}
+        profile={item as app.bsky.actor.defs.ProfileViewDetailed}
         btnType="remove"
         state={state}
         dispatch={dispatch}
@@ -70,7 +70,7 @@ export function WizardEditListDialog({
       />
     ) : (
       <WizardFeedCard
-        generator={item as AppBskyFeedDefs.GeneratorView}
+        generator={item as app.bsky.feed.defs.GeneratorView}
         btnType="remove"
         state={state}
         dispatch={dispatch}

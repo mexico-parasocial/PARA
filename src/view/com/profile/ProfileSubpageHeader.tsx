@@ -7,7 +7,6 @@ import Animated, {
   runOnUI,
   useAnimatedRef,
 } from 'react-native-reanimated'
-import {type AppBskyGraphDefs} from '@atproto/api'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -26,6 +25,7 @@ import {Text} from '#/view/com/util/text/Text'
 import {UserAvatar, type UserAvatarType} from '#/view/com/util/UserAvatar'
 import {StarterPackMultiPathLarge as StarterPackIcon} from '#/components/icons/StarterPack'
 import * as Layout from '#/components/Layout'
+import {app} from '#/lexicons'
 
 export function ProfileSubpageHeader({
   isLoading,
@@ -43,7 +43,7 @@ export function ProfileSubpageHeader({
   title: string | undefined
   avatar: string | undefined
   isOwner: boolean | undefined
-  purpose: AppBskyGraphDefs.ListPurpose | undefined
+  purpose: app.bsky.graph.defs.ListPurpose | undefined
   creator:
     | {
         did: string

@@ -152,8 +152,7 @@ let ListMaybePlaceholder = ({
   sideBorders?: boolean
   topBorder?: boolean
   emptyStateIcon?:
-    | React.ComponentType<Record<string, unknown>>
-    | React.ReactElement
+    React.ComponentType<Record<string, unknown>> | React.ReactElement
   emptyStateButton?: EmptyStateButtonProps
   useEmptyState?: boolean
 }): React.ReactNode => {
@@ -187,7 +186,6 @@ let ListMaybePlaceholder = ({
         message={errorMessage ?? _(msg`Something went wrong!`)}
         onRetry={onRetry}
         onGoBack={onGoBack}
-        sideBorders={sideBorders}
         hideBackButton={hideBackButton}
       />
     )
@@ -228,7 +226,6 @@ let ListMaybePlaceholder = ({
         onRetry={onRetry}
         onGoBack={onGoBack}
         hideBackButton={hideBackButton}
-        sideBorders={sideBorders}
       />
     )
   }

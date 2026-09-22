@@ -57,6 +57,16 @@ export type Device = {
    */
   mergedGeolocation?: Geolocation
 
+  /**
+   * Marker written before a custom OTA update reload so the previous bundle
+   * can detect a failed-launch fallback relaunch. See `useOTAUpdateRecovery`.
+   */
+  pendingOTAUpdate?: {
+    attemptedAt: number
+    channel: string
+    updateId: string
+  }
+
   trendingBetaEnabled: boolean
   devMode: boolean
   demoMode: boolean

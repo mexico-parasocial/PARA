@@ -1,8 +1,10 @@
+import {type AtUriString, type DidString} from '@atproto/syntax'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {issueParaVoteProof} from '#/lib/api/vote-proof'
 import {STALE} from '#/state/queries'
 import {useAgent} from '#/state/session'
+import {com} from '#/lexicons'
 
 const RQKEY_ROOT = 'qvl'
 
@@ -171,9 +173,10 @@ export function useQvlVotesQuery(proposal: string) {
     staleTime: STALE.SECONDS.THIRTY,
     queryKey: qvlVotesQueryKey(proposal),
     queryFn: async () => {
-      const res = await agent.call('com.para.community.listVotes', {proposal})
-      if (!res.success) throw new Error('Failed to load votes')
-      return res.data.votes as QvlVote[]
+      const res = await agent.appviewClient.call(com.para.community.listVotes, {
+        proposal: proposal as AtUriString,
+      })
+      return res.votes
     },
   })
 }
@@ -184,11 +187,13 @@ export function useQvlIntensitiesQuery(proposal: string) {
     staleTime: STALE.SECONDS.THIRTY,
     queryKey: qvlIntensitiesQueryKey(proposal),
     queryFn: async () => {
-      const res = await agent.call('com.para.community.listIntensities', {
-        proposal,
-      })
-      if (!res.success) throw new Error('Failed to load intensities')
-      return res.data.intensities as QvlIntensity[]
+      const res = await agent.appviewClient.call(
+        com.para.community.listIntensities,
+        {
+          proposal: proposal as AtUriString,
+        },
+      )
+      return res.intensities as QvlIntensity[]
     },
   })
 }
@@ -201,12 +206,14 @@ export function useQvlDelegationsQuery(
     staleTime: STALE.SECONDS.THIRTY,
     queryKey: qvlDelegationsQueryKey(opts.delegator, opts.delegate),
     queryFn: async () => {
-      const res = await agent.call('com.para.community.listDelegations', {
-        delegator: opts.delegator,
-        delegate: opts.delegate,
-      })
-      if (!res.success) throw new Error('Failed to load delegations')
-      return res.data.delegations as QvlDelegation[]
+      const res = await agent.appviewClient.call(
+        com.para.community.listDelegations,
+        {
+          delegator: opts.delegator as DidString | undefined,
+          delegate: opts.delegate as DidString | undefined,
+        },
+      )
+      return res.delegations
     },
   })
 }
@@ -217,11 +224,13 @@ export function useQvlDeliberationsQuery(proposal: string) {
     staleTime: STALE.SECONDS.THIRTY,
     queryKey: qvlDeliberationsQueryKey(proposal),
     queryFn: async () => {
-      const res = await agent.call('com.para.community.listDeliberations', {
-        proposal,
-      })
-      if (!res.success) throw new Error('Failed to load deliberations')
-      return res.data.statements as QvlDeliberation[]
+      const res = await agent.appviewClient.call(
+        com.para.community.listDeliberations,
+        {
+          proposal: proposal as AtUriString,
+        },
+      )
+      return res.statements as QvlDeliberation[]
     },
   })
 }
@@ -232,15 +241,17 @@ export function useQvlTallySimulationQuery(proposal: string) {
     staleTime: STALE.SECONDS.THIRTY,
     queryKey: qvlTallySimulationQueryKey(proposal),
     queryFn: async () => {
-      const res = await agent.call('com.para.community.getTallySimulation', {
-        proposal,
-      })
-      if (!res.success) throw new Error('Failed to load tally simulation')
+      const res = await agent.appviewClient.call(
+        com.para.community.getTallySimulation,
+        {
+          proposal: proposal as AtUriString,
+        },
+      )
       return {
-        flat: res.data.flat as TallyResult,
-        sqrtN: res.data.sqrtN as TallyResult,
-        correlation: res.data.correlation as TallyResult,
-        metrics: res.data.metrics as TallyMetrics,
+        flat: res.flat as TallyResult,
+        sqrtN: res.sqrtN as TallyResult,
+        correlation: res.correlation as TallyResult,
+        metrics: res.metrics,
       }
     },
   })
@@ -252,11 +263,13 @@ export function useQvlAuditTrailQuery(proposal: string) {
     staleTime: STALE.SECONDS.THIRTY,
     queryKey: qvlAuditTrailQueryKey(proposal),
     queryFn: async () => {
-      const res = await agent.call('com.para.community.getAuditTrail', {
-        proposal,
-      })
-      if (!res.success) throw new Error('Failed to load audit trail')
-      return res.data as AuditTrail
+      const res = await agent.appviewClient.call(
+        com.para.community.getAuditTrail,
+        {
+          proposal: proposal as AtUriString,
+        },
+      )
+      return res as AuditTrail
     },
   })
 }
@@ -282,7 +295,7 @@ export function useCastVoteMutation() {
         subjectUri: proposal,
         subjectType: 'community_proposal',
       })
-      return agent.com.atproto.repo.createRecord({
+      return agent.pdsClient.call(com.atproto.repo.createRecord, {
         repo: agent.session.did,
         collection: 'com.para.community.vote',
         record: {
@@ -327,7 +340,7 @@ export function useCastIntensityMutation() {
         subjectUri: proposal,
         subjectType: 'community_proposal',
       })
-      return agent.com.atproto.repo.createRecord({
+      return agent.pdsClient.call(com.atproto.repo.createRecord, {
         repo: agent.session.did,
         collection: 'com.para.community.intensity',
         record: {
@@ -376,7 +389,7 @@ export function useCreateDelegationMutation() {
       }
     }) => {
       if (!agent.session) throw new Error('Not logged in')
-      return agent.com.atproto.repo.createRecord({
+      return agent.pdsClient.call(com.atproto.repo.createRecord, {
         repo: agent.session.did,
         collection: 'com.para.community.delegation',
         record: {
@@ -413,7 +426,7 @@ export function useCreateDeliberationMutation() {
       stance: string
     }) => {
       if (!agent.session) throw new Error('Not logged in')
-      return agent.com.atproto.repo.createRecord({
+      return agent.pdsClient.call(com.atproto.repo.createRecord, {
         repo: agent.session.did,
         collection: 'com.para.community.deliberation',
         record: {
@@ -452,7 +465,7 @@ export function useCastDeliberationVoteMutation() {
         subjectUri: deliberation,
         subjectType: 'community_deliberation',
       })
-      return agent.com.atproto.repo.createRecord({
+      return agent.pdsClient.call(com.atproto.repo.createRecord, {
         repo: agent.session.did,
         collection: 'com.para.community.deliberationVote',
         record: {

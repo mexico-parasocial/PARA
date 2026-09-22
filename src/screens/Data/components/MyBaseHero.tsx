@@ -1,5 +1,4 @@
 import {StyleSheet, TouchableOpacity, View} from 'react-native'
-import {type AppBskyActorDefs} from '@atproto/api'
 import {useLingui} from '@lingui/react'
 
 import {type PoliticalAffiliation} from '#/lib/political-affiliations'
@@ -13,6 +12,7 @@ import {ChainLink_Stroke2_Corner0_Rounded as ChainLinkIcon} from '#/components/i
 import {CommunityIcon_Stroke as CommunityIcon} from '#/components/icons/Community'
 import {SettingsGear2_Stroke2_Corner0_Rounded as SettingsIcon} from '#/components/icons/SettingsGear2'
 import * as Layout from '#/components/Layout'
+import {app} from '#/lexicons'
 import {type CivicWeight} from '../mybase-metrics'
 
 export function MyBaseHero({
@@ -25,7 +25,7 @@ export function MyBaseHero({
   onPressBack,
   gtMobile,
 }: {
-  profile: AppBskyActorDefs.ProfileViewDetailed
+  profile: app.bsky.actor.defs.ProfileViewDetailed
   civicWeight: CivicWeight
   affiliations: PoliticalAffiliation[]
   onPressSettings: () => void
@@ -111,8 +111,7 @@ export function MyBaseHero({
                 {profileHandleText}
               </Text>
 
-              <View
-                style={[styles.affiliationBadge, t.atoms.bg_contrast_25]}>
+              <View style={[styles.affiliationBadge, t.atoms.bg_contrast_25]}>
                 <Text
                   style={[
                     styles.affiliationText,

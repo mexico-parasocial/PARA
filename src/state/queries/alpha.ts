@@ -2,6 +2,7 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {STALE} from '#/state/queries'
 import {useAgent} from '#/state/session'
+import {com} from '#/lexicons'
 
 const RQKEY_ROOT = 'alpha'
 
@@ -45,8 +46,8 @@ export function useAlphaAccessQuery() {
     staleTime: STALE.SECONDS.THIRTY,
     queryKey: alphaAccessQueryKey(),
     queryFn: async () => {
-      const res = await agent.call('com.para.alpha.getAccess', {})
-      return res.data as AlphaAccessResponse
+      const res = await agent.appviewClient.call(com.para.alpha.getAccess, {})
+      return res
     },
   })
 }
@@ -55,17 +56,23 @@ export function useRequestAlphaAccessMutation() {
   const agent = useAgent()
   const queryClient = useQueryClient()
 
-  return useMutation<AlphaRequestAccessResponse, Error, AlphaRequestAccessInput>({
+  return useMutation<
+    AlphaRequestAccessResponse,
+    Error,
+    AlphaRequestAccessInput
+  >({
     mutationFn: async input => {
-      const res = await agent.call('com.para.alpha.requestAccess', {
+      const res = await agent.appviewClient.call(com.para.alpha.requestAccess, {
         state: input.state,
         inviteCode: input.inviteCode,
       })
-      return res.data as AlphaRequestAccessResponse
+      return res as AlphaRequestAccessResponse
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({queryKey: alphaAccessQueryKey()})
-      void queryClient.invalidateQueries({queryKey: alphaRolloutStatusQueryKey()})
+      void queryClient.invalidateQueries({
+        queryKey: alphaRolloutStatusQueryKey(),
+      })
     },
   })
 }
@@ -77,8 +84,11 @@ export function useAlphaRolloutStatusQuery() {
     staleTime: STALE.SECONDS.THIRTY,
     queryKey: alphaRolloutStatusQueryKey(),
     queryFn: async () => {
-      const res = await agent.call('com.para.alpha.getRolloutStatus', {})
-      return res.data as AlphaRolloutStatusResponse
+      const res = await agent.appviewClient.call(
+        com.para.alpha.getRolloutStatus,
+        {},
+      )
+      return res
     },
   })
 }

@@ -269,6 +269,7 @@ export function useListMetadataMutation() {
 
       // wait for the appview to update
       await whenAppViewReady(appviewClient, res.uri, v => {
+        if (!v) return false
         const list = v.list
         return (
           list.name === record.name && list.description === record.description
@@ -339,7 +340,7 @@ export function useListDeleteMutation() {
       // apply in chunks
       for (const writesChunk of chunk(writes, 10)) {
         await pdsClient.call(com.atproto.repo.applyWrites, {
-          repo: currentAccount.did,
+          repo: currentAccount.did as AtIdentifierString,
           writes: writesChunk,
         })
       }
@@ -416,7 +417,10 @@ export function useListBlockMutation() {
 async function whenAppViewReady(
   client: Client,
   uri: string,
-  fn: (res: app.bsky.graph.getList.$OutputBody) => boolean,
+  fn: (
+    res: app.bsky.graph.getList.$OutputBody | undefined,
+    err?: unknown,
+  ) => boolean,
 ) {
   await until(
     5, // 5 tries

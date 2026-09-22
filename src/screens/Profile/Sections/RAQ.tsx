@@ -1,5 +1,5 @@
 import {forwardRef, useEffect, useImperativeHandle, useMemo} from 'react'
-import {findNodeHandle, type ListRenderItem,View} from 'react-native'
+import {findNodeHandle, type ListRenderItem, View} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 
@@ -70,7 +70,7 @@ export const ProfileRAQSection = forwardRef<SectionRef, Props>(
       if (IS_IOS && isFocused && scrollElRef.current) {
         // @ts-ignore
         const nativeTag = findNodeHandle(scrollElRef.current)
-        setScrollViewTag(nativeTag)
+        setScrollViewTag(nativeTag ?? null)
       }
     }, [isFocused, scrollElRef, setScrollViewTag])
 

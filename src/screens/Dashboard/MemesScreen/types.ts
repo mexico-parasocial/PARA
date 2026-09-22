@@ -1,13 +1,12 @@
-import {type AppBskyFeedDefs} from '@atproto/api'
-
 import {type Meme} from '#/lib/mock-data/types'
+import {app} from '#/lexicons'
 
 export type Mode = 'Memes'
 export type ViewStyleMode = 'board' | 'deck'
 
 export interface MemeMediaItem extends Meme {
   thumbUri?: string
-  post?: AppBskyFeedDefs.PostView
+  post?: app.bsky.feed.defs.PostView
   meta?: {
     uri?: string
     postType?: 'policy' | 'matter' | 'meme'

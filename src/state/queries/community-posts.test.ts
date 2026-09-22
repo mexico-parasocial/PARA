@@ -1,23 +1,26 @@
-import {type AppBskyActorDefs} from '@atproto/api'
+import {type Client} from '@atproto/lex'
 
 import {
   type CommunityPostHydrationAgent,
   hydrateCommunityPosts,
 } from '#/lib/community-posts'
+import {app} from '#/lexicons'
 
 describe('community posts query helpers', () => {
   it('hydrates PARA community posts into PostView objects', async () => {
-    const profileCache = new Map<string, AppBskyActorDefs.ProfileViewDetailed>()
+    const profileCache = new Map<
+      string,
+      app.bsky.actor.defs.ProfileViewDetailed
+    >()
+    const call = jest.fn().mockResolvedValue({
+      did: 'did:plc:alice',
+      handle: 'alice.test',
+      displayName: 'Alice',
+      labels: [],
+    })
     const agent = {
-      getProfile: jest.fn().mockResolvedValue({
-        data: {
-          did: 'did:plc:alice',
-          handle: 'alice.test',
-          displayName: 'Alice',
-          labels: [],
-        },
-      }),
-    } satisfies CommunityPostHydrationAgent
+      appviewClient: {call},
+    } as unknown as CommunityPostHydrationAgent
 
     const posts = await hydrateCommunityPosts({
       agent,
@@ -35,7 +38,9 @@ describe('community posts query helpers', () => {
       ],
     })
 
-    expect(agent.getProfile).toHaveBeenCalledWith({actor: 'did:plc:alice'})
+    expect(call).toHaveBeenCalledWith(app.bsky.actor.getProfile, {
+      actor: 'did:plc:alice',
+    })
     expect(posts[0]).toMatchObject({
       uri: 'at://did:plc:alice/com.para.post/1',
       author: {
@@ -51,7 +56,10 @@ describe('community posts query helpers', () => {
   })
 
   it('reuses cached author profiles', async () => {
-    const profileCache = new Map<string, AppBskyActorDefs.ProfileViewDetailed>([
+    const profileCache = new Map<
+      string,
+      app.bsky.actor.defs.ProfileViewDetailed
+    >([
       [
         'did:plc:alice',
         {
@@ -62,9 +70,10 @@ describe('community posts query helpers', () => {
         },
       ],
     ])
-    const agent: CommunityPostHydrationAgent & {getProfile: jest.Mock} = {
-      getProfile: jest.fn(),
-    }
+    const call = jest.fn()
+    const agent = {
+      appviewClient: {call},
+    } as unknown as CommunityPostHydrationAgent & {appviewClient: Client}
 
     const posts = await hydrateCommunityPosts({
       agent,
@@ -80,7 +89,7 @@ describe('community posts query helpers', () => {
       ],
     })
 
-    expect(agent.getProfile).not.toHaveBeenCalled()
+    expect(call).not.toHaveBeenCalled()
     expect(posts[0].author.handle).toBe('cached.test')
   })
 })

@@ -1,5 +1,4 @@
-import {type AppBskyActorDefs} from '@atproto/api'
-import {AtUri} from '@atproto/syntax'
+import {AtUri, type AtUriString} from '@atproto/syntax'
 
 import {
   hydrateParaPostView,
@@ -7,6 +6,7 @@ import {
   type ParaPostView,
 } from '#/lib/api/feed/para'
 import {type UsePostThreadQueryResult} from '#/state/queries/usePostThread/types'
+import {app} from '#/lexicons'
 
 export function isParaPostUri(uri: string) {
   try {
@@ -30,7 +30,7 @@ export function getParaThreadAuthors(data: unknown) {
 
 export function adaptParaPostThread(
   data: unknown,
-  profiles = new Map<string, AppBskyActorDefs.ProfileViewDetailed>(),
+  profiles = new Map<string, app.bsky.actor.defs.ProfileViewDetailed>(),
 ): UsePostThreadQueryResult {
   const thread = readParaThreadResponse(data)
   if (!thread?.post) {
@@ -86,20 +86,21 @@ function readParaThreadResponse(value: unknown):
 function toThreadItem(
   paraPost: ParaPostView,
   depth: number,
-  profiles: Map<string, AppBskyActorDefs.ProfileViewDetailed>,
+  profiles: Map<string, app.bsky.actor.defs.ProfileViewDetailed>,
 ): UsePostThreadQueryResult['thread'][number] {
   const hydrated = hydrateParaPostView(
     paraPost,
-    profiles.get(paraPost.author) ?? {
-      did: paraPost.author,
-      handle: paraPost.author,
-      displayName: paraPost.author,
-      labels: [],
-    },
+    profiles.get(paraPost.author) ??
+      ({
+        did: paraPost.author,
+        handle: paraPost.author,
+        displayName: paraPost.author,
+        labels: [],
+      } as app.bsky.actor.defs.ProfileViewDetailed),
   ).post
 
   return {
-    uri: paraPost.uri,
+    uri: paraPost.uri as AtUriString,
     depth,
     value: {
       $type: 'app.bsky.unspecced.defs#threadItemPost',

@@ -1,5 +1,4 @@
 import {useRef} from 'react'
-import {type AppBskyActorDefs, type AppBskyFeedDefs} from '@atproto/api'
 import {
   type InfiniteData,
   type QueryKey,
@@ -10,12 +9,13 @@ import {isParaPostView} from '#/lib/api/feed/para'
 import {hydrateCommunityPosts} from '#/lib/community-posts'
 import {STALE} from '#/state/queries'
 import {useAgent} from '#/state/session'
+import {app, com} from '#/lexicons'
 
 const RQKEY_ROOT = 'community-posts'
 
 type CommunityPostsPage = {
   cursor?: string
-  posts: AppBskyFeedDefs.PostView[]
+  posts: app.bsky.feed.defs.PostView[]
 }
 
 export const communityPostsQueryKey = ({
@@ -37,7 +37,7 @@ export function useCommunityPostsQuery({
 }) {
   const agent = useAgent()
   const profileCache = useRef(
-    new Map<string, AppBskyActorDefs.ProfileViewDetailed>(),
+    new Map<string, app.bsky.actor.defs.ProfileViewDetailed>(),
   )
 
   return useInfiniteQuery<
@@ -53,17 +53,17 @@ export function useCommunityPostsQuery({
     initialPageParam: undefined,
     getNextPageParam: lastPage => lastPage.cursor,
     queryFn: async ({pageParam}) => {
-      const res = await agent.call('com.para.community.listPosts', {
+      const res = await agent.appviewClient.call(com.para.community.listPosts, {
         community,
         postType,
         cursor: pageParam,
         limit: 25,
       })
-      const data = res.data as {cursor?: string; feed?: unknown[]}
+      const data = res as {cursor?: string; feed?: unknown[]}
       const paraPosts = (data.feed ?? []).filter(isParaPostView)
 
       const posts = await hydrateCommunityPosts({
-        agent,
+        agent: {appviewClient: agent.appviewClient},
         posts: paraPosts,
         profileCache: profileCache.current,
       })

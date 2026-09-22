@@ -1,5 +1,4 @@
 import {useCallback, useState} from 'react'
-import {type AppBskyFeedDefs, AppBskyFeedPost} from '@atproto/api'
 import {type ModerationDecision} from '@bsky/sdk/moderation'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -14,6 +13,7 @@ import {usePostQuotesQuery} from '#/state/queries/post-quotes'
 import {useResolveUriQuery} from '#/state/queries/resolve-uri'
 import {Post} from '#/view/com/post/Post'
 import {ListFooter, ListMaybePlaceholder} from '#/components/Lists'
+import {app} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 import {List} from '../util/List'
 
@@ -22,9 +22,9 @@ function renderItem({
   index,
 }: {
   item: {
-    post: AppBskyFeedDefs.PostView
+    post: app.bsky.feed.defs.PostView
     moderation: ModerationDecision
-    record: AppBskyFeedPost.Record
+    record: app.bsky.feed.post.Main
   }
   index: number
 }) {
@@ -32,9 +32,9 @@ function renderItem({
 }
 
 function keyExtractor(item: {
-  post: AppBskyFeedDefs.PostView
+  post: app.bsky.feed.defs.PostView
   moderation: ModerationDecision
-  record: AppBskyFeedPost.Record
+  record: app.bsky.feed.post.Main
 }) {
   return item.post.uri
 }
@@ -69,10 +69,7 @@ export function PostQuotes({uri}: {uri: string}) {
       .flatMap(page =>
         page.posts.map(post => {
           if (
-            !bsky.dangerousIsType<AppBskyFeedPost.Record>(
-              post.record,
-              AppBskyFeedPost.isRecord,
-            ) ||
+            !bsky.isType(app.bsky.feed.post, post.record) ||
             !moderationOpts
           ) {
             return null

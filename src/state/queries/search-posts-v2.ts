@@ -1,5 +1,4 @@
 import {useCallback, useMemo, useRef} from 'react'
-import {type AppBskyFeedDefs} from '@atproto/api'
 import {AtUri} from '@atproto/syntax'
 import {
   type InfiniteData,
@@ -181,7 +180,7 @@ export function useSearchPostsV2Query({
 export function* findAllPostsInQueryData(
   queryClient: QueryClient,
   uri: string,
-): Generator<AppBskyFeedDefs.PostView, undefined> {
+): Generator<app.bsky.feed.defs.PostView, undefined> {
   const queryDatas = queryClient.getQueriesData<
     InfiniteData<app.bsky.feed.searchPostsV2.$OutputBody>
   >({

@@ -10,6 +10,8 @@ import {CenteredView} from './Views'
 interface Props {
   children?: ReactNode
   renderError?: (error: Error) => ReactNode
+  /** Optional structured metadata to attach to the reported error. */
+  getErrorMetadata?: (error: Error) => Record<string, unknown>
   style?: StyleProp<ViewStyle>
 }
 
@@ -29,7 +31,10 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    logger.error(error, {errorInfo})
+    logger.error(error, {
+      errorInfo,
+      ...this.props.getErrorMetadata?.(error),
+    })
   }
 
   public render() {

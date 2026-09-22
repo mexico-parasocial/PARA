@@ -1,5 +1,4 @@
 import Animated, {Easing, FadeInDown, FadeOut} from 'react-native-reanimated'
-import {type ComAtprotoTempCheckHandleAvailability} from '@atproto/api'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -8,14 +7,15 @@ import {atoms as a, native, useTheme} from '#/alf'
 import {borderRadius} from '#/alf/tokens'
 import {Button} from '#/components/Button'
 import {Text} from '#/components/Typography'
+import {com} from '#/lexicons'
 
 export function HandleSuggestions({
   suggestions,
   onSelect,
 }: {
-  suggestions: ComAtprotoTempCheckHandleAvailability.Suggestion[]
+  suggestions: com.atproto.temp.checkHandleAvailability.Suggestion[]
   onSelect: (
-    suggestions: ComAtprotoTempCheckHandleAvailability.Suggestion,
+    suggestions: com.atproto.temp.checkHandleAvailability.Suggestion,
   ) => void
 }) {
   const t = useTheme()

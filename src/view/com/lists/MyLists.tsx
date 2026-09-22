@@ -7,7 +7,6 @@ import {
   View,
   type ViewStyle,
 } from 'react-native'
-import {type AppBskyGraphDefs as GraphDefs} from '@atproto/api'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 
@@ -21,6 +20,7 @@ import {atoms as a, useTheme} from '#/alf'
 import {BulletList_Stroke1_Corner0_Rounded as ListIcon} from '#/components/icons/BulletList'
 import * as ListCard from '#/components/ListCard'
 import {Text} from '#/components/Typography'
+import {app} from '#/lexicons'
 import {ErrorMessage} from '../util/error/ErrorMessage'
 import {List} from '../util/List'
 
@@ -28,9 +28,13 @@ const LOADING = {_reactKey: '__loading__' as const}
 const EMPTY = {_reactKey: '__empty__' as const}
 const ERROR_ITEM = {_reactKey: '__error__' as const}
 
-type Item = GraphDefs.ListView | typeof LOADING | typeof EMPTY | typeof ERROR_ITEM
+type Item =
+  | app.bsky.graph.defs.ListView
+  | typeof LOADING
+  | typeof EMPTY
+  | typeof ERROR_ITEM
 
-function isListView(item: Item): item is GraphDefs.ListView {
+function isListView(item: Item): item is app.bsky.graph.defs.ListView {
   return !('_reactKey' in item)
 }
 
@@ -44,7 +48,10 @@ export function MyLists({
   filter: MyListsFilter
   inline?: boolean
   style?: StyleProp<ViewStyle>
-  renderItem?: (list: GraphDefs.ListView, index: number) => JSX.Element
+  renderItem?: (
+    list: app.bsky.graph.defs.ListView,
+    index: number,
+  ) => JSX.Element
   testID?: string
 }) {
   const pal = usePalette('default')
@@ -105,13 +112,7 @@ export function MyLists({
   // =
 
   const renderItemInner = useCallback(
-    ({
-      item,
-      index,
-    }: {
-      item: Item
-      index: number
-    }) => {
+    ({item, index}: {item: Item; index: number}) => {
       if (item === EMPTY) {
         return (
           <View style={[a.flex_1, a.align_center, a.gap_sm, a.px_xl, a.pt_3xl]}>

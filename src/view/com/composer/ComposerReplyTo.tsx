@@ -1,13 +1,6 @@
 import {useCallback, useMemo, useState} from 'react'
 import {LayoutAnimation, Pressable, View} from 'react-native'
 import {Image} from 'expo-image'
-import {
-  AppBskyEmbedGallery,
-  AppBskyEmbedImages,
-  AppBskyEmbedRecord,
-  AppBskyEmbedRecordWithMedia,
-  AppBskyFeedPost,
-} from '@atproto/api'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -21,6 +14,8 @@ import {QuoteEmbed} from '#/components/Post/Embed'
 import {Text} from '#/components/Typography'
 import {useSimpleVerificationState} from '#/components/verification'
 import {VerificationCheck} from '#/components/verification/VerificationCheck'
+import {app} from '#/lexicons'
+import * as bsky from '#/types/bsky'
 import {parseEmbed} from '#/types/bsky/post'
 
 export function ComposerReplyTo({replyTo}: {replyTo: ComposerOptsPostRef}) {
@@ -40,15 +35,15 @@ export function ComposerReplyTo({replyTo}: {replyTo: ComposerOptsPostRef}) {
 
   const quoteEmbed = useMemo(() => {
     if (
-      AppBskyEmbedRecord.isView(embed) &&
-      AppBskyEmbedRecord.isViewRecord(embed.record) &&
-      AppBskyFeedPost.isRecord(embed.record.value)
+      bsky.isType(app.bsky.embed.record.view, embed) &&
+      bsky.isType(app.bsky.embed.record.viewRecord, embed.record) &&
+      bsky.isType(app.bsky.feed.post, embed.record.value)
     ) {
       return embed
     } else if (
-      AppBskyEmbedRecordWithMedia.isView(embed) &&
-      AppBskyEmbedRecord.isViewRecord(embed.record.record) &&
-      AppBskyFeedPost.isRecord(embed.record.record.value)
+      bsky.isType(app.bsky.embed.recordWithMedia.view, embed) &&
+      bsky.isType(app.bsky.embed.record.viewRecord, embed.record.record) &&
+      bsky.isType(app.bsky.feed.post, embed.record.record.value)
     ) {
       return embed.record
     }
@@ -62,20 +57,20 @@ export function ComposerReplyTo({replyTo}: {replyTo: ComposerOptsPostRef}) {
     : null
 
   const {images, totalNumber} = useMemo(() => {
-    if (AppBskyEmbedImages.isView(embed)) {
+    if (bsky.isType(app.bsky.embed.images.view, embed)) {
       return {images: embed.images, totalNumber: embed.images.length}
-    } else if (AppBskyEmbedGallery.isView(embed)) {
+    } else if (bsky.isType(app.bsky.embed.gallery.view, embed)) {
       return {
         images: galleryItemsToImages(embed.items),
         totalNumber: embed.items.length,
       }
-    } else if (AppBskyEmbedRecordWithMedia.isView(embed)) {
-      if (AppBskyEmbedImages.isView(embed.media)) {
+    } else if (bsky.isType(app.bsky.embed.recordWithMedia.view, embed)) {
+      if (bsky.isType(app.bsky.embed.images.view, embed.media)) {
         return {
           images: embed.media.images,
           totalNumber: embed.media.images.length,
         }
-      } else if (AppBskyEmbedGallery.isView(embed.media)) {
+      } else if (bsky.isType(app.bsky.embed.gallery.view, embed.media)) {
         return {
           images: galleryItemsToImages(embed.media.items),
           totalNumber: embed.media.items.length,
@@ -155,12 +150,12 @@ export function ComposerReplyTo({replyTo}: {replyTo: ComposerOptsPostRef}) {
 }
 
 function galleryItemsToImages(
-  items: AppBskyEmbedGallery.View['items'],
-): AppBskyEmbedImages.ViewImage[] {
+  items: app.bsky.embed.gallery.View['items'],
+): app.bsky.embed.images.ViewImage[] {
   // The reply-to thumbnail only renders up to 4 tiles; slicing here keeps
   // the existing layout switch valid for galleries up to 10 items.
   return items
-    .filter(AppBskyEmbedGallery.isViewImage)
+    .filter(v => bsky.isType(app.bsky.embed.gallery.viewImage, v))
     .slice(0, 4)
     .map(item => ({
       thumb: item.thumbnail,
@@ -174,7 +169,7 @@ function ComposerReplyToImages({
   images,
   totalNumber,
 }: {
-  images: AppBskyEmbedImages.ViewImage[]
+  images: app.bsky.embed.images.ViewImage[]
   totalNumber: number
 }) {
   const t = useTheme()

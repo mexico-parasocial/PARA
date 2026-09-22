@@ -1,6 +1,5 @@
 import {useCallback, useState} from 'react'
 import {View} from 'react-native'
-import {type AppBskyActorDefs} from '@atproto/api'
 import {type DatetimeString, toDatetimeString} from '@atproto/syntax'
 import {sanitizeMutedWordValue} from '@bsky/sdk/utils'
 import {msg} from '@lingui/core/macro'
@@ -441,7 +440,7 @@ function MutedWordRow({
 
   const renew = (days?: number) => {
     updateMutedWord({
-      ...(word as AppBskyActorDefs.MutedWord),
+      ...word,
       expiresAt: days
         ? toDatetimeString(new Date(Date.now() + days * ONE_DAY))
         : undefined,

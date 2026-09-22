@@ -35,8 +35,7 @@ import {PressableWithHover} from './PressableWithHover'
 import {Text} from './text/Text'
 
 type Event =
-  | React.MouseEvent<HTMLAnchorElement, MouseEvent>
-  | GestureResponderEvent
+  React.MouseEvent<HTMLAnchorElement, MouseEvent> | GestureResponderEvent
 
 interface Props extends React.ComponentProps<typeof TouchableOpacity> {
   testID?: string
@@ -436,7 +435,9 @@ function onPressInner(
         } else {
           // note: 'navigate' actually acts the same as 'push' nowadays
           // therefore we need to add 'pop' -sfn
-          navigation.navigate(routeName, params, {pop: true})
+          ;(navigation.navigate as CallableFunction)(routeName, params, {
+            pop: true,
+          })
         }
       } else {
         throw Error('Unsupported navigator action.')

@@ -1,11 +1,5 @@
 import {memo, useCallback, useMemo, useState} from 'react'
 import {StyleSheet, View} from 'react-native'
-import {
-  type AppBskyActorDefs,
-  AppBskyFeedDefs,
-  AppBskyFeedPost,
-  AppBskyFeedThreadgate,
-} from '@atproto/api'
 import {AtUri} from '@atproto/syntax'
 import {type ModerationDecision} from '@bsky/sdk/moderation'
 import {RichText as RichTextAPI} from '@bsky/sdk/richtext'
@@ -75,21 +69,21 @@ import {RichText} from '#/components/RichText'
 import {SubtleHover} from '#/components/SubtleHover'
 import {VotingButton} from '#/components/VotingButton'
 import {Features, useAnalytics} from '#/analytics'
-import {type app} from '#/lexicons'
+import {app} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 import {PostFeedReason} from './PostFeedReason'
 
 interface FeedItemProps {
-  record: AppBskyFeedPost.Record
+  record: app.bsky.feed.post.Main
   postNumbering?: FeedPostNumbering
   reason:
-    | AppBskyFeedDefs.ReasonRepost
-    | AppBskyFeedDefs.ReasonPin
+    | app.bsky.feed.defs.ReasonRepost
+    | app.bsky.feed.defs.ReasonPin
     | ReasonFeedSource
     | {[k: string]: unknown; $type: string}
     | undefined
   moderation: ModerationDecision
-  parentAuthor: AppBskyActorDefs.ProfileViewBasic | undefined
+  parentAuthor: app.bsky.actor.defs.ProfileViewBasic | undefined
   showReplyTo: boolean
   isThreadChild?: boolean
   isThreadLastChild?: boolean
@@ -120,9 +114,9 @@ export function PostFeedItem({
   rootPost,
   onShowLess,
 }: FeedItemProps & {
-  post: AppBskyFeedDefs.PostView
-  rootPost: AppBskyFeedDefs.PostView
-  onShowLess?: (interaction: AppBskyFeedDefs.Interaction) => void
+  post: app.bsky.feed.defs.PostView
+  rootPost: app.bsky.feed.defs.PostView
+  onShowLess?: (interaction: app.bsky.feed.defs.Interaction) => void
 }): React.ReactNode {
   const postShadowed = usePostShadow(post)
   const showPartyShields = useShowPartyShields()
@@ -203,9 +197,9 @@ let FeedItemInner = ({
   richText: RichTextAPI
   partyShield?: CivicInsigniaInfo
   authorInsignia?: CivicInsigniaInfo
-  post: Shadow<AppBskyFeedDefs.PostView>
-  rootPost: AppBskyFeedDefs.PostView
-  onShowLess?: (interaction: AppBskyFeedDefs.Interaction) => void
+  post: Shadow<app.bsky.feed.defs.PostView>
+  rootPost: app.bsky.feed.defs.PostView
+  onShowLess?: (interaction: app.bsky.feed.defs.Interaction) => void
 }): React.ReactNode => {
   const queryClient = useQueryClient()
   const {openComposer} = useOpenComposer()
@@ -319,7 +313,11 @@ let FeedItemInner = ({
       feedSourceInfo,
       post: {
         post,
-        reason: AppBskyFeedDefs.isReasonRepost(reason) ? reason : undefined,
+        reason: bsky.isType(app.bsky.feed.defs.reasonRepost, reason)
+          ? (reason as typeof reason & {
+              $type: 'app.bsky.feed.defs#reasonRepost'
+            })
+          : undefined,
         feedContext,
         reqId,
       },
@@ -343,9 +341,9 @@ let FeedItemInner = ({
    * If `post[0]` in this slice is the actual root post (not an orphan thread),
    * then we may have a threadgate record to reference
    */
-  const threadgateRecord = bsky.dangerousIsType<AppBskyFeedThreadgate.Record>(
+  const threadgateRecord = bsky.isType(
+    app.bsky.feed.threadgate,
     rootPost.threadgate?.record,
-    AppBskyFeedThreadgate.isRecord,
   )
     ? rootPost.threadgate.record
     : undefined
@@ -353,7 +351,11 @@ let FeedItemInner = ({
   const {isActive: live} = useActorStatus(post.author)
 
   const viaRepost = useMemo(() => {
-    if (AppBskyFeedDefs.isReasonRepost(reason) && reason.uri && reason.cid) {
+    if (
+      bsky.isType(app.bsky.feed.defs.reasonRepost, reason) &&
+      reason.uri &&
+      reason.cid
+    ) {
       return {
         uri: reason.uri,
         cid: reason.cid,
@@ -366,10 +368,7 @@ let FeedItemInner = ({
   })
   const additionalPostAlerts: AppModerationCause[] = useMemo(() => {
     const isPostHiddenByThreadgate = threadgateHiddenReplies.has(post.uri)
-    const rootPostUri = bsky.dangerousIsType<AppBskyFeedPost.Record>(
-      post.record,
-      AppBskyFeedPost.isRecord,
-    )
+    const rootPostUri = bsky.isType(app.bsky.feed.post, post.record)
       ? post.record?.reply?.root?.uri || post.uri
       : undefined
     const isControlledByViewer =
@@ -547,7 +546,7 @@ let FeedItemInner = ({
               style={{marginTop: 'auto'}}
             />
             <KnownLikers
-              post={post as unknown as app.bsky.feed.defs.PostView}
+              post={post}
               feature={Features.PostFeedKnownLikersEnable}
               variant="feed"
             />
@@ -574,10 +573,10 @@ let PostContent = ({
 }: {
   moderation: ModerationDecision
   richText: RichTextAPI
-  postEmbed: AppBskyFeedDefs.PostView['embed']
-  postAuthor: AppBskyFeedDefs.PostView['author']
+  postEmbed: app.bsky.feed.defs.PostView['embed']
+  postAuthor: app.bsky.feed.defs.PostView['author']
   onOpenEmbed: () => void
-  post: AppBskyFeedDefs.PostView
+  post: app.bsky.feed.defs.PostView
   postNumbering: FeedPostNumbering | undefined
   additionalPostAlerts?: AppModerationCause[]
   feedDescriptor?: string
@@ -587,14 +586,9 @@ let PostContent = ({
   )
   const showPostNumber = useHasThreadItemPostNumber(postNumbering)
 
-  const record = useMemo<AppBskyFeedPost.Record | undefined>(
+  const record = useMemo<app.bsky.feed.post.Main | undefined>(
     () =>
-      bsky.dangerousIsType<AppBskyFeedPost.Record>(
-        post.record,
-        AppBskyFeedPost.isRecord,
-      )
-        ? post.record
-        : undefined,
+      bsky.isType(app.bsky.feed.post, post.record) ? post.record : undefined,
     [post],
   )
 

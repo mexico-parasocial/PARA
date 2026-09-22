@@ -21,8 +21,8 @@ import {AgeAssuranceAppealDialog} from '#/components/ageAssurance/AgeAssuranceAp
 import {AgeAssuranceBadge} from '#/components/ageAssurance/AgeAssuranceBadge'
 import {AgeAssuranceInitDialog} from '#/components/ageAssurance/AgeAssuranceInitDialog'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
-import {useDialogControl} from '#/components/Dialog'
 import * as Dialog from '#/components/Dialog'
+import {useDialogControl} from '#/components/Dialog'
 import {BirthDateSettingsDialog} from '#/components/dialogs/BirthDateSettings'
 import {DeviceLocationRequestDialog} from '#/components/dialogs/DeviceLocationRequestDialog'
 import {Full as Logo} from '#/components/icons/Logo'
@@ -283,7 +283,10 @@ export function NoAccessScreen() {
 
       <BirthDateSettingsDialog control={birthdateControl} />
       <DeactivateAccountDialog control={deactivateAccountControl} />
-      <DeleteAccountDialog control={deleteAccountControl} />
+      <DeleteAccountDialog
+        control={deleteAccountControl}
+        deactivateDialogControl={deactivateAccountControl}
+      />
 
       {/*
        * While this blocking overlay is up, other dialogs in the shell

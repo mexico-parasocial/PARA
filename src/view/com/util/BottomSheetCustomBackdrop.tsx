@@ -34,10 +34,13 @@ export function createCustomBackdrop(
         onPress={onClose}
         accessibilityLabel={_(msg`Close bottom drawer`)}
         accessibilityHint=""
-        onAccessibilityEscape={() => {
-          if (onClose !== undefined) {
-            onClose()
-          }
+        /* escape hatch: prop missing from the strict RN type but supported at runtime */
+        {...{
+          onAccessibilityEscape: () => {
+            if (onClose !== undefined) {
+              onClose()
+            }
+          },
         }}>
         <Animated.View style={containerStyle} />
       </TouchableWithoutFeedback>

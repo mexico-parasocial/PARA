@@ -1,4 +1,3 @@
-import {type AppBskyDraftDefs} from '@atproto/api'
 import {
   useInfiniteQuery,
   useMutation,
@@ -48,7 +47,9 @@ export function useDraftsQuery() {
  * Load a draft's local media for editing.
  * Takes the full Draft object (from DraftSummary) to avoid re-fetching.
  */
-export async function loadDraftMedia(draft: AppBskyDraftDefs.Draft): Promise<{
+export async function loadDraftMedia(
+  draft: app.bsky.draft.defs.Draft,
+): Promise<{
   loadedMedia: Map<string, string>
 }> {
   // Load local media files
@@ -123,11 +124,11 @@ export function useSaveDraftMutation() {
         composerState,
       )
       /*
-       * `composerStateToDraft` builds the draft against the `@atproto/api`
+       * `composerStateToDraft` builds the draft against the `the legacy SDK`
        * types, whose string fields are unbranded, so it is asserted once here
        * to the vendored input type.
        */
-      const draft = apiDraft as unknown as app.bsky.draft.defs.Draft
+      const draft = apiDraft
 
       logger.debug('saving draft', {
         existingDraftId,
@@ -227,7 +228,7 @@ export function useDeleteDraftMutation() {
       draftId,
     }: {
       draftId: string
-      draft: AppBskyDraftDefs.Draft
+      draft: app.bsky.draft.defs.Draft
     }) => {
       // Delete from server first - if this fails, we keep local media for retry
       await client.call(app.bsky.draft.deleteDraft, {id: draftId})

@@ -15,7 +15,7 @@ import Animated, {
 } from 'react-native-reanimated'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import {GlassContainer} from 'expo-glass-effect'
-import {type $Typed, type ChatBskyConvoDefs} from '@atproto/api'
+import {type $Typed} from '@atproto/lex'
 import {useLingui} from '@lingui/react/macro'
 import {countGraphemes} from 'unicode-segmenter/grapheme'
 
@@ -33,6 +33,7 @@ import {PaperPlaneVertical_Filled_Stroke2_Corner1_Rounded as PaperPlaneIcon} fro
 import {Loader} from '#/components/Loader'
 import * as Toast from '#/components/Toast'
 import {IS_ANDROID, IS_IOS, IS_WEB} from '#/env'
+import {chat} from '#/lexicons'
 import {ComposerContainer} from './MessageComposer'
 import {
   type MessageEmbedState,
@@ -55,7 +56,7 @@ export function MessageInput({
   onSendMessage: (
     message: string,
     embed?: MessageEmbedState,
-    replyTo?: $Typed<ChatBskyConvoDefs.MessageView>,
+    replyTo?: $Typed<chat.bsky.convo.defs.MessageView>,
   ) => Promise<void> | void
   messageEmbed: MessageEmbedState | undefined
   setEmbed: (embedUrl: string | undefined) => void
@@ -229,8 +230,8 @@ export function MessageInput({
                 ios: {paddingTop: 10, paddingBottom: 5},
               }),
               animatedStyle,
+              {verticalAlign: 'middle'},
             ]}
-            verticalAlign="middle"
             keyboardAppearance={t.scheme}
             submitBehavior="newline"
             ref={inputRef}

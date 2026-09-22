@@ -1,8 +1,10 @@
+import {type AtIdentifierString} from '@atproto/syntax'
 import {useQuery} from '@tanstack/react-query'
 
 import {PARA_CIVIC_VOTE_COLLECTION} from '#/lib/api/para-lexicons'
 import {STALE} from '#/state/queries'
 import {useAgent} from '#/state/session'
+import {com} from '#/lexicons'
 
 const RQKEY_ROOT = 'profile-votes'
 
@@ -38,18 +40,14 @@ async function fetchProfileVotes({
   agent: ReturnType<typeof useAgent>
   did: string
 }): Promise<ProfileVoteItem[]> {
-  const res = await agent.api.com.atproto.repo.listRecords({
-    repo: did,
+  const res = await agent.pdsClient.call(com.atproto.repo.listRecords, {
+    repo: did as AtIdentifierString,
     collection: PARA_CIVIC_VOTE_COLLECTION,
     limit: 50,
     reverse: true,
   })
 
-  if (!res.success) {
-    throw new Error('Failed to list profile votes')
-  }
-
-  return res.data.records.map(record => {
+  return res.records.map(record => {
     const value = record.value as Record<string, unknown>
     const subject = String(value?.subject ?? '')
     const signal = typeof value?.signal === 'number' ? value.signal : undefined

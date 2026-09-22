@@ -1,15 +1,20 @@
-import {type AtpAgent, type ComAtprotoRepoListRecords} from '@atproto/api'
 import {TID} from '@atproto/common-web'
+import {type AtIdentifierString} from '@atproto/syntax'
 import {AtUri} from '@atproto/syntax'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {PARA_FOLLOWED_ELEMENT_COLLECTION} from '#/lib/api/para-lexicons'
 import {useAgent, useSession} from '#/state/session'
+import {
+  type PublicSessionBundle,
+  type SessionBundle,
+} from '#/state/session/session-core'
 import {getFollowedItems, setFollowedItems} from '#/state/topics/topicStorage'
 import {
   type FollowedItem,
   type FollowedItemType,
 } from '#/state/topics/topicTypes'
+import {com} from '#/lexicons'
 
 type FollowedElementRecord = {
   $type: typeof PARA_FOLLOWED_ELEMENT_COLLECTION
@@ -64,7 +69,7 @@ function dateToMs(value: string | undefined) {
 }
 
 function recordToFollowedItem(
-  record: ComAtprotoRepoListRecords.Record,
+  record: com.atproto.repo.listRecords.Record,
 ): FollowedItem | null {
   if (!isFollowedElementRecord(record.value)) return null
 
@@ -126,24 +131,24 @@ async function listRemoteFollowedElements({
   agent,
   repo,
 }: {
-  agent: AtpAgent
+  agent: SessionBundle | PublicSessionBundle
   repo: string
 }) {
   const items: FollowedItem[] = []
   let cursor: string | undefined
 
   do {
-    const res = await agent.com.atproto.repo.listRecords({
-      repo,
+    const res = await agent.pdsClient.call(com.atproto.repo.listRecords, {
+      repo: repo as AtIdentifierString,
       collection: PARA_FOLLOWED_ELEMENT_COLLECTION,
       limit: 100,
       cursor,
     })
-    for (const record of res.data.records) {
+    for (const record of res.records) {
       const item = recordToFollowedItem(record)
       if (item) items.push(item)
     }
-    cursor = res.data.cursor
+    cursor = res.cursor
   } while (cursor)
 
   return items.sort((a, b) => b.followedAt - a.followedAt)
@@ -193,15 +198,15 @@ export function useAddFollowedElementMutation() {
       if (existing) return existing
 
       const record = followedItemToRecord(item)
-      const res = await agent.com.atproto.repo.putRecord({
-        repo: currentAccount.did,
+      const res = await agent.pdsClient.call(com.atproto.repo.putRecord, {
+        repo: currentAccount.did as AtIdentifierString,
         collection: PARA_FOLLOWED_ELEMENT_COLLECTION,
         rkey: TID.nextStr(),
         record,
       })
 
       return {
-        id: res.data.uri,
+        id: res.uri,
         type: record.type,
         identifier: record.identifier,
         displayName: record.displayName,
@@ -257,8 +262,8 @@ export function useUpdateFollowedElementMutation() {
           updates.notificationsEnabled ?? item.notificationsEnabled,
       }
 
-      await agent.com.atproto.repo.putRecord({
-        repo: currentAccount.did,
+      await agent.pdsClient.call(com.atproto.repo.putRecord, {
+        repo: currentAccount.did as AtIdentifierString,
         collection: PARA_FOLLOWED_ELEMENT_COLLECTION,
         rkey,
         record: followedItemToRecord(next, item),
@@ -287,8 +292,8 @@ export function useRemoveFollowedElementMutation() {
         return
       }
 
-      await agent.com.atproto.repo.deleteRecord({
-        repo: currentAccount.did,
+      await agent.pdsClient.call(com.atproto.repo.deleteRecord, {
+        repo: currentAccount.did as AtIdentifierString,
         collection: PARA_FOLLOWED_ELEMENT_COLLECTION,
         rkey,
       })

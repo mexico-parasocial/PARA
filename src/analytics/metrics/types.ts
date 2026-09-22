@@ -15,6 +15,18 @@ export type Events = {
   init: {
     initMs: number
   }
+  'contentVisibility:algorithmicRecommendations:change': {
+    hide: boolean
+  }
+  'web:list:size': {
+    itemCount: number
+    milestone: number
+    [key: string]: unknown
+  }
+  'web:list:longTasks': {
+    taskCount: number
+    [key: string]: unknown
+  }
   'experiment:viewed': {
     experimentId: string
     variationId: string

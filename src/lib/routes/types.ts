@@ -69,6 +69,14 @@ export type CommonNavigatorParams = {
   PostThread: {name: string; rkey: string; collection?: string}
   PostLikedBy: {name: string; rkey: string}
   PostRepostedBy: {name: string; rkey: string}
+  CustomFeed: {
+    name: string
+    rkey: string
+    feedCacheKey?: string
+    feedDescriptor?: string
+  }
+  CustomFeedLikedBy: {name: string; rkey: string}
+  AutomationLabelSettings: undefined
   PostHighlights: {name: string; rkey: string}
   PostQuotes: {name: string; rkey: string}
   ProfileFeed: {

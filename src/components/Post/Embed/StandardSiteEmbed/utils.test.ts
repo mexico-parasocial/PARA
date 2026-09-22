@@ -1,10 +1,9 @@
-import {type AppBskyEmbedExternal} from '@atproto/api'
-
+import {app} from '#/lexicons'
 import {isStandardSiteEmbed, isStandardSitePublicationEmbed} from './utils'
 
 function makeView(
-  partial: Partial<AppBskyEmbedExternal.ViewExternal>,
-): AppBskyEmbedExternal.ViewExternal {
+  partial: Partial<app.bsky.embed.external.ViewExternal>,
+): app.bsky.embed.external.ViewExternal {
   return {
     uri: 'https://example.com/post',
     title: 'title',
@@ -16,14 +15,21 @@ function makeView(
 describe('isStandardSiteEmbed', () => {
   it('returns true when any associated ref is in the site.standard.* namespace', () => {
     const view = makeView({
-      associatedRefs: [{uri: 'at://did:plc:abc/site.standard.publication/foo', cid: 'fake-cid'}],
+      associatedRefs: [
+        {
+          uri: 'at://did:plc:abc/site.standard.publication/foo',
+          cid: 'fake-cid',
+        },
+      ],
     })
     expect(isStandardSiteEmbed(view)).toBe(true)
   })
 
   it('returns false when no associated refs are in the site.standard.* namespace', () => {
     const view = makeView({
-      associatedRefs: [{uri: 'at://did:plc:abc/app.bsky.feed.post/foo', cid: 'fake-cid'}],
+      associatedRefs: [
+        {uri: 'at://did:plc:abc/app.bsky.feed.post/foo', cid: 'fake-cid'},
+      ],
     })
     expect(isStandardSiteEmbed(view)).toBe(false)
   })
@@ -36,7 +42,12 @@ describe('isStandardSiteEmbed', () => {
 describe('isStandardSitePublicationEmbed', () => {
   it('returns true with at least one publication ref and no document refs', () => {
     const view = makeView({
-      associatedRefs: [{uri: 'at://did:plc:abc/site.standard.publication/foo', cid: 'fake-cid'}],
+      associatedRefs: [
+        {
+          uri: 'at://did:plc:abc/site.standard.publication/foo',
+          cid: 'fake-cid',
+        },
+      ],
     })
     expect(isStandardSitePublicationEmbed(view)).toBe(true)
   })
@@ -44,7 +55,10 @@ describe('isStandardSitePublicationEmbed', () => {
   it('returns false when any ref is a document', () => {
     const view = makeView({
       associatedRefs: [
-        {uri: 'at://did:plc:abc/site.standard.publication/foo', cid: 'fake-cid'},
+        {
+          uri: 'at://did:plc:abc/site.standard.publication/foo',
+          cid: 'fake-cid',
+        },
         {uri: 'at://did:plc:abc/site.standard.document/bar', cid: 'fake-cid'},
       ],
     })
@@ -53,7 +67,9 @@ describe('isStandardSitePublicationEmbed', () => {
 
   it('returns false when there are no publication refs', () => {
     const view = makeView({
-      associatedRefs: [{uri: 'at://did:plc:abc/site.standard.other/foo', cid: 'fake-cid'}],
+      associatedRefs: [
+        {uri: 'at://did:plc:abc/site.standard.other/foo', cid: 'fake-cid'},
+      ],
     })
     expect(isStandardSitePublicationEmbed(view)).toBe(false)
   })

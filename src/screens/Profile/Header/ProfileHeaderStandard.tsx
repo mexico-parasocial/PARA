@@ -1,7 +1,6 @@
 import {memo, useMemo, useState} from 'react'
 import {View} from 'react-native'
 import {LinearGradient} from 'expo-linear-gradient'
-import {type AppBskyActorDefs} from '@atproto/api'
 import {
   type ModerationDecision,
   type ModerationOpts,
@@ -59,6 +58,7 @@ import {useAnalytics} from '#/analytics'
 import {IS_IOS, IS_NATIVE} from '#/env'
 import {InviteFriendsDialog} from '#/features/inviteFriends'
 import {useActorStatus} from '#/features/liveNow'
+import {app} from '#/lexicons'
 import type * as bsky from '#/types/bsky'
 import {EditProfileDialog} from './EditProfileDialog'
 import {ProfileHeaderHandle} from './Handle'
@@ -67,7 +67,7 @@ import {ProfileHeaderShell} from './Shell'
 import {ProfileHeaderSuggestedFollows} from './SuggestedFollows'
 
 interface Props {
-  profile: AppBskyActorDefs.ProfileViewDetailed
+  profile: app.bsky.actor.defs.ProfileViewDetailed
   descriptionRT: RichTextAPI | null
   moderationOpts: ModerationOpts
   hideBackButton?: boolean
@@ -86,7 +86,7 @@ let ProfileHeaderStandard = ({
   const t = useTheme()
   const {gtMobile} = useBreakpoints()
   const profile =
-    useProfileShadow<AppBskyActorDefs.ProfileViewDetailed>(profileUnshadowed)
+    useProfileShadow<app.bsky.actor.defs.ProfileViewDetailed>(profileUnshadowed)
   const {currentAccount} = useSession()
   const {isEnabled: isAnonymous, profile: anonProfile} = useAnonymousMode()
   const isCurrentUserAnonymous =
@@ -264,7 +264,7 @@ function ProfileCivicBadges({
   paraIdentity,
   verification,
 }: {
-  profile: AppBskyActorDefs.ProfileViewDetailed
+  profile: app.bsky.actor.defs.ProfileViewDetailed
   paraIdentity?: ParaIdentityRecord | null
   verification: {isVerified: boolean}
 }) {
@@ -432,7 +432,7 @@ export function HeaderStandardButtons({
   onUnfollow,
   minimal,
 }: {
-  profile: Shadow<AppBskyActorDefs.ProfileViewDetailed>
+  profile: Shadow<app.bsky.actor.defs.ProfileViewDetailed>
   moderation: ModerationDecision
   moderationOpts: ModerationOpts
   onFollow?: () => void
@@ -658,7 +658,7 @@ export function HeaderStandardButtons({
 }
 
 function getAssociatedGerm(
-  profile: AppBskyActorDefs.ProfileViewDetailed,
+  profile: app.bsky.actor.defs.ProfileViewDetailed,
 ): GermAssociatedProfile {
   const associated = profile.associated as
     {germ?: GermAssociatedProfile} | undefined

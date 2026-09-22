@@ -4,12 +4,13 @@
  * tested in isolation (the search-posts-v2 query hook re-exports these).
  */
 
-import {type AppBskyFeedSearchPostsV2} from '@atproto/api'
+import {type AtIdentifierString, type AtUriString} from '@atproto/syntax'
 
 import {
   filtersToApiParams,
   type SearchFilters,
 } from '#/screens/Search/searchParams'
+import {app} from '#/lexicons'
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}/
 
@@ -320,21 +321,23 @@ function mergeList(a?: string[], b?: string[]): string[] | undefined {
 export function buildSearchPostsV2Filters(
   embedded: Omit<ExtractedSearchParams, 'q'>,
   filters?: SearchFilters,
-): AppBskyFeedSearchPostsV2.QueryParams {
-  const apiFilters = filters ? filtersToApiParams(filters) : {}
-  const params: AppBskyFeedSearchPostsV2.QueryParams = {}
+): Omit<app.bsky.feed.searchPostsV2.$Params, 'limit'> {
+  const apiFilters = (
+    filters ? filtersToApiParams(filters) : {}
+  ) as app.bsky.feed.searchPostsV2.$Params
+  const params: Omit<app.bsky.feed.searchPostsV2.$Params, 'limit'> = {}
 
   const authors = mergeList(
     embedded.author ? [embedded.author] : undefined,
     apiFilters.authors,
   )
-  if (authors) params.authors = authors
+  if (authors) params.authors = authors as AtIdentifierString[]
 
   const mentions = mergeList(
     embedded.mentions ? [embedded.mentions] : undefined,
     apiFilters.mentions,
   )
-  if (mentions) params.mentions = mentions
+  if (mentions) params.mentions = mentions as AtIdentifierString[]
 
   const domains = mergeList(
     embedded.domain ? [embedded.domain] : undefined,
@@ -346,12 +349,12 @@ export function buildSearchPostsV2Filters(
     embedded.url ? [embedded.url] : undefined,
     apiFilters.urls,
   )
-  if (urls) params.urls = urls
+  if (urls) params.urls = urls as AtUriString[]
 
   const hashtags = mergeList(embedded.tag, apiFilters.hashtags)
   if (hashtags) params.hashtags = hashtags
 
-  const language = apiFilters.language ?? embedded.lang
+  const language = (apiFilters as {language?: string}).language ?? embedded.lang
   // TODO At the moment, the language selector is single-select. -dsb
   if (language) params.languages = [language]
 
@@ -385,7 +388,7 @@ export function buildSearchPostsV2Filters(
 }
 
 /**
- * Consistent with timestamp parsing in @atproto/api. Only the date is used; the
+ * Consistent with timestamp parsing in the legacy SDK. Only the date is used; the
  * time is appended here since the lexicon expects a datetime value.
  */
 const parseTimestamp = (value: string | undefined): string | undefined => {

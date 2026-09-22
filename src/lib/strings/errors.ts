@@ -38,7 +38,7 @@ export function cleanError(e: unknown): string {
     return t`Unable to connect. Please check your internet connection and try again.`
   }
   /*
-   * `@atproto/api` names these with spaces ("Upstream Failure"); lexicon error
+   * `the legacy SDK` names these with spaces ("Upstream Failure"); lexicon error
    * codes are space-free ("UpstreamFailure"). Match both while the app throws
    * both shapes.
    */

@@ -1,8 +1,10 @@
+import {type AtUriString} from '@atproto/syntax'
 import {t} from '@lingui/core/macro'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {useAgent, useSession} from '#/state/session'
 import * as Toast from '#/components/Toast'
+import {com} from '#/lexicons'
 
 export type PostSubscription = {
   post: string
@@ -30,22 +32,12 @@ export function usePostSubscriptionQuery(postUri: string) {
     queryKey: RQKEY_getPostSubscription(postUri),
     enabled: hasSession && Boolean(postUri),
     queryFn: async () => {
-      const params = new URLSearchParams({post: postUri})
-      const res = await agent.fetchHandler(
-        `/xrpc/com.para.notification.getPostSubscription?${params.toString()}`,
+      return agent.appviewClient.call(
+        com.para.notification.getPostSubscription,
         {
-          method: 'GET',
-          headers: {
-            accept: 'application/json',
-          },
+          post: postUri as AtUriString,
         },
       )
-
-      if (!res.ok) {
-        throw new Error(await getErrorMessage(res))
-      }
-
-      return (await res.json()) as PostSubscription
     },
   })
 }
@@ -61,23 +53,10 @@ export function usePostSubscriptionMutation() {
     {previous?: PostSubscription}
   >({
     mutationFn: async input => {
-      const res = await agent.fetchHandler(
-        '/xrpc/com.para.notification.putPostSubscription',
-        {
-          method: 'POST',
-          headers: {
-            accept: 'application/json',
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify(input),
-        },
+      return agent.appviewClient.call(
+        com.para.notification.putPostSubscription,
+        input as com.para.notification.putPostSubscription.$InputBody,
       )
-
-      if (!res.ok) {
-        throw new Error(await getErrorMessage(res))
-      }
-
-      return (await res.json()) as PostSubscription
     },
     async onMutate(input) {
       const queryKey = RQKEY_getPostSubscription(input.post)
@@ -104,13 +83,4 @@ export function usePostSubscriptionMutation() {
       })
     },
   })
-}
-
-async function getErrorMessage(res: Response): Promise<string> {
-  try {
-    const body = await res.json()
-    return body?.message || body?.error || res.statusText
-  } catch {
-    return res.statusText
-  }
 }
