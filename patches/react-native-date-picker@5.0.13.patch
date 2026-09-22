@@ -1,0 +1,35 @@
+diff --git a/ios/RNDatePicker.mm b/ios/RNDatePicker.mm
+index 37f01e6291f94198553bd99e16654f08a6ba97d6..9a96d60fbf93a7c53599cd0059468bf1358ef6d7 100644
+--- a/ios/RNDatePicker.mm
++++ b/ios/RNDatePicker.mm
+@@ -1,4 +1,5 @@
+ #import "RNDatePicker.h"
++#include <string>
+ 
+ #ifdef RCT_NEW_ARCH_ENABLED
+ #import "RCTConvert.h"
+diff --git a/ios/RNDatePickerManager.mm b/ios/RNDatePickerManager.mm
+index ac965d9a22a89cc5a15d995f23c705f32a24605a..82211ff3d10c4ef6b7d065d7b6aef435217d8eb1 100644
+--- a/ios/RNDatePickerManager.mm
++++ b/ios/RNDatePickerManager.mm
+@@ -1,6 +1,7 @@
+ #import <React/RCTLog.h>
+ #import <React/RCTUIManager.h>
+ #import <React/RCTViewManager.h>
++#include <string>
+ 
+ #import "RNDatePickerManager.h"
+ #import "RCTConvert.h"
+diff --git a/package.json b/package.json
+--- a/package.json
++++ b/package.json
+@@ -70,9 +70,6 @@
+     "ios": {
+       "componentProvider": {
+         "RNDatePicker": "RNDatePicker"
+-      },
+-      "modulesProvider": {
+-        "RNDatePicker": "RNDatePickerManager"
+       }
+     }
+   }

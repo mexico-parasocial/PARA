@@ -160,6 +160,8 @@ bskyweb/static/media/*.svg
 # Local logs and error files
 *.log
 *.patch
+# ...except the pnpm patchedDependencies, which pnpm-workspace.yaml requires.
+!patches/*.patch
 *_errors.txt
 *_output.txt
 typecheck_errors.txt
