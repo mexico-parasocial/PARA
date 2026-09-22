@@ -1,9 +1,11 @@
 import {type AtIdentifierString} from '@atproto/syntax'
+import {t} from '@lingui/core/macro'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {isRecordNotFoundError} from '#/lib/xrpc-error'
 import {createQueryKey} from '#/state/queries/util'
 import {usePdsClient, useSession} from '#/state/session'
+import * as Toast from '#/components/Toast'
 import {useAnalytics} from '#/analytics'
 import {com} from '#/lexicons'
 
@@ -101,6 +103,7 @@ export function useContentVisibilityMutation() {
     },
     onError: (_error, _variables, context) => {
       queryClient.setQueryData(queryKey, context?.previous)
+      Toast.show(t`Failed to update content visibility`)
     },
     onSuccess: (_record, hide) => {
       ax.metric('contentVisibility:algorithmicRecommendations:change', {hide})

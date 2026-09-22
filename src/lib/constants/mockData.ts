@@ -370,7 +370,7 @@ export const MOCK_DISCOURSE_TOPOLOGY: DiscourseTopology = {
     'auth-center': 18,
     'auth-right': 8,
     'center-left': 22,
-    'center': 15,
+    center: 15,
     'center-right': 10,
     'lib-left': 8,
     'lib-center': 4,

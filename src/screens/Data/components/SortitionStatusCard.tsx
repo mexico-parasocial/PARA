@@ -64,14 +64,14 @@ export function SortitionStatusCard({
             resolvedStatus === 'active'
               ? t.palette.primary_50
               : resolvedStatus === 'pending'
-              ? t.palette.yellow + '18'
-              : t.palette.contrast_50,
+                ? t.palette.yellow + '18'
+                : t.palette.contrast_50,
           borderColor:
             resolvedStatus === 'active'
               ? t.palette.primary_500
               : resolvedStatus === 'pending'
-              ? t.palette.yellow
-              : t.palette.contrast_100,
+                ? t.palette.yellow
+                : t.palette.contrast_100,
         },
       ]}>
       <View style={[a.flex_row, a.align_center, a.gap_md, a.flex_1]}>
@@ -84,8 +84,8 @@ export function SortitionStatusCard({
                 resolvedStatus === 'active'
                   ? t.palette.primary_500
                   : resolvedStatus === 'pending'
-                  ? t.palette.yellow
-                  : t.palette.contrast_200,
+                    ? t.palette.yellow
+                    : t.palette.contrast_200,
             },
           ]}>
           {resolvedStatus === 'pending' ? (
@@ -145,7 +145,11 @@ export function SortitionStatusCard({
           />
           <View style={[a.flex_row, a.align_center, a.gap_xs]}>
             <CheckIcon fill={t.palette.primary_500} width={16} />
-            <Text style={[a.text_xs, {color: t.palette.primary_500, fontWeight: 'bold'}]}>
+            <Text
+              style={[
+                a.text_xs,
+                {color: t.palette.primary_500, fontWeight: 'bold'},
+              ]}>
               <Trans>Verificado</Trans>
             </Text>
           </View>

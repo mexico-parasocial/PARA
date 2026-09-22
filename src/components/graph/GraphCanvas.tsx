@@ -154,7 +154,8 @@ export function GraphCanvas({
       if (!hasFilters) return true
       const matchesQuery = !query || node.title.toLowerCase().includes(query)
       const matchesGroup =
-        !activeGroups || activeGroups.size === 0 ||
+        !activeGroups ||
+        activeGroups.size === 0 ||
         (node.group && activeGroups.has(node.group))
       return matchesQuery && matchesGroup
     },
@@ -293,17 +294,16 @@ export function GraphCanvas({
           accessibilityLabel="Re-stabilize graph"
           accessibilityHint="Runs the layout simulation again to stabilize node positions"
           onPress={restart}
-          style={[styles.zoomBtn, {backgroundColor: t.palette.primary_500 + '20'}]}>
+          style={[
+            styles.zoomBtn,
+            {backgroundColor: t.palette.primary_500 + '20'},
+          ]}>
           <Text style={{color: t.palette.primary_500, fontSize: 12}}>⚡</Text>
         </TouchableOpacity>
       </View>
 
-      <Svg
-        width={width}
-        height={graphHeight}
-        onPress={handleBackgroundPress}>
-        <G
-          transform={`translate(${pan.x}, ${pan.y}) scale(${scale})`}>
+      <Svg width={width} height={graphHeight} onPress={handleBackgroundPress}>
+        <G transform={`translate(${pan.x}, ${pan.y}) scale(${scale})`}>
           {/* Edges */}
           {edges.map(edge => {
             const sp = nodePositions.get(edge.source)
@@ -353,8 +353,18 @@ export function GraphCanvas({
                   cy={pos.y}
                   r={radius}
                   fill={node.color}
-                  stroke={query.length > 0 && node.title.toLowerCase().includes(query) ? t.palette.primary_500 : (node.borderColor ?? '#1e293b')}
-                  strokeWidth={query.length > 0 && node.title.toLowerCase().includes(query) ? 3 : (isSelected ? 3 : 2)}
+                  stroke={
+                    query.length > 0 && node.title.toLowerCase().includes(query)
+                      ? t.palette.primary_500
+                      : (node.borderColor ?? '#1e293b')
+                  }
+                  strokeWidth={
+                    query.length > 0 && node.title.toLowerCase().includes(query)
+                      ? 3
+                      : isSelected
+                        ? 3
+                        : 2
+                  }
                 />
                 <Circle
                   cx={pos.x}
@@ -368,9 +378,19 @@ export function GraphCanvas({
                     <SvgText
                       x={pos.x + radius + 6}
                       y={pos.y + 4}
-                      fill={query.length > 0 && node.title.toLowerCase().includes(query) ? t.palette.primary_500 : t.palette.contrast_900}
+                      fill={
+                        query.length > 0 &&
+                        node.title.toLowerCase().includes(query)
+                          ? t.palette.primary_500
+                          : t.palette.contrast_900
+                      }
                       fontSize={11}
-                      fontWeight={query.length > 0 && node.title.toLowerCase().includes(query) ? '700' : '600'}>
+                      fontWeight={
+                        query.length > 0 &&
+                        node.title.toLowerCase().includes(query)
+                          ? '700'
+                          : '600'
+                      }>
                       {label}
                     </SvgText>
                     <Rect

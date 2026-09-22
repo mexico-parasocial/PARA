@@ -3,7 +3,9 @@ import {type PasswordSession} from '@atproto/lex-password-session'
 
 import {
   BLUESKY_PROXY_HEADER,
-  CHAT_PROXY_SERVICE,
+  getAppviewServiceForServiceUrl,
+  getChatServiceForServiceUrl,
+  isLikelyLocalServiceUrl,
   PUBLIC_BSKY_SERVICE,
 } from '#/lib/constants'
 import {createLexClient} from '#/lib/lexClient'
@@ -27,8 +29,15 @@ import {networkAwareFetch} from './network'
  * No `fetch` option: a client built over a session uses that session's own
  * fetch, which is `networkAwareFetch` wrapped in the disposal kill switch.
  */
-export function buildAppviewClient(agent: Agent): Client {
-  return createLexClient(agent, {service: BLUESKY_PROXY_HEADER.get()})
+export function buildAppviewClient(agent: Agent, serviceUrl?: string): Client {
+  /*
+   * The e2e override owns the header for prod-shaped hosts. A local dev PDS
+   * proxies to its own AppView instead, which the override does not know about.
+   */
+  const service = isLikelyLocalServiceUrl(serviceUrl)
+    ? getAppviewServiceForServiceUrl(serviceUrl)
+    : BLUESKY_PROXY_HEADER.get()
+  return createLexClient(agent, {service})
 }
 
 /**
@@ -48,20 +57,21 @@ export function buildPdsClient(agent: Agent): Client {
 /**
  * Build the signed-in chat {@link Client}.
  *
- * {@link CHAT_PROXY_SERVICE} (`${CHAT_PROXY_DID}#bsky_chat`, default
- * `did:web:api.bsky.chat#bsky_chat`) is the client's `service`, so `chat.bsky.*`
- * calls are proxied to the chat service. The DID is read from the
+ * {@link getChatServiceForServiceUrl} supplies the client's `service`
+ * (`${CHAT_PROXY_DID}#bsky_chat`, default `did:web:api.bsky.chat#bsky_chat`), so
+ * `chat.bsky.*` calls are proxied to the chat service. The DID is read from the
  * env-configurable `CHAT_PROXY_DID` rather than a hard-coded constant, so it can
- * be retargeted per environment.
+ * be retargeted per environment, and an account on a local PDS is pointed at the
+ * dev-env chat service instead.
  *
  * Unlike the PDS client, chat carries moderation authorities. The service uses
  * them to hydrate labels on profiles embedded in conversation responses, so
  * this client reads the global `Client.appLabelers` and receives the account's
  * subscriptions through `configureModerationForAccount`.
  */
-export function buildChatClient(agent: Agent): Client {
+export function buildChatClient(agent: Agent, serviceUrl?: string): Client {
   return createLexClient(agent, {
-    service: CHAT_PROXY_SERVICE,
+    service: getChatServiceForServiceUrl(serviceUrl),
   })
 }
 

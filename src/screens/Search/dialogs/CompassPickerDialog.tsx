@@ -78,13 +78,7 @@ function Inner({
         </Text>
       </View>
 
-      <View
-        style={[
-          a.gap_xs,
-          a.align_center,
-          a.justify_center,
-          a.px_lg,
-        ]}>
+      <View style={[a.gap_xs, a.align_center, a.justify_center, a.px_lg]}>
         {COMPASS_GRID_ROWS.map((row, ri) => (
           <View
             key={ri}
@@ -130,13 +124,7 @@ function Inner({
         ))}
       </View>
 
-      <View
-        style={[
-          a.flex_row,
-          a.gap_xs,
-          a.flex_wrap,
-          {minHeight: 24},
-        ]}>
+      <View style={[a.flex_row, a.gap_xs, a.flex_wrap, {minHeight: 24}]}>
         {draft.length === 0 ? (
           <Text style={[a.text_xs, t.atoms.text_contrast_low]}>
             <Trans>No positions selected</Trans>

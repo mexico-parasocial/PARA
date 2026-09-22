@@ -1,4 +1,8 @@
-import {clearM8Session, getM8AccessToken, refreshM8AccessToken} from '#/lib/im8/api'
+import {
+  clearM8Session,
+  getM8AccessToken,
+  refreshM8AccessToken,
+} from '#/lib/im8/api'
 import {navigate} from '#/Navigation'
 
 export const MATRIX_BRIDGE_API_URL =
@@ -49,7 +53,10 @@ export async function matrixBridgeFetch(
 
   if (res.status === 403) {
     const body = (await res.json().catch(() => ({}))) as {error?: string}
-    throw new BridgeAuthError(403, body.error || 'No tienes permiso para realizar esta acción')
+    throw new BridgeAuthError(
+      403,
+      body.error || 'No tienes permiso para realizar esta acción',
+    )
   }
 
   return res

@@ -6,14 +6,36 @@ import {
 } from '../nodeSearch'
 
 const policies: PolicyOption[] = [
-  {uri: 'at://did:plc:a/com.para.civic.cabildeo/1', title: 'Vivienda asequible', community: 'MX Federal'},
-  {uri: 'at://did:plc:a/com.para.civic.cabildeo/2', title: 'Transporte público'},
+  {
+    uri: 'at://did:plc:a/com.para.civic.cabildeo/1',
+    title: 'Vivienda asequible',
+    community: 'MX Federal',
+  },
+  {
+    uri: 'at://did:plc:a/com.para.civic.cabildeo/2',
+    title: 'Transporte público',
+  },
 ]
 
 const flairs: FlairOption[] = [
-  {id: 'policy_educacion_laica', label: 'Educación laica', group: 'Policy topics', category: 'Servicios públicos'},
-  {id: 'policy_financiacion_ciencia', label: 'Financiación de la educación', group: 'Policy topics', category: 'Servicios públicos'},
-  {id: 'matter_vivienda', label: 'Vivienda', group: 'Matters', category: 'Sociedad'},
+  {
+    id: 'policy_educacion_laica',
+    label: 'Educación laica',
+    group: 'Policy topics',
+    category: 'Servicios públicos',
+  },
+  {
+    id: 'policy_financiacion_ciencia',
+    label: 'Financiación de la educación',
+    group: 'Policy topics',
+    category: 'Servicios públicos',
+  },
+  {
+    id: 'matter_vivienda',
+    label: 'Vivienda',
+    group: 'Matters',
+    category: 'Sociedad',
+  },
 ]
 
 const search = (query: string, over = {}) =>

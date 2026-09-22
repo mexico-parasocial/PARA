@@ -17,9 +17,8 @@ export default function AxesDiscoveryScreen() {
   const {_} = useLingui()
   const navigation = useNavigation<NavigationProp>()
   const navState = navigation.getState()
-  const routeParams = navState?.routes.find(r => r.name === 'AxesDiscoveryList')?.params as
-    | {initialTab?: 'official' | 'unofficial'}
-    | undefined
+  const routeParams = navState?.routes.find(r => r.name === 'AxesDiscoveryList')
+    ?.params as {initialTab?: 'official' | 'unofficial'} | undefined
   const initialTab = routeParams?.initialTab
   const [activeTab, setActiveTab] = useState<'official' | 'unofficial'>(
     initialTab === 'unofficial' ? 'unofficial' : 'official',

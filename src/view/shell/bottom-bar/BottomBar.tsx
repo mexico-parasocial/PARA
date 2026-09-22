@@ -17,8 +17,8 @@ import {useNavigationTabState} from '#/lib/hooks/useNavigationTabState'
 import {clamp} from '#/lib/numbers'
 import {getTabState, TabState} from '#/lib/routes/helpers'
 import {type SharedNavTab, TAB_TO_NAV_ITEM} from '#/lib/routes/tab-to-nav-item'
+import {useTotalChatUnread} from '#/state/chat/useTotalChatUnread'
 import {emitSoftReset} from '#/state/events'
-import {useUnreadMessageCount} from '#/state/queries/messages/list-conversations'
 import {useUpdateAllRead} from '#/state/queries/messages/update-all-read'
 import {useUnreadNotifications} from '#/state/queries/notifications/unread'
 import {useProfileQuery} from '#/state/queries/profile'
@@ -70,7 +70,7 @@ export function BottomBar({navigation}: BottomTabBarProps) {
   const {isAtHome, isAtSearch, isAtNotifications, isAtMyProfile, isAtMessages} =
     useNavigationTabState()
   const numUnreadNotifications = useUnreadNotifications()
-  const numUnreadMessages = useUnreadMessageCount()
+  const numUnreadMessages = useTotalChatUnread()
   const aa = useAgeAssurance()
   const footerMinimalShellTransform = useMinimalShellFooterTransform()
   const {data: profile} = useProfileQuery({did: currentAccount?.did})
@@ -335,7 +335,11 @@ export function BottomBar({navigation}: BottomTabBarProps) {
                 style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
                 <Logo allowVariants={false} width={28} />
                 <View style={{paddingTop: 4}}>
-                  <Logotype allowVariants={false} width={80} fill={t.atoms.text.color} />
+                  <Logotype
+                    allowVariants={false}
+                    width={80}
+                    fill={t.atoms.text.color}
+                  />
                 </View>
               </View>
 

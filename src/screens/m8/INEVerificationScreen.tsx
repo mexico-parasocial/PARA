@@ -17,7 +17,10 @@ import {
   postRevokeCredential,
 } from '#/lib/im8/api'
 import {INE_INTEGRATION_APPROVED, INE_PREVIEW_NOTICE} from '#/lib/im8/ine'
-import {type IneExtractedData, type IneVerificationResult} from '#/lib/im8/types'
+import {
+  type IneExtractedData,
+  type IneVerificationResult,
+} from '#/lib/im8/types'
 import {type NavigationProp} from '#/lib/routes/types'
 import * as Storage from '#/lib/storage'
 import {Text} from '#/view/com/util/text/Text'

@@ -3,19 +3,10 @@ import {type CommunityGovernanceView} from '#/lib/community-governance'
 export type WeightedPolicySignal = -3 | -2 | -1 | 0 | 1 | 2 | 3
 
 export type PolicyConsensusRole =
-  | 'member'
-  | 'verified'
-  | 'deputy'
-  | 'delegate'
-  | 'moderator'
+  'member' | 'verified' | 'deputy' | 'delegate' | 'moderator'
 
 export type PolicyConsensusState =
-  | 'draft'
-  | 'deliberation'
-  | 'voting'
-  | 'passed'
-  | 'failed'
-  | 'official'
+  'draft' | 'deliberation' | 'voting' | 'passed' | 'failed' | 'official'
 
 export type PolicyConsensusTally = {
   totalVotes: number
@@ -26,11 +17,7 @@ export type PolicyConsensusTally = {
   averageSignal: number
   breakdown: Record<WeightedPolicySignal, number>
   outcome:
-    | 'insufficient_quorum'
-    | 'passed'
-    | 'strong_passed'
-    | 'failed'
-    | 'contested'
+    'insufficient_quorum' | 'passed' | 'strong_passed' | 'failed' | 'contested'
   state: PolicyConsensusState
 }
 

@@ -1,4 +1,10 @@
-import {Modal, ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native'
+import {
+  Modal,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native'
 import {Trans} from '@lingui/react/macro'
 
 import {type CommunityPulse} from '#/state/queries/community-civic-tree'
@@ -39,12 +45,10 @@ export function CommunityPulseSheet({
         <View style={[styles.sheet, {backgroundColor: t.palette.contrast_0}]}>
           <View style={styles.header}>
             <View style={{flex: 1}}>
-              <Text
-                style={[styles.title, {color: t.palette.contrast_900}]}>
+              <Text style={[styles.title, {color: t.palette.contrast_900}]}>
                 <Trans>Community Pulse</Trans>
               </Text>
-              <Text
-                style={[styles.subtitle, {color: t.palette.contrast_500}]}>
+              <Text style={[styles.subtitle, {color: t.palette.contrast_500}]}>
                 {communityName}
               </Text>
             </View>
@@ -64,10 +68,7 @@ export function CommunityPulseSheet({
             {/* Stance Distribution */}
             <View style={styles.section}>
               <Text
-                style={[
-                  styles.sectionTitle,
-                  {color: t.palette.contrast_700},
-                ]}>
+                style={[styles.sectionTitle, {color: t.palette.contrast_700}]}>
                 <Trans>Opinion Landscape</Trans>
               </Text>
               <View style={styles.distBar}>
@@ -358,10 +359,7 @@ export function CommunityPulseSheet({
                       {borderColor: t.palette.contrast_100},
                     ]}>
                     <View
-                      style={[
-                        styles.claimDot,
-                        {backgroundColor: '#f59e0b'},
-                      ]}
+                      style={[styles.claimDot, {backgroundColor: '#f59e0b'}]}
                     />
                     <View style={styles.claimContent}>
                       <Text

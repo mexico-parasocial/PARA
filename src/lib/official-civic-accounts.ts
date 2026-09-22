@@ -26,13 +26,41 @@ export const CABILDEO_ACCESS_TIERS: Array<{
   label: string
   description: string
 }> = [
-  {value: 'public', label: 'Público', description: 'Cualquier persona puede verlo.'},
-  {value: 'signed_in', label: 'Sesión iniciada', description: 'Requiere cuenta PARA.'},
-  {value: 'verified_human', label: 'Humano verificado', description: 'Puede participar sin revelar identidad pública.'},
-  {value: 'verified_area', label: 'Área verificada', description: 'Requiere verificación del territorio.'},
-  {value: 'community_member', label: 'Miembro de comunidad', description: 'Requiere pertenecer a la comunidad.'},
-  {value: 'delegate', label: 'Delegado', description: 'Requiere rol o mandato delegado.'},
-  {value: 'official_controller', label: 'Controlador oficial', description: 'Solo cuentas cívicas oficiales autorizadas.'},
+  {
+    value: 'public',
+    label: 'Público',
+    description: 'Cualquier persona puede verlo.',
+  },
+  {
+    value: 'signed_in',
+    label: 'Sesión iniciada',
+    description: 'Requiere cuenta PARA.',
+  },
+  {
+    value: 'verified_human',
+    label: 'Humano verificado',
+    description: 'Puede participar sin revelar identidad pública.',
+  },
+  {
+    value: 'verified_area',
+    label: 'Área verificada',
+    description: 'Requiere verificación del territorio.',
+  },
+  {
+    value: 'community_member',
+    label: 'Miembro de comunidad',
+    description: 'Requiere pertenecer a la comunidad.',
+  },
+  {
+    value: 'delegate',
+    label: 'Delegado',
+    description: 'Requiere rol o mandato delegado.',
+  },
+  {
+    value: 'official_controller',
+    label: 'Controlador oficial',
+    description: 'Solo cuentas cívicas oficiales autorizadas.',
+  },
 ]
 
 export type OfficialCivicAccount = OfficialCivicEntityRecord & {
@@ -101,10 +129,12 @@ let actions: OfficialCivicAction[] = [
     entityName: 'Presidencia de México',
     actionType: 'pajareo.response',
     subjectUri: 'pajareo-sheinbaum-001',
-    recordUri: 'at://did:plc:para-official-federal-executive/com.para.official.action/pajareo-water',
+    recordUri:
+      'at://did:plc:para-official-federal-executive/com.para.official.action/pajareo-water',
     controllerHash: 'ctrl_7e1a6f44',
     controllerVisibility: 'entity_default',
-    summary: 'La oficina dará seguimiento público al calendario de agua y transporte.',
+    summary:
+      'La oficina dará seguimiento público al calendario de agua y transporte.',
     createdAt: now(),
   },
 ]
@@ -173,7 +203,10 @@ export function getViewerOfficialControllerAccounts(
         viewerDid,
       )
       return viewerController
-        ? ({...officialAccount, viewerController} satisfies ViewerOfficialCivicAccount)
+        ? ({
+            ...officialAccount,
+            viewerController,
+          } satisfies ViewerOfficialCivicAccount)
         : null
     })
     .filter((account): account is ViewerOfficialCivicAccount =>
@@ -185,7 +218,9 @@ export function hasOfficialScope(
   controller: OfficialCivicController | undefined,
   scope: OfficialCivicScope,
 ) {
-  return Boolean(controller?.status === 'active' && controller.scopes.includes(scope))
+  return Boolean(
+    controller?.status === 'active' && controller.scopes.includes(scope),
+  )
 }
 
 export function createOfficialAction(input: {
@@ -209,7 +244,9 @@ export function createOfficialAction(input: {
     controllerHash: hashController(input.controllerDid),
     controllerVisibility: input.controllerVisibility ?? 'entity_default',
     revealedControllerDid:
-      input.controllerVisibility === 'revealed' ? input.controllerDid : undefined,
+      input.controllerVisibility === 'revealed'
+        ? input.controllerDid
+        : undefined,
     summary: input.summary,
     createdAt: now(),
   }

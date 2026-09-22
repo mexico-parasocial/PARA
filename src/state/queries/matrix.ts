@@ -24,6 +24,7 @@ interface MatrixTokenResponse {
 export interface MatrixIdentityResponse {
   userId: string
   homeServer: string
+  /** How this deployment expects a client to obtain a device session. */
   loginFlow: 'oidc'
 }
 
@@ -44,6 +45,12 @@ export interface CommunityJoinResponse {
 interface UnreadResponse {
   unread: number
   communities: MatrixRoomSummary[]
+  /**
+   * True when the count is a fallback because the bridge could not be reached,
+   * not a real "nothing unread". Surfaces in the chat list; see
+   * `useUnreadCountQuery`.
+   */
+  unavailable?: boolean
 }
 
 export type MatrixRoomKind = 'main' | 'chamber-a' | 'chamber-b' | 'observers'
@@ -220,7 +227,10 @@ export function useUnreadCountQuery({
     queryKey: ['matrix-unread'],
     queryFn: async () => {
       // Background poller: the bridge being down is routine (local dev runs
-      // without it), so degrade to a zero count instead of surfacing an error.
+      // without it), so it must not throw into every badge on the shell. It
+      // degrades to a zero count — but flags `unavailable` so the chat list can
+      // say so. A silent zero is indistinguishable from "you are caught up",
+      // which is the one thing this must never claim while the bridge is down.
       try {
         const res = await matrixBridgeFetch('/api/unread')
         if (!res.ok) {
@@ -228,12 +238,13 @@ export function useUnreadCountQuery({
             await getBridgeErrorMessage(res, 'Failed to fetch unread'),
           )
         }
-        return res.json()
+        const data = (await res.json()) as UnreadResponse
+        return {...data, unavailable: false}
       } catch (err) {
         logger.warn('matrix: bridge unavailable, defaulting unread to 0', {
           safeMessage: String(err),
         })
-        return {unread: 0, communities: []}
+        return {unread: 0, communities: [], unavailable: true}
       }
     },
     enabled,

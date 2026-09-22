@@ -1,4 +1,9 @@
-import { generateKeyPairSync, createSign, createVerify, randomBytes } from 'crypto'
+import {
+  generateKeyPairSync,
+  createSign,
+  createVerify,
+  randomBytes,
+} from 'crypto'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -54,18 +59,22 @@ export interface KeyPair {
 }
 
 export function generateDeviceKeyPair(): KeyPair {
-  const { publicKey, privateKey } = generateKeyPairSync('rsa', {
+  const {publicKey, privateKey} = generateKeyPairSync('rsa', {
     modulusLength: 2048,
-    publicKeyEncoding: { type: 'spki', format: 'pem' },
-    privateKeyEncoding: { type: 'pkcs8', format: 'pem' },
+    publicKeyEncoding: {type: 'spki', format: 'pem'},
+    privateKeyEncoding: {type: 'pkcs8', format: 'pem'},
   })
   const fingerprint = hashPublicKey(Buffer.from(publicKey))
-  return { publicKey, privateKey, fingerprint }
+  return {publicKey, privateKey, fingerprint}
 }
 
 export function hashPublicKey(publicKey: Buffer): string {
   const crypto = require('crypto')
-  return crypto.createHash('sha256').update(publicKey).digest('hex').slice(0, 16)
+  return crypto
+    .createHash('sha256')
+    .update(publicKey)
+    .digest('hex')
+    .slice(0, 16)
 }
 
 // ─── Issuer Key Management ──────────────────────────────────────────────────
@@ -100,7 +109,9 @@ export interface CredentialInput {
 export function createCredential(input: CredentialInput): M8Credential {
   const credentialId = randomBytes(16).toString('hex')
   const now = new Date()
-  const expiresAt = new Date(now.getTime() + (input.validityDays ?? 365) * 24 * 60 * 60 * 1000)
+  const expiresAt = new Date(
+    now.getTime() + (input.validityDays ?? 365) * 24 * 60 * 60 * 1000,
+  )
 
   const credential: Omit<M8Credential, 'proof'> = {
     version: 'm8-identity-1',
@@ -148,18 +159,18 @@ export function verifyCredential(
   const now = new Date()
   const expiresAt = new Date(credential.expiresAt)
   if (now > expiresAt) {
-    return { valid: false, reason: 'Credential expired' }
+    return {valid: false, reason: 'Credential expired'}
   }
 
   // 2. Verify signature
-  const { proof, ...credentialWithoutProof } = credential
+  const {proof, ...credentialWithoutProof} = credential
   const verify = createVerify('SHA256')
   verify.update(JSON.stringify(credentialWithoutProof))
   verify.end()
 
   const isValid = verify.verify(issuerPublicKey, proof.jws, 'base64url')
   if (!isValid) {
-    return { valid: false, reason: 'Invalid signature' }
+    return {valid: false, reason: 'Invalid signature'}
   }
 
   return {
@@ -204,7 +215,7 @@ export function createPresentation(input: PresentationInput): M8Presentation {
 
 // Fixed version with proper device key fingerprint
 export function createPresentationFixed(
-  input: PresentationInput & { devicePublicKey: string },
+  input: PresentationInput & {devicePublicKey: string},
 ): M8Presentation {
   const nonce = randomBytes(16).toString('hex')
   const timestamp = new Date().toISOString()
@@ -240,25 +251,35 @@ export function verifyPresentation(
   devicePublicKey: string,
 ): PresentationVerificationResult {
   // 1. Verify the underlying credential
-  const credentialResult = verifyCredential(presentation.credential, issuerPublicKey)
+  const credentialResult = verifyCredential(
+    presentation.credential,
+    issuerPublicKey,
+  )
   if (!credentialResult.valid) {
     return credentialResult
   }
 
   // 2. Verify device binding
-  const bindingData = presentation.credential.credentialId + presentation.deviceBinding.nonce + presentation.deviceBinding.timestamp
+  const bindingData =
+    presentation.credential.credentialId +
+    presentation.deviceBinding.nonce +
+    presentation.deviceBinding.timestamp
   const verify = createVerify('SHA256')
   verify.update(bindingData)
   verify.end()
 
   const deviceFingerprint = hashPublicKey(Buffer.from(devicePublicKey))
   if (deviceFingerprint !== presentation.deviceBinding.deviceKeyFingerprint) {
-    return { valid: false, reason: 'Device key mismatch' }
+    return {valid: false, reason: 'Device key mismatch'}
   }
 
-  const isDeviceValid = verify.verify(devicePublicKey, presentation.deviceBinding.signature, 'base64url')
+  const isDeviceValid = verify.verify(
+    devicePublicKey,
+    presentation.deviceBinding.signature,
+    'base64url',
+  )
   if (!isDeviceValid) {
-    return { valid: false, reason: 'Invalid device binding signature' }
+    return {valid: false, reason: 'Invalid device binding signature'}
   }
 
   return {
@@ -288,7 +309,7 @@ export function checkRevocation(
   issuerPublicKey: Buffer,
 ): boolean {
   // Verify revocation list signature first
-  const { signature, ...listWithoutSig } = revocationList
+  const {signature, ...listWithoutSig} = revocationList
   const verify = createVerify('SHA256')
   verify.update(JSON.stringify(listWithoutSig))
   verify.end()
@@ -298,7 +319,10 @@ export function checkRevocation(
   }
 
   // Check if credential is revoked
-  const credentialHash = require('crypto').createHash('sha256').update(credential.credentialId).digest('hex')
+  const credentialHash = require('crypto')
+    .createHash('sha256')
+    .update(credential.credentialId)
+    .digest('hex')
   return revocationList.revokedCredentials.includes(credentialHash)
 }
 
@@ -311,7 +335,7 @@ export function filterClaims(
   const filtered: Partial<M8Credential['claims']> = {}
   for (const key of allowedClaims) {
     if (key in credential.claims) {
-      (filtered as Record<string, unknown>)[key] = credential.claims[key]
+      ;(filtered as Record<string, unknown>)[key] = credential.claims[key]
     }
   }
   return filtered

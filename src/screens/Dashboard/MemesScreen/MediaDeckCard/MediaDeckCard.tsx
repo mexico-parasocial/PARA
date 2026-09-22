@@ -17,7 +17,11 @@ export function MediaDeckCard({item, mode}: {item: MediaItem; mode: Mode}) {
         thumbUri={item.thumbUri}
         style={[styles.deckVisual, {minHeight: DECK_VISUAL_HEIGHT}]}>
         <View style={styles.deckVisualBottom}>
-          <Text style={[styles.deckTitle, item.thumbUri && styles.deckTitleOnImage]}>
+          <Text
+            style={[
+              styles.deckTitle,
+              item.thumbUri && styles.deckTitleOnImage,
+            ]}>
             {item.title}
           </Text>
           <MediaVisualMeta item={item} mode={mode} />

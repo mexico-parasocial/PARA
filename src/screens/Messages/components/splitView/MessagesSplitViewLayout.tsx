@@ -16,7 +16,6 @@ import {IS_WEB} from '#/env'
 import {ChatList, Header as ChatListHeader} from '../../ChatList'
 import {SplitViewProvider} from './context'
 
-
 type MessageScreens =
   | 'Messages'
   | 'MessagesConversation'
@@ -63,7 +62,6 @@ function MessagesSplitViewLayoutInner({
   const t = useTheme()
   const isFocused = useIsFocused()
   const {data: chatStatus} = useChatActorStatusQuery()
-
 
   const onNewChat = (conversation: string) =>
     navigation.navigate('MessagesConversation', {conversation})

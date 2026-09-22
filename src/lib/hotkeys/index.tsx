@@ -46,9 +46,7 @@ function useKeyboardShortcuts() {
     }
 
     return (
-      openDialogs.current.size > 0 ||
-      Boolean(activeLightbox) ||
-      isDrawerOpen
+      openDialogs.current.size > 0 || Boolean(activeLightbox) || isDrawerOpen
     )
   }
 

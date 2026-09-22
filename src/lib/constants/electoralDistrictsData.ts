@@ -322,11 +322,17 @@ function computeStateCentroid(stateName: string): {lat: number; lng: number} {
 
 function generateDistrictBoundaries(): Map<
   string,
-  {centroid: {lat: number; lng: number}; boundary: Array<{latitude: number; longitude: number}>}
+  {
+    centroid: {lat: number; lng: number}
+    boundary: Array<{latitude: number; longitude: number}>
+  }
 > {
   const result = new Map<
     string,
-    {centroid: {lat: number; lng: number}; boundary: Array<{latitude: number; longitude: number}>}
+    {
+      centroid: {lat: number; lng: number}
+      boundary: Array<{latitude: number; longitude: number}>
+    }
   >()
 
   for (const [stateName, count] of STATE_DISTRICT_COUNTS) {

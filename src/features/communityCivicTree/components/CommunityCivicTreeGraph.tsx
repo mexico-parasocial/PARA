@@ -12,6 +12,7 @@ import {
   COMPASS_COLORS,
   type CompassPositionId,
 } from '#/lib/compass/compassColors'
+import {useForceSimulation} from '#/screens/Data/components/useForceSimulation'
 import {useTheme} from '#/alf'
 import {useNativeGraphGestures} from '#/components/graph/useNativeGraphGestures'
 import {Text} from '#/components/Typography'
@@ -21,7 +22,6 @@ import {
   STANCE_COLORS,
 } from '#/features/civicTree/colors'
 import {type GraphData} from '#/features/civicTree/types'
-import {useForceSimulation} from '#/screens/Data/components/useForceSimulation'
 
 interface CommunityCivicTreeGraphProps {
   data: GraphData

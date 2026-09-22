@@ -68,7 +68,6 @@ function Text_DEPRECATED({
 
     applyFonts(flattened, fonts.family)
 
-
     if (flattened.fontSize) {
       flattened.fontSize = Math.round(
         flattened.fontSize * fonts.scaleMultiplier,

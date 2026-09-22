@@ -3,7 +3,6 @@ import {
   getCivicTreeItemKind,
   getCivicTreeItemTitle,
 } from '#/state/queries/collection-items'
-
 import {inferCivicTreeSourceType} from './sourceTypes'
 
 /*

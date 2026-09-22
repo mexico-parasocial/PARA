@@ -141,21 +141,22 @@ export function VotingButtonHorizontal({
       </Animated.View>
 
       {/* Draggable thumb */}
-        <Animated.View
-          style={[
-            styles.control,
-            controlStyle,
-            Platform.OS === 'web' && ({
+      <Animated.View
+        style={[
+          styles.control,
+          controlStyle,
+          Platform.OS === 'web' &&
+            ({
               userSelect: 'none',
               touchAction: 'none',
             } as any),
-          ]}>
-          <View style={styles.textWrapper}>
-            <Animated.Text style={[styles.voteText, voteTextStyle]}>
-              {currentVote > 0 ? `+${currentVote}` : `${currentVote}`}
-            </Animated.Text>
-          </View>
-        </Animated.View>
+        ]}>
+        <View style={styles.textWrapper}>
+          <Animated.Text style={[styles.voteText, voteTextStyle]}>
+            {currentVote > 0 ? `+${currentVote}` : `${currentVote}`}
+          </Animated.Text>
+        </View>
+      </Animated.View>
 
       {/* Neutral hint (fades out when voted) */}
       <Animated.View

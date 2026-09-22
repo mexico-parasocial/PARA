@@ -3,11 +3,6 @@ import {StyleSheet, TextInput, TouchableOpacity, View} from 'react-native'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
-import {CIVIC_TREE_COPY, CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
-import {
-  CIVIC_TREE_SOURCE_TYPES,
-  inferCivicTreeSourceType,
-} from '#/features/civicTree/sourceTypes'
 import {type NavigationProp} from '#/lib/routes/types'
 import {useCommunityBoardsQuery} from '#/state/queries/community-boards'
 import {useCreateCommunityTreeContributionMutation} from '#/state/queries/community-civic-tree'
@@ -16,6 +11,11 @@ import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import * as Dialog from '#/components/Dialog'
 import * as Toast from '#/components/Toast'
+import {CIVIC_TREE_COPY, CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
+import {
+  CIVIC_TREE_SOURCE_TYPES,
+  inferCivicTreeSourceType,
+} from '#/features/civicTree/sourceTypes'
 
 /*
  * A contribution can originate from a record in the network (an AT-URI), a page

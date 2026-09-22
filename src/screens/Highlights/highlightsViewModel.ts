@@ -70,9 +70,13 @@ export function getHighlightsForScope(
 ) {
   switch (scope) {
     case 'saved':
-      return highlights.filter(item => item.savedLocally || item.source === 'local')
+      return highlights.filter(
+        item => item.savedLocally || item.source === 'local',
+      )
     case 'mine':
-      return highlights.filter(item => item.creatorDid && item.creatorDid === viewerDid)
+      return highlights.filter(
+        item => item.creatorDid && item.creatorDid === viewerDid,
+      )
     case 'map':
     case 'signals':
     default:

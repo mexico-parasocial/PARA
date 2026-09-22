@@ -13,15 +13,17 @@ export function ShadowTallyChart({
 }: {
   flat: number
   sqrtN: number
-  correlation: number
+  correlation?: number
 }) {
   const {_} = useLingui()
 
   return (
     <View style={[a.gap_md]}>
-      <TallyRow label={_(msg`Flat`)} value={flat} />
-      <TallyRow label={_(msg`√n Weighted`)} value={sqrtN} />
-      <TallyRow label={_(msg`Correlation Adj.`)} value={correlation} />
+      <TallyRow label={_(msg`Plano`)} value={flat} />
+      <TallyRow label={_(msg`Ponderado √n`)} value={sqrtN} />
+      {correlation !== undefined && (
+        <TallyRow label={_(msg`Correlación`)} value={correlation} />
+      )}
     </View>
   )
 }
@@ -43,7 +45,7 @@ function TallyRow({label, value}: {label: string; value: number}) {
         {label}
       </Text>
       <View style={[a.flex_1]}>
-        <SignalBar value={value} height={6} />
+        {Number.isFinite(value) && <SignalBar value={value} height={6} />}
       </View>
       <Text
         style={[
@@ -55,7 +57,11 @@ function TallyRow({label, value}: {label: string; value: number}) {
             textAlign: 'right',
           },
         ]}>
-        {value > 0 ? `+${value.toFixed(1)}` : value.toFixed(1)}
+        {!Number.isFinite(value)
+          ? '—'
+          : value > 0
+            ? `+${value.toFixed(1)}`
+            : value.toFixed(1)}
       </Text>
     </View>
   )

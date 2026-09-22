@@ -56,7 +56,11 @@ export function MediaBoardCard({
           </View>
 
           <View style={styles.cardVisualBottom}>
-            <Text style={[styles.cardTitle, item.thumbUri && styles.cardTitleOnImage]}>
+            <Text
+              style={[
+                styles.cardTitle,
+                item.thumbUri && styles.cardTitleOnImage,
+              ]}>
               {item.title}
             </Text>
             <MediaVisualMeta item={item} mode={mode} />

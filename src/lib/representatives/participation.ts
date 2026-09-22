@@ -3,27 +3,16 @@ import {REPRESENTATIVES} from '#/lib/mock-data'
 
 export type RepresentativeNominationMode = 'public' | 'private'
 export type RepresentativeNominationStatus =
-  | 'pending'
-  | 'accepted'
-  | 'declined'
-  | 'expired'
+  'pending' | 'accepted' | 'declined' | 'expired'
 
 export type RepresentativePajareoEntryType =
-  | 'firma'
-  | 'pregunta'
-  | 'señal'
-  | 'testimonio'
+  'firma' | 'pregunta' | 'señal' | 'testimonio'
 
 export type RepresentativePajareoSubjectKind =
-  | 'person'
-  | 'institution'
-  | 'person_in_institution'
+  'person' | 'institution' | 'person_in_institution'
 
 export type RepresentativePajareoJurisdictionLevel =
-  | 'zone'
-  | 'state'
-  | 'nation'
-  | 'representative_area'
+  'zone' | 'state' | 'nation' | 'representative_area'
 
 export type RepresentativePajareoSubject = {
   kind: RepresentativePajareoSubjectKind
@@ -149,7 +138,8 @@ let nominations: RepresentativeNomination[] = [
     representativeId: 'party_morena_president_2026',
     mode: 'public',
     nominatorDid: 'did:plc:demo-civic-user',
-    reason: 'Debe reclamar su perfil para responder preguntas públicas sobre organización territorial.',
+    reason:
+      'Debe reclamar su perfil para responder preguntas públicas sobre organización territorial.',
     supportCount: 18,
     status: 'pending',
     createdAt: now(),
@@ -197,32 +187,33 @@ let pajareoOfficialResponses: RepresentativePajareoOfficialResponse[] = [
 export function normalizeRepresentative(
   representative: RepresentativeItem,
 ): RepresentativeItem {
-  const areaScope = representative.areaScope ?? {
-    type:
-      representative.state === 'National'
-        ? 'national'
-        : representative.municipality === 'State'
-          ? 'state'
-          : 'municipality',
-    label:
-      representative.state === 'National'
-        ? 'México'
-        : representative.municipality === 'State'
-          ? representative.state
-          : `${representative.municipality}, ${representative.state}`,
-    state:
-      representative.state === 'National' ? undefined : representative.state,
-    municipality:
-      representative.municipality === 'State'
-        ? undefined
-        : representative.municipality,
-  } as const
+  const areaScope =
+    representative.areaScope ??
+    ({
+      type:
+        representative.state === 'National'
+          ? 'national'
+          : representative.municipality === 'State'
+            ? 'state'
+            : 'municipality',
+      label:
+        representative.state === 'National'
+          ? 'México'
+          : representative.municipality === 'State'
+            ? representative.state
+            : `${representative.municipality}, ${representative.state}`,
+      state:
+        representative.state === 'National' ? undefined : representative.state,
+      municipality:
+        representative.municipality === 'State'
+          ? undefined
+          : representative.municipality,
+    } as const)
 
   return {
     ...representative,
     status:
-      representative.status ??
-      (representative.did ? 'verified' : 'unclaimed'),
+      representative.status ?? (representative.did ? 'verified' : 'unclaimed'),
     jurisdiction: representative.jurisdiction ?? areaScope.label,
     office: representative.office ?? representative.category,
     term: representative.term ?? 'Periodo por confirmar',
@@ -252,8 +243,10 @@ export function findRepresentativeByActor(
 }
 
 export function getRepresentativeParticipationIndex(): RepresentativeParticipationIndex {
-  const nominationsByRepresentative: Record<string, RepresentativeNomination[]> =
-    {}
+  const nominationsByRepresentative: Record<
+    string,
+    RepresentativeNomination[]
+  > = {}
   const pajareoByRepresentative: Record<string, RepresentativePajareoEntry[]> =
     {}
 
@@ -283,9 +276,7 @@ export function getRepresentativeNominations(
   })
 }
 
-export function createRepresentativeNomination(
-  input: CreateNominationInput,
-) {
+export function createRepresentativeNomination(input: CreateNominationInput) {
   const nomination: RepresentativeNomination = {
     id: `nom-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     representativeId: input.representativeId,
@@ -317,15 +308,18 @@ export function updateRepresentativeNominationStatus(
 }
 
 export function getRepresentativePajareoEntries(representativeId: string) {
-  return pajareoEntries.filter(
-    entry =>
-      entry.representativeId === representativeId && entry.status === 'visible',
-  ).map(entry => ({
-    ...entry,
-    officialResponse: pajareoOfficialResponses.find(
-      response => response.entryId === entry.id,
-    ),
-  }))
+  return pajareoEntries
+    .filter(
+      entry =>
+        entry.representativeId === representativeId &&
+        entry.status === 'visible',
+    )
+    .map(entry => ({
+      ...entry,
+      officialResponse: pajareoOfficialResponses.find(
+        response => response.entryId === entry.id,
+      ),
+    }))
 }
 
 export function checkRepresentativeAreaEligibility({

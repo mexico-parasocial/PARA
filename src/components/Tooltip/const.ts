@@ -1,4 +1,4 @@
-import {atoms as a, select,type Theme} from '#/alf'
+import {atoms as a, select, type Theme} from '#/alf'
 
 /**
  * Visual variant for the tooltip surface. `default` is a neutral floating card;

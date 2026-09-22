@@ -57,7 +57,6 @@ export const init = features.init({timeout: TIMEOUT_INIT}).then(res => {
     })
   }
 })
-
 /**
  * Refresh feature gates from GrowthBook. Updates attributes based on the
  * provided account, if any.

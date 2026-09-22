@@ -36,23 +36,20 @@ export default function IdentityHubScreen() {
   const {gtMobile} = useBreakpoints()
   const [activeTab, setActiveTab] = useState<TabKey>('wallet')
 
-  const renderTab = useCallback(
-    (tab: TabKey) => {
-      switch (tab) {
-        case 'wallet':
-          return <WalletScreen />
-        case 'anon':
-          return <AnonymousIdentitiesScreen />
-        case 'verify':
-          return <VerifyDashboardScreen />
-        case 'issuers':
-          return <TrustedIssuersScreen />
-        case 'audit':
-          return <ConsentAuditScreen />
-      }
-    },
-    [],
-  )
+  const renderTab = useCallback((tab: TabKey) => {
+    switch (tab) {
+      case 'wallet':
+        return <WalletScreen />
+      case 'anon':
+        return <AnonymousIdentitiesScreen />
+      case 'verify':
+        return <VerifyDashboardScreen />
+      case 'issuers':
+        return <TrustedIssuersScreen />
+      case 'audit':
+        return <ConsentAuditScreen />
+    }
+  }, [])
 
   return (
     <Layout.Screen>
@@ -81,7 +78,11 @@ export default function IdentityHubScreen() {
               ]}>
               <tab.icon
                 size={gtMobile ? 'md' : 'sm'}
-                fill={isActive ? t.palette.primary_500 : t.atoms.text_contrast_medium.color}
+                fill={
+                  isActive
+                    ? t.palette.primary_500
+                    : t.atoms.text_contrast_medium.color
+                }
                 style={a.mb_xs}
               />
               <Text

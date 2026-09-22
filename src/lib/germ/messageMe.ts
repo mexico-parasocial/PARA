@@ -1,4 +1,5 @@
-export type GermMessageMeVisibility = 'none' | 'usersIFollow' | 'everyone' | 'all'
+export type GermMessageMeVisibility =
+  'none' | 'usersIFollow' | 'everyone' | 'all'
 
 export type GermDeclarationRecord = {
   $type?: 'com.germnetwork.declaration' | (string & {})

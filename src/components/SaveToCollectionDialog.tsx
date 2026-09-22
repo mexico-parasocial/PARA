@@ -4,7 +4,6 @@ import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
-import {CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
 import {
   useAddToCollectionMutation,
   useCollectionsQuery,
@@ -16,6 +15,7 @@ import * as Dialog from '#/components/Dialog'
 import {Bookmark as BookmarkIcon} from '#/components/icons/Bookmark'
 import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/Plus'
 import * as Toast from '#/components/Toast'
+import {CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
 
 export function SaveToCollectionDialog({
   control,
@@ -173,7 +173,10 @@ function SaveToCollectionDialogInner({
       <View style={styles.list}>
         {collections.length === 0 && !showCreate ? (
           <Text style={[styles.empty, t.atoms.text_contrast_medium]}>
-            <Trans>You do not have any collections yet. Create one to start your personal civic tree.</Trans>
+            <Trans>
+              You do not have any collections yet. Create one to start your
+              personal civic tree.
+            </Trans>
           </Text>
         ) : (
           collections.map(col => (
@@ -181,7 +184,9 @@ function SaveToCollectionDialogInner({
               key={col.id}
               accessibilityRole="button"
               accessibilityLabel={_(msg`Add to ${col.name}`)}
-              accessibilityHint={_(msg`Adds this item to the selected collection`)}
+              accessibilityHint={_(
+                msg`Adds this item to the selected collection`,
+              )}
               onPress={() => onSelect(col.id)}
               disabled={addMutation.isPending}
               style={[
@@ -236,7 +241,8 @@ function SaveToCollectionDialogInner({
               numberOfLines={2}
             />
             <View style={styles.createActions}>
-              <TouchableOpacity accessibilityRole="button"
+              <TouchableOpacity
+                accessibilityRole="button"
                 onPress={() => {
                   setShowCreate(false)
                   setNewName('')
@@ -246,7 +252,8 @@ function SaveToCollectionDialogInner({
                   <Trans>Cancel</Trans>
                 </Text>
               </TouchableOpacity>
-              <TouchableOpacity accessibilityRole="button"
+              <TouchableOpacity
+                accessibilityRole="button"
                 onPress={onCreate}
                 disabled={!newName.trim() || createMutation.isPending}>
                 <Text

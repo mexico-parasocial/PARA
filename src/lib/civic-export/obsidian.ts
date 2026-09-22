@@ -234,10 +234,11 @@ function relationsToMarkdown(relations: CivicTreeRelation[]) {
   if (!relations.length) return []
   return [
     '## Relations',
-    ...relations.map(relation =>
-      `- ${relation.fromItemId} ${relation.kind} ${relation.toItemId}${
-        relation.note ? `: ${relation.note}` : ''
-      }`,
+    ...relations.map(
+      relation =>
+        `- ${relation.fromItemId} ${relation.kind} ${relation.toItemId}${
+          relation.note ? `: ${relation.note}` : ''
+        }`,
     ),
   ]
 }

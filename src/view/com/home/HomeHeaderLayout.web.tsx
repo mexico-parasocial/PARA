@@ -129,7 +129,11 @@ function HomeHeaderLayoutDesktopAndTablet({
                     // @ts-ignore Web-only drop shadow to correctly trace SVG paths
                     filter: 'drop-shadow(0px 2px 3px rgba(0, 0, 0, 0.2))',
                   }}>
-                  <Logotype allowVariants={false} width={106} fill={t.atoms.text.color} />
+                  <Logotype
+                    allowVariants={false}
+                    width={106}
+                    fill={t.atoms.text.color}
+                  />
                 </View>
               </View>
             </View>

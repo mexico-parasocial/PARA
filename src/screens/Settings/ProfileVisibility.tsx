@@ -6,10 +6,7 @@ import {Trans} from '@lingui/react/macro'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import {useFocusEffect} from '@react-navigation/native'
 
-import {
-  fetchParaIdentity,
-  putParaIdentity,
-} from '#/lib/api/para-identity'
+import {fetchParaIdentity, putParaIdentity} from '#/lib/api/para-identity'
 import {type ParaIdentityRecord} from '#/lib/api/para-lexicons'
 import {
   type CommonNavigatorParams,
@@ -104,10 +101,7 @@ export function ProfileVisibilityScreen({}: Props) {
 
   const syncVisibilityToServer = async (
     updates: Partial<
-      Pick<
-        ParaIdentityRecord,
-        'publicVotes' | 'publicRaq' | 'publicHighlights'
-      >
+      Pick<ParaIdentityRecord, 'publicVotes' | 'publicRaq' | 'publicHighlights'>
     >,
   ) => {
     try {

@@ -103,7 +103,8 @@ export function CommunityRAQScreen() {
           </Text>
           <Text style={[a.text_sm, a.mt_xs, t.atoms.text_contrast_medium]}>
             <Trans>
-              Proposed appends for this community. Vote to make them official.
+              Proposed appends for this community. A vote shows support; it does
+              not make a proposal official.
             </Trans>
           </Text>
 

@@ -8,20 +8,20 @@ import {
 } from 'react-native'
 import {Trans, useLingui} from '@lingui/react/macro'
 
+import {FLAIR_GROUPS} from '#/lib/tags'
+import {useCabildeosQuery} from '#/state/queries/cabildeo'
+import {
+  type CivicTreeItem,
+  createCivicTreeItemId,
+} from '#/state/queries/collection-items'
+import {Text} from '#/view/com/util/text/Text'
+import {atoms as a, useTheme} from '#/alf'
+import {PERSONAL_ITEM_KIND_COLORS} from '#/features/civicTree/colors'
 import {
   type CivicNodeCandidate,
   type FlairOption,
   searchCivicNodes,
 } from '#/features/civicTree/nodeSearch'
-import {FLAIR_GROUPS} from '#/lib/tags'
-import {useCabildeosQuery} from '#/state/queries/cabildeo'
-import {
-  createCivicTreeItemId,
-  type CivicTreeItem,
-} from '#/state/queries/collection-items'
-import {Text} from '#/view/com/util/text/Text'
-import {atoms as a, useTheme} from '#/alf'
-import {PERSONAL_ITEM_KIND_COLORS} from '#/features/civicTree/colors'
 
 /**
  * Flattens PARA's curated flair vocabulary into search candidates. These are

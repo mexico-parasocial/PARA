@@ -13,11 +13,8 @@ import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {buildPersonalCivicTreeVaultManifest} from '#/lib/civic-export/obsidian'
-import {CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
-  getCivicTreeItemKey,
-  type CivicTreeItem,
   useCollectionsQuery,
   useCreateCollectionMutation,
   useDeleteCollectionMutation,
@@ -25,15 +22,8 @@ import {
 import {useSession} from '#/state/session'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
-import {AddTreeItemDialog} from '#/features/personalCivicTree/components/AddTreeItemDialog'
 import * as Dialog from '#/components/Dialog'
 import {GraphCanvas} from '#/components/graph/GraphCanvas'
-import {
-  PersonalTreeLegend,
-  PersonalTreeUnconnectedNotice,
-} from '#/features/personalCivicTree/components/PersonalTreeLegend'
-import {PersonalTreeNodeSheet} from '#/features/personalCivicTree/components/PersonalTreeNodeSheet'
-import {buildPersonalTreeGraph} from '#/features/personalCivicTree/graph'
 import {Bookmark as BookmarkIcon} from '#/components/icons/Bookmark'
 import {BulletList_Stroke2_Corner0_Rounded as ListIcon} from '#/components/icons/BulletList'
 import {DotGrid_Stroke2_Corner0_Rounded as GridIcon} from '#/components/icons/DotGrid'
@@ -43,6 +33,14 @@ import {Trash_Stroke2_Corner0_Rounded as TrashIcon} from '#/components/icons/Tra
 import * as Layout from '#/components/Layout'
 import * as Prompt from '#/components/Prompt'
 import * as Toast from '#/components/Toast'
+import {CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
+import {AddTreeItemDialog} from '#/features/personalCivicTree/components/AddTreeItemDialog'
+import {
+  PersonalTreeLegend,
+  PersonalTreeUnconnectedNotice,
+} from '#/features/personalCivicTree/components/PersonalTreeLegend'
+import {PersonalTreeNodeSheet} from '#/features/personalCivicTree/components/PersonalTreeNodeSheet'
+import {buildPersonalTreeGraph} from '#/features/personalCivicTree/graph'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 

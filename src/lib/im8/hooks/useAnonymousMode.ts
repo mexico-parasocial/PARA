@@ -1,6 +1,9 @@
 import {useCallback, useEffect, useState} from 'react'
 
-import {getStoredAnonymousProfile, setStoredAnonymousProfile} from '../anonymous'
+import {
+  getStoredAnonymousProfile,
+  setStoredAnonymousProfile,
+} from '../anonymous'
 import {type AnonymousProfile} from '../types'
 
 export function useAnonymousMode() {

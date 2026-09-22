@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import {useCallback, useEffect, useState} from 'react'
 import {
   ScrollView,
   StyleSheet,
@@ -6,12 +6,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import { useLingui } from '@lingui/react'
+import {useLingui} from '@lingui/react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-import { m8Fetch } from '#/lib/im8/api'
-import { useTheme } from '#/alf'
-import { Text } from '#/components/Typography'
+import {m8Fetch} from '#/lib/im8/api'
+import {useTheme} from '#/alf'
+import {Text} from '#/components/Typography'
 
 const SETTINGS_STORAGE_KEY = 'm8_trusted_issuers_settings'
 
@@ -102,7 +102,9 @@ export default function TrustedIssuersScreen() {
       .catch(err => {
         console.warn('[m8] Failed to load issuers:', err)
       })
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   const toggleTrusted = useCallback((did: string) => {
@@ -130,7 +132,7 @@ export default function TrustedIssuersScreen() {
   }, [])
 
   const setMode = useCallback((mode: TrustSettings['mode']) => {
-    setSettings(prev => ({ ...prev, mode }))
+    setSettings(prev => ({...prev, mode}))
   }, [])
 
   return (
@@ -143,42 +145,63 @@ export default function TrustedIssuersScreen() {
         </Text>
 
         {/* Trust Mode Selector */}
-        <View style={[styles.modeCard, t.atoms.bg_contrast_25, { borderColor: t.palette.contrast_100 }]}>
+        <View
+          style={[
+            styles.modeCard,
+            t.atoms.bg_contrast_25,
+            {borderColor: t.palette.contrast_100},
+          ]}>
           <Text style={[styles.modeTitle, t.atoms.text]}>Trust Mode</Text>
 
           {(['any', 'any-known', 'whitelist'] as const).map(mode => (
             <TouchableOpacity
               key={mode}
               accessibilityRole="radio"
-              accessibilityState={{ checked: settings.mode === mode }}
+              accessibilityState={{checked: settings.mode === mode}}
               onPress={() => setMode(mode)}
-              style={styles.modeOption}
-            >
+              style={styles.modeOption}>
               <View
                 style={[
                   styles.modeRadio,
                   {
-                    borderColor: settings.mode === mode ? t.palette.primary_500 : t.palette.contrast_200,
-                    backgroundColor: settings.mode === mode ? t.palette.primary_500 : 'transparent',
+                    borderColor:
+                      settings.mode === mode
+                        ? t.palette.primary_500
+                        : t.palette.contrast_200,
+                    backgroundColor:
+                      settings.mode === mode
+                        ? t.palette.primary_500
+                        : 'transparent',
                   },
-                ]}
-              >
-                {settings.mode === mode && <Text style={styles.modeRadioDot}>●</Text>}
+                ]}>
+                {settings.mode === mode && (
+                  <Text style={styles.modeRadioDot}>●</Text>
+                )}
               </View>
               <View style={styles.modeLabelBox}>
-                <Text style={[styles.modeLabel, t.atoms.text]}>{modeLabel(mode)}</Text>
-                <Text style={[styles.modeDesc, t.atoms.text_contrast_medium]}>{modeDesc(mode)}</Text>
+                <Text style={[styles.modeLabel, t.atoms.text]}>
+                  {modeLabel(mode)}
+                </Text>
+                <Text style={[styles.modeDesc, t.atoms.text_contrast_medium]}>
+                  {modeDesc(mode)}
+                </Text>
               </View>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Country Filter */}
-        <View style={[styles.filterCard, t.atoms.bg_contrast_25, { borderColor: t.palette.contrast_100 }]}>
+        <View
+          style={[
+            styles.filterCard,
+            t.atoms.bg_contrast_25,
+            {borderColor: t.palette.contrast_100},
+          ]}>
           <Text style={[styles.filterTitle, t.atoms.text]}>Country Filter</Text>
           <View style={styles.countryRow}>
             {['MX', 'US', 'CA'].map(country => (
-              <TouchableOpacity accessibilityRole="button"
+              <TouchableOpacity
+                accessibilityRole="button"
                 key={country}
                 onPress={() => {
                   setSettings(prev => {
@@ -201,8 +224,7 @@ export default function TrustedIssuersScreen() {
                       ? t.palette.primary_500
                       : t.palette.contrast_200,
                   },
-                ]}
-              >
+                ]}>
                 <Text
                   style={[
                     styles.countryChipText,
@@ -211,9 +233,12 @@ export default function TrustedIssuersScreen() {
                         ? t.palette.primary_500
                         : t.atoms.text.color,
                     },
-                  ]}
-                >
-                  {country === 'MX' ? '🇲🇽 Mexico' : country === 'US' ? '🇺🇸 USA' : '🇨🇦 Canada'}
+                  ]}>
+                  {country === 'MX'
+                    ? '🇲🇽 Mexico'
+                    : country === 'US'
+                      ? '🇺🇸 USA'
+                      : '🇨🇦 Canada'}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -233,13 +258,18 @@ export default function TrustedIssuersScreen() {
               style={[
                 styles.issuerCard,
                 t.atoms.bg_contrast_25,
-                { borderColor: isBlocked ? t.palette.contrast_500 : t.palette.contrast_100 },
-              ]}
-            >
-              <TouchableOpacity accessibilityRole="button"
-                onPress={() => setExpandedIssuer(isExpanded ? null : issuer.did)}
-                style={styles.issuerHeader}
-              >
+                {
+                  borderColor: isBlocked
+                    ? t.palette.contrast_500
+                    : t.palette.contrast_100,
+                },
+              ]}>
+              <TouchableOpacity
+                accessibilityRole="button"
+                onPress={() =>
+                  setExpandedIssuer(isExpanded ? null : issuer.did)
+                }
+                style={styles.issuerHeader}>
                 <View style={styles.issuerLeft}>
                   <View
                     style={[
@@ -255,43 +285,69 @@ export default function TrustedIssuersScreen() {
                     ]}
                   />
                   <View>
-                    <Text style={[styles.issuerName, t.atoms.text]}>{issuer.name}</Text>
-                    <Text style={[styles.issuerDid, t.atoms.text_contrast_medium]}>{issuer.did}</Text>
+                    <Text style={[styles.issuerName, t.atoms.text]}>
+                      {issuer.name}
+                    </Text>
+                    <Text
+                      style={[styles.issuerDid, t.atoms.text_contrast_medium]}>
+                      {issuer.did}
+                    </Text>
                   </View>
                 </View>
-                <Text style={[styles.issuerArrow, t.atoms.text_contrast_medium]}>
+                <Text
+                  style={[styles.issuerArrow, t.atoms.text_contrast_medium]}>
                   {isExpanded ? '▼' : '▶'}
                 </Text>
               </TouchableOpacity>
 
               {isExpanded && (
                 <View style={styles.issuerDetail}>
-                  <Text style={[styles.issuerDesc, t.atoms.text_contrast_medium]}>
+                  <Text
+                    style={[styles.issuerDesc, t.atoms.text_contrast_medium]}>
                     {issuer.description}
                   </Text>
                   {issuer.website && (
-                    <Text style={[styles.issuerWeb, t.atoms.text_contrast_medium]}>
+                    <Text
+                      style={[styles.issuerWeb, t.atoms.text_contrast_medium]}>
                       🌐 {issuer.website}
                     </Text>
                   )}
 
                   <View style={styles.issuerActions}>
                     <View style={styles.issuerToggleRow}>
-                      <Text style={[styles.toggleLabel, t.atoms.text]}>Trusted</Text>
+                      <Text style={[styles.toggleLabel, t.atoms.text]}>
+                        Trusted
+                      </Text>
                       <Switch
                         value={isTrusted}
                         onValueChange={() => toggleTrusted(issuer.did)}
-                        trackColor={{ false: t.palette.contrast_200, true: t.palette.primary_500 + '60' }}
-                        thumbColor={isTrusted ? t.palette.primary_500 : t.palette.contrast_400}
+                        trackColor={{
+                          false: t.palette.contrast_200,
+                          true: t.palette.primary_500 + '60',
+                        }}
+                        thumbColor={
+                          isTrusted
+                            ? t.palette.primary_500
+                            : t.palette.contrast_400
+                        }
                       />
                     </View>
                     <View style={styles.issuerToggleRow}>
-                      <Text style={[styles.toggleLabel, t.atoms.text]}>Blocked</Text>
+                      <Text style={[styles.toggleLabel, t.atoms.text]}>
+                        Blocked
+                      </Text>
                       <Switch
                         value={isBlocked}
                         onValueChange={() => toggleBlocked(issuer.did)}
-                        trackColor={{ false: t.palette.contrast_200, true: t.palette.contrast_500 + '60' }}
-                        thumbColor={isBlocked ? t.palette.contrast_500 : t.palette.contrast_400}
+                        trackColor={{
+                          false: t.palette.contrast_200,
+                          true: t.palette.contrast_500 + '60',
+                        }}
+                        thumbColor={
+                          isBlocked
+                            ? t.palette.contrast_500
+                            : t.palette.contrast_400
+                        }
                       />
                     </View>
                   </View>
@@ -302,8 +358,15 @@ export default function TrustedIssuersScreen() {
         })}
 
         {/* Summary */}
-        <View style={[styles.summaryCard, t.atoms.bg_contrast_25, { borderColor: t.palette.contrast_100 }]}>
-          <Text style={[styles.summaryTitle, t.atoms.text]}>Current Policy Summary</Text>
+        <View
+          style={[
+            styles.summaryCard,
+            t.atoms.bg_contrast_25,
+            {borderColor: t.palette.contrast_100},
+          ]}>
+          <Text style={[styles.summaryTitle, t.atoms.text]}>
+            Current Policy Summary
+          </Text>
           <Text style={[styles.summaryItem, t.atoms.text_contrast_medium]}>
             Mode: {settings.mode}
           </Text>
@@ -324,19 +387,27 @@ export default function TrustedIssuersScreen() {
 
 function modeLabel(mode: string): string {
   switch (mode) {
-    case 'any': return 'Allow Any Issuer'
-    case 'any-known': return 'Allow Known Issuers'
-    case 'whitelist': return 'Whitelist Only'
-    default: return mode
+    case 'any':
+      return 'Allow Any Issuer'
+    case 'any-known':
+      return 'Allow Known Issuers'
+    case 'whitelist':
+      return 'Whitelist Only'
+    default:
+      return mode
   }
 }
 
 function modeDesc(mode: string): string {
   switch (mode) {
-    case 'any': return 'Accept credentials from any issuer, even unknown ones'
-    case 'any-known': return 'Only accept from issuers in this registry'
-    case 'whitelist': return 'Only accept from explicitly trusted issuers below'
-    default: return ''
+    case 'any':
+      return 'Accept credentials from any issuer, even unknown ones'
+    case 'any-known':
+      return 'Only accept from issuers in this registry'
+    case 'whitelist':
+      return 'Only accept from explicitly trusted issuers below'
+    default:
+      return ''
   }
 }
 

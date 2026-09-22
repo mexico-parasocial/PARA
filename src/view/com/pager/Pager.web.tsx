@@ -65,37 +65,40 @@ export function Pager({
     },
   }))
 
-  const onTabBarSelect = useCallback((index: number) => {
-    const scrollY = window.scrollY
-    // We want to determine if the tabbar is already "sticking" at the top (in which
-    // case we should preserve and restore scroll), or if it is somewhere below in the
-    // viewport (in which case a scroll jump would be jarring). We determine this by
-    // measuring where the "anchor" element is (which we place just above the tabbar).
-    let anchorTop = anchorRef.current
-      ? (anchorRef.current as Element).getBoundingClientRect().top
-      : -scrollY // If there's no anchor, treat the top of the page as one.
-    const isSticking = anchorTop <= 5 // This would be 0 if browser scrollTo() was reliable.
+  const onTabBarSelect = useCallback(
+    (index: number) => {
+      const scrollY = window.scrollY
+      // We want to determine if the tabbar is already "sticking" at the top (in which
+      // case we should preserve and restore scroll), or if it is somewhere below in the
+      // viewport (in which case a scroll jump would be jarring). We determine this by
+      // measuring where the "anchor" element is (which we place just above the tabbar).
+      let anchorTop = anchorRef.current
+        ? (anchorRef.current as Element).getBoundingClientRect().top
+        : -scrollY // If there's no anchor, treat the top of the page as one.
+      const isSticking = anchorTop <= 5 // This would be 0 if browser scrollTo() was reliable.
 
-    onTabPressed?.(index)
-    if (isSticking) {
-      scrollYs.current[selectedPage] = window.scrollY
-    } else {
-      scrollYs.current[selectedPage] = null
-    }
-    flushSync(() => {
-      setSelectedPage(index)
-      dragProgress.value = index
-      onPageSelected?.(index)
-    })
-    if (isSticking) {
-      const restoredScrollY = scrollYs.current[index]
-      if (restoredScrollY != null) {
-        window.scrollTo(0, restoredScrollY)
+      onTabPressed?.(index)
+      if (isSticking) {
+        scrollYs.current[selectedPage] = window.scrollY
       } else {
-        window.scrollTo(0, scrollY + anchorTop)
+        scrollYs.current[selectedPage] = null
       }
-    }
-  }, [selectedPage, setSelectedPage, onPageSelected, onTabPressed])
+      flushSync(() => {
+        setSelectedPage(index)
+        dragProgress.value = index
+        onPageSelected?.(index)
+      })
+      if (isSticking) {
+        const restoredScrollY = scrollYs.current[index]
+        if (restoredScrollY != null) {
+          window.scrollTo(0, restoredScrollY)
+        } else {
+          window.scrollTo(0, scrollY + anchorTop)
+        }
+      }
+    },
+    [selectedPage, setSelectedPage, onPageSelected, onTabPressed],
+  )
 
   return (
     <View testID={testID} style={s.hContentRegion}>

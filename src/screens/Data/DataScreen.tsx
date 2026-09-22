@@ -231,7 +231,11 @@ export function DataScreen() {
                           shadowOffset: {width: 0, height: 2},
                         }),
                   }}>
-                  <Logotype allowVariants={false} width={106} fill={t.atoms.text.color} />
+                  <Logotype
+                    allowVariants={false}
+                    width={106}
+                    fill={t.atoms.text.color}
+                  />
                 </View>
               </View>
             </View>

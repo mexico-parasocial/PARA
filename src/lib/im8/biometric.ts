@@ -1,6 +1,5 @@
-
-
-let LocalAuthentication: typeof import('expo-local-authentication') | null = null
+let LocalAuthentication: typeof import('expo-local-authentication') | null =
+  null
 
 try {
   LocalAuthentication = require('expo-local-authentication')

@@ -111,10 +111,9 @@ function VSScreenContent({
   const [selectedStatus, setSelectedStatus] = useState<VsStatusFilter>('all')
   const [selectedTime, setSelectedTime] = useState<VsTimeFilter>('all')
 
-  const {
-    data: cabildeos = [],
-    isLoading: cabildeosLoading,
-  } = useQuery<CabildeoReadView[]>({
+  const {data: cabildeos = [], isLoading: cabildeosLoading} = useQuery<
+    CabildeoReadView[]
+  >({
     staleTime: STALE.MINUTES.ONE,
     queryKey: ['vs-screen', 'cabildeos'],
     placeholderData: previous => previous,
@@ -484,9 +483,7 @@ function EntityPicker({
       ]}>
       <View style={styles.entityPickerHeader}>
         <View style={styles.entityPickerTitleBlock}>
-          <Text style={[styles.entityPickerTitle, t.atoms.text]}>
-            Comparar
-          </Text>
+          <Text style={[styles.entityPickerTitle, t.atoms.text]}>Comparar</Text>
           <Text
             style={[styles.entityPickerSubtitle, t.atoms.text_contrast_medium]}>
             Elige dos comunidades o partidos

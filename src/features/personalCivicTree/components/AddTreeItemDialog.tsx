@@ -13,8 +13,8 @@ import {
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import * as Dialog from '#/components/Dialog'
-import {CivicNodeResults} from '#/features/personalCivicTree/components/CivicNodePicker'
 import * as Toast from '#/components/Toast'
+import {CivicNodeResults} from '#/features/personalCivicTree/components/CivicNodePicker'
 
 type TreeItemKind = NonNullable<CivicTreeItem['kind']>
 
@@ -236,6 +236,7 @@ function AddTreeItemDialogInner({
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel={_(msg`Cancel`)}
+          accessibilityHint={_(msg`Closes without saving`)}
           onPress={() => control.close()}>
           <Text style={t.atoms.text_contrast_medium}>
             <Trans>Cancel</Trans>
@@ -245,6 +246,7 @@ function AddTreeItemDialogInner({
           <TouchableOpacity
             accessibilityRole="button"
             accessibilityLabel={_(msg`Save`)}
+            accessibilityHint={_(msg`Adds the item to the selected collection`)}
             onPress={onSave}
             disabled={!collection || !title.trim() || addMutation.isPending}>
             <Text

@@ -25,7 +25,7 @@ const OUT_FILE = path.join(OUT_DIR, 'matrix-js-sdk.bundle.txt')
 
 async function main() {
   if (!fs.existsSync(OUT_DIR)) {
-    fs.mkdirSync(OUT_DIR, { recursive: true })
+    fs.mkdirSync(OUT_DIR, {recursive: true})
   }
 
   const result = await esbuild.build({
@@ -45,10 +45,12 @@ async function main() {
 
   const size = (fs.statSync(OUT_FILE).size / 1024 / 1024).toFixed(2)
   console.log(`✅ Built ${OUT_FILE} (${size} MB)`)
-  console.log(`   Bundle includes ${Object.keys(result.metafile.inputs).length} inputs`)
+  console.log(
+    `   Bundle includes ${Object.keys(result.metafile.inputs).length} inputs`,
+  )
 }
 
-main().catch((err) => {
+main().catch(err => {
   console.error('❌ Failed to build chat bundle:', err)
   process.exit(1)
 })

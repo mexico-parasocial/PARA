@@ -511,7 +511,9 @@ export function FlairSelectionList({
                                 )}
                                 onPress={() => toggleFlair(flair)}
                                 activeColor={
-                                  mode === 'policy' ? POLICY_COLOR : MATTER_COLOR
+                                  mode === 'policy'
+                                    ? POLICY_COLOR
+                                    : MATTER_COLOR
                                 }
                               />
                             ),
@@ -591,7 +593,9 @@ export function FlairSelectionList({
                                 )}
                                 onPress={() => toggleFlair(flair)}
                                 activeColor={
-                                  mode === 'policy' ? POLICY_COLOR : MATTER_COLOR
+                                  mode === 'policy'
+                                    ? POLICY_COLOR
+                                    : MATTER_COLOR
                                 }
                               />
                             ),

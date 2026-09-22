@@ -115,10 +115,10 @@ export function getExternalRefsFromCollection(
     const provider = getProviderFromUri(uri)
     if (!provider) continue
     refs.push({
-        provider,
-        uri,
-        url: item.url,
-        title: getCivicTreeItemTitle(item),
+      provider,
+      uri,
+      url: item.url,
+      title: getCivicTreeItemTitle(item),
     })
   }
   return refs

@@ -1,4 +1,10 @@
-import {type ComponentType, useCallback, useEffect, useMemo, useState} from 'react'
+import {
+  type ComponentType,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react'
 import {
   ActivityIndicator,
   StyleSheet,
@@ -18,6 +24,7 @@ import {
 } from '#/state/queries/matrix'
 import {useAgent} from '#/state/session'
 import {atoms as a, useTheme} from '#/alf'
+import {ChatEncryptionNotice} from '#/components/chat/ChatEncryptionNotice'
 import {ChatIdentityPill} from '#/components/chat/ChatIdentityPill'
 import {type Props as SVGIconProps} from '#/components/icons/common'
 import {Group3_Stroke2_Corner0_Rounded as MembersIcon} from '#/components/icons/Group'
@@ -253,6 +260,9 @@ export function CommunityChatScreen() {
           },
         ]}>
         <ChatIdentityPill mode={identityMode} />
+        <View style={[a.mt_xs]}>
+          <ChatEncryptionNotice />
+        </View>
         {civicBadges.length > 0 && (
           <View style={[a.flex_row, a.flex_wrap, a.gap_xs, a.mt_xs]}>
             {civicBadges.slice(0, 4).map(badge => (
@@ -382,9 +392,9 @@ function OnboardingBanner({
           Deliberación cívica
         </Text>
         <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-          Esta es la {roomLabel}. Los mensajes aquí son parte de la
-          conversación de la comunidad. Usa los botones de arriba para resumir,
-          proponer o recopilar evidencia.
+          Esta es la {roomLabel}. Los mensajes aquí son parte de la conversación
+          de la comunidad. Usa los botones de arriba para resumir, proponer o
+          recopilar evidencia.
         </Text>
       </View>
       <TouchableOpacity

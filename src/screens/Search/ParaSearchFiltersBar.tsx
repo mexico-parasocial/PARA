@@ -76,13 +76,13 @@ export function ParaSearchFiltersBar({
     () =>
       Boolean(
         tagCount ||
-          compassCount ||
-          communityCount ||
-          cabildeoCount ||
-          filters.state ||
-          filters.districtKey ||
-          filters.cabildeoPhase ||
-          advancedCount,
+        compassCount ||
+        communityCount ||
+        cabildeoCount ||
+        filters.state ||
+        filters.districtKey ||
+        filters.cabildeoPhase ||
+        advancedCount,
       ),
     [
       tagCount,
@@ -114,7 +114,9 @@ export function ParaSearchFiltersBar({
           label={_(msg`Areas`)}
           activeCount={tagCount}
           onPress={policyControl.open}
-          onClear={tagCount ? () => onChange({...filters, tag: undefined}) : undefined}
+          onClear={
+            tagCount ? () => onChange({...filters, tag: undefined}) : undefined
+          }
         />
         <ParaFilterChip
           label={_(msg`Compass`)}

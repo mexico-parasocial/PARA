@@ -71,12 +71,7 @@ export function ParaFilterChip({
               backgroundColor: 'rgba(255,255,255,0.25)',
             },
           ]}>
-          <Text
-            style={[
-              a.text_xs,
-              a.font_bold,
-              {color: t.palette.white},
-            ]}>
+          <Text style={[a.text_xs, a.font_bold, {color: t.palette.white}]}>
             {activeCount}
           </Text>
         </View>

@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest'
+import {describe, it, expect} from 'vitest'
 import {
   exportToW3CVC2,
   importFromW3CVC2,
@@ -53,7 +53,7 @@ describe('exportToW3CVC2', () => {
       id: 'cred-min',
       issuerDid: 'did:m8:test',
       issuedAt: '2026-01-01T00:00:00Z',
-      claims: { ageOver18: true },
+      claims: {ageOver18: true},
       proofJws: 'mock-jws',
       proofType: 'Ed25519Signature2020',
       verificationMethod: 'did:m8:test#key1',
@@ -107,7 +107,11 @@ describe('createW3CPresentation', () => {
 
   it('adds proof when holder/challenge provided', () => {
     const vc = exportToW3CVC2(mockCredential)
-    const vp = createW3CPresentation([vc], 'did:m8:holder:juan', 'challenge-abc')
+    const vp = createW3CPresentation(
+      [vc],
+      'did:m8:holder:juan',
+      'challenge-abc',
+    )
 
     expect(vp.proof).toBeDefined()
     expect(vp.proof!.proofPurpose).toBe('authentication')

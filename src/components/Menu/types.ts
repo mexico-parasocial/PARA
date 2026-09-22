@@ -1,6 +1,5 @@
 import {
   type ComponentType,
-  type KeyboardEvent,
   type PropsWithChildren,
   type ReactNode,
   type RefObject,

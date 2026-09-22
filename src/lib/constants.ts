@@ -435,6 +435,39 @@ export function getDmServiceHeadersForServiceUrl(serviceUrl?: string) {
 
 export const DM_SERVICE_HEADERS = getDmServiceHeadersForServiceUrl()
 
+/**
+ * The appview's proxy target for an account on `serviceUrl`, in the
+ * `did#service_id` form a lex client's `service` option takes.
+ *
+ * A local dev PDS can only mint service auth for its own AppView, so proxying
+ * `app.bsky.*` to the production DID there fails every call with a 401 and the
+ * app reads that as an expired session. Point local accounts at the dev-env
+ * AppView instead (override with `EXPO_PUBLIC_LOCAL_BSKY_PROXY_DID`, whose DID
+ * is minted per dev-env data directory).
+ */
+export function getAppviewServiceForServiceUrl(serviceUrl?: string): Service {
+  const proxyDid = isLikelyLocalServiceUrl(serviceUrl)
+    ? LOCAL_DEV_APPVIEW_PROXY_DID
+    : BLUESKY_PROXY_DID
+  return `${proxyDid}#bsky_appview` as Service
+}
+
+/**
+ * The chat service's proxy target for an account on `serviceUrl`, in the
+ * `did#service_id` form a lex client's `service` option takes.
+ *
+ * The production chat service cannot resolve a DID minted on a local PLC, and
+ * answers `could not resolve iss did`, which the chat event bus reads as a lost
+ * session and logs the account out. Local accounts proxy to the dev-env chat
+ * service instead.
+ */
+export function getChatServiceForServiceUrl(serviceUrl?: string): Service {
+  const proxyDid = isLikelyLocalServiceUrl(serviceUrl)
+    ? LOCAL_DEV_CHAT_PROXY_DID
+    : CHAT_PROXY_DID
+  return `${proxyDid}#bsky_chat` as Service
+}
+
 export const BLUESKY_MOD_SERVICE_HEADERS = {
   'atproto-proxy': api.moderation.service,
 }

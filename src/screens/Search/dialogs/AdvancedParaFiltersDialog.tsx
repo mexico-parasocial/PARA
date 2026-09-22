@@ -79,7 +79,9 @@ function Inner({
           <Trans>More filters</Trans>
         </Text>
         <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-          <Trans>Refine posts by type, flair, party, or public figure status.</Trans>
+          <Trans>
+            Refine posts by type, flair, party, or public figure status.
+          </Trans>
         </Text>
       </View>
 

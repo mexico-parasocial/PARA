@@ -16,6 +16,7 @@ import {
 import {createPersistedQueryStorage} from '#/lib/persisted-query-storage'
 import {logger} from '#/logger'
 import {
+  emitSessionDropped,
   listenNetworkConfirmed,
   listenNetworkLost,
   listenSessionDropped,
@@ -146,15 +147,33 @@ const AUTH_ERROR_NAMES = new Set([
   'ExpiredToken',
   'InvalidToken',
   'AuthMissing',
+  'AuthenticationRequired',
+  'XrpcAuthenticationError',
 ])
 
 function isAuthError(error: unknown): boolean {
   if (!error || typeof error !== 'object') return false
-  const {name, message} = error as {name?: unknown; message?: unknown}
+  const {name, message, status} = error as {
+    name?: unknown
+    message?: unknown
+    status?: unknown
+  }
+  if (status === 401) return true
   if (typeof name === 'string' && AUTH_ERROR_NAMES.has(name)) return true
   return (
     typeof message === 'string' &&
-    /token has expired|invalid token|expiredtoken/i.test(message)
+    /token has expired|invalid token|expiredtoken|could not resolve iss did|identity unknown/i.test(
+      message,
+    )
+  )
+}
+
+function isDeadIdentityError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false
+  const {message} = error as {message?: unknown}
+  return (
+    typeof message === 'string' &&
+    /could not resolve iss did|identity unknown/i.test(message)
   )
 }
 
@@ -196,11 +215,17 @@ const createQueryClient = () =>
     queryCache: new QueryCache({
       onError: (error, query) => {
         if (isAuthError(error)) {
+          if (isDeadIdentityError(error)) {
+            emitSessionDropped()
+          }
           if (reportedAuthFailure) return
           reportedAuthFailure = true
-          logger.warn('query: failing on an expired session', {
-            queryKey: String(query.queryKey[0]),
-          })
+          logger.warn(
+            'query: failing on an expired session or unknown identity',
+            {
+              queryKey: String(query.queryKey[0]),
+            },
+          )
           return
         }
         if (isUnsupportedMethodError(error)) {

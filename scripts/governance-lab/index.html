@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PARA · Laboratorio de gobernanza</title>
+    <link rel="stylesheet" href="/lab.css">
+    <script type="module" src="/lab.js"></script>
+  </head>
+  <body>
+    <header class="masthead"><a href="/" aria-label="Reiniciar laboratorio PARA">para<span> / gobernanza</span></a><span class="badge">LABORATORIO · G1</span></header>
+    <main>
+      <section class="intro">
+        <p class="eyebrow">TU DECISIÓN. TU PRESUPUESTO.</p>
+        <h1>Una voz que puedes<br>ejercer o delegar.</h1>
+        <p class="lede">Explora cómo se conectan delegación, intensidad y voto cuadrático. Cada persona conserva sus créditos y cada decisión se cuenta una sola vez.</p>
+        <div class="notice"><strong>Datos sintéticos. Ningún voto se publica.</strong><span>Reglas provisionales: se delega la decisión, sin transferir créditos. Esta demo no proporciona anonimato ni autoriza elecciones reales.</span></div>
+      </section>
+      <section class="toolbar" aria-label="Estado de la elección">
+        <div><span class="dot" aria-hidden="true"></span><strong id="phase">Elección abierta</strong><span id="revision" class="muted"></span></div>
+        <div class="actions"><button id="close" class="secondary">Simular cierre</button><button id="reset" class="text-button">Reiniciar demo</button></div>
+      </section>
+      <div class="workspace">
+        <section class="card decision" aria-labelledby="decision-title">
+          <p class="eyebrow">01 / PARTICIPA</p><h2 id="decision-title">Tu decisión</h2>
+          <div class="fields"><label>Persona de la demo<select id="actor"></select></label><label>Propuesta<select id="proposal"></select></label></div>
+          <div class="balance"><div><span class="muted">Créditos disponibles</span><strong><span id="remaining">—</span><small> / <span id="budget-total">—</span></small></strong></div><p>Un presupuesto para todas las propuestas.<br>Intensidad 1 = 1 crédito · 2 = 4 · 3 = 9.</p></div>
+          <div id="current" class="current"></div>
+          <fieldset><legend>¿Qué tan fuerte es tu postura?</legend><p class="muted">En contra ← &nbsp; Abstención &nbsp; → A favor</p><div class="signals" id="signals"></div></fieldset>
+          <p id="preview" class="preview"></p>
+          <div class="actions"><button id="vote" class="primary">Guardar voto de prueba</button><button id="withdraw" class="secondary">Retirar voto directo</button></div>
+          <p class="help">Tu voto directo prevalece en esta propuesta. Retirarlo vuelve a aplicar tu delegación, si existe. La abstención explícita (0) no delega.</p>
+          <hr>
+          <h3>O delega tu decisión</h3><p class="muted">Sigues la señal del representante. Su costo se carga a tu propio presupuesto.</p>
+          <div class="fields"><label>Representante<select id="delegate"></select></label><label>Ámbito<select id="scope"><option value="proposal">Esta propuesta</option><option value="topic">Tema: presupuesto</option><option value="community">Toda la comunidad</option></select></label></div>
+          <div class="actions"><button id="grant" class="secondary">Registrar delegación de prueba</button></div>
+          <div id="grants" class="grant-list"></div>
+          <p id="feedback" role="status" aria-live="polite" class="feedback">Escenario inicial: Ana → Bruno → Carla. Carla votó +2 en parque y +1 en biblioteca.</p>
+        </section>
+        <aside class="right-column">
+          <section class="card publication" aria-labelledby="publication-title"><p class="eyebrow">02 / ESTADÍSTICAS COMPARTIDAS</p><h2 id="publication-title">Lo que ven los demás</h2><div id="publication"></div><p class="help">La regla de cierre y el mínimo de participantes solo ilustran el contrato. No constituyen una garantía de anonimato.</p></section>
+          <section class="card" aria-labelledby="calculation-title"><p class="eyebrow">03 / VERIFICACIÓN DEL LABORATORIO</p><h2 id="calculation-title">Un mismo conteo</h2><p class="muted">Esta vista interna usa las personas ficticias del ejercicio. Los conteos plano y de intensidad parten de los mismos votos efectivos.</p><div id="results"></div></section>
+          <section class="method"><h3>Cómo se conserva tu voz</h3><ol><li>Se resuelve tu voto directo o tu cadena de delegación.</li><li>Se calcula el costo: intensidad × intensidad.</li><li>Se valida el presupuesto de todas las propuestas.</li><li>El resultado se actualiza solo si el estado completo es válido.</li></ol></section>
+        </aside>
+      </div>
+      <footer><span>Motor compartido con WatZappa</span><code id="contract"></code><span>Solo en este navegador · reiniciar borra el ejercicio</span></footer>
+    </main>
+  </body>
+</html>

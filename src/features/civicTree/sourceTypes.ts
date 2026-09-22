@@ -1,11 +1,5 @@
 export type CivicTreeSourceType =
-  | 'article'
-  | 'link'
-  | 'book'
-  | 'research'
-  | 'audio'
-  | 'video'
-  | 'social'
+  'article' | 'link' | 'book' | 'research' | 'audio' | 'video' | 'social'
 
 export const CIVIC_TREE_SOURCE_TYPES: Array<{
   value: CivicTreeSourceType
@@ -21,7 +15,9 @@ export const CIVIC_TREE_SOURCE_TYPES: Array<{
   {value: 'social', label: 'Social', icon: '💬'},
 ]
 
-export function inferCivicTreeSourceType(input?: string | null): CivicTreeSourceType {
+export function inferCivicTreeSourceType(
+  input?: string | null,
+): CivicTreeSourceType {
   const value = input?.toLowerCase() ?? ''
   if (/youtube|vimeo|tiktok/.test(value)) return 'video'
   if (/spotify|soundcloud|podcast/.test(value)) return 'audio'
