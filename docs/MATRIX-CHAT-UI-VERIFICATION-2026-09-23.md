@@ -14,3 +14,7 @@
 - Header actions use ALF buttons with icons, spoken labels and hints. The risk count has a spoken number. VoiceOver and TalkBack navigation remain unverified because no signed-in chat screen was available in the simulator.
 - Chat screen, native room, and HTML client strings use Lingui. The translated map is installed before the HTML client initializes; the client no longer hardcodes Spanish visible strings. `pnpm intl:extract` completed and found the new strings. The extraction was run with a temporary backup of the already-modified English catalog, then that catalog was restored to avoid overwriting unrelated user work.
 - `pnpm typecheck` passed for iOS, Android, and web. Focused oxlint and six focused Jest tests passed.
+
+## P3 - explicit iframe message origin
+
+- The web iframe sends membership messages only to its configured app origin, and the receiver checks both the iframe window and origin. The native WebView continues to use its own `ReactNativeWebView.postMessage` bridge.

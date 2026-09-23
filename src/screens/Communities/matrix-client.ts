@@ -14,6 +14,7 @@ export interface MatrixClientConfig {
   roomId: string
   communityName: string
   strings?: Record<string, string>
+  parentOrigin?: string
   /**
    * Override the URL used to load matrix-js-sdk.
    * Default: PARA-hosted SDK. Keep this off public CDNs in production so the
@@ -854,7 +855,7 @@ export function buildClientHtml(sdkBundle?: string): string {
             if (member.userId !== CONFIG.userId || member.roomId !== CONFIG.roomId || member.membership !== 'leave') return;
             const message = JSON.stringify({type: 'matrix-membership-left', roomId: CONFIG.roomId});
             if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(message);
-            else if (window.parent !== window) window.parent.postMessage(message, '*');
+            else if (window.parent !== window && CONFIG.parentOrigin) window.parent.postMessage(message, CONFIG.parentOrigin);
           });
 
           client.on('Room.timeline', function(event, _room, toStartOfTimeline) {

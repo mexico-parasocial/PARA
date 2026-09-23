@@ -20,4 +20,22 @@ describe('Matrix client configuration', () => {
     expect(html).not.toContain('</script><script>bad()')
     expect(html).toContain('\\u003c/script>')
   })
+
+  it('targets the configured app origin for membership messages', () => {
+    const html = buildConfiguredClientHtml(undefined, {
+      accessToken: 'token',
+      userId: '@alice:example.org',
+      homeServer: 'https://example.org',
+      deviceId: 'DEVICE',
+      roomId: '!room:example.org',
+      communityName: 'Community',
+      parentOrigin: 'https://app.example.org',
+    })
+
+    expect(html).toContain('"parentOrigin":"https://app.example.org"')
+    expect(html).toContain(
+      'window.parent.postMessage(message, CONFIG.parentOrigin)',
+    )
+    expect(html).not.toContain("window.parent.postMessage(message, '*')")
+  })
 })

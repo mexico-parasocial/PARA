@@ -80,6 +80,7 @@ export function CommunityChatScreen() {
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (event.source !== iframeRef.current?.contentWindow) return
+      if (event.origin !== window.location.origin) return
       try {
         const message = JSON.parse(event.data) as {
           type?: string
@@ -173,6 +174,7 @@ export function CommunityChatScreen() {
       roomId: activeRoomId,
       communityName,
       strings: matrixStrings,
+      parentOrigin: window.location.origin,
     })
   }, [tokenData, activeRoomId, sdkBundle, communityName, matrixStrings])
 
