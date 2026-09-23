@@ -13,6 +13,7 @@ export interface MatrixClientConfig {
   deviceId: string
   roomId: string
   communityName: string
+  strings?: Record<string, string>
   /**
    * Override the URL used to load matrix-js-sdk.
    * Default: PARA-hosted SDK. Keep this off public CDNs in production so the
@@ -362,26 +363,26 @@ export function buildClientHtml(sdkBundle?: string): string {
 <body>
   <div id="app">
     <div id="header">
-      <span id="header-title">Cargando...</span>
+      <span id="header-title"></span>
       <span id="header-status" class="connecting"></span>
     </div>
 
     <div id="loading">
       <div class="spinner"></div>
-      <span>Conectando al chat...</span>
+      <span id="loading-text"></span>
     </div>
 
     <div id="error">
       <span style="font-size:32px">⚠️</span>
-      <span id="error-text">No se pudo conectar al chat</span>
-      <button onclick="initClient()">Reintentar</button>
+      <span id="error-text"></span>
+      <button id="retry" onclick="initClient()"></button>
     </div>
 
     <div id="messages"></div>
-    <div id="typing-indicator">Alguien está escribiendo...</div>
+    <div id="typing-indicator"></div>
 
     <div id="composer">
-      <textarea id="input" rows="1" placeholder="Escribe un mensaje..."></textarea>
+      <textarea id="input" rows="1"></textarea>
       <button id="send">➤</button>
     </div>
 
@@ -412,6 +413,7 @@ export function buildClientHtml(sdkBundle?: string): string {
       'use strict';
 
       const CONFIG = window.PARA_CONFIG || {};
+      const STRINGS = CONFIG.strings || {};
       const messagesEl = document.getElementById('messages');
       const composerEl = document.getElementById('composer');
       const loadingEl = document.getElementById('loading');
@@ -420,6 +422,14 @@ export function buildClientHtml(sdkBundle?: string): string {
       const headerStatus = document.getElementById('header-status');
       const inputEl = document.getElementById('input');
       const sendBtn = document.getElementById('send');
+      headerTitle.textContent = STRINGS.loading || '';
+      document.getElementById('loading-text').textContent = STRINGS.connecting || '';
+      document.getElementById('error-text').textContent = STRINGS.connectionFailed || '';
+      document.getElementById('retry').textContent = STRINGS.retry || '';
+      document.getElementById('typing-indicator').textContent = STRINGS.someoneTyping || '';
+      inputEl.placeholder = STRINGS.messagePlaceholder || '';
+      inputEl.setAttribute('aria-label', STRINGS.messagePlaceholder || '');
+      sendBtn.setAttribute('aria-label', STRINGS.sendMessage || '');
 
       let client = null;
       let room = null;
@@ -439,7 +449,7 @@ export function buildClientHtml(sdkBundle?: string): string {
 
       function formatTime(ts) {
         const d = new Date(ts);
-        return d.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+        return d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
       }
 
       function formatDate(ts) {
@@ -447,9 +457,9 @@ export function buildClientHtml(sdkBundle?: string): string {
         const today = new Date();
         const yesterday = new Date(today);
         yesterday.setDate(yesterday.getDate() - 1);
-        if (d.toDateString() === today.toDateString()) return 'Hoy';
-        if (d.toDateString() === yesterday.toDateString()) return 'Ayer';
-        return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+        if (d.toDateString() === today.toDateString()) return STRINGS.today;
+        if (d.toDateString() === yesterday.toDateString()) return STRINGS.yesterday;
+        return d.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
       }
 
       let lastDate = '';
@@ -530,7 +540,7 @@ export function buildClientHtml(sdkBundle?: string): string {
         retainMediaUrl(eventId, url);
         const link = document.createElement('a');
         link.href = url;
-        if (download) link.download = filename || 'archivo';
+        if (download) link.download = filename || STRINGS.file;
         else link.target = '_blank';
         document.body.appendChild(link);
         link.click();
@@ -621,18 +631,18 @@ export function buildClientHtml(sdkBundle?: string): string {
         if (msgtype === 'm.image') {
           if (mediaEndpoint(content.url, true)) {
             const container = document.createElement('span');
-            container.textContent = 'Cargando imagen...';
+            container.textContent = STRINGS.imageLoading;
             fetchMedia(content.url, true, PREVIEW_LIMIT_BYTES).then(blob => {
               if (!container.isConnected) return;
               const url = URL.createObjectURL(blob);
               retainMediaUrl(eventId, url);
               const img = document.createElement('img');
               img.src = url;
-              img.alt = content.body || 'Imagen';
+              img.alt = content.body || STRINGS.image;
               container.replaceChildren(img);
             }).catch(err => {
               if (!container.isConnected) return;
-              container.replaceChildren(mediaButton(content.url, content.body || 'imagen', eventId, 'Descargar imagen', true));
+              container.replaceChildren(mediaButton(content.url, content.body || STRINGS.imageLower, eventId, STRINGS.downloadImage, true));
               if (err.message !== 'MEDIA_TOO_LARGE') console.error('Media preview failed:', err);
             });
             return container;
@@ -640,7 +650,7 @@ export function buildClientHtml(sdkBundle?: string): string {
         }
         if ((msgtype === 'm.video' || msgtype === 'm.audio' || msgtype === 'm.file') && mediaEndpoint(content.url, false)) {
           const prefix = msgtype === 'm.video' ? '🎬 ' : msgtype === 'm.audio' ? '🎵 ' : '📎 ';
-          return mediaButton(content.url, content.body || 'archivo', eventId, prefix + 'Descargar ' + (content.body || 'archivo'), true);
+          return mediaButton(content.url, content.body || STRINGS.file, eventId, prefix + STRINGS.download + ' ' + (content.body || STRINGS.file), true);
         }
         const span = document.createElement('span');
         span.textContent = content.body || '';
@@ -659,7 +669,7 @@ export function buildClientHtml(sdkBundle?: string): string {
             await openMedia(mxcUrl, filename, eventId, download);
           } catch (err) {
             console.error('Media download failed:', err);
-            button.textContent = 'No se pudo descargar - reintentar';
+            button.textContent = STRINGS.downloadFailed;
           } finally {
             button.disabled = false;
           }
@@ -795,11 +805,11 @@ export function buildClientHtml(sdkBundle?: string): string {
       async function initClient() {
         show('loading');
         setStatus('connecting');
-        headerTitle.textContent = CONFIG.communityName || 'Chat';
+        headerTitle.textContent = CONFIG.communityName || STRINGS.chat;
 
         if (!CONFIG.accessToken || !CONFIG.userId || !CONFIG.homeServer || !CONFIG.roomId) {
           console.error('Missing PARA_CONFIG', CONFIG);
-          document.getElementById('error-text').textContent = 'Falta configuración de autenticación';
+          document.getElementById('error-text').textContent = STRINGS.missingAuth;
           show('error');
           setStatus('error');
           return;
@@ -830,7 +840,7 @@ export function buildClientHtml(sdkBundle?: string): string {
                   isReady = true;
                 }).catch(function(err) {
                   console.error('Failed to join room:', err);
-                  document.getElementById('error-text').textContent = 'No se pudo unir a la sala';
+                  document.getElementById('error-text').textContent = STRINGS.joinFailed;
                   show('error');
                   setStatus('error');
                 });
@@ -859,7 +869,7 @@ export function buildClientHtml(sdkBundle?: string): string {
             const indicator = document.getElementById('typing-indicator');
             if (typing && member.userId !== myUserId) {
               indicator.style.display = 'block';
-              indicator.textContent = member.name + ' está escribiendo...';
+              indicator.textContent = member.name + ' ' + STRINGS.typingSuffix;
             } else {
               indicator.style.display = 'none';
             }
@@ -868,7 +878,7 @@ export function buildClientHtml(sdkBundle?: string): string {
           await client.startClient({ initialSyncLimit: 50 });
         } catch (err) {
           console.error('Init error:', err);
-          document.getElementById('error-text').textContent = 'Error de conexión: ' + (err.message || 'desconocido');
+          document.getElementById('error-text').textContent = STRINGS.connectionError + ' ' + (err.message || STRINGS.unknown);
           show('error');
           setStatus('error');
         }
@@ -918,7 +928,17 @@ export function buildClientHtml(sdkBundle?: string): string {
 export function buildConfigScript(config: MatrixClientConfig): string {
   return `
     (function() {
-      window.PARA_CONFIG = ${JSON.stringify(config)};
+      window.PARA_CONFIG = ${JSON.stringify(config).replace(/</g, '\\u003c')};
     })();
   `
+}
+
+export function buildConfiguredClientHtml(
+  sdkBundle: string | undefined,
+  config: MatrixClientConfig,
+): string {
+  return buildClientHtml(sdkBundle).replace(
+    '  <script>\n    (function() {',
+    `  <script>${buildConfigScript(config)}</script>\n  <script>\n    (function() {`,
+  )
 }

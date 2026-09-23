@@ -15,6 +15,9 @@ import {
 import {WebView} from 'react-native-webview'
 import {Asset} from 'expo-asset'
 import * as FileSystem from 'expo-file-system/legacy'
+import {msg} from '@lingui/core/macro'
+import {useLingui} from '@lingui/react'
+import {Trans} from '@lingui/react/macro'
 import {useNavigation, useRoute} from '@react-navigation/native'
 
 import {getDefaultChatIdentityMode} from '#/lib/chat/identity'
@@ -30,19 +33,23 @@ import {
 } from '#/state/queries/matrix'
 import {useAgent} from '#/state/session'
 import {atoms as a, useTheme} from '#/alf'
+import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import {ChatEncryptionNotice} from '#/components/chat/ChatEncryptionNotice'
 import {ChatIdentityPill} from '#/components/chat/ChatIdentityPill'
 import {type Props as SVGIconProps} from '#/components/icons/common'
 import {Group3_Stroke2_Corner0_Rounded as MembersIcon} from '#/components/icons/Group'
 import {Megaphone_Stroke2_Corner0_Rounded as ProposalIcon} from '#/components/icons/Megaphone'
 import {Newspaper_Stroke2_Corner2_Rounded as EvidenceIcon} from '#/components/icons/Newspaper'
+import {Shield_Stroke2_Corner0_Rounded as ShieldIcon} from '#/components/icons/Shield'
 import {Sparkle_Stroke2_Corner0_Rounded as SummarizeIcon} from '#/components/icons/Sparkle'
+import {Warning_Stroke2_Corner0_Rounded as WarningIcon} from '#/components/icons/Warning'
 import * as Layout from '#/components/Layout'
 import {SorteoBadge} from '#/components/SorteoBadge'
 import {Text} from '#/components/Typography'
 import {CHAT_ENGINE} from '#/env'
-import {buildClientHtml, buildConfigScript} from './matrix-client'
+import {buildConfiguredClientHtml} from './matrix-client'
 import {NativeChatRoom} from './NativeChatRoom'
+import {useMatrixClientStrings} from './useMatrixClientStrings'
 
 export function CommunityChatScreen() {
   const route = useRoute<{
@@ -52,6 +59,8 @@ export function CommunityChatScreen() {
   }>()
   const navigation = useNavigation<NavigationProp>()
   const t = useTheme()
+  const {_} = useLingui()
+  const matrixStrings = useMatrixClientStrings()
   const agent = useAgent()
   const {communityUri, communityName, roomId: routeRoomId} = route.params
   const myDid = agent.session?.did ?? undefined
@@ -90,10 +99,10 @@ export function CommunityChatScreen() {
   const isModerator = myBadges?.participation?.isModerator ?? false
   const identityMode = getDefaultChatIdentityMode('matrix_community')
   const civicBadges = [
-    myBadges?.participation?.isModerator ? 'Moderador' : undefined,
-    myBadges?.participation?.isDelegate ? 'Delegado' : undefined,
+    myBadges?.participation?.isModerator ? _(msg`Moderador`) : undefined,
+    myBadges?.participation?.isDelegate ? _(msg`Delegado`) : undefined,
     myBadges?.participation?.chamber
-      ? `Cámara ${myBadges.participation.chamber}`
+      ? _(msg`Cámara ${myBadges.participation.chamber}`)
       : undefined,
     ...(myBadges?.visibleBadges.map(badge => badge.label) ?? []),
   ].filter(Boolean) as string[]
@@ -132,17 +141,18 @@ export function CommunityChatScreen() {
     }
   }, [])
 
-  const injectedJavaScript = useMemo(() => {
+  const chatHtml = useMemo(() => {
     if (!tokenData || !activeRoomId) return ''
-    return buildConfigScript({
+    return buildConfiguredClientHtml(sdkBundle, {
       accessToken: tokenData.accessToken,
       userId: tokenData.userId,
       homeServer: tokenData.homeServer,
       deviceId: tokenData.deviceId,
       roomId: activeRoomId,
       communityName,
+      strings: matrixStrings,
     })
-  }, [tokenData, activeRoomId, communityName])
+  }, [tokenData, activeRoomId, communityName, matrixStrings, sdkBundle])
 
   const openAgentAssistant = useCallback(() => {
     navigation.navigate('AgentChat', {agentId: 'Xavier Exul'})
@@ -158,7 +168,9 @@ export function CommunityChatScreen() {
         <ActivityIndicator size="large" color={t.palette.primary_500} />
         {!chatBootstrap.ready && (
           <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_sm]}>
-            Aprueba la firma pendiente en la sección Credenciales de iM8.
+            <Trans>
+              Aprueba la firma pendiente en la sección Credenciales de iM8.
+            </Trans>
           </Text>
         )}
       </View>
@@ -171,24 +183,26 @@ export function CommunityChatScreen() {
       <View style={[styles.loading, {backgroundColor: t.palette.contrast_0}]}>
         <Layout.Content>
           <Layout.Header.TitleText style={{color: t.palette.negative_500}}>
-            Chat no disponible
+            <Trans>Chat no disponible</Trans>
           </Layout.Header.TitleText>
           <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_sm]}>
             {chatBootstrap.error ??
               tokenError?.message ??
-              'No se pudo abrir el chat.'}
+              _(msg`No se pudo abrir el chat.`)}
           </Text>
           {chatBootstrap.error && (
             <TouchableOpacity
               accessibilityRole="button"
               onPress={() => void chatBootstrap.retry()}>
-              <Text style={[a.text_sm, t.atoms.text]}>Reintentar</Text>
+              <Text style={[a.text_sm, t.atoms.text]}>
+                <Trans>Reintentar</Trans>
+              </Text>
             </TouchableOpacity>
           )}
         </Layout.Content>
       </View>
     ),
-    [t, chatBootstrap, tokenError?.message],
+    [t, chatBootstrap, tokenError?.message, _],
   )
 
   if (isLoading) {
@@ -231,42 +245,58 @@ export function CommunityChatScreen() {
         <Layout.Header.Slot>
           <View style={[styles.headerSlot]}>
             {riskCount > 0 && (
-              <TouchableOpacity
-                accessibilityRole="button"
+              <Button
+                label={_(msg`Miembros con insignias de riesgo: ${riskCount}`)}
+                accessibilityHint={_(
+                  msg`Abre la lista de miembros de la comunidad`,
+                )}
+                size="small"
+                shape="default"
+                variant="ghost"
                 onPress={() =>
                   navigation.navigate('CommunityMembers', {
                     communityUri,
                     communityName,
                   })
-                }
-                style={[styles.riskIndicator]}>
-                <Text style={[styles.riskText]}>🟡 {riskCount}</Text>
-              </TouchableOpacity>
+                }>
+                <ButtonIcon icon={WarningIcon} />
+                <ButtonText>{riskCount}</ButtonText>
+              </Button>
             )}
             <SorteoBadge communityUri={communityUri} />
-            <TouchableOpacity
-              accessibilityRole="button"
+            <Button
+              label={_(msg`Miembros`)}
+              accessibilityHint={_(
+                msg`Abre la lista de miembros de la comunidad`,
+              )}
+              size="small"
+              shape="round"
+              variant="ghost"
               onPress={() =>
                 navigation.navigate('CommunityMembers', {
                   communityUri,
                   communityName,
                 })
-              }
-              style={[styles.headerBtn]}>
-              <Text style={[a.text_sm, t.atoms.text]}>👥</Text>
-            </TouchableOpacity>
+              }>
+              <ButtonIcon icon={MembersIcon} />
+            </Button>
             {isModerator && (
-              <TouchableOpacity
-                accessibilityRole="button"
+              <Button
+                label={_(msg`Panel de moderación`)}
+                accessibilityHint={_(
+                  msg`Abre las herramientas de moderación de la comunidad`,
+                )}
+                size="small"
+                shape="round"
+                variant="ghost"
                 onPress={() =>
                   navigation.navigate('ModeratorDashboard', {
                     communityUri,
                     communityName,
                   })
-                }
-                style={[styles.headerBtn]}>
-                <Text style={[a.text_sm, t.atoms.text]}>🛡️</Text>
-              </TouchableOpacity>
+                }>
+                <ButtonIcon icon={ShieldIcon} />
+              </Button>
             )}
           </View>
         </Layout.Header.Slot>
@@ -310,8 +340,8 @@ export function CommunityChatScreen() {
           onDismiss={() => setShowOnboarding(false)}
           roomLabel={
             routeRoomId && routeRoomId !== spaceData?.spaceId
-              ? 'cámara de debate'
-              : 'sala principal'
+              ? _(msg`cámara de debate`)
+              : _(msg`sala principal`)
           }
         />
       )}
@@ -324,26 +354,26 @@ export function CommunityChatScreen() {
           },
         ]}>
         <ChatActionButton
-          label="Resumir"
-          hint="Abre el agente para resumir el debate"
+          label={_(msg`Resumir`)}
+          hint={_(msg`Abre el agente para resumir el debate`)}
           icon={SummarizeIcon}
           onPress={openAgentAssistant}
         />
         <ChatActionButton
-          label="Propuesta"
-          hint="Crea un cabildeo desde esta conversación"
+          label={_(msg`Propuesta`)}
+          hint={_(msg`Crea un cabildeo desde esta conversación`)}
           icon={ProposalIcon}
           onPress={openCreateCabildeo}
         />
         <ChatActionButton
-          label="Evidencia"
-          hint="Abre el agente para extraer evidencia"
+          label={_(msg`Evidencia`)}
+          hint={_(msg`Abre el agente para extraer evidencia`)}
           icon={EvidenceIcon}
           onPress={openAgentAssistant}
         />
         <ChatActionButton
-          label="Miembros"
-          hint="Muestra miembros y badges cívicos"
+          label={_(msg`Miembros`)}
+          hint={_(msg`Muestra miembros y badges cívicos`)}
           icon={MembersIcon}
           onPress={() =>
             navigation.navigate('CommunityMembers', {
@@ -358,13 +388,12 @@ export function CommunityChatScreen() {
       ) : (
         <WebView
           source={{
-            html: buildClientHtml(sdkBundle),
+            html: chatHtml,
             baseUrl: 'https://chat.para.social',
           }}
           style={styles.webview}
           startInLoadingState
           renderLoading={renderLoading}
-          injectedJavaScript={injectedJavaScript}
           onMessage={event => {
             try {
               const message = JSON.parse(event.nativeEvent.data) as {
@@ -391,7 +420,7 @@ export function CommunityChatScreen() {
                   filename: message.filename,
                 }).catch(err => {
                   console.warn('[CommunityChat] Media open failed:', err)
-                  Alert.alert('No se pudo abrir el archivo')
+                  Alert.alert(_(msg`No se pudo abrir el archivo`))
                 })
               }
             } catch {
@@ -444,6 +473,7 @@ function OnboardingBanner({
   roomLabel: string
 }) {
   const t = useTheme()
+  const {_} = useLingui()
 
   return (
     <View
@@ -456,18 +486,20 @@ function OnboardingBanner({
       ]}>
       <View style={[a.flex_1, a.gap_xs]}>
         <Text style={[a.text_sm, a.font_bold, {color: t.palette.primary_600}]}>
-          Deliberación cívica
+          <Trans>Deliberación cívica</Trans>
         </Text>
         <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-          Esta es la {roomLabel}. Los mensajes aquí son parte de la conversación
-          de la comunidad. Usa los botones de arriba para resumir, proponer o
-          recopilar evidencia.
+          <Trans>
+            Esta es la {roomLabel}. Los mensajes aquí son parte de la
+            conversación de la comunidad. Usa los botones de arriba para
+            resumir, proponer o recopilar evidencia.
+          </Trans>
         </Text>
       </View>
       <TouchableOpacity
         accessibilityRole="button"
-        accessibilityLabel="Cerrar"
-        accessibilityHint="Oculta este mensaje de bienvenida"
+        accessibilityLabel={_(msg`Cerrar`)}
+        accessibilityHint={_(msg`Oculta este mensaje de bienvenida`)}
         onPress={onDismiss}
         style={styles.dismissBtn}>
         <Text style={{color: t.palette.primary_500}}>✕</Text>

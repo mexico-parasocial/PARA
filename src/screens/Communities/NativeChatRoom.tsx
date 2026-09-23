@@ -7,6 +7,9 @@ import {
   TextInput,
   View,
 } from 'react-native'
+import {msg} from '@lingui/core/macro'
+import {useLingui} from '@lingui/react'
+import {Trans} from '@lingui/react/macro'
 
 import {KeyboardStickyView} from '#/screens/Messages/components/vendor/KeyboardStickyView'
 import {atoms as a, useTheme} from '#/alf'
@@ -31,6 +34,7 @@ import {useEncryptedChatRoom} from '#/features/encryptedChat/useEncryptedChatRoo
  */
 export function NativeChatRoom({roomId}: {roomId: string}) {
   const t = useTheme()
+  const {_} = useLingui()
   const {status, messages, session, error, send, authorize, retry} =
     useEncryptedChatRoom(roomId)
 
@@ -96,7 +100,7 @@ export function NativeChatRoom({roomId}: {roomId: string}) {
               a.py_xl,
               t.atoms.text_contrast_medium,
             ]}>
-            Aún no hay mensajes en esta sala.
+            <Trans>Aún no hay mensajes en esta sala.</Trans>
           </Text>
         }
       />
@@ -120,14 +124,16 @@ export function NativeChatRoom({roomId}: {roomId: string}) {
             <TextInput
               value={draft}
               onChangeText={setDraft}
-              placeholder="Escribe un mensaje"
+              placeholder={_(msg`Escribe un mensaje`)}
               placeholderTextColor={t.palette.contrast_500}
               multiline
               // 8000 is the adapter's own limit; stopping here means the
               // rejection never has to reach the user as an error.
               maxLength={8000}
-              accessibilityLabel="Mensaje"
-              accessibilityHint="Escribe un mensaje cifrado para esta sala"
+              accessibilityLabel={_(msg`Mensaje`)}
+              accessibilityHint={_(
+                msg`Escribe un mensaje cifrado para esta sala`,
+              )}
               style={[
                 a.flex_1,
                 a.text_sm,
@@ -140,13 +146,15 @@ export function NativeChatRoom({roomId}: {roomId: string}) {
               ]}
             />
             <Button
-              label="Enviar mensaje"
+              label={_(msg`Enviar mensaje`)}
               size="small"
               variant="solid"
               color="primary"
               disabled={!draft.trim() || sending}
               onPress={onSend}>
-              <ButtonText>{sending ? 'Enviando…' : 'Enviar'}</ButtonText>
+              <ButtonText>
+                {sending ? _(msg`Enviando…`) : _(msg`Enviar`)}
+              </ButtonText>
             </Button>
           </View>
         </View>
@@ -171,11 +179,13 @@ function MessageRow({message, isOwn}: {message: ChatMessage; isOwn: boolean}) {
             },
           ]}>
           <Text style={[a.text_sm, a.italic, t.atoms.text_contrast_medium]}>
-            No se pudo descifrar este mensaje.
+            <Trans>No se pudo descifrar este mensaje.</Trans>
           </Text>
           <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-            Tu dispositivo no tiene la clave. Verifícalo desde otro dispositivo
-            o restaura tu copia de seguridad.
+            <Trans>
+              Tu dispositivo no tiene la clave. Verifícalo desde otro
+              dispositivo o restaura tu copia de seguridad.
+            </Trans>
           </Text>
         </View>
       </View>
@@ -222,6 +232,7 @@ function ConnectionState({
   onRetry: () => void
 }) {
   const t = useTheme()
+  const {_} = useLingui()
 
   if (
     status === 'connecting' ||
@@ -233,8 +244,8 @@ function ConnectionState({
         <ActivityIndicator color={t.palette.primary_500} />
         <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
           {status === 'authorizing'
-            ? 'Esperando la autorización en el navegador…'
-            : 'Conectando con el chat cifrado…'}
+            ? _(msg`Esperando la autorización en el navegador…`)
+            : _(msg`Conectando con el chat cifrado…`)}
         </Text>
       </View>
     )
@@ -245,19 +256,24 @@ function ConnectionState({
       <View
         style={[a.flex_1, a.align_center, a.justify_center, a.gap_md, a.px_xl]}>
         <Text style={[a.text_md, a.font_bold, a.text_center, t.atoms.text]}>
-          Autoriza este dispositivo
+          <Trans>Autoriza este dispositivo</Trans>
         </Text>
         <Text style={[a.text_sm, a.text_center, t.atoms.text_contrast_medium]}>
-          El chat cifrado necesita un dispositivo propio. Se abrirá tu navegador
-          para iniciar sesión en el servidor; la contraseña nunca pasa por PARA.
+          <Trans>
+            El chat cifrado necesita un dispositivo propio. Se abrirá tu
+            navegador para iniciar sesión en el servidor; la contraseña nunca
+            pasa por PARA.
+          </Trans>
         </Text>
         <Button
-          label="Autorizar este dispositivo"
+          label={_(msg`Autorizar este dispositivo`)}
           size="small"
           variant="solid"
           color="primary"
           onPress={onAuthorize}>
-          <ButtonText>Autorizar</ButtonText>
+          <ButtonText>
+            <Trans>Autorizar</Trans>
+          </ButtonText>
         </Button>
       </View>
     )
@@ -270,12 +286,14 @@ function ConnectionState({
         {connectionErrorCopy(error)}
       </Text>
       <Button
-        label="Reintentar la conexión"
+        label={_(msg`Reintentar la conexión`)}
         size="small"
         variant="solid"
         color="secondary"
         onPress={onRetry}>
-        <ButtonText>Reintentar</ButtonText>
+        <ButtonText>
+          <Trans>Reintentar</Trans>
+        </ButtonText>
       </Button>
     </View>
   )
