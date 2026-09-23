@@ -7,6 +7,7 @@ import {
 } from 'react'
 import {
   ActivityIndicator,
+  Alert,
   StyleSheet,
   TouchableOpacity,
   View,
@@ -17,6 +18,7 @@ import * as FileSystem from 'expo-file-system/legacy'
 import {useNavigation, useRoute} from '@react-navigation/native'
 
 import {getDefaultChatIdentityMode} from '#/lib/chat/identity'
+import {shareMatrixMedia} from '#/lib/matrix/media.native'
 import {useChatBootstrap} from '#/lib/matrix/useChatBootstrap'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
@@ -186,7 +188,7 @@ export function CommunityChatScreen() {
         </Layout.Content>
       </View>
     ),
-    [t, chatBootstrap],
+    [t, chatBootstrap, tokenError?.message],
   )
 
   if (isLoading) {
@@ -365,12 +367,32 @@ export function CommunityChatScreen() {
           injectedJavaScript={injectedJavaScript}
           onMessage={event => {
             try {
-              const message = JSON.parse(event.nativeEvent.data)
+              const message = JSON.parse(event.nativeEvent.data) as {
+                type?: string
+                roomId?: string
+                mxcUrl?: string
+                filename?: string
+              }
               if (
                 message.type === 'matrix-membership-left' &&
                 message.roomId === activeRoomId
               ) {
                 void chatBootstrap.rejoin()
+              } else if (
+                message.type === 'matrix-open-media' &&
+                typeof message.mxcUrl === 'string' &&
+                typeof message.filename === 'string' &&
+                tokenData
+              ) {
+                void shareMatrixMedia({
+                  homeServer: tokenData.homeServer,
+                  accessToken: tokenData.accessToken,
+                  mxcUrl: message.mxcUrl,
+                  filename: message.filename,
+                }).catch(err => {
+                  console.warn('[CommunityChat] Media open failed:', err)
+                  Alert.alert('No se pudo abrir el archivo')
+                })
               }
             } catch {
               // Ignore unrelated WebView messages.

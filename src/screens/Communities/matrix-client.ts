@@ -287,10 +287,15 @@ export function buildClientHtml(sdkBundle?: string): string {
       border-radius: 12px;
       display: block;
     }
-    .message-bubble a.file {
+    .message-bubble .file {
       display: flex;
       align-items: center;
       gap: 8px;
+      background: transparent;
+      border: 0;
+      padding: 0;
+      font: inherit;
+      text-align: left;
       color: inherit;
       text-decoration: none;
       word-break: break-word;
@@ -449,14 +454,87 @@ export function buildClientHtml(sdkBundle?: string): string {
 
       let lastDate = '';
       const messageElements = new Map(); // eventId -> msgDiv
+      const mediaObjectUrls = new Map(); // eventId -> blob URLs
+      const PREVIEW_LIMIT_BYTES = 8 * 1024 * 1024;
+      const DOWNLOAD_LIMIT_BYTES = 100 * 1024 * 1024;
       const reactionPickers = new Set();
 
-      function mxcToHttp(mxcUrl) {
+      function mediaEndpoint(mxcUrl, thumbnail) {
         if (!mxcUrl || !mxcUrl.startsWith('mxc://')) return null;
-        const parts = mxcUrl.replace('mxc://', '').split('/');
-        const serverName = parts[0];
-        const mediaId = parts[1];
-        return CONFIG.homeServer + '/_matrix/media/v3/download/' + encodeURIComponent(serverName) + '/' + encodeURIComponent(mediaId);
+        const path = mxcUrl.slice(6);
+        const separator = path.indexOf('/');
+        if (separator < 1 || separator === path.length - 1) return null;
+        const serverName = path.slice(0, separator);
+        const mediaId = path.slice(separator + 1);
+        if (/[?#/]/.test(mediaId) || /[?#/]/.test(serverName)) return null;
+        const endpoint = thumbnail ? 'thumbnail' : 'download';
+        const size = thumbnail ? '?width=800&height=600&method=scale' : '';
+        return CONFIG.homeServer.replace(/\\/$/, '') + '/_matrix/client/v1/media/' + endpoint + '/' + encodeURIComponent(serverName) + '/' + encodeURIComponent(mediaId) + size;
+      }
+
+      async function fetchMedia(mxcUrl, thumbnail, limitBytes) {
+        const url = mediaEndpoint(mxcUrl, thumbnail);
+        if (!url) throw new Error('INVALID_MXC');
+        const response = await fetch(url, {
+          headers: {Authorization: 'Bearer ' + CONFIG.accessToken},
+        });
+        if (!response.ok) throw new Error('MEDIA_HTTP_' + response.status);
+        const length = Number(response.headers.get('content-length'));
+        if (Number.isFinite(length) && length > limitBytes) {
+          if (response.body) await response.body.cancel();
+          throw new Error('MEDIA_TOO_LARGE');
+        }
+        if (!response.body) throw new Error('MEDIA_STREAM_UNAVAILABLE');
+        const reader = response.body.getReader();
+        const chunks = [];
+        let total = 0;
+        try {
+          while (true) {
+            const result = await reader.read();
+            if (result.done) break;
+            total += result.value.byteLength;
+            if (total > limitBytes) throw new Error('MEDIA_TOO_LARGE');
+            chunks.push(result.value);
+          }
+        } catch (err) {
+          await reader.cancel().catch(() => {});
+          throw err;
+        }
+        return new Blob(chunks, {type: response.headers.get('content-type') || 'application/octet-stream'});
+      }
+
+      function retainMediaUrl(eventId, url) {
+        const urls = mediaObjectUrls.get(eventId) || [];
+        urls.push(url);
+        mediaObjectUrls.set(eventId, urls);
+      }
+
+      function releaseMediaUrls(eventId) {
+        const urls = mediaObjectUrls.get(eventId) || [];
+        urls.forEach(url => URL.revokeObjectURL(url));
+        mediaObjectUrls.delete(eventId);
+      }
+
+      function releaseAllMediaUrls() {
+        mediaObjectUrls.forEach(urls => urls.forEach(url => URL.revokeObjectURL(url)));
+        mediaObjectUrls.clear();
+      }
+
+      async function openMedia(mxcUrl, filename, eventId, download) {
+        if (window.ReactNativeWebView) {
+          window.ReactNativeWebView.postMessage(JSON.stringify({type: 'matrix-open-media', mxcUrl, filename}));
+          return;
+        }
+        const blob = await fetchMedia(mxcUrl, false, DOWNLOAD_LIMIT_BYTES);
+        const url = URL.createObjectURL(blob);
+        retainMediaUrl(eventId, url);
+        const link = document.createElement('a');
+        link.href = url;
+        if (download) link.download = filename || 'archivo';
+        else link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
       }
 
       function renderEvent(event) {
@@ -510,7 +588,7 @@ export function buildClientHtml(sdkBundle?: string): string {
 
         const bubble = document.createElement('div');
         bubble.className = 'message-bubble';
-        bubble.appendChild(renderMessageContent(content));
+        bubble.appendChild(renderMessageContent(content, eventId));
         msgDiv.appendChild(bubble);
 
         const timeEl = document.createElement('div');
@@ -524,7 +602,7 @@ export function buildClientHtml(sdkBundle?: string): string {
         msgDiv.appendChild(reactionsEl);
 
         msgDiv.addEventListener('click', function(e) {
-          if (e.target.closest('a.file') || e.target.closest('.reaction')) return;
+          if (e.target.closest('.file') || e.target.closest('.reaction')) return;
           showReactionPicker(eventId);
         });
 
@@ -538,42 +616,55 @@ export function buildClientHtml(sdkBundle?: string): string {
         }
       }
 
-      function renderMessageContent(content) {
+      function renderMessageContent(content, eventId) {
         const msgtype = content.msgtype;
         if (msgtype === 'm.image') {
-          const url = mxcToHttp(content.url);
-          if (url) {
-            const img = document.createElement('img');
-            img.src = url;
-            img.alt = content.body || 'Image';
-            return img;
+          if (mediaEndpoint(content.url, true)) {
+            const container = document.createElement('span');
+            container.textContent = 'Cargando imagen...';
+            fetchMedia(content.url, true, PREVIEW_LIMIT_BYTES).then(blob => {
+              if (!container.isConnected) return;
+              const url = URL.createObjectURL(blob);
+              retainMediaUrl(eventId, url);
+              const img = document.createElement('img');
+              img.src = url;
+              img.alt = content.body || 'Imagen';
+              container.replaceChildren(img);
+            }).catch(err => {
+              if (!container.isConnected) return;
+              container.replaceChildren(mediaButton(content.url, content.body || 'imagen', eventId, 'Descargar imagen', true));
+              if (err.message !== 'MEDIA_TOO_LARGE') console.error('Media preview failed:', err);
+            });
+            return container;
           }
         }
-        if (msgtype === 'm.video' || msgtype === 'm.audio') {
-          const url = mxcToHttp(content.url);
-          if (url) {
-            const link = document.createElement('a');
-            link.className = 'file';
-            link.href = url;
-            link.target = '_blank';
-            link.textContent = (msgtype === 'm.video' ? '🎬 ' : '🎵 ') + (content.body || 'Media');
-            return link;
-          }
-        }
-        if (msgtype === 'm.file') {
-          const url = mxcToHttp(content.url);
-          if (url) {
-            const link = document.createElement('a');
-            link.className = 'file';
-            link.href = url;
-            link.target = '_blank';
-            link.textContent = '📎 ' + (content.body || 'File');
-            return link;
-          }
+        if ((msgtype === 'm.video' || msgtype === 'm.audio' || msgtype === 'm.file') && mediaEndpoint(content.url, false)) {
+          const prefix = msgtype === 'm.video' ? '🎬 ' : msgtype === 'm.audio' ? '🎵 ' : '📎 ';
+          return mediaButton(content.url, content.body || 'archivo', eventId, prefix + 'Descargar ' + (content.body || 'archivo'), true);
         }
         const span = document.createElement('span');
         span.textContent = content.body || '';
         return span;
+      }
+
+      function mediaButton(mxcUrl, filename, eventId, label, download) {
+        const button = document.createElement('button');
+        button.className = 'file';
+        button.type = 'button';
+        button.textContent = label;
+        button.addEventListener('click', async function(event) {
+          event.stopPropagation();
+          button.disabled = true;
+          try {
+            await openMedia(mxcUrl, filename, eventId, download);
+          } catch (err) {
+            console.error('Media download failed:', err);
+            button.textContent = 'No se pudo descargar - reintentar';
+          } finally {
+            button.disabled = false;
+          }
+        });
+        return button;
       }
 
       function updateMessageBody(eventId, content) {
@@ -581,14 +672,16 @@ export function buildClientHtml(sdkBundle?: string): string {
         if (!msgDiv) return;
         const bubble = msgDiv.querySelector('.message-bubble');
         if (bubble) {
+          releaseMediaUrls(eventId);
           bubble.innerHTML = '';
-          bubble.appendChild(renderMessageContent(content));
+          bubble.appendChild(renderMessageContent(content, eventId));
         }
       }
 
       function removeMessage(eventId) {
         const msgDiv = messageElements.get(eventId);
         if (msgDiv) {
+          releaseMediaUrls(eventId);
           msgDiv.remove();
           messageElements.delete(eventId);
         }
@@ -674,6 +767,7 @@ export function buildClientHtml(sdkBundle?: string): string {
         if (!room) return;
         const timeline = room.getLiveTimeline();
         const events = timeline.getEvents();
+        releaseAllMediaUrls();
         messagesEl.innerHTML = '';
         lastDate = '';
         messageElements.clear();
@@ -809,6 +903,7 @@ export function buildClientHtml(sdkBundle?: string): string {
       });
 
       // Start
+      window.addEventListener('beforeunload', releaseAllMediaUrls);
       initClient();
     })();
   </script>
