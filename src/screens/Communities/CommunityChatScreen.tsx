@@ -244,7 +244,7 @@ export function CommunityChatScreen() {
         </Layout.Header.Content>
         <Layout.Header.Slot>
           <View style={[styles.headerSlot]}>
-            {riskCount > 0 && (
+            {isModerator && riskCount > 0 && (
               <Button
                 label={_(msg`Miembros con insignias de riesgo: ${riskCount}`)}
                 accessibilityHint={_(

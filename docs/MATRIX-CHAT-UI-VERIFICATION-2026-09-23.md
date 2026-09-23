@@ -18,3 +18,7 @@
 ## P3 - explicit iframe message origin
 
 - The web iframe sends membership messages only to its configured app origin, and the receiver checks both the iframe window and origin. The native WebView continues to use its own `ReactNativeWebView.postMessage` bridge.
+
+## P4 - moderator-only risk indicator
+
+- The risk count is rendered only when the current member's participation says `isModerator` in both native and web chat headers. Badge calculation and the members list are unchanged, per D1.
