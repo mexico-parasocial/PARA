@@ -113,6 +113,12 @@ export function CommunityChatScreen() {
     (!chatBootstrap.ready && !chatBootstrap.error)
 
   const [sdkBundle, setSdkBundle] = useState<string | undefined>()
+  const [verifiedNativeRoomId, setVerifiedNativeRoomId] = useState<string>()
+  const onEncryptionVerified = useCallback(
+    (verified: boolean) =>
+      setVerifiedNativeRoomId(verified ? activeRoomId : undefined),
+    [activeRoomId],
+  )
   const onboarding = useChatOnboarding(communityUri)
 
   useEffect(() => {
@@ -304,7 +310,11 @@ export function CommunityChatScreen() {
       </Layout.Header.Outer>
       <ChatCivicContext
         identityMode={identityMode}
-        encryptionPolicy={CHAT_ENGINE === 'native' ? 'e2ee' : 'unencrypted'}
+        encryptionPolicy={
+          CHAT_ENGINE === 'native' && verifiedNativeRoomId === activeRoomId
+            ? 'e2ee'
+            : 'unencrypted'
+        }
         badges={civicBadges}
       />
       {onboarding.visible && (
@@ -356,7 +366,11 @@ export function CommunityChatScreen() {
         />
       </View>
       {CHAT_ENGINE === 'native' ? (
-        <NativeChatRoom roomId={activeRoomId} />
+        <NativeChatRoom
+          key={activeRoomId}
+          roomId={activeRoomId}
+          onEncryptionVerified={onEncryptionVerified}
+        />
       ) : (
         <WebView
           source={{

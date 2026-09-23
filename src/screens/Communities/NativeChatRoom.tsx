@@ -39,7 +39,13 @@ import {useEncryptedChatRoom} from '#/features/encryptedChat/useEncryptedChatRoo
  * not a bug to route around: there is deliberately no fallback that would
  * quietly downgrade the protection of a room.
  */
-export function NativeChatRoom({roomId}: {roomId: string}) {
+export function NativeChatRoom({
+  roomId,
+  onEncryptionVerified,
+}: {
+  roomId: string
+  onEncryptionVerified?: (verified: boolean) => void
+}) {
   const t = useTheme()
   const {_} = useLingui()
   const {
@@ -67,6 +73,11 @@ export function NativeChatRoom({roomId}: {roomId: string}) {
   const listRef = useRef<FlatList<ChatMessage>>(null)
   const latestRead = useRef<string | undefined>(undefined)
   const typingSent = useRef(false)
+
+  useEffect(() => {
+    onEncryptionVerified?.(status === 'ready')
+    return () => onEncryptionVerified?.(false)
+  }, [status, onEncryptionVerified])
 
   useEffect(() => {
     latestRead.current = undefined
