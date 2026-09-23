@@ -73,7 +73,7 @@ export function CommunityChatScreen() {
     isLoading: tokenLoading,
     error: tokenError,
   } = useMatrixTokenQuery({
-    enabled: !!myDid && chatBootstrap.ready,
+    enabled: CHAT_ENGINE !== 'native' && !!myDid && chatBootstrap.ready,
     deviceId: chatBootstrap.deviceId,
   })
   const {data: memberList} = useChatMemberListQuery(communityUri, 100, 0)
@@ -109,13 +109,14 @@ export function CommunityChatScreen() {
 
   const isLoading =
     spaceLoading ||
-    tokenLoading ||
+    (CHAT_ENGINE !== 'native' && tokenLoading) ||
     (!chatBootstrap.ready && !chatBootstrap.error)
 
   const [sdkBundle, setSdkBundle] = useState<string | undefined>()
   const onboarding = useChatOnboarding(communityUri)
 
   useEffect(() => {
+    if (CHAT_ENGINE === 'native') return
     let cancelled = false
     async function loadBundle() {
       try {
@@ -220,7 +221,7 @@ export function CommunityChatScreen() {
     )
   }
 
-  if (!spaceData || !tokenData || !activeRoomId) {
+  if (!spaceData || (CHAT_ENGINE !== 'native' && !tokenData) || !activeRoomId) {
     return (
       <Layout.Screen>
         <Layout.Header.Outer noBottomBorder>

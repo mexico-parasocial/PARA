@@ -1,3 +1,4 @@
+// oxlint-disable typescript/no-unsafe-enum-comparison -- Generated Uniffi tags have string values.
 import * as Crypto from 'expo-crypto'
 import * as FileSystem from 'expo-file-system/legacy'
 import * as SecureStore from 'expo-secure-store'
@@ -6,7 +7,12 @@ import {
   type ClientLike,
   CollectStrategy,
   EncryptionState,
+  EventOrTransactionId,
+  ImageInfo,
+  type MediaFileHandleLike,
+  type MediaSourceLike,
   messageEventContentFromMarkdown,
+  ReceiptType,
   RecoveryState,
   RoomHistoryVisibility,
   RoomPreset,
@@ -21,6 +27,7 @@ import {
   UploadSource,
 } from '@unomed/react-native-matrix-sdk'
 
+import {mapTimelineItems} from '#/features/encryptedChat/mapTimeline'
 import {buildOidcConfiguration} from '#/features/encryptedChat/oidc'
 import {
   assertSessionScope,
@@ -29,7 +36,6 @@ import {
 } from '#/features/encryptedChat/scope'
 import {applyTimelineChanges} from '#/features/encryptedChat/timeline'
 import {
-  type ChatMessage,
   type ConnectOptions,
   E2EE_ENGINE_ENABLED,
   type EncryptedChatClient,
@@ -60,26 +66,9 @@ function dispose(object: unknown): void {
     'uniffiDestroy' in object &&
     typeof object.uniffiDestroy === 'function'
   ) {
-    object.uniffiDestroy()
+    const destroy = object.uniffiDestroy as () => void
+    destroy.call(object)
   }
-}
-
-function renderMessages(items: TimelineItemLike[]): ChatMessage[] {
-  return items.flatMap(item => {
-    const event = item.asEvent()
-    if (!event || event.content.tag !== 'MsgLike') return []
-    const kind = event.content.inner.content.kind
-    if (kind.tag !== 'Message' && kind.tag !== 'UnableToDecrypt') return []
-    return [
-      {
-        id: item.uniqueId().id,
-        sender: event.sender,
-        body: kind.tag === 'Message' ? kind.inner.content.body : '',
-        pending: !event.isRemote,
-        unableToDecrypt: kind.tag === 'UnableToDecrypt',
-      },
-    ]
-  })
 }
 
 /** Development adapter using the SDK's crypto, room state and send queue. */
@@ -98,8 +87,14 @@ export async function connectEncryptedChat(
   let client: ClientLike | undefined
   let sync: SyncServiceLike | undefined
   let subscription: TaskHandleLike | undefined
+  let typingSubscription: TaskHandleLike | undefined
   let timeline: TimelineLike | undefined
   let openRoomId: string | undefined
+  const mediaSources = new Map<
+    string,
+    {source: MediaSourceLike; filename: string; mimeType: string; size?: bigint}
+  >()
+  const mediaHandles = new Map<string, MediaFileHandleLike>()
   let closed = false
   let roomGeneration = 0
   try {
@@ -209,8 +204,14 @@ export async function connectEncryptedChat(
       closed = true
       roomGeneration++
       subscription?.cancel()
+      typingSubscription?.cancel()
       dispose(subscription)
+      dispose(typingSubscription)
       subscription = undefined
+      typingSubscription = undefined
+      mediaHandles.forEach(dispose)
+      mediaHandles.clear()
+      mediaSources.clear()
       dispose(timeline)
       timeline = undefined
       await sync?.stop()
@@ -233,11 +234,18 @@ export async function connectEncryptedChat(
           historyVisibilityOverride: new RoomHistoryVisibility.Joined(),
         })
       },
-      async openRoom(roomId, onMessages) {
+      async openRoom(roomId, onMessages, onTyping) {
         requireOpen()
         const generation = ++roomGeneration
         subscription?.cancel()
+        typingSubscription?.cancel()
+        dispose(subscription)
+        dispose(typingSubscription)
         subscription = undefined
+        typingSubscription = undefined
+        mediaHandles.forEach(dispose)
+        mediaHandles.clear()
+        mediaSources.clear()
         timeline = undefined
         openRoomId = undefined
         onMessages([])
@@ -245,28 +253,156 @@ export async function connectEncryptedChat(
         if (room.encryptionState() !== EncryptionState.Encrypted)
           throw new Error('ENCRYPTED_ROOM_REQUIRED')
         const nextTimeline = await room.timeline()
+        const nextTypingSubscription = room.subscribeToTypingNotifications({
+          call(userIds) {
+            if (!closed && generation === roomGeneration) {
+              onTyping?.(
+                userIds.filter(userId => userId !== saved.session?.userId),
+              )
+            }
+          },
+        })
         let items: TimelineItemLike[] = []
         const nextSubscription = await nextTimeline.addListener({
           onUpdate(changes) {
             if (closed || generation !== roomGeneration) return
             items = applyTimelineChanges(items, changes)
-            onMessages(renderMessages(items))
+            mediaSources.clear()
+            for (const item of items) {
+              const event = item.asEvent()
+              if (!event || event.content.tag !== 'MsgLike') continue
+              if (event.eventOrTransactionId.tag !== 'EventId') continue
+              const kind = event.content.inner.content.kind
+              if (kind.tag !== 'Message') continue
+              const mediaType = kind.inner.content.msgType
+              if (
+                mediaType.tag !== 'Image' &&
+                mediaType.tag !== 'Audio' &&
+                mediaType.tag !== 'Video' &&
+                mediaType.tag !== 'File'
+              )
+                continue
+              const media = mediaType.inner.content
+              mediaSources.set(event.eventOrTransactionId.inner.eventId, {
+                source: media.source,
+                filename: media.filename,
+                mimeType: media.info?.mimetype ?? 'application/octet-stream',
+                size: media.info?.size,
+              })
+            }
+            for (const [eventId, handle] of mediaHandles) {
+              if (mediaSources.has(eventId)) continue
+              dispose(handle)
+              mediaHandles.delete(eventId)
+            }
+            onMessages(mapTimelineItems(items, saved.session!.userId))
           },
         })
         if (closed || generation !== roomGeneration) {
           nextSubscription.cancel()
+          nextTypingSubscription.cancel()
+          dispose(nextTypingSubscription)
           return
         }
         subscription = nextSubscription
+        typingSubscription = nextTypingSubscription
         timeline = nextTimeline
         openRoomId = roomId
+        await nextTimeline.markAsRead(ReceiptType.Read).catch(() => {})
       },
-      async sendText(body) {
+      async sendText(body, replyToEventId) {
         if (!body.trim() || body.length > 8000)
           throw new Error('INVALID_MESSAGE')
-        await requireEncryptedTimeline().send(
-          messageEventContentFromMarkdown(body),
+        const currentTimeline = requireEncryptedTimeline()
+        const content = messageEventContentFromMarkdown(body)
+        if (replyToEventId)
+          await currentTimeline.sendReply(content, replyToEventId)
+        else await currentTimeline.send(content)
+      },
+      async toggleReaction(eventId, key) {
+        if (!eventId || !key) throw new Error('INVALID_REACTION')
+        await requireEncryptedTimeline().toggleReaction(
+          EventOrTransactionId.EventId.new({eventId}),
+          key,
         )
+      },
+      async markRead() {
+        await requireEncryptedTimeline().markAsRead(ReceiptType.Read)
+      },
+      async setTyping(typing) {
+        requireEncryptedTimeline()
+        await matrix.getRoom(openRoomId!)!.typingNotice(typing)
+      },
+      retryDecryption() {
+        requireEncryptedTimeline().retryDecryption([])
+      },
+      async openMedia(eventId) {
+        requireEncryptedTimeline()
+        const media = mediaSources.get(eventId)
+        if (
+          !media ||
+          (media.size !== undefined &&
+            media.size > BigInt(MAX_ATTACHMENT_BYTES))
+        ) {
+          throw new Error('INVALID_ATTACHMENT')
+        }
+        const existing = mediaHandles.get(eventId)
+        if (existing) {
+          const path = existing.path()
+          return path.startsWith('file://') ? path : `file://${path}`
+        }
+        const handle = await matrix.getMediaFile(
+          media.source,
+          media.filename,
+          media.mimeType,
+          true,
+          decodeURI(cacheUri.replace('file://', '')),
+        )
+        const path = handle.path()
+        const uri = path.startsWith('file://') ? path : `file://${path}`
+        const fileInfo = await FileSystem.getInfoAsync(uri)
+        if (
+          !fileInfo.exists ||
+          fileInfo.isDirectory ||
+          fileInfo.size > MAX_ATTACHMENT_BYTES
+        ) {
+          dispose(handle)
+          throw new Error('INVALID_ATTACHMENT')
+        }
+        mediaHandles.set(eventId, handle)
+        return uri
+      },
+      async sendImage(image) {
+        const currentTimeline = requireEncryptedTimeline()
+        if (
+          !image.uri.startsWith('file://') ||
+          image.size < 1 ||
+          image.size > MAX_ATTACHMENT_BYTES ||
+          image.width < 1 ||
+          image.height < 1 ||
+          !image.mimeType.startsWith('image/')
+        )
+          throw new Error('INVALID_ATTACHMENT')
+        const info = await FileSystem.getInfoAsync(image.uri)
+        if (!info.exists || info.isDirectory || info.size !== image.size)
+          throw new Error('INVALID_ATTACHMENT')
+        await currentTimeline
+          .sendImage(
+            {
+              source: new UploadSource.File({
+                filename: decodeURI(image.uri.replace('file://', '')),
+              }),
+              caption: image.name,
+            },
+            undefined,
+            ImageInfo.new({
+              width: BigInt(image.width),
+              height: BigInt(image.height),
+              size: BigInt(image.size),
+              mimetype: image.mimeType,
+            }),
+          )
+          .join()
       },
       async sendFile(file) {
         const currentTimeline = requireEncryptedTimeline()
@@ -324,8 +460,11 @@ export async function connectEncryptedChat(
     }
   } catch (error) {
     subscription?.cancel()
+    typingSubscription?.cancel()
     await sync?.stop()
     dispose(subscription)
+    dispose(typingSubscription)
+    mediaHandles.forEach(dispose)
     dispose(timeline)
     dispose(sync)
     dispose(client)

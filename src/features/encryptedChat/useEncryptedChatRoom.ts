@@ -26,10 +26,18 @@ export type ChatRoomStatus =
 export type ChatRoomState = {
   status: ChatRoomStatus
   messages: ChatMessage[]
+  typingUserIds: string[]
   session?: ChatSessionInfo
   /** A stable code, not a message to render raw. See `chatErrorCode`. */
   error?: string
-  send: (body: string) => Promise<void>
+  send: (body: string, replyToEventId?: string) => Promise<void>
+  sendImage: EncryptedChatClient['sendImage']
+  sendFile: EncryptedChatClient['sendFile']
+  openMedia: (eventId: string) => Promise<string>
+  toggleReaction: (eventId: string, key: string) => Promise<void>
+  setTyping: (typing: boolean) => Promise<void>
+  markRead: () => Promise<void>
+  retryDecryption: () => void
   authorize: () => void
   retry: () => void
 }
@@ -51,6 +59,7 @@ export function useEncryptedChatRoom(
 
   const [status, setStatus] = useState<ChatRoomStatus>('idle')
   const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [typingUserIds, setTypingUserIds] = useState<string[]>([])
   const [session, setSession] = useState<ChatSessionInfo | undefined>()
   const [error, setError] = useState<string | undefined>()
   const [attempt, setAttempt] = useState(0)
@@ -85,16 +94,26 @@ export function useEncryptedChatRoom(
         clientRef.current = client
         setSession(client.session)
 
-        await client.openRoom(roomId, next => {
-          // The adapter emits the whole timeline on every change, so this
-          // replaces rather than appends. Guarding on `cancelled` keeps a
-          // late callback from a closed client out of React state.
-          if (!cancelled) setMessages(next)
-        })
+        await client.openRoom(
+          roomId,
+          next => {
+            // The adapter emits the whole timeline on every change, so this
+            // replaces rather than appends. Guarding on `cancelled` keeps a
+            // late callback from a closed client out of React state.
+            if (!cancelled) setMessages(next)
+          },
+          userIds => {
+            if (!cancelled) setTypingUserIds(userIds)
+          },
+        )
         if (cancelled) return
         setStatus('ready')
       } catch (err) {
         if (cancelled) return
+        if (client) {
+          await client.close().catch(() => {})
+          clientRef.current = undefined
+        }
         const code = chatErrorCode(err)
         if (code === 'CHAT_LOGIN_REQUIRED') {
           setStatus('authorizationRequired')
@@ -119,17 +138,50 @@ export function useEncryptedChatRoom(
       cancelled = true
       clientRef.current = undefined
       setMessages([])
+      setTypingUserIds([])
       // Releases the scope lock, the sync loop and the SQLite handles. Without
       // it, the next mount fails with CHAT_ALREADY_OPEN.
       void client?.close().catch(() => {})
     }
   }, [did, identity, roomId, attempt, wantsAuthorization])
 
-  const send = useCallback(async (body: string) => {
+  const send = useCallback(async (body: string, replyToEventId?: string) => {
     const client = clientRef.current
     if (!client) throw new Error('CHAT_NOT_READY')
-    await client.sendText(body)
+    await client.sendText(body, replyToEventId)
   }, [])
+
+  const withClient = useCallback(() => {
+    const client = clientRef.current
+    if (!client) throw new Error('CHAT_NOT_READY')
+    return client
+  }, [])
+
+  const sendImage = useCallback<EncryptedChatClient['sendImage']>(
+    image => withClient().sendImage(image),
+    [withClient],
+  )
+  const sendFile = useCallback<EncryptedChatClient['sendFile']>(
+    file => withClient().sendFile(file),
+    [withClient],
+  )
+  const openMedia = useCallback(
+    (eventId: string) => withClient().openMedia(eventId),
+    [withClient],
+  )
+  const toggleReaction = useCallback(
+    (eventId: string, key: string) => withClient().toggleReaction(eventId, key),
+    [withClient],
+  )
+  const setTyping = useCallback(
+    (typing: boolean) => withClient().setTyping(typing),
+    [withClient],
+  )
+  const markRead = useCallback(() => withClient().markRead(), [withClient])
+  const retryDecryption = useCallback(
+    () => withClient().retryDecryption(),
+    [withClient],
+  )
 
   const authorize = useCallback(() => {
     setWantsAuthorization(true)
@@ -141,5 +193,21 @@ export function useEncryptedChatRoom(
     setAttempt(n => n + 1)
   }, [])
 
-  return {status, messages, session, error, send, authorize, retry}
+  return {
+    status,
+    messages,
+    typingUserIds,
+    session,
+    error,
+    send,
+    sendImage,
+    sendFile,
+    openMedia,
+    toggleReaction,
+    setTyping,
+    markRead,
+    retryDecryption,
+    authorize,
+    retry,
+  }
 }

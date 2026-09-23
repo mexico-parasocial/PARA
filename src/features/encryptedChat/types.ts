@@ -8,8 +8,23 @@ export type ChatScope = {
 
 export type ChatMessage = {
   id: string
+  eventId?: string
   sender: string
   body: string
+  timestamp: number
+  kind:
+    | 'text'
+    | 'image'
+    | 'audio'
+    | 'video'
+    | 'file'
+    | 'redacted'
+    | 'unableToDecrypt'
+  media?: {filename: string; mimeType: string; size?: number}
+  reactions: Array<{key: string; count: number; reactedByMe: boolean}>
+  replyTo?: {eventId: string; sender?: string; body?: string}
+  edited: boolean
+  readByCount: number
   pending: boolean
   unableToDecrypt: boolean
 }
@@ -27,8 +42,22 @@ export interface EncryptedChatClient {
   openRoom(
     roomId: string,
     onMessages: (messages: ChatMessage[]) => void,
+    onTyping?: (userIds: string[]) => void,
   ): Promise<void>
-  sendText(body: string): Promise<void>
+  sendText(body: string, replyToEventId?: string): Promise<void>
+  toggleReaction(eventId: string, key: string): Promise<void>
+  markRead(): Promise<void>
+  setTyping(typing: boolean): Promise<void>
+  retryDecryption(): void
+  openMedia(eventId: string): Promise<string>
+  sendImage(image: {
+    uri: string
+    name: string
+    size: number
+    mimeType: string
+    width: number
+    height: number
+  }): Promise<void>
   sendFile(file: {
     uri: string
     name: string
