@@ -746,6 +746,13 @@ export function buildClientHtml(sdkBundle?: string): string {
             }
           });
 
+          client.on('RoomMember.membership', function(_event, member) {
+            if (member.userId !== CONFIG.userId || member.roomId !== CONFIG.roomId || member.membership !== 'leave') return;
+            const message = JSON.stringify({type: 'matrix-membership-left', roomId: CONFIG.roomId});
+            if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(message);
+            else if (window.parent !== window) window.parent.postMessage(message, '*');
+          });
+
           client.on('Room.timeline', function(event, _room, toStartOfTimeline) {
             if (toStartOfTimeline) return;
             if (_room && _room.roomId === CONFIG.roomId) {

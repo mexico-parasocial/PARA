@@ -17,6 +17,7 @@ import * as FileSystem from 'expo-file-system/legacy'
 import {useNavigation, useRoute} from '@react-navigation/native'
 
 import {getDefaultChatIdentityMode} from '#/lib/chat/identity'
+import {useChatBootstrap} from '#/lib/matrix/useChatBootstrap'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
   useChatBadgesQuery,
@@ -52,11 +53,17 @@ export function CommunityChatScreen() {
   const agent = useAgent()
   const {communityUri, communityName, roomId: routeRoomId} = route.params
   const myDid = agent.session?.did ?? undefined
+  const chatBootstrap = useChatBootstrap(communityUri, !!myDid)
 
   const {data: spaceData, isLoading: spaceLoading} =
     useCommunitySpaceQuery(communityUri)
-  const {data: tokenData, isLoading: tokenLoading} = useMatrixTokenQuery({
-    enabled: !!myDid,
+  const {
+    data: tokenData,
+    isLoading: tokenLoading,
+    error: tokenError,
+  } = useMatrixTokenQuery({
+    enabled: !!myDid && chatBootstrap.ready,
+    deviceId: chatBootstrap.deviceId,
   })
   const {data: memberList} = useChatMemberListQuery(communityUri, 100, 0)
   const {data: myBadges} = useChatBadgesQuery(myDid, communityUri)
@@ -89,7 +96,10 @@ export function CommunityChatScreen() {
     ...(myBadges?.visibleBadges.map(badge => badge.label) ?? []),
   ].filter(Boolean) as string[]
 
-  const isLoading = spaceLoading || tokenLoading
+  const isLoading =
+    spaceLoading ||
+    tokenLoading ||
+    (!chatBootstrap.ready && !chatBootstrap.error)
 
   const [sdkBundle, setSdkBundle] = useState<string | undefined>()
   const [showOnboarding, setShowOnboarding] = useState(true)
@@ -144,9 +154,14 @@ export function CommunityChatScreen() {
     () => (
       <View style={[styles.loading, {backgroundColor: t.palette.contrast_0}]}>
         <ActivityIndicator size="large" color={t.palette.primary_500} />
+        {!chatBootstrap.ready && (
+          <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_sm]}>
+            Aprueba la firma pendiente en la sección Credenciales de iM8.
+          </Text>
+        )}
       </View>
     ),
-    [t],
+    [t, chatBootstrap.ready],
   )
 
   const renderError = useCallback(
@@ -154,12 +169,24 @@ export function CommunityChatScreen() {
       <View style={[styles.loading, {backgroundColor: t.palette.contrast_0}]}>
         <Layout.Content>
           <Layout.Header.TitleText style={{color: t.palette.negative_500}}>
-            Chat not available
+            Chat no disponible
           </Layout.Header.TitleText>
+          <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_sm]}>
+            {chatBootstrap.error ??
+              tokenError?.message ??
+              'No se pudo abrir el chat.'}
+          </Text>
+          {chatBootstrap.error && (
+            <TouchableOpacity
+              accessibilityRole="button"
+              onPress={() => void chatBootstrap.retry()}>
+              <Text style={[a.text_sm, t.atoms.text]}>Reintentar</Text>
+            </TouchableOpacity>
+          )}
         </Layout.Content>
       </View>
     ),
-    [t],
+    [t, chatBootstrap],
   )
 
   if (isLoading) {
@@ -336,6 +363,19 @@ export function CommunityChatScreen() {
           startInLoadingState
           renderLoading={renderLoading}
           injectedJavaScript={injectedJavaScript}
+          onMessage={event => {
+            try {
+              const message = JSON.parse(event.nativeEvent.data)
+              if (
+                message.type === 'matrix-membership-left' &&
+                message.roomId === activeRoomId
+              ) {
+                void chatBootstrap.rejoin()
+              }
+            } catch {
+              // Ignore unrelated WebView messages.
+            }
+          }}
           onError={syntheticEvent => {
             const {nativeEvent} = syntheticEvent
             console.warn('[CommunityChat] WebView error:', nativeEvent)

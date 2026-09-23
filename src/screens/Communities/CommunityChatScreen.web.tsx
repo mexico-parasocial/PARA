@@ -3,6 +3,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 import {
@@ -14,6 +15,7 @@ import {
 import {useNavigation, useRoute} from '@react-navigation/native'
 
 import {getDefaultChatIdentityMode} from '#/lib/chat/identity'
+import {useChatBootstrap} from '#/lib/matrix/useChatBootstrap'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
   useChatBadgesQuery,
@@ -47,16 +49,43 @@ export function CommunityChatScreen() {
   const agent = useAgent()
   const {communityUri, communityName, roomId: routeRoomId} = route.params
   const myDid = agent.session?.did ?? undefined
+  const chatBootstrap = useChatBootstrap(communityUri, !!myDid)
+  const iframeRef = useRef<HTMLIFrameElement>(null)
 
   const {data: spaceData, isLoading: spaceLoading} =
     useCommunitySpaceQuery(communityUri)
-  const {data: tokenData, isLoading: tokenLoading} = useMatrixTokenQuery({
-    enabled: !!myDid,
+  const {
+    data: tokenData,
+    isLoading: tokenLoading,
+    error: tokenError,
+  } = useMatrixTokenQuery({
+    enabled: !!myDid && chatBootstrap.ready,
+    deviceId: chatBootstrap.deviceId,
   })
   const {data: memberList} = useChatMemberListQuery(communityUri, 100, 0)
   const {data: myBadges} = useChatBadgesQuery(myDid, communityUri)
   const {mutate: markRead} = useMarkMatrixReadMutation()
   const activeRoomId = routeRoomId ?? spaceData?.spaceId
+  const rejoin = chatBootstrap.rejoin
+
+  useEffect(() => {
+    const onMessage = (event: MessageEvent) => {
+      if (event.source !== iframeRef.current?.contentWindow) return
+      try {
+        const message = JSON.parse(event.data)
+        if (
+          message.type === 'matrix-membership-left' &&
+          message.roomId === activeRoomId
+        ) {
+          void rejoin()
+        }
+      } catch {
+        // Ignore unrelated iframe messages.
+      }
+    }
+    window.addEventListener('message', onMessage)
+    return () => window.removeEventListener('message', onMessage)
+  }, [activeRoomId, rejoin])
 
   useEffect(() => {
     if (myDid && activeRoomId) {
@@ -83,7 +112,10 @@ export function CommunityChatScreen() {
     ...(myBadges?.visibleBadges.map(badge => badge.label) ?? []),
   ].filter(Boolean) as string[]
 
-  const isLoading = spaceLoading || tokenLoading
+  const isLoading =
+    spaceLoading ||
+    tokenLoading ||
+    (!chatBootstrap.ready && !chatBootstrap.error)
 
   const [sdkBundle, setSdkBundle] = useState<string | undefined>()
   const [bundleError, setBundleError] = useState<Error | undefined>()
@@ -147,9 +179,14 @@ export function CommunityChatScreen() {
     () => (
       <View style={[styles.loading, {backgroundColor: t.palette.contrast_0}]}>
         <ActivityIndicator size="large" color={t.palette.primary_500} />
+        {!chatBootstrap.ready && (
+          <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_sm]}>
+            Aprueba la firma pendiente en la sección Credenciales de iM8.
+          </Text>
+        )}
       </View>
     ),
-    [t],
+    [t, chatBootstrap.ready],
   )
 
   const renderError = useCallback(
@@ -168,7 +205,10 @@ export function CommunityChatScreen() {
     [t],
   )
 
-  if (isLoading || (!srcDoc && !bundleError)) {
+  if (
+    isLoading ||
+    (!srcDoc && !bundleError && !chatBootstrap.error && !tokenError)
+  ) {
     return (
       <Layout.Screen>
         <Layout.Header.Outer noBottomBorder>
@@ -183,7 +223,13 @@ export function CommunityChatScreen() {
     )
   }
 
-  if (!spaceData || !tokenData || !activeRoomId || bundleError) {
+  if (
+    !spaceData ||
+    !tokenData ||
+    !activeRoomId ||
+    bundleError ||
+    chatBootstrap.error
+  ) {
     return (
       <Layout.Screen>
         <Layout.Header.Outer noBottomBorder>
@@ -194,7 +240,9 @@ export function CommunityChatScreen() {
           <Layout.Header.Slot />
         </Layout.Header.Outer>
         {renderError(
-          bundleError?.message ||
+          chatBootstrap.error ||
+            tokenError?.message ||
+            bundleError?.message ||
             'Could not load the community chat. Please try again.',
         )}
       </Layout.Screen>
@@ -332,6 +380,7 @@ export function CommunityChatScreen() {
         />
       </View>
       <iframe
+        ref={iframeRef}
         title={`${communityName} chat`}
         srcDoc={srcDoc}
         style={styles.iframe}

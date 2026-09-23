@@ -8,9 +8,8 @@ import {logger} from '#/logger'
  * Order matters and every step is proof-bearing (challenge → sign → call):
  *
  *   1. identity  — derivation cross-check + Synapse account provisioning
- *   2. attest    — register this device (stable per-install id) so
- *                  attribution, moderation, revocation and role projection
- *                  reach it
+ *   2. attest    — when an actual Matrix device already exists, register its
+ *                  device id so attribution and revocation can reach it
  *   3. join      — (re-)join every community the user is an active member
  *                  of. Idempotent; also the lease re-entry path after the
  *                  bridge's TTL sweep kicked an inactive account.
@@ -18,11 +17,13 @@ import {logger} from '#/logger'
  * Steps 2 and 3 fail soft (logged, reported) — partial boot is useful and
  * the next foreground retries. Step 1 failing is fatal to chat and is
  * returned as the typed failure the UI handles.
+ * A local install id must never be attested as a MAS device id: MAS chooses
+ * the device during OIDC, and that id is only known after authorization.
  */
 
 export interface MatrixBootstrapInput {
-  /** Stable per-install device id (SecureStore), matching the MAS device. */
-  deviceId: string
+  /** Actual Matrix device id, if a client-managed session already exists. */
+  deviceId?: string
   friendlyName?: string
   /** Communities the user is an active member of, from app state. */
   communityUris: string[]
@@ -50,18 +51,20 @@ export async function bootstrapMatrixIdentity(
   })
 
   let attestedDeviceId: string | undefined
-  try {
-    const attest = await bridgeCallWithProof<{deviceId: string}>(
-      BRIDGE_AUDIENCES.attest,
-      '/api/matrix-attest',
-      {deviceId: input.deviceId, friendlyName: input.friendlyName},
-    )
-    attestedDeviceId = attest.deviceId
-  } catch (err) {
-    logger.warn(
-      'matrix: attestation failed; moderation/revocation will not reach this device until it attests',
-      {err},
-    )
+  if (input.deviceId) {
+    try {
+      const attest = await bridgeCallWithProof<{deviceId: string}>(
+        BRIDGE_AUDIENCES.attest,
+        '/api/matrix-attest',
+        {deviceId: input.deviceId, friendlyName: input.friendlyName},
+      )
+      attestedDeviceId = attest.deviceId
+    } catch (err) {
+      logger.warn(
+        'matrix: attestation failed; moderation/revocation will not reach this device until it attests',
+        {err},
+      )
+    }
   }
 
   const joined: string[] = []

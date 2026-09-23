@@ -42,8 +42,7 @@ type SignRequestView =
   | {status: 'pending'}
   | {
       status: 'fulfilled'
-      assertion: SignedAssertion['assertion']
-      signature?: string
+      assertion: SignedAssertion
     }
 
 export async function requestAssertionSignature(
@@ -71,8 +70,8 @@ export async function requestAssertionSignature(
     }
     if (!res.ok) continue
     const view = (await res.json()) as SignRequestView
-    if (view.status === 'fulfilled' && view.signature) {
-      return {assertion: view.assertion, signature: view.signature}
+    if (view.status === 'fulfilled' && view.assertion?.signature) {
+      return view.assertion
     }
   }
   throw new Error('Firma no aprobada a tiempo — ábrela desde iM8')

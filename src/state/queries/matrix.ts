@@ -154,7 +154,7 @@ export function useMatrixIdentityQuery({
  * CD-M6 session attestation for MAS-native logins: registers the client's
  * MAS device against the derived MXID so attribution, moderation,
  * revocation and role projection reach it. Idempotent per device — call on
- * every login with a stable per-install deviceId.
+ * every login with the actual Matrix deviceId returned by the MAS client.
  */
 export function useMatrixAttestMutation() {
   return useMutation<

@@ -60,8 +60,10 @@ describe('im8Signer — requestAssertionSignature', () => {
       .mockResolvedValueOnce(
         okJson({
           status: 'fulfilled',
-          assertion: assertionBody('c'.repeat(64)),
-          signature: '42'.repeat(64),
+          assertion: {
+            assertion: assertionBody('c'.repeat(64)),
+            signature: '42'.repeat(64),
+          },
         }),
       )
 
