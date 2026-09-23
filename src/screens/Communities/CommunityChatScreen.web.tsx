@@ -30,8 +30,6 @@ import {
 import {useAgent} from '#/state/session'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
-import {ChatEncryptionNotice} from '#/components/chat/ChatEncryptionNotice'
-import {ChatIdentityPill} from '#/components/chat/ChatIdentityPill'
 import {type Props as SVGIconProps} from '#/components/icons/common'
 import {Group3_Stroke2_Corner0_Rounded as MembersIcon} from '#/components/icons/Group'
 import {Megaphone_Stroke2_Corner0_Rounded as ProposalIcon} from '#/components/icons/Megaphone'
@@ -42,7 +40,9 @@ import {Warning_Stroke2_Corner0_Rounded as WarningIcon} from '#/components/icons
 import * as Layout from '#/components/Layout'
 import {SorteoBadge} from '#/components/SorteoBadge'
 import {Text} from '#/components/Typography'
+import {ChatCivicContext} from './ChatCivicContext'
 import {buildConfiguredClientHtml} from './matrix-client'
+import {useChatOnboarding} from './useChatOnboarding'
 import {useMatrixClientStrings} from './useMatrixClientStrings'
 
 export function CommunityChatScreen() {
@@ -132,7 +132,7 @@ export function CommunityChatScreen() {
 
   const [sdkBundle, setSdkBundle] = useState<string | undefined>()
   const [bundleError, setBundleError] = useState<Error | undefined>()
-  const [showOnboarding, setShowOnboarding] = useState(true)
+  const onboarding = useChatOnboarding(communityUri)
 
   useEffect(() => {
     let cancelled = false
@@ -328,41 +328,14 @@ export function CommunityChatScreen() {
           </View>
         </Layout.Header.Slot>
       </Layout.Header.Outer>
-      <View
-        style={[
-          styles.civicContext,
-          {
-            backgroundColor: t.palette.contrast_25,
-            borderBottomColor: t.palette.contrast_100,
-          },
-        ]}>
-        <ChatIdentityPill mode={identityMode} />
-        <View style={[a.mt_xs]}>
-          <ChatEncryptionNotice />
-        </View>
-        {civicBadges.length > 0 && (
-          <View style={[a.flex_row, a.flex_wrap, a.gap_xs, a.mt_xs]}>
-            {civicBadges.slice(0, 4).map(badge => (
-              <View
-                key={badge}
-                style={[
-                  styles.badge,
-                  {
-                    backgroundColor: t.palette.primary_500 + '18',
-                    borderColor: t.palette.primary_500 + '33',
-                  },
-                ]}>
-                <Text style={[a.text_xs, {color: t.palette.primary_500}]}>
-                  {badge}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
-      {showOnboarding && (
+      <ChatCivicContext
+        identityMode={identityMode}
+        encryptionPolicy={'unencrypted'}
+        badges={civicBadges}
+      />
+      {onboarding.visible && (
         <OnboardingBanner
-          onDismiss={() => setShowOnboarding(false)}
+          onDismiss={onboarding.dismiss}
           roomLabel={
             routeRoomId && routeRoomId !== spaceData?.spaceId
               ? _(msg`cámara de debate`)
@@ -506,32 +479,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  },
-  riskIndicator: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255,149,0,0.12)',
-  },
-  riskText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  headerBtn: {
-    padding: 6,
-    borderRadius: 8,
-    backgroundColor: 'rgba(128,128,128,0.08)',
-  },
-  civicContext: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  badge: {
-    borderWidth: StyleSheet.hairlineWidth,
-    borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
   },
   actionBar: {
     flexDirection: 'row',

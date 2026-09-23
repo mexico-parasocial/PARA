@@ -22,3 +22,9 @@
 ## P4 - moderator-only risk indicator
 
 - The risk count is rendered only when the current member's participation says `isModerator` in both native and web chat headers. Badge calculation and the members list are unchanged, per D1.
+
+## P5 - compact civic context and onboarding
+
+- The default civic context is a 40-point row with identity, a permanent encryption state icon and label, and the badge count. Tapping it expands the existing identity pill, complete encryption notice, and up to four badges. The encryption notice text and dialog are unchanged.
+- The welcome banner is marked seen in AsyncStorage per community when first shown. Returning to the same community does not show it again; another community has its own key.
+- Device height and screenshot acceptance are still pending. The available installed app cannot reach a signed-in chat screen because Metro fails on the unrelated in-progress Agora import (`cabildeo-party-alignment`). iPhone SE and iPhone 15 simulator device types exist, but no authenticated app screen was reached for a valid before/after measurement. The row's declared `minHeight` is a code measurement, not a device measurement.
