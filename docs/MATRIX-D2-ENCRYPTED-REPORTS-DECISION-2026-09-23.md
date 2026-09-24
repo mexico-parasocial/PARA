@@ -58,3 +58,29 @@ decision it never tries to.
 Until these are in place and verified, `CHAT_ENGINE` remains `webview` by
 default. No bridge schema, Synapse configuration, deployment or production
 behaviour changed with this decision record.
+
+## Status, 2026-09-24
+
+Built and unit-tested, not yet verified on a device or against a live
+homeserver:
+
+- **3, IDs only.** A message is reported by room, event and a reason from a
+  fixed list (PARA `34593be6d`); the bridge resolves the sender itself and
+  refuses free-text reasons and a mismatched `reportedDid` (WatZappa
+  `e26583dc6`). `context` is gone from the client.
+- **4, review in the moderator's client.** The report queue groups reports per
+  message and returns how many people reported, never who (WatZappa
+  `222ec3d04`, PARA `738f7aba5`). "Ver mensaje" opens the room on the event and
+  reads it with the moderator's own session, with explicit redacted,
+  undecryptable, no-access, not-found and not-loaded states (PARA `1fcaba1af`).
+- **1, moderators in every room.** Moderators and owners are placed in every
+  room of the community at their first verified join and on promotion, and
+  removed from rooms a demotion no longer covers (WatZappa `e0ba832a2`). In the
+  pull model that is the earliest possible: the bridge cannot invite by DID
+  (CD-M1). A moderator appointed later still only reads what is sent after they
+  join; the queue says "no tienes acceso" for earlier messages rather than
+  showing nothing.
+
+Still open: **2** (key backup and recovery, week 2 of the chat plan), **5**
+(moderator role documentation), and **6** (the end-to-end run with two members
+and a moderator on separate devices).
