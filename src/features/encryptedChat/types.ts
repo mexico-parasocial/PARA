@@ -50,6 +50,11 @@ export interface EncryptedChatClient {
   setTyping(typing: boolean): Promise<void>
   retryDecryption(): void
   openMedia(eventId: string): Promise<string>
+  /**
+   * One message of the open room by event ID, decrypted with this device's
+   * keys when it can be. Undefined when it is not in this device's timeline.
+   */
+  getMessage(eventId: string): Promise<ChatMessage | undefined>
   sendImage(image: {
     uri: string
     name: string

@@ -9,9 +9,10 @@ import {
 import {msg, plural} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
-import {useRoute} from '@react-navigation/native'
+import {useNavigation, useRoute} from '@react-navigation/native'
 
 import {useGetTimeAgo} from '#/lib/hooks/useTimeAgo'
+import {type NavigationProp} from '#/lib/routes/types'
 import {
   type ModerationReportGroup,
   useApplySanctionMutation,
@@ -22,6 +23,7 @@ import {
 import {useProfilesQuery} from '#/state/queries/profile'
 import {useSession} from '#/state/session'
 import {atoms as a, useTheme} from '#/alf'
+import {Button, ButtonText} from '#/components/Button'
 import {useMessageReportReasonLabels} from '#/components/chat/ReportMessageDialog'
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'
@@ -174,6 +176,8 @@ export function ModeratorDashboardScreen() {
         )}
 
         <ReportQueue
+          communityUri={communityUri}
+          communityName={communityName}
           reports={reports.data}
           isLoading={reports.isLoading}
           isError={reports.isError}
@@ -252,10 +256,14 @@ export function ModeratorDashboardScreen() {
  * reads the message in the room from their own client (D2).
  */
 function ReportQueue({
+  communityUri,
+  communityName,
   reports,
   isLoading,
   isError,
 }: {
+  communityUri: string
+  communityName: string
   reports: ModerationReportGroup[] | undefined
   isLoading: boolean
   isError: boolean
@@ -264,6 +272,7 @@ function ReportQueue({
   const {_} = useLingui()
   const reasonLabels = useMessageReportReasonLabels()
   const timeAgo = useGetTimeAgo()
+  const navigation = useNavigation<NavigationProp>()
   // getProfiles accepts at most 25 actors.
   const dids = [...new Set((reports ?? []).map(r => r.reportedDid))].slice(
     0,
@@ -340,6 +349,28 @@ function ReportQueue({
                   )
                   .join(' · ')}
               </Text>
+              {report.matrixEventId && report.matrixRoomId && (
+                <Button
+                  label={_(msg`Ver el mensaje reportado`)}
+                  accessibilityHint={_(
+                    msg`Abre el chat en ese mensaje, leído con tu propia cuenta`,
+                  )}
+                  size="tiny"
+                  color="secondary"
+                  style={[a.self_start, a.mt_xs]}
+                  onPress={() =>
+                    navigation.navigate('CommunityChat', {
+                      communityUri,
+                      communityName,
+                      roomId: report.matrixRoomId ?? undefined,
+                      focusEventId: report.matrixEventId ?? undefined,
+                    })
+                  }>
+                  <ButtonText>
+                    <Trans>Ver mensaje</Trans>
+                  </ButtonText>
+                </Button>
+              )}
             </View>
           ))}
         </View>

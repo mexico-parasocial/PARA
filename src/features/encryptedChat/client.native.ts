@@ -336,6 +336,33 @@ export async function connectEncryptedChat(
       retryDecryption() {
         requireEncryptedTimeline().retryDecryption([])
       },
+      async getMessage(eventId) {
+        const current = requireEncryptedTimeline()
+        const room = openRoomId ? matrix.getRoom(openRoomId) : undefined
+        const lookup = async () => {
+          const item = await current.getEventTimelineItemByEventId(eventId)
+          // Reuse the timeline mapping so a single event is classified exactly
+          // like the list: message, redacted, or unable to decrypt.
+          const wrapped = {
+            asEvent: () => item,
+            asVirtual: () => undefined,
+            fmtDebug: () => '',
+            uniqueId: () => ({id: eventId}),
+          } as unknown as TimelineItemLike
+          return mapTimelineItems([wrapped], saved.session!.userId)[0]
+        }
+        try {
+          return await lookup()
+        } catch {
+          // Not in the loaded window; fetch it into the event cache and retry.
+        }
+        try {
+          await room?.loadOrFetchEvent(eventId)
+          return await lookup()
+        } catch {
+          return undefined
+        }
+      },
       async openMedia(eventId) {
         requireEncryptedTimeline()
         const media = mediaSources.get(eventId)

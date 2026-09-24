@@ -19,6 +19,7 @@ import {useNavigation, useRoute} from '@react-navigation/native'
 
 import {getDefaultChatIdentityMode} from '#/lib/chat/identity'
 import {useChatBootstrap} from '#/lib/matrix/useChatBootstrap'
+import {useReportedMessage} from '#/lib/matrix/useReportedMessage'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
   useChatBadgesQuery,
@@ -30,6 +31,7 @@ import {
 import {useAgent} from '#/state/session'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
+import {ReportedMessageCard} from '#/components/chat/ReportedMessageCard'
 import {
   type ReportedMessage,
   ReportMessageDialog,
@@ -54,14 +56,24 @@ export function CommunityChatScreen() {
   const route = useRoute<{
     key: string
     name: 'CommunityChat'
-    params: {communityUri: string; communityName: string; roomId?: string}
+    params: {
+      communityUri: string
+      communityName: string
+      roomId?: string
+      focusEventId?: string
+    }
   }>()
   const navigation = useNavigation<NavigationProp>()
   const t = useTheme()
   const {_} = useLingui()
   const matrixStrings = useMatrixClientStrings()
   const agent = useAgent()
-  const {communityUri, communityName, roomId: routeRoomId} = route.params
+  const {
+    communityUri,
+    communityName,
+    roomId: routeRoomId,
+    focusEventId,
+  } = route.params
   const myDid = agent.session?.did ?? undefined
   const chatBootstrap = useChatBootstrap(communityUri, !!myDid)
   const reportControl = Dialog.useDialogControl()
@@ -89,6 +101,15 @@ export function CommunityChatScreen() {
   const {data: myBadges} = useChatBadgesQuery(myDid, communityUri)
   const {mutate: markRead} = useMarkMatrixReadMutation()
   const activeRoomId = routeRoomId ?? spaceData?.spaceId
+  // A reported message opened from the moderator queue (D2): read with this
+  // session, shown above the conversation until dismissed.
+  const [focusDismissed, setFocusDismissed] = useState(false)
+  const showFocus = !!focusEventId && !focusDismissed
+  const reported = useReportedMessage({
+    roomId: activeRoomId,
+    eventId: showFocus ? focusEventId : undefined,
+    session: tokenData,
+  })
   const rejoin = chatBootstrap.rejoin
 
   useEffect(() => {
@@ -403,6 +424,14 @@ export function CommunityChatScreen() {
           }
         />
       </View>
+      {showFocus && (
+        <ReportedMessageCard
+          view={reported.view}
+          encrypted={false}
+          onClose={() => setFocusDismissed(true)}
+          onRetry={reported.retry}
+        />
+      )}
       <iframe
         ref={iframeRef}
         title={_(msg`Chat de ${communityName}`)}
