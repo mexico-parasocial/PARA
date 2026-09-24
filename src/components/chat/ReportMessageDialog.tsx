@@ -20,6 +20,22 @@ import {Text} from '#/components/Typography'
 
 export type ReportedMessage = {roomId: string; eventId: string}
 
+/** Localized labels for the fixed report reasons, shared with moderation. */
+export function useMessageReportReasonLabels(): Record<
+  MessageReportReason,
+  string
+> {
+  const {_} = useLingui()
+  return {
+    spam: _(msg`Spam o publicidad`),
+    harassment: _(msg`Acoso o intimidación`),
+    hate: _(msg`Discurso de odio`),
+    violence: _(msg`Violencia o amenazas`),
+    impersonation: _(msg`Suplantación de identidad`),
+    other: _(msg`Otro motivo`),
+  }
+}
+
 /*
  * Report a chat message to the community's moderators.
  *
@@ -72,14 +88,7 @@ function Inner({
   const [reason, setReason] = useState<MessageReportReason | undefined>()
   const report = useReportMessageMutation()
 
-  const reasonLabels: Record<MessageReportReason, string> = {
-    spam: _(msg`Spam o publicidad`),
-    harassment: _(msg`Acoso o intimidación`),
-    hate: _(msg`Discurso de odio`),
-    violence: _(msg`Violencia o amenazas`),
-    impersonation: _(msg`Suplantación de identidad`),
-    other: _(msg`Otro motivo`),
-  }
+  const reasonLabels = useMessageReportReasonLabels()
 
   const onSubmit = () => {
     if (!reason || !currentAccount) return
