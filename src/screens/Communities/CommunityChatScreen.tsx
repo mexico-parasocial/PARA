@@ -34,6 +34,11 @@ import {
 import {useAgent} from '#/state/session'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
+import {
+  type ReportedMessage,
+  ReportMessageDialog,
+} from '#/components/chat/ReportMessageDialog'
+import * as Dialog from '#/components/Dialog'
 import {type Props as SVGIconProps} from '#/components/icons/common'
 import {Group3_Stroke2_Corner0_Rounded as MembersIcon} from '#/components/icons/Group'
 import {Megaphone_Stroke2_Corner0_Rounded as ProposalIcon} from '#/components/icons/Megaphone'
@@ -65,6 +70,15 @@ export function CommunityChatScreen() {
   const {communityUri, communityName, roomId: routeRoomId} = route.params
   const myDid = agent.session?.did ?? undefined
   const chatBootstrap = useChatBootstrap(communityUri, !!myDid)
+  const reportControl = Dialog.useDialogControl()
+  const [reportedMessage, setReportedMessage] = useState<ReportedMessage>()
+  const openReport = useCallback(
+    (message: ReportedMessage) => {
+      setReportedMessage(message)
+      reportControl.open()
+    },
+    [reportControl],
+  )
 
   const {data: spaceData, isLoading: spaceLoading} =
     useCommunitySpaceQuery(communityUri)
@@ -370,6 +384,9 @@ export function CommunityChatScreen() {
           key={activeRoomId}
           roomId={activeRoomId}
           onEncryptionVerified={onEncryptionVerified}
+          onReportMessage={eventId =>
+            openReport({roomId: activeRoomId, eventId})
+          }
         />
       ) : (
         <WebView
@@ -387,8 +404,15 @@ export function CommunityChatScreen() {
                 roomId?: string
                 mxcUrl?: string
                 filename?: string
+                eventId?: string
               }
               if (
+                message.type === 'matrix-report-message' &&
+                message.roomId === activeRoomId &&
+                typeof message.eventId === 'string'
+              ) {
+                openReport({roomId: message.roomId, eventId: message.eventId})
+              } else if (
                 message.type === 'matrix-membership-left' &&
                 message.roomId === activeRoomId
               ) {
@@ -419,6 +443,11 @@ export function CommunityChatScreen() {
           }}
         />
       )}
+      <ReportMessageDialog
+        control={reportControl}
+        communityUri={communityUri}
+        message={reportedMessage}
+      />
     </Layout.Screen>
   )
 }

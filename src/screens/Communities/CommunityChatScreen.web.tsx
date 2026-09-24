@@ -30,6 +30,11 @@ import {
 import {useAgent} from '#/state/session'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
+import {
+  type ReportedMessage,
+  ReportMessageDialog,
+} from '#/components/chat/ReportMessageDialog'
+import * as Dialog from '#/components/Dialog'
 import {type Props as SVGIconProps} from '#/components/icons/common'
 import {Group3_Stroke2_Corner0_Rounded as MembersIcon} from '#/components/icons/Group'
 import {Megaphone_Stroke2_Corner0_Rounded as ProposalIcon} from '#/components/icons/Megaphone'
@@ -59,6 +64,15 @@ export function CommunityChatScreen() {
   const {communityUri, communityName, roomId: routeRoomId} = route.params
   const myDid = agent.session?.did ?? undefined
   const chatBootstrap = useChatBootstrap(communityUri, !!myDid)
+  const reportControl = Dialog.useDialogControl()
+  const [reportedMessage, setReportedMessage] = useState<ReportedMessage>()
+  const openReport = useCallback(
+    (message: ReportedMessage) => {
+      setReportedMessage(message)
+      reportControl.open()
+    },
+    [reportControl],
+  )
   const iframeRef = useRef<HTMLIFrameElement>(null)
 
   const {data: spaceData, isLoading: spaceLoading} =
@@ -85,8 +99,16 @@ export function CommunityChatScreen() {
         const message = JSON.parse(event.data) as {
           type?: string
           roomId?: string
+          eventId?: string
         }
         if (
+          message.type === 'matrix-report-message' &&
+          typeof message.roomId === 'string' &&
+          message.roomId === activeRoomId &&
+          typeof message.eventId === 'string'
+        ) {
+          openReport({roomId: message.roomId, eventId: message.eventId})
+        } else if (
           message.type === 'matrix-membership-left' &&
           message.roomId === activeRoomId
         ) {
@@ -98,7 +120,7 @@ export function CommunityChatScreen() {
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
-  }, [activeRoomId, rejoin])
+  }, [activeRoomId, rejoin, openReport])
 
   useEffect(() => {
     if (myDid && activeRoomId) {
@@ -387,6 +409,11 @@ export function CommunityChatScreen() {
         srcDoc={srcDoc}
         style={styles.iframe}
         sandbox="allow-scripts allow-same-origin allow-forms"
+      />
+      <ReportMessageDialog
+        control={reportControl}
+        communityUri={communityUri}
+        message={reportedMessage}
       />
     </Layout.Screen>
   )

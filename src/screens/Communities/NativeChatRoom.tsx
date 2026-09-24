@@ -42,9 +42,12 @@ import {useEncryptedChatRoom} from '#/features/encryptedChat/useEncryptedChatRoo
 export function NativeChatRoom({
   roomId,
   onEncryptionVerified,
+  onReportMessage,
 }: {
   roomId: string
   onEncryptionVerified?: (verified: boolean) => void
+  /** Report another member's sent message, by event ID only (D2). */
+  onReportMessage?: (eventId: string) => void
 }) {
   const t = useTheme()
   const {_} = useLingui()
@@ -210,9 +213,17 @@ export function NativeChatRoom({
         onReaction={toggleReaction}
         onOpenMedia={openMedia}
         onRetryDecryption={retryDecryption}
+        onReport={onReportMessage}
       />
     ),
-    [session?.userId, inverted, toggleReaction, openMedia, retryDecryption],
+    [
+      session?.userId,
+      inverted,
+      toggleReaction,
+      openMedia,
+      retryDecryption,
+      onReportMessage,
+    ],
   )
 
   if (status !== 'ready') {
@@ -342,6 +353,7 @@ function MessageRow({
   onReaction,
   onOpenMedia,
   onRetryDecryption,
+  onReport,
 }: {
   message: ChatMessage
   isOwn: boolean
@@ -350,6 +362,7 @@ function MessageRow({
   onReaction: (eventId: string, key: string) => Promise<void>
   onOpenMedia: (eventId: string) => Promise<string>
   onRetryDecryption: () => void
+  onReport?: (eventId: string) => void
 }) {
   const t = useTheme()
   const {_} = useLingui()
@@ -540,6 +553,21 @@ function MessageRow({
                 <ButtonText>{key}</ButtonText>
               </Button>
             ))}
+            {!isOwn && onReport && (
+              <Button
+                label={_(msg`Reportar este mensaje a moderación`)}
+                size="tiny"
+                variant="ghost"
+                color="negative"
+                onPress={() => {
+                  setShowActions(false)
+                  if (message.eventId) onReport(message.eventId)
+                }}>
+                <ButtonText>
+                  <Trans>Reportar</Trans>
+                </ButtonText>
+              </Button>
+            )}
           </View>
         )}
       </View>
