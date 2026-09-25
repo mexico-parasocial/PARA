@@ -20,7 +20,6 @@ import {
 } from '#/state/queries/post-feed'
 import {findAllProfilesInQueryData as findAllProfilesInPostLikedByQueryData} from '#/state/queries/post-liked-by'
 import {findAllProfilesInQueryData as findAllProfilesInPostQuotesQueryData} from '#/state/queries/post-quotes'
-import {findAllProfilesInQueryData as findAllProfilesInPostRepostedByQueryData} from '#/state/queries/post-reposted-by'
 import {findAllProfilesInQueryData as findAllProfilesInProfileQueryData} from '#/state/queries/profile'
 import {findAllProfilesInQueryData as findAllProfilesInProfileFollowersQueryData} from '#/state/queries/profile-followers'
 import {findAllProfilesInQueryData as findAllProfilesInProfileFollowsQueryData} from '#/state/queries/profile-follows'
@@ -30,7 +29,7 @@ import {findAllProfilesInQueryData as findAllProfilesInSuggestedUsersForExploreQ
 import {findAllProfilesInQueryData as findAllProfilesInSuggestedUsersForSeeMoreQueryData} from '#/state/queries/trending/useGetSuggestedUsersForSeeMoreQuery'
 import {findAllProfilesInQueryData as findAllProfilesInSuggestedUsersQueryData} from '#/state/queries/trending/useGetSuggestedUsersQuery'
 import {findAllProfilesInQueryData as findAllProfilesInPostThreadV2QueryData} from '#/state/queries/usePostThread/queryCache'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import type * as bsky from '#/types/bsky'
 import {castAsShadow, type Shadow} from './types'
 
@@ -39,7 +38,6 @@ export type {Shadow} from './types'
 export interface ProfileShadow {
   followingUri: string | undefined
   muted: boolean | undefined
-  mutedOnlyReposts: boolean | undefined
   blockingUri: string | undefined
   verification: app.bsky.actor.defs.VerificationState
   status: app.bsky.actor.defs.StatusView | undefined
@@ -82,11 +80,6 @@ export function isProfileShadowApplied<
   }
   if ('muted' in shadow) {
     if (profile.viewer?.muted !== shadow.muted) return false
-  }
-  if ('mutedOnlyReposts' in shadow) {
-    if (profile.viewer?.mutedOnlyReposts !== shadow.mutedOnlyReposts) {
-      return false
-    }
   }
   if ('blockingUri' in shadow) {
     if (profile.viewer?.blocking !== shadow.blockingUri) return false
@@ -264,10 +257,6 @@ export function mergeShadow<TProfileView extends bsky.profile.AnyProfileView>(
           ? shadow.followingUri
           : profile.viewer?.following,
       muted: 'muted' in shadow ? shadow.muted : profile.viewer?.muted,
-      mutedOnlyReposts:
-        'mutedOnlyReposts' in shadow
-          ? shadow.mutedOnlyReposts
-          : profile.viewer?.mutedOnlyReposts,
       blocking:
         'blockingUri' in shadow ? shadow.blockingUri : profile.viewer?.blocking,
       activitySubscription:
@@ -297,10 +286,6 @@ function* findProfilesInCache(
     bsky.profile.AnyProfileView,
     void
   >
-  yield* findAllProfilesInPostRepostedByQueryData(
-    queryClient,
-    did,
-  ) as Generator<bsky.profile.AnyProfileView, void>
   yield* findAllProfilesInPostQuotesQueryData(queryClient, did) as Generator<
     bsky.profile.AnyProfileView,
     void

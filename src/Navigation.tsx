@@ -143,7 +143,6 @@ import {NotificationsActivityListScreen} from '#/screens/Notifications/ActivityL
 import {PostHighlightsScreen} from '#/screens/Post/PostHighlights'
 import {PostLikedByScreen} from '#/screens/Post/PostLikedBy'
 import {PostQuotesScreen} from '#/screens/Post/PostQuotes'
-import {PostRepostedByScreen} from '#/screens/Post/PostRepostedBy'
 import {CommunitiesActiveInScreen} from '#/screens/Profile/CommunitiesActiveIn'
 import {ProfileKnownFollowersScreen} from '#/screens/Profile/KnownFollowers'
 import {ProfileFeedScreen} from '#/screens/Profile/ProfileFeed'
@@ -181,14 +180,11 @@ import {LegacyNotificationSettingsScreen} from '#/screens/Settings/LegacyNotific
 import {NotificationSettingsScreen} from '#/screens/Settings/NotificationSettings'
 import {ActivityNotificationSettingsScreen} from '#/screens/Settings/NotificationSettings/ActivityNotificationSettings'
 import {LikeNotificationSettingsScreen} from '#/screens/Settings/NotificationSettings/LikeNotificationSettings'
-import {LikesOnRepostsNotificationSettingsScreen} from '#/screens/Settings/NotificationSettings/LikesOnRepostsNotificationSettings'
 import {MentionNotificationSettingsScreen} from '#/screens/Settings/NotificationSettings/MentionNotificationSettings'
 import {MiscellaneousNotificationSettingsScreen} from '#/screens/Settings/NotificationSettings/MiscellaneousNotificationSettings'
 import {NewFollowerNotificationSettingsScreen} from '#/screens/Settings/NotificationSettings/NewFollowerNotificationSettings'
 import {QuoteNotificationSettingsScreen} from '#/screens/Settings/NotificationSettings/QuoteNotificationSettings'
 import {ReplyNotificationSettingsScreen} from '#/screens/Settings/NotificationSettings/ReplyNotificationSettings'
-import {RepostNotificationSettingsScreen} from '#/screens/Settings/NotificationSettings/RepostNotificationSettings'
-import {RepostsOnRepostsNotificationSettingsScreen} from '#/screens/Settings/NotificationSettings/RepostsOnRepostsNotificationSettings'
 import {PoliticalAffiliationScreen} from '#/screens/Settings/PoliticalAffiliation'
 import {PrivacyAndSecuritySettingsScreen} from '#/screens/Settings/PrivacyAndSecuritySettings'
 import {ProfileVisibilityScreen} from '#/screens/Settings/ProfileVisibility'
@@ -354,13 +350,6 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
       <Stack.Screen
         name="PostLikedBy"
         getComponent={() => PostLikedByScreen}
-        options={({route}) => ({
-          title: title(msg`Post by @${route.params.name}`),
-        })}
-      />
-      <Stack.Screen
-        name="PostRepostedBy"
-        getComponent={() => PostRepostedByScreen}
         options={({route}) => ({
           title: title(msg`Post by @${route.params.name}`),
         })}
@@ -612,34 +601,10 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
         }}
       />
       <Stack.Screen
-        name="RepostNotificationSettings"
-        getComponent={() => RepostNotificationSettingsScreen}
-        options={{
-          title: title(msg`Repost notifications`),
-          requireAuth: true,
-        }}
-      />
-      <Stack.Screen
         name="NewFollowerNotificationSettings"
         getComponent={() => NewFollowerNotificationSettingsScreen}
         options={{
           title: title(msg`New follower notifications`),
-          requireAuth: true,
-        }}
-      />
-      <Stack.Screen
-        name="LikesOnRepostsNotificationSettings"
-        getComponent={() => LikesOnRepostsNotificationSettingsScreen}
-        options={{
-          title: title(msg`Votes of your quotes notifications`),
-          requireAuth: true,
-        }}
-      />
-      <Stack.Screen
-        name="RepostsOnRepostsNotificationSettings"
-        getComponent={() => RepostsOnRepostsNotificationSettingsScreen}
-        options={{
-          title: title(msg`Reposts of your reposts notifications`),
           requireAuth: true,
         }}
       />

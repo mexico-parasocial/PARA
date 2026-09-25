@@ -27,7 +27,6 @@ export const router = new Router({
   ProfileList: '/profile/:name/lists/:rkey',
   PostThread: '/profile/:name/post/:rkey',
   PostLikedBy: '/profile/:name/post/:rkey/liked-by',
-  PostRepostedBy: '/profile/:name/post/:rkey/reposted-by',
   PostHighlights: '/profile/:name/post/:rkey/highlights',
   PostQuotes: '/profile/:name/post/:rkey/quotes',
   ProfileFeed: '/profile/:name/feed/:rkey',
@@ -62,12 +61,7 @@ export const router = new Router({
   MentionNotificationSettings: '/settings/notifications/mentions',
   QuoteNotificationSettings: '/settings/notifications/quotes',
   LikeNotificationSettings: '/settings/notifications/likes',
-  RepostNotificationSettings: '/settings/notifications/reposts',
   NewFollowerNotificationSettings: '/settings/notifications/new-followers',
-  LikesOnRepostsNotificationSettings:
-    '/settings/notifications/likes-on-reposts',
-  RepostsOnRepostsNotificationSettings:
-    '/settings/notifications/reposts-on-reposts',
   MiscellaneousNotificationSettings: '/settings/notifications/miscellaneous',
   // support
   Support: '/support',

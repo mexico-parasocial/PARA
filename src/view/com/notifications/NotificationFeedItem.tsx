@@ -50,7 +50,6 @@ import {Contacts_Filled_Corner2_Rounded as ContactsIconFilled} from '#/component
 import {Heart2_Filled_Stroke2_Corner0_Rounded as HeartIconFilled} from '#/components/icons/Heart2'
 import {PersonPlus_Filled_Stroke2_Corner0_Rounded as PersonPlusIcon} from '#/components/icons/Person'
 import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/Plus'
-import {Repost_Stroke2_Corner3_Rounded as RepostIcon} from '#/components/icons/Repost'
 import {StarterPackMultiPathLarge as StarterPackIcon} from '#/components/icons/StarterPack'
 import {VerifiedCheck} from '#/components/icons/VerifiedCheck'
 import {InlineLinkText, Link} from '#/components/Link'
@@ -97,10 +96,7 @@ let NotificationFeedItem = ({
   const [isHoveringAuthorsList, setIsHoveringAuthorsList] = useState(false)
   const itemHref = useMemo(() => {
     switch (item.type) {
-      case 'post-like':
-      case 'repost':
-      case 'like-via-repost':
-      case 'repost-via-repost': {
+      case 'post-like': {
         if (item.subjectUri) {
           const urip = new AtUri(item.subjectUri)
           return `/profile/${urip.host}/post/${urip.rkey}`
@@ -308,29 +304,6 @@ let NotificationFeedItem = ({
     ) : (
       <Trans>{firstAuthorLink} liked your post</Trans>
     )
-  } else if (item.type === 'repost') {
-    a11yLabel = hasMultipleAuthors
-      ? l`${firstAuthorName} and ${plural(additionalAuthorsCount, {
-          one: `${formattedAuthorsCount} other`,
-          other: `${formattedAuthorsCount} others`,
-        })} reposted your post`
-      : l`${firstAuthorName} reposted your post`
-    notificationContent = hasMultipleAuthors ? (
-      <Trans>
-        {firstAuthorLink} and{' '}
-        <Text style={[a.text_md, a.font_semi_bold]}>
-          <Plural
-            value={additionalAuthorsCount}
-            one={`${formattedAuthorsCount} other`}
-            other={`${formattedAuthorsCount} others`}
-          />
-        </Text>{' '}
-        reposted your post
-      </Trans>
-    ) : (
-      <Trans>{firstAuthorLink} reposted your post</Trans>
-    )
-    icon = <RepostIcon size="xl" style={{color: t.palette.positive_500}} />
   } else if (item.type === 'follow') {
     if (isFollowBack && !hasMultipleAuthors) {
       /*
@@ -477,51 +450,6 @@ let NotificationFeedItem = ({
       </Trans>
     )
     icon = <VerifiedCheck size="xl" fill={t.palette.contrast_500} />
-  } else if (item.type === 'like-via-repost') {
-    a11yLabel = hasMultipleAuthors
-      ? l`${firstAuthorName} and ${plural(additionalAuthorsCount, {
-          one: `${formattedAuthorsCount} other`,
-          other: `${formattedAuthorsCount} others`,
-        })} liked your repost`
-      : l`${firstAuthorName} liked your repost`
-    notificationContent = hasMultipleAuthors ? (
-      <Trans>
-        {firstAuthorLink} and{' '}
-        <Text style={[a.text_md, a.font_semi_bold]}>
-          <Plural
-            value={additionalAuthorsCount}
-            one={`${formattedAuthorsCount} other`}
-            other={`${formattedAuthorsCount} others`}
-          />
-        </Text>{' '}
-        liked your repost
-      </Trans>
-    ) : (
-      <Trans>{firstAuthorLink} liked your repost</Trans>
-    )
-  } else if (item.type === 'repost-via-repost') {
-    a11yLabel = hasMultipleAuthors
-      ? l`${firstAuthorName} and ${plural(additionalAuthorsCount, {
-          one: `${formattedAuthorsCount} other`,
-          other: `${formattedAuthorsCount} others`,
-        })} reposted your repost`
-      : l`${firstAuthorName} reposted your repost`
-    notificationContent = hasMultipleAuthors ? (
-      <Trans>
-        {firstAuthorLink} and{' '}
-        <Text style={[a.text_md, a.font_semi_bold]}>
-          <Plural
-            value={additionalAuthorsCount}
-            one={`${formattedAuthorsCount} other`}
-            other={`${formattedAuthorsCount} others`}
-          />
-        </Text>{' '}
-        reposted your repost
-      </Trans>
-    ) : (
-      <Trans>{firstAuthorLink} reposted your repost</Trans>
-    )
-    icon = <RepostIcon size="xl" style={{color: t.palette.positive_500}} />
   } else if (item.type === 'subscribed-post') {
     const postsCount = 1 + (item.additional?.length || 0)
     a11yLabel = hasMultipleAuthors
@@ -673,11 +601,7 @@ let NotificationFeedItem = ({
               !item.notification.author.viewer?.following) ? (
               <FollowBackButton profile={item.notification.author} />
             ) : null}
-            {item.type === 'post-like' ||
-            item.type === 'repost' ||
-            item.type === 'like-via-repost' ||
-            item.type === 'repost-via-repost' ||
-            item.type === 'subscribed-post' ? (
+            {item.type === 'post-like' || item.type === 'subscribed-post' ? (
               <View style={[a.pt_2xs]}>
                 <AdditionalPostText post={item.subject} />
               </View>
