@@ -396,20 +396,6 @@ export class FeedTuner {
     return slices
   }
 
-  static removeReposts(
-    tuner: FeedTuner,
-    slices: FeedViewPostsSlice[],
-    _dryRun: boolean,
-  ) {
-    for (let i = 0; i < slices.length; i++) {
-      if (slices[i].isRepost) {
-        slices.splice(i, 1)
-        i--
-      }
-    }
-    return slices
-  }
-
   static removeQuotePosts(
     tuner: FeedTuner,
     slices: FeedViewPostsSlice[],

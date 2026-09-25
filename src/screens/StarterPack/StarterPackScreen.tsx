@@ -589,7 +589,7 @@ function OverflowMenu({
   return (
     <>
       <Menu.Root>
-        <Menu.Trigger label={_(msg`Repost or quote post`)}>
+        <Menu.Trigger label={_(msg`Open starter pack menu`)}>
           {({props}) => (
             <Button
               {...props}

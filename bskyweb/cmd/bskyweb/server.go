@@ -363,7 +363,6 @@ func serve(cctx *cli.Context) error {
 	// post endpoints; only first populates info
 	e.GET("/profile/:handleOrDID/post/:rkey", server.WebPost)
 	e.GET("/profile/:handleOrDID/post/:rkey/liked-by", server.WebGeneric)
-	e.GET("/profile/:handleOrDID/post/:rkey/reposted-by", server.WebGeneric)
 	e.GET("/profile/:handleOrDID/post/:rkey/quotes", server.WebGeneric)
 
 	// starter packs

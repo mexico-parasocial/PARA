@@ -326,6 +326,30 @@ decision is made.
 
 ---
 
+## 2026-09-25: PARA has no reposts (keep it that way across upstream syncs)
+
+- **Product decision:** a post is shared by quoting it or by highlighting part
+  of its text. The post controls show the pencil `QuoteButton` (Highlight /
+  Quote / Remove highlights), never Bluesky's `RepostButton`.
+- **How it was lost:** the August 2026 SDK sync (`05cfb0bd2`) replaced
+  `PostControls/index.tsx` with upstream's version, which put `RepostButton`
+  back and dropped the highlight wiring. It also removed the up/down
+  `RedditVoteButton` (still unrestored; `VoteButton.tsx` is unused).
+- **Guard:** `src/lib/__tests__/no-reposts.test.ts` fails if repost screens,
+  buttons or repost writes come back. When an upstream sync touches post
+  controls, feeds or notifications, re-apply PARA's version instead of
+  accepting upstream's.
+- **Backend:** WatZappa refuses `app.bsky.feed.repost` on write (PDS) and on
+  index (AppView) unless `PARA_REPOSTS_ENABLED=1`, and the
+  `20260925T120000000Z-drop-para-reposts` migration removed the reposts
+  already indexed. See `@atproto/common` `para-repost-policy.ts`.
+- **Deliberately kept:** the protocol types (`reasonRepost`, `repostCount`,
+  `feedViewPrefs.hideReposts`) and the feed-slicing logic in
+  `lib/api/feed-manip.ts`. They describe atproto data, not PARA features, and
+  removing them would only make upstream merges harder.
+
+---
+
 ## 2026-08-29: Local dev networking + error-surface fixes
 
 - **`EXPO_PUBLIC_LOCAL_DEV_IP` drift:** The dev machine's LAN IP is set in

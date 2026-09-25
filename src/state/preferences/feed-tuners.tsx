@@ -17,12 +17,6 @@ export function useFeedTuners(
   const {activeFilters} = useCompassFilter()
 
   return useMemo(() => {
-    if (feedDesc.startsWith('author')) {
-      if (feedDesc.endsWith('|posts_with_replies')) {
-        // TODO: Do this on the server instead.
-        return [FeedTuner.removeReposts]
-      }
-    }
     if (feedDesc.startsWith('feedgen')) {
       return [
         FeedTuner.preferredLangOnly(langPrefs.contentLanguages),
@@ -32,9 +26,6 @@ export function useFeedTuners(
     if (feedDesc === 'following' || feedDesc.startsWith('list')) {
       const feedTuners = [FeedTuner.removeOrphans]
 
-      if (preferences?.feedViewPrefs.hideReposts) {
-        feedTuners.push(FeedTuner.removeReposts)
-      }
       if (preferences?.feedViewPrefs.hideReplies) {
         feedTuners.push(FeedTuner.removeReplies)
       } else {
