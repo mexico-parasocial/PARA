@@ -56,6 +56,8 @@ async function clearTokens() {
   await Storage.deleteItemAsync('m8_access_token')
   await Storage.deleteItemAsync('m8_refresh_token')
   await Storage.deleteItemAsync('m8_session_id')
+  // Mirrors M8_SESSION_DID_KEY in ensureSession.ts.
+  await Storage.deleteItemAsync('m8_session_did')
 }
 
 export async function m8Fetch(

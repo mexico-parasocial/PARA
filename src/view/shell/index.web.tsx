@@ -7,6 +7,7 @@ import {RemoveScrollBar} from 'react-remove-scroll-bar'
 
 import {useIntentHandler} from '#/lib/hooks/useIntentHandler'
 import {Provider as HotkeysProvider} from '#/lib/hotkeys'
+import {useEnsureM8Session} from '#/lib/im8/hooks/useEnsureM8Session'
 import {type NavigationProp} from '#/lib/routes/types'
 import {useSession} from '#/state/session'
 import {useIsDrawerOpen, useSetDrawerOpen} from '#/state/shell'
@@ -43,6 +44,7 @@ import {DrawerContent} from './Drawer'
 function ShellInner() {
   const navigator = useNavigation<NavigationProp>()
   const closeAllActiveElements = useCloseAllActiveElements()
+  useEnsureM8Session()
 
   const {state: policyUpdateState} = usePolicyUpdateContext()
   const {showLoggedOut} = useLoggedOutView()

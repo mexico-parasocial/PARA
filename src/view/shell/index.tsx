@@ -9,6 +9,7 @@ import {useNavigation, useNavigationState} from '@react-navigation/native'
 import {useDedupe} from '#/lib/hooks/useDedupe'
 import {useIntentHandler} from '#/lib/hooks/useIntentHandler'
 import {useNotificationsHandler} from '#/lib/hooks/useNotificationHandler'
+import {useEnsureM8Session} from '#/lib/im8/hooks/useEnsureM8Session'
 import {useNotificationsRegistration} from '#/lib/notifications/notifications'
 import {isStateAtTabRoot} from '#/lib/routes/helpers'
 import {useDialogFullyExpandedCountContext} from '#/state/dialogs'
@@ -58,6 +59,7 @@ function ShellInner() {
 
   useNotificationsRegistration()
   useNotificationsHandler()
+  useEnsureM8Session()
 
   useEffect(() => {
     if (IS_ANDROID) {
