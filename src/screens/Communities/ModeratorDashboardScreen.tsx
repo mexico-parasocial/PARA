@@ -6,15 +6,25 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import {useRoute} from '@react-navigation/native'
+import {msg, plural} from '@lingui/core/macro'
+import {useLingui} from '@lingui/react'
+import {Trans} from '@lingui/react/macro'
+import {useNavigation, useRoute} from '@react-navigation/native'
 
+import {useGetTimeAgo} from '#/lib/hooks/useTimeAgo'
+import {type NavigationProp} from '#/lib/routes/types'
 import {
+  type ModerationReportGroup,
   useApplySanctionMutation,
   useChatMemberListQuery,
   useModerationDashboardQuery,
+  useModerationReportsQuery,
 } from '#/state/queries/matrix'
+import {useProfilesQuery} from '#/state/queries/profile'
 import {useSession} from '#/state/session'
 import {atoms as a, useTheme} from '#/alf'
+import {Button, ButtonText} from '#/components/Button'
+import {useMessageReportReasonLabels} from '#/components/chat/ReportMessageDialog'
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'
 
@@ -49,13 +59,15 @@ export function ModeratorDashboardScreen() {
     refetch,
   } = useModerationDashboardQuery(communityUri, modDid)
   const {data: memberList} = useChatMemberListQuery(communityUri, 20, 0)
+  const reports = useModerationReportsQuery(communityUri, modDid)
   const sanctionMutation = useApplySanctionMutation()
 
+  const refetchReports = reports.refetch
   const onRefresh = useCallback(async () => {
     setRefreshing(true)
-    await refetch()
+    await Promise.all([refetch(), refetchReports()])
     setRefreshing(false)
-  }, [refetch])
+  }, [refetch, refetchReports])
 
   const reportedMembers =
     memberList?.members.filter(m =>
@@ -163,6 +175,14 @@ export function ModeratorDashboardScreen() {
           </View>
         )}
 
+        <ReportQueue
+          communityUri={communityUri}
+          communityName={communityName}
+          reports={reports.data}
+          isLoading={reports.isLoading}
+          isError={reports.isError}
+        />
+
         {/* Reported members quick list */}
         <View style={[a.px_md, a.pt_md]}>
           <Text style={[a.text_sm, a.font_bold, t.atoms.text, a.mb_md]}>
@@ -227,6 +247,135 @@ export function ModeratorDashboardScreen() {
         </View>
       </ScrollView>
     </Layout.Screen>
+  )
+}
+
+/*
+ * The report queue: one row per reported message (or member). It shows how
+ * many people reported and why, never who, and no message text: the moderator
+ * reads the message in the room from their own client (D2).
+ */
+function ReportQueue({
+  communityUri,
+  communityName,
+  reports,
+  isLoading,
+  isError,
+}: {
+  communityUri: string
+  communityName: string
+  reports: ModerationReportGroup[] | undefined
+  isLoading: boolean
+  isError: boolean
+}) {
+  const t = useTheme()
+  const {_} = useLingui()
+  const reasonLabels = useMessageReportReasonLabels()
+  const timeAgo = useGetTimeAgo()
+  const navigation = useNavigation<NavigationProp>()
+  // getProfiles accepts at most 25 actors.
+  const dids = [...new Set((reports ?? []).map(r => r.reportedDid))].slice(
+    0,
+    25,
+  )
+  const {data: profiles} = useProfilesQuery({handles: dids})
+  const nameFor = (did: string) => {
+    const profile = profiles?.profiles.find(p => p.did === did)
+    return profile?.displayName || (profile ? `@${profile.handle}` : did)
+  }
+  const reasonLabel = (key: string) =>
+    (reasonLabels as Record<string, string>)[key] ?? key
+
+  return (
+    <View style={[a.px_md, a.pt_md]}>
+      <Text style={[a.text_sm, a.font_bold, t.atoms.text, a.mb_md]}>
+        <Trans>Reportes recientes</Trans>
+      </Text>
+      {isLoading ? (
+        <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
+          <Trans>Cargando reportes…</Trans>
+        </Text>
+      ) : isError ? (
+        <Text style={[a.text_sm, {color: t.palette.negative_500}]}>
+          <Trans>No se pudieron cargar los reportes.</Trans>
+        </Text>
+      ) : !reports?.length ? (
+        <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
+          <Trans>No hay reportes en los últimos 30 días.</Trans>
+        </Text>
+      ) : (
+        <View style={[a.gap_sm]}>
+          {reports.map(report => (
+            <View
+              key={`${report.matrixEventId ?? 'member'}:${report.reportedDid}`}
+              style={[
+                a.p_md,
+                a.rounded_md,
+                a.gap_2xs,
+                {backgroundColor: t.atoms.bg_contrast_50.backgroundColor},
+              ]}>
+              <View style={[a.flex_row, a.justify_between, a.gap_sm]}>
+                <Text
+                  style={[a.flex_1, a.text_sm, a.font_bold, t.atoms.text]}
+                  numberOfLines={1}>
+                  {nameFor(report.reportedDid)}
+                </Text>
+                <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
+                  {report.matrixEventId ? (
+                    <Trans>Mensaje</Trans>
+                  ) : (
+                    <Trans>Miembro</Trans>
+                  )}
+                </Text>
+              </View>
+              <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
+                {_(
+                  msg`${plural(report.reportCount, {
+                    one: '# reporte',
+                    other: '# reportes',
+                  })} de ${plural(report.reporterCount, {
+                    one: '# persona',
+                    other: '# personas',
+                  })} · hace ${timeAgo(report.lastReportedAt, Date.now())}`,
+                )}
+              </Text>
+              <Text style={[a.text_xs, t.atoms.text]}>
+                {Object.entries(report.reasons)
+                  .sort((x, y) => y[1] - x[1])
+                  .map(([key, count]) =>
+                    count > 1
+                      ? `${reasonLabel(key)} ×${count}`
+                      : reasonLabel(key),
+                  )
+                  .join(' · ')}
+              </Text>
+              {report.matrixEventId && report.matrixRoomId && (
+                <Button
+                  label={_(msg`Ver el mensaje reportado`)}
+                  accessibilityHint={_(
+                    msg`Abre el chat en ese mensaje, leído con tu propia cuenta`,
+                  )}
+                  size="tiny"
+                  color="secondary"
+                  style={[a.self_start, a.mt_xs]}
+                  onPress={() =>
+                    navigation.navigate('CommunityChat', {
+                      communityUri,
+                      communityName,
+                      roomId: report.matrixRoomId ?? undefined,
+                      focusEventId: report.matrixEventId ?? undefined,
+                    })
+                  }>
+                  <ButtonText>
+                    <Trans>Ver mensaje</Trans>
+                  </ButtonText>
+                </Button>
+              )}
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
   )
 }
 

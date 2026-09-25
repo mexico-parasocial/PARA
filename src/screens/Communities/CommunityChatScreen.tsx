@@ -23,6 +23,7 @@ import {useNavigation, useRoute} from '@react-navigation/native'
 import {getDefaultChatIdentityMode} from '#/lib/chat/identity'
 import {shareMatrixMedia} from '#/lib/matrix/media.native'
 import {useChatBootstrap} from '#/lib/matrix/useChatBootstrap'
+import {useReportedMessage} from '#/lib/matrix/useReportedMessage'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
   useChatBadgesQuery,
@@ -34,6 +35,12 @@ import {
 import {useAgent} from '#/state/session'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
+import {ReportedMessageCard} from '#/components/chat/ReportedMessageCard'
+import {
+  type ReportedMessage,
+  ReportMessageDialog,
+} from '#/components/chat/ReportMessageDialog'
+import * as Dialog from '#/components/Dialog'
 import {type Props as SVGIconProps} from '#/components/icons/common'
 import {Group3_Stroke2_Corner0_Rounded as MembersIcon} from '#/components/icons/Group'
 import {Megaphone_Stroke2_Corner0_Rounded as ProposalIcon} from '#/components/icons/Megaphone'
@@ -55,16 +62,35 @@ export function CommunityChatScreen() {
   const route = useRoute<{
     key: string
     name: 'CommunityChat'
-    params: {communityUri: string; communityName: string; roomId?: string}
+    params: {
+      communityUri: string
+      communityName: string
+      roomId?: string
+      focusEventId?: string
+    }
   }>()
   const navigation = useNavigation<NavigationProp>()
   const t = useTheme()
   const {_} = useLingui()
   const matrixStrings = useMatrixClientStrings()
   const agent = useAgent()
-  const {communityUri, communityName, roomId: routeRoomId} = route.params
+  const {
+    communityUri,
+    communityName,
+    roomId: routeRoomId,
+    focusEventId,
+  } = route.params
   const myDid = agent.session?.did ?? undefined
   const chatBootstrap = useChatBootstrap(communityUri, !!myDid)
+  const reportControl = Dialog.useDialogControl()
+  const [reportedMessage, setReportedMessage] = useState<ReportedMessage>()
+  const openReport = useCallback(
+    (message: ReportedMessage) => {
+      setReportedMessage(message)
+      reportControl.open()
+    },
+    [reportControl],
+  )
 
   const {data: spaceData, isLoading: spaceLoading} =
     useCommunitySpaceQuery(communityUri)
@@ -80,6 +106,15 @@ export function CommunityChatScreen() {
   const {data: myBadges} = useChatBadgesQuery(myDid, communityUri)
   const {mutate: markRead} = useMarkMatrixReadMutation()
   const activeRoomId = routeRoomId ?? spaceData?.spaceId
+  // A reported message opened from the moderator queue (D2): read with this
+  // session, shown above the conversation until dismissed.
+  const [focusDismissed, setFocusDismissed] = useState(false)
+  const showFocus = !!focusEventId && !focusDismissed
+  const reported = useReportedMessage({
+    roomId: activeRoomId,
+    eventId: showFocus && CHAT_ENGINE !== 'native' ? focusEventId : undefined,
+    session: tokenData,
+  })
 
   // Mark room as read when entering chat
   useEffect(() => {
@@ -365,11 +400,23 @@ export function CommunityChatScreen() {
           }
         />
       </View>
+      {CHAT_ENGINE !== 'native' && showFocus && (
+        <ReportedMessageCard
+          view={reported.view}
+          encrypted={false}
+          onClose={() => setFocusDismissed(true)}
+          onRetry={reported.retry}
+        />
+      )}
       {CHAT_ENGINE === 'native' ? (
         <NativeChatRoom
           key={activeRoomId}
           roomId={activeRoomId}
+          focusEventId={focusEventId}
           onEncryptionVerified={onEncryptionVerified}
+          onReportMessage={eventId =>
+            openReport({roomId: activeRoomId, eventId})
+          }
         />
       ) : (
         <WebView
@@ -387,8 +434,15 @@ export function CommunityChatScreen() {
                 roomId?: string
                 mxcUrl?: string
                 filename?: string
+                eventId?: string
               }
               if (
+                message.type === 'matrix-report-message' &&
+                message.roomId === activeRoomId &&
+                typeof message.eventId === 'string'
+              ) {
+                openReport({roomId: message.roomId, eventId: message.eventId})
+              } else if (
                 message.type === 'matrix-membership-left' &&
                 message.roomId === activeRoomId
               ) {
@@ -419,6 +473,11 @@ export function CommunityChatScreen() {
           }}
         />
       )}
+      <ReportMessageDialog
+        control={reportControl}
+        communityUri={communityUri}
+        message={reportedMessage}
+      />
     </Layout.Screen>
   )
 }

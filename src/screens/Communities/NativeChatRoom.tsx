@@ -17,10 +17,16 @@ import * as Sharing from 'expo-sharing'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
+import {useQuery} from '@tanstack/react-query'
 
+import {
+  type ReportedMessageView,
+  viewFromChatMessage,
+} from '#/lib/matrix/reportedMessage'
 import {KeyboardStickyView} from '#/screens/Messages/components/vendor/KeyboardStickyView'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
+import {ReportedMessageCard} from '#/components/chat/ReportedMessageCard'
 import {Text} from '#/components/Typography'
 import {
   chatErrorCode,
@@ -42,9 +48,15 @@ import {useEncryptedChatRoom} from '#/features/encryptedChat/useEncryptedChatRoo
 export function NativeChatRoom({
   roomId,
   onEncryptionVerified,
+  onReportMessage,
+  focusEventId,
 }: {
   roomId: string
   onEncryptionVerified?: (verified: boolean) => void
+  /** Report another member's sent message, by event ID only (D2). */
+  onReportMessage?: (eventId: string) => void
+  /** A reported message a moderator opened from the report queue. */
+  focusEventId?: string
 }) {
   const t = useTheme()
   const {_} = useLingui()
@@ -58,6 +70,7 @@ export function NativeChatRoom({
     sendImage,
     sendFile,
     openMedia,
+    getMessage,
     toggleReaction,
     setTyping,
     markRead,
@@ -65,6 +78,19 @@ export function NativeChatRoom({
     authorize,
     retry,
   } = useEncryptedChatRoom(roomId)
+
+  const [focusDismissed, setFocusDismissed] = useState(false)
+  const reported = useQuery({
+    queryKey: ['reported-message', 'native', roomId, focusEventId],
+    enabled: status === 'ready' && !!focusEventId && !focusDismissed,
+    retry: false,
+    queryFn: async (): Promise<ReportedMessageView> => {
+      const message = await getMessage(focusEventId!)
+      return message
+        ? viewFromChatMessage(message)
+        : {state: 'unavailable', reason: 'not-loaded'}
+    },
+  })
 
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
@@ -210,9 +236,17 @@ export function NativeChatRoom({
         onReaction={toggleReaction}
         onOpenMedia={openMedia}
         onRetryDecryption={retryDecryption}
+        onReport={onReportMessage}
       />
     ),
-    [session?.userId, inverted, toggleReaction, openMedia, retryDecryption],
+    [
+      session?.userId,
+      inverted,
+      toggleReaction,
+      openMedia,
+      retryDecryption,
+      onReportMessage,
+    ],
   )
 
   if (status !== 'ready') {
@@ -228,6 +262,18 @@ export function NativeChatRoom({
 
   return (
     <View style={[a.flex_1]}>
+      {focusEventId && !focusDismissed && (
+        <ReportedMessageCard
+          view={
+            reported.isError
+              ? {state: 'unavailable', reason: 'error'}
+              : reported.data
+          }
+          encrypted
+          onClose={() => setFocusDismissed(true)}
+          onRetry={() => void reported.refetch()}
+        />
+      )}
       <FlatList
         ref={listRef}
         data={inverted}
@@ -342,6 +388,7 @@ function MessageRow({
   onReaction,
   onOpenMedia,
   onRetryDecryption,
+  onReport,
 }: {
   message: ChatMessage
   isOwn: boolean
@@ -350,6 +397,7 @@ function MessageRow({
   onReaction: (eventId: string, key: string) => Promise<void>
   onOpenMedia: (eventId: string) => Promise<string>
   onRetryDecryption: () => void
+  onReport?: (eventId: string) => void
 }) {
   const t = useTheme()
   const {_} = useLingui()
@@ -540,6 +588,21 @@ function MessageRow({
                 <ButtonText>{key}</ButtonText>
               </Button>
             ))}
+            {!isOwn && onReport && (
+              <Button
+                label={_(msg`Reportar este mensaje a moderación`)}
+                size="tiny"
+                variant="ghost"
+                color="negative"
+                onPress={() => {
+                  setShowActions(false)
+                  if (message.eventId) onReport(message.eventId)
+                }}>
+                <ButtonText>
+                  <Trans>Reportar</Trans>
+                </ButtonText>
+              </Button>
+            )}
           </View>
         )}
       </View>

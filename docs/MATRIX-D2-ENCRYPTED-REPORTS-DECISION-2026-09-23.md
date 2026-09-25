@@ -1,14 +1,60 @@
 # D2 - reports from encrypted community rooms
 
-Decision by the user on 2026-09-23: a reporter may attach the decrypted text of a reported message to a moderation report with explicit consent in the UI.
+Decision by the user, confirmed on 2026-09-24: moderators read a reported
+message in their own client, as members of the room. The bridge stores only the
+Matrix event and room IDs. No copy of the message leaves the encrypted room.
 
-This reopens the earlier F4 decision to store only the Matrix event ID. The bridge cannot fetch plaintext from an encrypted Matrix event, so a report with evidence needs a client-supplied copy. The reported member has not consented to this separate copy. The copy must therefore be narrow, visible to the reporter, and subject to deletion rules; the existing event-ID-only path should continue to work when the reporter declines to attach text.
+This supersedes the 2026-09-23 version of this file, which recorded option 1
+(the reporter attaching decrypted text with consent). That option is not taken.
 
-Before this option can support a default switch to the native engine:
+## Why
 
-1. Show the exact plaintext that would be attached. Require an unchecked, explicit confirmation that the text will be sent to moderation and stored outside the encrypted room. Never attach it silently or copy surrounding messages. Bound text to the reported event; media needs a separate consent and evidence design.
-2. Add an authenticated bridge field for the client-supplied excerpt, validate its size and event/room relationship, and make the reporter identity and consent version auditable. Treat the excerpt as untrusted client testimony, not as server-verified content.
-3. Limit moderation access, encrypt the stored excerpt at rest, and purge it no later than the room's 90-day message retention. Purge it after a Matrix redaction within the redaction retention window and when a report is deleted. Test these deletion paths; F4's original retention bypass must not return.
-4. Verify the full report flow from a native E2EE room with two devices and a moderator. Then decide how existing unencrypted rooms transition. Enabling encryption is one-way and does not encrypt earlier history or older WebView clients.
+It keeps F4 as it stands. A report stores `matrixEventId` and nothing else, so
+the evidence inherits the room's retention and redaction rules instead of
+outliving them. It is also how Matrix end-to-end encryption is meant to work:
+only members with keys can read the room, and moderators read as members.
 
-Until these controls and the P6/week-2 device acceptance are verified, `CHAT_ENGINE` remains `webview` by default. No bridge schema, Synapse configuration, deployment, or production behavior changed with this decision record.
+The bridge cannot fetch plaintext from an encrypted event, and under this
+decision it never tries to.
+
+## What it costs, and accepts
+
+- **Evidence can disappear.** If the author redacts the message before a
+  moderator opens the report, there is nothing left to read. This is F4's
+  behaviour applied to encrypted rooms, and it is accepted. The report itself
+  (reporter, reason, event ID, time) remains.
+- **A moderator on a device without the keys cannot read the report.** The
+  review screen must say so plainly ("no se puede descifrar en este
+  dispositivo") rather than show an empty message.
+
+## What this requires before the native engine can become the default
+
+1. **Moderators are in every encrypted room from the start.** A member who joins
+   an encrypted room cannot decrypt messages sent before they joined. The
+   successor-room transition in `MATRIX-CHAT-P8-ROLLOUT-GATES-2026-09-23.md`
+   must invite moderators when the room is created, and appointing a new
+   moderator later only gives them what is sent after they join. State that in
+   the moderator UI.
+2. **Moderator devices keep their keys.** Moderators need key backup and
+   recovery (week 2 of the separate chat plan) so that changing devices does not
+   make earlier reports unreadable.
+3. **The report flow sends IDs only.** The reporter's client sends room ID,
+   event ID and reason. The client must not attach the message text, and the
+   bridge must not accept a text field for encrypted rooms. Keep the existing
+   `chat-moderation.ts` path; do not add an excerpt column.
+4. **The review opens the event in the moderator's client.** The moderator
+   dashboard links to the event in the native room view (or the room at that
+   event), where the moderator's own session decrypts it. Show an explicit
+   state when it cannot decrypt or when the event was redacted.
+5. **Removing a moderator removes their future access.** Leaving or being
+   removed from the room stops new keys from reaching them. Past messages they
+   already decrypted stay on their device; say so in the moderator role
+   documentation instead of implying otherwise.
+6. **Verified end to end.** From a native E2EE room with two members and a
+   moderator on a separate device: report a message, open the report as the
+   moderator, read it, then redact it and confirm the report shows it as
+   redacted.
+
+Until these are in place and verified, `CHAT_ENGINE` remains `webview` by
+default. No bridge schema, Synapse configuration, deployment or production
+behaviour changed with this decision record.

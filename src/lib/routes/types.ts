@@ -151,7 +151,13 @@ export type CommonNavigatorParams = {
     pushToNewGroupChat?: boolean
     animation?: 'push' | 'pop'
   }
-  CommunityChat: {communityUri: string; communityName: string; roomId?: string}
+  CommunityChat: {
+    communityUri: string
+    communityName: string
+    roomId?: string
+    /** A reported message a moderator opened from the report queue. */
+    focusEventId?: string
+  }
   Communities: undefined
   MyCommunities: undefined
   CreateCommunity: undefined
@@ -272,7 +278,13 @@ export type DataTabNavigatorParams = CommonNavigatorParams & {
   MyBase: undefined
   MyAffiliations: undefined
   CommunityProfile: {communityId: string; communityName?: string}
-  CommunityChat: {communityUri: string; communityName: string; roomId?: string}
+  CommunityChat: {
+    communityUri: string
+    communityName: string
+    roomId?: string
+    /** A reported message a moderator opened from the report queue. */
+    focusEventId?: string
+  }
   CommunityMembers: {communityUri: string; communityName: string}
   ModeratorDashboard: {communityUri: string; communityName: string}
 }
@@ -286,7 +298,13 @@ export type FlatNavigatorParams = CommonNavigatorParams & {
   PartyFeed: {partyId: string}
   Notifications: undefined
   CommunityProfile: {communityId: string; communityName?: string}
-  CommunityChat: {communityUri: string; communityName: string; roomId?: string}
+  CommunityChat: {
+    communityUri: string
+    communityName: string
+    roomId?: string
+    /** A reported message a moderator opened from the report queue. */
+    focusEventId?: string
+  }
   CommunityRoles: {communityId: string; communityName: string}
   CommunityMembers: {communityUri: string; communityName: string}
   ModeratorDashboard: {communityUri: string; communityName: string}
@@ -347,7 +365,13 @@ export type AllNavigatorParams = CommonNavigatorParams & {
   MyAffiliations: undefined
   CreatePost: undefined
   CommunityProfile: {communityId: string; communityName?: string}
-  CommunityChat: {communityUri: string; communityName: string; roomId?: string}
+  CommunityChat: {
+    communityUri: string
+    communityName: string
+    roomId?: string
+    /** A reported message a moderator opened from the report queue. */
+    focusEventId?: string
+  }
   CommunityMembers: {communityUri: string; communityName: string}
   ModeratorDashboard: {communityUri: string; communityName: string}
   CommunityRoles: {communityId: string; communityName: string}

@@ -34,6 +34,7 @@ export type ChatRoomState = {
   sendImage: EncryptedChatClient['sendImage']
   sendFile: EncryptedChatClient['sendFile']
   openMedia: (eventId: string) => Promise<string>
+  getMessage: EncryptedChatClient['getMessage']
   toggleReaction: (eventId: string, key: string) => Promise<void>
   setTyping: (typing: boolean) => Promise<void>
   markRead: () => Promise<void>
@@ -169,6 +170,10 @@ export function useEncryptedChatRoom(
     (eventId: string) => withClient().openMedia(eventId),
     [withClient],
   )
+  const getMessage = useCallback<EncryptedChatClient['getMessage']>(
+    eventId => withClient().getMessage(eventId),
+    [withClient],
+  )
   const toggleReaction = useCallback(
     (eventId: string, key: string) => withClient().toggleReaction(eventId, key),
     [withClient],
@@ -203,6 +208,7 @@ export function useEncryptedChatRoom(
     sendImage,
     sendFile,
     openMedia,
+    getMessage,
     toggleReaction,
     setTyping,
     markRead,

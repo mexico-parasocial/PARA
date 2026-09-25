@@ -29,6 +29,7 @@ export function useMatrixClientStrings() {
       joinFailed: _(msg`No se pudo unir a la sala`),
       connectionError: _(msg`Error de conexión:`),
       unknown: _(msg`desconocido`),
+      reportMessage: _(msg`Reportar mensaje`),
     }),
     [_],
   )
