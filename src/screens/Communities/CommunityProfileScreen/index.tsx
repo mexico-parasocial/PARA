@@ -1,5 +1,7 @@
 import {useCallback, useEffect, useMemo, useState} from 'react'
 import {RefreshControl, ScrollView, TouchableOpacity, View} from 'react-native'
+import {msg} from '@lingui/core/macro'
+import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation, useRoute} from '@react-navigation/native'
 
@@ -41,6 +43,7 @@ import * as Layout from '#/components/Layout'
 import {CommunityAbout} from './CommunityAbout'
 import {CommunityFeed} from './CommunityFeed'
 import {CommunityHero} from './CommunityHero'
+import {CommunityMenu} from './CommunityMenu'
 import {RepresentativeCard} from './RepresentativeCard'
 import {styles} from './styles'
 
@@ -123,9 +126,12 @@ function normalizeCommunityLookupValue(value?: string) {
     .replace(/\s+/g, '-')
 }
 
+type CommunityTab = 'Feed' | 'about' | 'menu'
+
 export function CommunityProfileScreen() {
   const pal = usePalette('default')
   const t = useTheme()
+  const {_} = useLingui()
   const agent = useAgent()
   const navigation = useNavigation<NavigationProp>()
   const route = useRoute<{
@@ -232,12 +238,9 @@ export function CommunityProfileScreen() {
   }, [resolvedCommunityName])
 
   const featuredRepresentative = useMemo(() => {
-    return (governance.officials[0] ||
-      governance.deputies[0]?.activeHolder ||
-      null) as
-      | CommunityGovernanceOfficialRepresentative
-      | CommunityGovernancePerson
-      | null
+    return (
+      governance.officials[0] || governance.deputies[0]?.activeHolder || null
+    )
   }, [governance.deputies, governance.officials])
   const agentDisplayName =
     featuredRepresentative?.displayName ||
@@ -294,7 +297,7 @@ export function CommunityProfileScreen() {
 
   const quorumCount = board?.memberCount ?? 0
   const membersToUnlock = Math.max(0, 9 - quorumCount)
-  const [activeTab, setActiveTab] = useState<'Feed' | 'about'>(
+  const [activeTab, setActiveTab] = useState<CommunityTab>(
     isDraft ? 'about' : 'Feed',
   )
   const displayedTab = isDraft ? 'about' : activeTab
@@ -592,54 +595,41 @@ export function CommunityProfileScreen() {
                   borderRadius: 12,
                 },
               ]}>
-              {!isDraft ? (
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  style={[
-                    styles.pillTab,
-                    displayedTab === 'Feed' && [
-                      styles.pillTabActive,
-                      {backgroundColor: t.palette.primary_500},
-                    ],
-                  ]}
-                  onPress={() => setActiveTab('Feed')}>
-                  <Text
+              {(
+                [
+                  {key: 'Feed', label: _(msg`Posts`), hideInDraft: true},
+                  {key: 'about', label: _(msg`About`), hideInDraft: false},
+                  {key: 'menu', label: _(msg`Menu`), hideInDraft: true},
+                ] as const
+              )
+                .filter(tab => !(isDraft && tab.hideInDraft))
+                .map(tab => (
+                  <TouchableOpacity
+                    key={tab.key}
+                    accessibilityRole="tab"
+                    accessibilityState={{selected: displayedTab === tab.key}}
                     style={[
-                      styles.pillTabText,
-                      {
-                        color:
-                          displayedTab === 'Feed'
-                            ? '#fff'
-                            : t.palette.contrast_400,
-                      },
-                    ]}>
-                    <Trans>Posts</Trans>
-                  </Text>
-                </TouchableOpacity>
-              ) : null}
-              <TouchableOpacity
-                accessibilityRole="button"
-                style={[
-                  styles.pillTab,
-                  displayedTab === 'about' && [
-                    styles.pillTabActive,
-                    {backgroundColor: t.palette.primary_500},
-                  ],
-                ]}
-                onPress={() => setActiveTab('about')}>
-                <Text
-                  style={[
-                    styles.pillTabText,
-                    {
-                      color:
-                        displayedTab === 'about'
-                          ? '#fff'
-                          : t.palette.contrast_400,
-                    },
-                  ]}>
-                  <Trans>About</Trans>
-                </Text>
-              </TouchableOpacity>
+                      styles.pillTab,
+                      displayedTab === tab.key && [
+                        styles.pillTabActive,
+                        {backgroundColor: t.palette.primary_500},
+                      ],
+                    ]}
+                    onPress={() => setActiveTab(tab.key)}>
+                    <Text
+                      style={[
+                        styles.pillTabText,
+                        {
+                          color:
+                            displayedTab === tab.key
+                              ? '#fff'
+                              : t.palette.contrast_400,
+                        },
+                      ]}>
+                      {tab.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
             </View>
           </View>
 
@@ -657,6 +647,15 @@ export function CommunityProfileScreen() {
                 refetchPosts={refetchPosts}
                 fetchNextPage={fetchNextPage}
                 pal={pal}
+              />
+            )}
+
+            {!isDraft && displayedTab === 'menu' && (
+              <CommunityMenu
+                communityUri={board?.uri}
+                communityName={board?.name || resolvedCommunityName}
+                communityId={communityId}
+                governance={fetchedGovernance || undefined}
               />
             )}
 

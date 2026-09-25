@@ -37,6 +37,13 @@ export const PARA_COMMUNITY_CIVIC_TREE_CONFIG_COLLECTION =
   'com.para.community.civicTree.config'
 export const PARA_COMMUNITY_BRIEFING_PACK_COLLECTION =
   'com.para.community.briefingPack'
+export const PARA_COMMUNITY_SOCIAL_ACTIVITY_COLLECTION =
+  'com.para.community.socialActivity'
+export const PARA_COMMUNITY_ECONOMIC_ACTIVITY_COLLECTION =
+  'com.para.community.economicActivity'
+export const PARA_COMMUNITY_ACTIVITY_LEDGER_COLLECTION =
+  'com.para.community.activityLedgerEntry'
+export const PARA_COMMUNITY_WIKI_PAGE_COLLECTION = 'com.para.community.wikiPage'
 export const PARA_HIGHLIGHT_COLLECTION = 'com.para.highlight.annotation'
 export const PARA_OFFICIAL_CIVIC_ENTITY_COLLECTION = 'com.para.official.entity'
 export const PARA_OFFICIAL_CIVIC_CONTROLLER_COLLECTION =
@@ -398,6 +405,196 @@ export interface CommunityBriefingPackRecord {
   marginCollectionUri?: string
   obsidianExportUri?: string
   status: CommunityBriefingPackStatus
+  createdBy: string
+  createdAt: string
+  updatedAt: string
+}
+
+// ─── Community activities, ledger and wiki ─────────────────────────────────
+
+export type CommunityActivityStatus =
+  'planned' | 'active' | 'completed' | 'cancelled'
+
+/** Fields shared by social and economic activities. */
+interface CommunityActivityBase {
+  communityUri: string
+  title: string
+  description?: string
+  startsAt: string
+  endsAt?: string
+  location?: string
+  status: CommunityActivityStatus
+  links?: string[]
+  createdBy: string
+  createdAt: string
+  updatedAt: string
+}
+
+// Social (no money) ────────────────────────────────────────────────────────
+
+export const SOCIAL_ACTIVITY_PEACEFUL_MARCH =
+  'com.para.community.socialActivity#peacefulMarch'
+export const SOCIAL_ACTIVITY_SIGNATURE_DRIVE =
+  'com.para.community.socialActivity#signatureDrive'
+export const SOCIAL_ACTIVITY_ASSEMBLY =
+  'com.para.community.socialActivity#assembly'
+
+export type PeacefulMarchPermitStatus =
+  'not_required' | 'requested' | 'granted' | 'denied'
+
+export interface SocialActivityPeacefulMarch {
+  $type: typeof SOCIAL_ACTIVITY_PEACEFUL_MARCH
+  meetingPoint: string
+  route?: string
+  destination?: string
+  permitStatus: PeacefulMarchPermitStatus
+  permitReference?: string
+  expectedAttendance?: number
+  safetyContact?: string
+  accessibilityNotes?: string
+}
+
+export type SignatureDriveInstrumentType =
+  'bill' | 'law' | 'citizen_initiative' | 'referendum' | 'petition'
+
+export interface SocialActivitySignatureDrive {
+  $type: typeof SOCIAL_ACTIVITY_SIGNATURE_DRIVE
+  instrumentType: SignatureDriveInstrumentType
+  instrumentTitle: string
+  instrumentUrl?: string
+  targetSignatures: number
+  signaturesCollected?: number
+  deadline?: string
+  collectionPoints?: string[]
+  signerRequirements?: string
+}
+
+export type AssemblyFormat = 'in_person' | 'online' | 'hybrid'
+
+export interface SocialActivityAssembly {
+  $type: typeof SOCIAL_ACTIVITY_ASSEMBLY
+  format: AssemblyFormat
+  meetingUrl?: string
+  agenda?: string[]
+  quorumRequired?: number
+}
+
+export type SocialActivityDetails =
+  | SocialActivityPeacefulMarch
+  | SocialActivitySignatureDrive
+  | SocialActivityAssembly
+
+export interface SocialActivityRecord extends CommunityActivityBase {
+  details: SocialActivityDetails
+}
+
+// Economic (moves money) ───────────────────────────────────────────────────
+
+export const ECONOMIC_ACTIVITY_SALE = 'com.para.community.economicActivity#sale'
+export const ECONOMIC_ACTIVITY_RAFFLE =
+  'com.para.community.economicActivity#raffle'
+export const ECONOMIC_ACTIVITY_FUNDRAISER =
+  'com.para.community.economicActivity#fundraiser'
+
+export interface EconomicActivitySaleItem {
+  name: string
+  unitPriceMinor: number
+  quantityAvailable?: number
+}
+
+export interface EconomicActivitySale {
+  $type: typeof ECONOMIC_ACTIVITY_SALE
+  items: EconomicActivitySaleItem[]
+  channel: 'in_person' | 'online' | 'mixed'
+}
+
+export interface EconomicActivityPrize {
+  description: string
+  estimatedValueMinor?: number
+}
+
+export interface EconomicActivityRaffle {
+  $type: typeof ECONOMIC_ACTIVITY_RAFFLE
+  ticketPriceMinor: number
+  ticketsAvailable: number
+  prizes: EconomicActivityPrize[]
+  drawAt: string
+  drawMethod: string
+  permitReference?: string
+  /** Published after the draw; excluded from the terms digest. */
+  winningTickets?: string[]
+}
+
+export interface EconomicActivityFundraiser {
+  $type: typeof ECONOMIC_ACTIVITY_FUNDRAISER
+  purpose: string
+  beneficiary?: string
+  suggestedDonationMinor?: number
+  donationChannels?: string[]
+}
+
+export type EconomicActivityDetails =
+  EconomicActivitySale | EconomicActivityRaffle | EconomicActivityFundraiser
+
+export type CommunityActivityAllocationRecipient =
+  'community' | 'party' | 'cause' | 'organizers' | 'reinvestment'
+
+export type CommunityActivityAllocationBase = 'net_proceeds' | 'gross_income'
+
+export interface CommunityActivityAllocation {
+  recipient: CommunityActivityAllocationRecipient
+  label: string
+  /** Basis points; all allocations of a plan sum to 10000. */
+  shareBps: number
+}
+
+/** Amounts are integers in the currency's minor unit (e.g. centavos). */
+export interface CommunityActivityFinancialPlan {
+  currency: string
+  allocationBase: CommunityActivityAllocationBase
+  fundingGoalMinor?: number
+  expenseBudgetMinor?: number
+  allocations: CommunityActivityAllocation[]
+  committedAt: string
+}
+
+export interface EconomicActivityRecord extends CommunityActivityBase {
+  details: EconomicActivityDetails
+  financialPlan: CommunityActivityFinancialPlan
+}
+
+export type CommunityActivityLedgerEntryType = 'income' | 'expense' | 'donation'
+
+export interface CommunityActivityLedgerEntryRecord {
+  activityUri: string
+  communityUri: string
+  /** sha256 of the activity's committed terms when the entry was booked. */
+  termsDigest: string
+  entryType: CommunityActivityLedgerEntryType
+  amountMinor: number
+  /** Units or tickets an income entry covers. */
+  quantity?: number
+  currency: string
+  description: string
+  category?: string
+  itemName?: string
+  recipient?: string
+  receiptUrl?: string
+  occurredAt: string
+  createdAt: string
+}
+
+export type CommunityWikiPageKind = 'page' | 'megathread'
+
+export interface CommunityWikiPageRecord {
+  communityUri: string
+  kind: CommunityWikiPageKind
+  slug: string
+  title: string
+  body: string
+  threadUri?: string
+  pinned?: boolean
+  sortOrder?: number
   createdBy: string
   createdAt: string
   updatedAt: string
