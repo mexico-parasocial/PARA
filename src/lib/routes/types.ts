@@ -217,6 +217,21 @@ export type CommonNavigatorParams = {
   CommunityCivicTree: CommunityCivicTreeRouteParams
   CivicTree: undefined
   CollectionDetail: {collectionId: string}
+  CommunityActivity: {activityUri: string}
+  CreateCommunityActivity: {
+    communityUri: string
+    communityName: string
+    communityId?: string
+    category: 'social' | 'economic'
+  }
+  CommunityWikiPage: {
+    communityUri: string
+    communityName: string
+    communityId?: string
+    /** Omitted to start a new page. */
+    slug?: string
+    kind?: 'page' | 'megathread'
+  }
 }
 
 export type BottomTabNavigatorParams = CommonNavigatorParams & {
