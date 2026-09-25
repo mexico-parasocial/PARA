@@ -343,6 +343,19 @@ decision is made.
   `DEV_ENV_APPVIEW` in `src/lib/constants.ts` always uses
   `http://${LOCAL_DEV_IP}:2584`, so a stale IP breaks AppView calls even on
   the simulator.
+- **"XRPCError: could not resolve proxy did" on sign-in (2026-09-23/24).** The
+  app sends `atproto-proxy: <DEV_ENV_APPVIEW_DID>#bsky_appview` for local
+  accounts; if the local PLC (`:2582`) has never registered that DID, the PDS
+  (`packages/pds/src/pipethrough.ts`) rejects every proxied call. Current
+  dev-env builds derive the AppView DID from the fixed dev `bsky` key +
+  `localhost:2584`, giving `did:plc:6gcjjmsoeyaq4xgvkofdklqc` on every machine
+  (the default in `src/lib/constants.ts`). Builds from before that fix minted
+  a random DID per run (e.g. `did:plc:sbj4k…`), so a backend running a stale
+  `dist/` produces a different DID. Always read the live value from `bsky.did`
+  on `curl http://127.0.0.1:2581` and check it with
+  `curl http://localhost:2582/<did>`. Git worktrees do not copy the untracked
+  `.env.local`, so worktree builds use the code default.
+  `../para-platform/scripts/doctor.sh` checks all of this.
 - **Background/backgrounded-service queries must degrade gracefully.** Two
   known local-dev error sources were converted from red LogBox screens to
   `logger.warn`:

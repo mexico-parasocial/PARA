@@ -4,7 +4,7 @@ import {type Service} from '@atproto/lex'
 import {api} from '@bsky/sdk'
 
 import {BLUESKY_PROXY_DID, CHAT_PROXY_DID, IS_DEV} from '#/env'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 // Physical devices must set EXPO_PUBLIC_LOCAL_DEV_IP in .env.local to reach
 // the dev machine (localhost on a phone is the phone itself). The localhost
@@ -41,7 +41,16 @@ export const DEFAULT_SERVICE =
   (USE_LOCAL_DEMO_DEFAULTS ? LOCAL_DEV_SERVICE : BSKY_SERVICE)
 export const IS_LOCAL_DEV_MODE = DEFAULT_SERVICE === LOCAL_DEV_SERVICE
 export const DEV_ENV_APPVIEW = `http://${LOCAL_DEV_IP}:2584` // always the same
-export const DEV_ENV_APPVIEW_DID = `did:plc:6gcjjmsoeyaq4xgvkofdklqc` // always the same
+// The local AppView's DID, used as the `atproto-proxy` target for local
+// accounts. dev-env derives it from a PLC create-op signed with the fixed dev
+// `bsky` key (DEV_BSKY_HEX) that names `http://localhost:2584` as endpoint
+// (WatZappa packages/dev-env/src/bsky.ts), so every machine running a current
+// dev-env build gets this same DID. Builds older than that fix minted a random
+// DID per run. The source of truth is `bsky.did` on the introspection server
+// (http://127.0.0.1:2581); a DID the local PLC does not know makes every
+// proxied call, sign-in included, fail with "could not resolve proxy did".
+// Override with EXPO_PUBLIC_LOCAL_BSKY_PROXY_DID.
+export const DEV_ENV_APPVIEW_DID = `did:plc:6gcjjmsoeyaq4xgvkofdklqc`
 export const HELP_DESK_URL = `https://para.social/support`
 export const EMBED_SERVICE = 'https://embed.bsky.app'
 export const EMBED_SCRIPT = `${EMBED_SERVICE}/static/embed.js`
