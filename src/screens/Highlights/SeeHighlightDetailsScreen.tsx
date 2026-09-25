@@ -218,7 +218,7 @@ export function SeeHighlightDetailsScreen({route}: Props) {
           createdAt: new Date(post.indexedAt).getTime(),
           upvotes: post.likeCount || 0,
           downvotes: 0,
-          saves: post.repostCount || 0,
+          saves: post.bookmarkCount || 0,
           replyCount: post.replyCount || 0,
           isVerified: !!post.author.viewer?.followedBy,
           isTrending: (post.likeCount || 0) > 0,

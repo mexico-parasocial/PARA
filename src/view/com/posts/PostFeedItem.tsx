@@ -350,19 +350,6 @@ let FeedItemInner = ({
 
   const {isActive: live} = useActorStatus(post.author)
 
-  const viaRepost = useMemo(() => {
-    if (
-      bsky.isType(app.bsky.feed.defs.reasonRepost, reason) &&
-      reason.uri &&
-      reason.cid
-    ) {
-      return {
-        uri: reason.uri,
-        cid: reason.cid,
-      }
-    }
-  }, [reason])
-
   const threadgateHiddenReplies = useMergedThreadgateHiddenReplies({
     threadgateRecord,
   })
@@ -542,7 +529,6 @@ let FeedItemInner = ({
               reqId={reqId}
               threadgateRecord={threadgateRecord}
               onShowLess={onShowLess}
-              viaRepost={viaRepost}
               style={{marginTop: 'auto'}}
             />
             <KnownLikers
