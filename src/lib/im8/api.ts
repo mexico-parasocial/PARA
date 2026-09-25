@@ -108,6 +108,22 @@ export async function refreshM8AccessToken(): Promise<boolean> {
   }
 }
 
+/**
+ * Development brokers only (404 elsewhere): enrolls the current M8 session
+ * with a simulated INE derived from its DID, so a local account can obtain
+ * cabildeo vote and delegation proofs. Idempotent. Returns false when the
+ * broker does not offer it.
+ */
+export async function postDevIneEnroll(): Promise<boolean> {
+  const res = await m8Fetch('/identity/ine/dev-enroll', {method: 'POST'})
+  if (res.status === 404) return false
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
+    throw new Error(err.error ?? `Dev INE enrollment failed (${res.status})`)
+  }
+  return true
+}
+
 export async function postSessionStart(
   identifier: string,
 ): Promise<M8SessionStartResponse> {

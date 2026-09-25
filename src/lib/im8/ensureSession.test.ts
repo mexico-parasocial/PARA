@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
+import {postDevIneEnroll} from './api'
 import {ensureM8SessionFor, M8_SESSION_DID_KEY} from './ensureSession'
 
 const ALICE = 'did:plc:alice'
@@ -75,5 +76,37 @@ describe('ensureM8SessionFor', () => {
     await expect(ensureM8SessionFor(ALICE)).resolves.toBe('pending_oauth')
     expect(await AsyncStorage.getItem('m8_access_token')).toBeNull()
     expect(await AsyncStorage.getItem(M8_SESSION_DID_KEY)).toBeNull()
+  })
+})
+
+describe('postDevIneEnroll', () => {
+  const originalFetch = global.fetch
+
+  beforeEach(async () => {
+    await AsyncStorage.clear()
+    await AsyncStorage.setItem('m8_access_token', 'access-1')
+    global.fetch = jest.fn()
+  })
+
+  afterEach(() => {
+    global.fetch = originalFetch
+  })
+
+  it('enrolls the current session with the bearer token', async () => {
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce(
+      json({enrolled: true, created: true}),
+    )
+
+    await expect(postDevIneEnroll()).resolves.toBe(true)
+    const [url, init] = (global.fetch as jest.Mock).mock.calls[0]
+    expect(url).toMatch(/\/v1\/identity\/ine\/dev-enroll$/)
+    expect(init.method).toBe('POST')
+    expect(init.headers.authorization).toBe('Bearer access-1')
+  })
+
+  it('reports a broker without dev enrollment instead of throwing', async () => {
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce(json({}, 404))
+
+    await expect(postDevIneEnroll()).resolves.toBe(false)
   })
 })
