@@ -26,6 +26,7 @@ import {useReportedMessageReader} from '#/lib/matrix/useReportedMessage'
 import {KeyboardStickyView} from '#/screens/Messages/components/vendor/KeyboardStickyView'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
+import {ChatRecoveryPanel} from '#/components/chat/ChatRecoveryPanel'
 import {ReportedMessageCard} from '#/components/chat/ReportedMessageCard'
 import {Text} from '#/components/Typography'
 import {
@@ -65,6 +66,7 @@ export function NativeChatRoom({
     messages,
     typingUserIds,
     session,
+    recovery,
     error,
     send,
     sendImage,
@@ -78,6 +80,7 @@ export function NativeChatRoom({
     authorize,
     retry,
   } = useEncryptedChatRoom(roomId)
+  const [securityOpen, setSecurityOpen] = useState(false)
 
   const [dismissedEventId, setDismissedEventId] = useState<string>()
   const showFocus = !!focusEventId && dismissedEventId !== focusEventId
@@ -264,14 +267,36 @@ export function NativeChatRoom({
     )
   }
 
+  if (securityOpen && session) {
+    return (
+      <ChatRecoveryPanel
+        key={`${session.userId}:${session.deviceId}`}
+        recovery={recovery}
+        deviceId={session.deviceId}
+        onClose={() => setSecurityOpen(false)}
+      />
+    )
+  }
+
   return (
     <View style={[a.flex_1]}>
+      <Button
+        label={_(msg`Claves y verificación de este dispositivo`)}
+        size="tiny"
+        color="secondary"
+        style={[a.self_start, a.mx_md, a.my_xs]}
+        onPress={() => setSecurityOpen(true)}>
+        <ButtonText>
+          <Trans>Claves y dispositivo</Trans>
+        </ButtonText>
+      </Button>
       {showFocus && (
         <ReportedMessageCard
           view={reported.view}
           encrypted
           onClose={() => setDismissedEventId(focusEventId)}
           onRetry={reported.retry}
+          onRecover={() => setSecurityOpen(true)}
         />
       )}
       <FlatList

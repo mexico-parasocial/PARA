@@ -18,6 +18,7 @@ export function ReportedMessageCard({
   encrypted,
   onClose,
   onRetry,
+  onRecover,
 }: {
   /** Undefined while loading. */
   view: ReportedMessageView | undefined
@@ -25,6 +26,7 @@ export function ReportedMessageCard({
   encrypted: boolean
   onClose: () => void
   onRetry: () => void
+  onRecover?: () => void
 }) {
   const t = useTheme()
   const {_, i18n} = useLingui()
@@ -101,6 +103,17 @@ export function ReportedMessageCard({
         </Text>
       )}
 
+      {view?.state === 'undecryptable' && encrypted && onRecover && (
+        <Button
+          label={_(msg`Recuperar claves para revisar este mensaje`)}
+          size="small"
+          color="primary"
+          onPress={onRecover}>
+          <ButtonText>
+            <Trans>Recuperar claves</Trans>
+          </ButtonText>
+        </Button>
+      )}
       {view && view.state !== 'redacted' && (
         <Button
           label={_(msg`Volver a cargar el mensaje reportado`)}

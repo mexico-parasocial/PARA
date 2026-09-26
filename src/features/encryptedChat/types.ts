@@ -35,8 +35,26 @@ export type ChatSessionInfo = {
   recoveryEnabled: boolean
 }
 
+export type ChatSecurityStatus = {
+  recovery: 'unknown' | 'disabled' | 'incomplete' | 'enabled'
+  verification: 'unknown' | 'unverified' | 'verified'
+  backupExists: boolean
+  backupEnabled: boolean
+}
+
+export type RecoveryKey = {key: string; persisted: boolean}
+
+export interface ChatRecovery {
+  getSecurityStatus(): Promise<ChatSecurityStatus>
+  getPendingRecoveryKey(): Promise<RecoveryKey | undefined>
+  enableRecovery(): Promise<RecoveryKey>
+  acknowledgeRecoveryKey(): Promise<void>
+  recover(key: string): Promise<void>
+  syncKeyBackup(): Promise<void>
+}
+
 /** The UI never receives access tokens, the crypto-store key, or SDK objects. */
-export interface EncryptedChatClient {
+export interface EncryptedChatClient extends ChatRecovery {
   session: ChatSessionInfo
   createRoom(name: string, invite: string[]): Promise<string>
   openRoom(
@@ -69,8 +87,6 @@ export interface EncryptedChatClient {
     size: number
     mimeType: string
   }): Promise<void>
-  enableRecovery(): Promise<string>
-  recover(key: string): Promise<void>
   close(): Promise<void>
   logout(): Promise<void>
 }
