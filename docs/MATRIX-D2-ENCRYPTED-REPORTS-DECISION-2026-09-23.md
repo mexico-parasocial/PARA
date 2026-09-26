@@ -50,8 +50,10 @@ review through the moderator's existing room access.
 - Removing a moderator removes future room access through role projection.
   Previously decrypted messages and keys may remain on their device; removal
   cannot erase what they already learned.
-- New moderator devices need key backup, recovery and verification. Those UI
-  and device-acceptance tasks remain open.
+- New moderator devices need key backup, recovery and verification. The native
+  recovery UI and actual SDK verification status are implemented as of
+  2026-09-26; real-device acceptance remains open. See
+  `MATRIX-CHAT-RECOVERY-2026-09-26.md`.
 
 ## Implementation and rollout
 
@@ -82,3 +84,5 @@ removed moderator. See `MATRIX-CHAT-P8-ROLLOUT-GATES-2026-09-23.md`.
 - Global lint also reports existing errors outside this change; it reports no
   diagnostics in the changed Matrix files.
 - Live device decryption, key recovery and moderator removal remain unverified.
+  The subsequent recovery implementation is tracked in
+  `MATRIX-CHAT-RECOVERY-2026-09-26.md`.

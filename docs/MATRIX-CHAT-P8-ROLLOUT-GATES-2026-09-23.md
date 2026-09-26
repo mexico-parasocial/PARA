@@ -8,7 +8,7 @@ The default switch requires all of the following evidence:
 
 1. P1 authenticated media shown in PARA on iOS and web after uploading from local Element; P2 header verified with VoiceOver/TalkBack; P5 before/after heights and screenshots on iPhone SE and iPhone 15. These device checks are still open.
 2. P6 PARA ↔ Element exchange of reaction, reply, edit and image in both directions in an encrypted room, with receipts and typing checked. The adapter and UI compile and pure mapping tests pass; device interoperability is still open.
-3. Week-2 acceptance from the separate chat plan: device verification, key recovery and encrypted files. These are outstanding.
+3. Week-2 acceptance from the separate chat plan: device verification, key recovery and encrypted files. The native key recovery UI is implemented (see `MATRIX-CHAT-RECOVERY-2026-09-26.md`); device acceptance remains outstanding.
 4. D2 moderator review verified in an encrypted room: moderators completing a verified join before test messages are sent, their keys backed up, reports carrying IDs only, and the review opening the event in the moderator's own client with explicit undecryptable and redacted states. No message text may be copied into a report.
 5. A working path for web and older mobile clients after a room becomes encrypted. The current iframe has no crypto initialization. Either complete P7 for web or agree on an explicit upgrade/read-only policy before migrating a shared community room. Do not silently fall back to an unencrypted room after a native error.
 
