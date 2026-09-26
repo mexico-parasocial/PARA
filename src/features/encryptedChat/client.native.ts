@@ -6,6 +6,7 @@ import {
   ClientBuilder,
   type ClientLike,
   CollectStrategy,
+  DateDividerMode,
   EncryptionState,
   EventOrTransactionId,
   ImageInfo,
@@ -22,8 +23,11 @@ import {
   SqliteStoreBuilder,
   type SyncServiceLike,
   type TaskHandleLike,
+  TimelineFilter,
+  TimelineFocus,
   type TimelineItemLike,
   type TimelineLike,
+  TimelineReadReceiptTracking,
   UploadSource,
 } from '@unomed/react-native-matrix-sdk'
 
@@ -335,6 +339,49 @@ export async function connectEncryptedChat(
       },
       retryDecryption() {
         requireEncryptedTimeline().retryDecryption([])
+      },
+      async getMessage(eventId) {
+        const current = requireEncryptedTimeline()
+        const room = openRoomId ? matrix.getRoom(openRoomId) : undefined
+        const generation = roomGeneration
+        const lookup = async (source: TimelineLike) => {
+          const item = await source.getEventTimelineItemByEventId(eventId)
+          if (closed || generation !== roomGeneration) return undefined
+          // Reuse the timeline mapping so a single event is classified exactly
+          // like the list: message, redacted, or unable to decrypt.
+          const wrapped = {
+            asEvent: () => item,
+            asVirtual: () => undefined,
+            fmtDebug: () => '',
+            uniqueId: () => ({id: eventId}),
+          } as unknown as TimelineItemLike
+          return mapTimelineItems([wrapped], saved.session!.userId)[0]
+        }
+        try {
+          return await lookup(current)
+        } catch {
+          // The live timeline may not contain an older reported event.
+        }
+        let focused: TimelineLike | undefined
+        try {
+          if (!room || closed || generation !== roomGeneration) return undefined
+          focused = await room.timelineWithConfiguration({
+            focus: new TimelineFocus.Event({
+              eventId,
+              numContextEvents: 0,
+              hideThreadedEvents: false,
+            }),
+            filter: new TimelineFilter.All(),
+            dateDividerMode: DateDividerMode.Daily,
+            trackReadReceipts: TimelineReadReceiptTracking.Disabled,
+            reportUtds: false,
+          })
+          return await lookup(focused)
+        } catch {
+          return undefined
+        } finally {
+          dispose(focused)
+        }
       },
       async openMedia(eventId) {
         requireEncryptedTimeline()

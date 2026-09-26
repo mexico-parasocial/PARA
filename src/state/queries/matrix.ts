@@ -7,6 +7,7 @@ import {
   MatrixProofUnavailableError,
 } from '#/lib/matrix/proofs'
 import {logger} from '#/logger'
+import {useSession} from '#/state/session'
 
 interface CommunitySpaceResponse {
   spaceId: string
@@ -139,11 +140,12 @@ export function useCommunitySpaceQuery(communityUri: string | undefined) {
 export function useMatrixIdentityQuery({
   enabled = true,
 }: {enabled?: boolean} = {}) {
+  const {currentAccount} = useSession()
   return useQuery<MatrixIdentityResponse>({
-    queryKey: ['matrix-identity'],
+    queryKey: ['matrix-identity', currentAccount?.did],
     queryFn: () =>
       bridgeCallWithProof(BRIDGE_AUDIENCES.identity, '/api/matrix-identity'),
-    enabled,
+    enabled: enabled && !!currentAccount,
     staleTime: Infinity,
     retry: (failureCount, error) =>
       !(error instanceof MatrixProofUnavailableError) && failureCount < 2,
@@ -203,8 +205,9 @@ export function useMatrixTokenQuery({
   deviceId?: string
   friendlyName?: string
 } = {}) {
+  const {currentAccount} = useSession()
   return useQuery<MatrixTokenResponse>({
-    queryKey: ['matrix-token', deviceId ?? null],
+    queryKey: ['matrix-token', currentAccount?.did, deviceId ?? null],
     queryFn: () =>
       // Appservice-login deployments only; the current MAS deployment
       // answers 503 MATRIX_CLIENT_LOGIN_REQUIRED, which the caller surfaces
@@ -213,7 +216,7 @@ export function useMatrixTokenQuery({
         deviceId,
         friendlyName,
       }),
-    enabled,
+    enabled: enabled && !!currentAccount,
     staleTime: 1000 * 60 * 60, // 1 hour — tokens are long-lived in Synapse
     retry: (failureCount, error) =>
       !(error instanceof MatrixProofUnavailableError) && failureCount < 2,
@@ -584,7 +587,6 @@ interface ModerationDashboardResponse {
   reportedThisWeek: number
   sanctionedNow: number
   riskDistribution: {low: number; warning: number; critical: number}
-  recentEvents: unknown[]
 }
 
 export function useModerationDashboardQuery(
@@ -614,14 +616,58 @@ export function useModerationDashboardQuery(
   })
 }
 
+/**
+ * One entry in the moderator report queue: the reports against one message,
+ * or against one member when no event was reported. Carries how many people
+ * reported, never who, and no message text (the moderator opens the event in
+ * the room).
+ */
+export interface ModerationReportGroup {
+  reportedDid: string
+  matrixRoomId: string | null
+  matrixEventId: string | null
+  reportCount: number
+  reporterCount: number
+  reasons: Record<string, number>
+  firstReportedAt: string
+  lastReportedAt: string
+}
+
+export function useModerationReportsQuery(
+  communityUri: string | undefined,
+  modDid: string | undefined,
+) {
+  return useQuery<ModerationReportGroup[]>({
+    queryKey: ['moderation-reports', communityUri, modDid],
+    queryFn: async () => {
+      if (!communityUri || !modDid)
+        throw new Error('Missing communityUri or modDid')
+      const params = new URLSearchParams({community: communityUri, modDid})
+      const res = await matrixBridgeFetch(
+        `/api/moderation-reports?${params.toString()}`,
+      )
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        throw new Error(err.error || `Failed to fetch reports: ${res.status}`)
+      }
+      const body = (await res.json()) as {reports: ModerationReportGroup[]}
+      return body.reports
+    },
+    enabled: !!communityUri && !!modDid,
+    staleTime: 1000 * 30,
+  })
+}
+
+/*
+ * No `context` field: a report never carries message text. The bridge drops it
+ * anyway (F4), and D2 has moderators read the message in the room from their
+ * own client.
+ */
 interface ReportUserInput {
   reportedDid: string
   reporterDid: string
   communityUri: string
   reason: string
-  context?: string
-  matrixEventId?: string
-  matrixRoomId?: string
 }
 
 export function useReportUserMutation() {
@@ -634,6 +680,64 @@ export function useReportUserMutation() {
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         throw new Error(err.error || `Failed to submit report: ${res.status}`)
+      }
+    },
+  })
+}
+
+/**
+ * Reasons a chat message can be reported for. Must match the bridge's
+ * `MESSAGE_REPORT_REASONS`: a fixed set, so the reason cannot carry the text.
+ */
+export const MESSAGE_REPORT_REASONS = [
+  'spam',
+  'harassment',
+  'hate',
+  'violence',
+  'impersonation',
+  'other',
+] as const
+export type MessageReportReason = (typeof MESSAGE_REPORT_REASONS)[number]
+
+interface ReportMessageInput {
+  reporterDid: string
+  communityUri: string
+  matrixRoomId: string
+  matrixEventId: string
+  reason: MessageReportReason
+}
+
+/** A refused report, with the bridge's stable code for choosing the copy. */
+export class MessageReportError extends Error {
+  constructor(
+    readonly code: string | undefined,
+    message: string,
+  ) {
+    super(message)
+    this.name = 'MessageReportError'
+  }
+}
+
+/**
+ * Report a chat message by room and event. The client never names the
+ * sender: it only knows an MXID, and the bridge resolves who that is.
+ */
+export function useReportMessageMutation() {
+  return useMutation<void, Error, ReportMessageInput>({
+    mutationFn: async input => {
+      const res = await matrixBridgeFetch('/api/moderation-report', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      })
+      if (!res.ok) {
+        const err = (await res.json().catch(() => ({}))) as {
+          error?: string
+          code?: string
+        }
+        throw new MessageReportError(
+          err.code,
+          err.error || `Failed to submit report: ${res.status}`,
+        )
       }
     },
   })

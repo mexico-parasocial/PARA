@@ -350,6 +350,16 @@ export function buildClientHtml(sdkBundle?: string): string {
       transition: transform 0.1s;
     }
     #reaction-picker span:active { transform: scale(1.2); }
+    #reaction-picker .report-btn {
+      border: none;
+      border-left: 1px solid var(--border);
+      background: transparent;
+      color: var(--text-secondary, inherit);
+      font-size: 13px;
+      padding: 4px 4px 4px 12px;
+      cursor: pointer;
+    }
+    #reaction-picker .report-btn[hidden] { display: none; }
 
     /* Typing indicator */
     #typing-indicator {
@@ -394,6 +404,7 @@ export function buildClientHtml(sdkBundle?: string): string {
       <span data-emoji="😮">😮</span>
       <span data-emoji="😢">😢</span>
       <span data-emoji="🎉">🎉</span>
+      <button id="report-message" class="report-btn" type="button"></button>
       <span data-emoji="🔥">🔥</span>
     </div>
   </div>
@@ -614,7 +625,7 @@ export function buildClientHtml(sdkBundle?: string): string {
 
         msgDiv.addEventListener('click', function(e) {
           if (e.target.closest('.file') || e.target.closest('.reaction')) return;
-          showReactionPicker(eventId);
+          showReactionPicker(eventId, isSelf);
         });
 
         messageElements.set(eventId, msgDiv);
@@ -741,9 +752,19 @@ export function buildClientHtml(sdkBundle?: string): string {
         }
       }
 
-      function showReactionPicker(eventId) {
+      // One channel to the app: React Native bridge, or the iframe parent at
+      // its configured origin only.
+      function postToApp(payload) {
+        const message = JSON.stringify(payload);
+        if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(message);
+        else if (window.parent !== window && CONFIG.parentOrigin) window.parent.postMessage(message, CONFIG.parentOrigin);
+      }
+
+      function showReactionPicker(eventId, isSelf) {
         const picker = document.getElementById('reaction-picker');
         picker.dataset.eventId = eventId;
+        // Your own messages cannot be reported.
+        document.getElementById('report-message').hidden = !!isSelf;
         picker.classList.add('visible');
         function hide(e) {
           if (!picker.contains(e.target)) {
@@ -853,9 +874,7 @@ export function buildClientHtml(sdkBundle?: string): string {
 
           client.on('RoomMember.membership', function(_event, member) {
             if (member.userId !== CONFIG.userId || member.roomId !== CONFIG.roomId || member.membership !== 'leave') return;
-            const message = JSON.stringify({type: 'matrix-membership-left', roomId: CONFIG.roomId});
-            if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage(message);
-            else if (window.parent !== window && CONFIG.parentOrigin) window.parent.postMessage(message, CONFIG.parentOrigin);
+            postToApp({type: 'matrix-membership-left', roomId: CONFIG.roomId});
           });
 
           client.on('Room.timeline', function(event, _room, toStartOfTimeline) {
@@ -887,6 +906,16 @@ export function buildClientHtml(sdkBundle?: string): string {
 
       // Reaction picker listeners
       const picker = document.getElementById('reaction-picker');
+      const reportBtn = document.getElementById('report-message');
+      reportBtn.textContent = STRINGS.reportMessage || '';
+      reportBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const eventId = picker.dataset.eventId;
+        picker.classList.remove('visible');
+        // IDs only: the app collects a reason; the message text never leaves
+        // the room (D2).
+        if (eventId) postToApp({type: 'matrix-report-message', roomId: CONFIG.roomId, eventId: eventId});
+      });
       picker.querySelectorAll('span').forEach(function(span) {
         span.addEventListener('click', function(e) {
           e.stopPropagation();
