@@ -2,6 +2,11 @@
 
 **State: blocked.** `CHAT_ENGINE` remains `webview`. No room encryption, default switch, bridge schema change, push or deployment was made in this package.
 
+Follow-up on 2026-09-26: a separate synthetic encrypted fixture and two iOS
+installations are prepared. No shared community was migrated. Authentication,
+recovery and moderator device acceptance remain blocked; the evidence and
+implementation gaps are in `MATRIX-CHAT-DEVICE-ACCEPTANCE-2026-09-26.md`.
+
 D2 was consolidated on 2026-09-25 under the user's request to reuse the moderator screens and resolve the conflicting proposals: moderators read reported events in their own client; reports carry IDs and a fixed reason, without copied text (F4 unchanged). The dialog, queue and review are integrated. Key recovery and end-to-end device acceptance remain open. See `MATRIX-D2-ENCRYPTED-REPORTS-DECISION-2026-09-23.md`.
 
 The default switch requires all of the following evidence:

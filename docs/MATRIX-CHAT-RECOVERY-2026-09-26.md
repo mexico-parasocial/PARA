@@ -41,13 +41,20 @@ a bridge credential or a second SDK connection.
   committed PARA baseline plus this change, using the installed dependencies
   and freshly generated local lexicons. The main working directory still has
   unrelated in-progress compile failures.
-- A live multi-device run is **not completed**. Neither of the two inspected
+- At the initial implementation check, a live multi-device run was **not
+  completed**. Neither of the two inspected
   iPhone 17 Pro simulators had PARA installed; the computer-use surface also
   could not open Simulator. Both test-started simulators were shut down again.
 - SAS/QR verification UX is not implemented here. Recovering with a saved key
   and displaying actual verification state does not prove that separate flow.
 
 ## Device acceptance still required
+
+The follow-up run built PARA and installed it on two isolated iOS simulators,
+repaired local service blockers and reran focused checks. Live authorization
+and recovery are still incomplete; see
+`MATRIX-CHAT-DEVICE-ACCEPTANCE-2026-09-26.md` for evidence and the concrete
+IdP-return/device-attestation gaps.
 
 1. In a native E2EE test room, join with two members and a moderator before
    sending the report fixture. Verify all devices have real room access.
