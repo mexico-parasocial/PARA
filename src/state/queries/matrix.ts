@@ -7,6 +7,7 @@ import {
   MatrixProofUnavailableError,
 } from '#/lib/matrix/proofs'
 import {logger} from '#/logger'
+import {useSession} from '#/state/session'
 
 interface CommunitySpaceResponse {
   spaceId: string
@@ -139,11 +140,12 @@ export function useCommunitySpaceQuery(communityUri: string | undefined) {
 export function useMatrixIdentityQuery({
   enabled = true,
 }: {enabled?: boolean} = {}) {
+  const {currentAccount} = useSession()
   return useQuery<MatrixIdentityResponse>({
-    queryKey: ['matrix-identity'],
+    queryKey: ['matrix-identity', currentAccount?.did],
     queryFn: () =>
       bridgeCallWithProof(BRIDGE_AUDIENCES.identity, '/api/matrix-identity'),
-    enabled,
+    enabled: enabled && !!currentAccount,
     staleTime: Infinity,
     retry: (failureCount, error) =>
       !(error instanceof MatrixProofUnavailableError) && failureCount < 2,
@@ -203,8 +205,9 @@ export function useMatrixTokenQuery({
   deviceId?: string
   friendlyName?: string
 } = {}) {
+  const {currentAccount} = useSession()
   return useQuery<MatrixTokenResponse>({
-    queryKey: ['matrix-token', deviceId ?? null],
+    queryKey: ['matrix-token', currentAccount?.did, deviceId ?? null],
     queryFn: () =>
       // Appservice-login deployments only; the current MAS deployment
       // answers 503 MATRIX_CLIENT_LOGIN_REQUIRED, which the caller surfaces
@@ -213,7 +216,7 @@ export function useMatrixTokenQuery({
         deviceId,
         friendlyName,
       }),
-    enabled,
+    enabled: enabled && !!currentAccount,
     staleTime: 1000 * 60 * 60, // 1 hour — tokens are long-lived in Synapse
     retry: (failureCount, error) =>
       !(error instanceof MatrixProofUnavailableError) && failureCount < 2,

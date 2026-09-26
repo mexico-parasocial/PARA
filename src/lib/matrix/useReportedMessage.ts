@@ -1,11 +1,54 @@
-import {useQuery} from '@tanstack/react-query'
+import {useCallback, useEffect, useState} from 'react'
 
 import {fetchReportedMessage, type ReportedMessageView} from './reportedMessage'
 
-/**
- * The reported message a moderator opened, read over the client-server API
- * with the chat's own Matrix session (the WebView engine has no other way in).
- */
+type ReadMessage = () => Promise<ReportedMessageView>
+
+/** Keeps review content inside the open screen, scoped to its reader/session. */
+export function useReportedMessageReader(read: ReadMessage | undefined) {
+  const [attempt, setAttempt] = useState(0)
+  const [result, setResult] = useState<{
+    read: ReadMessage
+    attempt: number
+    view: ReportedMessageView
+  }>()
+
+  useEffect(() => {
+    if (!read) {
+      setResult(undefined)
+      return
+    }
+    let cancelled = false
+    let timer: ReturnType<typeof setTimeout> | undefined
+    const refresh = async () => {
+      let view: ReportedMessageView
+      try {
+        view = await read()
+      } catch {
+        view = {state: 'unavailable', reason: 'error'}
+      }
+      if (cancelled) return
+      setResult({read, attempt, view})
+      // Recheck while reviewing: a redaction must replace the displayed text.
+      timer = setTimeout(() => void refresh(), 15_000)
+    }
+    void refresh()
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [read, attempt])
+
+  return {
+    view:
+      read && result?.read === read && result.attempt === attempt
+        ? result.view
+        : undefined,
+    retry: () => setAttempt(value => value + 1),
+  }
+}
+
+/** Reads with the current Matrix session, without a shared plaintext cache. */
 export function useReportedMessage({
   roomId,
   eventId,
@@ -15,17 +58,19 @@ export function useReportedMessage({
   eventId: string | undefined
   session: {homeServer: string; accessToken: string} | undefined
 }) {
-  const query = useQuery<ReportedMessageView>({
-    queryKey: ['reported-message', 'webview', roomId, eventId],
-    enabled: !!roomId && !!eventId && !!session,
-    retry: false,
-    queryFn: () =>
+  const homeServer = session?.homeServer
+  const accessToken = session?.accessToken
+  const read = useCallback(
+    () =>
       fetchReportedMessage({
-        homeServer: session!.homeServer,
-        accessToken: session!.accessToken,
+        homeServer: homeServer!,
+        accessToken: accessToken!,
         roomId: roomId!,
         eventId: eventId!,
       }),
-  })
-  return {view: query.data, retry: () => void query.refetch()}
+    [homeServer, accessToken, roomId, eventId],
+  )
+  return useReportedMessageReader(
+    roomId && eventId && homeServer && accessToken ? read : undefined,
+  )
 }

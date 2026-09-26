@@ -17,12 +17,12 @@ import * as Sharing from 'expo-sharing'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
-import {useQuery} from '@tanstack/react-query'
 
 import {
   type ReportedMessageView,
   viewFromChatMessage,
 } from '#/lib/matrix/reportedMessage'
+import {useReportedMessageReader} from '#/lib/matrix/useReportedMessage'
 import {KeyboardStickyView} from '#/screens/Messages/components/vendor/KeyboardStickyView'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
@@ -79,18 +79,22 @@ export function NativeChatRoom({
     retry,
   } = useEncryptedChatRoom(roomId)
 
-  const [focusDismissed, setFocusDismissed] = useState(false)
-  const reported = useQuery({
-    queryKey: ['reported-message', 'native', roomId, focusEventId],
-    enabled: status === 'ready' && !!focusEventId && !focusDismissed,
-    retry: false,
-    queryFn: async (): Promise<ReportedMessageView> => {
-      const message = await getMessage(focusEventId!)
-      return message
-        ? viewFromChatMessage(message)
-        : {state: 'unavailable', reason: 'not-loaded'}
-    },
-  })
+  const [dismissedEventId, setDismissedEventId] = useState<string>()
+  const showFocus = !!focusEventId && dismissedEventId !== focusEventId
+  const timelineMessage = messages.find(
+    message => message.eventId === focusEventId,
+  )
+  const readReported = useCallback(async (): Promise<ReportedMessageView> => {
+    if (!session) return {state: 'unavailable', reason: 'not-loaded'}
+    if (timelineMessage) return viewFromChatMessage(timelineMessage)
+    const message = await getMessage(focusEventId!)
+    return message
+      ? viewFromChatMessage(message)
+      : {state: 'unavailable', reason: 'not-loaded'}
+  }, [getMessage, focusEventId, timelineMessage, session])
+  const reported = useReportedMessageReader(
+    status === 'ready' && showFocus ? readReported : undefined,
+  )
 
   const [draft, setDraft] = useState('')
   const [sending, setSending] = useState(false)
@@ -262,16 +266,12 @@ export function NativeChatRoom({
 
   return (
     <View style={[a.flex_1]}>
-      {focusEventId && !focusDismissed && (
+      {showFocus && (
         <ReportedMessageCard
-          view={
-            reported.isError
-              ? {state: 'unavailable', reason: 'error'}
-              : reported.data
-          }
+          view={reported.view}
           encrypted
-          onClose={() => setFocusDismissed(true)}
-          onRetry={() => void reported.refetch()}
+          onClose={() => setDismissedEventId(focusEventId)}
+          onRetry={reported.retry}
         />
       )}
       <FlatList

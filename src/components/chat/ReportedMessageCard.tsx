@@ -101,7 +101,7 @@ export function ReportedMessageCard({
         </Text>
       )}
 
-      {view?.state === 'unavailable' && view.reason === 'error' && (
+      {view && view.state !== 'redacted' && (
         <Button
           label={_(msg`Volver a cargar el mensaje reportado`)}
           size="tiny"
@@ -124,7 +124,7 @@ function stateCopy(
   switch (view.state) {
     case 'redacted':
       return _(
-        msg`Su autor borró este mensaje. El reporte se conserva, pero ya no hay contenido que revisar.`,
+        msg`Este mensaje fue borrado. El reporte se conserva, pero ya no hay contenido que revisar.`,
       )
     case 'undecryptable':
       return encrypted
@@ -146,7 +146,7 @@ function stateCopy(
           )
         case 'not-loaded':
           return _(
-            msg`El mensaje no está en el historial de este dispositivo. Desplázate hacia atrás en el chat o ábrelo en otro dispositivo.`,
+            msg`No se pudo cargar este mensaje en el dispositivo. Reintenta o ábrelo en otro dispositivo con acceso a la sala.`,
           )
         default:
           return _(msg`No se pudo cargar el mensaje reportado.`)
