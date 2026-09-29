@@ -16,11 +16,17 @@ import {
   postIneVerify,
   postRevokeCredential,
 } from '#/lib/im8/api'
-import {INE_INTEGRATION_APPROVED, INE_PREVIEW_NOTICE} from '#/lib/im8/ine'
+import {
+  INE_INTEGRATION_APPROVED,
+  INE_PREVIEW_NOTICE,
+  WALLET_HOLDER_KEY_SUPPORTED,
+  WALLET_HOLDER_KEY_UNSUPPORTED_MESSAGE,
+} from '#/lib/im8/ine'
 import {
   type IneExtractedData,
   type IneVerificationResult,
 } from '#/lib/im8/types'
+import {requestWalletHolderBinding} from '#/lib/im8/wallet'
 import {type NavigationProp} from '#/lib/routes/types'
 import * as Storage from '#/lib/storage'
 import {Text} from '#/view/com/util/text/Text'
@@ -104,6 +110,13 @@ export default function INEVerificationScreen() {
         return
       }
 
+      // mubEZ binds a holder key into every credential. PARA holds none: the
+      // iM8 wallet makes it on the phone, and receives the credentials.
+      // Closed until the iM8 wallet passes device tests (see ine.ts).
+      if (!WALLET_HOLDER_KEY_SUPPORTED) {
+        throw new Error(WALLET_HOLDER_KEY_UNSUPPORTED_MESSAGE)
+      }
+
       // The credential endpoint requires a client-generated ZK age proof.
       // Proof generation (prover WebView) lands in a later build; until then
       // fail with an honest message instead of a server rejection.
@@ -116,9 +129,15 @@ export default function INEVerificationScreen() {
           'ZK age proof not available: proof generation is not enabled in this build yet.',
         )
       }
+      // The wallet binds its key against the session's current challenge;
+      // issuance must present that same challenge.
+      const {walletBindingRequestId, issuanceChallenge} =
+        await requestWalletHolderBinding()
       const result = await postIneCredential({
         extracted,
         verification,
+        issuanceChallenge,
+        walletBindingRequestId,
         ageProofs: {
           over18: {
             proof: JSON.parse(proofJson),
@@ -135,11 +154,11 @@ export default function INEVerificationScreen() {
 
       // The server never sees the witness (birthYear/salt) — it is generated
       // and stored client-side by the prover flow. Persist only what the
-      // server actually returns.
+      // server actually returns; the credentials themselves are in iM8.
       await Storage.setItemAsync('para_zkp_commitment', result.commitment)
       await Storage.setItemAsync(
-        'para_zkp_revocationHash',
-        result.credential.revocationHash,
+        'para_ine_proofArtifactId',
+        result.proofArtifactId,
       )
 
       // Anonymous by default: store profile locally (also flips the
@@ -162,8 +181,10 @@ export default function INEVerificationScreen() {
   }, [navigation])
 
   const handleRevoke = useCallback(async () => {
-    const revocationHash = await Storage.getItemAsync('para_zkp_revocationHash')
-    if (!revocationHash) {
+    const proofArtifactId = await Storage.getItemAsync(
+      'para_ine_proofArtifactId',
+    )
+    if (!proofArtifactId) {
       Alert.alert('Error', 'No credential to revoke.')
       return
     }
@@ -178,14 +199,14 @@ export default function INEVerificationScreen() {
           onPress: async () => {
             try {
               await postRevokeCredential({
-                revocationHash,
+                proofArtifactId,
                 reason: 'User requested',
               })
               await Storage.deleteItemAsync('para_ine_verified')
               await Storage.deleteItemAsync('para_ine_verified_at')
               await Storage.deleteItemAsync('para_verified_human')
               await Storage.deleteItemAsync('para_zkp_commitment')
-              await Storage.deleteItemAsync('para_zkp_revocationHash')
+              await Storage.deleteItemAsync('para_ine_proofArtifactId')
               await setStoredAnonymousProfile(null)
               Alert.alert('Revoked', 'Your credential has been revoked.')
               navigation.goBack()
@@ -596,22 +617,24 @@ export default function INEVerificationScreen() {
                   ]}>
                   <Text
                     style={[styles.credentialTitle, {color: t.palette.white}]}>
-                    Anonymous Persona
+                    Anonymous posting persona
                   </Text>
                   <Text
                     style={[
                       styles.body,
                       {color: t.palette.white, textAlign: 'center'},
                     ]}>
-                    You are now posting as your verified anonymous citizen.
+                    Your anonymous posting persona is active. It hides your name
+                    from other users, not from PARA or mubEZ, and verifying does
+                    not make you anonymous.
                   </Text>
                 </View>
               )}
 
               <Text style={[styles.body, t.atoms.text_contrast_medium]}>
                 {INE_INTEGRATION_APPROVED
-                  ? 'Your credential has been stored in your wallet and your anonymous persona is active across all PARA communities.'
-                  : 'This walkthrough ran against simulated data. Once INE integration is approved, confirming here will issue a real credential to your wallet and activate your anonymous persona.'}
+                  ? 'Your credentials were delivered to your iM8 wallet. When you share them, apps receive your account DID and every fact in the credential; sharing is not anonymous.'
+                  : 'This walkthrough ran against simulated data. Once INE integration is approved, confirming here will issue credentials to your iM8 wallet and activate your anonymous posting persona.'}
               </Text>
 
               <TouchableOpacity

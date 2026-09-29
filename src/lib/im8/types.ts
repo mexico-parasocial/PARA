@@ -28,7 +28,8 @@ export type M8IdentityRequest = {
   purpose: string
   merchantIdentifier: string
   requestedElements: M8IdentityRequestedElement[]
-  status: 'active' | 'used' | 'expired'
+  /** 'declined': the holder's iM8 wallet refused to present for it. */
+  status: 'active' | 'used' | 'expired' | 'declined'
   createdAt: string
   expiresAt: string
   usedAt: string | null
@@ -38,37 +39,97 @@ export type M8IdentityCredentialClaims = Partial<
   Record<M8IdentityElementId, string | boolean>
 >
 
+/**
+ * Issuer-signed credential (mubEZ CD-13). `holderPublicKey` is the wallet's
+ * Ed25519 SPKI PEM key, covered by the issuer signature; only credentials
+ * that carry one can be presented. Credentials issued before holder binding
+ * lack it and must be re-issued.
+ */
 export type M8IdentityCredential = {
   id: string
   issuerDid: string
+  issuerKeyId: string
   subjectDid: string
   issuedAt: string
   expiresAt: string
   claims: M8IdentityCredentialClaims
   revocationHash: string
+  holderPublicKey?: string
   signatureAlg: 'Ed25519'
   signature: string
 }
 
+/**
+ * Full-credential disclosure: the verifier receives the whole credential,
+ * every claim included. Not selective disclosure. Signed with the key in
+ * `credential.holderPublicKey`. A credential holding curp_hash or
+ * district_hash is refused unless the request asked for it; present
+ * `basicCredential` otherwise. v1 (presenter-chosen `devicePublicKey`) is
+ * rejected by the server.
+ */
 export type M8WalletPresentation = {
-  type: 'm8.identity.presentation.v1'
+  type: 'm8.identity.presentation.v2'
+  disclosure: 'full-credential'
   requestId: string
   nonce: string
   audienceAppId: string
   credential: M8IdentityCredential
   disclosedClaims: M8IdentityCredentialClaims
-  devicePublicKey: string
   issuedAt: string
   expiresAt: string
   signatureAlg: 'Ed25519'
   signature: string
 }
 
+/**
+ * A holder-binding request on the iM8 wallet relay (mubEZ CD-14). The
+ * wallet binds a key made on the phone; PARA only ever sees this view.
+ */
+export type M8WalletBindingRequest = {
+  id: string
+  issuanceChallenge: string
+  status: 'pending' | 'bound' | 'issued' | 'collected' | 'declined'
+  createdAt: string
+  expiresAt: string
+}
+
+/**
+ * /identity/ine/credential issued against a wallet binding. The credentials
+ * (full and basic) were delivered to the iM8 wallet; PARA gets none.
+ */
+export type M8IneWalletIssuance = {
+  proofArtifactId: string
+  verificationId: string
+  commitment: string
+  anonymousProfile: AnonymousProfile
+  credentialDelivery: 'wallet'
+  walletBindingRequestId: string
+}
+
+/** PARA's read of an identity request it created; `result` comes once. */
+export type M8IdentityRequestOutcome = {
+  id: string
+  status: M8IdentityRequest['status']
+  expiresAt: string
+  resultDelivered: boolean
+  result?: Pick<
+    M8IdentityVerificationResult,
+    | 'valid'
+    | 'disclosedClaims'
+    | 'disclosure'
+    | 'revealedClaimIds'
+    | 'issuerDid'
+    | 'checkedAt'
+  >
+}
+
 export type M8TrustedIssuer = {
   did: string
+  keyId: string
   name: string
   country: string
-  status: 'active' | 'suspended' | 'revoked'
+  status: 'active' | 'previous' | 'suspended' | 'revoked' | 'expired'
+  notAfter?: string
   publicKeyPem: string
   allowedElements: M8IdentityElementId[]
 }
@@ -81,6 +142,9 @@ export type M8IdentityVerificationResult = {
   issuerName: string | null
   subjectDid: string | null
   disclosedClaims: M8IdentityCredentialClaims
+  /** Always full-credential: every claim in revealedClaimIds reached the verifier. */
+  disclosure: 'full-credential'
+  revealedClaimIds: M8IdentityElementId[]
   checkedAt: string
   errors: string[]
   warnings: string[]
@@ -260,6 +324,8 @@ export type ProofBrokerSession = {
   }
   activePersonaId: string
   activeSurfaceId: ProofBrokerSurfaceId
+  /** Single-use challenge for /identity/ine/credential; rotated after each attempt. */
+  issuanceChallenge: string
   createdAt: string
   updatedAt: string
 }
