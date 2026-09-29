@@ -185,11 +185,6 @@ msgstr ""
 msgid "{0, plural, one {# reporte} other {# reportes}} de {1, plural, one {# persona} other {# personas}} · hace {2}"
 msgstr "{0, plural, one {# reporte} other {# reportes}} de {1, plural, one {# persona} other {# personas}} · hace {2}"
 
-#. placeholder {0}: quoteCount ?? 0
-#: src/screens/Post/PostRepostedBy.tsx:44
-msgid "{0, plural, one {# repost} other {# reposts}}"
-msgstr ""
-
 #. placeholder {0}: diff.value
 #: src/lib/hooks/useTimeAgo.ts:139
 msgid "{0, plural, one {# second} other {# seconds}}"
@@ -216,7 +211,7 @@ msgid "{0, plural, one {#mo} other {#mo}}"
 msgstr ""
 
 #. placeholder {0}: paraSummaryMetrics.comments
-#: src/screens/PostThread/components/ThreadItemAnchor.tsx:493
+#: src/screens/PostThread/components/ThreadItemAnchor.tsx:478
 msgid "{0, plural, one {comment} other {comments}}"
 msgstr "{0, plural, one {comment} other {comments}}"
 
@@ -233,7 +228,7 @@ msgid "{0, plural, one {following} other {following}}"
 msgstr ""
 
 #. placeholder {0}: paraSummaryMetrics.highlights
-#: src/screens/PostThread/components/ThreadItemAnchor.tsx:508
+#: src/screens/PostThread/components/ThreadItemAnchor.tsx:493
 msgid "{0, plural, one {highlight} other {highlights}}"
 msgstr "{0, plural, one {highlight} other {highlights}}"
 
@@ -243,12 +238,12 @@ msgid "{0, plural, one {post} other {posts}}"
 msgstr ""
 
 #. placeholder {0}: paraSummaryMetrics.quotes
-#: src/screens/PostThread/components/ThreadItemAnchor.tsx:525
+#: src/screens/PostThread/components/ThreadItemAnchor.tsx:510
 msgid "{0, plural, one {quote} other {quotes}}"
 msgstr "{0, plural, one {quote} other {quotes}}"
 
 #. placeholder {0}: paraSummaryMetrics.saves
-#: src/screens/PostThread/components/ThreadItemAnchor.tsx:540
+#: src/screens/PostThread/components/ThreadItemAnchor.tsx:525
 msgid "{0, plural, one {save} other {saves}}"
 msgstr "{0, plural, one {save} other {saves}}"
 
@@ -322,15 +317,30 @@ msgstr "{0} added to chat"
 msgid "{0} and {1} added to chat"
 msgstr "{0} and {1} added to chat"
 
+#. placeholder {0}: i18n.number(item.quantityAvailable)
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:70
+msgid "{0} available"
+msgstr "{0} available"
+
 #. placeholder {0}: communities.length
 #: src/screens/Agora/components/EmergentPublicBadge.tsx:24
 msgid "{0} communities voting together for the first time"
 msgstr "{0} communities voting together for the first time"
 
+#. placeholder {0}: summary.foreignCurrencyEntryCount
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:309
+msgid "{0} entries use another currency and are left out of the totals."
+msgstr "{0} entries use another currency and are left out of the totals."
+
 #. placeholder {0}: profile.followsCount || 0
 #: src/screens/Profile/Header/Metrics.tsx:55
 msgid "{0} following"
 msgstr ""
+
+#. placeholder {0}: summary.mispricedEntryCount
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:293
+msgid "{0} income entries do not match quantity × the committed price."
+msgstr "{0} income entries do not match quantity × the committed price."
 
 #. placeholder {0}: badges.length
 #: src/screens/Communities/ChatCivicContext.tsx:89
@@ -373,6 +383,11 @@ msgstr "{0} joined the group"
 msgid "{0} joined this week"
 msgstr ""
 
+#. placeholder {0}: summary.staleEntryCount
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:289
+msgid "{0} ledger entries were booked under different terms. The split or the prices changed after money moved."
+msgstr "{0} ledger entries were booked under different terms. The split or the prices changed after money moved."
+
 #. placeholder {0}: action.displayName
 #: src/components/dms/getSystemMessageInfo.ts:103
 msgid "{0} left"
@@ -393,6 +408,17 @@ msgstr "{0} not connected to anything yet."
 #: src/components/Post/Embed/VideoEmbed/VideoEmbedInner/web-controls/Scrubber.tsx:203
 msgid "{0} of {1}"
 msgstr ""
+
+#. placeholder {0}: i18n.number(collected)
+#. placeholder {1}: i18n.number(drive.targetSignatures)
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:153
+msgid "{0} of {1} signatures"
+msgstr "{0} of {1} signatures"
+
+#. placeholder {0}: formatBps(summary.fundingGoalProgressBps)
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:323
+msgid "{0} of the goal raised"
+msgstr "{0} of the goal raised"
 
 #. Accessibility label describing how many characters the user has entered out of a 50-character limit in a text input field
 #. placeholder {0}: state.name?.length
@@ -436,6 +462,11 @@ msgstr "{0} was removed"
 #: src/components/dms/getSystemMessageInfo.ts:74
 msgid "{0} was removed from the group"
 msgstr "{0} was removed from the group"
+
+#. placeholder {0}: money(summary.unplannedDeliveredMinor)
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:305
+msgid "{0} went to recipients that are not in the plan."
+msgstr "{0} went to recipients that are not in the plan."
 
 #. placeholder {0}: createSanitizedDisplayName(members[0])
 #. placeholder {1}: createSanitizedDisplayName(members[1])
@@ -613,167 +644,119 @@ msgstr ""
 msgid "{filterCount, plural, one {+# filter} other {+# filters}}"
 msgstr "{filterCount, plural, one {+# filter} other {+# filters}}"
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:359
+#: src/view/com/notifications/NotificationFeedItem.tsx:332
 msgid "{firstAuthorLink} and <0>{additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}}</0> followed you"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:391
+#: src/view/com/notifications/NotificationFeedItem.tsx:364
 msgid "{firstAuthorLink} and <0>{additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}}</0> liked your custom feed"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:297
+#: src/view/com/notifications/NotificationFeedItem.tsx:293
 msgid "{firstAuthorLink} and <0>{additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}}</0> liked your post"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:488
-msgid "{firstAuthorLink} and <0>{additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}}</0> liked your repost"
-msgstr ""
-
-#: src/view/com/notifications/NotificationFeedItem.tsx:463
+#: src/view/com/notifications/NotificationFeedItem.tsx:436
 msgid "{firstAuthorLink} and <0>{additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}}</0> removed their verifications from your account"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:319
-msgid "{firstAuthorLink} and <0>{additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}}</0> reposted your post"
-msgstr ""
-
-#: src/view/com/notifications/NotificationFeedItem.tsx:510
-msgid "{firstAuthorLink} and <0>{additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}}</0> reposted your repost"
-msgstr ""
-
-#: src/view/com/notifications/NotificationFeedItem.tsx:413
+#: src/view/com/notifications/NotificationFeedItem.tsx:386
 msgid "{firstAuthorLink} and <0>{additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}}</0> signed up with your starter pack"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:440
+#: src/view/com/notifications/NotificationFeedItem.tsx:413
 msgid "{firstAuthorLink} and <0>{additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}}</0> verified you"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:371
+#: src/view/com/notifications/NotificationFeedItem.tsx:344
 msgid "{firstAuthorLink} followed you"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:343
+#: src/view/com/notifications/NotificationFeedItem.tsx:316
 msgid "{firstAuthorLink} followed you back"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:403
+#: src/view/com/notifications/NotificationFeedItem.tsx:376
 msgid "{firstAuthorLink} liked your custom feed"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:309
+#: src/view/com/notifications/NotificationFeedItem.tsx:305
 msgid "{firstAuthorLink} liked your post"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:500
-msgid "{firstAuthorLink} liked your repost"
-msgstr ""
-
-#: src/view/com/notifications/NotificationFeedItem.tsx:475
+#: src/view/com/notifications/NotificationFeedItem.tsx:448
 msgid "{firstAuthorLink} removed their verification from your account"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:331
-msgid "{firstAuthorLink} reposted your post"
-msgstr ""
-
-#: src/view/com/notifications/NotificationFeedItem.tsx:522
-msgid "{firstAuthorLink} reposted your repost"
-msgstr ""
-
-#: src/view/com/notifications/NotificationFeedItem.tsx:425
+#: src/view/com/notifications/NotificationFeedItem.tsx:398
 msgid "{firstAuthorLink} signed up with your starter pack"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:452
+#: src/view/com/notifications/NotificationFeedItem.tsx:425
 msgid "{firstAuthorLink} verified you"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:353
+#: src/view/com/notifications/NotificationFeedItem.tsx:326
 msgid "{firstAuthorName} and {additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}} followed you"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:347
+#: src/view/com/notifications/NotificationFeedItem.tsx:320
 msgid "{firstAuthorName} and {additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}} followed you via starter pack {starterPackName}"
 msgstr "{firstAuthorName} and {additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}} followed you via starter pack {starterPackName}"
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:385
+#: src/view/com/notifications/NotificationFeedItem.tsx:358
 msgid "{firstAuthorName} and {additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}} liked your custom feed"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:291
+#: src/view/com/notifications/NotificationFeedItem.tsx:287
 msgid "{firstAuthorName} and {additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}} liked your post"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:482
-msgid "{firstAuthorName} and {additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}} liked your repost"
-msgstr ""
-
-#: src/view/com/notifications/NotificationFeedItem.tsx:457
+#: src/view/com/notifications/NotificationFeedItem.tsx:430
 msgid "{firstAuthorName} and {additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}} removed their verifications from your account"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:313
-msgid "{firstAuthorName} and {additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}} reposted your post"
-msgstr ""
-
-#: src/view/com/notifications/NotificationFeedItem.tsx:504
-msgid "{firstAuthorName} and {additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}} reposted your repost"
-msgstr ""
-
-#: src/view/com/notifications/NotificationFeedItem.tsx:407
+#: src/view/com/notifications/NotificationFeedItem.tsx:380
 msgid "{firstAuthorName} and {additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}} signed up with your starter pack"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:434
+#: src/view/com/notifications/NotificationFeedItem.tsx:407
 msgid "{firstAuthorName} and {additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}} verified you"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:357
+#: src/view/com/notifications/NotificationFeedItem.tsx:330
 msgid "{firstAuthorName} followed you"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:342
+#: src/view/com/notifications/NotificationFeedItem.tsx:315
 msgid "{firstAuthorName} followed you back"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:341
+#: src/view/com/notifications/NotificationFeedItem.tsx:314
 msgid "{firstAuthorName} followed you back via starter pack {starterPackName}"
 msgstr "{firstAuthorName} followed you back via starter pack {starterPackName}"
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:351
+#: src/view/com/notifications/NotificationFeedItem.tsx:324
 msgid "{firstAuthorName} followed you via starter pack {starterPackName}"
 msgstr "{firstAuthorName} followed you via starter pack {starterPackName}"
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:389
+#: src/view/com/notifications/NotificationFeedItem.tsx:362
 msgid "{firstAuthorName} liked your custom feed"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:295
+#: src/view/com/notifications/NotificationFeedItem.tsx:291
 msgid "{firstAuthorName} liked your post"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:486
-msgid "{firstAuthorName} liked your repost"
-msgstr ""
-
-#: src/view/com/notifications/NotificationFeedItem.tsx:461
+#: src/view/com/notifications/NotificationFeedItem.tsx:434
 msgid "{firstAuthorName} removed their verification from your account"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:317
-msgid "{firstAuthorName} reposted your post"
-msgstr ""
-
-#: src/view/com/notifications/NotificationFeedItem.tsx:508
-msgid "{firstAuthorName} reposted your repost"
-msgstr ""
-
-#: src/view/com/notifications/NotificationFeedItem.tsx:411
+#: src/view/com/notifications/NotificationFeedItem.tsx:384
 msgid "{firstAuthorName} signed up with your starter pack"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:438
+#: src/view/com/notifications/NotificationFeedItem.tsx:411
 msgid "{firstAuthorName} verified you"
 msgstr ""
 
@@ -1209,8 +1192,8 @@ msgstr "A screenshot of the post composer with a new button next to the post but
 msgid "A selected recipient is not followed by the sender."
 msgstr "A selected recipient is not followed by the sender."
 
-#: src/Navigation.tsx:690
-#: src/screens/Communities/CommunityProfileScreen/index.tsx:640
+#: src/Navigation.tsx:658
+#: src/screens/Communities/CommunityProfileScreen/index.tsx:601
 #: src/screens/Settings/AboutSettings.tsx:78
 #: src/screens/Settings/Settings.tsx:267
 #: src/screens/Settings/Settings.tsx:270
@@ -1302,17 +1285,22 @@ msgstr "Accepts your delegate's vote as your own"
 msgid "Access requested! The group owner will review your request."
 msgstr "Access requested! The group owner will review your request."
 
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:68
 #: src/screens/Settings/AccessibilitySettings.tsx:45
 #: src/screens/Settings/Settings.tsx:237
 #: src/screens/Settings/Settings.tsx:240
 msgid "Accessibility"
 msgstr ""
 
-#: src/Navigation.tsx:477
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:248
+msgid "Accessibility notes"
+msgstr "Accessibility notes"
+
+#: src/Navigation.tsx:469
 msgid "Accessibility Settings"
 msgstr ""
 
-#: src/Navigation.tsx:493
+#: src/Navigation.tsx:485
 #: src/screens/Login/LoginForm.tsx:465
 #: src/screens/Settings/AccountSettings.tsx:204
 #: src/screens/Settings/Settings.tsx:177
@@ -1437,15 +1425,32 @@ msgstr "Active in"
 msgid "Active Proofs"
 msgstr "Active Proofs"
 
-#: src/lib/hooks/useNotificationHandler.ts:219
+#: src/lib/community-activities.ts:70
+msgid "Activity"
+msgstr "Activity"
+
+#: src/lib/hooks/useNotificationHandler.ts:199
 #: src/screens/Settings/NotificationSettings/ActivityNotificationSettings.tsx:105
-#: src/screens/Settings/NotificationSettings/index.tsx:225
+#: src/screens/Settings/NotificationSettings/index.tsx:204
 msgid "Activity from others"
 msgstr ""
 
-#: src/Navigation.tsx:650
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:208
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:180
+msgid "Activity kind"
+msgstr "Activity kind"
+
+#: src/Navigation.tsx:618
 msgid "Activity notifications"
 msgstr "Activity notifications"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:122
+msgid "Activity published"
+msgstr "Activity published"
+
+#: src/screens/Communities/CommunityActivityScreen.tsx:251
+msgid "Activity status"
+msgstr "Activity status"
 
 #: src/screens/Communities/AcuerdoListScreen.tsx:39
 msgid "Acuerdos"
@@ -1496,6 +1501,10 @@ msgstr "Add a second item to this collection before connecting anything."
 #: src/features/liveNow/components/GoLiveDialog.tsx:108
 msgid "Add a temporary live status to your profile. When someone clicks on your avatar, they’ll see information about your live event."
 msgstr ""
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:79
+msgid "Add a title."
+msgstr "Add a title."
 
 #: src/screens/ProfileList/AboutSection.tsx:64
 #: src/screens/ProfileList/AboutSection.tsx:82
@@ -1558,6 +1567,11 @@ msgstr ""
 msgid "Add automation label to account"
 msgstr "Add automation label to account"
 
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:244
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:257
+msgid "Add destination"
+msgstr "Add destination"
+
 #: src/components/dms/EmojiReactionPicker.web.tsx:32
 msgid "Add emoji reaction"
 msgstr ""
@@ -1582,6 +1596,7 @@ msgstr "Add group chat members"
 msgid "Add image"
 msgstr ""
 
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:293
 #: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:142
 #: src/screens/Data/CivicTreeScreen.tsx:663
 #: src/screens/Data/CollectionDetailScreen.tsx:369
@@ -1646,6 +1661,10 @@ msgstr "Add people with a link"
 msgid "Add policy or topic"
 msgstr "Add policy or topic"
 
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:359
+msgid "Add prize"
+msgstr "Add prize"
+
 #: src/screens/RAQ/components/AddRAQDialog.tsx:50
 msgid "Add Proposed Question"
 msgstr "Add Proposed Question"
@@ -1683,6 +1702,14 @@ msgstr ""
 msgid "Add the following DNS record to your domain:"
 msgstr ""
 
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:149
+msgid "Add the link to join online."
+msgstr "Add the link to join online."
+
+#: src/screens/Communities/CommunityActivityScreen.tsx:124
+msgid "Add this activity to the community civic tree"
+msgstr "Add this activity to the community civic tree"
+
 #: src/components/FeedCard.tsx:384
 msgid "Add this feed to your feeds"
 msgstr ""
@@ -1691,6 +1718,10 @@ msgstr ""
 #: src/components/SaveToCollectionDialog.tsx:186
 msgid "Add to {0}"
 msgstr "Add to {0}"
+
+#: src/screens/Communities/CommunityActivityScreen.tsx:129
+msgid "Add to civic tree"
+msgstr "Add to civic tree"
 
 #: src/view/com/profile/ProfileMenu.tsx:334
 #: src/view/com/profile/ProfileMenu.tsx:337
@@ -1843,15 +1874,23 @@ msgstr ""
 msgid "Age assurance only takes a few minutes"
 msgstr ""
 
-#: src/Navigation.tsx:736
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:107
+msgid "Agenda"
+msgstr "Agenda"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:334
+msgid "Agenda (one item per line)"
+msgstr "Agenda (one item per line)"
+
+#: src/Navigation.tsx:704
 msgid "Agent Chat"
 msgstr "Agent Chat"
 
-#: src/Navigation.tsx:741
+#: src/Navigation.tsx:709
 msgid "Agent Profile"
 msgstr "Agent Profile"
 
-#: src/Navigation.tsx:970
+#: src/Navigation.tsx:953
 #: src/view/shell/desktop/LeftNav.tsx:701
 #: src/view/shell/Drawer.tsx:852
 msgid "Agora"
@@ -1915,6 +1954,14 @@ msgstr "All entities"
 #: src/components/contacts/screens/ViewMatches.tsx:148
 msgid "All friends followed!"
 msgstr ""
+
+#: src/components/PostControls/index.tsx:143
+msgid "All highlights removed"
+msgstr "All highlights removed"
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:169
+msgid "All income"
+msgstr "All income"
 
 #: src/components/dialogs/LanguageSelectDialog.tsx:255
 #: src/screens/Search/components/SearchLanguageDropdown.tsx:63
@@ -2072,6 +2119,16 @@ msgstr "Alt text must be less than {MAX_ALT_TEXT} characters."
 msgid "Alt text will be truncated. {MAX_ALT_TEXT, plural, other {Limit: {0} characters.}}"
 msgstr ""
 
+#. placeholder {0}: plan.currency
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:631
+msgid "Amount ({0})"
+msgstr "Amount ({0})"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:95
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:68
+msgid "Amounts must be numbers with up to 2 decimals."
+msgstr "Amounts must be numbers with up to 2 decimals."
+
 #. placeholder {0}: currentAccount?.email || '(no email)'
 #: src/screens/Settings/components/DisableEmail2FADialog.tsx:100
 msgid "An email has been sent to {0}. It includes a confirmation code which you can enter below."
@@ -2152,8 +2209,8 @@ msgid "An illustration depicting user avatars flowing from a contact book into t
 msgstr "An illustration depicting user avatars flowing from a contact book into the PARA app"
 
 #: src/screens/Onboarding/StepFinished/ValuePropositionPager.shared.tsx:45
-msgid "An illustration of several PARA posts alongside repost, like, and comment icons"
-msgstr "An illustration of several PARA posts alongside repost, like, and comment icons"
+msgid "An illustration of several PARA posts alongside highlight, like, and comment icons"
+msgstr "An illustration of several PARA posts alongside highlight, like, and comment icons"
 
 #: src/components/dialogs/nuxs/InitialVerificationAnnouncement.tsx:86
 #: src/components/verification/VerifierDialog.tsx:88
@@ -2185,8 +2242,8 @@ msgstr "An issue occurred starting the group chat, please try again."
 #: src/components/hooks/useFollowMethods.ts:52
 #: src/components/ProfileCard.tsx:508
 #: src/components/ProfileCard.tsx:530
-#: src/view/com/notifications/NotificationFeedItem.tsx:827
-#: src/view/com/notifications/NotificationFeedItem.tsx:848
+#: src/view/com/notifications/NotificationFeedItem.tsx:751
+#: src/view/com/notifications/NotificationFeedItem.tsx:772
 msgid "An issue occurred, please try again."
 msgstr ""
 
@@ -2252,13 +2309,21 @@ msgstr "Anonymous · Verified"
 msgid "Anonymous mode restored: {0}"
 msgstr "Anonymous mode restored: {0}"
 
+#: src/screens/m8/INEVerificationScreen.tsx:625
+msgid "Anonymous posting persona"
+msgstr "Anonymous posting persona"
+
 #: src/screens/m8/AnonymousVoiceScreen.tsx:94
 msgid "Anonymous voice"
 msgstr "Anonymous voice"
 
-#: src/Navigation.tsx:1010
+#: src/Navigation.tsx:993
 msgid "Anonymous Voice"
 msgstr "Anonymous Voice"
+
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:233
+msgid "Another page already uses this title."
+msgstr "Another page already uses this title."
 
 #: src/screens/Communities/CommunityProfileScreen/CommunityAbout.tsx:719
 msgid "Answered by voters"
@@ -2341,7 +2406,7 @@ msgstr "Aportes destacados"
 msgid "apoyos"
 msgstr "apoyos"
 
-#: src/Navigation.tsx:698
+#: src/Navigation.tsx:666
 #: src/screens/Settings/AppIconSettings/index.tsx:65
 #: src/screens/Settings/AppIconSettings/SettingsListItem.tsx:19
 #: src/screens/Settings/AppIconSettings/SettingsListItem.tsx:24
@@ -2379,7 +2444,7 @@ msgstr ""
 msgid "App passwords"
 msgstr ""
 
-#: src/Navigation.tsx:445
+#: src/Navigation.tsx:437
 #: src/screens/Settings/AppPasswords.tsx:51
 msgid "App Passwords"
 msgstr ""
@@ -2430,7 +2495,7 @@ msgstr ""
 msgid "Appeal this label"
 msgstr "Appeal this label"
 
-#: src/Navigation.tsx:485
+#: src/Navigation.tsx:477
 #: src/screens/Settings/AppearanceSettings.tsx:73
 #: src/screens/Settings/Settings.tsx:229
 #: src/screens/Settings/Settings.tsx:232
@@ -2492,12 +2557,12 @@ msgid "Aprueba la firma pendiente en la sección Credenciales de iM8."
 msgstr "Aprueba la firma pendiente en la sección Credenciales de iM8."
 
 #. placeholder {0}: niceDate(i18n, createdAt, 'medium')
-#: src/screens/PostThread/components/ThreadItemAnchor.tsx:714
+#: src/screens/PostThread/components/ThreadItemAnchor.tsx:698
 msgid "Archived from {0}"
 msgstr ""
 
-#: src/screens/PostThread/components/ThreadItemAnchor.tsx:685
-#: src/screens/PostThread/components/ThreadItemAnchor.tsx:723
+#: src/screens/PostThread/components/ThreadItemAnchor.tsx:669
+#: src/screens/PostThread/components/ThreadItemAnchor.tsx:707
 msgid "Archived post"
 msgstr ""
 
@@ -2613,6 +2678,16 @@ msgstr "Ask apps and sites not to show my account to logged-out users"
 msgid "Ask apps to hide my posts from algorithmic recommendations"
 msgstr "Ask apps to hide my posts from algorithmic recommendations"
 
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:86
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:312
+#: src/lib/community-activities.ts:59
+msgid "Assembly"
+msgstr "Assembly"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:316
+msgid "Assembly format"
+msgstr "Assembly format"
+
 #: src/components/PostControls/PostMenu/PostMenuItems.tsx:659
 #: src/components/PostControls/PostMenu/PostMenuItems.tsx:661
 msgid "Assign topic for algo"
@@ -2704,12 +2779,12 @@ msgstr "Avatar creator"
 msgid "Awaiting review"
 msgstr "Awaiting review"
 
-#: src/Navigation.tsx:853
+#: src/Navigation.tsx:821
 #: src/screens/RAQ/AxesDiscoveryScreen.tsx:110
 msgid "Axes Discovery"
 msgstr "Axes Discovery"
 
-#: src/Navigation.tsx:858
+#: src/Navigation.tsx:826
 msgid "Axis Detail"
 msgstr "Axis Detail"
 
@@ -2847,6 +2922,14 @@ msgstr ""
 msgid "Being worked on together"
 msgstr "Being worked on together"
 
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:136
+msgid "Beneficiary"
+msgstr "Beneficiary"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:405
+msgid "Beneficiary (optional)"
+msgstr "Beneficiary (optional)"
+
 #: src/components/dialogs/nuxs/LiveNowBetaDialog.tsx:99
 msgid "Beta Feature"
 msgstr ""
@@ -2872,6 +2955,10 @@ msgstr "Beta features may be unstable. Some changes may require reloading the ap
 msgctxt "native"
 msgid "Beta features may be unstable. Some changes may require restarting the app."
 msgstr "Beta features may be unstable. Some changes may require restarting the app."
+
+#: src/lib/community-activities.ts:99
+msgid "Bill"
+msgstr "Bill"
 
 #: src/screens/Login/LoginForm.tsx:244
 msgid "Biometric check didn't pass. Try again or use an email code."
@@ -2966,7 +3053,7 @@ msgstr ""
 msgid "Blocked accounts"
 msgstr ""
 
-#: src/Navigation.tsx:272
+#: src/Navigation.tsx:271
 #: src/view/screens/ModerationBlockedAccounts.tsx:104
 msgid "Blocked Accounts"
 msgstr ""
@@ -3033,6 +3120,23 @@ msgstr ""
 msgid "Blur images and filter from feeds"
 msgstr ""
 
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:411
+msgid "Book a ledger entry"
+msgstr "Book a ledger entry"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:417
+msgid "Book an entry"
+msgstr "Book an entry"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:700
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:706
+msgid "Book entry"
+msgstr "Book entry"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:483
+msgid "Booked under earlier terms"
+msgstr "Booked under earlier terms"
+
 #: src/lib/interests.ts:195
 msgid "Books"
 msgstr ""
@@ -3040,6 +3144,10 @@ msgstr ""
 #: src/lib/interests.ts:114
 msgid "Border Policy"
 msgstr "Border Policy"
+
+#: src/lib/community-activities.ts:121
+msgid "Both"
+msgstr "Both"
 
 #: src/components/moderation/ReportDialog/utils/useReportOptions.ts:217
 msgid "Breaking site rules"
@@ -3143,6 +3251,11 @@ msgstr "Burner voices have no profile"
 #: src/view/com/auth/SplashScreen.web.tsx:171
 msgid "Business"
 msgstr ""
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:217
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:128
+msgid "Business model"
+msgstr "Business model"
 
 #: src/screens/Bookmarks/index.tsx:283
 msgid "Button to go back to the home timeline"
@@ -3283,12 +3396,13 @@ msgstr "campaña electoral"
 #: src/components/moderation/BlockDialog.tsx:201
 #: src/components/PostControls/QuoteButton.tsx:202
 #: src/components/PostControls/QuoteButton.tsx:207
-#: src/components/PostControls/RepostButton.tsx:210
 #: src/components/Prompt.tsx:169
 #: src/components/Prompt.tsx:172
 #: src/components/SaveToCollectionDialog.tsx:252
 #: src/components/SendErrorReportDialog.tsx:98
 #: src/components/SendErrorReportDialog.tsx:102
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:691
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:696
 #: src/features/liveEvents/components/LiveEventFeedOptionsMenu.tsx:152
 #: src/features/liveEvents/components/LiveEventFeedOptionsMenu.tsx:157
 #: src/features/liveNow/components/GoLiveDialog.tsx:248
@@ -3296,6 +3410,8 @@ msgstr "campaña electoral"
 #: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:238
 #: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:242
 #: src/lib/media/picker.tsx:38
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:361
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:366
 #: src/screens/Data/CivicTreeScreen.tsx:497
 #: src/screens/Data/CollectionDetailScreen.tsx:280
 #: src/screens/Data/CommunityCivicTreeScreen.tsx:1026
@@ -3345,10 +3461,6 @@ msgstr "Cancel collection creation"
 msgid "Cancel editing"
 msgstr "Cancel editing"
 
-#: src/components/PostControls/RepostButton.tsx:205
-msgid "Cancel quote post"
-msgstr ""
-
 #: src/screens/Deactivated.tsx:148
 msgid "Cancel reactivation and sign out"
 msgstr ""
@@ -3371,13 +3483,16 @@ msgstr "Cancelar"
 msgid "Cancelar respuesta"
 msgstr "Cancelar respuesta"
 
+#: src/lib/community-activities.ts:131
+msgid "Cancelled"
+msgstr "Cancelled"
+
 #: src/screens/Login/components/ConfirmHostingProviderDialog.tsx:155
 msgid "Cancels signing in so you can check your username"
 msgstr "Cancels signing in so you can check your username"
 
-#: src/components/PostControls/index.tsx:104
-#: src/components/PostControls/index.tsx:134
-#: src/components/PostControls/index.tsx:162
+#: src/components/PostControls/index.tsx:99
+#: src/components/PostControls/index.tsx:151
 #: src/state/shell/composer/index.tsx:103
 msgid "Cannot interact with a blocked user"
 msgstr ""
@@ -3441,9 +3556,17 @@ msgstr "Cast vote"
 msgid "Cast your vote"
 msgstr "Cast your vote"
 
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:644
+msgid "Category"
+msgstr "Category"
+
 #: src/components/FlairSelectionList.tsx:327
 msgid "Category Name"
 msgstr "Category Name"
+
+#: src/lib/community-activities.ts:140
+msgid "Cause / third party"
+msgstr "Cause / third party"
 
 #: src/components/civic/PublicRecordNotice.tsx:106
 msgid "Ceder es un acto público"
@@ -3576,9 +3699,9 @@ msgstr ""
 msgid "Changes to the starter pack will not be reflected in the list after creation. The list will be an independent copy."
 msgstr ""
 
-#: src/lib/hooks/useNotificationHandler.ts:136
-#: src/Navigation.tsx:726
-#: src/Navigation.tsx:1373
+#: src/lib/hooks/useNotificationHandler.ts:133
+#: src/Navigation.tsx:694
+#: src/Navigation.tsx:1356
 #: src/screens/Communities/useMatrixClientStrings.ts:27
 #: src/view/screens/Notifications.tsx:238
 #: src/view/screens/Notifications.tsx:262
@@ -3614,11 +3737,11 @@ msgstr "Chat invite link no longer available"
 msgid "Chat locked"
 msgstr "Chat locked"
 
-#: src/lib/hooks/useNotificationHandler.ts:151
+#: src/lib/hooks/useNotificationHandler.ts:148
 msgid "Chat messages - silent"
 msgstr ""
 
-#: src/lib/hooks/useNotificationHandler.ts:142
+#: src/lib/hooks/useNotificationHandler.ts:139
 msgid "Chat messages - sound"
 msgstr ""
 
@@ -3652,7 +3775,7 @@ msgstr "Chat owners cannot leave a group chat."
 msgid "Chat recipient is not followed by the sender."
 msgstr "Chat recipient is not followed by the sender."
 
-#: src/Navigation.tsx:756
+#: src/Navigation.tsx:724
 msgid "Chat request inbox"
 msgstr ""
 
@@ -3662,8 +3785,8 @@ msgid "Chat requests"
 msgstr ""
 
 #: src/components/dms/ConvoMenu.tsx:88
-#: src/Navigation.tsx:731
-#: src/Navigation.tsx:751
+#: src/Navigation.tsx:699
+#: src/Navigation.tsx:719
 #: src/screens/Messages/ChatList.tsx:140
 #: src/screens/Messages/ChatList.tsx:144
 #: src/screens/Messages/ChatList.tsx:827
@@ -3826,6 +3949,18 @@ msgstr ""
 #: src/screens/Communities/ChatCivicContext.tsx:33
 msgid "Cifrado"
 msgstr "Cifrado"
+
+#: src/lib/community-activities.ts:101
+msgid "Citizen initiative"
+msgstr "Citizen initiative"
+
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:142
+msgid "Civic activities"
+msgstr "Civic activities"
+
+#: src/screens/Communities/CommunityActivityScreen.tsx:75
+msgid "Civic activity"
+msgstr "Civic activity"
 
 #: src/screens/Map/MapScreen.shared.tsx:1851
 msgid "Civic Activity"
@@ -4086,7 +4221,7 @@ msgstr "Close banner"
 msgid "Close dialog"
 msgstr ""
 
-#: src/view/shell/index.web.tsx:132
+#: src/view/shell/index.web.tsx:134
 msgid "Close drawer menu"
 msgstr ""
 
@@ -4159,15 +4294,15 @@ msgstr "Closing"
 msgid "Collapse"
 msgstr "Collapse"
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:593
+#: src/view/com/notifications/NotificationFeedItem.tsx:521
 msgid "Collapse list of users"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:975
+#: src/view/com/notifications/NotificationFeedItem.tsx:899
 msgid "Collapses list of users for a given notification"
 msgstr ""
 
-#: src/Navigation.tsx:940
+#: src/Navigation.tsx:908
 #: src/screens/Data/CollectionDetailScreen.tsx:258
 msgid "Collection"
 msgstr "Collection"
@@ -4194,6 +4329,10 @@ msgstr "Collection name"
 #: src/screens/Data/CollectionDetailScreen.tsx:343
 msgid "Collection not found"
 msgstr "Collection not found"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:294
+msgid "Collection points (one per line)"
+msgstr "Collection points (one per line)"
 
 #: src/screens/Data/CollectionDetailScreen.tsx:115
 msgid "Collection updated"
@@ -4233,6 +4372,11 @@ msgstr "Command Center"
 msgid "Comments are not available for this item"
 msgstr "Comments are not available for this item"
 
+#. placeholder {0}: i18n.date(new Date(plan.committedAt), { dateStyle: 'medium', })
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:219
+msgid "Committed {0} before any money moved."
+msgstr "Committed {0} before any money moved."
+
 #: src/screens/Data/CommunityDirectoryScreen.tsx:154
 msgid "communities"
 msgstr "communities"
@@ -4245,7 +4389,7 @@ msgstr "communities"
 msgid "Communities"
 msgstr "Communities"
 
-#: src/Navigation.tsx:332
+#: src/Navigation.tsx:331
 msgid "Communities active in"
 msgstr "Communities active in"
 
@@ -4257,10 +4401,14 @@ msgstr "Communities Active In"
 msgid "community"
 msgstr "community"
 
-#: src/Navigation.tsx:1368
-#: src/screens/Communities/CommunityProfileScreen/index.tsx:456
+#: src/Navigation.tsx:1351
+#: src/screens/Communities/CommunityProfileScreen/index.tsx:459
 msgid "Community"
 msgstr "Community"
+
+#: src/Navigation.tsx:933
+msgid "Community Activity"
+msgstr "Community Activity"
 
 #: src/screens/Dashboard/PolicyDetails.tsx:551
 msgid "Community alignment"
@@ -4270,24 +4418,28 @@ msgstr "Community alignment"
 msgid "Community alignment on official axes."
 msgstr "Community alignment on official axes."
 
-#: src/Navigation.tsx:878
+#: src/Navigation.tsx:846
 msgid "Community Badges"
 msgstr "Community Badges"
 
-#: src/Navigation.tsx:925
+#: src/Navigation.tsx:893
 #: src/screens/Data/CommunityCivicTreeScreen.tsx:352
 msgid "Community Civic Tree"
 msgstr "Community Civic Tree"
 
-#: src/Navigation.tsx:930
+#: src/Navigation.tsx:898
 #: src/screens/Agora/AgoraScreen.tsx:538
 #: src/screens/Communities/CommunityProfileScreen/CommunityAbout.tsx:437
 #: src/screens/Data/CommunityDirectoryScreen.tsx:111
 msgid "Community Directory"
 msgstr "Community Directory"
 
+#: src/lib/community-activities.ts:138
+msgid "Community fund"
+msgstr "Community fund"
+
 #: src/components/PolicyUpdateOverlay/updates/202508/index.tsx:46
-#: src/Navigation.tsx:435
+#: src/Navigation.tsx:427
 #: src/view/screens/CommunityGuidelines.tsx:38
 msgid "Community Guidelines"
 msgstr ""
@@ -4296,7 +4448,7 @@ msgstr ""
 msgid "Community Pulse"
 msgstr "Community Pulse"
 
-#: src/Navigation.tsx:868
+#: src/Navigation.tsx:836
 msgid "Community RAQ"
 msgstr "Community RAQ"
 
@@ -4317,9 +4469,13 @@ msgstr "Community Rules"
 msgid "Community Tree"
 msgstr "Community Tree"
 
-#: src/Navigation.tsx:873
+#: src/Navigation.tsx:841
 msgid "Community Voters"
 msgstr "Community Voters"
+
+#: src/Navigation.tsx:943
+msgid "Community Wiki"
+msgstr "Community Wiki"
 
 #: src/screens/Data/CommunityCivicTreeScreen.tsx:872
 msgid "Community-approved contributions will appear here as connectable nodes."
@@ -4333,7 +4489,7 @@ msgstr "Comparación experimental de conteos"
 msgid "Compare what your political family is carrying publicly with what needs internal work."
 msgstr "Compare what your political family is carrying publicly with what needs internal work."
 
-#: src/Navigation.tsx:823
+#: src/Navigation.tsx:791
 msgid "Comparison"
 msgstr "Comparison"
 
@@ -4365,6 +4521,10 @@ msgstr ""
 msgid "Complete the challenge"
 msgstr ""
 
+#: src/lib/community-activities.ts:130
+msgid "Completed"
+msgstr "Completed"
+
 #: src/lib/hotkeys/index.tsx:73
 #: src/view/com/feeds/ComposerPrompt.tsx:157
 #: src/view/shell/desktop/LeftNav.tsx:602
@@ -4383,6 +4543,10 @@ msgstr ""
 #: src/view/com/composer/Composer.tsx:3090
 msgid "Compressing video..."
 msgstr ""
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:317
+msgid "Computed from the ledger below and the committed business model."
+msgstr "Computed from the ledger below and the committed business model."
 
 #: src/features/communityCivicTree/components/ContributeToCommunityTreeDialog.tsx:169
 msgid "Comunidad"
@@ -4455,6 +4619,10 @@ msgstr "Confirm Change"
 #: src/screens/Communities/CabildeoDetailScreen.tsx:1283
 msgid "Confirm delegated vote"
 msgstr "Confirm delegated vote"
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:96
+msgid "Confirm that you commit to this business model."
+msgstr "Confirm that you commit to this business model."
 
 #: src/components/dialogs/DeviceLocationRequestDialog.tsx:41
 #: src/components/dialogs/DeviceLocationRequestDialog.tsx:105
@@ -4537,7 +4705,7 @@ msgstr "Consensus"
 msgid "Consensus Areas"
 msgstr "Consensus Areas"
 
-#: src/Navigation.tsx:995
+#: src/Navigation.tsx:978
 msgid "Consent Audit"
 msgstr "Consent Audit"
 
@@ -4577,6 +4745,11 @@ msgstr ""
 msgid "Contenido para adultos (18+)"
 msgstr "Contenido para adultos (18+)"
 
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:335
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:339
+msgid "Content"
+msgstr "Content"
+
 #: src/screens/Settings/ContentAndMediaSettings.tsx:65
 msgid "Content & Media"
 msgstr ""
@@ -4586,7 +4759,7 @@ msgstr ""
 msgid "Content and media"
 msgstr ""
 
-#: src/Navigation.tsx:666
+#: src/Navigation.tsx:634
 msgid "Content and Media"
 msgstr ""
 
@@ -4867,7 +5040,7 @@ msgstr ""
 
 #: src/components/PolicyUpdateOverlay/updates/202508/index.tsx:41
 #: src/components/PolicyUpdateOverlay/updates/202508/index.tsx:108
-#: src/Navigation.tsx:440
+#: src/Navigation.tsx:432
 #: src/view/screens/CopyrightPolicy.tsx:35
 msgid "Copyright Policy"
 msgstr ""
@@ -4968,6 +5141,14 @@ msgstr "Could not load memes."
 #: src/features/inviteFriends/InviteFriendsDialogInner.tsx:173
 msgid "Could not load profile"
 msgstr "Could not load profile"
+
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:92
+msgid "Could not load the wiki."
+msgstr "Could not load the wiki."
+
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:274
+msgid "Could not load this section."
+msgstr "Could not load this section."
 
 #: src/components/dms/ConvoMenu.tsx:212
 msgid "Could not mute chat"
@@ -5076,7 +5257,7 @@ msgstr ""
 
 #: src/components/StarterPack/ProfileStarterPacks.tsx:211
 #: src/components/StarterPack/ProfileStarterPacks.tsx:320
-#: src/Navigation.tsx:1025
+#: src/Navigation.tsx:1008
 msgid "Create a starter pack"
 msgstr ""
 
@@ -5135,7 +5316,7 @@ msgstr "Create collection"
 msgid "Create collections to organize policies, topics, evidence, links, and notes under your own control."
 msgstr "Create collections to organize policies, topics, evidence, links, and notes under your own control."
 
-#: src/Navigation.tsx:1348
+#: src/Navigation.tsx:1331
 #: src/screens/Communities/CreateCommunityScreen.tsx:176
 msgid "Create Community"
 msgstr "Create Community"
@@ -5166,7 +5347,7 @@ msgstr ""
 msgid "Create list from starter pack"
 msgstr ""
 
-#: src/Navigation.tsx:960
+#: src/Navigation.tsx:928
 #: src/screens/Agora/AgoraScreen.tsx:1190
 msgid "Create Lobbying"
 msgstr "Create Lobbying"
@@ -5197,7 +5378,7 @@ msgstr "Create new Policy"
 msgid "Create or modify an invite link for this group chat"
 msgstr "Create or modify an invite link for this group chat"
 
-#: src/Navigation.tsx:1317
+#: src/Navigation.tsx:1300
 msgid "Create Post"
 msgstr "Create Post"
 
@@ -5251,6 +5432,10 @@ msgstr "Creates a topic of your own with this name"
 msgid "Creator has been blocked"
 msgstr ""
 
+#: src/screens/m8/WalletScreen.tsx:447
+msgid "Credentials are shared from your iM8 wallet, not from PARA. A shared credential includes your account DID and every fact in it, and apps can link repeat shares. It is not anonymous, and single facts cannot be hidden."
+msgstr "Credentials are shared from your iM8 wallet, not from PARA. A shared credential includes your account DID and every fact in it, and apps can link repeat shares. It is not anonymous, and single facts cannot be hidden."
+
 #: src/screens/Agora/ProposalDetailScreen.tsx:865
 msgid "credits spent"
 msgstr "credits spent"
@@ -5283,6 +5468,10 @@ msgstr "Cuenta cívica oficial"
 #: src/lib/interests.ts:198
 msgid "Culture"
 msgstr ""
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:135
+msgid "Currency"
+msgstr "Currency"
 
 #: src/screens/Settings/BetaFeaturesSettings.tsx:196
 msgid "Current beta features"
@@ -5338,9 +5527,14 @@ msgstr "Dark mode"
 msgid "Dark theme"
 msgstr ""
 
-#: src/Navigation.tsx:1302
+#: src/Navigation.tsx:1285
 msgid "Data"
 msgstr "Data"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:668
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:671
+msgid "Date"
+msgstr "Date"
 
 #: src/screens/Signup/StepInfo/index.tsx:298
 msgid "Date of birth"
@@ -5365,6 +5559,14 @@ msgstr "De acuerdo"
 msgid "Deactivate account"
 msgstr ""
 
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:159
+msgid "Deadline"
+msgstr "Deadline"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:289
+msgid "Deadline (optional)"
+msgstr "Deadline (optional)"
+
 #: src/screens/Settings/Settings.tsx:484
 msgid "Debug Moderation"
 msgstr ""
@@ -5372,6 +5574,10 @@ msgstr ""
 #: src/view/screens/Debug.tsx:87
 msgid "Debug panel"
 msgstr "Debug panel"
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:130
+msgid "Decide where every peso goes before any money moves. The split and the prices above are fingerprinted into every ledger entry, so anyone can see if they change later."
+msgstr "Decide where every peso goes before any money moves. The split and the prices above are fingerprinted into every ledger entry, so anyone can see if they change later."
 
 #: src/view/com/composer/select-language/SuggestedLanguage.tsx:468
 msgid "Decline this language suggestion"
@@ -5408,7 +5614,7 @@ msgstr "Delegate"
 msgid "Delegate my vote"
 msgstr "Delegate my vote"
 
-#: src/Navigation.tsx:955
+#: src/Navigation.tsx:923
 msgid "Delegate Vote"
 msgstr "Delegate Vote"
 
@@ -5613,6 +5819,19 @@ msgstr "Deliberation Matters"
 msgid "Deliberation Pulse"
 msgstr "Deliberation Pulse"
 
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:362
+msgid "Delivered"
+msgstr "Delivered"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:653
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:656
+msgid "Delivered to"
+msgstr "Delivered to"
+
+#: src/lib/community-activities.ts:92
+msgid "Denied"
+msgstr "Denied"
+
 #. Advanced search: Example of a “none of these words” civic search. Paired with “presupuesto educación”.
 #: src/screens/Search/components/AdvancedSearchDialog/index.tsx:186
 msgid "deporte cultura"
@@ -5635,6 +5854,14 @@ msgstr "Descargar imagen"
 msgid "desconocido"
 msgstr "desconocido"
 
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:152
+msgid "Describe at least one prize."
+msgstr "Describe at least one prize."
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:554
+msgid "Describe the entry."
+msgstr "Describe the entry."
+
 #: src/components/SaveToCollectionDialog.tsx:232
 #: src/screens/Data/CivicTreeScreen.tsx:471
 msgid "Describe what this collection is for"
@@ -5646,6 +5873,8 @@ msgstr "Describes the evidence, link, note, or reference"
 
 #: src/components/dialogs/lists/CreateOrEditListDialog.tsx:461
 #: src/components/SendErrorReportDialog.tsx:78
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:638
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:179
 #: src/screens/Profile/Header/EditProfileDialog.tsx:360
 #: src/screens/Profile/Header/EditProfileDialog.tsx:367
 msgid "Description"
@@ -5666,6 +5895,15 @@ msgstr "Description (optional)"
 #: src/view/com/composer/photos/ImageAltTextDialog.tsx:124
 msgid "Descriptive alt text"
 msgstr ""
+
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:46
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:210
+msgid "Destination"
+msgstr "Destination"
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:91
+msgid "Destinations must add up to exactly 100%."
+msgstr "Destinations must add up to exactly 100%."
 
 #: src/components/PostControls/PostMenu/PostMenuItems.tsx:766
 #: src/components/PostControls/PostMenu/PostMenuItems.tsx:776
@@ -5842,7 +6080,7 @@ msgstr "Disconnect"
 msgid "Disconnect Germ DM"
 msgstr ""
 
-#: src/Navigation.tsx:818
+#: src/Navigation.tsx:786
 msgid "Discourse Analysis"
 msgstr "Discourse Analysis"
 
@@ -5869,6 +6107,14 @@ msgstr ""
 #: src/components/chat/ReportMessageDialog.tsx:32
 msgid "Discurso de odio"
 msgstr "Discurso de odio"
+
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:311
+msgid "Discussion thread"
+msgstr "Discussion thread"
+
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:307
+msgid "Discussion thread (post link)"
+msgstr "Discussion thread (post link)"
 
 #: src/components/Dialog/index.tsx:402
 #: src/features/inviteFriends/components/FollowersPromoBanner.tsx:83
@@ -5929,7 +6175,7 @@ msgstr "District Not Found"
 msgid "District not found."
 msgstr "District not found."
 
-#: src/Navigation.tsx:915
+#: src/Navigation.tsx:883
 msgid "District Profile"
 msgstr "District Profile"
 
@@ -5950,7 +6196,7 @@ msgstr ""
 msgid "Do not apply this mute word to users you follow"
 msgstr ""
 
-#: src/Navigation.tsx:813
+#: src/Navigation.tsx:781
 #: src/screens/Dashboard/DocumentsScreen.tsx:159
 msgid "Documents"
 msgstr "Documents"
@@ -5991,6 +6237,10 @@ msgstr ""
 #: src/components/ageAssurance/useAgeAssuranceCopy.ts:17
 msgid "Don't worry! All existing messages and settings are saved and will be available after you verify you're an adult."
 msgstr ""
+
+#: src/lib/community-activities.ts:151
+msgid "Donation delivered"
+msgstr "Donation delivered"
 
 #: src/components/CompassFilterControls.tsx:230
 #: src/components/CompassFilterControls.tsx:233
@@ -6041,7 +6291,7 @@ msgstr ""
 msgid "Double tap to close the dialog"
 msgstr ""
 
-#: src/screens/VideoFeed/index.tsx:1235
+#: src/screens/VideoFeed/index.tsx:1233
 msgid "Double tap to like"
 msgstr ""
 
@@ -6105,6 +6355,14 @@ msgstr ""
 msgid "Drag left to disagree (-3), right to agree (+3)."
 msgstr "Drag left to disagree (-3), right to agree (+3)."
 
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:108
+msgid "Draw"
+msgstr "Draw"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:371
+msgid "Draw date"
+msgstr "Draw date"
+
 #: src/view/com/composer/text-input/TextInput.web.tsx:371
 msgid "Drop to add images"
 msgstr ""
@@ -6157,9 +6415,17 @@ msgstr ""
 msgid "e.g. iztapalapa-1"
 msgstr "e.g. iztapalapa-1"
 
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:380
+msgid "e.g. Live-streamed draw from a sealed urn, witnessed by two members"
+msgstr "e.g. Live-streamed draw from a sealed urn, witnessed by two members"
+
 #: src/components/dialogs/lists/CreateOrEditListDialog.tsx:379
 msgid "e.g. Spammers"
 msgstr ""
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:421
+msgid "e.g. the organization's account, or the collection box at the assembly"
+msgstr "e.g. the organization's account, or the collection box at the assembly"
 
 #: src/components/dialogs/lists/CreateOrEditListDialog.tsx:382
 msgid "e.g. The posters who never miss."
@@ -6168,6 +6434,10 @@ msgstr ""
 #: src/components/dialogs/lists/CreateOrEditListDialog.tsx:383
 msgid "e.g. Users that repeatedly reply with ads."
 msgstr ""
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:301
+msgid "e.g. voter ID from this district"
+msgstr "e.g. voter ID from this district"
 
 #: src/screens/RAQ/components/AddRAQDialog.tsx:81
 msgid "e.g., Economics"
@@ -6181,6 +6451,14 @@ msgstr "e.g., Should we implement UBI?"
 msgid "Eating disorders"
 msgstr ""
 
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:149
+msgid "Economic activities"
+msgstr "Economic activities"
+
+#: src/screens/Communities/CommunityActivityScreen.tsx:73
+msgid "Economic activity"
+msgstr "Economic activity"
+
 #: src/screens/Onboarding/StepCompassPreview/index.tsx:43
 msgid "Economic policy should prioritize reducing inequality over maximizing growth."
 msgstr "Economic policy should prioritize reducing inequality over maximizing growth."
@@ -6189,6 +6467,7 @@ msgstr "Economic policy should prioritize reducing inequality over maximizing gr
 msgid "Economy"
 msgstr "Economy"
 
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:75
 #: src/screens/Messages/components/EditTextButton.tsx:51
 #: src/screens/Settings/AccountSettings.tsx:465
 #: src/screens/Settings/NotificationSettings/ActivityNotificationSettings.tsx:250
@@ -6265,7 +6544,7 @@ msgstr ""
 msgid "Edit moderation list"
 msgstr ""
 
-#: src/Navigation.tsx:450
+#: src/Navigation.tsx:442
 #: src/view/screens/Feeds.tsx:647
 msgid "Edit My Feeds"
 msgstr ""
@@ -6278,6 +6557,10 @@ msgstr "Edit name"
 #: src/screens/Settings/NotificationSettings/ActivityNotificationSettings.tsx:242
 msgid "Edit notifications from {0}"
 msgstr "Edit notifications from {0}"
+
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:70
+msgid "Edit page"
+msgstr "Edit page"
 
 #: src/components/StarterPack/Wizard/WizardEditListDialog.tsx:115
 msgid "Edit People"
@@ -6329,7 +6612,7 @@ msgstr ""
 msgid "Edit window closed"
 msgstr "Edit window closed"
 
-#: src/Navigation.tsx:1030
+#: src/Navigation.tsx:1013
 msgid "Edit your starter pack"
 msgstr ""
 
@@ -6551,8 +6834,8 @@ msgstr ""
 msgid "Enable Public Figure Status"
 msgstr "Enable Public Figure Status"
 
-#: src/screens/Settings/NotificationSettings/index.tsx:135
-#: src/screens/Settings/NotificationSettings/index.tsx:139
+#: src/screens/Settings/NotificationSettings/index.tsx:125
+#: src/screens/Settings/NotificationSettings/index.tsx:129
 msgid "Enable push notifications"
 msgstr ""
 
@@ -6586,6 +6869,10 @@ msgstr "Enabling Public Figure mode will make your profile fully public and disp
 msgid "End of feed"
 msgstr ""
 
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:193
+msgid "Ends (optional)"
+msgstr "Ends (optional)"
+
 #. Advanced search: Example of an “all of these words” civic search. Paired with “combustibles fósiles”.
 #: src/screens/Search/components/AdvancedSearchDialog/index.tsx:253
 msgid "energía renovable"
@@ -6611,6 +6898,10 @@ msgstr ""
 #: src/components/dialogs/MutedWords.tsx:139
 msgid "Enter a word or tag"
 msgstr ""
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:546
+msgid "Enter an amount greater than zero."
+msgstr "Enter an amount greater than zero."
 
 #: src/components/HighlightOptionsModal.tsx:302
 msgid "Enter an optional tag or note for this highlight"
@@ -6711,6 +7002,14 @@ msgstr "Entiendo que este voto queda publicado a mi nombre."
 #: src/screens/Data/components/ContributionReviewDetail.tsx:119
 msgid "Entra al mapa con 3 aprobaciones y una diferencia de +2."
 msgstr "Entra al mapa con 3 aprobaciones y una diferencia de +2."
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:585
+msgid "Entry booked"
+msgstr "Entry booked"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:596
+msgid "Entry type"
+msgstr "Entry type"
 
 #: src/components/chat/ReportMessageDialog.tsx:156
 #: src/screens/Communities/NativeChatRoom.tsx:373
@@ -6838,6 +7137,22 @@ msgstr "Este proceso utilizará un faro de aleatoriedad pública (Drand) para se
 msgid "Estimated party distribution"
 msgstr "Estimated party distribution"
 
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:87
+msgid "Every destination needs a name."
+msgstr "Every destination needs a name."
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:89
+msgid "Every destination needs a percentage above zero."
+msgstr "Every destination needs a percentage above zero."
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:401
+msgid "Every entry is a signed record in the organizer's account."
+msgstr "Every entry is a signed record in the organizer's account."
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:108
+msgid "Every item needs a name."
+msgstr "Every item needs a name."
+
 #: src/screens/Agora/components/HowItWorksSheet.tsx:33
 msgid "Every proposal computes three results: Flat (one person, one vote), √n-weighted (discounts highly correlated voters), and Correlation-adjusted (also weights by deliberation quality). Flat is binding; the others are advisory transparency layers."
 msgstr "Every proposal computes three results: Flat (one person, one vote), √n-weighted (discounts highly correlated voters), and Correlation-adjusted (also weights by deliberation quality). Flat is binding; the others are advisory transparency layers."
@@ -6865,8 +7180,8 @@ msgctxt "allow messages from"
 msgid "Everyone"
 msgstr "Everyone"
 
-#: src/screens/Settings/NotificationSettings/index.tsx:298
-#: src/screens/Settings/NotificationSettings/index.tsx:387
+#: src/screens/Settings/NotificationSettings/index.tsx:251
+#: src/screens/Settings/NotificationSettings/index.tsx:313
 #: src/screens/Settings/NotificationSettings/MiscellaneousNotificationSettings.tsx:41
 msgid "Everything else"
 msgstr ""
@@ -6911,7 +7226,7 @@ msgstr "Expand"
 msgid "Expand alt text"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:594
+#: src/view/com/notifications/NotificationFeedItem.tsx:522
 msgid "Expand list of users"
 msgstr ""
 
@@ -6935,11 +7250,41 @@ msgstr ""
 msgid "Expands or collapses the list of child communities"
 msgstr "Expands or collapses the list of child communities"
 
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:60
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:237
+msgid "Expected attendance"
+msgstr "Expected attendance"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:105
+msgid "Expected attendance must be a whole number."
+msgstr "Expected attendance must be a whole number."
+
 #: src/lib/api/index.ts:587
 msgid "Expected uri to resolve to a record"
 msgstr ""
 
-#: src/screens/Settings/FollowingFeedPreferences.tsx:127
+#: src/lib/community-activities.ts:150
+msgid "Expense"
+msgstr "Expense"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:232
+msgid "Expense budget"
+msgstr "Expense budget"
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:152
+msgid "Expense budget cap (optional)"
+msgstr "Expense budget cap (optional)"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:343
+msgid "Expenses"
+msgstr "Expenses"
+
+#. placeholder {0}: money(summary.budgetOverrunMinor)
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:301
+msgid "Expenses exceed the committed budget by {0}."
+msgstr "Expenses exceed the committed budget by {0}."
+
+#: src/screens/Settings/FollowingFeedPreferences.tsx:104
 msgid "Experimental"
 msgstr ""
 
@@ -6964,6 +7309,10 @@ msgstr ""
 #: src/features/liveNow/components/EditLiveDialog.tsx:128
 msgid "Expires in {0} at {1}"
 msgstr ""
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:155
+msgid "Explain how the winner is drawn."
+msgstr "Explain how the winner is drawn."
 
 #: src/lib/moderation/useGlobalLabelStrings.ts:47
 #: src/lib/moderation/useGlobalLabelStrings.ts:51
@@ -7054,7 +7403,7 @@ msgstr ""
 msgid "External media may allow websites to collect information about you and your device. No information is sent or requested until you press the \"play\" button."
 msgstr ""
 
-#: src/Navigation.tsx:469
+#: src/Navigation.tsx:461
 #: src/screens/Settings/ExternalMediaPreferences.tsx:35
 msgid "External Media Preferences"
 msgstr ""
@@ -7234,18 +7583,15 @@ msgstr ""
 #: src/components/dialogs/NotificationSettingsDialog.tsx:85
 #: src/screens/Messages/Settings.tsx:369
 #: src/screens/Settings/NotificationSettings/ActivityNotificationSettings.tsx:112
-#: src/screens/Settings/NotificationSettings/index.tsx:148
-#: src/screens/Settings/NotificationSettings/index.tsx:267
-#: src/screens/Settings/NotificationSettings/index.tsx:284
+#: src/screens/Settings/NotificationSettings/index.tsx:138
+#: src/screens/Settings/NotificationSettings/index.tsx:220
+#: src/screens/Settings/NotificationSettings/index.tsx:237
 #: src/screens/Settings/NotificationSettings/LikeNotificationSettings.tsx:50
-#: src/screens/Settings/NotificationSettings/LikesOnRepostsNotificationSettings.tsx:53
 #: src/screens/Settings/NotificationSettings/MentionNotificationSettings.tsx:50
 #: src/screens/Settings/NotificationSettings/MiscellaneousNotificationSettings.tsx:53
 #: src/screens/Settings/NotificationSettings/NewFollowerNotificationSettings.tsx:50
 #: src/screens/Settings/NotificationSettings/QuoteNotificationSettings.tsx:50
 #: src/screens/Settings/NotificationSettings/ReplyNotificationSettings.tsx:52
-#: src/screens/Settings/NotificationSettings/RepostNotificationSettings.tsx:50
-#: src/screens/Settings/NotificationSettings/RepostsOnRepostsNotificationSettings.tsx:52
 msgid "Failed to load notification settings."
 msgstr ""
 
@@ -7496,7 +7842,7 @@ msgstr "Featured States"
 msgid "Federal districts"
 msgstr "Federal districts"
 
-#: src/Navigation.tsx:385
+#: src/Navigation.tsx:377
 msgid "Feed"
 msgstr ""
 
@@ -7546,7 +7892,7 @@ msgctxt "toast"
 msgid "Feedback sent to feed operator"
 msgstr ""
 
-#: src/Navigation.tsx:772
+#: src/Navigation.tsx:740
 #: src/screens/SavedFeeds.tsx:135
 #: src/screens/SavedFeeds.tsx:355
 #: src/screens/Search/SearchResults.tsx:180
@@ -7749,8 +8095,8 @@ msgstr ""
 msgid "Find and invite friends"
 msgstr "Find and invite friends"
 
-#: src/Navigation.tsx:573
-#: src/Navigation.tsx:800
+#: src/Navigation.tsx:565
+#: src/Navigation.tsx:768
 msgid "Find Contacts"
 msgstr ""
 
@@ -7834,7 +8180,7 @@ msgstr "Firmas, preguntas, señales y testimonios sobre personas o instituciones
 msgid "Fiscal Transparency"
 msgstr "Fiscal Transparency"
 
-#: src/Navigation.tsx:710
+#: src/Navigation.tsx:678
 msgid "Flair Feed"
 msgstr "Flair Feed"
 
@@ -7882,8 +8228,8 @@ msgstr "Focus the search field"
 #: src/screens/PostThread/components/ThreadItemAnchorFollowButton.tsx:159
 #: src/screens/Profile/Header/ProfileHeaderStandard.tsx:635
 #: src/screens/VideoFeed/index.tsx:994
-#: src/view/com/notifications/NotificationFeedItem.tsx:890
-#: src/view/com/notifications/NotificationFeedItem.tsx:897
+#: src/view/com/notifications/NotificationFeedItem.tsx:814
+#: src/view/com/notifications/NotificationFeedItem.tsx:821
 msgid "Follow"
 msgstr ""
 
@@ -7936,8 +8282,8 @@ msgstr ""
 #: src/components/ProfileCard.tsx:542
 #: src/screens/PostThread/components/ThreadItemAnchorFollowButton.tsx:157
 #: src/screens/Profile/Header/ProfileHeaderStandard.tsx:633
-#: src/view/com/notifications/NotificationFeedItem.tsx:890
-#: src/view/com/notifications/NotificationFeedItem.tsx:897
+#: src/view/com/notifications/NotificationFeedItem.tsx:814
+#: src/view/com/notifications/NotificationFeedItem.tsx:821
 msgid "Follow back"
 msgstr ""
 
@@ -7999,7 +8345,7 @@ msgstr ""
 msgid "Followed by <0>{0}</0>, <1>{1}</1>, and {2, plural, one {# other} other {# others}}"
 msgstr ""
 
-#: src/Navigation.tsx:682
+#: src/Navigation.tsx:650
 #: src/screens/Settings/FollowedElementsSettings.tsx:129
 #: src/view/screens/Feeds.tsx:858
 msgid "Followed Elements"
@@ -8014,7 +8360,7 @@ msgid "Followers can join"
 msgstr "Followers can join"
 
 #. placeholder {0}: route.params.name
-#: src/Navigation.tsx:325
+#: src/Navigation.tsx:324
 msgid "Followers of @{0} that you know"
 msgstr ""
 
@@ -8032,8 +8378,8 @@ msgstr ""
 #: src/screens/PostThread/components/ThreadItemAnchorFollowButton.tsx:162
 #: src/screens/Profile/Header/ProfileHeaderStandard.tsx:631
 #: src/screens/VideoFeed/index.tsx:992
-#: src/view/com/notifications/NotificationFeedItem.tsx:869
-#: src/view/com/notifications/NotificationFeedItem.tsx:885
+#: src/view/com/notifications/NotificationFeedItem.tsx:793
+#: src/view/com/notifications/NotificationFeedItem.tsx:809
 msgid "Following"
 msgstr ""
 
@@ -8047,7 +8393,7 @@ msgstr ""
 #. placeholder {0}: sanitizeDisplayName( profile.displayName || profile.handle, moderation.ui('displayName'), )
 #. placeholder {0}: sanitizeDisplayName( profile.displayName || profile.handle, )
 #: src/components/ProfileCard.tsx:498
-#: src/view/com/notifications/NotificationFeedItem.tsx:820
+#: src/view/com/notifications/NotificationFeedItem.tsx:744
 msgid "Following {0}"
 msgstr ""
 
@@ -8068,8 +8414,8 @@ msgstr ""
 msgid "Following feed preferences"
 msgstr ""
 
-#: src/Navigation.tsx:456
-#: src/screens/Settings/FollowingFeedPreferences.tsx:57
+#: src/Navigation.tsx:448
+#: src/screens/Settings/FollowingFeedPreferences.tsx:52
 msgid "Following Feed Preferences"
 msgstr ""
 
@@ -8077,7 +8423,7 @@ msgstr ""
 msgid "Follows are kept inside m8 — they are never written to the public social graph, so this voice stays unlinkable to its owner's account."
 msgstr "Follows are kept inside m8 — they are never written to the public social graph, so this voice stays unlinkable to its owner's account."
 
-#: src/components/Pills.tsx:215
+#: src/components/Pills.tsx:214
 #: src/screens/Profile/Header/Handle.tsx:33
 msgid "Follows you"
 msgstr ""
@@ -8101,6 +8447,10 @@ msgstr "For"
 #: src/ageAssurance/components/NoAccessScreen.tsx:95
 msgid "For organizational accounts, use the birthdate of the person who is responsible for the account."
 msgstr ""
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:61
+msgid "For sale"
+msgstr "For sale"
 
 #: src/screens/Settings/components/DeleteAccountDialog.tsx:193
 msgid "For security reasons, we’ll need to send a confirmation code to your email address <0>{currentEmail}</0>."
@@ -8139,6 +8489,11 @@ msgstr ""
 msgid "Forgot?"
 msgstr "Forgot?"
 
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:88
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:314
+msgid "Format"
+msgstr "Format"
+
 #: src/screens/Communities/NativeChatRoom.tsx:212
 msgid "Foto"
 msgstr "Foto"
@@ -8163,7 +8518,7 @@ msgstr "From {sanitizedAuthor}"
 msgid "From @{sanitizedAuthor}"
 msgstr ""
 
-#: src/view/com/posts/PostFeedReason.tsx:50
+#: src/view/com/posts/PostFeedReason.tsx:37
 msgctxt "from-feed"
 msgid "From <0/>"
 msgstr ""
@@ -8190,6 +8545,16 @@ msgstr "Fuente"
 #: src/screens/Data/components/SortitionStatusCard.tsx:111
 msgid "Fuiste seleccionado por Drand para deliberar."
 msgstr "Fuiste seleccionado por Drand para deliberar."
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:134
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:396
+#: src/lib/community-activities.ts:65
+msgid "Fundraiser"
+msgstr "Fundraiser"
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:143
+msgid "Fundraising goal (optional)"
+msgstr "Fundraising goal (optional)"
 
 #: src/lib/interests.ts:129
 msgid "Gender Equality"
@@ -8243,50 +8608,33 @@ msgstr "Get early access to experimental features we’re testing."
 msgid "Get help"
 msgstr ""
 
-#: src/screens/Settings/NotificationSettings/index.tsx:389
+#: src/screens/Settings/NotificationSettings/index.tsx:315
 msgid "Get notifications for starter pack joins, verification, and other activity."
 msgstr "Get notifications for starter pack joins, verification, and other activity."
 
-#: src/screens/Settings/NotificationSettings/index.tsx:324
+#: src/screens/Settings/NotificationSettings/index.tsx:277
 #: src/screens/Settings/NotificationSettings/NewFollowerNotificationSettings.tsx:43
 msgid "Get notifications when people follow you."
 msgstr ""
 
-#: src/screens/Settings/NotificationSettings/index.tsx:316
+#: src/screens/Settings/NotificationSettings/index.tsx:269
 msgid "Get notifications when people like your posts."
 msgstr ""
 
-#: src/screens/Settings/NotificationSettings/index.tsx:366
-msgid "Get notifications when people like your reposts."
-msgstr "Get notifications when people like your reposts."
-
-#: src/screens/Settings/NotificationSettings/index.tsx:340
+#: src/screens/Settings/NotificationSettings/index.tsx:293
 #: src/screens/Settings/NotificationSettings/MentionNotificationSettings.tsx:43
 msgid "Get notifications when people mention you."
 msgstr ""
 
-#: src/screens/Settings/NotificationSettings/RepostsOnRepostsNotificationSettings.tsx:43
-msgid "Get notifications when people quote posts that you've quoted."
-msgstr "Get notifications when people quote posts that you've quoted."
-
-#: src/screens/Settings/NotificationSettings/index.tsx:348
+#: src/screens/Settings/NotificationSettings/index.tsx:301
 #: src/screens/Settings/NotificationSettings/QuoteNotificationSettings.tsx:43
-#: src/screens/Settings/NotificationSettings/RepostNotificationSettings.tsx:43
 msgid "Get notifications when people quote your posts."
 msgstr ""
 
-#: src/screens/Settings/NotificationSettings/index.tsx:332
+#: src/screens/Settings/NotificationSettings/index.tsx:285
 #: src/screens/Settings/NotificationSettings/ReplyNotificationSettings.tsx:43
 msgid "Get notifications when people reply to your posts."
 msgstr ""
-
-#: src/screens/Settings/NotificationSettings/index.tsx:357
-msgid "Get notifications when people repost your posts."
-msgstr ""
-
-#: src/screens/Settings/NotificationSettings/index.tsx:375
-msgid "Get notifications when people repost your reposts."
-msgstr "Get notifications when people repost your reposts."
 
 #: src/screens/Settings/NotificationSettings/components/ChatNotificationDialogs.tsx:33
 msgid "Get notifications when people send you message requests."
@@ -8295,10 +8643,6 @@ msgstr "Get notifications when people send you message requests."
 #: src/screens/Settings/NotificationSettings/components/ChatNotificationDialogs.tsx:23
 msgid "Get notifications when people send you messages."
 msgstr "Get notifications when people send you messages."
-
-#: src/screens/Settings/NotificationSettings/LikesOnRepostsNotificationSettings.tsx:43
-msgid "Get notifications when people vote on posts that you've quoted."
-msgstr "Get notifications when people vote on posts that you've quoted."
 
 #: src/screens/Settings/NotificationSettings/LikeNotificationSettings.tsx:43
 msgid "Get notifications when people vote on your posts."
@@ -8341,6 +8685,10 @@ msgstr ""
 msgid "GIF"
 msgstr ""
 
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:229
+msgid "Give the page a title."
+msgstr "Give the page a title."
+
 #: src/screens/Settings/AccountSettings.tsx:391
 msgid "Global Karma"
 msgstr "Global Karma"
@@ -8368,8 +8716,8 @@ msgstr ""
 #: src/screens/ProfileList/components/ErrorScreen.tsx:35
 #: src/screens/ProfileList/components/ErrorScreen.tsx:41
 #: src/screens/VideoFeed/components/Header.tsx:163
-#: src/screens/VideoFeed/index.tsx:1296
-#: src/screens/VideoFeed/index.tsx:1300
+#: src/screens/VideoFeed/index.tsx:1294
+#: src/screens/VideoFeed/index.tsx:1298
 #: src/view/com/auth/LoggedOut.tsx:93
 #: src/view/com/profile/ProfileFollowers.tsx:225
 #: src/view/com/profile/ProfileFollowers.tsx:226
@@ -8434,7 +8782,7 @@ msgstr ""
 msgid "Go to {0}'s profile"
 msgstr "Go to {0}'s profile"
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:250
+#: src/view/com/notifications/NotificationFeedItem.tsx:246
 msgid "Go to {firstAuthorName}'s profile"
 msgstr ""
 
@@ -8455,7 +8803,7 @@ msgstr ""
 msgid "Go to Data to edit filters"
 msgstr "Go to Data to edit filters"
 
-#: src/view/com/posts/PostFeedReason.tsx:41
+#: src/view/com/posts/PostFeedReason.tsx:28
 msgid "Go to feed"
 msgstr ""
 
@@ -8488,6 +8836,10 @@ msgstr ""
 msgid "Go to user’s profile"
 msgstr "Go to user’s profile"
 
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:224
+msgid "Goal"
+msgstr "Goal"
+
 #: src/screens/Data/components/SortitionStatusCard.tsx:105
 msgid "Gobernanza Abierta"
 msgstr "Gobernanza Abierta"
@@ -8513,6 +8865,10 @@ msgstr "Governance permissions"
 #: src/features/inviteFriends/InviteScannerScreen.tsx:113
 msgid "Grant access"
 msgstr "Grant access"
+
+#: src/lib/community-activities.ts:91
+msgid "Granted"
+msgstr "Granted"
 
 #: src/screens/Data/CommunityCivicTreeScreen.tsx:391
 msgid "Graph"
@@ -8681,7 +9037,7 @@ msgstr ""
 msgid "Harming or endangering minors"
 msgstr ""
 
-#: src/Navigation.tsx:705
+#: src/Navigation.tsx:673
 msgid "Hashtag"
 msgstr ""
 
@@ -8747,8 +9103,8 @@ msgstr ""
 msgid "Hi there!"
 msgstr ""
 
-#: src/components/VideoPostCard.tsx:168
-#: src/components/VideoPostCard.tsx:451
+#: src/components/VideoPostCard.tsx:166
+#: src/components/VideoPostCard.tsx:440
 msgid "Hidden"
 msgstr ""
 
@@ -8772,7 +9128,7 @@ msgstr ""
 msgid "Hide"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:981
+#: src/view/com/notifications/NotificationFeedItem.tsx:905
 msgctxt "action"
 msgid "Hide"
 msgstr ""
@@ -8842,7 +9198,7 @@ msgstr ""
 msgid "Hide trending videos?"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:974
+#: src/view/com/notifications/NotificationFeedItem.tsx:898
 msgid "Hide user list"
 msgstr ""
 
@@ -8881,7 +9237,7 @@ msgctxt "action"
 msgid "Highlight"
 msgstr "Highlight"
 
-#: src/Navigation.tsx:894
+#: src/Navigation.tsx:862
 msgid "Highlight Details"
 msgstr "Highlight Details"
 
@@ -8909,7 +9265,7 @@ msgstr "Highlight tag"
 msgid "Highlight this post"
 msgstr "Highlight this post"
 
-#: src/Navigation.tsx:883
+#: src/Navigation.tsx:851
 #: src/screens/Highlights/HighlightsScreen.tsx:386
 #: src/screens/Post/PostHighlights.tsx:35
 #: src/screens/Settings/ProfileVisibility.tsx:316
@@ -8917,7 +9273,7 @@ msgstr "Highlight this post"
 msgid "Highlights"
 msgstr "Highlights"
 
-#: src/screens/PostThread/components/ThreadItemAnchor.tsx:501
+#: src/screens/PostThread/components/ThreadItemAnchor.tsx:486
 msgid "Highlights on this post"
 msgstr "Highlights on this post"
 
@@ -8965,7 +9321,7 @@ msgstr ""
 msgid "Hold up! We’re gradually giving access to video, and you’re still waiting in line. Check back soon!"
 msgstr ""
 
-#: src/Navigation.tsx:1353
+#: src/Navigation.tsx:1336
 #: src/view/shell/bottom-bar/BottomBar.tsx:196
 #: src/view/shell/desktop/LeftNav.tsx:773
 #: src/view/shell/Drawer.tsx:611
@@ -9004,6 +9360,18 @@ msgstr "How PARA Democracy Works"
 msgid "How should we open this link?"
 msgstr ""
 
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:378
+msgid "How the winner is drawn"
+msgstr "How the winner is drawn"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:142
+msgid "How to give"
+msgstr "How to give"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:419
+msgid "How to give (one per line)"
+msgstr "How to give (one per line)"
+
 #: src/components/contacts/screens/PhoneInput.tsx:277
 msgid "How we use your number:"
 msgstr ""
@@ -9015,6 +9383,18 @@ msgstr "Hoy"
 #: src/components/moderation/ReportDialog/utils/useReportOptions.ts:152
 msgid "Human trafficking"
 msgstr ""
+
+#: src/lib/community-activities.ts:112
+msgid "Hybrid"
+msgstr "Hybrid"
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:283
+msgid "I commit to these prices and this split. I will book every income, expense and donation in the public ledger."
+msgstr "I commit to these prices and this split. I will book every income, expense and donation in the public ledger."
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:278
+msgid "I commit to this business model"
+msgstr "I commit to this business model"
 
 #: src/components/contacts/screens/GetContacts.tsx:267
 msgid "I consent to PARA using my contacts for mutual friend discovery and to retain hashed data for matching until I opt out."
@@ -9052,7 +9432,7 @@ msgstr "Identidad: {identityLabel}. {encryptionLabel}. {0} insignias."
 msgid "Identity"
 msgstr "Identity"
 
-#: src/Navigation.tsx:1000
+#: src/Navigation.tsx:983
 #: src/view/shell/Drawer.tsx:957
 msgid "Identity & Wallet"
 msgstr "Identity & Wallet"
@@ -9285,6 +9665,15 @@ msgstr "In favor {0} / Against {1}"
 msgid "In order to provide an age-appropriate experience, we need to know your birthdate. This is a one-time thing, and your data will be kept private."
 msgstr ""
 
+#: src/lib/community-activities.ts:110
+#: src/lib/community-activities.ts:119
+msgid "In person"
+msgstr "In person"
+
+#: src/lib/community-activities.ts:129
+msgid "In progress"
+msgstr "In progress"
+
 #: src/screens/Agora/AgoraScreen.tsx:957
 msgid "In your region"
 msgstr "In your region"
@@ -9370,6 +9759,11 @@ msgstr "Include video timestamp ({videoTimestamp})"
 msgid "included in the AI synthesis."
 msgstr "included in the AI synthesis."
 
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:342
+#: src/lib/community-activities.ts:149
+msgid "Income"
+msgstr "Income"
+
 #: src/screens/RAQ/RAQAssessment.tsx:102
 msgid "Incomplete"
 msgstr "Incomplete"
@@ -9390,7 +9784,7 @@ msgstr "Indigenous Rights"
 msgid "Individual freedoms should take priority over collective security measures."
 msgstr "Individual freedoms should take priority over collective security measures."
 
-#: src/Navigation.tsx:1005
+#: src/Navigation.tsx:988
 msgid "INE Verification"
 msgstr "INE Verification"
 
@@ -9407,11 +9801,11 @@ msgstr "Influence"
 msgid "Influence data for this profile."
 msgstr "Influence data for this profile."
 
-#: src/Navigation.tsx:610
+#: src/Navigation.tsx:602
 msgid "Influence notifications"
 msgstr "Influence notifications"
 
-#: src/Navigation.tsx:536
+#: src/Navigation.tsx:528
 msgid "Influence Score"
 msgstr "Influence Score"
 
@@ -9448,6 +9842,10 @@ msgstr ""
 #: src/screens/Profile/Sections/Pajareo.tsx:339
 msgid "Institution name"
 msgstr "Institution name"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:261
+msgid "Instrument type"
+msgstr "Instrument type"
 
 #: src/screens/Data/components/SummaryModal.tsx:57
 msgid "Inteligencia del Discurso"
@@ -9652,9 +10050,21 @@ msgstr ""
 msgid "item"
 msgstr "item"
 
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:256
+msgid "Item"
+msgstr "Item"
+
 #: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:195
 msgid "Item description"
 msgstr "Item description"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:115
+msgid "Item names must be unique."
+msgstr "Item names must be unique."
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:609
+msgid "Item sold"
+msgstr "Item sold"
 
 #: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:181
 msgid "Item title"
@@ -9700,6 +10110,11 @@ msgstr "Join communities from the directory and they'll appear here."
 #: src/components/intents/GroupChatJoinDialog.tsx:469
 msgid "Join group chat"
 msgstr "Join group chat"
+
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:94
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:96
+msgid "Join online"
+msgstr "Join online"
 
 #: src/screens/StarterPack/StarterPackLandingScreen.tsx:201
 #: src/screens/StarterPack/StarterPackLandingScreen.tsx:206
@@ -9801,7 +10216,7 @@ msgstr ""
 msgid "Language"
 msgstr "Language"
 
-#: src/Navigation.tsx:298
+#: src/Navigation.tsx:297
 msgid "Language Settings"
 msgstr ""
 
@@ -9843,6 +10258,10 @@ msgstr ""
 #: src/screens/Topic.tsx:79
 msgid "Latest"
 msgstr ""
+
+#: src/lib/community-activities.ts:100
+msgid "Law"
+msgstr "Law"
 
 #: src/screens/Agora/AgoraScreen.tsx:381
 msgid "Leading option"
@@ -10066,7 +10485,7 @@ msgstr ""
 
 #. Accessibility label for the like button when the post has not been liked, verb form followed by number of likes and noun form
 #. placeholder {0}: post.likeCount || 0
-#: src/components/PostControls/index.tsx:280
+#: src/components/PostControls/index.tsx:270
 msgid "Like ({0, plural, one {# like} other {# likes}})"
 msgstr ""
 
@@ -10088,8 +10507,8 @@ msgstr ""
 msgid "Like this labeler"
 msgstr ""
 
-#: src/Navigation.tsx:390
-#: src/Navigation.tsx:395
+#: src/Navigation.tsx:382
+#: src/Navigation.tsx:387
 msgid "Liked by"
 msgstr ""
 
@@ -10135,17 +10554,11 @@ msgstr "Liked by {0} and {1}"
 msgid "Liked by {likeCount, plural, one {# user} other {# users}}"
 msgstr ""
 
-#: src/lib/hooks/useNotificationHandler.ts:163
-#: src/screens/Settings/NotificationSettings/index.tsx:159
-#: src/screens/Settings/NotificationSettings/index.tsx:314
+#: src/lib/hooks/useNotificationHandler.ts:164
+#: src/screens/Settings/NotificationSettings/index.tsx:149
+#: src/screens/Settings/NotificationSettings/index.tsx:267
 #: src/view/screens/Profile.tsx:323
 msgid "Likes"
-msgstr ""
-
-#: src/lib/hooks/useNotificationHandler.ts:205
-#: src/screens/Settings/NotificationSettings/index.tsx:238
-#: src/screens/Settings/NotificationSettings/index.tsx:364
-msgid "Likes of your reposts"
 msgstr ""
 
 #: src/screens/PostThread/components/LikesStat.tsx:31
@@ -10160,6 +10573,18 @@ msgstr ""
 #: src/components/Lightbox/Lightbox.web.tsx:300
 msgid "Link copied to clipboard"
 msgstr "Link copied to clipboard"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:327
+msgid "Link to join"
+msgstr "Link to join"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:277
+msgid "Link to the text (optional)"
+msgstr "Link to the text (optional)"
+
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:284
+msgid "Link to this page with [[{slug}]]"
+msgstr "Link to this page with [[{slug}]]"
 
 #: src/screens/Data/CommunityCivicTreeScreen.tsx:765
 msgid "Link type"
@@ -10181,7 +10606,7 @@ msgstr "Links the two items"
 msgid "Liquid Delegation"
 msgstr "Liquid Delegation"
 
-#: src/Navigation.tsx:338
+#: src/Navigation.tsx:337
 msgid "List"
 msgstr ""
 
@@ -10189,6 +10614,10 @@ msgstr ""
 msgctxt "moderation-report-subject"
 msgid "List “{list}”"
 msgstr "List “{list}”"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:103
+msgid "List at least one item."
+msgstr "List at least one item."
 
 #: src/components/dialogs/lists/CreateOrEditListDialog.tsx:405
 msgid "List avatar"
@@ -10276,7 +10705,7 @@ msgstr ""
 msgid "Listo"
 msgstr "Listo"
 
-#: src/Navigation.tsx:247
+#: src/Navigation.tsx:246
 #: src/view/screens/Lists.tsx:68
 #: src/view/screens/Profile.tsx:314
 #: src/view/screens/Profile.tsx:325
@@ -10412,8 +10841,8 @@ msgstr ""
 msgid "Loads more memes"
 msgstr "Loads more memes"
 
-#: src/Navigation.tsx:945
-#: src/Navigation.tsx:950
+#: src/Navigation.tsx:913
+#: src/Navigation.tsx:918
 #: src/screens/Agora/AgoraScreen.tsx:809
 #: src/screens/Agora/AgoraScreen.tsx:842
 #: src/screens/Communities/CabildeoDetailScreen.tsx:542
@@ -10436,6 +10865,10 @@ msgstr "Local demo account: alice.test / para-test-pw on {LOCAL_DEV_SERVICE}"
 #: src/screens/Login/LoginForm.tsx:455
 msgid "Local demo login: use provider {LOCAL_DEV_SERVICE}, account alice.test, password para-test-pw."
 msgstr "Local demo login: use provider {LOCAL_DEV_SERVICE}, account alice.test, password para-test-pw."
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:200
+msgid "Location"
+msgstr "Location"
 
 #: src/screens/Messages/ConversationSettings/index.tsx:564
 msgid "Lock"
@@ -10461,7 +10894,7 @@ msgstr "Lock this group chat"
 msgid "Locked"
 msgstr "Locked"
 
-#: src/Navigation.tsx:415
+#: src/Navigation.tsx:407
 msgid "Log"
 msgstr ""
 
@@ -10582,7 +11015,7 @@ msgstr "Mantén pulsado para responder o reaccionar"
 msgid "Manual"
 msgstr "Manual"
 
-#: src/Navigation.tsx:904
+#: src/Navigation.tsx:872
 msgid "Map"
 msgstr "Map"
 
@@ -10593,6 +11026,10 @@ msgstr "Marcar posts con contenido delicado"
 #: src/view/com/composer/tags/AddTagsBtn.tsx:259
 msgid "Marcas universales"
 msgstr "Marcas universales"
+
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:44
+msgid "March logistics"
+msgstr "March logistics"
 
 #: src/screens/ModerationInbox/index.tsx:166
 msgid "Mark all actions as read"
@@ -10695,12 +11132,26 @@ msgstr ""
 msgid "Media that may be disturbing or inappropriate for some audiences."
 msgstr ""
 
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:45
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:197
+msgid "Meeting point"
+msgstr "Meeting point"
+
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:152
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:299
+msgid "Megathread"
+msgstr "Megathread"
+
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:94
+msgid "Megathreads"
+msgstr "Megathreads"
+
 #: src/components/moderation/BlockDialog.tsx:300
 msgid "Member removed from group chat."
 msgstr "Member removed from group chat."
 
 #. The heading above the list of chat members.
-#: src/Navigation.tsx:1378
+#: src/Navigation.tsx:1361
 #: src/screens/Communities/CommunityVotersScreen.tsx:163
 #: src/screens/Messages/ConversationSettings/MembersAndRequests.tsx:34
 msgid "Members"
@@ -10710,7 +11161,7 @@ msgstr "Members"
 msgid "Members can still read chat history but can’t send new messages."
 msgstr "Members can still read chat history but can’t send new messages."
 
-#: src/Navigation.tsx:808
+#: src/Navigation.tsx:776
 #: src/screens/Dashboard/MemesScreen.tsx:184
 msgid "Memes"
 msgstr "Memes"
@@ -10736,7 +11187,7 @@ msgstr "Mensaje reportado"
 msgid "Mensajes directos"
 msgstr "Mensajes directos"
 
-#: src/Navigation.tsx:594
+#: src/Navigation.tsx:586
 msgid "Mention notifications"
 msgstr "Mention notifications"
 
@@ -10744,9 +11195,9 @@ msgstr "Mention notifications"
 msgid "mentioned users"
 msgstr ""
 
-#: src/lib/hooks/useNotificationHandler.ts:184
-#: src/screens/Settings/NotificationSettings/index.tsx:192
-#: src/screens/Settings/NotificationSettings/index.tsx:339
+#: src/lib/hooks/useNotificationHandler.ts:178
+#: src/screens/Settings/NotificationSettings/index.tsx:182
+#: src/screens/Settings/NotificationSettings/index.tsx:292
 #: src/screens/Settings/NotificationSettings/MentionNotificationSettings.tsx:41
 #: src/view/screens/Notifications.tsx:112
 msgid "Mentions"
@@ -10758,6 +11209,7 @@ msgid "Mentions of these people"
 msgstr "Mentions of these people"
 
 #: src/components/Menu/index.tsx:119
+#: src/screens/Communities/CommunityProfileScreen/index.tsx:602
 msgid "Menu"
 msgstr ""
 
@@ -10829,7 +11281,7 @@ msgstr "Message is too long ({graphemeCount}/{MAX_DM_GRAPHEME_LENGTH})"
 msgid "Message options"
 msgstr ""
 
-#: src/Navigation.tsx:721
+#: src/Navigation.tsx:689
 #: src/view/shell/desktop/LeftNav.tsx:667
 msgid "Messages"
 msgstr ""
@@ -10841,6 +11293,10 @@ msgstr "Messages from this person are hidden while they are blocking you."
 #: src/components/dms/MessageItem.tsx:748
 msgid "Messages from this person are hidden while you are blocking them."
 msgstr "Messages from this person are hidden while you are blocking them."
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:114
+msgid "Method"
+msgstr "Method"
 
 #: src/screens/Map/MapScreen.shared.tsx:1728
 #: src/screens/Map/MapScreen.shared.tsx:1852
@@ -10894,7 +11350,7 @@ msgstr "Mis Proxies ({0})"
 msgid "Mis Votos Bloqueados"
 msgstr "Mis Votos Bloqueados"
 
-#: src/Navigation.tsx:658
+#: src/Navigation.tsx:626
 msgid "Miscellaneous notifications"
 msgstr "Miscellaneous notifications"
 
@@ -10915,8 +11371,8 @@ msgstr "Moderación verá el mensaje en la sala, desde su propia cuenta. No envi
 msgid "Moderador"
 msgstr "Moderador"
 
-#: src/Navigation.tsx:252
-#: src/Navigation.tsx:1383
+#: src/Navigation.tsx:251
+#: src/Navigation.tsx:1366
 #: src/screens/Moderation/index.tsx:102
 msgid "Moderation"
 msgstr ""
@@ -10930,7 +11386,7 @@ msgstr "Moderation and content filters"
 msgid "Moderation details"
 msgstr ""
 
-#: src/Navigation.tsx:257
+#: src/Navigation.tsx:256
 #: src/screens/Moderation/index.tsx:292
 #: src/screens/ModerationInbox/index.tsx:39
 msgid "Moderation inbox"
@@ -10966,7 +11422,7 @@ msgstr ""
 msgid "Moderation lists"
 msgstr ""
 
-#: src/Navigation.tsx:262
+#: src/Navigation.tsx:261
 #: src/view/screens/ModerationModlists.tsx:68
 msgid "Moderation Lists"
 msgstr ""
@@ -10975,7 +11431,7 @@ msgstr ""
 msgid "moderation settings"
 msgstr ""
 
-#: src/Navigation.tsx:405
+#: src/Navigation.tsx:397
 msgid "Moderation states"
 msgstr ""
 
@@ -11017,6 +11473,12 @@ msgstr ""
 #: src/view/com/profile/ProfileMenu.tsx:245
 msgid "More options"
 msgstr ""
+
+#. placeholder {0}: summary.unitsSold
+#. placeholder {1}: summary.unitsAvailable ?? 0
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:297
+msgid "More units were reported sold ({0}) than were offered ({1})."
+msgstr "More units were reported sold ({0}) than were offered ({1})."
 
 #: src/screens/Communities/CabildeoDetailScreen.tsx:401
 msgid "more weight"
@@ -11154,7 +11616,7 @@ msgstr "Muted"
 msgid "Muted accounts"
 msgstr ""
 
-#: src/Navigation.tsx:267
+#: src/Navigation.tsx:266
 #: src/view/screens/ModerationMutedAccounts.tsx:116
 msgid "Muted Accounts"
 msgstr ""
@@ -11180,12 +11642,12 @@ msgstr ""
 msgid "Mutual group chats"
 msgstr "Mutual group chats"
 
-#: src/Navigation.tsx:1338
+#: src/Navigation.tsx:1321
 #: src/screens/Data/MyAffiliationsScreen.tsx:327
 msgid "My Affiliations"
 msgstr "My Affiliations"
 
-#: src/Navigation.tsx:1322
+#: src/Navigation.tsx:1305
 #: src/view/shell/Drawer.tsx:917
 msgid "My Base"
 msgstr "My Base"
@@ -11195,7 +11657,7 @@ msgstr "My Base"
 msgid "My Birthday"
 msgstr "My Birthday"
 
-#: src/Navigation.tsx:1328
+#: src/Navigation.tsx:1311
 #: src/screens/Communities/MyCommunitiesScreen.tsx:106
 msgid "My Communities"
 msgstr "My Communities"
@@ -11208,7 +11670,7 @@ msgstr "My favorite feeds and people - join me!"
 msgid "My Feeds"
 msgstr ""
 
-#: src/Navigation.tsx:1333
+#: src/Navigation.tsx:1316
 #: src/screens/RAQ/MyRAQScreen.tsx:128
 msgid "My RAQ"
 msgstr "My RAQ"
@@ -11221,13 +11683,26 @@ msgstr "My starter pack"
 msgid "My Voice"
 msgstr "My Voice"
 
-#: src/Navigation.tsx:980
+#: src/Navigation.tsx:963
 msgid "My Wallet"
 msgstr "My Wallet"
 
 #: src/components/dialogs/lists/CreateOrEditListDialog.tsx:424
 msgid "Name"
 msgstr ""
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:271
+msgid "Name of the bill, law or initiative"
+msgstr "Name of the bill, law or initiative"
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:201
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:202
+msgid "Name of the recipient"
+msgstr "Name of the recipient"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:126
+msgid "Name the bill, law or initiative."
+msgstr "Name the bill, law or initiative."
 
 #: src/screens/Profile/Sections/Pajareo.tsx:341
 msgid "Name the public institution this Pajareo entry is about."
@@ -11321,11 +11796,11 @@ msgctxt "nux-description"
 msgid "New"
 msgstr "New"
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:551
+#: src/view/com/notifications/NotificationFeedItem.tsx:479
 msgid "New {postsCount, plural, one {post} other {posts}} from {firstAuthorLink}"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:535
+#: src/view/com/notifications/NotificationFeedItem.tsx:463
 msgid "New {postsCount, plural, one {post} other {posts}} from {firstAuthorName}"
 msgstr ""
 
@@ -11382,13 +11857,13 @@ msgstr ""
 msgid "New Feature"
 msgstr ""
 
-#: src/Navigation.tsx:626
+#: src/Navigation.tsx:610
 msgid "New follower notifications"
 msgstr "New follower notifications"
 
-#: src/lib/hooks/useNotificationHandler.ts:198
-#: src/screens/Settings/NotificationSettings/index.tsx:170
-#: src/screens/Settings/NotificationSettings/index.tsx:323
+#: src/lib/hooks/useNotificationHandler.ts:192
+#: src/screens/Settings/NotificationSettings/index.tsx:160
+#: src/screens/Settings/NotificationSettings/index.tsx:276
 #: src/screens/Settings/NotificationSettings/NewFollowerNotificationSettings.tsx:41
 msgid "New followers"
 msgstr ""
@@ -11421,17 +11896,25 @@ msgstr ""
 msgid "New list"
 msgstr ""
 
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:98
+msgid "New megathread"
+msgstr "New megathread"
+
 #: src/screens/Messages/Settings.tsx:289
 #: src/screens/Settings/NotificationSettings/components/ChatNotificationDialogs.tsx:31
-#: src/screens/Settings/NotificationSettings/index.tsx:281
+#: src/screens/Settings/NotificationSettings/index.tsx:234
 msgid "New message requests"
 msgstr "New message requests"
 
 #: src/screens/Messages/Settings.tsx:268
 #: src/screens/Settings/NotificationSettings/components/ChatNotificationDialogs.tsx:21
-#: src/screens/Settings/NotificationSettings/index.tsx:264
+#: src/screens/Settings/NotificationSettings/index.tsx:217
 msgid "New messages"
 msgstr "New messages"
+
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:121
+msgid "New page"
+msgstr "New page"
 
 #: src/screens/Login/SetNewPasswordForm.tsx:146
 #: src/screens/Settings/components/ChangePasswordDialog.tsx:208
@@ -11456,11 +11939,11 @@ msgctxt "action"
 msgid "New post"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:540
+#: src/view/com/notifications/NotificationFeedItem.tsx:468
 msgid "New posts from {firstAuthorLink} and <0>{additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}}</0> "
 msgstr "New posts from {firstAuthorLink} and <0>{additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}}</0> "
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:528
+#: src/view/com/notifications/NotificationFeedItem.tsx:456
 msgid "New posts from {firstAuthorName} and {additionalAuthorsCount, plural, one {{formattedAuthorsCount} other} other {{formattedAuthorsCount} others}}"
 msgstr ""
 
@@ -11665,6 +12148,10 @@ msgstr "No hay nodos disponibles para conectar."
 msgid "No hay reportes en los últimos 30 días."
 msgstr "No hay reportes en los últimos 30 días."
 
+#: src/components/PostControls/index.tsx:145
+msgid "No highlights to remove"
+msgstr "No highlights to remove"
+
 #: src/screens/Highlights/HighlightsScreen.tsx:581
 #: src/view/com/post-thread/PostHighlights.tsx:53
 msgid "No highlights yet"
@@ -11707,13 +12194,17 @@ msgstr "No live policy matches that."
 #. placeholder {0}: sanitizeDisplayName( profile.displayName || profile.handle, moderation.ui('displayName'), )
 #. placeholder {0}: sanitizeDisplayName( profile.displayName || profile.handle, )
 #: src/components/ProfileCard.tsx:521
-#: src/view/com/notifications/NotificationFeedItem.tsx:841
+#: src/view/com/notifications/NotificationFeedItem.tsx:765
 msgid "No longer following {0}"
 msgstr ""
 
 #: src/screens/Profile/Header/ProfileHeaderStandard.tsx:490
 msgid "No longer following {formattedDisplayName}"
 msgstr "No longer following {formattedDisplayName}"
+
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:144
+msgid "No marches, signature drives or assemblies yet."
+msgstr "No marches, signature drives or assemblies yet."
 
 #: src/screens/Settings/FollowedElementsSettings.tsx:173
 msgid "No matches"
@@ -11727,6 +12218,10 @@ msgstr "No matches found"
 msgid "No media yet"
 msgstr ""
 
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:106
+msgid "No megathreads pinned yet."
+msgstr "No megathreads pinned yet."
+
 #: src/screens/Dashboard/MemesScreen.tsx:247
 #: src/screens/Dashboard/MemesScreen.tsx:290
 msgid "No memes match those filters"
@@ -11735,6 +12230,10 @@ msgstr "No memes match those filters"
 #: src/screens/Messages/components/ChatListItem.tsx:341
 msgid "No messages yet"
 msgstr ""
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:424
+msgid "No money has moved yet."
+msgstr "No money has moved yet."
 
 #: src/components/contacts/screens/ViewMatches.tsx:568
 msgid "No name"
@@ -11859,10 +12358,6 @@ msgstr "No replies"
 msgid "No replies yet"
 msgstr ""
 
-#: src/view/com/post-thread/PostRepostedBy.tsx:90
-msgid "No reposts yet"
-msgstr ""
-
 #: src/screens/Dashboard/Representatives.tsx:172
 msgid "No representatives found"
 msgstr "No representatives found"
@@ -11904,6 +12399,10 @@ msgstr "No results found for your query with advanced search filters applied."
 #: src/screens/Search/Explore.tsx:699
 msgid "No results."
 msgstr ""
+
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:151
+msgid "No sales, raffles or fundraisers yet."
+msgstr "No sales, raffles or fundraisers yet."
 
 #: src/components/civic/PublicRecordNotice.tsx:186
 msgid "NO SE PUBLICA"
@@ -12032,10 +12531,6 @@ msgstr ""
 msgid "Nobody has quoted this yet. Maybe you should be the first!"
 msgstr ""
 
-#: src/view/com/post-thread/PostRepostedBy.tsx:92
-msgid "Nobody has reposted this yet. Maybe you should be the first!"
-msgstr ""
-
 #: src/features/communityCivicTree/components/CommunityHelpWanted.tsx:85
 msgid "Nobody has said what these are about"
 msgstr "Nobody has said what these are about"
@@ -12089,6 +12584,10 @@ msgstr ""
 msgid "Not connected to anything yet. Open its collection to connect it."
 msgstr "Not connected to anything yet. Open its collection to connect it."
 
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:121
+msgid "Not drawn yet"
+msgstr "Not drawn yet"
+
 #: src/screens/Data/components/SummaryModal.tsx:373
 msgid "Not enough claims to generate a summary yet."
 msgstr "Not enough claims to generate a summary yet."
@@ -12097,7 +12596,7 @@ msgstr "Not enough claims to generate a summary yet."
 msgid "Not followed by anyone you’re following"
 msgstr "Not followed by anyone you’re following"
 
-#: src/Navigation.tsx:242
+#: src/Navigation.tsx:241
 #: src/view/screens/Profile.tsx:141
 msgid "Not Found"
 msgstr ""
@@ -12105,6 +12604,10 @@ msgstr ""
 #: src/components/dialogs/nuxs/DraftsAnnouncement.tsx:131
 msgid "Not ready to hit post? Keep your best ideas in Drafts until the timing is just right."
 msgstr ""
+
+#: src/lib/community-activities.ts:89
+msgid "Not required"
+msgstr "Not required"
 
 #: src/features/communityCivicTree/components/CommunityCivicTreeOutline.tsx:205
 msgid "Not yet connected"
@@ -12148,8 +12651,8 @@ msgid "Nothing selected to connect."
 msgstr "Nothing selected to connect."
 
 #: src/components/dialogs/NotificationSettingsDialog.tsx:72
-#: src/Navigation.tsx:580
-#: src/Navigation.tsx:767
+#: src/Navigation.tsx:572
+#: src/Navigation.tsx:735
 #: src/view/screens/Notifications.tsx:147
 msgid "Notification settings"
 msgstr ""
@@ -12159,21 +12662,18 @@ msgstr ""
 msgid "Notification sounds"
 msgstr ""
 
-#: src/Navigation.tsx:762
-#: src/Navigation.tsx:1307
+#: src/Navigation.tsx:730
+#: src/Navigation.tsx:1290
 #: src/screens/Messages/Settings.tsx:255
 #: src/screens/Notifications/ActivityList.tsx:31
 #: src/screens/Settings/NotificationSettings/ActivityNotificationSettings.tsx:93
-#: src/screens/Settings/NotificationSettings/index.tsx:125
+#: src/screens/Settings/NotificationSettings/index.tsx:115
 #: src/screens/Settings/NotificationSettings/LikeNotificationSettings.tsx:30
-#: src/screens/Settings/NotificationSettings/LikesOnRepostsNotificationSettings.tsx:30
 #: src/screens/Settings/NotificationSettings/MentionNotificationSettings.tsx:30
 #: src/screens/Settings/NotificationSettings/MiscellaneousNotificationSettings.tsx:30
 #: src/screens/Settings/NotificationSettings/NewFollowerNotificationSettings.tsx:30
 #: src/screens/Settings/NotificationSettings/QuoteNotificationSettings.tsx:30
 #: src/screens/Settings/NotificationSettings/ReplyNotificationSettings.tsx:30
-#: src/screens/Settings/NotificationSettings/RepostNotificationSettings.tsx:30
-#: src/screens/Settings/NotificationSettings/RepostsOnRepostsNotificationSettings.tsx:30
 #: src/screens/Settings/Settings.tsx:201
 #: src/screens/Settings/Settings.tsx:204
 #: src/view/screens/Notifications.tsx:141
@@ -12234,6 +12734,14 @@ msgstr "Oculta los detalles del chat"
 msgid "Ocultar"
 msgstr "Ocultar"
 
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:241
+msgid "Of all income:"
+msgstr "Of all income:"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:242
+msgid "Of the profit (income − expenses):"
+msgstr "Of the profit (income − expenses):"
+
 #: src/lib/moderation/useLabelBehaviorDescription.ts:14
 #: src/screens/Settings/NotificationSettings/components/SettingPreview.tsx:34
 msgid "Off"
@@ -12288,7 +12796,7 @@ msgstr ""
 #: src/components/dms/InitiateChatFlow.tsx:841
 #: src/components/dms/MessageItem.tsx:760
 #: src/screens/Login/PasswordUpdatedForm.tsx:38
-#: src/screens/PostThread/components/ThreadItemAnchor.tsx:750
+#: src/screens/PostThread/components/ThreadItemAnchor.tsx:734
 msgid "Okay"
 msgstr ""
 
@@ -12350,6 +12858,11 @@ msgstr ""
 msgid "One tap: confirm with FaceID and we'll use your iM8 session on this device to finish signing in. No codes to type."
 msgstr "One tap: confirm with FaceID and we'll use your iM8 session on this device to finish signing in. No codes to type."
 
+#: src/lib/community-activities.ts:111
+#: src/lib/community-activities.ts:120
+msgid "Online"
+msgstr "Online"
+
 #. placeholder {0}: settings.map((rule, i) => ( <Fragment key={`rule-${i}`}> <Rule rule={rule} post={post} lists={post.threadgate!.lists} /> <Separator i={i} length={settings.length} /> </Fragment> ))
 #: src/components/WhoCanReply.tsx:264
 msgid "Only {0} can reply."
@@ -12407,6 +12920,10 @@ msgstr "Only residents of {0} can vote"
 #: src/features/communityCivicTree/components/CommunityHelpWanted.tsx:96
 msgid "Only the member who raised these has added anything"
 msgstr "Only the member who raised these has added anything"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:154
+msgid "Only this community's creator, moderators and officials can register activities."
+msgstr "Only this community's creator, moderators and officials can register activities."
 
 #: src/view/com/composer/videos/SubtitleFilePicker.tsx:39
 msgid "Only WebVTT (.vtt) files are supported"
@@ -12535,6 +13052,15 @@ msgstr "Open group chat settings"
 msgid "Open in Google Translate"
 msgstr "Open in Google Translate"
 
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:428
+msgid "Open ledger"
+msgstr "Open ledger"
+
+#. placeholder {0}: formatMinor( plan.fundingGoalMinor, plan.currency, )
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:423
+msgid "Open ledger · goal {0}"
+msgstr "Open ledger · goal {0}"
+
 #: src/components/Post/Embed/ExternalEmbed/index.tsx:94
 #: src/components/Post/Embed/StandardSiteEmbed/index.tsx:176
 msgid "Open link to {niceUrl}"
@@ -12604,7 +13130,7 @@ msgctxt "description"
 msgid "Open Question"
 msgstr "Open Question"
 
-#: src/Navigation.tsx:843
+#: src/Navigation.tsx:811
 #: src/screens/Communities/CommunityRAQScreen.tsx:213
 #: src/screens/Data/components/SummaryModal.tsx:201
 #: src/screens/RAQ/OpenQuestionsList.tsx:109
@@ -12625,6 +13151,7 @@ msgstr "Open settings"
 msgid "Open share menu"
 msgstr ""
 
+#: src/screens/StarterPack/StarterPackScreen.tsx:592
 #: src/screens/StarterPack/StarterPackScreen.tsx:597
 msgid "Open starter pack menu"
 msgstr ""
@@ -12636,6 +13163,11 @@ msgstr ""
 #: src/screens/Settings/Settings.tsx:460
 msgid "Open system log"
 msgstr ""
+
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:164
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:173
+msgid "Open the discussion thread"
+msgstr "Open the discussion thread"
 
 #: src/components/intents/GroupChatJoinDialog.tsx:452
 msgid "Open this group chat"
@@ -12792,6 +13324,18 @@ msgstr ""
 msgid "Opens profile"
 msgstr "Opens profile"
 
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:392
+msgid "Opens the activity"
+msgstr "Opens the activity"
+
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:391
+msgid "Opens the activity and its public ledger"
+msgstr "Opens the activity and its public ledger"
+
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:185
+msgid "Opens the community civic tree"
+msgstr "Opens the community civic tree"
+
 #: src/screens/Data/CivicTreeScreen.tsx:601
 msgid "Opens the confirmation to delete this collection"
 msgstr "Opens the confirmation to delete this collection"
@@ -12929,9 +13473,18 @@ msgstr ""
 msgid "Or, sign in to one of your other accounts."
 msgstr ""
 
+#. placeholder {0}: organizer?.handle ? `@${organizer.handle}` : activity.authorDid
+#: src/screens/Communities/CommunityActivityScreen.tsx:217
+msgid "Organized by {0}"
+msgstr "Organized by {0}"
+
 #: src/screens/Communities/MyCommunitiesScreen.tsx:109
 msgid "Organized by Parties and Geographic Regions"
 msgstr "Organized by Parties and Geographic Regions"
+
+#: src/lib/community-activities.ts:141
+msgid "Organizers"
+msgstr "Organizers"
 
 #: src/screens/Settings/components/OTAInfo.tsx:55
 msgid "OTA status: ..."
@@ -13023,6 +13576,10 @@ msgstr "Overview"
 msgid "Overview view"
 msgstr "Overview view"
 
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:358
+msgid "Owed under the plan"
+msgstr "Owed under the plan"
+
 #: src/components/dms/LeaveConvoPrompt.tsx:46
 msgid "Owner must lock the group before leaving."
 msgstr "Owner must lock the group before leaving."
@@ -13036,6 +13593,14 @@ msgstr ""
 #: src/view/screens/NotFound.tsx:45
 msgid "Page Not Found"
 msgstr "Page Not Found"
+
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:260
+msgid "Page saved"
+msgstr "Page saved"
+
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:294
+msgid "Page type"
+msgstr "Page type"
 
 #: src/view/screens/Profile.tsx:317
 msgid "Pajareo"
@@ -13062,7 +13627,7 @@ msgstr "Pajareo response input"
 msgid "Panel de moderación"
 msgstr "Panel de moderación"
 
-#: src/screens/PostThread/components/ThreadItemAnchor.tsx:745
+#: src/screens/PostThread/components/ThreadItemAnchor.tsx:729
 msgid "PARA cannot confirm the authenticity of the claimed date."
 msgstr "PARA cannot confirm the authenticity of the claimed date."
 
@@ -13149,10 +13714,11 @@ msgstr "Participants"
 msgid "Participation"
 msgstr "Participation"
 
-#: src/Navigation.tsx:1297
+#: src/Navigation.tsx:1280
 msgid "Parties"
 msgstr "Parties"
 
+#: src/lib/community-activities.ts:139
 #: src/screens/Data/components/MyBaseDashboard.tsx:285
 #: src/screens/Map/DistrictProfileScreen.tsx:421
 #: src/screens/Map/DistrictProfileScreen.tsx:423
@@ -13164,7 +13730,7 @@ msgstr "Party"
 msgid "Party activity"
 msgstr "Party activity"
 
-#: src/Navigation.tsx:777
+#: src/Navigation.tsx:745
 #: src/screens/Feeds/PartyFeed.tsx:39
 msgid "Party feed"
 msgstr "Party feed"
@@ -13215,6 +13781,14 @@ msgstr ""
 msgid "Password updated!"
 msgstr ""
 
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:367
+msgid "Past"
+msgstr "Past"
+
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:241
+msgid "Paste a post link or an at:// post URI."
+msgstr "Paste a post link or an at:// post URI."
+
 #: src/components/Post/Embed/VideoEmbed/VideoEmbedInner/VideoEmbedInnerNative.tsx:195
 #: src/components/Post/Embed/VideoEmbed/VideoEmbedInner/web-controls/VideoControls.tsx:380
 msgid "Pause"
@@ -13227,6 +13801,15 @@ msgstr ""
 #: src/components/Post/Embed/VideoEmbed/VideoEmbedInner/web-controls/VideoControls.tsx:331
 msgid "Pause video"
 msgstr ""
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:192
+#: src/lib/community-activities.ts:51
+msgid "Peaceful march"
+msgstr "Peaceful march"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:366
+msgid "Pending"
+msgstr "Pending"
 
 #: src/screens/ProfileList/index.tsx:166
 #: src/screens/Search/SearchResults.tsx:174
@@ -13243,12 +13826,12 @@ msgid "People {ownerName} follows can request to join"
 msgstr "People {ownerName} follows can request to join"
 
 #. placeholder {0}: route.params.name
-#: src/Navigation.tsx:318
+#: src/Navigation.tsx:317
 msgid "People followed by @{0}"
 msgstr ""
 
 #. placeholder {0}: route.params.name
-#: src/Navigation.tsx:311
+#: src/Navigation.tsx:310
 msgid "People following @{0}"
 msgstr ""
 
@@ -13288,15 +13871,41 @@ msgstr ""
 msgid "People you mention"
 msgstr ""
 
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:212
+msgid "Percentage"
+msgstr "Percentage"
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:161
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:164
+msgid "Percentages apply to"
+msgstr "Percentages apply to"
+
 #: src/lib/media/save-image.ts:59
 msgid "Permission to access your photo library was denied. Please enable it in your system settings."
 msgstr ""
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:115
+msgid "Permit"
+msgstr "Permit"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:231
+msgid "Permit or folio number (optional)"
+msgstr "Permit or folio number (optional)"
+
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:49
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:217
+msgid "Permit or notice"
+msgstr "Permit or notice"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:220
+msgid "Permit status"
+msgstr "Permit status"
 
 #: src/components/StarterPack/Wizard/WizardListCard.tsx:60
 msgid "Person toggle"
 msgstr ""
 
-#: src/Navigation.tsx:935
+#: src/Navigation.tsx:903
 #: src/view/shell/Drawer.tsx:937
 msgid "Personal Civic Tree"
 msgstr "Personal Civic Tree"
@@ -13312,6 +13921,10 @@ msgstr ""
 #: src/screens/Agora/components/QuadraticTallyPanel.tsx:76
 msgid "Peso de la voz más grande"
 msgstr "Peso de la voz más grande"
+
+#: src/lib/community-activities.ts:103
+msgid "Petition"
+msgstr "Petition"
 
 #: src/lib/interests.ts:209
 msgid "Pets"
@@ -13338,6 +13951,10 @@ msgstr ""
 msgid "Pick a color theme"
 msgstr "Pick a color theme"
 
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:80
+msgid "Pick a start date."
+msgstr "Pick a start date."
+
 #: src/screens/Search/dialogs/CabildeoPickerDialog.tsx:79
 msgid "Pick active civic deliberations to include posts from."
 msgstr "Pick active civic deliberations to include posts from."
@@ -13345,6 +13962,10 @@ msgstr "Pick active civic deliberations to include posts from."
 #: src/screens/Search/dialogs/CommunityPickerDialog.tsx:78
 msgid "Pick communities to include posts from. Active members appear first."
 msgstr "Pick communities to include posts from. Active members appear first."
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:153
+msgid "Pick the draw date."
+msgstr "Pick the draw date."
 
 #: src/screens/Onboarding/StepChooseCommunity/index.tsx:84
 msgid "Pick the state or region where you live or care about most. You can always join more communities later."
@@ -13374,12 +13995,17 @@ msgstr ""
 msgid "Pin to Home"
 msgstr ""
 
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:324
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:329
+msgid "Pin to the top of the menu"
+msgstr "Pin to the top of the menu"
+
 #: src/components/PostControls/PostMenu/PostMenuItems.tsx:558
 #: src/components/PostControls/PostMenu/PostMenuItems.tsx:563
 msgid "Pin to your profile"
 msgstr ""
 
-#: src/view/com/posts/PostFeedReason.tsx:118
+#: src/view/com/posts/PostFeedReason.tsx:66
 msgid "Pinned"
 msgstr ""
 
@@ -13403,6 +14029,10 @@ msgstr ""
 #: src/screens/Map/DistrictProfileScreen.tsx:462
 msgid "Placeholder preview — will be computed from PARA civic engagement data when district-level party affiliation aggregates are available."
 msgstr "Placeholder preview — will be computed from PARA civic engagement data when district-level party affiliation aggregates are available."
+
+#: src/lib/community-activities.ts:128
+msgid "Planned"
+msgstr "Planned"
 
 #: src/screens/Agora/components/ShadowTallyChart.tsx:22
 msgid "Plano"
@@ -13607,7 +14237,7 @@ msgstr ""
 msgid "Please write your message below:"
 msgstr ""
 
-#: src/Navigation.tsx:1358
+#: src/Navigation.tsx:1341
 msgid "Policies & Matters"
 msgstr "Policies & Matters"
 
@@ -13619,7 +14249,7 @@ msgstr "Policies you voted on"
 msgid "Policy areas"
 msgstr "Policy areas"
 
-#: src/Navigation.tsx:1388
+#: src/Navigation.tsx:1371
 msgid "Policy Details"
 msgstr "Policy Details"
 
@@ -13639,7 +14269,7 @@ msgstr "Policy Results"
 msgid "Policy votes for {profileName}. Tap a card to review or change your stance."
 msgstr "Policy votes for {profileName}. Tap a card to review or change your stance."
 
-#: src/Navigation.tsx:509
+#: src/Navigation.tsx:501
 #: src/screens/Settings/AccountSettings.tsx:433
 #: src/screens/Settings/AccountSettings.tsx:436
 #: src/screens/Settings/PoliticalAffiliation.tsx:143
@@ -13650,7 +14280,7 @@ msgstr "Political Affiliation"
 msgid "Political affiliations cleared"
 msgstr "Political affiliations cleared"
 
-#: src/Navigation.tsx:920
+#: src/Navigation.tsx:888
 #: src/screens/Data/CompassScreen.tsx:665
 #: src/screens/Data/components/CivicDashboard.tsx:214
 #: src/view/shell/Drawer.tsx:723
@@ -13754,11 +14384,10 @@ msgid "Post by {account}"
 msgstr "Post by {account}"
 
 #. placeholder {0}: route.params.name
-#: src/Navigation.tsx:351
-#: src/Navigation.tsx:358
-#: src/Navigation.tsx:365
-#: src/Navigation.tsx:372
-#: src/Navigation.tsx:379
+#: src/Navigation.tsx:350
+#: src/Navigation.tsx:357
+#: src/Navigation.tsx:364
+#: src/Navigation.tsx:371
 msgid "Post by @{0}"
 msgstr ""
 
@@ -13792,7 +14421,7 @@ msgstr ""
 msgid "Post interaction settings"
 msgstr ""
 
-#: src/Navigation.tsx:278
+#: src/Navigation.tsx:277
 #: src/screens/ModerationInteractionSettings/index.tsx:36
 msgid "Post Interaction Settings"
 msgstr ""
@@ -13853,8 +14482,8 @@ msgstr ""
 
 #: src/components/activity-notifications/SubscribeProfileDialog.tsx:255
 #: src/components/activity-notifications/SubscribeProfileDialog.tsx:267
-#: src/Navigation.tsx:549
-#: src/screens/Communities/CommunityProfileScreen/index.tsx:616
+#: src/Navigation.tsx:541
+#: src/screens/Communities/CommunityProfileScreen/index.tsx:600
 #: src/screens/Data/components/MyBaseDashboard.tsx:181
 #: src/screens/Data/SeePostsScreen.tsx:38
 #: src/screens/ProfileList/index.tsx:166
@@ -13933,6 +14562,14 @@ msgstr ""
 msgid "Previous image"
 msgstr ""
 
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:202
+msgid "Price ({currency})"
+msgstr "Price ({currency})"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:222
+msgid "Prices are part of the commitment. Leave stock empty if it is open-ended."
+msgstr "Prices are part of the commitment. Leave stock empty if it is open-ended."
+
 #: src/screens/Settings/LanguageSettings.tsx:124
 #: src/screens/Settings/LanguageSettings.tsx:140
 msgid "Primary language"
@@ -13948,8 +14585,8 @@ msgstr ""
 msgid "Privacy and security"
 msgstr ""
 
+#: src/Navigation.tsx:549
 #: src/Navigation.tsx:557
-#: src/Navigation.tsx:565
 #: src/screens/Settings/ActivityPrivacySettings.tsx:41
 #: src/screens/Settings/PrivacyAndSecuritySettings.tsx:55
 msgid "Privacy and Security"
@@ -13962,7 +14599,7 @@ msgstr ""
 
 #: src/components/PolicyUpdateOverlay/updates/202508/index.tsx:36
 #: src/components/PolicyUpdateOverlay/updates/202508/index.tsx:103
-#: src/Navigation.tsx:425
+#: src/Navigation.tsx:417
 #: src/screens/Settings/AboutSettings.tsx:95
 #: src/screens/Settings/AboutSettings.tsx:98
 #: src/view/screens/PrivacyPolicy.tsx:35
@@ -13979,6 +14616,17 @@ msgstr ""
 #: src/view/com/post-thread/PostHighlights.tsx:93
 msgid "Private"
 msgstr "Private"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:100
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:340
+msgid "Prize"
+msgstr "Prize"
+
+#. placeholder {0}: index + 1
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:99
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:340
+msgid "Prize {0}"
+msgstr "Prize {0}"
 
 #: src/screens/Data/components/CommunityPulseSheet.tsx:201
 msgid "pro"
@@ -14022,12 +14670,20 @@ msgctxt "toast"
 msgid "Profile updated"
 msgstr ""
 
-#: src/Navigation.tsx:501
+#: src/Navigation.tsx:493
 #: src/screens/Settings/AccountSettings.tsx:409
 #: src/screens/Settings/AccountSettings.tsx:427
 #: src/screens/Settings/ProfileVisibility.tsx:197
 msgid "Profile Visibility"
 msgstr "Profile Visibility"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:345
+msgid "Profit"
+msgstr "Profit"
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:168
+msgid "Profit (income − expenses)"
+msgstr "Profit (income − expenses)"
 
 #: src/components/dialogs/SortitionConfigDialog.tsx:171
 msgid "Programando..."
@@ -14037,7 +14693,7 @@ msgstr "Programando..."
 msgid "Promoting or selling prohibited items or services"
 msgstr ""
 
-#: src/Navigation.tsx:975
+#: src/Navigation.tsx:958
 #: src/screens/Agora/ProposalDetailScreen.tsx:725
 #: src/screens/Agora/ProposalDetailScreen.tsx:749
 msgid "Proposal"
@@ -14086,7 +14742,7 @@ msgstr "Proposed appends for this community. A vote shows support; it does not m
 msgid "Proposed for: {0}"
 msgstr "Proposed for: {0}"
 
-#: src/Navigation.tsx:838
+#: src/Navigation.tsx:806
 #: src/screens/RAQ/ProposedRAQList.tsx:76
 msgid "Proposed RAQs"
 msgstr "Proposed RAQs"
@@ -14154,6 +14810,14 @@ msgstr "Public Figure mode enabled"
 msgid "Public Figure mode enabled. Your identity is now public."
 msgstr "Public Figure mode enabled. Your identity is now public."
 
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:399
+msgid "Public ledger"
+msgstr "Public ledger"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:194
+msgid "Public logistics only. Never publish a personal phone without consent."
+msgstr "Public logistics only. Never publish a personal phone without consent."
+
 #: src/lib/interests.ts:47
 msgid "Public Services"
 msgstr "Public Services"
@@ -14182,6 +14846,15 @@ msgstr "Publicar en Pajareo"
 msgid "Publicar respuesta"
 msgstr "Publicar respuesta"
 
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:194
+msgid "Publish"
+msgstr "Publish"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:230
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:236
+msgid "Publish activity"
+msgstr "Publish activity"
+
 #. Accessibility label for button to publish a single post
 #: src/view/com/composer/Composer.tsx:2119
 msgid "Publish post"
@@ -14201,6 +14874,10 @@ msgstr ""
 #: src/view/com/composer/Composer.tsx:2104
 msgid "Publish reply"
 msgstr ""
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:180
+msgid "Publish the winning tickets"
+msgstr "Publish the winning tickets"
 
 #: src/screens/RAQ/Results.tsx:548
 #: src/screens/RAQ/Results.tsx:554
@@ -14274,6 +14951,14 @@ msgstr ""
 msgid "Quadratic Voting"
 msgstr "Quadratic Voting"
 
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:97
+msgid "Quantities must be whole numbers."
+msgstr "Quantities must be whole numbers."
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:550
+msgid "Quantity must be a whole number."
+msgstr "Quantity must be a whole number."
+
 #: src/components/civic/PublicRecordNotice.tsx:77
 msgid "Qué"
 msgstr "Qué"
@@ -14321,7 +15006,19 @@ msgstr "Quita el mensaje citado de la respuesta"
 msgid "Quorum"
 msgstr "Quorum"
 
-#: src/Navigation.tsx:602
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:147
+msgid "Quorum must be a whole number."
+msgstr "Quorum must be a whole number."
+
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:100
+msgid "Quorum required"
+msgstr "Quorum required"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:340
+msgid "Quorum required (optional)"
+msgstr "Quorum required (optional)"
+
+#: src/Navigation.tsx:594
 msgid "Quote notifications"
 msgstr "Quote notifications"
 
@@ -14329,10 +15026,6 @@ msgstr "Quote notifications"
 #: src/components/PostControls/QuoteButton.tsx:196
 #: src/components/PostControls/QuoteButton.web.tsx:86
 #: src/components/PostControls/QuoteButton.web.tsx:93
-#: src/components/PostControls/RepostButton.tsx:176
-#: src/components/PostControls/RepostButton.tsx:199
-#: src/components/PostControls/RepostButton.web.tsx:84
-#: src/components/PostControls/RepostButton.web.tsx:91
 #: src/view/com/composer/drafts/DraftItem.tsx:156
 msgid "Quote post"
 msgstr ""
@@ -14349,29 +15042,33 @@ msgstr ""
 #: src/components/PostControls/QuoteButton.tsx:194
 #: src/components/PostControls/QuoteButton.web.tsx:85
 #: src/components/PostControls/QuoteButton.web.tsx:92
-#: src/components/PostControls/RepostButton.tsx:175
-#: src/components/PostControls/RepostButton.tsx:197
-#: src/components/PostControls/RepostButton.web.tsx:83
-#: src/components/PostControls/RepostButton.web.tsx:90
 msgid "Quote posts disabled"
 msgstr ""
 
-#: src/lib/hooks/useNotificationHandler.ts:191
+#: src/lib/hooks/useNotificationHandler.ts:185
 #: src/screens/Post/PostQuotes.tsx:41
-#: src/screens/Settings/NotificationSettings/index.tsx:203
-#: src/screens/Settings/NotificationSettings/index.tsx:346
+#: src/screens/Settings/NotificationSettings/index.tsx:193
+#: src/screens/Settings/NotificationSettings/index.tsx:299
 #: src/screens/Settings/NotificationSettings/QuoteNotificationSettings.tsx:41
-#: src/screens/Settings/NotificationSettings/RepostNotificationSettings.tsx:41
 msgid "Quotes"
 msgstr ""
 
-#: src/screens/PostThread/components/ThreadItemAnchor.tsx:518
+#: src/screens/PostThread/components/ThreadItemAnchor.tsx:503
 msgid "Quotes of this post"
 msgstr ""
 
-#: src/screens/Settings/NotificationSettings/RepostsOnRepostsNotificationSettings.tsx:41
-msgid "Quotes of your quotes"
-msgstr "Quotes of your quotes"
+#: src/lib/community-activities.ts:64
+msgid "Raffle"
+msgstr "Raffle"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:388
+msgid "Raffle permit number (if the law requires one)"
+msgstr "Raffle permit number (if the law requires one)"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:84
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:308
+msgid "Raffle terms"
+msgstr "Raffle terms"
 
 #: src/view/screens/Profile.tsx:319
 msgid "RAQ"
@@ -14381,12 +15078,12 @@ msgstr "RAQ"
 msgid "RAQ Answers"
 msgstr "RAQ Answers"
 
-#: src/Navigation.tsx:833
+#: src/Navigation.tsx:801
 #: src/screens/RAQ/RAQAssessment.tsx:201
 msgid "RAQ Assessment"
 msgstr "RAQ Assessment"
 
-#: src/Navigation.tsx:828
+#: src/Navigation.tsx:796
 #: src/screens/RAQ/RAQMenu.tsx:81
 msgid "RAQ Menu"
 msgstr "RAQ Menu"
@@ -14503,6 +15200,15 @@ msgstr ""
 msgid "Reason for appeal"
 msgstr ""
 
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:476
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:478
+msgid "Receipt"
+msgstr "Receipt"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:678
+msgid "Receipt link (optional)"
+msgstr "Receipt link (optional)"
+
 #: src/screens/Settings/NotificationSettings/components/PreferenceControls.tsx:139
 msgid "Receive in-app notifications"
 msgstr ""
@@ -14541,6 +15247,10 @@ msgstr ""
 msgid "Rechazar"
 msgstr "Rechazar"
 
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:189
+msgid "Recipient"
+msgstr "Recipient"
+
 #: src/screens/Dashboard/PolicyMatterDashboard.tsx:438
 msgid "Recommended {activeMode}"
 msgstr "Recommended {activeMode}"
@@ -14552,6 +15262,10 @@ msgstr ""
 #: src/screens/Agora/components/VoteComposer.tsx:129
 msgid "Reduces vote intensity by one unit"
 msgstr "Reduces vote intensity by one unit"
+
+#: src/lib/community-activities.ts:102
+msgid "Referendum"
+msgstr "Referendum"
 
 #: src/screens/Search/dialogs/AdvancedParaFiltersDialog.tsx:82
 msgid "Refine posts by type, flair, party, or public figure status."
@@ -14568,6 +15282,20 @@ msgstr "Regional lean"
 #: src/screens/Agora/AgoraScreen.tsx:651
 msgid "Regional Map"
 msgstr "Regional Map"
+
+#: src/Navigation.tsx:938
+msgid "Register Activity"
+msgstr "Register Activity"
+
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:143
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:136
+msgid "Register civic activity"
+msgstr "Register civic activity"
+
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:150
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:138
+msgid "Register economic activity"
+msgstr "Register economic activity"
 
 #: src/screens/Communities/DelegateVoteScreen.tsx:233
 msgid "Registrar una delegación no equivale a emitir una papeleta. El voto con intensidad y el conteo cuadrático privado siguen en desarrollo. Aquí no se calcula ni se promete un peso electoral."
@@ -14589,6 +15317,10 @@ msgstr "Reintentar conteo"
 #: src/screens/Communities/NativeChatRoom.tsx:679
 msgid "Reintentar la conexión"
 msgstr "Reintentar la conexión"
+
+#: src/lib/community-activities.ts:142
+msgid "Reinvestment"
+msgstr "Reinvestment"
 
 #. Reject a chat request, this opens a menu with options
 #: src/screens/Messages/components/RequestButtons.tsx:138
@@ -14636,6 +15368,9 @@ msgstr ""
 #: src/components/StarterPack/Main/ProfilesList.tsx:206
 #: src/components/StarterPack/Wizard/WizardListCard.tsx:112
 #: src/components/StarterPack/Wizard/WizardListCard.tsx:119
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:459
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:465
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:236
 #: src/screens/Bookmarks/index.tsx:265
 #: src/screens/Data/CollectionDetailScreen.tsx:522
 #: src/screens/Messages/ConversationSettings/Member.tsx:164
@@ -14706,6 +15441,10 @@ msgstr ""
 #: src/view/com/util/UserBanner.tsx:193
 msgid "Remove Banner"
 msgstr ""
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:224
+msgid "Remove destination"
+msgstr "Remove destination"
 
 #: src/screens/Messages/components/MessageInputEmbed.tsx:224
 #: src/screens/Messages/components/MessageInputEmbed.tsx:279
@@ -14798,11 +15537,6 @@ msgstr ""
 
 #: src/screens/Search/components/SearchHistory.tsx:244
 msgid "Remove profile"
-msgstr ""
-
-#: src/components/PostControls/RepostButton.tsx:153
-#: src/components/PostControls/RepostButton.tsx:163
-msgid "Remove repost"
 msgstr ""
 
 #: src/view/com/composer/videos/SubtitleDialog.tsx:283
@@ -14946,10 +15680,10 @@ msgstr "replies"
 
 #: src/components/activity-notifications/SubscribeProfileDialog.tsx:272
 #: src/components/activity-notifications/SubscribeProfileDialog.tsx:284
-#: src/lib/hooks/useNotificationHandler.ts:177
+#: src/lib/hooks/useNotificationHandler.ts:171
 #: src/screens/Settings/NotificationSettings/ActivityNotificationSettings.tsx:218
-#: src/screens/Settings/NotificationSettings/index.tsx:181
-#: src/screens/Settings/NotificationSettings/index.tsx:330
+#: src/screens/Settings/NotificationSettings/index.tsx:171
+#: src/screens/Settings/NotificationSettings/index.tsx:283
 #: src/screens/Settings/NotificationSettings/ReplyNotificationSettings.tsx:41
 #: src/view/screens/Profile.tsx:320
 msgid "Replies"
@@ -14979,7 +15713,7 @@ msgstr ""
 
 #. Accessibility label for the reply button, verb form followed by number of replies and noun form
 #. placeholder {0}: post.replyCount || 0
-#: src/components/PostControls/index.tsx:236
+#: src/components/PostControls/index.tsx:225
 msgid "Reply ({0, plural, one {# reply} other {# replies}})"
 msgstr ""
 
@@ -14993,7 +15727,7 @@ msgstr ""
 msgid "Reply Hidden by You"
 msgstr ""
 
-#: src/Navigation.tsx:586
+#: src/Navigation.tsx:578
 msgid "Reply notifications"
 msgstr "Reply notifications"
 
@@ -15141,66 +15875,7 @@ msgstr "Reporte enviado a moderación"
 msgid "Reportes recientes"
 msgstr "Reportes recientes"
 
-#: src/components/PostControls/RepostButton.tsx:154
-#: src/components/PostControls/RepostButton.tsx:165
-#: src/components/PostControls/RepostButton.web.tsx:68
-#: src/components/PostControls/RepostButton.web.tsx:75
-msgctxt "action"
-msgid "Repost"
-msgstr ""
-
-#. Accessibility label for the repost button when the post has not been reposted, verb form followed by number of reposts and noun form
-#. placeholder {0}: repostCount || 0
-#: src/components/PostControls/RepostButton.tsx:78
-msgid "Repost ({0, plural, one {# repost} other {# reposts}})"
-msgstr ""
-
-#: src/Navigation.tsx:618
-msgid "Repost notifications"
-msgstr "Repost notifications"
-
-#: src/components/PostControls/RepostButton.tsx:146
-#: src/components/PostControls/RepostButton.web.tsx:43
-#: src/components/PostControls/RepostButton.web.tsx:103
-#: src/screens/StarterPack/StarterPackScreen.tsx:592
-msgid "Repost or quote post"
-msgstr ""
-
-#: src/screens/Post/PostRepostedBy.tsx:41
-msgid "Reposted By"
-msgstr ""
-
-#: src/view/com/posts/PostFeedReason.tsx:80
-#: src/view/com/posts/PostFeedReason.tsx:99
-msgid "Reposted by {reposter}"
-msgstr ""
-
-#: src/view/com/posts/PostFeedReason.tsx:80
-#: src/view/com/posts/PostFeedReason.tsx:97
-msgid "Reposted by you"
-msgstr ""
-
-#: src/lib/hooks/useNotificationHandler.ts:170
-#: src/screens/Settings/NotificationSettings/index.tsx:214
-#: src/screens/Settings/NotificationSettings/index.tsx:355
-msgid "Reposts"
-msgstr ""
-
-#: src/components/Pills.tsx:230
-msgid "Reposts Hidden"
-msgstr "Reposts Hidden"
-
-#: src/lib/hooks/useNotificationHandler.ts:212
-#: src/screens/Settings/NotificationSettings/index.tsx:251
-#: src/screens/Settings/NotificationSettings/index.tsx:373
-msgid "Reposts of your reposts"
-msgstr ""
-
-#: src/Navigation.tsx:642
-msgid "Reposts of your reposts notifications"
-msgstr "Reposts of your reposts notifications"
-
-#: src/Navigation.tsx:1363
+#: src/Navigation.tsx:1346
 #: src/screens/Dashboard/Representatives.tsx:87
 msgid "Representatives"
 msgstr "Representatives"
@@ -15228,6 +15903,7 @@ msgid "Request to join"
 msgstr "Request to join"
 
 #: src/components/dms/ChatInvite/Root.tsx:135
+#: src/lib/community-activities.ts:90
 msgid "Requested"
 msgstr "Requested"
 
@@ -15236,7 +15912,7 @@ msgstr "Requested"
 msgid "Requests"
 msgstr "Requests"
 
-#: src/Navigation.tsx:746
+#: src/Navigation.tsx:714
 #: src/screens/Messages/JoinRequests.tsx:55
 #: src/screens/Messages/JoinRequests.tsx:417
 msgid "Requests to join"
@@ -15397,7 +16073,7 @@ msgstr "Restricted"
 msgid "resultados"
 msgstr "resultados"
 
-#: src/Navigation.tsx:863
+#: src/Navigation.tsx:831
 msgid "Results"
 msgstr "Results"
 
@@ -15432,6 +16108,10 @@ msgstr ""
 #: src/components/Post/Embed/VideoEmbed/VideoEmbedInner/VideoFallback.tsx:56
 #: src/components/Post/Embed/VideoEmbed/VideoEmbedInner/VideoFallback.tsx:59
 #: src/components/StarterPack/ProfileStarterPacks.tsx:381
+#: src/screens/Communities/CommunityActivityScreen.tsx:98
+#: src/screens/Communities/CommunityActivityScreen.tsx:103
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:277
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:282
 #: src/screens/Data/CommunityCivicTreeScreen.tsx:822
 #: src/screens/Login/LoginForm.tsx:712
 #: src/screens/Login/LoginForm.tsx:719
@@ -15468,7 +16148,7 @@ msgstr ""
 #: src/screens/Profile/ProfileFeed/index.tsx:97
 #: src/screens/ProfileList/components/ErrorScreen.tsx:36
 #: src/screens/Settings/components/ChangeHandleDialog.tsx:577
-#: src/screens/VideoFeed/index.tsx:1297
+#: src/screens/VideoFeed/index.tsx:1295
 #: src/view/screens/NotFound.tsx:61
 msgid "Returns to previous page"
 msgstr ""
@@ -15531,15 +16211,36 @@ msgstr "Revoked"
 msgid "Revokes this app's access to your credential data"
 msgstr "Revokes this app's access to your credential data"
 
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:47
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:203
+msgid "Route"
+msgstr "Route"
+
 #. Accessibility label for the icon-only pill that filters the GIF picker to sad/crying GIFs.
 #: src/features/gifPicker/components/GifCategoryPills.tsx:75
 msgid "Sad GIFs"
 msgstr "Sad GIFs"
 
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:67
+msgid "Safety contact"
+msgstr "Safety contact"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:243
+msgid "Safety or logistics contact"
+msgstr "Safety or logistics contact"
+
 #: src/screens/Communities/CommunityChatScreen.tsx:361
 #: src/screens/Communities/CommunityChatScreen.web.tsx:385
 msgid "sala principal"
 msgstr "sala principal"
+
+#: src/lib/community-activities.ts:63
+msgid "Sale"
+msgstr "Sale"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:229
+msgid "Sales channel"
+msgstr "Sales channel"
 
 #. Advanced search: Example of an “all of these words” civic search. Paired with “infraestructura carretera”.
 #: src/screens/Search/components/AdvancedSearchDialog/index.tsx:217
@@ -15556,6 +16257,7 @@ msgstr "salud mental"
 #: src/features/liveNow/components/EditLiveDialog.tsx:207
 #: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:248
 #: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:260
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:376
 #: src/screens/Data/CollectionDetailScreen.tsx:297
 #: src/screens/Data/CompassScreen.tsx:678
 #: src/screens/Data/MyAffiliationsScreen.tsx:340
@@ -15634,6 +16336,10 @@ msgstr ""
 msgid "Save new handle"
 msgstr ""
 
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:370
+msgid "Save page"
+msgstr "Save page"
+
 #: src/screens/Data/CompassScreen.tsx:671
 msgid "Save position"
 msgstr "Save position"
@@ -15674,7 +16380,7 @@ msgid "Saved Feeds"
 msgstr ""
 
 #: src/components/dialogs/nuxs/BookmarksAnnouncement.tsx:145
-#: src/Navigation.tsx:792
+#: src/Navigation.tsx:760
 #: src/screens/Bookmarks/index.tsx:59
 msgid "Saved Posts"
 msgstr ""
@@ -15694,8 +16400,8 @@ msgid "Saves the highlighted text, color, and note to your Civic Tree"
 msgstr "Saves the highlighted text, color, and note to your Civic Tree"
 
 #: src/components/NewskieDialog.tsx:140
-#: src/view/com/notifications/NotificationFeedItem.tsx:939
-#: src/view/com/notifications/NotificationFeedItem.tsx:947
+#: src/view/com/notifications/NotificationFeedItem.tsx:863
+#: src/view/com/notifications/NotificationFeedItem.tsx:871
 msgid "Say hello!"
 msgstr ""
 
@@ -15707,6 +16413,18 @@ msgstr "Say hi to someone"
 #: src/features/personalCivicTree/components/ConnectTreeItemsDialog.tsx:156
 msgid "Say how {sourceTitle} relates to something else in this collection. These links are what your tree is drawn from."
 msgstr "Say how {sourceTitle} relates to something else in this collection. These links are what your tree is drawn from."
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:173
+msgid "Say what the money is for."
+msgstr "Say what the money is for."
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:103
+msgid "Say where people meet."
+msgstr "Say where people meet."
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:86
+msgid "Say where the money goes."
+msgstr "Say where the money goes."
 
 #: src/components/moderation/ReportDialog/utils/useReportOptions.ts:44
 msgid "Scam"
@@ -15765,7 +16483,7 @@ msgstr ""
 
 #. placeholder {0}: profile.handle
 #. placeholder {0}: route.params.name
-#: src/Navigation.tsx:344
+#: src/Navigation.tsx:343
 #: src/screens/Profile/ProfileSearch.tsx:37
 msgid "Search @{0}'s posts"
 msgstr ""
@@ -16431,6 +17149,14 @@ msgstr ""
 msgid "Set as my position"
 msgstr "Set as my position"
 
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:128
+msgid "Set how many signatures are needed."
+msgstr "Set how many signatures are needed."
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:143
+msgid "Set how many tickets will be sold."
+msgstr "Set how many tickets will be sold."
+
 #: src/screens/Login/SetNewPasswordForm.tsx:111
 msgid "Set new password"
 msgstr ""
@@ -16438,6 +17164,10 @@ msgstr ""
 #: src/components/dialogs/PostInteractionSettingsDialog.tsx:477
 msgid "Set precisely which groups of people can reply to your post"
 msgstr ""
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:140
+msgid "Set the ticket price."
+msgstr "Set the ticket price."
 
 #: src/screens/Onboarding/Layout.tsx:49
 msgid "Set up your account"
@@ -16459,14 +17189,14 @@ msgstr ""
 msgid "Sets the relationship type"
 msgstr "Sets the relationship type"
 
-#: src/Navigation.tsx:293
+#: src/Navigation.tsx:292
 #: src/screens/Settings/Settings.tsx:102
 #: src/view/shell/desktop/LeftNav.tsx:866
 #: src/view/shell/Drawer.tsx:802
 msgid "Settings"
 msgstr ""
 
-#: src/screens/Settings/NotificationSettings/index.tsx:220
+#: src/screens/Settings/NotificationSettings/index.tsx:199
 msgid "Settings for activity from others"
 msgstr ""
 
@@ -16474,50 +17204,38 @@ msgstr ""
 msgid "Settings for allowing others to be notified of your posts"
 msgstr ""
 
-#: src/screens/Settings/NotificationSettings/index.tsx:154
+#: src/screens/Settings/NotificationSettings/index.tsx:144
 msgid "Settings for like notifications"
 msgstr ""
 
-#: src/screens/Settings/NotificationSettings/index.tsx:187
+#: src/screens/Settings/NotificationSettings/index.tsx:177
 msgid "Settings for mention notifications"
 msgstr ""
 
-#: src/screens/Settings/NotificationSettings/index.tsx:165
+#: src/screens/Settings/NotificationSettings/index.tsx:155
 msgid "Settings for new follower notifications"
 msgstr ""
 
-#: src/screens/Settings/NotificationSettings/index.tsx:293
+#: src/screens/Settings/NotificationSettings/index.tsx:246
 msgid "Settings for notifications for everything else"
 msgstr ""
 
-#: src/screens/Settings/NotificationSettings/index.tsx:233
-msgid "Settings for notifications for likes of your reposts"
-msgstr ""
-
 #: src/screens/Messages/Settings.tsx:280
-#: src/screens/Settings/NotificationSettings/index.tsx:276
+#: src/screens/Settings/NotificationSettings/index.tsx:229
 msgid "Settings for notifications for new message requests"
 msgstr "Settings for notifications for new message requests"
 
 #: src/screens/Messages/Settings.tsx:259
-#: src/screens/Settings/NotificationSettings/index.tsx:259
+#: src/screens/Settings/NotificationSettings/index.tsx:212
 msgid "Settings for notifications for new messages"
 msgstr "Settings for notifications for new messages"
 
-#: src/screens/Settings/NotificationSettings/index.tsx:246
-msgid "Settings for notifications for reposts of your reposts"
-msgstr ""
-
-#: src/screens/Settings/NotificationSettings/index.tsx:198
+#: src/screens/Settings/NotificationSettings/index.tsx:188
 msgid "Settings for quote notifications"
 msgstr ""
 
-#: src/screens/Settings/NotificationSettings/index.tsx:176
+#: src/screens/Settings/NotificationSettings/index.tsx:166
 msgid "Settings for reply notifications"
-msgstr ""
-
-#: src/screens/Settings/NotificationSettings/index.tsx:209
-msgid "Settings for repost notifications"
 msgstr ""
 
 #: src/screens/ModerationInteractionSettings/index.tsx:108
@@ -16656,9 +17374,13 @@ msgstr "Share your thoughts…"
 msgid "Shared"
 msgstr "Shared"
 
-#: src/Navigation.tsx:410
+#: src/Navigation.tsx:402
 msgid "Shared Preferences Tester"
 msgstr ""
+
+#: src/screens/m8/WalletScreen.tsx:444
+msgid "Sharing"
+msgstr "Sharing"
 
 #. Shown next to the 'Share age range' button when on-device age verification is available. KWS is the name of a third-party verification partner.
 #: src/ageAssurance/components/DeviceSignalsNotice.tsx:25
@@ -16776,8 +17498,8 @@ msgstr "Show party shields on posts"
 msgid "Show post replies in a threaded tree view"
 msgstr ""
 
-#: src/screens/Settings/FollowingFeedPreferences.tsx:108
-#: src/screens/Settings/FollowingFeedPreferences.tsx:118
+#: src/screens/Settings/FollowingFeedPreferences.tsx:85
+#: src/screens/Settings/FollowingFeedPreferences.tsx:95
 msgid "Show quote posts"
 msgstr ""
 
@@ -16785,8 +17507,8 @@ msgstr ""
 msgid "Show RAQ Answers on Profile"
 msgstr "Show RAQ Answers on Profile"
 
-#: src/screens/Settings/FollowingFeedPreferences.tsx:72
-#: src/screens/Settings/FollowingFeedPreferences.tsx:82
+#: src/screens/Settings/FollowingFeedPreferences.tsx:67
+#: src/screens/Settings/FollowingFeedPreferences.tsx:77
 msgid "Show replies"
 msgstr ""
 
@@ -16799,13 +17521,8 @@ msgstr ""
 msgid "Show reply for everyone"
 msgstr ""
 
-#: src/screens/Settings/FollowingFeedPreferences.tsx:90
-#: src/screens/Settings/FollowingFeedPreferences.tsx:100
-msgid "Show reposts"
-msgstr ""
-
-#: src/screens/Settings/FollowingFeedPreferences.tsx:133
-#: src/screens/Settings/FollowingFeedPreferences.tsx:143
+#: src/screens/Settings/FollowingFeedPreferences.tsx:110
+#: src/screens/Settings/FollowingFeedPreferences.tsx:120
 msgid "Show samples of your saved feeds in your Following feed"
 msgstr ""
 
@@ -16846,7 +17563,7 @@ msgstr "Shows collections in a list format"
 msgid "Shows collections in an interactive tree format"
 msgstr "Shows collections in an interactive tree format"
 
-#: src/screens/PostThread/components/ThreadItemAnchor.tsx:686
+#: src/screens/PostThread/components/ThreadItemAnchor.tsx:670
 msgid "Shows information about when this post was created"
 msgstr ""
 
@@ -16969,11 +17686,29 @@ msgstr ""
 msgid "Sign-in Required"
 msgstr ""
 
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:135
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:257
+#: src/lib/community-activities.ts:56
+msgid "Signature drive"
+msgstr "Signature drive"
+
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:176
+msgid "Signatures collected"
+msgstr "Signatures collected"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:283
+msgid "Signatures needed"
+msgstr "Signatures needed"
+
 #. placeholder {0}: account.handle
 #: src/lib/hooks/useAccountSwitcher.ts:42
 #: src/screens/Login/ChooseAccountForm.tsx:51
 msgid "Signed in as @{0}"
 msgstr ""
+
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:166
+msgid "Signers need"
+msgstr "Signers need"
 
 #: src/screens/Communities/ChatCivicContext.tsx:33
 msgid "Sin cifrado"
@@ -17301,8 +18036,8 @@ msgstr "Start typing to find or name a topic."
 msgid "Start with people worth hearing from"
 msgstr "Start with people worth hearing from"
 
-#: src/Navigation.tsx:1015
-#: src/Navigation.tsx:1020
+#: src/Navigation.tsx:998
+#: src/Navigation.tsx:1003
 #: src/screens/StarterPack/Wizard/index.tsx:193
 msgid "Starter Pack"
 msgstr ""
@@ -17342,6 +18077,10 @@ msgstr ""
 msgid "Starter prompt"
 msgstr "Starter prompt"
 
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:186
+msgid "Starts"
+msgstr "Starts"
+
 #: src/screens/Agora/AgoraScreen.tsx:877
 msgid "State entity"
 msgstr "State entity"
@@ -17358,6 +18097,10 @@ msgstr "Statements"
 msgid "Statements bridging the widest gaps"
 msgstr "Statements bridging the widest gaps"
 
+#: src/screens/Communities/CommunityActivityScreen.tsx:249
+msgid "Status"
+msgstr "Status"
+
 #: src/screens/Settings/AboutSettings.tsx:103
 #: src/screens/Settings/AboutSettings.tsx:106
 msgid "Status Page"
@@ -17372,6 +18115,10 @@ msgstr ""
 msgid "Step {0} of {1}"
 msgstr ""
 
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:273
+msgid "Stock"
+msgstr "Stock"
+
 #: src/screens/Settings/Settings.tsx:414
 msgid "Storage cleared, you need to restart the app now."
 msgstr ""
@@ -17380,7 +18127,7 @@ msgstr ""
 msgid "Stored as part of a secure code for matching with others"
 msgstr ""
 
-#: src/Navigation.tsx:400
+#: src/Navigation.tsx:392
 #: src/screens/Settings/Settings.tsx:477
 msgid "Storybook"
 msgstr ""
@@ -17524,6 +18271,14 @@ msgstr "Suggested Accounts"
 msgid "Suggested by"
 msgstr "Suggested by"
 
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:138
+msgid "Suggested donation"
+msgstr "Suggested donation"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:410
+msgid "Suggested donation ({currency}, optional)"
+msgstr "Suggested donation ({currency}, optional)"
+
 #: src/components/FeedInterstitials.tsx:469
 msgid "Suggested for you"
 msgstr ""
@@ -17559,7 +18314,7 @@ msgstr ""
 msgid "Suplantación de identidad"
 msgstr "Suplantación de identidad"
 
-#: src/Navigation.tsx:420
+#: src/Navigation.tsx:412
 #: src/screens/Agora/components/SignalBadge.tsx:24
 #: src/screens/Agora/components/SignalBadge.tsx:60
 #: src/screens/Agora/components/VoteComposer.tsx:67
@@ -17576,6 +18331,10 @@ msgstr ""
 #: src/screens/RAQ/ProposedRAQList.tsx:50
 msgid "Support:"
 msgstr "Support:"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:259
+msgid "Supporting a"
+msgstr "Supporting a"
 
 #: src/components/dms/dialogs/NewChatDialog.tsx:93
 #: src/components/dms/dialogs/ShareViaChatDialog.tsx:109
@@ -17634,7 +18393,7 @@ msgstr "Tag or note (optional)…"
 msgid "Tags only"
 msgstr ""
 
-#: src/Navigation.tsx:965
+#: src/Navigation.tsx:948
 msgid "Take Position"
 msgstr "Take Position"
 
@@ -17805,10 +18564,15 @@ msgstr "Tension Lines"
 msgid "Terms"
 msgstr ""
 
+#. placeholder {0}: digest.slice(0, 16)
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:266
+msgid "Terms fingerprint {0}"
+msgstr "Terms fingerprint {0}"
+
 #: src/components/dialogs/BirthDateSettings.tsx:188
 #: src/components/PolicyUpdateOverlay/updates/202508/index.tsx:31
 #: src/components/PolicyUpdateOverlay/updates/202508/index.tsx:98
-#: src/Navigation.tsx:430
+#: src/Navigation.tsx:422
 #: src/screens/Settings/AboutSettings.tsx:87
 #: src/screens/Settings/AboutSettings.tsx:90
 #: src/view/screens/TermsOfService.tsx:35
@@ -17869,7 +18633,7 @@ msgstr ""
 msgid "That's all, folks!"
 msgstr ""
 
-#: src/screens/VideoFeed/index.tsx:1269
+#: src/screens/VideoFeed/index.tsx:1267
 msgid "That's everything!"
 msgstr ""
 
@@ -17917,6 +18681,10 @@ msgstr ""
 msgid "The Discover feed now knows what you like"
 msgstr ""
 
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:82
+msgid "The end must be after the start."
+msgstr "The end must be after the start."
+
 #: src/screens/StarterPack/StarterPackLandingScreen.tsx:325
 msgid "The experience is better in the app. Download PARA now and we'll pick back up where you left off."
 msgstr "The experience is better in the app. Download PARA now and we'll pick back up where you left off."
@@ -17953,6 +18721,10 @@ msgstr "The laws in your location require you to verify you're an adult to acces
 #: src/screens/Messages/JoinRequests.tsx:194
 msgid "The member limit has been reached."
 msgstr "The member limit has been reached."
+
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:77
+msgid "The menu is available once this community's details load."
+msgstr "The menu is available once this community's details load."
 
 #: src/components/moderation/ReportDialog/index.tsx:315
 msgid "The moderation service is temporarily unavailable. Please try again later."
@@ -18014,6 +18786,10 @@ msgstr ""
 #: src/components/contacts/screens/VerifyNumber.tsx:168
 msgid "The verification provider was unable to send a code to your phone number. Please check your phone number and try again."
 msgstr ""
+
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:127
+msgid "The wiki is empty."
+msgstr "The wiki is empty."
 
 #: src/screens/Settings/AppearanceSettings.tsx:139
 msgid "Theme"
@@ -18179,7 +18955,7 @@ msgstr "These hashtags"
 msgid "These policy areas"
 msgstr "These policy areas"
 
-#: src/screens/Settings/FollowingFeedPreferences.tsx:66
+#: src/screens/Settings/FollowingFeedPreferences.tsx:61
 msgid "These settings only apply to the Following feed."
 msgstr ""
 
@@ -18227,6 +19003,10 @@ msgstr ""
 #: src/components/dialogs/CivicProofDialog.tsx:58
 msgid "This action requires a verified civic identity. Complete verification in iM8, or open your PARA wallet."
 msgstr "This action requires a verified civic identity. Complete verification in iM8, or open your PARA wallet."
+
+#: src/screens/Communities/CommunityActivityScreen.tsx:95
+msgid "This activity could not be found."
+msgstr "This activity could not be found."
 
 #: src/components/moderation/AppealForm.tsx:107
 msgid "This appeal will be sent to <0>{sourceName}</0>."
@@ -18472,13 +19252,17 @@ msgstr "This moderation service does not support that report reason. Please choo
 msgid "This moderation service is unavailable. See below for more details. If this issue persists, contact us."
 msgstr ""
 
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:114
+msgid "This page does not exist yet."
+msgstr "This page does not exist yet."
+
 #: src/components/dms/MessagesListBlockedFooter.tsx:86
 msgid "This person is blocking you"
 msgstr "This person is blocking you"
 
 #. placeholder {0}: niceDate(i18n, createdAt)
 #. placeholder {1}: niceDate(i18n, indexedAt)
-#: src/screens/PostThread/components/ThreadItemAnchor.tsx:726
+#: src/screens/PostThread/components/ThreadItemAnchor.tsx:710
 msgid "This post claims to have been created on <0>{0}</0>, but was first seen by PARA on <1>{1}</1>."
 msgstr "This post claims to have been created on <0>{0}</0>, but was first seen by PARA on <1>{1}</1>."
 
@@ -18596,6 +19380,10 @@ msgstr ""
 msgid "This video can’t be played on your device. Your browser or system may be missing the required video codecs (H.264/AAC)."
 msgstr "This video can’t be played on your device. Your browser or system may be missing the required video codecs (H.264/AAC)."
 
+#: src/screens/m8/INEVerificationScreen.tsx:649
+msgid "This walkthrough ran against simulated data. Once INE integration is approved, confirming here will issue credentials to your iM8 wallet and activate your anonymous posting persona."
+msgstr "This walkthrough ran against simulated data. Once INE integration is approved, confirming here will issue credentials to your iM8 wallet and activate your anonymous posting persona."
+
 #: src/components/dialogs/lists/CreateListFromStarterPackDialog.tsx:161
 msgid "This will create a new list with the same name, description, and members as this starter pack."
 msgstr ""
@@ -18630,7 +19418,7 @@ msgstr "This will remove the item from this collection."
 msgid "This will remove your post from this quote post for all users, and replace it with a placeholder."
 msgstr ""
 
-#: src/Navigation.tsx:848
+#: src/Navigation.tsx:816
 msgid "Thread"
 msgstr "Thread"
 
@@ -18653,7 +19441,7 @@ msgstr ""
 msgid "Threaded"
 msgstr ""
 
-#: src/Navigation.tsx:463
+#: src/Navigation.tsx:455
 msgid "Threads Preferences"
 msgstr ""
 
@@ -18668,6 +19456,35 @@ msgstr "Three Tallies"
 #: src/screens/Agora/components/TripleSignalIndicator.tsx:81
 msgid "Three tallies measure different things. Flat = one person, one vote. √n discounts highly correlated voters. Correlation-adjusted also weights by deliberation participation."
 msgstr "Three tallies measure different things. Flat = one person, one vote. √n discounts highly correlated voters. Correlation-adjusted also weights by deliberation participation."
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:86
+msgid "Ticket price"
+msgstr "Ticket price"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:312
+msgid "Ticket price ({currency})"
+msgstr "Ticket price ({currency})"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:91
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:321
+msgid "Tickets for sale"
+msgstr "Tickets for sale"
+
+#: src/screens/Communities/CommunityActivityScreen.tsx:170
+msgid "tickets sold"
+msgstr "tickets sold"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:622
+msgid "Tickets sold"
+msgstr "Tickets sold"
+
+#: src/features/communityActivities/components/forms/FormBits.tsx:156
+msgid "Time"
+msgstr "Time"
+
+#: src/features/communityActivities/components/forms/FormBits.tsx:159
+msgid "Time (HH:MM)"
+msgstr "Time (HH:MM)"
 
 #. placeholder {0}: Number(time) || 0
 #: src/components/Post/Embed/VideoEmbed/VideoEmbedInner/TimeIndicator.tsx:34
@@ -18693,6 +19510,9 @@ msgstr "Tipo de publicación"
 
 #: src/components/SendErrorReportDialog.tsx:68
 #: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:185
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:272
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:276
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:173
 msgid "Title"
 msgstr "Title"
 
@@ -18805,7 +19625,7 @@ msgstr ""
 msgid "Top Topics"
 msgstr "Top Topics"
 
-#: src/Navigation.tsx:715
+#: src/Navigation.tsx:683
 msgid "Topic"
 msgstr ""
 
@@ -18824,6 +19644,11 @@ msgstr "Topics, civic trees, and bridges you follow now live with your feeds."
 #: src/screens/Data/SeeVotesScreen.tsx:282
 msgid "Total"
 msgstr "Total"
+
+#. placeholder {0}: formatBps(totalBps)
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:271
+msgid "Total {0}"
+msgstr "Total {0}"
 
 #: src/screens/Data/SeeInfluenceScreen.tsx:92
 msgid "Total Influencia"
@@ -18851,8 +19676,8 @@ msgstr "Trade Policy"
 #: src/components/Post/Translated/index.tsx:156
 #: src/components/PostControls/PostMenu/PostMenuItems.tsx:600
 #: src/components/PostControls/PostMenu/PostMenuItems.tsx:606
-#: src/screens/PostThread/components/ThreadItemAnchor.tsx:652
-#: src/screens/PostThread/components/ThreadItemAnchor.tsx:655
+#: src/screens/PostThread/components/ThreadItemAnchor.tsx:636
+#: src/screens/PostThread/components/ThreadItemAnchor.tsx:639
 msgid "Translate"
 msgstr ""
 
@@ -18933,7 +19758,7 @@ msgstr ""
 msgid "Trust emerges from relationships, communities, and shared context, so we’re also enabling <0>trusted verifiers</0>: organizations that can directly issue verification."
 msgstr ""
 
-#: src/Navigation.tsx:990
+#: src/Navigation.tsx:973
 msgid "Trusted Issuers"
 msgstr "Trusted Issuers"
 
@@ -19020,6 +19845,10 @@ msgstr "Twilight"
 #: src/screens/Settings/PrivacyAndSecuritySettings.tsx:75
 msgid "Two-factor authentication (2FA)"
 msgstr ""
+
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:291
+msgid "Type"
+msgstr "Type"
 
 #: src/screens/Messages/components/MessageInput.tsx:202
 msgid "Type your message here"
@@ -19188,17 +20017,6 @@ msgstr "Undo opt-out from starter pack"
 msgid "Undo opt-out?"
 msgstr "Undo opt-out?"
 
-#: src/components/PostControls/RepostButton.web.tsx:67
-#: src/components/PostControls/RepostButton.web.tsx:74
-msgid "Undo repost"
-msgstr ""
-
-#. Accessibility label for the repost button when the post has been reposted, verb followed by number of reposts and noun
-#. placeholder {0}: repostCount || 0
-#: src/components/PostControls/RepostButton.tsx:68
-msgid "Undo repost ({0, plural, one {# repost} other {# reposts}})"
-msgstr ""
-
 #: src/features/communityCivicTree/components/ContributeToCommunityTreeDialog.tsx:177
 msgid "Únete a una comunidad para aportar a su árbol cívico."
 msgstr "Únete a una comunidad para aportar a su árbol cívico."
@@ -19238,6 +20056,14 @@ msgstr "Unfortunately, the birthdate you have saved to your profile makes you to
 msgid "Unfortunately, your declared age indicates that you are not old enough to access PARA in your region."
 msgstr "Unfortunately, your declared age indicates that you are not old enough to access PARA in your region."
 
+#: src/screens/Communities/CommunityActivityScreen.tsx:172
+msgid "units sold"
+msgstr "units sold"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:623
+msgid "Units sold"
+msgstr "Units sold"
+
 #: src/components/verification/VerificationsDialog.tsx:213
 msgid "Unknown verifier"
 msgstr ""
@@ -19257,7 +20083,7 @@ msgstr ""
 
 #. Accessibility label for the like button when the post has been liked, verb followed by number of likes and noun
 #. placeholder {0}: post.likeCount || 0
-#: src/components/PostControls/index.tsx:272
+#: src/components/PostControls/index.tsx:262
 msgid "Unlike ({0, plural, one {# like} other {# likes}})"
 msgstr ""
 
@@ -19419,10 +20245,20 @@ msgstr ""
 msgid "Until"
 msgstr "Until"
 
+#. placeholder {0}: fmt(record.endsAt)
+#: src/screens/Communities/CommunityActivityScreen.tsx:210
+msgid "Until {0}"
+msgstr "Until {0}"
+
 #: src/components/dialogs/nuxs/GroupChatsAnnouncement.tsx:198
 msgid "Up to 50 people"
 msgstr "Up to 50 people"
 
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:363
+msgid "Upcoming"
+msgstr "Upcoming"
+
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:200
 #: src/screens/Settings/components/OTAInfo.tsx:61
 #: src/screens/Settings/components/OTAInfo.tsx:77
 msgid "Update"
@@ -19454,6 +20290,10 @@ msgstr "Update in Lists"
 msgid "Update invite link"
 msgstr "Update invite link"
 
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:184
+msgid "Update signature count"
+msgstr "Update signature count"
+
 #: src/screens/Settings/components/ChangeHandleDialog.tsx:544
 #: src/screens/Settings/components/ChangeHandleDialog.tsx:565
 msgid "Update to {domain}"
@@ -19467,6 +20307,11 @@ msgstr ""
 #: src/components/ageAssurance/AgeAssuranceAccountCard.tsx:282
 msgid "Update your location"
 msgstr "Update your location"
+
+#. placeholder {0}: i18n.date(new Date(page.record.updatedAt), { dateStyle: 'medium', })
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:156
+msgid "Updated {0}"
+msgstr "Updated {0}"
 
 #: src/components/PostControls/PostMenu/PostMenuItems.tsx:395
 msgctxt "toast"
@@ -19536,6 +20381,10 @@ msgstr "Upvote ({score, plural, one {# upvote} other {# upvotes}})"
 #: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:218
 msgid "URL (optional)"
 msgstr "URL (optional)"
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:85
+msgid "Use a 3-letter currency code, e.g. MXN."
+msgstr "Use a 3-letter currency code, e.g. MXN."
 
 #: src/screens/Settings/AppPasswords.tsx:67
 msgid "Use app passwords to sign in to other PARA clients without giving full access to your account or password."
@@ -19658,6 +20507,10 @@ msgstr ""
 msgid "users following <0>@{0}</0>"
 msgstr ""
 
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:349
+msgid "Value (optional)"
+msgstr "Value (optional)"
+
 #: src/screens/Settings/components/ChangeHandleDialog.tsx:451
 msgid "Value:"
 msgstr ""
@@ -19686,7 +20539,7 @@ msgstr ""
 msgid "Verification settings"
 msgstr ""
 
-#: src/Navigation.tsx:286
+#: src/Navigation.tsx:285
 #: src/screens/Moderation/VerificationSettings.tsx:33
 msgid "Verification Settings"
 msgstr ""
@@ -19730,7 +20583,7 @@ msgctxt "action"
 msgid "Verify code"
 msgstr ""
 
-#: src/Navigation.tsx:985
+#: src/Navigation.tsx:968
 msgid "Verify Dashboard"
 msgstr "Verify Dashboard"
 
@@ -19821,7 +20674,7 @@ msgid "Version {0}"
 msgstr ""
 
 #. When the source of a follow is a starter pack, i.e., 'via starter pack {starterPackName}'.
-#: src/view/com/notifications/NotificationFeedItem.tsx:738
+#: src/view/com/notifications/NotificationFeedItem.tsx:662
 msgid "via starter pack <0/><1>{starterPackName}</1>"
 msgstr "via starter pack <0/><1>{starterPackName}</1>"
 
@@ -19838,17 +20691,17 @@ msgstr ""
 msgid "Video failed to process"
 msgstr ""
 
-#: src/Navigation.tsx:784
+#: src/Navigation.tsx:752
 msgid "Video Feed"
 msgstr ""
 
 #. placeholder {0}: author.handle
-#: src/components/VideoPostCard.tsx:113
+#: src/components/VideoPostCard.tsx:111
 msgid "Video from {0}: {text}"
 msgstr ""
 
 #. placeholder {0}: sanitizeHandle( post.author.handle, '@', )
-#: src/screens/VideoFeed/index.tsx:1231
+#: src/screens/VideoFeed/index.tsx:1229
 msgid "Video from {0}. Tap to play or pause the video"
 msgstr ""
 
@@ -19857,11 +20710,11 @@ msgstr ""
 msgid "Video Games"
 msgstr ""
 
-#: src/screens/VideoFeed/index.tsx:1230
+#: src/screens/VideoFeed/index.tsx:1228
 msgid "Video is paused"
 msgstr ""
 
-#: src/screens/VideoFeed/index.tsx:1230
+#: src/screens/VideoFeed/index.tsx:1228
 msgid "Video is playing"
 msgstr ""
 
@@ -19908,7 +20761,7 @@ msgid "View {0}"
 msgstr "View {0}"
 
 #. placeholder {0}: profile.handle
-#: src/screens/Profile/Header/Shell.tsx:258
+#: src/screens/Profile/Header/Shell.tsx:257
 msgid "View {0}'s avatar"
 msgstr ""
 
@@ -19919,7 +20772,7 @@ msgstr ""
 #: src/screens/Profile/components/ProfileFeedHeader.tsx:504
 #: src/screens/Search/components/SearchProfileCard.tsx:37
 #: src/screens/VideoFeed/index.tsx:937
-#: src/view/com/notifications/NotificationFeedItem.tsx:600
+#: src/view/com/notifications/NotificationFeedItem.tsx:528
 msgid "View {0}'s profile"
 msgstr ""
 
@@ -20092,7 +20945,7 @@ msgstr ""
 msgid "View users who like this feed"
 msgstr ""
 
-#: src/components/VideoPostCard.tsx:390
+#: src/components/VideoPostCard.tsx:379
 msgid "View video"
 msgstr ""
 
@@ -20134,7 +20987,7 @@ msgstr ""
 msgid "Views full image"
 msgstr ""
 
-#: src/components/VideoPostCard.tsx:112
+#: src/components/VideoPostCard.tsx:110
 msgid "Views video in immersive mode"
 msgstr ""
 
@@ -20238,17 +21091,9 @@ msgstr "Votes"
 msgid "votes cast"
 msgstr "votes cast"
 
-#: src/Navigation.tsx:522
+#: src/Navigation.tsx:514
 msgid "Votes History"
 msgstr "Votes History"
-
-#: src/screens/Settings/NotificationSettings/LikesOnRepostsNotificationSettings.tsx:41
-msgid "Votes of your quotes"
-msgstr "Votes of your quotes"
-
-#: src/Navigation.tsx:634
-msgid "Votes of your quotes notifications"
-msgstr "Votes of your quotes notifications"
 
 #: src/screens/Data/components/CivicDashboard.tsx:148
 msgid "Votes this month"
@@ -20579,6 +21424,26 @@ msgstr "What civic matters interest you?"
 msgid "What do you want to call your starter pack?"
 msgstr ""
 
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:220
+msgid "What is for sale"
+msgstr "What is for sale"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:178
+msgid "What kind of civic activity?"
+msgstr "What kind of civic activity?"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:206
+msgid "What kind of economic activity?"
+msgstr "What kind of economic activity?"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:300
+msgid "What signers need"
+msgstr "What signers need"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:398
+msgid "What the money is for"
+msgstr "What the money is for"
+
 #: src/components/AffiliationChangeModal.tsx:133
 msgid "What this means"
 msgstr "What this means"
@@ -20589,6 +21454,10 @@ msgstr "What this means"
 #: src/view/com/feeds/ComposerPrompt.tsx:205
 msgid "What's up?"
 msgstr ""
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:171
+msgid "When and where"
+msgstr "When and where"
 
 #: src/components/dialogs/nuxs/InitialVerificationAnnouncement.tsx:149
 msgid "When you tap on a check, you’ll see which organizations have granted verification."
@@ -20601,6 +21470,22 @@ msgstr "Where do you stand?"
 #: src/screens/Onboarding/StepChooseCommunity/index.tsx:81
 msgid "Where is your civic home?"
 msgstr "Where is your civic home?"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:226
+msgid "Where it is sold"
+msgstr "Where it is sold"
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:176
+msgid "Where the money goes"
+msgstr "Where the money goes"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:315
+msgid "Where the money is"
+msgstr "Where the money is"
+
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:168
+msgid "Where to sign"
+msgstr "Where to sign"
 
 #: src/components/WhoCanReply.tsx:207
 msgid "Who can interact with this post?"
@@ -20675,9 +21560,28 @@ msgstr "Why these are connected"
 msgid "Why? (optional)"
 msgstr "Why? (optional)"
 
+#: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:118
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:61
+msgid "Wiki"
+msgstr "Wiki"
+
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:153
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:298
+msgid "Wiki page"
+msgstr "Wiki page"
+
 #: src/screens/Agora/AgoraScreen.tsx:411
 msgid "window"
 msgstr "window"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:173
+msgid "Winning ticket numbers, comma separated"
+msgstr "Winning ticket numbers, comma separated"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:117
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:172
+msgid "Winning tickets"
+msgstr "Winning tickets"
 
 #: src/components/dms/AfterReportDialog.tsx:51
 msgid "Would you like to block this user and/or delete this conversation?"
@@ -20721,6 +21625,10 @@ msgstr ""
 #: src/screens/Data/CivicTreeScreen.tsx:456
 msgid "Write the name of the new collection"
 msgstr "Write the name of the new collection"
+
+#: src/screens/Communities/CommunityWikiPageScreen.tsx:341
+msgid "Write the page. Link other pages with [[Page title]] and paste web links as-is."
+msgstr "Write the page. Link other pages with [[Page title]] and paste web links as-is."
 
 #: src/screens/PostThread/components/ThreadComposePrompt.tsx:91
 #: src/view/com/composer/Composer.tsx:1842
@@ -20895,7 +21803,7 @@ msgstr ""
 msgid "You can always opt out and delete your data"
 msgstr ""
 
-#: src/lib/hooks/useNotificationHandler.ts:138
+#: src/lib/hooks/useNotificationHandler.ts:135
 msgid "You can choose whether chat notifications have sound in the chat settings within the app"
 msgstr ""
 
@@ -21362,7 +22270,7 @@ msgstr ""
 msgid "You've reached your daily limit for video uploads (too many videos)"
 msgstr ""
 
-#: src/screens/VideoFeed/index.tsx:1278
+#: src/screens/VideoFeed/index.tsx:1276
 msgid "You've run out of videos to watch. Maybe it's a good time to take a break?"
 msgstr ""
 
@@ -21419,6 +22327,10 @@ msgstr "Your account was found to be in violation of the <0>PARA Social Terms of
 msgid "Your Affiliations"
 msgstr "Your Affiliations"
 
+#: src/screens/m8/INEVerificationScreen.tsx:632
+msgid "Your anonymous posting persona is active. It hides your name from other users, not from PARA or mubEZ, and verifying does not make you anonymous."
+msgstr "Your anonymous posting persona is active. It hides your name from other users, not from PARA or mubEZ, and verifying does not make you anonymous."
+
 #: src/screens/Takendown.tsx:150
 msgid "Your appeal has been submitted. If your appeal succeeds, you will receive an email."
 msgstr ""
@@ -21460,11 +22372,11 @@ msgstr "Your community's proposals, evidence, votes, and arguments"
 msgid "Your confirmation code is incorrect."
 msgstr "Your confirmation code is incorrect."
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:378
+#: src/view/com/notifications/NotificationFeedItem.tsx:351
 msgid "Your contact {firstAuthorLink} is on Bluesky"
 msgstr ""
 
-#: src/view/com/notifications/NotificationFeedItem.tsx:376
+#: src/view/com/notifications/NotificationFeedItem.tsx:349
 msgid "Your contact {firstAuthorName} is on Bluesky"
 msgstr ""
 
@@ -21475,6 +22387,10 @@ msgstr ""
 #: src/screens/Data/CommunityCivicTreeScreen.tsx:541
 msgid "Your contribution is under community review."
 msgstr "Your contribution is under community review."
+
+#: src/screens/m8/INEVerificationScreen.tsx:643
+msgid "Your credentials were delivered to your iM8 wallet. When you share them, apps receive your account DID and every fact in the credential; sharing is not anonymous."
+msgstr "Your credentials were delivered to your iM8 wallet. When you share them, apps receive your account DID and every fact in the credential; sharing is not anonymous."
 
 #. placeholder {0}: sanitizeHandle(currentAccount?.handle || '', '@')
 #: src/screens/Settings/components/ChangeHandleDialog.tsx:531
@@ -21543,7 +22459,7 @@ msgstr "Your hosting provider is detected automatically from the username you en
 msgid "Your identity is already verified."
 msgstr "Your identity is already verified."
 
-#: src/Navigation.tsx:674
+#: src/Navigation.tsx:642
 #: src/screens/Search/modules/ExploreInterestsCard.tsx:62
 #: src/screens/Settings/ContentAndMediaSettings.tsx:106
 #: src/screens/Settings/ContentAndMediaSettings.tsx:109
