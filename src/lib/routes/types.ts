@@ -68,7 +68,6 @@ export type CommonNavigatorParams = {
   ProfileList: {name: string; rkey: string}
   PostThread: {name: string; rkey: string; collection?: string}
   PostLikedBy: {name: string; rkey: string}
-  PostRepostedBy: {name: string; rkey: string}
   CustomFeed: {
     name: string
     rkey: string
@@ -120,10 +119,7 @@ export type CommonNavigatorParams = {
   MentionNotificationSettings: undefined
   QuoteNotificationSettings: undefined
   LikeNotificationSettings: undefined
-  RepostNotificationSettings: undefined
   NewFollowerNotificationSettings: undefined
-  LikesOnRepostsNotificationSettings: undefined
-  RepostsOnRepostsNotificationSettings: undefined
   MiscellaneousNotificationSettings: undefined
   InterestsSettings: undefined
   FollowedElementsSettings: {selectedId?: string} | undefined

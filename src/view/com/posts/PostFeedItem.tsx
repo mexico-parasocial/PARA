@@ -271,15 +271,6 @@ let FeedItemInner = ({
     })
   }
 
-  const onOpenReposter = () => {
-    sendInteraction({
-      item: post.uri,
-      event: 'app.bsky.feed.defs#clickthroughReposter',
-      feedContext,
-      reqId,
-    })
-  }
-
   const onOpenEmbed = () => {
     sendInteraction({
       item: post.uri,
@@ -313,11 +304,6 @@ let FeedItemInner = ({
       feedSourceInfo,
       post: {
         post,
-        reason: bsky.isType(app.bsky.feed.defs.reasonRepost, reason)
-          ? (reason as typeof reason & {
-              $type: 'app.bsky.feed.defs#reasonRepost'
-            })
-          : undefined,
         feedContext,
         reqId,
       },
@@ -349,19 +335,6 @@ let FeedItemInner = ({
     : undefined
 
   const {isActive: live} = useActorStatus(post.author)
-
-  const viaRepost = useMemo(() => {
-    if (
-      bsky.isType(app.bsky.feed.defs.reasonRepost, reason) &&
-      reason.uri &&
-      reason.cid
-    ) {
-      return {
-        uri: reason.uri,
-        cid: reason.cid,
-      }
-    }
-  }, [reason])
 
   const threadgateHiddenReplies = useMergedThreadgateHiddenReplies({
     threadgateRecord,
@@ -421,13 +394,7 @@ let FeedItemInner = ({
           </View>
 
           <View style={[a.pt_sm, a.flex_shrink]}>
-            {reason && (
-              <PostFeedReason
-                reason={reason}
-                moderation={moderation}
-                onOpenReposter={onOpenReposter}
-              />
-            )}
+            {reason && <PostFeedReason reason={reason} />}
           </View>
         </View>
 
@@ -542,7 +509,6 @@ let FeedItemInner = ({
               reqId={reqId}
               threadgateRecord={threadgateRecord}
               onShowLess={onShowLess}
-              viaRepost={viaRepost}
               style={{marginTop: 'auto'}}
             />
             <KnownLikers

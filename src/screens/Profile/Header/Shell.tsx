@@ -31,7 +31,7 @@ import {useActorStatus} from '#/features/liveNow'
 import {EditLiveDialog} from '#/features/liveNow/components/EditLiveDialog'
 import {LiveIndicator} from '#/features/liveNow/components/LiveIndicator'
 import {LiveStatusDialog} from '#/features/liveNow/components/LiveStatusDialog'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import {GrowableAvatar} from './GrowableAvatar'
 import {GrowableBanner} from './GrowableBanner'
 import {StatusBarShadow} from './StatusBarShadow'
@@ -240,7 +240,6 @@ let ProfileHeaderShell = ({
         ) : (
           <ProfileHeaderAlerts
             moderation={moderation}
-            profile={profile}
             style={[
               a.px_lg,
               a.pt_xs,

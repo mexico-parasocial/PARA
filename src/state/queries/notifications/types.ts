@@ -33,7 +33,6 @@ export interface CachedFeedPage {
 type StarterPackNotificationType = 'starterpack-joined'
 type OtherNotificationType =
   | 'post-like'
-  | 'repost'
   | 'mention'
   | 'reply'
   | 'quote'
@@ -41,8 +40,6 @@ type OtherNotificationType =
   | 'feedgen-like'
   | 'verified'
   | 'unverified'
-  | 'like-via-repost'
-  | 'repost-via-repost'
   | 'subscribed-post'
   | 'contact-match'
   | 'unknown'

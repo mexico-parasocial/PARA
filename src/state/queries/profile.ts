@@ -341,7 +341,7 @@ export function useProfileFollowMutationQueue(
       if (finalFollowingUri) {
         void client
           .call(app.bsky.graph.getSuggestedFollowsByActor, {
-            actor: did as AtIdentifierString,
+            actor: did,
           })
           .then(res => {
             const dids = res.suggestions
@@ -438,11 +438,11 @@ export function useProfileMuteMutationQueue(
     initialState: initialMuted,
     runMutation: async (_prevMuted, shouldMute) => {
       if (shouldMute) {
-        await muteMutation.mutateAsync({did: did as DidString})
+        await muteMutation.mutateAsync({did: did})
         ax.metric('profile:mute', {})
         return true
       } else {
-        await unmuteMutation.mutateAsync({did: did as DidString})
+        await unmuteMutation.mutateAsync({did: did})
         ax.metric('profile:unmute', {})
         return false
       }
@@ -454,13 +454,9 @@ export function useProfileMuteMutationQueue(
   })
 
   const queueMute = useCallback(() => {
-    /*
-     * Optimistically update. A full mute replaces any stored repost-only
-     * scope on the server, so clear it here too.
-     */
+    // optimistically update
     updateProfileShadow(queryClient, did, {
       muted: true,
-      mutedOnlyReposts: false,
     })
     return queueToggle(true)
   }, [queryClient, did, queueToggle])
@@ -469,67 +465,11 @@ export function useProfileMuteMutationQueue(
     // optimistically update
     updateProfileShadow(queryClient, did, {
       muted: false,
-      mutedOnlyReposts: false,
     })
     return queueToggle(false)
   }, [queryClient, did, queueToggle])
 
   return [queueMute, queueUnmute] as const
-}
-
-/**
- * Toggles a repost-only mute: muting hides just the account's reposts,
- * unmuting removes the mute entirely. Not applicable when the account is
- * fully muted (viewer.muted).
- */
-export function useProfileMuteRepostsMutationQueue(
-  profile: Shadow<bsky.profile.AnyProfileView>,
-) {
-  const ax = useAnalytics()
-  const queryClient = useQueryClient()
-  const did = profile.did
-  const initialMutedOnlyReposts = !!profile.viewer?.mutedOnlyReposts
-  const muteRepostsMutation = useProfileMuteRepostsMutation()
-  const unmuteMutation = useProfileUnmuteMutation()
-
-  const queueToggle = useToggleMutationQueue({
-    initialState: initialMutedOnlyReposts,
-    runMutation: async (_prevMutedOnlyReposts, shouldMute) => {
-      if (shouldMute) {
-        await muteRepostsMutation.mutateAsync({did: did as DidString})
-        ax.metric('profile:muteReposts', {})
-        return true
-      } else {
-        await unmuteMutation.mutateAsync({did: did as DidString})
-        ax.metric('profile:unmuteReposts', {})
-        return false
-      }
-    },
-    onSuccess(finalMutedOnlyReposts) {
-      // finalize
-      updateProfileShadow(queryClient, did, {
-        mutedOnlyReposts: finalMutedOnlyReposts,
-      })
-    },
-  })
-
-  const queueMuteReposts = useCallback(() => {
-    // optimistically update
-    updateProfileShadow(queryClient, did, {
-      mutedOnlyReposts: true,
-    })
-    return queueToggle(true)
-  }, [queryClient, did, queueToggle])
-
-  const queueUnmuteReposts = useCallback(() => {
-    // optimistically update
-    updateProfileShadow(queryClient, did, {
-      mutedOnlyReposts: false,
-    })
-    return queueToggle(false)
-  }, [queryClient, did, queueToggle])
-
-  return [queueMuteReposts, queueUnmuteReposts] as const
 }
 
 function useProfileMuteMutation() {
@@ -538,22 +478,6 @@ function useProfileMuteMutation() {
   return useMutation({
     mutationFn: async ({did}: {did: DidString}) => {
       await appviewClient.call(muteActor, {actor: did})
-    },
-    onSuccess() {
-      void queryClient.invalidateQueries({queryKey: RQKEY_MY_MUTED()})
-    },
-  })
-}
-
-function useProfileMuteRepostsMutation() {
-  const queryClient = useQueryClient()
-  const appviewClient = useAppviewClient()
-  return useMutation({
-    mutationFn: async ({did}: {did: DidString}) => {
-      await appviewClient.call(muteActor, {
-        actor: did,
-        onlyReposts: true,
-      })
     },
     onSuccess() {
       void queryClient.invalidateQueries({queryKey: RQKEY_MY_MUTED()})

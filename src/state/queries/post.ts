@@ -1,6 +1,6 @@
 import {useCallback} from 'react'
 import {AtUri, type AtUriString, type HandleString} from '@atproto/syntax'
-import {deleteLike, deletePost, deleteRepost, like, repost} from '@bsky/sdk'
+import {deleteLike, deletePost, like} from '@bsky/sdk'
 import {
   type QueryClient,
   useMutation,
@@ -124,7 +124,6 @@ export function useGetPosts() {
 
 export function usePostLikeMutationQueue(
   post: Shadow<app.bsky.feed.defs.PostView>,
-  viaRepost: {uri: string; cid: string} | undefined,
   feedDescriptor: string | undefined,
   logContext: Metrics['post:like']['logContext'],
 ) {
@@ -142,7 +141,6 @@ export function usePostLikeMutationQueue(
         const {uri: likeUri} = await likeMutation.mutateAsync({
           uri: postUri,
           cid: postCid,
-          via: viaRepost,
         })
         userActionHistory.like([postUri])
         return likeUri
@@ -197,9 +195,9 @@ function usePostLikeMutation(
   return useMutation<
     {uri: AtUriString}, // responds with the uri of the like
     Error,
-    {uri: string; cid: string; via?: {uri: string; cid: string}} // the post's uri and cid, and the repost uri/cid if present
+    {uri: string; cid: string} // the post's uri and cid
   >({
-    mutationFn: ({uri, cid, via}) => {
+    mutationFn: ({uri, cid}) => {
       let ownProfile: app.bsky.actor.defs.ProfileViewDetailed | undefined
       if (currentAccount) {
         ownProfile = findProfileQueryData(queryClient, currentAccount.did)
@@ -216,18 +214,12 @@ function usePostLikeMutation(
           : undefined,
         likerClout: toClout(ownProfile?.followersCount),
         postClout:
-          post.likeCount != null &&
-          post.repostCount != null &&
-          post.replyCount != null
-            ? toClout(post.likeCount + post.repostCount + post.replyCount)
+          post.likeCount != null && post.replyCount != null
+            ? toClout(post.likeCount + post.replyCount)
             : undefined,
         feedDescriptor: feedDescriptor,
       })
-      return pdsClient.call(like, {
-        uri: uri as AtUriString,
-        cid: cid,
-        via: via ? {uri: via.uri as AtUriString, cid: via.cid} : undefined,
-      })
+      return pdsClient.call(like, {uri: uri as AtUriString, cid: cid})
     },
   })
 }
@@ -248,118 +240,6 @@ function usePostUnlikeMutation(
         feedDescriptor,
       })
       return pdsClient.call(deleteLike, likeUri as AtUriString)
-    },
-  })
-}
-
-export function usePostRepostMutationQueue(
-  post: Shadow<app.bsky.feed.defs.PostView>,
-  viaRepost: {uri: string; cid: string} | undefined,
-  feedDescriptor: string | undefined,
-  logContext: Metrics['post:repost']['logContext'],
-) {
-  const queryClient = useQueryClient()
-  const postUri = post.uri
-  const postCid = post.cid
-  const initialRepostUri = post.viewer?.repost
-  const repostMutation = usePostRepostMutation(feedDescriptor, logContext, post)
-  const unrepostMutation = usePostUnrepostMutation(
-    feedDescriptor,
-    logContext,
-    post,
-  )
-
-  const queueToggle = useToggleMutationQueue({
-    initialState: initialRepostUri,
-    runMutation: async (prevRepostUri, shouldRepost) => {
-      if (shouldRepost) {
-        const {uri: repostUri} = await repostMutation.mutateAsync({
-          uri: postUri,
-          cid: postCid,
-          via: viaRepost,
-        })
-        return repostUri
-      } else {
-        if (prevRepostUri) {
-          await unrepostMutation.mutateAsync({
-            postUri: postUri,
-            repostUri: prevRepostUri,
-          })
-        }
-        return undefined
-      }
-    },
-    onSuccess(finalRepostUri) {
-      // finalize
-      updatePostShadow(queryClient, postUri, {
-        repostUri: finalRepostUri,
-      })
-    },
-  })
-
-  const queueRepost = useCallback(() => {
-    // optimistically update
-    updatePostShadow(queryClient, postUri, {
-      repostUri: 'pending',
-    })
-    return queueToggle(true)
-  }, [queryClient, postUri, queueToggle])
-
-  const queueUnrepost = useCallback(() => {
-    // optimistically update
-    updatePostShadow(queryClient, postUri, {
-      repostUri: undefined,
-    })
-    return queueToggle(false)
-  }, [queryClient, postUri, queueToggle])
-
-  return [queueRepost, queueUnrepost] as const
-}
-
-function usePostRepostMutation(
-  feedDescriptor: string | undefined,
-  logContext: Metrics['post:repost']['logContext'],
-  post: Shadow<app.bsky.feed.defs.PostView>,
-) {
-  const pdsClient = usePdsClient()
-  const ax = useAnalytics()
-  return useMutation<
-    {uri: AtUriString}, // responds with the uri of the repost
-    Error,
-    {uri: string; cid: string; via?: {uri: string; cid: string}} // the post's uri and cid, and the repost uri/cid if present
-  >({
-    mutationFn: ({uri, cid, via}) => {
-      ax.metric('post:repost', {
-        uri,
-        authorDid: post.author.did,
-        logContext,
-        feedDescriptor,
-      })
-      return pdsClient.call(repost, {
-        uri: uri as AtUriString,
-        cid: cid,
-        via: via ? {uri: via.uri as AtUriString, cid: via.cid} : undefined,
-      })
-    },
-  })
-}
-
-function usePostUnrepostMutation(
-  feedDescriptor: string | undefined,
-  logContext: Metrics['post:unrepost']['logContext'],
-  post: Shadow<app.bsky.feed.defs.PostView>,
-) {
-  const pdsClient = usePdsClient()
-  const ax = useAnalytics()
-  return useMutation<void, Error, {postUri: string; repostUri: string}>({
-    mutationFn: ({postUri, repostUri}) => {
-      ax.metric('post:unrepost', {
-        uri: postUri,
-        authorDid: post.author.did,
-        logContext,
-        feedDescriptor,
-      })
-      return pdsClient.call(deleteRepost, repostUri as AtUriString)
     },
   })
 }

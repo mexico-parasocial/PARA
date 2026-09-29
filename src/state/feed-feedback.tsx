@@ -37,7 +37,6 @@ export const THIRD_PARTY_ALLOWED_INTERACTIONS = new Set<
   'app.bsky.feed.defs#interactionLike',
   'app.bsky.feed.defs#interactionQuote',
   'app.bsky.feed.defs#interactionReply',
-  'app.bsky.feed.defs#interactionRepost',
   // This can be inferred from pagination requests for everything except the very last page
   // so it is fine to send. It is crucial for third party algorithmic feeds to receive these.
   'app.bsky.feed.defs#interactionSeen',
@@ -320,15 +319,13 @@ function sendOrAggregateInteractionsForStats(
       // The events are aggregated and sent later in batches.
       case 'app.bsky.feed.defs#clickthroughAuthor':
       case 'app.bsky.feed.defs#clickthroughEmbed':
-      case 'app.bsky.feed.defs#clickthroughItem':
-      case 'app.bsky.feed.defs#clickthroughReposter': {
+      case 'app.bsky.feed.defs#clickthroughItem': {
         stats.clickthroughCount++
         break
       }
       case 'app.bsky.feed.defs#interactionLike':
       case 'app.bsky.feed.defs#interactionQuote':
       case 'app.bsky.feed.defs#interactionReply':
-      case 'app.bsky.feed.defs#interactionRepost':
       case 'app.bsky.feed.defs#interactionShare': {
         stats.engagedCount++
         break

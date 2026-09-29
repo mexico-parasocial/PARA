@@ -85,7 +85,7 @@ export const QuoteButton = ({
                 ? _(msg`Quote posts disabled`)
                 : _(msg`Quote post`)
             }
-            testID="repostDropdownQuoteBtn"
+            testID="highlightDropdownQuoteBtn"
             onPress={onQuote}>
             <Menu.ItemText>
               {embeddingDisabled

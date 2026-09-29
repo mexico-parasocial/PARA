@@ -42,7 +42,7 @@ export function useValuePropText(step: 0 | 1 | 2) {
         msg`Read highlights, track issues, join lobbying, and move from browsing to participation.`,
       ),
       alt: _(
-        msg`An illustration of several PARA posts alongside repost, like, and comment icons`,
+        msg`An illustration of several PARA posts alongside highlight, like, and comment icons`,
       ),
     },
   ][step]

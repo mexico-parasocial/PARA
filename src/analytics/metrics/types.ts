@@ -370,19 +370,7 @@ export type Events = {
     logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
     feedDescriptor?: string
   }
-  'post:repost': {
-    uri: string
-    authorDid: string
-    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
-    feedDescriptor?: string
-  }
   'post:unlike': {
-    uri: string
-    authorDid: string
-    logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
-    feedDescriptor?: string
-  }
-  'post:unrepost': {
     uri: string
     authorDid: string
     logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
@@ -559,8 +547,6 @@ export type Events = {
   }
   'profile:mute': {}
   'profile:unmute': {}
-  'profile:muteReposts': {}
-  'profile:unmuteReposts': {}
   'profile:block': {}
   'profile:unblock': {}
   'suggestedUser:follow': {

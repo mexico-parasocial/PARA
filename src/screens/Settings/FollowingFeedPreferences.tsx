@@ -16,7 +16,6 @@ import * as Toggle from '#/components/forms/Toggle'
 import {Beaker_Stroke2_Corner2_Rounded as BeakerIcon} from '#/components/icons/Beaker'
 import {Bubbles_Stroke2_Corner2_Rounded as BubblesIcon} from '#/components/icons/Bubble'
 import {CloseQuote_Stroke2_Corner1_Rounded as QuoteIcon} from '#/components/icons/Quote'
-import {Repost_Stroke2_Corner2_Rounded as RepostIcon} from '#/components/icons/Repost'
 import * as Layout from '#/components/Layout'
 import * as SettingsList from './components/SettingsList'
 
@@ -33,10 +32,6 @@ export function FollowingFeedPreferencesScreen({}: Props) {
 
   const showReplies = !(
     variables?.hideReplies ?? preferences?.feedViewPrefs?.hideReplies
-  )
-
-  const showReposts = !(
-    variables?.hideReposts ?? preferences?.feedViewPrefs?.hideReposts
   )
 
   const showQuotePosts = !(
@@ -80,24 +75,6 @@ export function FollowingFeedPreferencesScreen({}: Props) {
               <SettingsList.ItemIcon icon={BubblesIcon} />
               <SettingsList.ItemText>
                 <Trans>Show replies</Trans>
-              </SettingsList.ItemText>
-              <Toggle.Platform />
-            </SettingsList.Item>
-          </Toggle.Item>
-          <Toggle.Item
-            type="checkbox"
-            name="show-reposts"
-            label={_(msg`Show reposts`)}
-            value={showReposts}
-            onChange={value =>
-              setFeedViewPref({
-                hideReposts: !value,
-              })
-            }>
-            <SettingsList.Item>
-              <SettingsList.ItemIcon icon={RepostIcon} />
-              <SettingsList.ItemText>
-                <Trans>Show reposts</Trans>
               </SettingsList.ItemText>
               <Toggle.Platform />
             </SettingsList.Item>

@@ -1172,10 +1172,8 @@ function PlayPauseTapArea({
   const {t: l} = useLingui()
   const doubleTapRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const playHaptic = useHaptics()
-  // TODO: implement viaRepost -sfn
   const [queueLike] = usePostLikeMutationQueue(
     post,
-    undefined,
     undefined,
     'ImmersiveVideo',
   )

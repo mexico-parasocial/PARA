@@ -23,7 +23,6 @@ import {router} from '#/routes'
 
 export type NotificationReason =
   | 'like'
-  | 'repost'
   | 'follow'
   | 'mention'
   | 'reply'
@@ -35,8 +34,6 @@ export type NotificationReason =
   | 'chat-join-request-rejected'
   | 'matrix-message'
   | 'starterpack-joined'
-  | 'like-via-repost'
-  | 'repost-via-repost'
   | 'verified'
   | 'unverified'
   | 'subscribed-post'
@@ -157,17 +154,14 @@ export function useNotificationsHandler() {
       lockscreenVisibility: Notifications.AndroidNotificationVisibility.PRIVATE,
     })
 
+    // PARA has no reposts. Remove the channels older builds created.
+    for (const channel of ['repost', 'like-via-repost', 'repost-via-repost']) {
+      void Notifications.deleteNotificationChannelAsync(channel)
+    }
     void Notifications.setNotificationChannelAsync(
       'like' satisfies NotificationReason,
       {
         name: _(msg`Likes`),
-        importance: Notifications.AndroidImportance.HIGH,
-      },
-    )
-    void Notifications.setNotificationChannelAsync(
-      'repost' satisfies NotificationReason,
-      {
-        name: _(msg`Reposts`),
         importance: Notifications.AndroidImportance.HIGH,
       },
     )
@@ -196,20 +190,6 @@ export function useNotificationsHandler() {
       'follow' satisfies NotificationReason,
       {
         name: _(msg`New followers`),
-        importance: Notifications.AndroidImportance.HIGH,
-      },
-    )
-    void Notifications.setNotificationChannelAsync(
-      'like-via-repost' satisfies NotificationReason,
-      {
-        name: _(msg`Likes of your reposts`),
-        importance: Notifications.AndroidImportance.HIGH,
-      },
-    )
-    void Notifications.setNotificationChannelAsync(
-      'repost-via-repost' satisfies NotificationReason,
-      {
-        name: _(msg`Reposts of your reposts`),
         importance: Notifications.AndroidImportance.HIGH,
       },
     )
@@ -490,10 +470,7 @@ export function getNotificationPayload(
 
 export function notificationToURL(payload: NotificationPayload): string | null {
   switch (payload?.reason) {
-    case 'like':
-    case 'repost':
-    case 'like-via-repost':
-    case 'repost-via-repost': {
+    case 'like': {
       const urip = new AtUri(payload.subject)
       if (urip.collection === 'app.bsky.feed.post') {
         return `/profile/${urip.host}/post/${urip.rkey}`

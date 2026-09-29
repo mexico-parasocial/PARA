@@ -15,14 +15,7 @@ import {
   type NotificationType,
 } from './types'
 
-const GROUPABLE_REASONS = [
-  'like',
-  'repost',
-  'follow',
-  'like-via-repost',
-  'repost-via-repost',
-  'subscribed-post',
-]
+const GROUPABLE_REASONS = ['like', 'follow', 'subscribed-post']
 const MS_1HR = 1e3 * 60 * 60
 const MS_2DAY = MS_1HR * 48
 
@@ -256,7 +249,6 @@ function toKnownType(
     return 'post-like'
   }
   if (
-    notif.reason === 'repost' ||
     notif.reason === 'mention' ||
     notif.reason === 'reply' ||
     notif.reason === 'quote' ||
@@ -264,8 +256,6 @@ function toKnownType(
     notif.reason === 'starterpack-joined' ||
     notif.reason === 'verified' ||
     notif.reason === 'unverified' ||
-    notif.reason === 'like-via-repost' ||
-    notif.reason === 'repost-via-repost' ||
     notif.reason === 'subscribed-post'
   ) {
     return notif.reason as NotificationType
@@ -284,16 +274,8 @@ function getSubjectUri(
     type === 'subscribed-post'
   ) {
     return notif.uri
-  } else if (
-    type === 'post-like' ||
-    type === 'repost' ||
-    type === 'like-via-repost' ||
-    type === 'repost-via-repost'
-  ) {
-    if (
-      bsky.isType(app.bsky.feed.repost, notif.record) ||
-      bsky.isType(app.bsky.feed.like, notif.record)
-    ) {
+  } else if (type === 'post-like') {
+    if (bsky.isType(app.bsky.feed.like, notif.record)) {
       return typeof notif.record.subject?.uri === 'string'
         ? notif.record.subject?.uri
         : undefined

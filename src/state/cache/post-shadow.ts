@@ -18,7 +18,6 @@ export type {Shadow} from './types'
 
 export interface PostShadow {
   likeUri: string | undefined
-  repostUri: string | undefined
   isDeleted: boolean
   embed:
     app.bsky.embed.record.View | app.bsky.embed.recordWithMedia.View | undefined
@@ -106,18 +105,6 @@ function mergeShadow(
     bookmarkCount = Math.max(0, bookmarkCount)
   }
 
-  let repostCount = post.repostCount ?? 0
-  if ('repostUri' in shadow) {
-    const wasReposted = !!post.viewer?.repost
-    const isReposted = !!shadow.repostUri
-    if (wasReposted && !isReposted) {
-      repostCount--
-    } else if (!wasReposted && isReposted) {
-      repostCount++
-    }
-    repostCount = Math.max(0, repostCount)
-  }
-
   let replyCount = post.replyCount ?? 0
   if ('optimisticReplyCount' in shadow) {
     replyCount = shadow.optimisticReplyCount ?? replyCount
@@ -139,7 +126,6 @@ function mergeShadow(
     ...post,
     embed: embed || post.embed,
     likeCount: likeCount,
-    repostCount: repostCount,
     replyCount: replyCount,
     bookmarkCount: bookmarkCount,
     voteCount: shadow.voteScore ?? (post as {voteCount?: number}).voteCount,
@@ -149,10 +135,6 @@ function mergeShadow(
         'likeUri' in shadow
           ? (shadow.likeUri as AtUriString)
           : post.viewer?.like,
-      repost:
-        'repostUri' in shadow
-          ? (shadow.repostUri as AtUriString)
-          : post.viewer?.repost,
       pinned: 'pinned' in shadow ? shadow.pinned : post.viewer?.pinned,
       bookmarked:
         'bookmarked' in shadow ? shadow.bookmarked : post.viewer?.bookmarked,

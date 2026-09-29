@@ -22,17 +22,10 @@ import {BellRinging_Stroke2_Corner0_Rounded as BellRingingIcon} from '#/componen
 import {Bubble_Stroke2_Corner2_Rounded as BubbleIcon} from '#/components/icons/Bubble'
 import {Envelope_Stroke2_Corner2_Rounded as EnvelopeIcon} from '#/components/icons/Envelope'
 import {Haptic_Stroke2_Corner2_Rounded as HapticIcon} from '#/components/icons/Haptic'
-import {
-  Heart2_Stroke2_Corner0_Rounded as HeartIcon,
-  LikeRepost_Stroke2_Corner2_Rounded as LikeRepostIcon,
-} from '#/components/icons/Heart2'
+import {Heart2_Stroke2_Corner0_Rounded as HeartIcon} from '#/components/icons/Heart2'
 import {Message_Stroke2_Corner0_Rounded as MessageIcon} from '#/components/icons/Message'
 import {PersonPlus_Stroke2_Corner2_Rounded as PersonPlusIcon} from '#/components/icons/Person'
 import {CloseQuote_Stroke2_Corner0_Rounded as CloseQuoteIcon} from '#/components/icons/Quote'
-import {
-  Repost_Stroke2_Corner2_Rounded as RepostIcon,
-  RepostRepost_Stroke2_Corner2_Rounded as RepostRepostIcon,
-} from '#/components/icons/Repost'
 import {Shapes_Stroke2_Corner0_Rounded as ShapesIcon} from '#/components/icons/Shapes'
 import * as Layout from '#/components/Layout'
 import {IS_ANDROID, IS_IOS, IS_WEB} from '#/env'
@@ -56,9 +49,6 @@ export function NotificationSettingsScreen({}: Props) {
   const replyDialogControl = Dialog.useDialogControl()
   const mentionDialogControl = Dialog.useDialogControl()
   const quoteDialogControl = Dialog.useDialogControl()
-  const repostDialogControl = Dialog.useDialogControl()
-  const likeRepostDialogControl = Dialog.useDialogControl()
-  const repostRepostDialogControl = Dialog.useDialogControl()
   const chatDialogControl = Dialog.useDialogControl()
   const chatRequestDialogControl = Dialog.useDialogControl()
   const miscDialogControl = Dialog.useDialogControl()
@@ -205,17 +195,6 @@ export function NotificationSettingsScreen({}: Props) {
                 showSkeleton={!settings}
               />
             </SettingsList.PressableItem>
-            <SettingsList.PressableItem
-              label={l`Settings for repost notifications`}
-              onPress={repostDialogControl.open}
-              contentContainerStyle={[a.align_start]}>
-              <SettingsList.ItemIcon icon={RepostIcon} />
-              <ItemTextWithSubtitle
-                titleText={<Trans>Reposts</Trans>}
-                subtitleText={<SettingPreview preference={settings?.repost} />}
-                showSkeleton={!settings}
-              />
-            </SettingsList.PressableItem>
             <SettingsList.LinkItem
               label={l`Settings for activity from others`}
               to={{screen: 'ActivityNotificationSettings'}}
@@ -229,32 +208,6 @@ export function NotificationSettingsScreen({}: Props) {
                 showSkeleton={!settings}
               />
             </SettingsList.LinkItem>
-            <SettingsList.PressableItem
-              label={l`Settings for notifications for likes of your reposts`}
-              onPress={likeRepostDialogControl.open}
-              contentContainerStyle={[a.align_start]}>
-              <SettingsList.ItemIcon icon={LikeRepostIcon} />
-              <ItemTextWithSubtitle
-                titleText={<Trans>Likes of your reposts</Trans>}
-                subtitleText={
-                  <SettingPreview preference={settings?.likeViaRepost} />
-                }
-                showSkeleton={!settings}
-              />
-            </SettingsList.PressableItem>
-            <SettingsList.PressableItem
-              label={l`Settings for notifications for reposts of your reposts`}
-              onPress={repostRepostDialogControl.open}
-              contentContainerStyle={[a.align_start]}>
-              <SettingsList.ItemIcon icon={RepostRepostIcon} />
-              <ItemTextWithSubtitle
-                titleText={<Trans>Reposts of your reposts</Trans>}
-                subtitleText={
-                  <SettingPreview preference={settings?.repostViaRepost} />
-                }
-                showSkeleton={!settings}
-              />
-            </SettingsList.PressableItem>
             <SettingsList.PressableItem
               label={l`Settings for notifications for new messages`}
               onPress={chatDialogControl.open}
@@ -346,33 +299,6 @@ export function NotificationSettingsScreen({}: Props) {
         titleText={<Trans>Quotes</Trans>}
         subtitleText={
           <Trans>Get notifications when people quote your posts.</Trans>
-        }
-      />
-      <NotificationSettingsDialog
-        control={repostDialogControl}
-        name="repost"
-        icon={RepostIcon}
-        titleText={<Trans>Reposts</Trans>}
-        subtitleText={
-          <Trans>Get notifications when people repost your posts.</Trans>
-        }
-      />
-      <NotificationSettingsDialog
-        control={likeRepostDialogControl}
-        name="likeViaRepost"
-        icon={LikeRepostIcon}
-        titleText={<Trans>Likes of your reposts</Trans>}
-        subtitleText={
-          <Trans>Get notifications when people like your reposts.</Trans>
-        }
-      />
-      <NotificationSettingsDialog
-        control={repostRepostDialogControl}
-        name="repostViaRepost"
-        icon={RepostRepostIcon}
-        titleText={<Trans>Reposts of your reposts</Trans>}
-        subtitleText={
-          <Trans>Get notifications when people repost your reposts.</Trans>
         }
       />
       <ChatNotificationDialogs

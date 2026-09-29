@@ -1,18 +1,19 @@
 import {memo, useMemo, useState} from 'react'
 import {type StyleProp, View, type ViewStyle} from 'react-native'
+import {AtUri} from '@atproto/syntax'
 import {type RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {plural} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react/macro'
+import {useNavigation} from '@react-navigation/native'
 
 import {CountWheel} from '#/lib/custom-animations/CountWheel'
 import {AnimatedLikeIcon} from '#/lib/custom-animations/LikeIcon'
 import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
+import {type NavigationProp} from '#/lib/routes/types'
 import {type Shadow} from '#/state/cache/types'
 import {useFeedFeedbackContext} from '#/state/feed-feedback'
-import {
-  usePostLikeMutationQueue,
-  usePostRepostMutationQueue,
-} from '#/state/queries/post'
+import {useHighlightMode, useHighlights} from '#/state/highlights'
+import {usePostLikeMutationQueue} from '#/state/queries/post'
 import {useRequireAuth} from '#/state/session'
 import {
   ProgressGuideAction,
@@ -24,7 +25,7 @@ import {useFormatPostStatCount} from '#/components/PostControls/util'
 import * as Skele from '#/components/Skeleton'
 import * as Toast from '#/components/Toast'
 import {useAnalytics} from '#/analytics'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import {BookmarkButton} from './BookmarkButton'
 import {
   PostControlButton,
@@ -32,7 +33,7 @@ import {
   PostControlButtonText,
 } from './PostControlButton'
 import {PostMenuButton} from './PostMenu'
-import {RepostButton} from './RepostButton'
+import {QuoteButton} from './QuoteButton'
 import {ShareMenuButton} from './ShareMenu'
 
 let PostControls = ({
@@ -48,7 +49,6 @@ let PostControls = ({
   logContext,
   threadgateRecord,
   onShowLess,
-  viaRepost,
   variant,
   forceGoogleTranslate = false,
 }: {
@@ -64,7 +64,6 @@ let PostControls = ({
   logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
   threadgateRecord?: app.bsky.feed.threadgate.Main
   onShowLess?: (interaction: app.bsky.feed.defs.Interaction) => void
-  viaRepost?: {uri: string; cid: string}
   variant?: 'compact' | 'normal' | 'large'
   forceGoogleTranslate?: boolean
 }): React.ReactNode => {
@@ -73,18 +72,14 @@ let PostControls = ({
   const {t: l} = useLingui()
   const {openComposer} = useOpenComposer()
   const {feedDescriptor} = useFeedFeedbackContext()
+  const navigation = useNavigation<NavigationProp>()
   const [queueLike, queueUnlike] = usePostLikeMutationQueue(
     post,
-    viaRepost,
     feedDescriptor,
     logContext,
   )
-  const [queueRepost, queueUnrepost] = usePostRepostMutationQueue(
-    post,
-    viaRepost,
-    feedDescriptor,
-    logContext,
-  )
+  const {enterHighlightMode} = useHighlightMode()
+  const {highlights, clearAll: clearAllHighlights} = useHighlights(post.uri)
   const requireAuth = useRequireAuth()
   const {sendInteraction} = useFeedFeedbackContext()
   const {captureAction} = useProgressGuideControls()
@@ -129,31 +124,25 @@ let PostControls = ({
     }
   }
 
-  const onRepost = async () => {
-    if (isBlocked) {
-      Toast.show(l`Cannot interact with a blocked user`, {
-        type: 'warning',
+  // PARA has no reposts: a post is shared by quoting it or by highlighting
+  // part of its text. Text is only selectable in the post's own thread view,
+  // so highlighting from anywhere else opens it there.
+  const onHighlight = () => {
+    enterHighlightMode(post.uri)
+    if (logContext !== 'PostThreadItem') {
+      navigation.navigate('PostThread', {
+        name: post.author.did,
+        rkey: new AtUri(post.uri).rkey,
       })
-      return
     }
+  }
 
-    try {
-      if (!post.viewer?.repost) {
-        sendInteraction({
-          item: post.uri,
-          event: 'app.bsky.feed.defs#interactionRepost',
-          feedContext,
-          reqId,
-        })
-        await queueRepost()
-      } else {
-        await queueUnrepost()
-      }
-    } catch (err) {
-      const e = err as Error
-      if (e?.name !== 'AbortError') {
-        throw e
-      }
+  const onRemoveAllHighlights = () => {
+    if (highlights.length > 0) {
+      clearAllHighlights()
+      Toast.show(l`All highlights removed`)
+    } else {
+      Toast.show(l`No highlights to remove`)
     }
   }
 
@@ -251,11 +240,12 @@ let PostControls = ({
           </PostControlButton>
         </View>
         <View style={[a.flex_1, a.align_start]}>
-          <RepostButton
-            isReposted={!!post.viewer?.repost}
-            repostCount={(post.repostCount ?? 0) + (post.quoteCount ?? 0)}
-            onRepost={() => void onRepost()}
+          <QuoteButton
+            quoteCount={post.quoteCount ?? 0}
             onQuote={onQuote}
+            onHighlight={onHighlight}
+            onRemoveAllHighlights={onRemoveAllHighlights}
+            hasHighlights={highlights.length > 0}
             big={big}
             embeddingDisabled={Boolean(post.viewer?.embeddingDisabled)}
           />

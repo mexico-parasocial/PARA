@@ -261,21 +261,6 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
   const showFollowButton =
     currentAccount?.did !== post.author.did && !onlyFollowersCanReply
 
-  const viaQuote = useMemo(() => {
-    const reason = postSource?.post.reason
-
-    if (
-      bsky.isType(app.bsky.feed.defs.reasonRepost, reason) &&
-      reason.uri &&
-      reason.cid
-    ) {
-      return {
-        uri: reason.uri,
-        cid: reason.cid,
-      }
-    }
-  }, [postSource])
-
   const onPressReply = useNonReactiveCallback(() => {
     openComposer({
       replyTo: {
@@ -569,7 +554,6 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
                 threadgateRecord={threadgateRecord}
                 feedContext={postSource?.post?.feedContext}
                 reqId={postSource?.post?.reqId}
-                viaRepost={viaQuote}
               />
             </FeedFeedbackProvider>
           </View>
