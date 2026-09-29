@@ -5,7 +5,6 @@ import {
   type DatetimeString,
   type DidString,
   type HandleString,
-  type NsidString,
   type UriString,
 } from '@atproto/syntax'
 

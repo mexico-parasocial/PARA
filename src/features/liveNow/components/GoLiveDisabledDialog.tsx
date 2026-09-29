@@ -1,6 +1,5 @@
 import {useCallback, useState} from 'react'
 import {View} from 'react-native'
-import {type AtUriString} from '@atproto/syntax'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'

@@ -1,4 +1,3 @@
-import {type $Typed} from '@atproto/lex'
 import {toDatetimeString} from '@atproto/syntax'
 import {useMutation, useQueryClient} from '@tanstack/react-query'
 

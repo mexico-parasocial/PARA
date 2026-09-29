@@ -24,7 +24,6 @@ import Animated, {
 } from 'react-native-reanimated'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import {type $Typed} from '@atproto/lex'
-import {type AtUriString} from '@atproto/syntax'
 import {useScrollEdgeEffectRef} from '@bsky.app/expo-scroll-edge-effect'
 import {RichText} from '@bsky/sdk/richtext'
 

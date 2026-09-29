@@ -1,5 +1,5 @@
 import {useMemo, useRef} from 'react'
-import {AtUri, type AtUriString} from '@atproto/syntax'
+import {AtUri} from '@atproto/syntax'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {

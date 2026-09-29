@@ -1,4 +1,3 @@
-import {type $Typed} from '@atproto/lex'
 import {
   type InfiniteData,
   useMutation,
