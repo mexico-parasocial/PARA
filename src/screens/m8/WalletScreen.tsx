@@ -16,6 +16,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated'
 import {useLingui} from '@lingui/react'
+import {Trans} from '@lingui/react/macro'
 
 import {getGrants, postGrantRevoke, type ProofBrokerGrant} from '#/lib/im8'
 import {authenticateBiometric} from '#/lib/im8/biometric'
@@ -440,13 +441,15 @@ function CredentialDetail({
         */}
         <View style={[styles.detailSection, {marginTop: 16}]}>
           <Text style={[styles.detailLabel, t.atoms.text_contrast_medium]}>
-            Sharing
+            <Trans>Sharing</Trans>
           </Text>
           <Text style={[styles.proofValue, t.atoms.text_contrast_medium]}>
-            Credentials are shared from your iM8 wallet, not from PARA. A shared
-            credential includes your account DID and every fact in it, and apps
-            can link repeat shares. It is not anonymous, and single facts cannot
-            be hidden.
+            <Trans>
+              Credentials are shared from your iM8 wallet, not from PARA. A
+              shared credential includes your account DID and every fact in it,
+              and apps can link repeat shares. It is not anonymous, and single
+              facts cannot be hidden.
+            </Trans>
           </Text>
         </View>
 
