@@ -14,23 +14,23 @@ export function HowItWorksSheet({onClose}: {onClose: () => void}) {
   const sections = [
     {
       emoji: '🗳️',
-      title: _(msg`Quadratic voting (being tested)`),
+      title: _(msg`Weighted votes on policies`),
       body: _(
-        msg`You vote from -3 to +3, and the number is your voice. Each extra voice costs more: 1 voice costs 1 credit, 2 cost 4, 3 cost 9. You can say something matters a lot to you, but it is expensive, so you save it for what matters most. In PARA this is still an experiment: its results are shown for comparison and decide nothing.`,
+        msg`Everyone has one vote. On a policy you vote from -3 to +3, and the number says how much your vote weighs: +3 adds three times what +1 does. On a cabildeo you pick one option, and every vote counts the same.`,
       ),
     },
     {
       emoji: '🔗',
-      title: _(msg`Lending your voice`),
+      title: _(msg`Lending your vote`),
       body: _(
-        msg`You can lend your voice to someone you trust, for one proposal or for a topic, renewing every 90 days. They cannot pass it on. It still counts as one person, at the intensity you allowed, paid from your own credits. If you vote yourself, your vote counts instead, and you can take your voice back at any moment. Lending is public today: anyone can see whom you trust.`,
+        msg`You can lend your vote to someone you trust, for one proposal or for a topic, renewing every 90 days. They cannot pass it on. It still counts once, as yours, and votes the way they vote. If you vote yourself, your vote counts instead, and you can take it back at any moment. Lending is public today: anyone can see whom you trust.`,
       ),
     },
     {
       emoji: '⚖️',
-      title: _(msg`Three Tallies`),
+      title: _(msg`How votes are counted`),
       body: _(
-        msg`Every proposal is counted one person, one vote, and that count decides. A quadratic count runs alongside it in shadow, so the community can compare the two before choosing. An adjustment for voters who always vote together has been designed but not built.`,
+        msg`A policy is counted by adding everyone's -3 to +3; a cabildeo by counting the votes for each option. Any other count shown beside them is an experiment in shadow and decides nothing.`,
       ),
     },
     {

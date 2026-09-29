@@ -6,10 +6,10 @@ import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {
-  type DelegateVoice,
-  delegateVoice,
+  type DelegateReach,
+  delegateReach,
   type Mandate,
-} from '#/lib/mandates/voice'
+} from '#/lib/mandates/mandates'
 import {
   type CommonNavigatorParams,
   type NativeStackScreenProps,
@@ -29,7 +29,7 @@ import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {
   CommunityChip,
-  DelegatedVoiceCard,
+  DelegateReachCard,
   EmptyState,
   ParticipationBar,
   PhaseBadge,
@@ -180,19 +180,19 @@ const MOCK_AUDIT: AuditEntry[] = [
   {
     uri: 'at://did:web:local/audit/1',
     actor: '@green.rep',
-    action: 'delegated vote +2 (4 credits)',
+    action: 'delegated vote +2',
     timestamp: '2026-05-05T14:32:00Z',
   },
   {
     uri: 'at://did:web:local/audit/2',
     actor: '@you',
-    action: 'direct vote +2 (4 credits)',
+    action: 'direct vote +2',
     timestamp: '2026-05-04T09:15:00Z',
   },
   {
     uri: 'at://did:web:local/audit/3',
     actor: '@neighbor.anna',
-    action: 'direct vote +1 (1 credit)',
+    action: 'direct vote +1',
     timestamp: '2026-05-03T18:45:00Z',
   },
   {
@@ -204,7 +204,7 @@ const MOCK_AUDIT: AuditEntry[] = [
   {
     uri: 'at://did:web:local/audit/5',
     actor: '@civic.league',
-    action: 'delegated vote +3 (9 credits)',
+    action: 'delegated vote +3',
     timestamp: '2026-05-01T08:00:00Z',
   },
 ]
@@ -221,11 +221,10 @@ const MOCK_VOTE_DISTRIBUTION: Record<number, number> = {
 }
 
 /**
- * The delegate's voice on a mock proposal, computed by the real arithmetic:
- * one lender per delegation, most at voice 1, a few who authorised 2, and a
- * handful who then voted themselves.
+ * The delegate's reach on a mock proposal, computed by the real arithmetic:
+ * one lender per delegation, two of whom then voted themselves.
  */
-function mockDelegateVoice(proposal: Proposal): DelegateVoice | null {
+function mockDelegateReach(proposal: Proposal): DelegateReach | null {
   if (!proposal.delegateVote) return null
   const delegate = proposal.delegateVote.delegateHandle
   const mandates: Mandate[] = Array.from(
@@ -236,13 +235,12 @@ function mockDelegateVoice(proposal: Proposal): DelegateVoice | null {
       delegate,
       kind: 'standing',
       scope: {community: proposal.community},
-      maxIntensity: i % 5 === 0 ? 2 : 1,
       grantedAt: new Date(Date.UTC(2026, 8, 1 + (i % 28))).toISOString(),
     }),
   )
-  return delegateVoice({
+  return delegateReach({
     delegate,
-    delegateIntensity: Math.abs(proposal.delegateVote.signal),
+    delegateVoted: true,
     mandates,
     directVoters: new Set(['did:plc:lender3', 'did:plc:lender7']),
     proposal: {
@@ -252,7 +250,7 @@ function mockDelegateVoice(proposal: Proposal): DelegateVoice | null {
       delegable: true,
     },
     eligibleMembers: 400,
-    totalVoices: proposal.voteCount * 2,
+    totalVotes: proposal.voteCount,
     // Fixed, so the mock mandates (granted September 2026) never lapse.
     now: new Date(Date.UTC(2026, 8, 29)),
   })
@@ -697,13 +695,9 @@ export function ProposalDetailScreen({route}: Props) {
   }, [route.params.proposalUri])
 
   const hasVoted = proposal?.yourSignal !== undefined
-  // A voice of k costs k² credits: the signal's magnitude is the voice.
-  const creditsSpent = proposal?.yourSignal
-    ? proposal.yourSignal * proposal.yourSignal
-    : 0
 
-  const delegateVoiceView = useMemo(
-    () => (proposal ? mockDelegateVoice(proposal) : null),
+  const delegateReachView = useMemo(
+    () => (proposal ? mockDelegateReach(proposal) : null),
     [proposal],
   )
 
@@ -899,14 +893,6 @@ export function ProposalDetailScreen({route}: Props) {
                     {_(
                       msg`You voted ${(proposal.yourSignal! > 0 ? '+' : '') + String(proposal.yourSignal)}`,
                     )}
-                  </Text>
-                  <Text
-                    style={[
-                      a.text_center,
-                      a.text_xs,
-                      t.atoms.text_contrast_medium,
-                    ]}>
-                    {creditsSpent} <Trans>credits spent</Trans>
                   </Text>
                 </View>
               )}
@@ -1138,10 +1124,14 @@ export function ProposalDetailScreen({route}: Props) {
                 ))
               )}
 
-              {delegateVoiceView && proposal.delegateVote && (
-                <DelegatedVoiceCard
+              {delegateReachView && proposal.delegateVote && (
+                <DelegateReachCard
                   handle={proposal.delegateVote.delegateHandle}
-                  voice={delegateVoiceView}
+                  reach={delegateReachView}
+                  kind="policy"
+                  // Weighted policy ballots are frozen until the private
+                  // ballot (OD-7 §5c): nothing here decides anything yet.
+                  shadow
                 />
               )}
 

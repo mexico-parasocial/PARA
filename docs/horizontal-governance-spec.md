@@ -61,7 +61,7 @@ For horizontal communities, this model is **invalid**. We need a new governance 
 - Revocable at any moment, with immediate effect; your own ballot always overrides
 - No permanent delegates: no delegate may carry more than 10% of a community's members
 
-Full rules, and how delegation combines with quadratic voting: `revocable-mandates-spec.md`.
+Full rules, and how lent votes count on policies and cabildeos: `revocable-mandates-spec.md`.
 
 ### Record-Level Authorization
 

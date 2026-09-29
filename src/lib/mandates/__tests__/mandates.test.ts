@@ -1,15 +1,14 @@
 import {
-  creditCost,
-  delegateVoice,
-  type DelegateVoiceInput,
+  delegateReach,
+  type DelegateReachInput,
   governingMandate,
+  isValidSignal,
   type Mandate,
   mandateCap,
   mandateIsActive,
   mandateLapsesAt,
-  pooledVoices,
   type ProposalContext,
-} from '../voice'
+} from '../mandates'
 
 const NOW = new Date('2026-09-29T12:00:00Z')
 
@@ -29,35 +28,29 @@ function mandate(over: Partial<Mandate>): Mandate {
     delegate: 'did:plc:ana',
     kind: 'standing',
     scope: {community: 'verde'},
-    maxIntensity: 1,
     grantedAt: `2026-09-${String(10 + (seq % 15)).padStart(2, '0')}T00:00:00Z`,
     ...over,
   }
 }
 
-function input(over: Partial<DelegateVoiceInput>): DelegateVoiceInput {
+function input(over: Partial<DelegateReachInput>): DelegateReachInput {
   return {
     delegate: 'did:plc:ana',
-    delegateIntensity: 1,
+    delegateVoted: true,
     mandates: [],
     directVoters: new Set(),
     proposal,
     eligibleMembers: 1000,
-    totalVoices: 100,
+    totalVotes: 100,
     now: NOW,
     ...over,
   }
 }
 
-describe('creditCost', () => {
-  it('is the square of the voice', () => {
-    expect([0, 1, 2, 3].map(creditCost)).toEqual([0, 1, 4, 9])
-  })
-
-  it('refuses voices outside 0..3', () => {
-    expect(() => creditCost(4)).toThrow(RangeError)
-    expect(() => creditCost(-1)).toThrow(RangeError)
-    expect(() => creditCost(1.5)).toThrow(RangeError)
+describe('isValidSignal', () => {
+  it('accepts whole signals from -3 to +3 and nothing else', () => {
+    expect([-3, -1, 0, 2, 3].every(isValidSignal)).toBe(true)
+    expect([4, -4, 1.5, NaN].some(isValidSignal)).toBe(false)
   })
 })
 
@@ -135,7 +128,7 @@ describe('governingMandate', () => {
     ).toBeNull()
   })
 
-  it('never applies to non-delegable proposals', () => {
+  it('never applies to non-delegable subjects', () => {
     const m = mandate({delegator: 'did:plc:x'})
     expect(
       governingMandate([m], 'did:plc:x', {...proposal, delegable: false}, NOW),
@@ -143,48 +136,35 @@ describe('governingMandate', () => {
   })
 })
 
-describe('delegateVoice', () => {
-  it('counts each lender once, at the voice they authorised', () => {
-    const mandates = [
-      mandate({maxIntensity: 1}),
-      mandate({maxIntensity: 3}),
-      mandate({maxIntensity: 2}),
-    ]
-    const v = delegateVoice(input({delegateIntensity: 3, mandates}))
-    expect(v.own).toBe(3)
-    expect(v.lent.map(l => l.intensity).sort()).toEqual([1, 2, 3])
-    expect(v.lent.map(l => l.credits).sort((a, b) => a - b)).toEqual([1, 4, 9])
-    expect(v.voices).toBe(9)
-    expect(v.people).toBe(4)
-    expect(v.share).toBeCloseTo(0.09)
+describe('delegateReach', () => {
+  it('counts the delegate once and each lender once', () => {
+    const v = delegateReach(
+      input({mandates: [mandate({}), mandate({}), mandate({})]}),
+    )
+    expect(v.votes).toBe(4)
+    expect(v.lent).toHaveLength(3)
+    expect(v.share).toBeCloseTo(0.04)
   })
 
-  it('never lends more voice than the delegate casts', () => {
-    const v = delegateVoice(
-      input({delegateIntensity: 1, mandates: [mandate({maxIntensity: 3})]}),
+  it('casts nothing lent when the delegate has not voted', () => {
+    const v = delegateReach(
+      input({delegateVoted: false, mandates: [mandate({}), mandate({})]}),
     )
-    expect(v.lent[0]).toMatchObject({intensity: 1, credits: 1})
-  })
-
-  it('counts nothing lent when the delegate has not voted', () => {
-    const v = delegateVoice(
-      input({delegateIntensity: 0, mandates: [mandate({}), mandate({})]}),
-    )
-    expect(v).toMatchObject({voices: 0, people: 0, lent: [], returned: []})
+    expect(v).toMatchObject({votes: 0, lent: [], returned: [], share: 0})
   })
 
   it("lets a lender's own ballot override the mandate", () => {
     const a = mandate({})
     const b = mandate({})
-    const v = delegateVoice(
+    const v = delegateReach(
       input({mandates: [a, b], directVoters: new Set([a.delegator])}),
     )
     expect(v.overridden).toEqual([a.delegator])
-    expect(v.lent.map(l => l.delegator)).toEqual([b.delegator])
+    expect(v.lent).toEqual([b.delegator])
   })
 
   it('drops revoked and lapsed mandates', () => {
-    const v = delegateVoice(
+    const v = delegateReach(
       input({
         mandates: [
           mandate({revokedAt: '2026-09-28T00:00:00Z'}),
@@ -206,33 +186,31 @@ describe('delegateVoice', () => {
       delegate: 'did:plc:luis',
       grantedAt: '2026-09-20T00:00:00Z',
     })
-    const v = delegateVoice(input({mandates: [toAna, toLuis]}))
-    expect(v.lent).toHaveLength(0)
+    expect(delegateReach(input({mandates: [toAna, toLuis]})).lent).toEqual([])
   })
 
-  it('returns voices beyond the cap to their owners, oldest kept first', () => {
+  it('returns votes beyond the cap to their owners, oldest kept first', () => {
     const mandates = Array.from({length: 5}, (_, i) =>
       mandate({grantedAt: `2026-09-0${i + 1}T00:00:00Z`}),
     )
-    const v = delegateVoice(input({mandates, eligibleMembers: 30}))
+    const v = delegateReach(input({mandates, eligibleMembers: 30}))
     expect(v.capPeople).toBe(3)
-    expect(v.lent.map(l => l.delegator)).toEqual(
-      mandates.slice(0, 3).map(m => m.delegator),
-    )
+    expect(v.lent).toEqual(mandates.slice(0, 3).map(m => m.delegator))
     expect(v.returned).toEqual(mandates.slice(3).map(m => m.delegator))
+    expect(v.votes).toBe(4)
   })
 
-  it('is one hop: voices lent to the delegate do not travel on', () => {
-    // Ana lent her own voice to Luis; Luis's voice does not include Ana's lenders.
+  it('is one hop: votes lent to the delegate do not travel on', () => {
+    // Ana lent her own vote to Luis; Luis does not also carry Ana's lenders.
     const anaToLuis = mandate({
       delegator: 'did:plc:ana',
       delegate: 'did:plc:luis',
     })
     const toAna = mandate({})
-    const v = delegateVoice(
+    const v = delegateReach(
       input({delegate: 'did:plc:luis', mandates: [anaToLuis, toAna]}),
     )
-    expect(v.lent.map(l => l.delegator)).toEqual(['did:plc:ana'])
+    expect(v.lent).toEqual(['did:plc:ana'])
   })
 })
 
@@ -241,13 +219,5 @@ describe('mandateCap', () => {
     expect(mandateCap(1000)).toBe(100)
     expect(mandateCap(25)).toBe(2)
     expect(mandateCap(5)).toBe(1)
-  })
-})
-
-describe('why voices are not pooled', () => {
-  it('pooling 25 lenders at voice 3 would shrink them from 75 voices to 15', () => {
-    const credits = Array.from({length: 25}, () => creditCost(3))
-    expect(25 * 3).toBe(75)
-    expect(pooledVoices(credits)).toBe(15)
   })
 })

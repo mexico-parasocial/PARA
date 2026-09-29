@@ -2,9 +2,9 @@ import {i18n} from '@lingui/core'
 import {I18nProvider} from '@lingui/react'
 import {fireEvent, render, screen} from '@testing-library/react-native'
 
-import {delegateVoice, type Mandate} from '#/lib/mandates/voice'
+import {delegateReach, type Mandate} from '#/lib/mandates/mandates'
 import {ThemeProvider} from '#/alf'
-import {DelegatedVoiceCard} from '../DelegatedVoiceCard'
+import {DelegateReachCard} from '../DelegateReachCard'
 import {VoteComposer} from '../VoteComposer'
 
 /*
@@ -48,69 +48,97 @@ function wrap(ui: React.ReactElement) {
 
 const NOW = new Date('2026-09-29T00:00:00Z')
 
-function voice(lenders: number, own: number, direct: string[] = []) {
+function reach(lenders: number, voted: boolean, direct: string[] = []) {
   const mandates: Mandate[] = Array.from({length: lenders}, (_v, i) => ({
     id: `m${i}`,
     delegator: `did:plc:l${i}`,
     delegate: 'did:plc:ana',
     kind: 'standing',
     scope: {community: 'verde'},
-    maxIntensity: 1,
     grantedAt: '2026-09-01T00:00:00Z',
   }))
-  return delegateVoice({
+  return delegateReach({
     delegate: 'did:plc:ana',
-    delegateIntensity: own,
+    delegateVoted: voted,
     mandates,
     directVoters: new Set(direct),
     proposal: {uri: 'p', community: 'verde', topics: [], delegable: true},
     eligibleMembers: 400,
-    totalVoices: 200,
+    totalVotes: 200,
     now: NOW,
   })
 }
 
-describe('DelegatedVoiceCard', () => {
-  it('says how many voices, whose, and what share', () => {
+describe('DelegateReachCard', () => {
+  it('says how many votes, whose, and what share', () => {
     wrap(
-      <DelegatedVoiceCard handle="@ana" voice={voice(12, 2, ['did:plc:l0'])} />,
+      <DelegateReachCard
+        handle="@ana"
+        kind="policy"
+        shadow
+        reach={reach(12, true, ['did:plc:l0'])}
+      />,
     )
-    expect(screen.getByText('13 voces')).toBeTruthy()
+    expect(screen.getByText('12 votos')).toBeTruthy()
     expect(
-      screen.getByText('La suya y la de 11 personas que se la prestaron.'),
+      screen.getByText('El suyo y el de 11 personas que se lo prestaron.'),
     ).toBeTruthy()
-    expect(screen.getByText(/7% de todas las voces/)).toBeTruthy()
+    expect(screen.getByText(/6% de los votos/)).toBeTruthy()
     expect(screen.getByText(/más de 40 personas/)).toBeTruthy()
     expect(
       screen.getByText(
         '1 persona votó por su cuenta: cuenta su voto, no este.',
       ),
     ).toBeTruthy()
+    expect(screen.getByText(/la misma señal que el de @ana/)).toBeTruthy()
     expect(screen.getByText('EN SOMBRA')).toBeTruthy()
   })
 
+  it('explains a cabildeo as one option per person, with no shadow badge', () => {
+    wrap(
+      <DelegateReachCard
+        handle="@ana"
+        kind="cabildeo"
+        reach={reach(3, true)}
+      />,
+    )
+    expect(screen.getByText('4 votos')).toBeTruthy()
+    expect(screen.getByText(/va a la opción que elija @ana/)).toBeTruthy()
+    expect(screen.queryByText('EN SOMBRA')).toBeNull()
+    expect(screen.queryByText(/crédito/)).toBeNull()
+  })
+
   it('carries nothing before the delegate votes', () => {
-    wrap(<DelegatedVoiceCard handle="@ana" voice={voice(5, 0)} />)
-    expect(screen.getByText('0 voces')).toBeTruthy()
+    wrap(
+      <DelegateReachCard handle="@ana" kind="policy" reach={reach(5, false)} />,
+    )
+    expect(screen.getByText('0 votos')).toBeTruthy()
     expect(
       screen.getByText(
-        'Todavía no vota, así que no lleva ninguna voz prestada.',
+        'Todavía no vota, así que no lleva ningún voto prestado.',
       ),
     ).toBeTruthy()
   })
 })
 
 describe('VoteComposer', () => {
-  it('prices the signal as a square, with no second intensity knob', () => {
+  it('weighs the signal, with no credits and no second knob', () => {
     const onCast = jest.fn()
     wrap(<VoteComposer onCast={onCast} />)
-    expect(screen.getByText('Neutral no gasta créditos.')).toBeTruthy()
+    expect(
+      screen.getByText('0 cuenta tu participación sin mover el resultado.'),
+    ).toBeTruthy()
     expect(screen.queryByLabelText('Increase units')).toBeNull()
+    expect(screen.queryByText(/crédito/)).toBeNull()
 
     fireEvent.press(screen.getByLabelText('Strongly Support'))
-    expect(screen.getByText('Este voto cuesta 9 de tus créditos.')).toBeTruthy()
+    expect(
+      screen.getByText('Tu voto suma +3 al conteo: +3 pesa el triple que +1.'),
+    ).toBeTruthy()
     fireEvent.press(screen.getByLabelText('Oppose'))
-    expect(screen.getByText('Este voto cuesta 4 de tus créditos.')).toBeTruthy()
+    expect(
+      screen.getByText('Tu voto suma -2 al conteo: +3 pesa el triple que +1.'),
+    ).toBeTruthy()
 
     fireEvent.press(screen.getByText('Cast vote'))
     expect(onCast).toHaveBeenCalledWith(-2)

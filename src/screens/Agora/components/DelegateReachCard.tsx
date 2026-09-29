@@ -3,28 +3,33 @@ import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Plural, Trans} from '@lingui/react/macro'
 
-import {type DelegateVoice} from '#/lib/mandates/voice'
+import {type BallotKind, type DelegateReach} from '#/lib/mandates/mandates'
 import {atoms as a, useTheme} from '#/alf'
 import {Text} from '#/components/Typography'
 
 const MAX_DOTS = 30
 
 /**
- * How much of a proposal one delegate speaks for. One number (voces), one
- * row of people, one bar. Everything else is a sentence.
- * docs/revocable-mandates-spec.md §6.
+ * How many votes one delegate's choice decides, and what share of the whole
+ * that is. One number, one row of people, one bar; everything else is a
+ * sentence. docs/revocable-mandates-spec.md §6.
  */
-export function DelegatedVoiceCard({
+export function DelegateReachCard({
   handle,
-  voice,
+  reach,
+  kind,
+  shadow = false,
 }: {
   handle: string
-  voice: DelegateVoice
+  reach: DelegateReach
+  kind: BallotKind
+  /** The subject's ballots do not decide anything yet. */
+  shadow?: boolean
 }) {
   const t = useTheme()
   const {_} = useLingui()
-  const lenders = voice.lent.length
-  const pct = Math.round(voice.share * 100)
+  const lenders = reach.lent.length
+  const pct = Math.round(reach.share * 100)
 
   return (
     <View
@@ -36,56 +41,59 @@ export function DelegatedVoiceCard({
         t.atoms.bg,
         t.atoms.border_contrast_low,
       ]}>
-      <View style={[a.flex_row, a.align_center, a.gap_sm]}>
-        <View style={[a.px_sm, a.py_2xs, a.rounded_sm, t.atoms.bg_contrast_50]}>
-          <Text
-            style={[
-              a.text_xs,
-              a.font_bold,
-              t.atoms.text_contrast_high,
-              {letterSpacing: 0.4},
-            ]}>
-            <Trans>EN SOMBRA</Trans>
+      {shadow && (
+        <View style={[a.flex_row, a.align_center, a.gap_sm]}>
+          <View
+            style={[a.px_sm, a.py_2xs, a.rounded_sm, t.atoms.bg_contrast_50]}>
+            <Text
+              style={[
+                a.text_xs,
+                a.font_bold,
+                t.atoms.text_contrast_high,
+                {letterSpacing: 0.4},
+              ]}>
+              <Trans>EN SOMBRA</Trans>
+            </Text>
+          </View>
+          <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
+            <Trans>No decide nada</Trans>
           </Text>
         </View>
-        <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-          <Trans>No decide nada</Trans>
-        </Text>
-      </View>
+      )}
 
       <View style={[a.gap_2xs]}>
         <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-          <Trans>La voz de {handle} en esta propuesta</Trans>
+          <Trans>El voto de {handle} en esta propuesta</Trans>
         </Text>
         <Text style={[a.text_3xl, a.font_bold, t.atoms.text]}>
-          <Plural value={voice.voices} one="# voz" other="# voces" />
+          <Plural value={reach.votes} one="# voto" other="# votos" />
         </Text>
         <Text style={[a.text_sm, a.leading_snug, t.atoms.text]}>
-          {voice.own === 0 ? (
+          {!reach.voted ? (
             <Trans>
-              Todavía no vota, así que no lleva ninguna voz prestada.
+              Todavía no vota, así que no lleva ningún voto prestado.
             </Trans>
           ) : lenders === 0 ? (
-            <Trans>Solo la suya.</Trans>
+            <Trans>Solo el suyo.</Trans>
           ) : (
             <Plural
               value={lenders}
-              one="La suya y la de # persona que se la prestó."
-              other="La suya y la de # personas que se la prestaron."
+              one="El suyo y el de # persona que se lo prestó."
+              other="El suyo y el de # personas que se lo prestaron."
             />
           )}
         </Text>
       </View>
 
-      {voice.people > 0 && <People voice={voice} />}
+      {reach.votes > 0 && <People reach={reach} />}
 
       <View style={[a.gap_xs]}>
         <View
           accessible
           accessibilityRole="progressbar"
-          accessibilityLabel={_(msg`Parte de todas las voces de la propuesta`)}
+          accessibilityLabel={_(msg`Parte de todos los votos de la propuesta`)}
           accessibilityHint={_(
-            msg`Cuánto de la propuesta lleva esta voz frente a todas las demás`,
+            msg`Cuántos votos decide esta persona frente a todos los demás`,
           )}
           accessibilityValue={{min: 0, max: 100, now: pct}}
           style={[
@@ -100,7 +108,7 @@ export function DelegatedVoiceCard({
               a.h_full,
               a.rounded_full,
               {
-                width: `${Math.max(voice.share > 0 ? 2 : 0, pct)}%`,
+                width: `${Math.max(reach.share > 0 ? 2 : 0, pct)}%`,
                 backgroundColor: t.palette.primary_500,
               },
             ]}
@@ -108,29 +116,29 @@ export function DelegatedVoiceCard({
         </View>
         <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
           <Trans>
-            {pct}% de todas las voces de esta propuesta. Nadie puede llevar la
-            voz de más de {voice.capPeople} personas.
+            {pct}% de los votos de esta propuesta. Nadie puede llevar el voto de
+            más de {reach.capPeople} personas.
           </Trans>
         </Text>
       </View>
 
-      {(voice.overridden.length > 0 || voice.returned.length > 0) && (
+      {(reach.overridden.length > 0 || reach.returned.length > 0) && (
         <View style={[a.gap_2xs]}>
-          {voice.overridden.length > 0 && (
+          {reach.overridden.length > 0 && (
             <Text style={[a.text_xs, a.leading_snug, t.atoms.text]}>
               <Plural
-                value={voice.overridden.length}
+                value={reach.overridden.length}
                 one="# persona votó por su cuenta: cuenta su voto, no este."
                 other="# personas votaron por su cuenta: cuenta su voto, no este."
               />
             </Text>
           )}
-          {voice.returned.length > 0 && (
+          {reach.returned.length > 0 && (
             <Text style={[a.text_xs, a.leading_snug, t.atoms.text]}>
               <Plural
-                value={voice.returned.length}
-                one="# persona recuperó su voz porque se pasaba del tope."
-                other="# personas recuperaron su voz porque se pasaba del tope."
+                value={reach.returned.length}
+                one="# persona recuperó su voto porque se pasaba del tope."
+                other="# personas recuperaron su voto porque se pasaba del tope."
               />
             </Text>
           )}
@@ -138,22 +146,29 @@ export function DelegatedVoiceCard({
       )}
 
       <Text style={[a.text_xs, a.leading_snug, t.atoms.text_contrast_medium]}>
-        <Trans>
-          Prestar tu voz no la multiplica ni la reduce: cada persona cuenta una
-          vez, con la intensidad que ella misma autorizó y pagada con sus
-          propios créditos. Puedes votar tú o retirarla hasta el cierre.
-        </Trans>
+        {kind === 'policy' ? (
+          <Trans>
+            Cada voto prestado lleva la misma señal que el de {handle}, de −3 a
+            +3, y cuenta una vez por persona. Puedes votar tú o retirarlo hasta
+            el cierre.
+          </Trans>
+        ) : (
+          <Trans>
+            Cada voto prestado va a la opción que elija {handle} y cuenta una
+            vez por persona. Puedes votar tú o retirarlo hasta el cierre.
+          </Trans>
+        )}
       </Text>
     </View>
   )
 }
 
 /** One dot per person: filled for the delegate, outlined for each lender. */
-function People({voice}: {voice: DelegateVoice}) {
+function People({reach}: {reach: DelegateReach}) {
   const t = useTheme()
   const dots = [
-    ...(voice.own > 0 ? ['own'] : []),
-    ...voice.lent.map(() => 'lent'),
+    ...(reach.voted ? ['own'] : []),
+    ...reach.lent.map(() => 'lent'),
   ]
   const shown = dots.slice(0, MAX_DOTS)
   const more = dots.length - shown.length

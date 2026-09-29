@@ -14,7 +14,7 @@ import {
   type AcuerdoLockRecord,
   type AcuerdoRecord,
 } from '#/lib/api/acuerdo-lexicon'
-import {STANDING_TERM_DAYS} from '#/lib/mandates/voice'
+import {STANDING_TERM_DAYS} from '#/lib/mandates/mandates'
 import {useSession} from '#/state/session'
 
 const STORAGE_KEY = 'para_acuerdos'

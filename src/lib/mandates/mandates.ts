@@ -1,30 +1,28 @@
 /**
- * Voice arithmetic for revocable mandates under quadratic voting.
- * docs/revocable-mandates-spec.md is the specification; this module is its
- * executable part and publishes nothing.
+ * Revocable mandates: who a lent vote counts for, and how far one delegate
+ * reaches. docs/revocable-mandates-spec.md is the specification; this module
+ * is its executable part and publishes nothing.
  *
- * A person's ballot on a proposal is a signal from -3 to +3. Its magnitude is
- * their voice (voces) and costs voice² credits. A mandate lends a voice to one
- * delegate. Each lent voice is still priced on its owner's own budget, never
- * pooled, so lending neither creates nor destroys voice.
+ * There are no credits. A policy ballot is a signal from -3 to +3; a cabildeo
+ * ballot is one option, unweighted. A lent vote casts the delegate's ballot
+ * once for the person who lent it, so lending neither adds votes nor removes
+ * them.
  */
 
-export const MAX_INTENSITY = 3
+export const MAX_SIGNAL = 3
 export const STANDING_TERM_DAYS = 90
 export const DEFAULT_CONCENTRATION_CAP = 0.1
 
 const DAY_MS = 24 * 60 * 60 * 1000
 
-/** Credits a voice of `intensity` costs: 1, 4 or 9. */
-export function creditCost(intensity: number): number {
-  if (
-    !Number.isInteger(intensity) ||
-    intensity < 0 ||
-    intensity > MAX_INTENSITY
-  ) {
-    throw new RangeError(`intensity must be an integer 0..${MAX_INTENSITY}`)
-  }
-  return intensity * intensity
+/** What a subject takes: a weighted signal (policy) or one option (cabildeo). */
+export type BallotKind = 'policy' | 'cabildeo'
+
+/** A policy signal is an integer from -3 to +3. */
+export function isValidSignal(signal: number): boolean {
+  return (
+    Number.isInteger(signal) && signal >= -MAX_SIGNAL && signal <= MAX_SIGNAL
+  )
 }
 
 export type MandateScope = {
@@ -40,8 +38,6 @@ export type Mandate = {
   /** `proposal`: one proposal, ends when it closes. `standing`: renewable. */
   kind: 'proposal' | 'standing'
   scope: MandateScope
-  /** Highest voice the delegator lets the delegate spend for them, 1..3. */
-  maxIntensity: number
   grantedAt: string
   renewedAt?: string
   revokedAt?: string
@@ -104,7 +100,7 @@ export function governingMandate(
   return best
 }
 
-/** How many people's voices one delegate may carry in a community. */
+/** How many people's votes one delegate may carry in a community. */
 export function mandateCap(
   eligibleMembers: number,
   cap = DEFAULT_CONCENTRATION_CAP,
@@ -112,48 +108,38 @@ export function mandateCap(
   return Math.max(1, Math.floor(eligibleMembers * cap))
 }
 
-export type LentVoice = {
-  delegator: string
-  intensity: number
-  credits: number
-}
-
-export type DelegateVoice = {
-  /** The delegate's own voice, 0 if they have not voted. */
-  own: number
-  /** Voices exercised, oldest mandate first. */
-  lent: LentVoice[]
-  /** Delegators who voted themselves: their own ballot counts instead. */
+export type DelegateReach = {
+  /** Whether the delegate has cast their own ballot. */
+  voted: boolean
+  /** Lenders whose vote this ballot casts, oldest mandate first. */
+  lent: string[]
+  /** Lenders who voted themselves: their own ballot counts instead. */
   overridden: string[]
-  /** Delegators beyond the cap, whose voice goes back to them. */
+  /** Lenders beyond the cap, whose vote goes back to them. */
   returned: string[]
-  /** own + Σ lent intensities. */
-  voices: number
-  /** People whose voice this is: the delegate (if voting) plus lenders. */
-  people: number
-  /** voices / totalVoices, 0..1. */
+  /** Ballots this delegate's choice decides: their own plus the lent ones. */
+  votes: number
+  /** votes / totalVotes, 0..1. */
   share: number
   capPeople: number
 }
 
-export type DelegateVoiceInput = {
+export type DelegateReachInput = {
   delegate: string
-  /** Magnitude of the delegate's own ballot, 0 if they have not voted. */
-  delegateIntensity: number
+  /** Whether the delegate has voted on this subject. */
+  delegateVoted: boolean
   mandates: readonly Mandate[]
-  /** People who cast their own ballot on this proposal. */
+  /** People who cast their own ballot on this subject. */
   directVoters: ReadonlySet<string>
   proposal: ProposalContext
   eligibleMembers: number
-  /** Every voice cast on the proposal, this delegate's included. */
-  totalVoices: number
+  /** Every ballot counted on the subject, direct and lent. */
+  totalVotes: number
   now: Date
   cap?: number
 }
 
-export function delegateVoice(input: DelegateVoiceInput): DelegateVoice {
-  const own = input.delegateIntensity
-  creditCost(own)
+export function delegateReach(input: DelegateReachInput): DelegateReach {
   const capPeople = mandateCap(input.eligibleMembers, input.cap)
 
   const delegators = new Set(
@@ -175,48 +161,25 @@ export function delegateVoice(input: DelegateVoiceInput): DelegateVoice {
   governing.sort((x, y) => x.grantedAt.localeCompare(y.grantedAt))
 
   const overridden: string[] = []
-  const eligible: Mandate[] = []
+  const eligible: string[] = []
   for (const m of governing) {
     if (input.directVoters.has(m.delegator)) overridden.push(m.delegator)
-    else eligible.push(m)
+    else eligible.push(m.delegator)
   }
 
-  // Nothing is lent to a delegate who has not voted: there is no direction.
-  const lent: LentVoice[] =
-    own === 0
-      ? []
-      : eligible.slice(0, capPeople).map(m => {
-          const intensity = Math.min(own, clampIntensity(m.maxIntensity))
-          return {
-            delegator: m.delegator,
-            intensity,
-            credits: creditCost(intensity),
-          }
-        })
-  const returned =
-    own === 0 ? [] : eligible.slice(capPeople).map(m => m.delegator)
+  // A delegate who has not voted casts nothing: there is no ballot to copy.
+  const voted = input.delegateVoted
+  const lent = voted ? eligible.slice(0, capPeople) : []
+  const returned = voted ? eligible.slice(capPeople) : []
+  const votes = (voted ? 1 : 0) + lent.length
 
-  const voices = own + lent.reduce((sum, v) => sum + v.intensity, 0)
   return {
-    own,
+    voted,
     lent,
     overridden,
     returned,
-    voices,
-    people: (own > 0 ? 1 : 0) + lent.length,
-    share: input.totalVoices > 0 ? Math.min(1, voices / input.totalVoices) : 0,
+    votes,
+    share: input.totalVotes > 0 ? Math.min(1, votes / input.totalVotes) : 0,
     capPeople,
   }
-}
-
-function clampIntensity(n: number): number {
-  return Math.max(1, Math.min(MAX_INTENSITY, Math.floor(n)))
-}
-
-/**
- * What pooling would give instead: √(Σ credits). Kept only so the spec's
- * comparison is executable; the tally never pools.
- */
-export function pooledVoices(credits: readonly number[]): number {
-  return Math.sqrt(credits.reduce((sum, c) => sum + c, 0))
 }

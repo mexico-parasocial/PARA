@@ -6,16 +6,14 @@ import {useLingui} from '@lingui/react'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import {Text} from '#/components/Typography'
-import {IntensityScale} from './IntensityScale'
 import {SIGNAL_COLORS} from './SignalBadge'
 
 const SIGNALS = [-3, -2, -1, 0, 1, 2, 3]
 
 /**
- * One control for direction and intensity: the signal's magnitude is the
- * voice, and a voice of k costs k² credits (docs/revocable-mandates-spec.md
- * §5). There is no separate intensity stepper: two knobs for one quantity is
- * how quadratic voting gets misunderstood.
+ * A policy ballot: one person, one vote, weighted by its signal from -3 to +3
+ * (docs/revocable-mandates-spec.md §4). One control for direction and weight;
+ * there are no credits and no separate intensity stepper.
  */
 export function VoteComposer({
   initialSignal = 0,
@@ -28,9 +26,8 @@ export function VoteComposer({
   const {_} = useLingui()
   const [signal, setSignal] = useState(initialSignal)
 
-  const canCast = signal !== 0 && signal !== initialSignal
-  const voice = Math.abs(signal)
-  const cost = voice * voice
+  const canCast = signal !== initialSignal
+  const signed = signal > 0 ? `+${signal}` : `${signal}`
 
   const castLabel = _(msg`Cast vote`)
 
@@ -115,8 +112,7 @@ export function VoteComposer({
                     : _(msg`Strongly Support`)}
       </Text>
 
-      {/* Quadratic price */}
-      <IntensityScale selected={voice} />
+      {/* What the weight means */}
       <Text
         style={[
           a.text_center,
@@ -125,9 +121,9 @@ export function VoteComposer({
             fontSize: 12,
           },
         ]}>
-        {voice === 0
-          ? _(msg`Neutral no gasta créditos.`)
-          : _(msg`Este voto cuesta ${cost} de tus créditos.`)}
+        {signal === 0
+          ? _(msg`0 cuenta tu participación sin mover el resultado.`)
+          : _(msg`Tu voto suma ${signed} al conteo: +3 pesa el triple que +1.`)}
       </Text>
 
       {/* Cast vote button */}
