@@ -4,10 +4,11 @@ import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
-import {getMe, logoutM8, startM8Session} from '#/lib/im8'
+import {completeM8OAuth, getMe, logoutM8, startM8Session} from '#/lib/im8'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import {Text} from '#/components/Typography'
+import {IS_NATIVE} from '#/env'
 
 type ConnectionState =
   | {status: 'loading'}
@@ -20,8 +21,8 @@ function shortenDid(did: string) {
 
 /**
  * Session banner for the Identity Hub. Shows whether the app holds an m8
- * broker session, offers the connect flow (dev token bootstrap today; OAuth
- * handoff opens in the system browser), and disconnect.
+ * broker session, offers the connect flow (dev token bootstrap, or OAuth in
+ * an auth session that returns an exchange code), and disconnect.
  */
 export function M8SessionBanner() {
   const t = useTheme()
@@ -60,13 +61,16 @@ export function M8SessionBanner() {
       if (res.tokens) {
         await refresh()
       } else {
-        // OAuth-gated attempt: hand off to the system browser. The broker's
-        // callback returns JSON tokens and cannot deep-link back into the
-        // app yet, so the user completes sign-in manually.
         const url = res.oauthUrl ?? res.attempt.authUrl
-        setOauthPending(true)
-        if (url) {
-          await Linking.openURL(url)
+        if (IS_NATIVE && url) {
+          // The auth session returns the exchange code to this call, and it
+          // is swapped for tokens over the app's own channel.
+          if (await completeM8OAuth(url)) await refresh()
+        } else {
+          // Web: the broker's callback answers in the browser, so the person
+          // finishes there and checks the status here.
+          setOauthPending(true)
+          if (url) await Linking.openURL(url)
         }
       }
     } catch (e) {

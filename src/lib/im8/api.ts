@@ -122,12 +122,24 @@ export async function postDevIneEnroll(): Promise<boolean> {
   return true
 }
 
+/**
+ * Where m8 sends the browser back after OAuth, carrying a single-use
+ * `exchange_code` (never the tokens). It must be on mubEZ's
+ * OAUTH_RETURN_TO_ALLOWLIST, and it matches the app scheme in app.config.js.
+ */
+export const M8_OAUTH_RETURN_URL = 'para://m8/oauth-callback'
+
 export async function postSessionStart(
   identifier: string,
+  opts: {returnTo?: string} = {},
 ): Promise<M8SessionStartResponse> {
   const res = await m8Fetch('/sessions/start', {
     method: 'POST',
-    body: JSON.stringify({identifier}),
+    body: JSON.stringify(
+      opts.returnTo
+        ? {identifier, platform: 'mobile', returnTo: opts.returnTo}
+        : {identifier},
+    ),
   })
   if (!res.ok) {
     const err = (await res.json().catch(() => ({}))) as {error?: string}
@@ -143,6 +155,37 @@ export async function postSessionStart(
     }
   }
   return body
+}
+
+/** The single-use code m8 appends to the OAuth return URL, or null. */
+export function exchangeCodeFromReturnUrl(url: string): string | null {
+  const query = url.split('#')[0].split('?')[1]
+  if (!query) return null
+  const code = new URLSearchParams(query).get('exchange_code')
+  return code && code.length >= 16 && code.length <= 256 ? code : null
+}
+
+/** Swaps the OAuth exchange code for a token bundle and stores it. */
+export async function postSessionExchange(code: string): Promise<void> {
+  const res = await m8Fetch('/sessions/exchange', {
+    method: 'POST',
+    body: JSON.stringify({code}),
+  })
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
+    throw new Error(err.error ?? `Session exchange failed (${res.status})`)
+  }
+  const body = (await res.json()) as {
+    sessionId?: string
+    tokens?: {accessToken: string; refreshToken: string}
+  }
+  if (!body.tokens?.accessToken || !body.tokens.refreshToken) {
+    throw new Error('m8 did not return a session token')
+  }
+  await setTokens(body.tokens.accessToken, body.tokens.refreshToken)
+  if (body.sessionId) {
+    await Storage.setItemAsync('m8_session_id', body.sessionId)
+  }
 }
 
 export async function getMe(): Promise<{
