@@ -9,14 +9,14 @@ import {
  * im8Signer.ts. PARA never generates, holds or signs with a holder key, and
  * never receives the credentials:
  *
- *   Issuance:  PARA: POST /identity/wallet/binding-requests       → id, challenge
- *              iM8:  user approves → key made on the phone → fulfill
+ *   Issuance:  PARA: POST /identity/wallet/binding-requests       -> id, challenge
+ *              iM8:  user approves -> key made on the phone -> fulfill
  *              PARA: poll until `bound`, then issue with walletBindingRequestId;
  *                    the credentials go to iM8's mailbox, not to PARA.
- *   Presenting: PARA: POST /identity/request                      → request id
- *              iM8:  shows everything it would reveal → user approves → signs
- *                    on the phone → POST /identity/verify
- *              PARA: poll GET /identity/request/:id                → result, once
+ *   Presenting: PARA: POST /identity/request                      -> request id
+ *              iM8:  shows everything it would reveal -> user approves -> signs
+ *                    on the phone -> POST /identity/verify
+ *              PARA: poll GET /identity/request/:id                -> result, once
  *
  * A v2 presentation is full-credential and carries the account DID: nothing
  * here is anonymous or selective. Gated with WALLET_HOLDER_KEY_SUPPORTED.

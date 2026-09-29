@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
+import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {setStoredAnonymousProfile} from '#/lib/im8/anonymous'
@@ -110,9 +111,11 @@ export default function INEVerificationScreen() {
         return
       }
 
-      // mubEZ binds a holder key into every credential. PARA holds none: the
-      // iM8 wallet makes it on the phone, and receives the credentials.
-      // Closed until the iM8 wallet passes device tests (see ine.ts).
+      /*
+       * mubEZ binds a holder key into every credential. PARA holds none: the
+       * iM8 wallet makes it on the phone, and receives the credentials.
+       * Closed until the iM8 wallet passes device tests (see ine.ts).
+       */
       if (!WALLET_HOLDER_KEY_SUPPORTED) {
         throw new Error(WALLET_HOLDER_KEY_UNSUPPORTED_MESSAGE)
       }
@@ -129,8 +132,10 @@ export default function INEVerificationScreen() {
           'ZK age proof not available: proof generation is not enabled in this build yet.',
         )
       }
-      // The wallet binds its key against the session's current challenge;
-      // issuance must present that same challenge.
+      /*
+       * The wallet binds its key against the session's current challenge;
+       * issuance must present that same challenge.
+       */
       const {walletBindingRequestId, issuanceChallenge} =
         await requestWalletHolderBinding()
       const result = await postIneCredential({
@@ -617,24 +622,37 @@ export default function INEVerificationScreen() {
                   ]}>
                   <Text
                     style={[styles.credentialTitle, {color: t.palette.white}]}>
-                    Anonymous posting persona
+                    <Trans>Anonymous posting persona</Trans>
                   </Text>
                   <Text
                     style={[
                       styles.body,
                       {color: t.palette.white, textAlign: 'center'},
                     ]}>
-                    Your anonymous posting persona is active. It hides your name
-                    from other users, not from PARA or mubEZ, and verifying does
-                    not make you anonymous.
+                    <Trans>
+                      Your anonymous posting persona is active. It hides your
+                      name from other users, not from PARA or mubEZ, and
+                      verifying does not make you anonymous.
+                    </Trans>
                   </Text>
                 </View>
               )}
 
               <Text style={[styles.body, t.atoms.text_contrast_medium]}>
-                {INE_INTEGRATION_APPROVED
-                  ? 'Your credentials were delivered to your iM8 wallet. When you share them, apps receive your account DID and every fact in the credential; sharing is not anonymous.'
-                  : 'This walkthrough ran against simulated data. Once INE integration is approved, confirming here will issue credentials to your iM8 wallet and activate your anonymous posting persona.'}
+                {INE_INTEGRATION_APPROVED ? (
+                  <Trans>
+                    Your credentials were delivered to your iM8 wallet. When you
+                    share them, apps receive your account DID and every fact in
+                    the credential; sharing is not anonymous.
+                  </Trans>
+                ) : (
+                  <Trans>
+                    This walkthrough ran against simulated data. Once INE
+                    integration is approved, confirming here will issue
+                    credentials to your iM8 wallet and activate your anonymous
+                    posting persona.
+                  </Trans>
+                )}
               </Text>
 
               <TouchableOpacity
