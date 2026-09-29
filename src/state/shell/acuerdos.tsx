@@ -45,7 +45,12 @@ export type DelegationChain = {
   parentAcuerdo?: string
 }
 
-const MAX_DELEGATION_DEPTH = 5
+/*
+ * Hops a vote may travel up the parent chain: an acuerdo may defer to its
+ * parent, but not to its grandparent. docs/horizontal-governance-spec.md
+ * ("Max delegation depth: 1 hop").
+ */
+const MAX_DELEGATION_DEPTH = 1
 
 export type DelegationError =
   | {type: 'max-depth-exceeded'; maxDepth: number}

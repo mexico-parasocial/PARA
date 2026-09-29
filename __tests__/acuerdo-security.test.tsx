@@ -112,20 +112,14 @@ describe('Acuerdo Security — Vector 2: Cancellation cascading', () => {
 })
 
 describe('Acuerdo Security — Vector 3: Recursive delegation depth bomb', () => {
-  /*
-   * Skipped pending a product decision. The chain below is 6 acuerdos, 5 hops;
-   * resolveEffectiveVote allows depth <= MAX_DELEGATION_DEPTH (5), so it
-   * resolves instead of halting. Whether "max depth 5" counts hops or
-   * acuerdos is undecided, and docs/horizontal-governance-spec.md says 1 hop.
-   * Settle the limit, then fix the test or the implementation.
-   */
-  it.skip('halts at max depth (5)', async () => {
-    const {result} = renderHook(() => useAcuerdos(), {wrapper})
-
-    // Build a chain: a1 -> a2 -> a3 -> a4 -> a5 -> a6
+  /** Builds a parent chain of `length` acuerdos; uris[0] is the root. */
+  async function buildChain(
+    result: {current: ReturnType<typeof useAcuerdos>},
+    length: number,
+  ) {
     const uris: string[] = []
     await act(async () => {
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < length; i++) {
         const a = await result.current.createAcuerdo({
           title: `A${i}`,
           description: 'D',
@@ -140,6 +134,32 @@ describe('Acuerdo Security — Vector 3: Recursive delegation depth bomb', () =>
         uris.push(a.uri)
       }
     })
+    return uris
+  }
+
+  // docs/horizontal-governance-spec.md: max delegation depth 1 hop.
+  it('resolves one hop to the parent', async () => {
+    const {result} = renderHook(() => useAcuerdos(), {wrapper})
+    const uris = await buildChain(result, 2)
+
+    const resolved = result.current.resolveEffectiveVote(uris[1])
+    expect(resolved.error).toBeUndefined()
+    expect(resolved.effectiveDid).toBe('did:plc:test')
+    expect(resolved.chain.map(c => c.acuerdoUri)).toEqual([uris[1], uris[0]])
+  })
+
+  it('halts at the second hop', async () => {
+    const {result} = renderHook(() => useAcuerdos(), {wrapper})
+    const uris = await buildChain(result, 3)
+
+    const deepest = result.current.resolveEffectiveVote(uris[2])
+    expect(deepest.error).toEqual({type: 'max-depth-exceeded', maxDepth: 1})
+    expect(deepest.effectiveDid).toBeNull()
+  })
+
+  it('halts a long chain (depth bomb)', async () => {
+    const {result} = renderHook(() => useAcuerdos(), {wrapper})
+    const uris = await buildChain(result, 6)
 
     const deepest = result.current.resolveEffectiveVote(uris[5])
     expect(deepest.error?.type).toBe('max-depth-exceeded')
