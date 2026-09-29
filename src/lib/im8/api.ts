@@ -301,6 +301,8 @@ export async function postCivicVoteProof(payload: {
   subjectUri: string
   subjectType: M8CivicVoteProof['subjectType']
   selectedOption?: number
+  /** A policy ballot's -3..+3 signal, which m8 binds into its authorization. */
+  signal?: number
 }): Promise<M8CivicVoteProof> {
   const res = await m8Fetch('/identity/civic-vote-proof', {
     method: 'POST',

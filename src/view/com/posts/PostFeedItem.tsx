@@ -27,7 +27,6 @@ import {asSdkFacets} from '#/lib/strings/rich-text-helpers'
 import {
   POST_TOMBSTONE,
   type Shadow,
-  updatePostShadow,
   usePostShadow,
 } from '#/state/cache/post-shadow'
 import {useFeedFeedbackContext} from '#/state/feed-feedback'
@@ -48,6 +47,7 @@ import {
   useHasThreadItemPostNumber,
 } from '#/screens/PostThread/components/ThreadItemPostNumber'
 import {atoms as a, select, useTheme} from '#/alf'
+import {PolicyBallotControl} from '#/components/civic/PolicyBallotControl'
 import {CivicInsignia} from '#/components/CivicInsignia'
 import {
   GalleryBleed,
@@ -67,7 +67,6 @@ import {PostControls} from '#/components/PostControls'
 import {DiscoverDebug} from '#/components/PostControls/DiscoverDebug'
 import {RichText} from '#/components/RichText'
 import {SubtleHover} from '#/components/SubtleHover'
-import {VotingButton} from '#/components/VotingButton'
 import {Features, useAnalytics} from '#/analytics'
 import {app} from '#/lexicons'
 import * as bsky from '#/types/bsky'
@@ -224,16 +223,6 @@ let FeedItemInner = ({
   )
   const {sendInteraction, feedSourceInfo, feedDescriptor} =
     useFeedFeedbackContext()
-
-  const onVoteChange = useCallback(
-    (vote: number) => {
-      updatePostShadow(queryClient, post.uri, {
-        voteScore: vote,
-        voteUri: vote !== 0 ? 'optimistic-vote-uri' : undefined,
-      })
-    },
-    [post.uri, queryClient],
-  )
 
   const onPressReply = () => {
     sendInteraction({
@@ -417,9 +406,9 @@ let FeedItemInner = ({
                   ]}
                 />
                 <View style={{marginTop: 8, alignItems: 'center'}}>
-                  <VotingButton
+                  <PolicyBallotControl
+                    policyUri={post.uri}
                     initialVote={(post as {voteCount?: number}).voteCount || 0}
-                    onVoteChange={onVoteChange}
                   />
                 </View>
               </>
