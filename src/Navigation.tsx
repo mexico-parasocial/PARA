@@ -85,6 +85,7 @@ import {BookmarksScreen} from '#/screens/Bookmarks'
 import {CabildeoDetailScreen} from '#/screens/Communities/CabildeoDetailScreen'
 import {CabildeoListScreen} from '#/screens/Communities/CabildeoListScreen'
 import {CommunitiesScreen} from '#/screens/Communities/CommunitiesScreen'
+import {CommunityActivityScreen} from '#/screens/Communities/CommunityActivityScreen'
 import {CommunityAgentProfileScreen} from '#/screens/Communities/CommunityAgentProfileScreen'
 import {CommunityChatScreen} from '#/screens/Communities/CommunityChatScreen'
 import {CommunityMembersScreen} from '#/screens/Communities/CommunityMembersScreen'
@@ -92,7 +93,9 @@ import {CommunityProfileScreen} from '#/screens/Communities/CommunityProfileScre
 import {CommunityRAQScreen} from '#/screens/Communities/CommunityRAQScreen'
 import {CommunityRolesScreen} from '#/screens/Communities/CommunityRolesScreen'
 import {CommunityVotersScreen} from '#/screens/Communities/CommunityVotersScreen'
+import {CommunityWikiPageScreen} from '#/screens/Communities/CommunityWikiPageScreen'
 import {CreateCabildeoScreen} from '#/screens/Communities/CreateCabildeoScreen'
+import {CreateCommunityActivityScreen} from '#/screens/Communities/CreateCommunityActivityScreen'
 import {CreateCommunityScreen} from '#/screens/Communities/CreateCommunityScreen'
 import {CreatePositionScreen} from '#/screens/Communities/CreatePositionScreen'
 import {DelegateVoteScreen} from '#/screens/Communities/DelegateVoteScreen'
@@ -958,6 +961,21 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
         name="CreateCabildeo"
         getComponent={() => CreateCabildeoScreen}
         options={{title: title(msg`Create Lobbying`), requireAuth: true}}
+      />
+      <Stack.Screen
+        name="CommunityActivity"
+        getComponent={() => CommunityActivityScreen}
+        options={{title: title(msg`Community Activity`), requireAuth: true}}
+      />
+      <Stack.Screen
+        name="CreateCommunityActivity"
+        getComponent={() => CreateCommunityActivityScreen}
+        options={{title: title(msg`Register Activity`), requireAuth: true}}
+      />
+      <Stack.Screen
+        name="CommunityWikiPage"
+        getComponent={() => CommunityWikiPageScreen}
+        options={{title: title(msg`Community Wiki`), requireAuth: true}}
       />
       <Stack.Screen
         name="CreatePosition"

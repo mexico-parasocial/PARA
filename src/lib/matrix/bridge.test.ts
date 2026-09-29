@@ -1,10 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-import {BridgeAuthError, matrixBridgeFetch} from './bridge'
-
-jest.mock('#/Navigation', () => ({
-  navigate: jest.fn(),
-}))
+import {BridgeAuthError, M8_SESSION_REQUIRED, matrixBridgeFetch} from './bridge'
 
 describe('matrixBridgeFetch', () => {
   const originalFetch = global.fetch
@@ -59,6 +55,32 @@ describe('matrixBridgeFetch', () => {
         }),
       }),
     )
+  })
+
+  it('fails locally without calling the bridge when there is no M8 session', async () => {
+    const fetchMock = global.fetch as jest.Mock
+
+    await expect(matrixBridgeFetch('/api/unread')).rejects.toMatchObject({
+      name: 'BridgeAuthError',
+      statusCode: 401,
+      message: M8_SESSION_REQUIRED,
+    })
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
+  it('clears a rejected token after refresh fails', async () => {
+    await AsyncStorage.setItem('m8_access_token', 'access-old')
+    const fetchMock = global.fetch as jest.Mock
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify({error: 'Invalid M8 bearer token'}), {
+        status: 401,
+      }),
+    )
+
+    await expect(matrixBridgeFetch('/api/unread')).rejects.toBeInstanceOf(
+      BridgeAuthError,
+    )
+    expect(await AsyncStorage.getItem('m8_access_token')).toBeNull()
   })
 
   it('throws BridgeAuthError on 401 when refresh fails', async () => {

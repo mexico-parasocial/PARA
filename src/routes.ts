@@ -102,6 +102,9 @@ export const router = new Router({
   DelegateVote: '/communities/cabildeos/:cabildeoUri/delegate-vote',
   CreateCabildeo: '/communities/cabildeos/create',
   CreatePosition: '/communities/cabildeos/:cabildeoUri/positions/create',
+  CommunityActivity: '/communities/activities/:activityUri',
+  CreateCommunityActivity: '/communities/activities/create',
+  CommunityWikiPage: '/communities/wiki',
   CommunityProfile: [
     '/communities/profile/:communityId',
     '/p/:communityId',

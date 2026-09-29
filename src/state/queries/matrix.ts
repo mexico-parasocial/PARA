@@ -1,6 +1,6 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
-import {matrixBridgeFetch} from '#/lib/matrix/bridge'
+import {isBridgeAuthError, matrixBridgeFetch} from '#/lib/matrix/bridge'
 import {
   BRIDGE_AUDIENCES,
   bridgeCallWithProof,
@@ -414,7 +414,10 @@ export function useSortitionRunQuery(
       return res.json() as Promise<SortitionRunResponse>
     },
     enabled: !!cabildeoUri,
-    refetchInterval: 10_000,
+    // Keep polling for a live draw, but not against an auth wall: without an
+    // M8 session every tick is the same 401.
+    refetchInterval: query =>
+      isBridgeAuthError(query.state.error) ? false : 10_000,
     retry: false,
   })
 }
