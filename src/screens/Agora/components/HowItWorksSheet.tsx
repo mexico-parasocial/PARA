@@ -14,23 +14,23 @@ export function HowItWorksSheet({onClose}: {onClose: () => void}) {
   const sections = [
     {
       emoji: '🗳️',
-      title: _(msg`Quadratic Voting`),
+      title: _(msg`Weighted votes on policies`),
       body: _(
-        msg`You can vote from -3 (strongly oppose) to +3 (strongly support). But intensity matters: each additional "unit" of conviction costs the square of that unit in credits. 1 unit = 1 credit, 2 units = 4 credits, 4 units = 16 credits. This makes extreme positions expensive and encourages honest signaling.`,
+        msg`Everyone has one vote. On a policy you vote from -3 to +3, and the number says how much your vote weighs: +3 adds three times what +1 does. On a cabildeo you pick one option, and every vote counts the same.`,
       ),
     },
     {
       emoji: '🔗',
-      title: _(msg`Liquid Delegation`),
+      title: _(msg`Lending your vote`),
       body: _(
-        msg`Don't have time to research every proposal? Delegate your vote to someone you trust for a specific community, topic, or single proposal. You can revoke at any time. Your delegate's vote is transparent — you always know how they voted on your behalf.`,
+        msg`You can lend your vote to someone you trust, for one proposal or for a topic, renewing every 90 days. They cannot pass it on. It still counts once, as yours, and votes the way they vote. If you vote yourself, your vote counts instead, and you can take it back at any moment. Lending is public today: anyone can see whom you trust.`,
       ),
     },
     {
       emoji: '⚖️',
-      title: _(msg`Three Tallies`),
+      title: _(msg`How votes are counted`),
       body: _(
-        msg`Every proposal computes three results: Flat (one person, one vote), √n-weighted (discounts highly correlated voters), and Correlation-adjusted (also weights by deliberation quality). Flat is binding; the others are advisory transparency layers.`,
+        msg`A policy is counted by adding everyone's -3 to +3; a cabildeo by counting the votes for each option. Any other count shown beside them is an experiment in shadow and decides nothing.`,
       ),
     },
     {

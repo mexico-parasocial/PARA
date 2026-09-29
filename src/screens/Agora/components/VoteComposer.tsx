@@ -1,4 +1,4 @@
-import {useCallback, useMemo, useState} from 'react'
+import {useState} from 'react'
 import {Pressable, View} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -10,32 +10,24 @@ import {SIGNAL_COLORS} from './SignalBadge'
 
 const SIGNALS = [-3, -2, -1, 0, 1, 2, 3]
 
+/**
+ * A policy ballot: one person, one vote, weighted by its signal from -3 to +3
+ * (docs/revocable-mandates-spec.md §4). One control for direction and weight;
+ * there are no credits and no separate intensity stepper.
+ */
 export function VoteComposer({
   initialSignal = 0,
-  initialUnits = 1,
   onCast,
 }: {
   initialSignal?: number
-  initialUnits?: number
-  onCast: (signal: number, units: number) => void
+  onCast: (signal: number) => void
 }) {
   const t = useTheme()
   const {_} = useLingui()
   const [signal, setSignal] = useState(initialSignal)
-  const [units, setUnits] = useState(initialUnits)
 
-  const canCast =
-    signal !== 0 || signal !== initialSignal || units !== initialUnits
-
-  const decrementUnits = useCallback(() => {
-    setUnits(u => Math.max(1, u - 1))
-  }, [])
-
-  const incrementUnits = useCallback(() => {
-    setUnits(u => Math.min(16, u + 1))
-  }, [])
-
-  const cost = useMemo(() => units * units, [units])
+  const canCast = signal !== initialSignal
+  const signed = signal > 0 ? `+${signal}` : `${signal}`
 
   const castLabel = _(msg`Cast vote`)
 
@@ -120,56 +112,7 @@ export function VoteComposer({
                     : _(msg`Strongly Support`)}
       </Text>
 
-      {/* Intensity stepper */}
-      <View style={[a.flex_row, a.align_center, a.justify_center, a.gap_md]}>
-        <Pressable
-          onPress={decrementUnits}
-          accessibilityRole="button"
-          accessibilityLabel={_(msg`Decrease units`)}
-          accessibilityHint={_(msg`Reduces vote intensity by one unit`)}
-          disabled={units <= 1}
-          style={[
-            a.align_center,
-            a.justify_center,
-            a.rounded_md,
-            t.atoms.bg_contrast_100,
-            {
-              width: 32,
-              height: 32,
-              opacity: units <= 1 ? 0.5 : 1,
-            },
-          ]}>
-          <Text style={[a.font_bold, t.atoms.text, {fontSize: 16}]}>−</Text>
-        </Pressable>
-
-        <View style={[a.align_center, {minWidth: 32}]}>
-          <Text style={[a.font_semi_bold, a.text_lg, t.atoms.text]}>
-            {units}
-          </Text>
-        </View>
-
-        <Pressable
-          onPress={incrementUnits}
-          accessibilityRole="button"
-          accessibilityLabel={_(msg`Increase units`)}
-          accessibilityHint={_(msg`Increases vote intensity by one unit`)}
-          disabled={units >= 16}
-          style={[
-            a.align_center,
-            a.justify_center,
-            a.rounded_md,
-            t.atoms.bg_contrast_100,
-            {
-              width: 32,
-              height: 32,
-              opacity: units >= 16 ? 0.5 : 1,
-            },
-          ]}>
-          <Text style={[a.font_bold, t.atoms.text, {fontSize: 16}]}>+</Text>
-        </Pressable>
-      </View>
-
-      {/* Credit preview */}
+      {/* What the weight means */}
       <Text
         style={[
           a.text_center,
@@ -178,7 +121,9 @@ export function VoteComposer({
             fontSize: 12,
           },
         ]}>
-        {_(msg`Cost: ${cost} credits`)}
+        {signal === 0
+          ? _(msg`0 cuenta tu participación sin mover el resultado.`)
+          : _(msg`Tu voto suma ${signed} al conteo: +3 pesa el triple que +1.`)}
       </Text>
 
       {/* Cast vote button */}
@@ -188,7 +133,7 @@ export function VoteComposer({
         size="large"
         disabled={!canCast}
         label={castLabel}
-        onPress={() => onCast(signal, units)}>
+        onPress={() => onCast(signal)}>
         <ButtonText>{castLabel}</ButtonText>
       </Button>
     </View>

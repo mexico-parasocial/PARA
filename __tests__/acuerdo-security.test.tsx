@@ -5,7 +5,11 @@
 import {renderHook, act, waitFor} from '@testing-library/react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-import {AcuerdoProvider, useAcuerdos} from '#/state/shell/acuerdos'
+import {
+  AcuerdoProvider,
+  isLockActive,
+  useAcuerdos,
+} from '#/state/shell/acuerdos'
 
 /*
  * The provider only reads the viewer's DID (the tests act as did:plc:test,
@@ -57,6 +61,107 @@ describe('Acuerdo Security — Vector 1: Cooldown enforcement', () => {
         await result.current.joinAcuerdo(acuerdoUri, 'follow-acuerdo')
       }),
     ).rejects.toThrow(/Cooldown activo/)
+  })
+})
+
+describe('Acuerdo Security — Vector 1b: Revocable at any moment', () => {
+  async function joined(result: {current: ReturnType<typeof useAcuerdos>}) {
+    let uri = ''
+    await act(async () => {
+      const acuerdo = await result.current.createAcuerdo({
+        title: 'Mandato',
+        description: 'D',
+        author: 'did:plc:test',
+        scope: {type: 'policy', subjects: ['did:plc:subj']},
+        visibility: 'public',
+        admins: ['did:plc:test'],
+        minLockQuorum: 5,
+        phase: 'forming',
+      })
+      uri = acuerdo.uri
+    })
+    await act(async () => {
+      await result.current.joinAcuerdo(uri, 'follow-acuerdo')
+    })
+    return uri
+  }
+
+  it('releases the vote the moment the member leaves', async () => {
+    const {result} = renderHook(() => useAcuerdos(), {wrapper})
+    const uri = await joined(result)
+    expect(result.current.getAcuerdoByUri(uri)?.lockedCount).toBe(1)
+    expect(result.current.isSubjectLocked('did:plc:subj')).toBe(true)
+
+    await act(async () => {
+      await result.current.requestExit(result.current.myLocks[0].id)
+    })
+
+    const acuerdo = result.current.getAcuerdoByUri(uri)
+    expect(acuerdo?.lockedCount).toBe(0)
+    expect(acuerdo?.isLockedByViewer).toBe(false)
+    expect(result.current.isSubjectLocked('did:plc:subj')).toBe(false)
+    expect(isLockActive(result.current.myLocks[0])).toBe(false)
+  })
+
+  it('does not count a second exit', async () => {
+    const {result} = renderHook(() => useAcuerdos(), {wrapper})
+    const uri = await joined(result)
+    const lockId = result.current.myLocks[0].id
+    await act(async () => {
+      await result.current.requestExit(lockId)
+    })
+    await act(async () => {
+      await result.current.requestExit(lockId)
+    })
+    expect(result.current.getAcuerdoByUri(uri)?.lockedCount).toBe(0)
+  })
+
+  it('refuses joining twice, which would count the vote twice', async () => {
+    const {result} = renderHook(() => useAcuerdos(), {wrapper})
+    const uri = await joined(result)
+    await expect(
+      act(async () => {
+        await result.current.joinAcuerdo(uri, 'follow-acuerdo')
+      }),
+    ).rejects.toThrow(/Ya estás en este acuerdo/)
+    expect(result.current.getAcuerdoByUri(uri)?.lockedCount).toBe(1)
+  })
+
+  it('gives a lock a 90-day term, and renewing restarts it', async () => {
+    const {result} = renderHook(() => useAcuerdos(), {wrapper})
+    await joined(result)
+    const lock = result.current.myLocks[0]
+    const term = Date.parse(lock.expiresAt!) - Date.parse(lock.lockedAt)
+    expect(term).toBe(90 * 24 * 60 * 60 * 1000)
+
+    await act(async () => {
+      await result.current.renewLock(lock.id)
+    })
+    const renewed = result.current.myLocks[0]
+    expect(renewed.renewedAt).toBeDefined()
+    expect(Date.parse(renewed.expiresAt!)).toBeGreaterThanOrEqual(
+      Date.parse(lock.expiresAt!),
+    )
+  })
+
+  it('stops counting a lock that lapsed, without a cooldown', async () => {
+    jest.useFakeTimers()
+    try {
+      const {result} = renderHook(() => useAcuerdos(), {wrapper})
+      const uri = await joined(result)
+      expect(result.current.getAcuerdoByUri(uri)?.lockedCount).toBe(1)
+
+      jest.setSystemTime(Date.now() + 91 * 24 * 60 * 60 * 1000)
+      await act(async () => {
+        jest.advanceTimersByTime(30_000)
+      })
+
+      expect(result.current.getAcuerdoByUri(uri)?.lockedCount).toBe(0)
+      expect(result.current.myLocks[0].releasedAt).toBeDefined()
+      expect(result.current.isInCooldown(uri)).toBe(false)
+    } finally {
+      jest.useRealTimers()
+    }
   })
 })
 
