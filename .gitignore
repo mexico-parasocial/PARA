@@ -173,6 +173,10 @@ ios_build.log
 eslint_errors.txt
 final_lint_report.txt
 temp_*.tsx
+# Throwaway drafts and debug scripts at the repo root; real code lives in src/.
+/scratch*.ts
+/scratch*.tsx
+/debug-*.ts
 *.diff
 PLAN.md
 all_files.txt
