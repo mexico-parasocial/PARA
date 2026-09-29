@@ -256,11 +256,16 @@ jobs:
   # and installing it on a store/TestFlight client is misleading at best. Those
   # PRs need a native build instead. A skipped or failed fingerprint job also
   # skips this one - without a verdict we can't say the OTA is representative.
+  #
+  # PARA: gated on the repository variable PR_OTA_ENABLED. This repository has
+  # no EXPO_TOKEN (nor the ENV_TOKEN and signing secrets that follow), so the
+  # job could only fail at setup. Set the secrets, then the variable to 'true'.
   publish-pr-ota:
     name: Publish PR OTA to denis
     needs: fingerprint-native
     runs-on: ubuntu-latest
     if: >-
+      vars.PR_OTA_ENABLED == 'true' &&
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.user.type != 'Bot' &&
