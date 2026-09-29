@@ -34,7 +34,10 @@ jobs:
     # Skip comments/reviews that don't mention @claude, non-PR issue
     # comments, and events from claude[bot] itself (its review prose
     # often quotes "@claude" and must not retrigger the workflow).
+    # PARA: gated like claude-review.yml until CLAUDE_REVIEW_ENABLED is set,
+    # since the Bluesky Agent Gateway secret does not exist here.
     if: >
+      vars.CLAUDE_REVIEW_ENABLED == 'true' &&
       (
         (github.event_name == 'issue_comment' &&
           github.event.issue.pull_request != null &&
