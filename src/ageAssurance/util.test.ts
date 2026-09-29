@@ -3,6 +3,12 @@ import {getAgeAssuranceRegionConfig} from '@bsky/sdk/utils'
 import {getAgeAssuranceRegionConfigForGeolocation} from '#/ageAssurance/util'
 
 jest.mock('#/ageAssurance/data')
+/*
+ * `#/geolocation` also exports LocationPermissionGate, whose UI imports pull in
+ * native modules (bottom sheet, Reanimated) that do not load under jest. The
+ * function under test takes a geolocation value and never calls the hook.
+ */
+jest.mock('#/geolocation', () => ({useGeolocation: jest.fn()}))
 jest.mock('@bsky/sdk/utils', () => ({
   ...jest.requireActual('@bsky/sdk/utils'),
   getAgeAssuranceRegionConfig: jest.fn(),
