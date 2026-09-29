@@ -6,6 +6,11 @@ import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {
+  type DelegateVoice,
+  delegateVoice,
+  type Mandate,
+} from '#/lib/mandates/voice'
+import {
   type CommonNavigatorParams,
   type NativeStackScreenProps,
   type NavigationProp,
@@ -24,6 +29,7 @@ import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {
   CommunityChip,
+  DelegatedVoiceCard,
   EmptyState,
   ParticipationBar,
   PhaseBadge,
@@ -55,11 +61,9 @@ interface Proposal {
   phase: 'open' | 'closing' | 'closed'
   closesAt: string
   yourSignal?: number
-  yourUnits?: number
   delegateVote?: {
     delegateHandle: string
     signal: number
-    units: number
   }
 }
 
@@ -99,11 +103,9 @@ const MOCK_PROPOSALS: Proposal[] = [
     phase: 'open',
     closesAt: '2026-05-12T00:00:00Z',
     yourSignal: 2,
-    yourUnits: 4,
     delegateVote: {
       delegateHandle: '@green.rep',
       signal: 2,
-      units: 4,
     },
   },
   {
@@ -123,11 +125,9 @@ const MOCK_PROPOSALS: Proposal[] = [
     phase: 'closing',
     closesAt: '2026-05-07T00:00:00Z',
     yourSignal: -2,
-    yourUnits: 9,
     delegateVote: {
       delegateHandle: '@transit.watch',
       signal: -1,
-      units: 4,
     },
   },
   {
@@ -180,19 +180,19 @@ const MOCK_AUDIT: AuditEntry[] = [
   {
     uri: 'at://did:web:local/audit/1',
     actor: '@green.rep',
-    action: 'delegated vote +2 (4 units)',
+    action: 'delegated vote +2 (4 credits)',
     timestamp: '2026-05-05T14:32:00Z',
   },
   {
     uri: 'at://did:web:local/audit/2',
     actor: '@you',
-    action: 'direct vote +2 (4 units)',
+    action: 'direct vote +2 (4 credits)',
     timestamp: '2026-05-04T09:15:00Z',
   },
   {
     uri: 'at://did:web:local/audit/3',
     actor: '@neighbor.anna',
-    action: 'direct vote +1 (2 units)',
+    action: 'direct vote +1 (1 credit)',
     timestamp: '2026-05-03T18:45:00Z',
   },
   {
@@ -204,7 +204,7 @@ const MOCK_AUDIT: AuditEntry[] = [
   {
     uri: 'at://did:web:local/audit/5',
     actor: '@civic.league',
-    action: 'delegated vote +3 (9 units)',
+    action: 'delegated vote +3 (9 credits)',
     timestamp: '2026-05-01T08:00:00Z',
   },
 ]
@@ -218,6 +218,44 @@ const MOCK_VOTE_DISTRIBUTION: Record<number, number> = {
   [1]: 45,
   [2]: 67,
   [3]: 23,
+}
+
+/**
+ * The delegate's voice on a mock proposal, computed by the real arithmetic:
+ * one lender per delegation, most at voice 1, a few who authorised 2, and a
+ * handful who then voted themselves.
+ */
+function mockDelegateVoice(proposal: Proposal): DelegateVoice | null {
+  if (!proposal.delegateVote) return null
+  const delegate = proposal.delegateVote.delegateHandle
+  const mandates: Mandate[] = Array.from(
+    {length: proposal.delegationCount},
+    (_v, i) => ({
+      id: `mock-${i}`,
+      delegator: `did:plc:lender${i}`,
+      delegate,
+      kind: 'standing',
+      scope: {community: proposal.community},
+      maxIntensity: i % 5 === 0 ? 2 : 1,
+      grantedAt: new Date(Date.UTC(2026, 8, 1 + (i % 28))).toISOString(),
+    }),
+  )
+  return delegateVoice({
+    delegate,
+    delegateIntensity: Math.abs(proposal.delegateVote.signal),
+    mandates,
+    directVoters: new Set(['did:plc:lender3', 'did:plc:lender7']),
+    proposal: {
+      uri: proposal.uri,
+      community: proposal.community,
+      topics: [],
+      delegable: true,
+    },
+    eligibleMembers: 400,
+    totalVoices: proposal.voteCount * 2,
+    // Fixed, so the mock mandates (granted September 2026) never lapse.
+    now: new Date(Date.UTC(2026, 8, 29)),
+  })
 }
 
 function findProposalByUri(uri: string): Proposal | undefined {
@@ -659,9 +697,15 @@ export function ProposalDetailScreen({route}: Props) {
   }, [route.params.proposalUri])
 
   const hasVoted = proposal?.yourSignal !== undefined
-  const creditsSpent = proposal?.yourUnits
-    ? proposal.yourUnits * proposal.yourUnits
+  // A voice of k costs k² credits: the signal's magnitude is the voice.
+  const creditsSpent = proposal?.yourSignal
+    ? proposal.yourSignal * proposal.yourSignal
     : 0
+
+  const delegateVoiceView = useMemo(
+    () => (proposal ? mockDelegateVoice(proposal) : null),
+    [proposal],
+  )
 
   const activeDelegations = useMemo(
     () => MOCK_DELEGATIONS.filter(d => d.active),
@@ -853,7 +897,7 @@ export function ProposalDetailScreen({route}: Props) {
                   />
                   <Text style={[a.text_center, a.text_sm, t.atoms.text]}>
                     {_(
-                      msg`You voted ${(proposal.yourSignal! > 0 ? '+' : '') + String(proposal.yourSignal)} with ${String(proposal.yourUnits ?? 0)} intensity units`,
+                      msg`You voted ${(proposal.yourSignal! > 0 ? '+' : '') + String(proposal.yourSignal)}`,
                     )}
                   </Text>
                   <Text
@@ -897,8 +941,7 @@ export function ProposalDetailScreen({route}: Props) {
                         <Text style={t.atoms.text_contrast_medium}>
                           <Trans>
                             voted {proposal.delegateVote.signal > 0 ? '+' : ''}
-                            {proposal.delegateVote.signal} (
-                            {proposal.delegateVote.units} units)
+                            {proposal.delegateVote.signal}
                           </Trans>
                         </Text>
                       </Text>
@@ -929,7 +972,6 @@ export function ProposalDetailScreen({route}: Props) {
                 </Text>
                 <VoteComposer
                   initialSignal={proposal.yourSignal ?? 0}
-                  initialUnits={proposal.yourUnits ?? 1}
                   onCast={() => {
                     // TODO: wire to qvl hooks
                   }}
@@ -1094,6 +1136,13 @@ export function ProposalDetailScreen({route}: Props) {
                     }}
                   />
                 ))
+              )}
+
+              {delegateVoiceView && proposal.delegateVote && (
+                <DelegatedVoiceCard
+                  handle={proposal.delegateVote.delegateHandle}
+                  voice={delegateVoiceView}
+                />
               )}
 
               {/* Create Delegation */}

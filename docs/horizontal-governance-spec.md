@@ -55,10 +55,13 @@ For horizontal communities, this model is **invalid**. We need a new governance 
 | Ordinary proposal | Configurable (default: majority) | 25% | Yes |
 
 **Delegation rules in horizontal mode:**
-- Delegation is **opt-in per proposal**
+- Delegation is **opt-in**: per proposal by default; standing (topic or community) only if the person chooses it
 - Max delegation depth: 1 hop
-- Delegations expire after each proposal
-- No permanent delegates
+- Proposal delegations expire when the proposal closes; standing ones lapse after 90 days unless renewed
+- Revocable at any moment, with immediate effect; your own ballot always overrides
+- No permanent delegates: no delegate may carry more than 10% of a community's members
+
+Full rules, and how delegation combines with quadratic voting: `revocable-mandates-spec.md`.
 
 ### Record-Level Authorization
 

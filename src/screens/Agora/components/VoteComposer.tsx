@@ -1,4 +1,4 @@
-import {useCallback, useMemo, useState} from 'react'
+import {useState} from 'react'
 import {Pressable, View} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -6,36 +6,31 @@ import {useLingui} from '@lingui/react'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import {Text} from '#/components/Typography'
+import {IntensityScale} from './IntensityScale'
 import {SIGNAL_COLORS} from './SignalBadge'
 
 const SIGNALS = [-3, -2, -1, 0, 1, 2, 3]
 
+/**
+ * One control for direction and intensity: the signal's magnitude is the
+ * voice, and a voice of k costs k² credits (docs/revocable-mandates-spec.md
+ * §5). There is no separate intensity stepper: two knobs for one quantity is
+ * how quadratic voting gets misunderstood.
+ */
 export function VoteComposer({
   initialSignal = 0,
-  initialUnits = 1,
   onCast,
 }: {
   initialSignal?: number
-  initialUnits?: number
-  onCast: (signal: number, units: number) => void
+  onCast: (signal: number) => void
 }) {
   const t = useTheme()
   const {_} = useLingui()
   const [signal, setSignal] = useState(initialSignal)
-  const [units, setUnits] = useState(initialUnits)
 
-  const canCast =
-    signal !== 0 || signal !== initialSignal || units !== initialUnits
-
-  const decrementUnits = useCallback(() => {
-    setUnits(u => Math.max(1, u - 1))
-  }, [])
-
-  const incrementUnits = useCallback(() => {
-    setUnits(u => Math.min(16, u + 1))
-  }, [])
-
-  const cost = useMemo(() => units * units, [units])
+  const canCast = signal !== 0 && signal !== initialSignal
+  const voice = Math.abs(signal)
+  const cost = voice * voice
 
   const castLabel = _(msg`Cast vote`)
 
@@ -120,56 +115,8 @@ export function VoteComposer({
                     : _(msg`Strongly Support`)}
       </Text>
 
-      {/* Intensity stepper */}
-      <View style={[a.flex_row, a.align_center, a.justify_center, a.gap_md]}>
-        <Pressable
-          onPress={decrementUnits}
-          accessibilityRole="button"
-          accessibilityLabel={_(msg`Decrease units`)}
-          accessibilityHint={_(msg`Reduces vote intensity by one unit`)}
-          disabled={units <= 1}
-          style={[
-            a.align_center,
-            a.justify_center,
-            a.rounded_md,
-            t.atoms.bg_contrast_100,
-            {
-              width: 32,
-              height: 32,
-              opacity: units <= 1 ? 0.5 : 1,
-            },
-          ]}>
-          <Text style={[a.font_bold, t.atoms.text, {fontSize: 16}]}>−</Text>
-        </Pressable>
-
-        <View style={[a.align_center, {minWidth: 32}]}>
-          <Text style={[a.font_semi_bold, a.text_lg, t.atoms.text]}>
-            {units}
-          </Text>
-        </View>
-
-        <Pressable
-          onPress={incrementUnits}
-          accessibilityRole="button"
-          accessibilityLabel={_(msg`Increase units`)}
-          accessibilityHint={_(msg`Increases vote intensity by one unit`)}
-          disabled={units >= 16}
-          style={[
-            a.align_center,
-            a.justify_center,
-            a.rounded_md,
-            t.atoms.bg_contrast_100,
-            {
-              width: 32,
-              height: 32,
-              opacity: units >= 16 ? 0.5 : 1,
-            },
-          ]}>
-          <Text style={[a.font_bold, t.atoms.text, {fontSize: 16}]}>+</Text>
-        </Pressable>
-      </View>
-
-      {/* Credit preview */}
+      {/* Quadratic price */}
+      <IntensityScale selected={voice} />
       <Text
         style={[
           a.text_center,
@@ -178,7 +125,9 @@ export function VoteComposer({
             fontSize: 12,
           },
         ]}>
-        {_(msg`Cost: ${cost} credits`)}
+        {voice === 0
+          ? _(msg`Neutral no gasta créditos.`)
+          : _(msg`Este voto cuesta ${cost} de tus créditos.`)}
       </Text>
 
       {/* Cast vote button */}
@@ -188,7 +137,7 @@ export function VoteComposer({
         size="large"
         disabled={!canCast}
         label={castLabel}
-        onPress={() => onCast(signal, units)}>
+        onPress={() => onCast(signal)}>
         <ButtonText>{castLabel}</ButtonText>
       </Button>
     </View>

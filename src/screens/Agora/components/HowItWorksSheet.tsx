@@ -14,23 +14,23 @@ export function HowItWorksSheet({onClose}: {onClose: () => void}) {
   const sections = [
     {
       emoji: '🗳️',
-      title: _(msg`Quadratic Voting`),
+      title: _(msg`Quadratic voting (being tested)`),
       body: _(
-        msg`You can vote from -3 (strongly oppose) to +3 (strongly support). But intensity matters: each additional "unit" of conviction costs the square of that unit in credits. 1 unit = 1 credit, 2 units = 4 credits, 4 units = 16 credits. This makes extreme positions expensive and encourages honest signaling.`,
+        msg`You vote from -3 to +3, and the number is your voice. Each extra voice costs more: 1 voice costs 1 credit, 2 cost 4, 3 cost 9. You can say something matters a lot to you, but it is expensive, so you save it for what matters most. In PARA this is still an experiment: its results are shown for comparison and decide nothing.`,
       ),
     },
     {
       emoji: '🔗',
-      title: _(msg`Liquid Delegation`),
+      title: _(msg`Lending your voice`),
       body: _(
-        msg`Don't have time to research every proposal? Delegate your vote to someone you trust for a specific community, topic, or single proposal. You can revoke at any time. Your delegate's vote is transparent — you always know how they voted on your behalf.`,
+        msg`You can lend your voice to someone you trust, for one proposal or for a topic, renewing every 90 days. They cannot pass it on. It still counts as one person, at the intensity you allowed, paid from your own credits. If you vote yourself, your vote counts instead, and you can take your voice back at any moment. Lending is public today: anyone can see whom you trust.`,
       ),
     },
     {
       emoji: '⚖️',
       title: _(msg`Three Tallies`),
       body: _(
-        msg`Every proposal computes three results: Flat (one person, one vote), √n-weighted (discounts highly correlated voters), and Correlation-adjusted (also weights by deliberation quality). Flat is binding; the others are advisory transparency layers.`,
+        msg`Every proposal is counted one person, one vote, and that count decides. A quadratic count runs alongside it in shadow, so the community can compare the two before choosing. An adjustment for voters who always vote together has been designed but not built.`,
       ),
     },
     {
