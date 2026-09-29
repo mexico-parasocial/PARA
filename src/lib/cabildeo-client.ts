@@ -74,11 +74,17 @@ export function mapCabildeoReadViewToView(
         totalParticipants: view.outcomeSummary.totalParticipants,
         directVoters: view.voteTotals.direct,
         delegatedVoters: view.voteTotals.delegated,
-        effectiveTotalPower: view.outcomeSummary.effectiveTotalPower,
+        effectiveTotalPower:
+          view.outcomeSummary.effectiveTotalPowerMicros !== undefined
+            ? view.outcomeSummary.effectiveTotalPowerMicros / 1_000_000
+            : view.outcomeSummary.effectiveTotalPower,
         breakdown: view.outcomeSummary.breakdown.map(item => ({
           optionIndex: item.optionIndex,
           label: item.label,
-          effectiveVotes: item.votes,
+          effectiveVotes:
+            item.effectivePowerMicros !== undefined
+              ? item.effectivePowerMicros / 1_000_000
+              : item.votes,
         })),
       }
     : undefined
@@ -97,6 +103,7 @@ export function mapCabildeoReadViewToView(
       ? {
           optionIndex: view.viewerContext.delegatedVoteOption,
           votedAt: view.viewerContext.delegatedVotedAt,
+          gracePeriodEndsAt: view.viewerContext.gracePeriodEndsAt,
           isDismissed: !!view.viewerContext.delegateVoteDismissed,
         }
       : undefined

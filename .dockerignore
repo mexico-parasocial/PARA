@@ -1,0 +1,25 @@
+# PARA: upstream builds only from clean git checkouts (Render/CI), so they
+# ship no .dockerignore. Local builds from this working tree would otherwise
+# send ~13GB of context (node_modules, agent worktrees) and leak the
+# machine-local dev .env into the image. Keep this aligned with the gitignore
+# entries for bskyweb generated artifacts: stage 1 regenerates all of them via
+# post-web-build.js.
+.git
+.claude
+.env
+.env.local
+.env.*.local
+node_modules
+dist
+web-build
+.expo
+coverage
+ios/Pods
+android/build
+bskyweb/static/js
+bskyweb/static/css
+bskyweb/static/media
+bskyweb/static/_expo
+bskyweb/static/assets
+bskyweb/templates/scripts.html
+bskyweb/templates/fonts.html

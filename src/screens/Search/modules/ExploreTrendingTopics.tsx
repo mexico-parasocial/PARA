@@ -1,10 +1,10 @@
 import {useMemo} from 'react'
 import {Pressable, View} from 'react-native'
 import {Image} from 'expo-image'
+import {moderateProfile} from '@bsky/sdk/moderation'
 import {RichText as RichTextApi} from '@bsky/sdk/richtext'
 import {Plural, Trans, useLingui} from '@lingui/react/macro'
 
-import {moderateProfile} from '#/lib/moderation/subjects'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
 import {
   useTrendingSettings,
@@ -26,12 +26,13 @@ import * as Prompt from '#/components/Prompt'
 import {RichText} from '#/components/RichText'
 import {SubtleHover} from '#/components/SubtleHover'
 import {
+  getTrendingTopicFeedUri,
   TrendingTopicsPrompt,
   useTrendingTopicSeen,
 } from '#/components/TrendingTopics'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import * as ModuleHeader from '../components/ModuleHeader'
 
 const IMAGE_SIZE = 56
@@ -95,6 +96,7 @@ function Inner() {
                   onPress={() => {
                     ax.metric('trendingTopic:click', {
                       context: 'explore',
+                      feedUri: getTrendingTopicFeedUri(trend),
                       rank,
                       recId: trending.recId,
                     })
@@ -134,7 +136,7 @@ export function TrendRow({
 
   const actors = useModerateTrendingActors(trend.actors)
   const formattedPostCount = formatCount(i18n, trend.postCount)
-  useTrendingTopicSeen('explore', rank, recId)
+  useTrendingTopicSeen('explore', getTrendingTopicFeedUri(trend), rank, recId)
 
   const description = useMemo(() => {
     if (!trend.description) return

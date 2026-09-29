@@ -11,7 +11,7 @@ import {hydrateCommunityPosts} from '#/lib/community-posts'
 import {moderatePost} from '#/lib/moderation/subjects'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
 import {useAgent} from '#/state/session'
-import {app, com} from '#/lexicons'
+import {type app, com} from '#/lexicons'
 
 const paraSearchPostsQueryKeyRoot = 'para-search-posts'
 

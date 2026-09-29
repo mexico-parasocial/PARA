@@ -8,10 +8,10 @@ import {
   type CabildeoPhase,
   type CabildeoPositionRecord,
   type CabildeoRecord,
-  type CabildeoVoteRecord,
   type CabildeoVoteVisibility,
 } from '#/lib/api/para-lexicons'
 import {issueParaVoteProof} from '#/lib/api/vote-proof'
+import {postCivicDelegationProof} from '#/lib/im8'
 import {
   type PublicSessionBundle,
   type SessionBundle,
@@ -65,12 +65,16 @@ export async function publishCabildeoPosition(
 
 export async function castCabildeoVote(
   agent: CabildeoServiceAgent,
-  record: Omit<
-    CabildeoVoteRecord,
-    'createdAt' | 'delegatedFrom' | 'effectivePower'
-  >,
+  record: {cabildeo: string; selectedOption: number},
 ) {
   if (!agent.session) throw new Error('Not logged in')
+  if (
+    typeof record.selectedOption !== 'number' ||
+    !Number.isSafeInteger(record.selectedOption) ||
+    record.selectedOption < 0
+  ) {
+    throw new Error('Selecciona una opción válida antes de votar.')
+  }
 
   const proof = await issueParaVoteProof(agent, {
     subjectUri: record.cabildeo,
@@ -78,9 +82,9 @@ export async function castCabildeoVote(
     selectedOption: record.selectedOption,
   })
 
-  return await agent.appviewClient.call(com.para.civic.castVote, {
+  return await agent.pdsClient.call(com.para.civic.castVote, {
     cabildeo: record.cabildeo as AtUriString,
-    selectedOption: record.selectedOption ?? 0,
+    selectedOption: record.selectedOption,
     voteNullifier: proof.voteNullifier,
     eligibilityProofRef: proof.eligibilityProofRef,
   })
@@ -93,11 +97,27 @@ export async function delegateCabildeoVote(
   if (!agent.session) throw new Error('Not logged in')
   assertValidCession(record)
 
+  const proof =
+    record.mode === 'passive'
+      ? await postCivicDelegationProof({
+          mode: 'passive',
+          delegateTo: record.delegateTo!,
+          party: record.party!,
+          community: record.community!,
+          scopeFlairs: record.scopeFlairs!,
+        })
+      : await postCivicDelegationProof({
+          mode: 'active',
+          delegateTo: record.delegateTo!,
+          cabildeo: record.cabildeo!,
+        })
+
   return await agent.pdsClient.call(com.atproto.repo.createRecord, {
     repo: agent.session.did,
     collection: 'com.para.civic.delegation',
     record: {
       ...record,
+      eligibilityProofRef: proof.eligibilityProofRef,
       createdAt: new Date().toISOString(),
     },
   })
@@ -114,21 +134,33 @@ export async function listMyCabildeoDelegations(
 ): Promise<CabildeoDelegationEntry[]> {
   if (!agent.session) throw new Error('Not logged in')
 
-  const res = await agent.pdsClient.call(com.atproto.repo.listRecords, {
-    repo: agent.session.did,
-    collection: 'com.para.civic.delegation',
-    limit: 100,
-  })
-
-  return res.records
-    .map(item => ({
-      uri: item.uri,
-      cid: item.cid,
-      record: item.value as unknown as CabildeoDelegationRecord,
-    }))
-    .filter(entry =>
-      opts.cabildeo ? entry.record.cabildeo === opts.cabildeo : true,
+  const records: CabildeoDelegationEntry[] = []
+  let cursor: string | undefined
+  for (let page = 0; page < 20; page++) {
+    const res = await agent.pdsClient.call(com.atproto.repo.listRecords, {
+      repo: agent.session.did,
+      collection: 'com.para.civic.delegation',
+      limit: 100,
+      cursor,
+    })
+    records.push(
+      ...res.records.map(item => ({
+        uri: item.uri,
+        cid: item.cid,
+        record: item.value as unknown as CabildeoDelegationRecord,
+      })),
     )
+    cursor = res.cursor
+    if (!cursor) break
+  }
+  if (cursor) throw new Error('Hay demasiadas cesiones para mostrar todas.')
+
+  return records.filter(entry =>
+    opts.cabildeo
+      ? entry.record.cabildeo === opts.cabildeo ||
+        entry.record.mode === 'passive'
+      : true,
+  )
 }
 
 /**
@@ -166,16 +198,16 @@ export type CabildeoDelegationEntry = {
 function assertValidCession(
   record: Omit<CabildeoDelegationRecord, 'createdAt'>,
 ) {
+  if (record.signal !== undefined) {
+    throw new Error('La cesión no puede publicar una señal de intensidad.')
+  }
+  if (!record.delegateTo?.startsWith('did:')) {
+    throw new Error('Elige una voz receptora para la cesión.')
+  }
   const mode = record.mode ?? 'active'
   if (mode === 'active') {
-    const criteriaCount =
-      (typeof record.preferredOption === 'number' ? 1 : 0) +
-      (record.reason?.trim() ? 1 : 0) +
-      (typeof record.signal === 'number' ? 1 : 0)
-    if (!record.delegateTo || !record.cabildeo || criteriaCount < 2) {
-      throw new Error(
-        'La cesión activa requiere voz receptora y al menos 2 piezas de criterio.',
-      )
+    if (!record.cabildeo) {
+      throw new Error('La cesión activa requiere un cabildeo.')
     }
     return
   }
@@ -189,12 +221,81 @@ function assertValidCession(
   }
 }
 
+// ─── Phase lifecycle ─────────────────────────────────────────────────────────
+
+export const CABILDEO_PHASE_ORDER = [
+  'draft',
+  'open',
+  'deliberating',
+  'voting',
+  'resolved',
+] as const
+
+export function nextCabildeoPhase(
+  phase: string,
+): (typeof CABILDEO_PHASE_ORDER)[number] | null {
+  const idx = CABILDEO_PHASE_ORDER.indexOf(
+    phase as (typeof CABILDEO_PHASE_ORDER)[number],
+  )
+  if (idx === -1 || idx === CABILDEO_PHASE_ORDER.length - 1) return null
+  return CABILDEO_PHASE_ORDER[idx + 1]
+}
+
+/**
+ * Phases advance by the author rewriting their own record (`putRecord`).
+ * The PDS vote gate reads the phase from the AppView's indexed row, and the
+ * indexer replaces that row on record updates, so no dedicated backend
+ * endpoint is needed — the firehose does the propagation.
+ */
+export async function advanceCabildeoPhase(
+  agent: CabildeoServiceAgent,
+  cabildeoUri: string,
+): Promise<CabildeoPhase> {
+  if (!agent.session) throw new Error('Not logged in')
+
+  const rkey = cabildeoUri.split('/').pop()
+  if (!rkey) throw new Error('Cabildeo no encontrado')
+
+  const current = await agent.pdsClient.call(com.atproto.repo.getRecord, {
+    repo: agent.session.did,
+    collection: 'com.para.civic.cabildeo',
+    rkey,
+  })
+  const record = {...(current.value as unknown as CabildeoRecord)}
+  const next = nextCabildeoPhase(record.phase)
+  if (!next) throw new Error('Este cabildeo ya está resuelto.')
+
+  record.phase = next
+  // The PDS rejects votes once the deadline passes, so entering voting with
+  // a stale or missing deadline would brick the ballot — open a fresh
+  // 7-day window unless the author set a future one.
+  if (next === 'voting') {
+    const deadline = record.phaseDeadline
+      ? new Date(record.phaseDeadline).getTime()
+      : NaN
+    if (!Number.isFinite(deadline) || deadline <= Date.now()) {
+      record.phaseDeadline = new Date(
+        Date.now() + 7 * 24 * 60 * 60 * 1000,
+      ).toISOString()
+    }
+  }
+
+  await agent.pdsClient.call(com.atproto.repo.putRecord, {
+    repo: agent.session.did,
+    collection: 'com.para.civic.cabildeo',
+    rkey,
+    record: record as unknown as LexMap,
+  })
+  return next
+}
+
 // ─── Reads (AppView) ─────────────────────────────────────────────────────────
 
 export type CabildeoOptionSummary = {
   optionIndex: number
   label: string
   votes: number
+  effectivePowerMicros?: number
   positions: number
 }
 
@@ -216,6 +317,7 @@ export type CabildeoOutcomeSummary = {
   winningOption?: number
   totalParticipants: number
   effectiveTotalPower: number
+  effectiveTotalPowerMicros?: number
   tie: boolean
   breakdown: CabildeoOptionSummary[]
 }

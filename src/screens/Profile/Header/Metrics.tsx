@@ -12,7 +12,7 @@ import {Influence_Stroke_Icon as InfluenceIcon} from '#/components/icons/Influen
 import {RaisingHand4Finger_Stroke2_Corner2_Rounded as VoteIcon} from '#/components/icons/RaisingHand'
 import {InlineLinkText} from '#/components/Link'
 import {Text} from '#/components/Typography'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 export function ProfileHeaderMetrics({
   profile,

@@ -6,6 +6,7 @@ import {AtpAgent, AtUri} from '@atproto/api'
 import {type TestBsky, TestNetwork} from '@atproto/dev-env'
 
 import {E2E_APPVIEW_DID} from './constants.ts'
+
 export interface TestUser {
   email: string
   did: string

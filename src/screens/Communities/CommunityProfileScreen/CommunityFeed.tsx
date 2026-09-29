@@ -9,7 +9,7 @@ import {PostFeedLoadingPlaceholder} from '#/view/com/util/LoadingPlaceholder'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import {ListFooter} from '#/components/Lists'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import {styles} from './styles'
 
 export function CommunityFeed({

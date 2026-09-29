@@ -548,7 +548,7 @@ let FeedItemInner = ({
             <KnownLikers
               post={post}
               feature={Features.PostFeedKnownLikersEnable}
-              variant="feed"
+              outerStyle={[a.py_sm]}
             />
           </View>
 

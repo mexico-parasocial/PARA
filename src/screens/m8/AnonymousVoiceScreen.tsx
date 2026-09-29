@@ -31,7 +31,7 @@ function colorFromSeed(seed: string): string {
 
 /**
  * Public page for a default anonymous identity ("main voice"). Shows the
- * follower graph and karma, and lets visitors follow it. Isolated burner
+ * follower graph and influence, and lets visitors follow it. Isolated burner
  * identities have no page by design — the server rejects them with
  * ISOLATED_NOT_FOLLOWABLE, surfaced here as an explainer.
  */
@@ -175,7 +175,7 @@ export default function AnonymousVoiceScreen({route}: Props) {
                     {karma === null ? '—' : karma}
                   </Text>
                   <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-                    <Trans>Karma</Trans>
+                    <Trans>Influence</Trans>
                   </Text>
                 </View>
               </View>

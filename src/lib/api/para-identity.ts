@@ -16,7 +16,7 @@ export async function fetchParaIdentity(
   const res = await client
     .call(com.atproto.repo.getRecord, {
       repo: repo as AtIdentifierString,
-      collection: PARA_IDENTITY_COLLECTION as NsidString,
+      collection: PARA_IDENTITY_COLLECTION,
       rkey: PARA_IDENTITY_RKEY,
     })
     .catch(() => null)
@@ -48,7 +48,7 @@ export async function putParaIdentity(
 
   return await client.call(com.atproto.repo.putRecord, {
     repo: repo as AtIdentifierString,
-    collection: PARA_IDENTITY_COLLECTION as NsidString,
+    collection: PARA_IDENTITY_COLLECTION,
     rkey: PARA_IDENTITY_RKEY,
     record: fullRecord as unknown as LexMap,
   })

@@ -44,7 +44,7 @@ import {ListFooter} from '#/components/Lists'
 import {SearchError} from '#/components/SearchError'
 import {Text} from '#/components/Typography'
 import {type Metrics, useAnalytics} from '#/analytics'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import type * as bsky from '#/types/bsky'
 import {ParaSearchFiltersBar} from './ParaSearchFiltersBar'
 
@@ -72,14 +72,9 @@ let SearchResults = ({
   onChangeFilters?: (filters: SearchFilters) => void
 }): React.ReactNode => {
   const {t: l} = useLingui()
-  const ax = useAnalytics()
   const paraFilters = useMemo(
     () => searchFiltersToParaFilters(filters ?? {}),
     [filters],
-  )
-
-  const isStarterPacksEnabled = ax.features.enabled(
-    ax.features.SearchStarterPacksV2Enable,
   )
 
   const onChangeParaFilters = useCallback(
@@ -113,7 +108,7 @@ let SearchResults = ({
       }
       onChangeFilters(merged)
     },
-    [filters, onChangeFilters, ax],
+    [filters, onChangeFilters],
   )
 
   /*
@@ -182,31 +177,20 @@ let SearchResults = ({
           <SearchScreenFeedsResults query={query} active={activePage === 3} />
         ),
       },
-      noFilters &&
-        isStarterPacksEnabled && {
-          title: l`Starter packs`,
-          component: (
-            <SearchScreenStarterPackResults
-              query={query}
-              active={activePage === 4}
-            />
-          ),
-        },
+      noFilters && {
+        title: l`Starter Packs`,
+        component: (
+          <SearchScreenStarterPackResults
+            query={query}
+            active={activePage === 4}
+          />
+        ),
+      },
     ].filter(Boolean) as {
       title: string
       component: React.ReactNode
     }[]
-  }, [
-    l,
-    query,
-    filters,
-    hasFilters,
-    paraFilters,
-    hasPostFilters,
-    activePage,
-    onChangeFilters,
-    isStarterPacksEnabled,
-  ])
+  }, [l, query, filters, hasFilters, hasPostFilters, activePage])
 
   // There may be fewer tabs after changing the search options.
   const selectedPage = activePage > sections.length - 1 ? 0 : activePage

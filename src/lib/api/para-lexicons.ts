@@ -467,6 +467,7 @@ export interface CabildeoUserContext {
   delegateVoteEvent?: {
     optionIndex: number
     votedAt: string
+    gracePeriodEndsAt?: string // Server-authoritative end of the confirm window
     isDismissed?: boolean // Mock locally if dismissed
   }
 }
@@ -543,6 +544,7 @@ export interface CabildeoVoteRecord {
 export interface CabildeoDelegationRecord {
   cabildeo?: string // at-uri
   delegateTo?: string // DID of representative for active cessions
+  eligibilityProofRef?: string // m8 authorization required for new delegations
   createdAt: string
   mode?: 'active' | 'passive'
   party?: string

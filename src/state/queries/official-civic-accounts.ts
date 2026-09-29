@@ -5,13 +5,10 @@ import {type RepresentativeItem} from '#/lib/mock-data'
 import {
   createOfficialAction,
   getOfficialActionsForSubject,
-  getOfficialCabildeoSignatures,
   getOfficialCivicAccountForRepresentative,
   getOfficialControllerForViewer,
   getOfficialControllers,
   getViewerOfficialControllerAccounts,
-  type OfficialCivicAccount,
-  signOfficialCabildeo,
 } from '#/lib/official-civic-accounts'
 
 const officialRoot = 'official-civic-accounts'
@@ -66,18 +63,6 @@ export function useOfficialActionsForSubjectQuery(subjectUri?: string) {
   })
 }
 
-export function useOfficialCabildeoSignaturesQuery(cabildeoUri?: string) {
-  return useQuery({
-    queryKey: [officialRoot, 'cabildeo-signatures', cabildeoUri],
-    queryFn: async () => {
-      if (!cabildeoUri) return []
-      return getOfficialCabildeoSignatures(cabildeoUri)
-    },
-    enabled: Boolean(cabildeoUri),
-    staleTime: 1000 * 15,
-  })
-}
-
 export function useCreateOfficialActionMutation() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -94,24 +79,6 @@ export function useCreateOfficialActionMutation() {
       void queryClient.invalidateQueries({queryKey: [officialRoot]})
       void queryClient.invalidateQueries({
         queryKey: [officialRoot, 'actions', action.subjectUri],
-      })
-    },
-  })
-}
-
-export function useSignOfficialCabildeoMutation() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async (input: {
-      account: OfficialCivicAccount
-      controllerDid: string
-      cabildeoUri: string
-      summary: string
-    }) => signOfficialCabildeo(input),
-    onSuccess: action => {
-      void queryClient.invalidateQueries({queryKey: [officialRoot]})
-      void queryClient.invalidateQueries({
-        queryKey: [officialRoot, 'cabildeo-signatures', action.subjectUri],
       })
     },
   })

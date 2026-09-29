@@ -27,10 +27,9 @@ import {
   getCabildeoTotalParticipants,
 } from '#/lib/cabildeo-display'
 import {
-  type AlignedParty,
-  getCabildeoAlignedParty,
-  getVoteBreakdownByParty,
-} from '#/lib/cabildeo-party-alignment'
+  getCabildeosForParty,
+  getPartyParticipation,
+} from '#/lib/cabildeo-party-stats'
 import {PressableScale} from '#/lib/custom-animations/PressableScale'
 import {type NavigationProp} from '#/lib/routes/types'
 import {useCabildeosQuery} from '#/state/queries/cabildeo'
@@ -762,31 +761,21 @@ function LobbyingSection({
       .slice(0, 5)
   }, [cabildeos, regionalFocus, selectedResolution])
 
-  const partyOptions = useMemo(() => {
-    const counts = new Map<string, {party: AlignedParty; count: number}>()
-    for (const c of regionScoped) {
-      const party = getCabildeoAlignedParty(c)
-      const existing = counts.get(party.id)
-      counts.set(party.id, {
-        party,
-        count: (existing?.count || 0) + 1,
-      })
-    }
-    return Array.from(counts.values()).sort(
-      (a, b) => b.count - a.count || a.party.name.localeCompare(b.party.name),
-    )
-  }, [regionScoped])
+  const partyOptions = useMemo(
+    () => getPartyParticipation(regionScoped),
+    [regionScoped],
+  )
 
-  const viewerParty =
-    getVoteBreakdownByParty(regionScoped)[0]?.party || partyOptions[0]?.party
-  const selectedParty =
-    partyOptions.find(item => item.party.id === selectedPartyId)?.party ||
-    viewerParty
+  const selectedParty = partyOptions.find(
+    item => item.party.id === selectedPartyId,
+  )?.party
 
   const partyItems = useMemo(() => {
     if (!selectedParty) return []
-    return filterByAccess(regionScoped, partyVisibility)
-      .filter(c => getCabildeoAlignedParty(c).id === selectedParty.id)
+    return getCabildeosForParty(
+      filterByAccess(regionScoped, partyVisibility),
+      selectedParty.id,
+    )
       .sort(compareLobbyingPriority)
       .slice(0, 4)
   }, [partyVisibility, regionScoped, selectedParty])
@@ -999,7 +988,7 @@ function LobbyingSection({
           <View style={a.flex_1}>
             <Text
               style={[styles.partyDeskEyebrow, {color: t.palette.primary_500}]}>
-              <Trans>Your party desk</Trans>
+              <Trans>Party desk</Trans>
             </Text>
             <Text style={[styles.partyDeskTitle, t.atoms.text]}>
               {selectedParty?.name || _(msg`Choose a party`)}
@@ -1007,8 +996,7 @@ function LobbyingSection({
             <Text
               style={[styles.partyDeskSubtitle, t.atoms.text_contrast_medium]}>
               <Trans>
-                Compare what your political family is carrying publicly with
-                what needs internal work.
+                Cabildeos where supporters of this party have already voted.
               </Trans>
             </Text>
           </View>

@@ -97,7 +97,7 @@ import {Text} from '#/components/Typography'
 import {useAgeAssurance} from '#/ageAssurance'
 import {useAnalytics} from '#/analytics'
 import {type Events} from '#/analytics/metrics/types'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import {router} from '#/routes'
 import {PlatformInfo} from '../../../../modules/expo-bluesky-swiss-army'
 

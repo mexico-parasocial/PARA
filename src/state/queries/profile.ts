@@ -341,7 +341,7 @@ export function useProfileFollowMutationQueue(
       if (finalFollowingUri) {
         void client
           .call(app.bsky.graph.getSuggestedFollowsByActor, {
-            actor: did as AtIdentifierString,
+            actor: did,
           })
           .then(res => {
             const dids = res.suggestions
@@ -438,11 +438,11 @@ export function useProfileMuteMutationQueue(
     initialState: initialMuted,
     runMutation: async (_prevMuted, shouldMute) => {
       if (shouldMute) {
-        await muteMutation.mutateAsync({did: did as DidString})
+        await muteMutation.mutateAsync({did: did})
         ax.metric('profile:mute', {})
         return true
       } else {
-        await unmuteMutation.mutateAsync({did: did as DidString})
+        await unmuteMutation.mutateAsync({did: did})
         ax.metric('profile:unmute', {})
         return false
       }
@@ -496,11 +496,11 @@ export function useProfileMuteRepostsMutationQueue(
     initialState: initialMutedOnlyReposts,
     runMutation: async (_prevMutedOnlyReposts, shouldMute) => {
       if (shouldMute) {
-        await muteRepostsMutation.mutateAsync({did: did as DidString})
+        await muteRepostsMutation.mutateAsync({did: did})
         ax.metric('profile:muteReposts', {})
         return true
       } else {
-        await unmuteMutation.mutateAsync({did: did as DidString})
+        await unmuteMutation.mutateAsync({did: did})
         ax.metric('profile:unmuteReposts', {})
         return false
       }

@@ -1,6 +1,6 @@
 import {StyleSheet} from 'react-native'
 
-import {DECK_CARD_HEIGHT, DECK_SECONDARY_TOP, DECK_THIRD_TOP} from './helpers'
+import {DECK_CARD_HEIGHT, DECK_SECONDARY_TOP} from './helpers'
 
 export const styles = StyleSheet.create({
   topChrome: {
@@ -12,17 +12,9 @@ export const styles = StyleSheet.create({
     zIndex: 0,
   },
   contentContainer: {
-    gap: 16,
     padding: 16,
-    paddingBottom: 48,
+    paddingBottom: 100,
     paddingTop: 8,
-  },
-  deckContentShell: {
-    flex: 1,
-    justifyContent: 'flex-start',
-    paddingBottom: 0,
-    paddingHorizontal: 0,
-    paddingTop: 20,
   },
   headerActions: {
     alignItems: 'center',
@@ -33,84 +25,36 @@ export const styles = StyleSheet.create({
     paddingRight: 8,
     width: '100%',
   },
-  headerSearchButton: {
-    alignItems: 'center',
-    height: 44,
-    justifyContent: 'center',
-    width: 44,
-  },
-  headerViewToggleButton: {
+  headerIconButton: {
     alignItems: 'center',
     borderRadius: 8,
-    height: 44,
+    height: 40,
     justifyContent: 'center',
-    width: 44,
+    width: 40,
   },
-  headerViewToggleButtonActive: {
-    backgroundColor: '#1E293B',
-  },
-  viewToggleButton: {
-    alignSelf: 'center',
-    alignItems: 'center',
-    borderRadius: 8,
-    height: 48,
-    justifyContent: 'center',
-    width: 48,
-  },
-  viewToggleButtonActive: {
-    backgroundColor: '#1E293B',
-  },
-  boardGrid: {
+  boardRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: 14,
+    marginBottom: 14,
   },
-  loadingContainer: {
+  boardCell: {
+    flex: 1,
+  },
+  centeredState: {
     alignItems: 'center',
     paddingVertical: 48,
   },
-  loadMoreButton: {
-    alignItems: 'center',
-    borderRadius: 8,
-    marginTop: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 28,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    borderWidth: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: {width: 0, height: 4},
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  fabText: {
-    fontSize: 32,
-    fontWeight: '300',
-    lineHeight: 36,
-  },
   cardShell: {
-    width: '100%',
     borderRadius: 8,
     shadowColor: '#000',
     shadowOpacity: 0.08,
     shadowRadius: 12,
     shadowOffset: {width: 0, height: 4},
     elevation: 3,
+    width: '100%',
   },
   cardVisual: {
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-    justifyContent: 'space-between',
-    overflow: 'hidden',
+    minHeight: 196,
     padding: 18,
   },
   mediaVisual: {
@@ -127,6 +71,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
+    minHeight: 38,
   },
   cardVisualBottom: {
     gap: 10,
@@ -142,22 +87,20 @@ export const styles = StyleSheet.create({
     shadowRadius: 4,
     width: 32,
   },
+  /*
+   * Titles always sit on either a darkened thumbnail or the saturated fallback
+   * color, so they are always light.
+   */
   cardTitle: {
-    color: '#121212',
-    fontSize: 28,
-    fontWeight: '800',
-    lineHeight: 32,
-    width: '88%',
-  },
-  cardTitleOnImage: {
     color: '#ffffff',
+    fontSize: 24,
+    fontWeight: '800',
+    lineHeight: 29,
     textShadowColor: 'rgba(0, 0, 0, 0.6)',
     textShadowOffset: {width: 0, height: 1},
     textShadowRadius: 3,
   },
   cardBody: {
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
     gap: 10,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -165,10 +108,6 @@ export const styles = StyleSheet.create({
   cardMeta: {
     fontSize: 14,
     fontWeight: '700',
-  },
-  cardSubmeta: {
-    fontSize: 14,
-    lineHeight: 19,
   },
   actionsRow: {
     alignItems: 'center',
@@ -188,23 +127,29 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
+  deckShell: {
+    flex: 1,
+    overflow: 'hidden',
+    paddingTop: 20,
+  },
   deckStage: {
-    marginTop: 8,
-    minHeight: DECK_CARD_HEIGHT + DECK_SECONDARY_TOP + 100,
+    alignSelf: 'center',
+    flex: 1,
     position: 'relative',
-    width: '100%',
   },
   deckBoundaryNotice: {
     alignItems: 'center',
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: -4,
+    zIndex: 20,
+  },
+  deckBoundaryNoticeInner: {
     backgroundColor: 'rgba(15, 23, 42, 0.86)',
     borderRadius: 8,
-    left: '50%',
     paddingHorizontal: 14,
     paddingVertical: 8,
-    position: 'absolute',
-    top: -4,
-    transform: [{translateX: -92}],
-    zIndex: 20,
   },
   deckBoundaryNoticeText: {
     color: '#F8FAFC',
@@ -214,12 +159,11 @@ export const styles = StyleSheet.create({
   deckEndCard: {
     backgroundColor: '#0F172A',
     borderRadius: 8,
-    left: 34,
     paddingHorizontal: 16,
     paddingVertical: 14,
     position: 'absolute',
-    right: 34,
-    top: DECK_SECONDARY_TOP + DECK_CARD_HEIGHT + 14,
+    right: 0,
+    top: DECK_SECONDARY_TOP + 16,
     zIndex: 2,
   },
   deckEndTitle: {
@@ -233,104 +177,56 @@ export const styles = StyleSheet.create({
     lineHeight: 18,
     marginTop: 4,
   },
-  deckPrimary: {
-    backgroundColor: 'transparent',
+  deckCard: {
     borderRadius: 8,
     borderWidth: 1,
-    left: 0,
     overflow: 'hidden',
     position: 'absolute',
-    right: 52,
+  },
+  deckPrimary: {
+    left: 0,
     top: 0,
     zIndex: 3,
   },
   deckPrevIncoming: {
-    backgroundColor: 'transparent',
-    borderRadius: 8,
-    borderWidth: 1,
     left: 0,
-    overflow: 'hidden',
-    position: 'absolute',
-    right: 34,
     top: 0,
     zIndex: 5,
   },
   deckSecondary: {
-    backgroundColor: 'transparent',
-    borderRadius: 8,
-    borderWidth: 1,
-    left: 52,
-    overflow: 'hidden',
-    position: 'absolute',
     right: 0,
     top: DECK_SECONDARY_TOP,
     zIndex: 2,
   },
   deckHidden: {
-    backgroundColor: 'transparent',
-    borderRadius: 8,
-    borderWidth: 1,
-    left: 52,
-    overflow: 'hidden',
-    position: 'absolute',
     right: 0,
-    top: DECK_THIRD_TOP,
+    top: DECK_SECONDARY_TOP * 2,
     zIndex: 1,
   },
   deckCardShell: {
-    minHeight: DECK_CARD_HEIGHT,
-    position: 'relative',
+    height: DECK_CARD_HEIGHT,
   },
   deckVisual: {
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-    justifyContent: 'space-between',
     padding: 15,
   },
   deckVisualBottom: {
     gap: 8,
-    paddingTop: 8,
-  },
-  deckBody: {
-    overflow: 'hidden',
-    position: 'relative',
+    marginTop: 'auto',
   },
   deckBodyContent: {
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
-    gap: 2,
-    paddingBottom: 16,
     paddingHorizontal: 16,
     paddingTop: 8,
-    zIndex: 1,
-  },
-  deckBodyGlassTail: {
-    display: 'none',
-  },
-  deckInfoRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  deckSubmeta: {
-    flex: 1,
   },
   deckTitle: {
-    color: '#121212',
-    fontSize: 25,
+    color: '#ffffff',
+    fontSize: 24,
     fontWeight: '800',
     lineHeight: 28,
-    width: '86%',
-  },
-  deckTitleOnImage: {
-    color: '#ffffff',
     textShadowColor: 'rgba(0, 0, 0, 0.6)',
     textShadowOffset: {width: 0, height: 1},
     textShadowRadius: 3,
   },
   deckCommandCenter: {
-    alignItems: 'flex-start',
-    alignSelf: 'center',
     position: 'absolute',
     top: DECK_SECONDARY_TOP - 44,
     zIndex: 10,
@@ -339,27 +235,10 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     bottom: 0,
     flexDirection: 'row',
+    gap: 6,
     justifyContent: 'center',
     position: 'absolute',
     top: 0,
-  },
-  commentChip: {
-    alignItems: 'center',
-    borderRadius: 8,
-    flexDirection: 'row',
-    gap: 6,
-    height: 38,
-    justifyContent: 'center',
-    minWidth: 68,
-    paddingHorizontal: 12,
-  },
-  commentChipFloating: {
-    minWidth: 68,
-  },
-  commentChipCompact: {
-    height: 26,
-    minWidth: 0,
-    paddingHorizontal: 8,
   },
   commentChipText: {
     fontSize: 13,
@@ -390,23 +269,26 @@ export const styles = StyleSheet.create({
   metaPillTextOnImage: {
     color: '#ffffff',
   },
-  deckCardPressable: {
-    flex: 1,
-  },
   expandedModalOverlay: {
-    backgroundColor: 'rgba(15, 23, 42, 0.42)',
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
     flex: 1,
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    paddingHorizontal: 12,
   },
   expandedModalDismiss: {
-    flex: 1,
+    ...StyleSheet.absoluteFill,
   },
   expandedModalSheet: {
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-    paddingBottom: 34,
+    alignSelf: 'center',
+    borderRadius: 16,
+    maxHeight: '90%',
+    maxWidth: 600,
     paddingHorizontal: 16,
     paddingTop: 12,
+    width: '100%',
+  },
+  expandedScroll: {
+    flexGrow: 0,
   },
   expandedHandle: {
     alignSelf: 'center',
@@ -417,9 +299,7 @@ export const styles = StyleSheet.create({
   },
   expandedVisual: {
     borderRadius: 8,
-    justifyContent: 'space-between',
     minHeight: 236,
-    overflow: 'hidden',
     padding: 18,
   },
   expandedBody: {

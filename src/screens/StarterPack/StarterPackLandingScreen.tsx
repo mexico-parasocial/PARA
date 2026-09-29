@@ -9,14 +9,13 @@ import {Trans} from '@lingui/react/macro'
 
 import {JOINED_THIS_WEEK} from '#/lib/constants'
 import {useWebMediaQueries} from '#/lib/hooks/useWebMediaQueries'
-import {logEvent} from '#/lib/statsig/statsig'
 import {createStarterPackGooglePlayUri} from '#/lib/strings/starter-pack'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
 import {useStarterPackQuery} from '#/state/queries/starter-packs'
 import {
   useActiveStarterPack,
   useSetActiveStarterPack,
-} from '#/state/shell/starter-pack'
+} from '#/state/shell/landing'
 import {LoggedOutScreenState} from '#/view/com/auth/LoggedOut'
 import {formatCount} from '#/view/com/util/numeric/format'
 import {Logo} from '#/view/icons/Logo'
@@ -33,6 +32,7 @@ import {Default as ProfileCard} from '#/components/ProfileCard'
 import * as Prompt from '#/components/Prompt'
 import {RichText} from '#/components/RichText'
 import {Text} from '#/components/Typography'
+import {useAnalytics} from '#/analytics'
 import {IS_WEB, IS_WEB_MOBILE_ANDROID} from '#/env'
 import {app} from '#/lexicons'
 import * as bsky from '#/types/bsky'
@@ -112,6 +112,7 @@ function LandingScreenLoaded({
 }) {
   const {creator, listItemsSample, feeds} = starterPack
   const {_, i18n} = useLingui()
+  const ax = useAnalytics()
   const t = useTheme()
   const activeStarterPack = useActiveStarterPack()
   const setActiveStarterPack = useSetActiveStarterPack()
@@ -138,7 +139,7 @@ function LandingScreenLoaded({
     } else {
       onContinue()
     }
-    logEvent('starterPack:ctaPress', {
+    ax.metric('starterPack:ctaPress', {
       starterPack: starterPack.uri,
     })
   }
@@ -189,7 +190,7 @@ function LandingScreenLoaded({
               a.text_md,
               {color: 'white'},
             ]}>
-            Starter pack by {`@${creator.handle}`}
+            <Trans>Starter Pack by {`@${creator.handle}`}</Trans>
           </Text>
         </LinearGradientBackground>
         <View style={[a.gap_2xl, a.mx_lg, a.my_2xl]}>
@@ -198,12 +199,12 @@ function LandingScreenLoaded({
           ) : null}
           <View style={[a.gap_sm]}>
             <Button
-              label={_(msg`Join PARA`)}
+              label={_(msg`Join Bluesky`)}
               onPress={onJoinPress}
               color="primary"
               size="large">
               <ButtonText style={[a.text_lg]}>
-                <Trans>Join PARA</Trans>
+                <Trans>Join Bluesky</Trans>
               </ButtonText>
             </Button>
             <View style={[a.flex_row, a.align_center, a.gap_xs]}>
@@ -211,19 +212,17 @@ function LandingScreenLoaded({
                 width={16}
                 style={{color: t.atoms.text_contrast_medium.color}}
               />
-              {JOINED_THIS_WEEK !== undefined && (
-                <Text
-                  style={[
-                    a.font_semi_bold,
-                    a.text_sm,
-                    t.atoms.text_contrast_medium,
-                  ]}
-                  numberOfLines={1}>
-                  <Trans>
-                    {formatCount(i18n, JOINED_THIS_WEEK)} joined this week
-                  </Trans>
-                </Text>
-              )}
+              <Text
+                style={[
+                  a.font_semi_bold,
+                  a.text_sm,
+                  t.atoms.text_contrast_medium,
+                ]}
+                numberOfLines={1}>
+                <Trans>
+                  {formatCount(i18n, JOINED_THIS_WEEK)} joined this week
+                </Trans>
+              </Text>
             </View>
           </View>
           <View style={[a.gap_3xl]}>
@@ -300,14 +299,14 @@ function LandingScreenLoaded({
             ) : null}
           </View>
           <Button
-            label={_(msg`Create an account without using this starter pack`)}
+            label={_(msg`Create an account without using this Starter Pack`)}
             variant="solid"
             color="secondary"
             size="large"
             style={[a.py_lg]}
             onPress={onJoinWithoutPress}>
             <ButtonText>
-              <Trans>Create an account without using this starter pack</Trans>
+              <Trans>Create an account without using this Starter Pack</Trans>
             </ButtonText>
           </Button>
         </View>
@@ -319,38 +318,38 @@ function LandingScreenLoaded({
       <Prompt.Outer control={androidDialogControl}>
         <Prompt.Content>
           <Prompt.TitleText>
-            <Trans>Download PARA</Trans>
+            <Trans>Download Bluesky</Trans>
           </Prompt.TitleText>
           <Prompt.DescriptionText>
             <Trans>
-              The experience is better in the app. Download PARA now and we'll
-              pick back up where you left off.
+              The experience is better in the app. Download Bluesky now and
+              we'll pick back up where you left off.
             </Trans>
           </Prompt.DescriptionText>
-          <Prompt.Actions>
-            <Prompt.Action
-              cta="Download on Google Play"
-              color="primary"
-              onPress={() => {
-                const rkey = new AtUri(starterPack.uri).rkey
-                if (!rkey) return
-
-                const googlePlayUri = createStarterPackGooglePlayUri(
-                  creator.handle,
-                  rkey,
-                )
-                if (!googlePlayUri) return
-
-                window.location.href = googlePlayUri
-              }}
-            />
-            <Prompt.Action
-              cta="Continue on web"
-              color="secondary"
-              onPress={onContinue}
-            />
-          </Prompt.Actions>
         </Prompt.Content>
+        <Prompt.Actions>
+          <Prompt.Action
+            cta="Download on Google Play"
+            color="primary"
+            onPress={() => {
+              const rkey = new AtUri(starterPack.uri).rkey
+              if (!rkey) return
+
+              const googlePlayUri = createStarterPackGooglePlayUri(
+                creator.handle,
+                rkey,
+              )
+              if (!googlePlayUri) return
+
+              window.location.href = googlePlayUri
+            }}
+          />
+          <Prompt.Action
+            cta="Continue on web"
+            color="secondary"
+            onPress={onContinue}
+          />
+        </Prompt.Actions>
       </Prompt.Outer>
       {IS_WEB && (
         <meta
@@ -394,10 +393,10 @@ export function AppClipOverlay({
               a.text_4xl,
               {lineHeight: 40, color: 'white'},
             ]}>
-            Download PARA to get started!
+            Download Bluesky to get started!
           </Text>
           <Text style={[a.text_lg, {color: 'white'}]}>
-            We'll remember the starter pack you chose and use it when you create
+            We’ll remember the Starter Pack you chose and use it when you create
             an account in the app.
           </Text>
         </View>

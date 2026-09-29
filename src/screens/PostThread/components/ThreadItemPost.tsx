@@ -43,7 +43,7 @@ import {RichText} from '#/components/RichText'
 import * as Skele from '#/components/Skeleton'
 import {SubtleHover} from '#/components/SubtleHover'
 import {Text} from '#/components/Typography'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 export type ThreadItemPostProps = {
   item: Extract<ThreadItem, {type: 'threadPost'}>

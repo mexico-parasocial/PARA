@@ -62,7 +62,7 @@ import {Message_Stroke1_Corner0_Rounded_Filled as MessageIcon} from '#/component
 import {VideoClip_Stroke1_Corner0_Rounded as VideoIcon} from '#/components/icons/VideoClip'
 import * as Layout from '#/components/Layout'
 import {ScreenHider} from '#/components/moderation/ScreenHider'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import {navigate} from '#/Navigation'
 
 interface SectionRef {

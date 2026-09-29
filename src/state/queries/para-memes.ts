@@ -1,18 +1,17 @@
-import {deleteLike, like} from '@bsky/sdk'
+import {AtUri} from '@atproto/syntax'
 import {
   type InfiniteData,
+  type QueryClient,
   useInfiniteQuery,
-  useMutation,
-  useQueryClient,
 } from '@tanstack/react-query'
 
 import {
   PERSISTED_QUERY_GCTIME,
   PERSISTED_QUERY_ROOT,
 } from '#/state/queries/index'
-import {useAgent} from '#/state/session'
+import {didOrHandleUriMatches} from '#/state/queries/util'
+import {useAgent, useSession} from '#/state/session'
 import {type MemeMediaItem} from '#/screens/Dashboard/MemesScreen/types'
-import * as Toast from '#/components/Toast'
 import {app, com} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 
@@ -24,21 +23,29 @@ export interface MemesFeedPage {
   items: MemeMediaItem[]
 }
 
-function getQueryKey(): [string, string] {
-  return [PERSISTED_QUERY_ROOT, RQKEY_ROOT]
+/*
+ * Posts carry viewer state (viewer.like) and the cache is persisted, so the
+ * key is partitioned by account to avoid leaking one account's likes into
+ * another's session.
+ */
+export function createMemesFeedQueryKey(
+  did: string | undefined,
+): [string, string, string] {
+  return [PERSISTED_QUERY_ROOT, RQKEY_ROOT, did ?? '']
 }
 
 export function useMemesFeedQuery() {
   const agent = useAgent()
+  const {currentAccount} = useSession()
 
   return useInfiniteQuery<
     MemesFeedPage,
     Error,
     InfiniteData<MemesFeedPage>,
-    [string, string],
+    [string, string, string],
     string | undefined
   >({
-    queryKey: getQueryKey(),
+    queryKey: createMemesFeedQueryKey(currentAccount?.did),
     staleTime: STALE_TIME,
     gcTime: PERSISTED_QUERY_GCTIME,
     initialPageParam: undefined,
@@ -86,7 +93,7 @@ function toMemeMediaItem(view: MemeView): MemeMediaItem {
   const post = view.post
   const meta = view.meta
   const author = post.author
-  const thumbUri = getMemeThumbnailUri(post.embed)
+  const thumbUri = getMemeImageUri(post.embed)
 
   // Use the post text as a title fallback.
   const record = post.record as Record<string, unknown> | undefined
@@ -110,13 +117,13 @@ function toMemeMediaItem(view: MemeView): MemeMediaItem {
   }
 }
 
-function getMemeThumbnailUri(
+function getMemeImageUri(
   embed: app.bsky.feed.defs.PostView['embed'],
 ): string | undefined {
   if (!embed) return undefined
 
   if (bsky.isType(app.bsky.embed.images.view, embed)) {
-    return embed.images[0]?.thumb
+    return embed.images[0]?.fullsize ?? embed.images[0]?.thumb
   }
 
   if (bsky.isType(app.bsky.embed.video.view, embed)) {
@@ -126,7 +133,7 @@ function getMemeThumbnailUri(
   if (bsky.isType(app.bsky.embed.recordWithMedia.view, embed)) {
     const media = embed.media
     if (bsky.isType(app.bsky.embed.images.view, media)) {
-      return media.images[0]?.thumb
+      return media.images[0]?.fullsize ?? media.images[0]?.thumb
     }
     if (bsky.isType(app.bsky.embed.video.view, media)) {
       return media.thumbnail
@@ -136,35 +143,26 @@ function getMemeThumbnailUri(
   return undefined
 }
 
-export function useMemeVoteMutation() {
-  const agent = useAgent()
-  const queryClient = useQueryClient()
-
-  return useMutation<
-    void,
-    Error,
-    {post: app.bsky.feed.defs.PostView; vote: 1 | -1 | 0}
-  >({
-    mutationFn: async ({post, vote}) => {
-      const likeUri = post.viewer?.like
-      if (vote === 1) {
-        if (!likeUri) {
-          await agent.pdsClient.call(like, {
-            uri: post.uri,
-            cid: post.cid,
-          })
-        }
-      } else {
-        if (likeUri) {
-          await agent.pdsClient.call(deleteLike, likeUri)
+/**
+ * Lets the post shadow cache find memes, so likes made on other surfaces (e.g.
+ * the post thread) are reflected on the Memes screen.
+ */
+export function* findAllPostsInQueryData(
+  queryClient: QueryClient,
+  uri: string,
+): Generator<app.bsky.feed.defs.PostView, undefined> {
+  const queryDatas = queryClient.getQueriesData<InfiniteData<MemesFeedPage>>({
+    queryKey: [PERSISTED_QUERY_ROOT, RQKEY_ROOT],
+  })
+  const atUri = new AtUri(uri)
+  for (const [_queryKey, queryData] of queryDatas) {
+    if (!queryData?.pages) continue
+    for (const page of queryData.pages) {
+      for (const item of page.items) {
+        if (item.post && didOrHandleUriMatches(atUri, item.post)) {
+          yield item.post
         }
       }
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({queryKey: getQueryKey()})
-    },
-    onError: error => {
-      Toast.show(`Vote failed: ${error.message}`, {type: 'error'})
-    },
-  })
+    }
+  }
 }

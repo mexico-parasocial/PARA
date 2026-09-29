@@ -21,7 +21,7 @@ import {EmojiArc_Stroke2_Corner0_Rounded as EmojiSmile} from '#/components/icons
 import {PaperPlane_Stroke2_Corner0_Rounded as PaperPlane} from '#/components/icons/PaperPlane'
 import * as Toast from '#/components/Toast'
 import {IS_WEB_SAFARI, IS_WEB_TOUCH_DEVICE} from '#/env'
-import {chat} from '#/lexicons'
+import {type chat} from '#/lexicons'
 import {
   type MessageEmbedState,
   useExtractEmbedFromFacets,

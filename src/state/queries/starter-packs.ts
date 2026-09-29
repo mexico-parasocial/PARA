@@ -291,7 +291,7 @@ export function useCreateStarterPackMutation({
       })
       onSuccess(data)
     },
-    onError: async error => {
+    onError: error => {
       onError(error)
     },
   })
@@ -332,7 +332,7 @@ export function useEditStarterPackMutation({
       }
 
       if (!bsky.isType(app.bsky.graph.starterpack, currentStarterPack.record)) {
-        throw new Error('Invalid starter pack')
+        throw new Error('Invalid Starter Pack')
       }
 
       const removedItems = currentListItems.filter(

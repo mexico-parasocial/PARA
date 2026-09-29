@@ -19,7 +19,7 @@ import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/
 import {Text} from '#/components/Typography'
 import {useSimpleVerificationState} from '#/components/verification'
 import {VerificationCheck} from '#/components/verification/VerificationCheck'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 export function AccountList({
   onSelectAccount,

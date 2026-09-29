@@ -2,7 +2,7 @@ import {
   mapOpenQuestionPosts,
   toPostThreadParamsFromUri,
 } from '#/screens/RAQ/open-questions-utils'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 function buildPost(overrides: Partial<app.bsky.feed.defs.PostView>) {
   return {

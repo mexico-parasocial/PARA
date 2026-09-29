@@ -9,7 +9,7 @@ import {isParaPostView} from '#/lib/api/feed/para'
 import {hydrateCommunityPosts} from '#/lib/community-posts'
 import {STALE} from '#/state/queries'
 import {useAgent} from '#/state/session'
-import {app, com} from '#/lexicons'
+import {type app, com} from '#/lexicons'
 
 const RQKEY_ROOT = 'community-posts'
 

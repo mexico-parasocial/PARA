@@ -10,12 +10,8 @@ import {AppState, type AppStateStatus} from 'react-native'
 import {type AtUriString, type DidString} from '@atproto/syntax'
 import throttle from 'lodash.throttle'
 
-import {PROD_FEEDS, STAGING_FEEDS} from '#/lib/constants'
-import {
-  type FeedSourceFeedInfo,
-  type FeedSourceInfo,
-  isFeedSourceFeedInfo,
-} from '#/state/queries/feed'
+import {PROD_FEEDS, STAGING_FEEDS, TRENDING_DID} from '#/lib/constants'
+import {type FeedSourceInfo, isFeedSourceFeedInfo} from '#/state/queries/feed'
 import {
   type FeedDescriptor,
   type FeedPostSliceItem,
@@ -45,7 +41,7 @@ export const THIRD_PARTY_ALLOWED_INTERACTIONS = new Set<
 
 export type StateContext = {
   enabled: boolean
-  onItemSeen: (item: Parameters<typeof getItemsForFeedback>[0]) => void
+  onItemSeen: (item: any) => void
   sendInteraction: (interaction: app.bsky.feed.defs.Interaction) => void
   feedDescriptor: FeedDescriptor | undefined
   feedSourceInfo: FeedSourceInfo | undefined
@@ -53,7 +49,7 @@ export type StateContext = {
 
 const stateContext = createContext<StateContext>({
   enabled: false,
-  onItemSeen: (_item: Parameters<typeof getItemsForFeedback>[0]) => {},
+  onItemSeen: (_item: any) => {},
   sendInteraction: (_interaction: app.bsky.feed.defs.Interaction) => {},
   feedDescriptor: undefined,
   feedSourceInfo: undefined,
@@ -144,7 +140,7 @@ export function useFeedFeedback(
     const interactionsToSend = interactions.filter(
       interaction =>
         interaction.event &&
-        isInteractionAllowed(enabled, feed, interaction.event),
+        isInteractionAllowed(enabled, feed?.feedDescriptor, interaction.event),
     )
 
     if (interactionsToSend.length === 0) {
@@ -167,7 +163,6 @@ export function useFeedFeedback(
       )
       .catch(() => {}) // ignore upstream errors
 
-    // Send to Statsig
     if (aggregatedStats.current === null) {
       aggregatedStats.current = createAggregatedStats()
     }
@@ -201,7 +196,7 @@ export function useFeedFeedback(
   }, [enabled, sendToFeed])
 
   const onItemSeen = useCallback(
-    (feedItem: Parameters<typeof getItemsForFeedback>[0]) => {
+    (feedItem: any) => {
       if (!enabled) {
         return
       }
@@ -211,7 +206,7 @@ export function useFeedFeedback(
           history.current.add(postItem)
           queue.current.add(
             toString({
-              item: postItem.uri as AtUriString,
+              item: postItem.uri,
               event: 'app.bsky.feed.defs#interactionSeen',
               feedContext,
               reqId,
@@ -264,22 +259,28 @@ export function useFeedFeedbackContext() {
 // TODO
 // We will introduce a permissions framework for 3p feeds to
 // take advantage of the feed feedback API. Until that's in
-// place, we're hardcoding it to the discover feed.
+// place, we're hardcoding it to the discover and trending feeds.
 // -prf
 export function isDiscoverFeed(feed?: FeedDescriptor) {
   return !!feed && FEEDBACK_FEEDS.includes(feed)
 }
 
+export function isTrendingFeed(feed?: FeedDescriptor) {
+  return !!feed && feed.startsWith(`feedgen|at://${TRENDING_DID}/`)
+}
+
 function isInteractionAllowed(
   enabled: boolean,
-  feed: FeedSourceFeedInfo | undefined,
+  feed: FeedDescriptor | undefined,
   interaction: app.bsky.feed.defs.Interaction['event'],
 ) {
   if (!enabled || !feed) {
     return false
   }
-  const isDiscover = isDiscoverFeed(feed.feedDescriptor)
-  return isDiscover ? true : THIRD_PARTY_ALLOWED_INTERACTIONS.has(interaction)
+  if (isDiscoverFeed(feed) || isTrendingFeed(feed)) {
+    return true
+  }
+  return THIRD_PARTY_ALLOWED_INTERACTIONS.has(interaction)
 }
 
 function toString(interaction: app.bsky.feed.defs.Interaction): string {

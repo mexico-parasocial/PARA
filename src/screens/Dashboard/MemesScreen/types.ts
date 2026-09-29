@@ -1,7 +1,6 @@
 import {type Meme} from '#/lib/mock-data/types'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
-export type Mode = 'Memes'
 export type ViewStyleMode = 'board' | 'deck'
 
 export interface MemeMediaItem extends Meme {

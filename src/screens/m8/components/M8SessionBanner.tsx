@@ -139,7 +139,7 @@ export function M8SessionBanner() {
       <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
         <Trans>
           Link your handle or DID to enable verified voting, anonymous
-          identities, and karma.
+          identities, and influence.
         </Trans>
       </Text>
       <View style={[a.flex_row, a.gap_sm, a.align_center]}>

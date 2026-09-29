@@ -1,7 +1,7 @@
 import {useCallback} from 'react'
 import {useLingui} from '@lingui/react'
 
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 type ParaSummaryPost = Pick<
   app.bsky.feed.defs.PostView,

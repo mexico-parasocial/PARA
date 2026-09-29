@@ -13,6 +13,7 @@ import {
 import {
   getKarmaMe,
   getKarmaProfile,
+  getM8AccessToken,
   getMe,
   postAnonymousDisable,
   postAnonymousEnable,
@@ -21,6 +22,7 @@ import {
 import {type AnonymousProfile} from '#/lib/im8/types'
 import {type CommonNavigatorParams} from '#/lib/routes/types'
 import * as Storage from '#/lib/storage'
+import {logger} from '#/logger'
 import {useSession} from '#/state/session'
 import * as SettingsList from '#/screens/Settings/components/SettingsList'
 import {atoms as a, useTheme} from '#/alf'
@@ -82,6 +84,11 @@ export function AccountSettingsScreen({navigation}: Props) {
         setAnonymousMode(true)
         return
       }
+      if (!(await getM8AccessToken())) {
+        setAnonymousMode(false)
+        setAnonProfile(null)
+        return
+      }
       const {anonymousProfile} = await getMe()
       if (anonymousProfile) {
         await setStoredAnonymousProfile(anonymousProfile)
@@ -92,7 +99,20 @@ export function AccountSettingsScreen({navigation}: Props) {
         setAnonProfile(null)
       }
     } catch (e) {
-      console.error('Failed to load anonymous mode', e)
+      logger.warn('Failed to load anonymous mode', {safeMessage: String(e)})
+    }
+  }, [])
+
+  const loadKarma = useCallback(async () => {
+    // Influence lives on the M8 broker; without an M8 session there is nothing to load.
+    if (!(await getM8AccessToken())) return
+    try {
+      const karma = await getKarmaMe()
+      setKarmaGlobal(karma.global)
+      const profile = await getKarmaProfile(karma.profileId)
+      setRevealGlobalKarma(profile.revealed.global)
+    } catch (e) {
+      logger.warn('Failed to load influence', {safeMessage: String(e)})
     }
   }, [])
 
@@ -100,19 +120,8 @@ export function AccountSettingsScreen({navigation}: Props) {
     useCallback(() => {
       void loadAnonymousMode()
       void loadKarma()
-    }, [loadAnonymousMode]),
+    }, [loadAnonymousMode, loadKarma]),
   )
-
-  const loadKarma = useCallback(async () => {
-    try {
-      const karma = await getKarmaMe()
-      setKarmaGlobal(karma.global)
-      const profile = await getKarmaProfile(karma.profileId)
-      setRevealGlobalKarma(profile.revealed.global)
-    } catch (e) {
-      console.error('Failed to load karma', e)
-    }
-  }, [])
 
   const toggleRevealGlobalKarma = async (value: boolean) => {
     try {
@@ -121,11 +130,11 @@ export function AccountSettingsScreen({navigation}: Props) {
       setRevealGlobalKarma(value)
       Toast.show(
         value
-          ? _(msg`Global karma is now visible`)
-          : _(msg`Global karma is now private`),
+          ? _(msg`Global influence is now visible`)
+          : _(msg`Global influence is now private`),
       )
     } catch (e) {
-      Toast.show(_(msg`Failed to update karma visibility`))
+      Toast.show(_(msg`Failed to update influence visibility`))
     } finally {
       setLoadingKarma(false)
     }
@@ -363,7 +372,7 @@ export function AccountSettingsScreen({navigation}: Props) {
             <SettingsList.Group>
               <SettingsList.ItemIcon icon={ShieldIcon} />
               <SettingsList.ItemText>
-                <Trans>Karma</Trans>
+                <Trans>Influence</Trans>
               </SettingsList.ItemText>
               <View style={[a.pb_sm, a.pt_xs]}>
                 <Text
@@ -388,18 +397,18 @@ export function AccountSettingsScreen({navigation}: Props) {
                   {karmaGlobal}
                 </Text>
                 <Text style={[a.text_sm, t.atoms.text_contrast_low]}>
-                  <Trans>Global Karma</Trans>
+                  <Trans>Global Influence</Trans>
                 </Text>
               </View>
               <Toggle.Item
                 name="reveal_global_karma"
-                label={_(msg`Reveal Global Karma`)}
+                label={_(msg`Reveal Global Influence`)}
                 value={revealGlobalKarma}
                 onChange={toggleRevealGlobalKarma}
                 disabled={loadingKarma}
                 style={[a.w_full, a.py_xs]}>
                 <Toggle.LabelText style={[a.flex_1]}>
-                  <Trans>Reveal Global Karma</Trans>
+                  <Trans>Reveal Global Influence</Trans>
                 </Toggle.LabelText>
                 <Toggle.Platform />
               </Toggle.Item>

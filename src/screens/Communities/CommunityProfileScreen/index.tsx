@@ -234,10 +234,7 @@ export function CommunityProfileScreen() {
   const featuredRepresentative = useMemo(() => {
     return (governance.officials[0] ||
       governance.deputies[0]?.activeHolder ||
-      null) as
-      | CommunityGovernanceOfficialRepresentative
-      | CommunityGovernancePerson
-      | null
+      null)
   }, [governance.deputies, governance.officials])
   const agentDisplayName =
     featuredRepresentative?.displayName ||

@@ -40,7 +40,7 @@ import {ListFooter} from '#/components/Lists'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {IS_NATIVE} from '#/env'
-import {chat} from '#/lexicons'
+import {type chat} from '#/lexicons'
 import {RequestListItem} from './components/RequestListItem'
 import {useIsWithinSplitView} from './components/splitView/context'
 

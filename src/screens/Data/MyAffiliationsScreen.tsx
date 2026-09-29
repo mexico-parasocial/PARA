@@ -5,7 +5,11 @@ import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import {useFocusEffect, useNavigation} from '@react-navigation/native'
 
-import {getVoteBreakdownByParty} from '#/lib/cabildeo-party-alignment'
+import {getCabildeoLinkKind} from '#/lib/cabildeo-display'
+import {
+  getMatchingPartiesForCabildeo,
+  getViewerVoteAlignment,
+} from '#/lib/cabildeo-party-stats'
 import {
   getPartyNinthId,
   PARTY_COMPASS_PROFILE_BY_ID,
@@ -43,7 +47,7 @@ function VoteAnalysis({navigation}: {navigation: NavigationProp}) {
   )
 
   const breakdown = useMemo(
-    () => getVoteBreakdownByParty(votedCabildeos),
+    () => getViewerVoteAlignment(votedCabildeos),
     [votedCabildeos],
   )
 
@@ -71,21 +75,20 @@ function VoteAnalysis({navigation}: {navigation: NavigationProp}) {
         </Text>
         <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mb_md]}>
           <Trans>
-            Vote on some policies to see which parties your decisions align
-            with.
+            Vote on some proposals to see which parties you vote alongside.
           </Trans>
         </Text>
         <Button
           variant="solid"
           color="primary"
           size="small"
-          label={_(msg`Browse policies to vote`)}
+          label={_(msg`Browse proposals to vote`)}
           onPress={() =>
             navigation.navigate('PoliciesDashboard', {mode: 'Policies'})
           }
           style={[a.w_full]}>
           <ButtonText>
-            <Trans>Browse policies to vote →</Trans>
+            <Trans>Browse proposals to vote →</Trans>
           </ButtonText>
         </Button>
       </View>
@@ -104,48 +107,71 @@ function VoteAnalysis({navigation}: {navigation: NavigationProp}) {
         <Trans>Vote Analysis</Trans>
       </Text>
 
-      {/* Pie chart */}
-      <View style={[a.align_center, a.mb_lg]}>
-        <PieChart data={pieData} size={160} showLegend={false} />
-      </View>
-
-      {/* Breakdown stats */}
-      <View style={[a.gap_sm, a.mb_lg]}>
-        {breakdown.map(b => (
-          <View key={b.party.id} style={[a.flex_row, a.align_center, a.gap_sm]}>
-            <View
-              style={{
-                width: 10,
-                height: 10,
-                borderRadius: 5,
-                backgroundColor: b.party.color,
-              }}
-            />
-            <Text style={[a.text_sm, t.atoms.text, a.flex_1]}>
-              {b.party.name}
-            </Text>
-            <Text
-              style={[a.text_sm, a.font_bold, t.atoms.text_contrast_medium]}>
-              {b.count} vote{b.count !== 1 ? 's' : ''}
-            </Text>
+      {breakdown.length === 0 ? (
+        <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mb_md]}>
+          <Trans>
+            Your votes don't overlap with any party majority yet. Party
+            breakdowns only exist on cabildeos with party-only vote visibility.
+          </Trans>
+        </Text>
+      ) : (
+        <>
+          {/* Pie chart */}
+          <View style={[a.align_center, a.mb_lg]}>
+            <PieChart data={pieData} size={160} showLegend={false} />
           </View>
-        ))}
-      </View>
 
-      {/* Voted policies list */}
+          {/* Breakdown stats */}
+          <View style={[a.gap_sm, a.mb_lg]}>
+            {breakdown.map(b => (
+              <View
+                key={b.party.id}
+                style={[a.flex_row, a.align_center, a.gap_sm]}>
+                <View
+                  style={{
+                    width: 10,
+                    height: 10,
+                    borderRadius: 5,
+                    backgroundColor: b.party.color,
+                  }}
+                />
+                <Text style={[a.text_sm, t.atoms.text, a.flex_1]}>
+                  {b.party.name}
+                </Text>
+                <Text
+                  style={[
+                    a.text_sm,
+                    a.font_bold,
+                    t.atoms.text_contrast_medium,
+                  ]}>
+                  {b.count} vote{b.count !== 1 ? 's' : ''}
+                </Text>
+              </View>
+            ))}
+          </View>
+        </>
+      )}
+
+      {/* Voted proposals list */}
       <Text style={[a.text_sm, a.font_bold, t.atoms.text, a.mb_sm]}>
-        <Trans>Policies you voted on</Trans>
+        <Trans>Proposals you voted on</Trans>
       </Text>
       <View style={[a.gap_sm]}>
         {votedCabildeos.slice(0, 6).map(c => {
-          const aligned = getVoteBreakdownByParty([c])[0]?.party
+          const aligned = getMatchingPartiesForCabildeo(c)[0]
           return (
             <TouchableOpacity
               key={c.uri}
               accessibilityRole="button"
-              onPress={() =>
-                navigation.navigate('PolicyDetails', {cabildeoUri: c.uri})
-              }
+              onPress={() => {
+                // Cabildeos linked to a policy/matter open in the policy
+                // surface; standalone ones open in the civic detail.
+                if (getCabildeoLinkKind(c)) {
+                  navigation.navigate('PolicyDetails', {cabildeoUri: c.uri})
+                } else {
+                  navigation.navigate('CabildeoDetail', {cabildeoUri: c.uri})
+                }
+              }}
               style={[
                 a.p_sm,
                 a.rounded_md,

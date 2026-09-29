@@ -14,13 +14,13 @@ import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {type CabildeoPartyVoteSummary} from '#/lib/api/cabildeo'
+import {nextCabildeoPhase} from '#/lib/api/cabildeo'
 import {type CabildeoOption, type CabildeoPhase} from '#/lib/api/para-lexicons'
 import {fromCabildeoRouteParam} from '#/lib/cabildeo-client'
 import {REPRESENTATIVES} from '#/lib/mock-data'
 import {
   evaluateCabildeoAccess,
   getAccessTierLabel,
-  hasOfficialScope,
 } from '#/lib/official-civic-accounts'
 import {
   type CommonNavigatorParams,
@@ -29,21 +29,17 @@ import {
 } from '#/lib/routes/types'
 import {usePartyLobbyingBriefingPacksQuery} from '#/state/queries/briefing-packs'
 import {
+  useAdvanceCabildeoPhaseMutation,
   useCabildeoPositionsQuery,
   useCabildeoQuery,
   useCabildeosQuery,
-  useDelegationCandidatesQuery,
   useVoteMutation,
 } from '#/state/queries/cabildeo'
 import {
   useCreateSortitionRunMutation,
   useSortitionRunQuery,
 } from '#/state/queries/matrix'
-import {
-  useOfficialCabildeoSignaturesQuery,
-  useSignOfficialCabildeoMutation,
-  useViewerOfficialAccountsQuery,
-} from '#/state/queries/official-civic-accounts'
+import {useViewerOfficialAccountsQuery} from '#/state/queries/official-civic-accounts'
 import {
   useCreateRepresentativeNominationMutation,
   useRepresentativeNominationsQuery,
@@ -329,88 +325,6 @@ function PartyVoteSummary({
   )
 }
 
-function DelegationImpactCalculator({
-  delegateDid,
-  cabildeoUri,
-}: {
-  delegateDid: string
-  cabildeoUri: string
-}) {
-  const t = useTheme()
-  const {data: candidates = []} = useDelegationCandidatesQuery({cabildeoUri})
-  const delegate = candidates.find(c => c.did === delegateDid)
-
-  if (!delegate) return null
-
-  const N = Math.max(1, delegate.activeDelegationCount)
-  // Current delegated weight share: total power (sqrt(N)) / total people (N)
-  const delegatedWeight = Math.sqrt(N) / N
-  const directWeight = 1.0
-  const gain = directWeight - delegatedWeight
-  const multiplier = (directWeight / delegatedWeight).toFixed(1)
-
-  return (
-    <View
-      style={[
-        styles.impactCalculator,
-        {
-          backgroundColor: t.palette.primary_500 + '08',
-          borderColor: t.palette.primary_500 + '20',
-        },
-      ]}>
-      <Text style={[styles.impactTitle, {color: t.palette.primary_500}]}>
-        📊 Impacto del Voto Directo
-      </Text>
-      <View style={styles.impactMathRow}>
-        <View style={styles.impactMathItem}>
-          <Text style={[styles.impactMathLabel, t.atoms.text_contrast_medium]}>
-            Delegado (√N)
-          </Text>
-          <Text style={[styles.impactMathValue, t.atoms.text]}>
-            {delegatedWeight.toFixed(2)}
-          </Text>
-        </View>
-        <Text style={[styles.impactMathOp, t.atoms.text_contrast_medium]}>
-          →
-        </Text>
-        <View style={styles.impactMathItem}>
-          <Text style={[styles.impactMathLabel, t.atoms.text_contrast_medium]}>
-            Directo
-          </Text>
-          <Text
-            style={[
-              styles.impactMathValue,
-              {color: t.palette.positive_500, fontWeight: '900'},
-            ]}>
-            {directWeight.toFixed(2)}
-          </Text>
-        </View>
-      </View>
-
-      <View
-        style={[
-          styles.impactResult,
-          {backgroundColor: t.palette.positive_500 + '15'},
-        ]}>
-        <Text
-          style={[styles.impactResultText, {color: t.palette.positive_500}]}>
-          <Trans>Your vote will have</Trans>{' '}
-          <Text style={{fontWeight: '900'}}>
-            {multiplier} <Trans>times</Trans>
-          </Text>{' '}
-          <Trans>more weight</Trans>
-          si votas directamente (+{gain.toFixed(2)} de poder).
-        </Text>
-      </View>
-
-      <Text style={[styles.impactFootnote, t.atoms.text_contrast_medium]}>
-        Basado en {N} personas delegando a{' '}
-        {delegate.displayName || 'este usuario'}.
-      </Text>
-    </View>
-  )
-}
-
 function AccessTierPill({label, value}: {label: string; value: string}) {
   const t = useTheme()
   return (
@@ -450,16 +364,16 @@ export function CabildeoDetailScreen({route}: Props) {
   const [hasVoted, setHasVoted] = useState(false)
   // Use cabildeo.options directly; no local duplication needed.
   // Consensus synthesizer state removed — pending real backend implementation
-  const [hasDismissedGracePeriod, setHasDismissedGracePeriod] = useState(false)
   const sortitionControl = useDialogControl()
   const ballotNoticeControl = useDialogControl()
-  const [mountedAt] = useState(() => Date.now())
   const [nowMs, setNowMs] = useState(() => Date.now())
   const [positionFilter, setPositionFilter] = useState<
     'all' | 'for' | 'against' | 'amendment'
   >('all')
+  const [confirmResolve, setConfirmResolve] = useState(false)
   const delegateEvent = cabildeo?.userContext?.delegateVoteEvent
   const {mutate: vote, isPending: isVoting} = useVoteMutation()
+  const advancePhase = useAdvanceCabildeoPhaseMutation(cabildeo?.uri)
   const sortitionRunQuery = useSortitionRunQuery(
     cabildeo?.uri,
     currentAccount?.did,
@@ -469,10 +383,6 @@ export function CabildeoDetailScreen({route}: Props) {
     REPRESENTATIVES,
     currentAccount?.did,
   )
-  const officialSignaturesQuery = useOfficialCabildeoSignaturesQuery(
-    cabildeo?.uri,
-  )
-  const signOfficialCabildeo = useSignOfficialCabildeoMutation()
 
   useEffect(() => {
     const interval = setInterval(() => setNowMs(Date.now()), 1000)
@@ -483,31 +393,14 @@ export function CabildeoDetailScreen({route}: Props) {
     if (!cabildeo) {
       setSelectedOption(null)
       setHasVoted(false)
-      setHasDismissedGracePeriod(false)
       setPositionFilter('all')
       return
     }
     setSelectedOption(cabildeo.userContext?.viewerVoteOption ?? null)
     setHasVoted(typeof cabildeo.userContext?.viewerVoteOption === 'number')
-    setHasDismissedGracePeriod(false)
+    setConfirmResolve(false)
     setPositionFilter('all')
   }, [cabildeo?.uri])
-
-  // Calculate 24h grace period remaining time
-  const gracePeriodRemainingMs = useMemo(() => {
-    if (!delegateEvent?.votedAt) return 0
-    const votedTime = new Date(delegateEvent.votedAt).getTime()
-    const expiryTime = votedTime + 24 * 60 * 60 * 1000 // 24 hours
-    return Math.max(0, expiryTime - mountedAt)
-  }, [delegateEvent, mountedAt])
-
-  const hoursRemaining = Math.floor(gracePeriodRemainingMs / (1000 * 60 * 60))
-  const minutesRemaining = Math.floor(
-    (gracePeriodRemainingMs % (1000 * 60 * 60)) / (1000 * 60),
-  )
-
-  const isGracePeriodActive =
-    gracePeriodRemainingMs > 0 && !hasVoted && !hasDismissedGracePeriod
 
   const viewerHasVoted =
     typeof cabildeo?.userContext?.viewerVoteOption === 'number'
@@ -591,10 +484,6 @@ export function CabildeoDetailScreen({route}: Props) {
     viewerDid: currentAccount?.did,
     officialControllers: viewerOfficialControllers,
   })
-  const officialSigner = viewerOfficialAccounts.find(account =>
-    hasOfficialScope(account.viewerController, 'official.cabildeo.sign'),
-  )
-  const officialSignatures = officialSignaturesQuery.data ?? []
 
   const phase = getPhaseMeta(t)[cabildeo.phase]
 
@@ -634,6 +523,12 @@ export function CabildeoDetailScreen({route}: Props) {
     : 'none'
 
   const phaseIndex = PHASE_ORDER.indexOf(cabildeo.phase)
+  const isAuthor = Boolean(
+    cabildeo.author &&
+    currentAccount?.did &&
+    cabildeo.author === currentAccount.did,
+  )
+  const nextPhase = nextCabildeoPhase(cabildeo.phase)
 
   // Casting publishes the ballot in the voter's own repo under their DID,
   // permanently. They are told that first: OD-7 §5d.
@@ -653,7 +548,7 @@ export function CabildeoDetailScreen({route}: Props) {
   const castVote = () => {
     if (selectedOption === null || !cabildeoUri) return
     vote(
-      {cabildeoUri, selectedOption, isDirect: true},
+      {cabildeoUri, selectedOption},
       {
         onSuccess: () => {
           setHasVoted(true)
@@ -704,67 +599,21 @@ export function CabildeoDetailScreen({route}: Props) {
     )
   }
 
-  const handleConfirmDelegateVote = () => {
-    if (!delegateEvent || !cabildeoUri) return
-    if (!participationAccess.allowed) {
-      Toast.show(i18n._(msg`No tienes el tier requerido para participar.`))
-      return
-    }
-    if (cabildeo?.phase !== 'voting') {
-      Toast.show(i18n._(msg`Voting is not open for this proposal.`))
-      return
-    }
-    setSelectedOption(delegateEvent.optionIndex)
-    vote(
-      {
-        cabildeoUri,
-        selectedOption: delegateEvent.optionIndex,
-        isDirect: false,
+  const handleAdvancePhase = () => {
+    if (!cabildeoUri) return
+    setConfirmResolve(false)
+    advancePhase.mutate(cabildeoUri, {
+      onSuccess: () => {
+        Toast.show(i18n._(msg`Fase avanzada`))
       },
-      {
-        onSuccess: () => {
-          setHasVoted(true)
-          Toast.show(i18n._(msg`Delegated vote confirmed`))
-        },
-        onError: err => {
-          Toast.show(
-            i18n._(
-              msg`Could not confirm vote. ${err instanceof Error ? err.message : 'Try again.'}`,
-            ),
-          )
-        },
+      onError: err => {
+        Toast.show(
+          err instanceof Error
+            ? err.message
+            : i18n._(msg`No se pudo avanzar la fase.`),
+        )
       },
-    )
-  }
-
-  const handleOverrideVoteStart = () => {
-    setHasDismissedGracePeriod(true) // Dismiss the banner
-    // Keep user in voting phase so they can pick a new option and hit main vote button
-  }
-
-  const handleOfficialSignature = () => {
-    if (!officialSigner || !cabildeo?.uri) return
-    signOfficialCabildeo.mutate(
-      {
-        account: officialSigner,
-        controllerDid: officialSigner.viewerController?.controllerDid || '',
-        cabildeoUri: cabildeo.uri,
-        summary: `${officialSigner.name} registra postura oficial sobre este cabildeo.`,
-      },
-      {
-        onSuccess: () => {
-          void officialSignaturesQuery.refetch()
-          Toast.show(i18n._(msg`Postura oficial firmada`))
-        },
-        onError: err => {
-          Toast.show(
-            err instanceof Error
-              ? err.message
-              : i18n._(msg`No se pudo firmar la postura oficial.`),
-          )
-        },
-      },
-    )
+    })
   }
 
   return (
@@ -851,6 +700,91 @@ export function CabildeoDetailScreen({route}: Props) {
               )
             })}
           </View>
+
+          {/* ─── Author phase control ─── */}
+          {isAuthor && nextPhase && (
+            <View
+              style={[
+                styles.authorPhaseCard,
+                t.atoms.bg_contrast_25,
+                t.atoms.border_contrast_low,
+              ]}>
+              <Text style={[styles.authorPhaseTitle, t.atoms.text]}>
+                <Trans>Eres quien creó este cabildeo</Trans>
+              </Text>
+              <Text
+                style={[styles.authorPhaseSub, t.atoms.text_contrast_medium]}>
+                {nextPhase === 'resolved' ? (
+                  <Trans>
+                    Al resolver se cierra la votación definitivamente.
+                  </Trans>
+                ) : (
+                  <Trans>Avanza la fase cuando la comunidad esté lista.</Trans>
+                )}
+              </Text>
+              {nextPhase === 'resolved' && confirmResolve ? (
+                <View style={styles.authorPhaseActions}>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    onPress={handleAdvancePhase}
+                    disabled={advancePhase.isPending}
+                    style={[
+                      styles.authorPhaseBtn,
+                      {backgroundColor: t.palette.negative_500},
+                      advancePhase.isPending && {opacity: 0.65},
+                    ]}>
+                    <Text style={styles.authorPhaseBtnText}>
+                      <Trans>Confirmar cierre</Trans>
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    onPress={() => setConfirmResolve(false)}
+                    style={[
+                      styles.authorPhaseBtn,
+                      {borderWidth: 1, borderColor: t.palette.contrast_200},
+                    ]}>
+                    <Text
+                      style={[
+                        styles.authorPhaseBtnText,
+                        t.atoms.text_contrast_medium,
+                      ]}>
+                      <Trans>Cancelar</Trans>
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={
+                    nextPhase === 'resolved'
+                      ? () => setConfirmResolve(true)
+                      : handleAdvancePhase
+                  }
+                  disabled={advancePhase.isPending}
+                  style={[
+                    styles.authorPhaseBtn,
+                    styles.authorPhaseBtnSingle,
+                    {backgroundColor: t.palette.primary_500},
+                    advancePhase.isPending && {opacity: 0.65},
+                  ]}>
+                  <Text style={styles.authorPhaseBtnText}>
+                    {advancePhase.isPending ? (
+                      <Trans>Avanzando…</Trans>
+                    ) : nextPhase === 'voting' ? (
+                      <Trans>Iniciar votación</Trans>
+                    ) : nextPhase === 'resolved' ? (
+                      <Trans>Cerrar y resolver</Trans>
+                    ) : nextPhase === 'open' ? (
+                      <Trans>Abrir debate</Trans>
+                    ) : (
+                      <Trans>Iniciar deliberación</Trans>
+                    )}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
 
           {/* ─── Title & Description ─── */}
           <Text style={[styles.title, t.atoms.text]}>{cabildeo.title}</Text>
@@ -1004,10 +938,18 @@ export function CabildeoDetailScreen({route}: Props) {
                 barWidth = total > 0 ? (displayVotes / total) * 100 : 0
               } else {
                 // Real-time voting phase
-                const total = cabildeo.voteTotals.total
+                const total =
+                  cabildeo.optionSummary.reduce(
+                    (sum, item) =>
+                      sum +
+                      (item.effectivePowerMicros ?? item.votes * 1_000_000),
+                    0,
+                  ) / 1_000_000
                 displayVotes =
-                  cabildeo.optionSummary.find(s => s.optionIndex === i)
-                    ?.votes ?? 0
+                  (cabildeo.optionSummary.find(s => s.optionIndex === i)
+                    ?.effectivePowerMicros ??
+                    (cabildeo.optionSummary.find(s => s.optionIndex === i)
+                      ?.votes ?? 0) * 1_000_000) / 1_000_000
                 barWidth = total > 0 ? (displayVotes / total) * 100 : 0
               }
             }
@@ -1166,175 +1108,23 @@ export function CabildeoDetailScreen({route}: Props) {
             </>
           )}
 
-          <View
-            style={[
-              styles.officialSignatureSection,
-              t.atoms.bg_contrast_25,
-              t.atoms.border_contrast_low,
-            ]}>
-            <View style={styles.officialSignatureHeader}>
-              <View style={{flex: 1}}>
-                <Text style={[styles.officialSignatureTitle, t.atoms.text]}>
-                  <Trans>Posturas oficiales</Trans>
-                </Text>
-                <Text
-                  style={[
-                    styles.officialSignatureSub,
-                    t.atoms.text_contrast_medium,
-                  ]}>
-                  <Trans>
-                    Firmas emitidas por cuentas cívicas oficiales, con
-                    controlador privado-auditable.
-                  </Trans>
-                </Text>
-              </View>
-              {officialSigner && (
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  onPress={handleOfficialSignature}
-                  disabled={signOfficialCabildeo.isPending}
-                  style={[
-                    styles.officialSignatureButton,
-                    {backgroundColor: t.palette.primary_500},
-                    signOfficialCabildeo.isPending && {opacity: 0.65},
-                  ]}>
-                  <Text style={styles.officialSignatureButtonText}>
-                    <Trans>Firmar</Trans>
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-            {officialSignatures.length > 0 ? (
-              officialSignatures.map(signature => (
-                <View
-                  key={signature.id}
-                  style={[
-                    styles.officialSignatureItem,
-                    t.atoms.bg_contrast_50,
-                  ]}>
-                  <Text style={[styles.officialSignatureEntity, t.atoms.text]}>
-                    {signature.entityName ?? signature.entityId}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.officialSignatureSummary,
-                      t.atoms.text_contrast_medium,
-                    ]}>
-                    {signature.summary}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.officialSignatureAudit,
-                      t.atoms.text_contrast_medium,
-                    ]}>
-                    #{signature.controllerHash.slice(-8)}
-                  </Text>
-                </View>
-              ))
-            ) : (
-              <Text
-                style={[
-                  styles.officialSignatureEmpty,
-                  t.atoms.text_contrast_medium,
-                ]}>
-                <Trans>Aún no hay postura oficial firmada.</Trans>
-              </Text>
-            )}
-          </View>
-
-          {/* ─── Consensus Synthesizer (AI Mediation) ─── */}
-          {/* TODO: Implement real AI consensus synthesis backend */}
-
-          {/* Grace Period Notification Banner */}
-          {isGracePeriodActive && delegateEvent && (
+          {delegateEvent && !viewerHasVoted && cabildeo.phase === 'voting' && (
             <View
               style={[
                 styles.gracePeriodBanner,
-                {
-                  borderColor: t.palette.primary_500 + '40',
-                  backgroundColor: t.palette.primary_500 + '10',
-                },
+                {borderColor: t.palette.primary_500 + '40'},
               ]}>
-              <View style={styles.gracePeriodHeader}>
-                <Text style={styles.gracePeriodTitle}>
-                  🔔 <Trans>Your delegate has voted</Trans>
-                </Text>
-                <Text
-                  style={[
-                    styles.gracePeriodTime,
-                    {color: t.palette.primary_500},
-                  ]}>
-                  <Trans>
-                    {hoursRemaining}h {minutesRemaining}m remaining
-                  </Trans>
-                </Text>
-              </View>
-              <Text style={[styles.gracePeriodDesc, t.atoms.text]}>
-                <Trans>Your delegate voted for:</Trans>
-                {'\n'}
-                <Text style={{fontWeight: '900'}}>
-                  {cabildeo.options[delegateEvent.optionIndex]?.label}
-                </Text>
+              <Text style={[styles.gracePeriodTitle, t.atoms.text]}>
+                <Trans>
+                  Tu delegado ya votó. La cesión cuenta provisionalmente hasta
+                  el cierre.
+                </Trans>
               </Text>
-
-              <View style={styles.gracePeriodActions}>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel={i18n._(msg`Confirm delegated vote`)}
-                  accessibilityHint={i18n._(
-                    msg`Accepts your delegate's vote as your own`,
-                  )}
-                  onPress={handleConfirmDelegateVote}
-                  disabled={isVoting}
-                  style={[
-                    styles.graceBtn,
-                    {backgroundColor: t.palette.primary_500},
-                    isVoting && {opacity: 0.6},
-                  ]}>
-                  <Text
-                    style={[
-                      styles.graceBtnText,
-                      {color: t.palette.contrast_100},
-                    ]}>
-                    {isVoting
-                      ? i18n._(msg`Confirming...`)
-                      : i18n._(msg`Confirm (Weight 1.0)`)}
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel={i18n._(msg`Override delegate vote`)}
-                  accessibilityHint={i18n._(
-                    msg`Opens interface to cast your own vote instead of delegate's`,
-                  )}
-                  onPress={handleOverrideVoteStart}
-                  style={[
-                    styles.graceBtn,
-                    {borderWidth: 1, borderColor: t.palette.primary_500},
-                  ]}>
-                  <Text
-                    style={[
-                      styles.graceBtnText,
-                      {color: t.palette.primary_500},
-                    ]}>
-                    <Trans>Change vote</Trans>
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <TouchableOpacity
-                accessibilityRole="button"
-                onPress={() => setHasDismissedGracePeriod(true)}
-                style={styles.graceLinkBtn}>
-                <Text
-                  style={[styles.graceLinkText, t.atoms.text_contrast_medium]}>
-                  <Trans>Leave as is (Weight √N)</Trans>
-                </Text>
-              </TouchableOpacity>
-
-              <DelegationImpactCalculator
-                delegateDid={cabildeo.userContext?.hasDelegatedTo || ''}
-                cabildeoUri={cabildeoUri}
-              />
+              <Text style={[styles.gracePeriodDesc, t.atoms.text]}>
+                <Trans>
+                  Puedes votar directamente antes del cierre para sustituirla.
+                </Trans>
+              </Text>
             </View>
           )}
 
@@ -1458,7 +1248,7 @@ export function CabildeoDetailScreen({route}: Props) {
 
           {/* Delegate Button */}
           {cabildeo.phase === 'voting' &&
-            !hasVoted &&
+            !viewerHasVoted &&
             participationAccess.allowed && (
               <TouchableOpacity
                 accessibilityRole="button"
@@ -1969,6 +1759,41 @@ const styles = StyleSheet.create({
   center: {paddingHorizontal: 16, paddingTop: 8},
 
   // Timeline
+  authorPhaseCard: {
+    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+  },
+  authorPhaseTitle: {
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  authorPhaseSub: {
+    fontSize: 12,
+    lineHeight: 17,
+    marginTop: 4,
+  },
+  authorPhaseActions: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 12,
+  },
+  authorPhaseBtn: {
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+  },
+  authorPhaseBtnSingle: {
+    marginTop: 12,
+    alignSelf: 'flex-start',
+  },
+  authorPhaseBtnText: {
+    color: 'white',
+    fontSize: 13,
+    fontWeight: '900',
+  },
   timeline: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2243,62 +2068,6 @@ const styles = StyleSheet.create({
   },
   delegateText: {fontSize: 15, fontWeight: '800'},
   delegateSub: {fontSize: 12, marginTop: 6, fontWeight: '500'},
-
-  officialSignatureSection: {
-    borderWidth: 1,
-    borderRadius: 16,
-    padding: 16,
-    marginTop: 12,
-    marginBottom: 16,
-  },
-  officialSignatureHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    marginBottom: 12,
-  },
-  officialSignatureTitle: {
-    fontSize: 16,
-    fontWeight: '900',
-  },
-  officialSignatureSub: {
-    fontSize: 12,
-    lineHeight: 17,
-    marginTop: 4,
-  },
-  officialSignatureButton: {
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-  },
-  officialSignatureButtonText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: '900',
-  },
-  officialSignatureItem: {
-    borderRadius: 12,
-    padding: 12,
-    marginTop: 8,
-  },
-  officialSignatureEntity: {
-    fontSize: 14,
-    fontWeight: '900',
-  },
-  officialSignatureSummary: {
-    fontSize: 12,
-    lineHeight: 17,
-    marginTop: 4,
-  },
-  officialSignatureAudit: {
-    fontSize: 10,
-    fontWeight: '800',
-    marginTop: 6,
-  },
-  officialSignatureEmpty: {
-    fontSize: 12,
-    lineHeight: 17,
-  },
 
   // Outcome
   outcomeSection: {

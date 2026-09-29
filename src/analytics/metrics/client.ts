@@ -3,25 +3,35 @@ import {isNetworkError} from '#/lib/strings/errors'
 import {Logger} from '#/logger'
 import * as env from '#/env'
 
-type Event<M extends Record<string, unknown>> = {
+type Event<M extends Record<string, any>> = {
+  source: 'app'
   time: number
   event: keyof M
   payload: M[keyof M]
-  metadata: Record<string, unknown>
+  metadata: Record<string, any>
 }
 
-// Privacy-first: default to local Umami, never Bluesky
-const UMAMI_HOST = env.METRICS_API_HOST || 'http://localhost:3001'
-const UMAMI_WEBSITE_ID = 'para-app'
+const TRACKING_ENDPOINT = env.METRICS_API_HOST + '/t'
 const logger = Logger.create(Logger.Context.Metric, {})
 
-export class MetricsClient<M extends Record<string, unknown>> {
+/**
+ * The tracking endpoint is unreachable for plenty of users - offline, or
+ * blocked by a content blocker. Without a backoff every flush keeps firing,
+ * and browsers coalesce the throttled background timers into a burst of
+ * failing requests as soon as the tab is refocused.
+ */
+const MIN_BACKOFF_MS = 30_000
+const MAX_BACKOFF_MS = 5 * 60_000
+
+export class MetricsClient<M extends Record<string, any>> {
   maxBatchSize = 100
 
   private started: boolean = false
   private queue: Event<M>[] = []
   private failedQueue: Event<M>[] = []
-  private flushInterval: ReturnType<typeof setInterval> | null = null
+  private flushInterval: NodeJS.Timeout | null = null
+  private backoffMs = 0
+  private backoffUntil = 0
 
   start() {
     if (this.started) return
@@ -41,11 +51,12 @@ export class MetricsClient<M extends Record<string, unknown>> {
   track<E extends keyof M>(
     event: E,
     payload: M[E],
-    metadata: Record<string, unknown> = {},
+    metadata: Record<string, any> = {},
   ) {
     this.start()
 
-    const e = {
+    const e: Event<M> = {
+      source: 'app',
       time: Date.now(),
       event,
       payload,
@@ -53,7 +64,7 @@ export class MetricsClient<M extends Record<string, unknown>> {
     }
     this.queue.push(e)
 
-    logger.info(`event: ${e.event as string}`, e)
+    logger.debug(`event: ${e.event as string}`, e)
 
     if (this.queue.length > this.maxBatchSize) {
       this.flush()
@@ -62,50 +73,62 @@ export class MetricsClient<M extends Record<string, unknown>> {
 
   flush() {
     if (!this.queue.length) return
+    if (Date.now() < this.backoffUntil) {
+      // Endpoint is unreachable. Hold the most recent events so the queue
+      // can't grow without bound while we wait for the backoff to expire.
+      this.trim(this.queue)
+      return
+    }
     const events = this.queue.splice(0, this.queue.length)
     this.sendBatch(events)
   }
 
   private async sendBatch(events: Event<M>[], isRetry: boolean = false) {
-    logger.debug(`sendBatch: ${events.length}`, {isRetry})
-
-    // Send each event individually to local Umami (privacy-first, no third parties)
-    for (const e of events) {
-      try {
-        const body = JSON.stringify({
-          type: 'event',
-          payload: {
-            website: UMAMI_WEBSITE_ID,
-            hostname: 'para.local',
-            url: e.metadata?.screen || '/',
-            referrer: '',
-            name: String(e.event),
-            data: {
-              ...(e.payload as Record<string, unknown>),
-              ...e.metadata,
-              time: e.time,
-            },
+    try {
+      const body = JSON.stringify({events})
+      if (env.IS_WEB && 'navigator' in globalThis && navigator.sendBeacon) {
+        const success = navigator.sendBeacon(
+          TRACKING_ENDPOINT,
+          new Blob([body], {type: 'application/json'}),
+        )
+        if (!success) {
+          // construct a "network error" for `isNetworkError` to work
+          throw new Error(`Failed to fetch: sendBeacon returned false`)
+        }
+      } else {
+        const res = await fetch(TRACKING_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
           },
+          body: JSON.stringify({events}),
+          keepalive: true,
         })
 
-        if (env.IS_WEB && 'navigator' in globalThis && navigator.sendBeacon) {
-          navigator.sendBeacon(
-            `${UMAMI_HOST}/api/collect`,
-            new Blob([body], {type: 'application/json'}),
-          )
-        } else {
-          await fetch(`${UMAMI_HOST}/api/collect`, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body,
-            keepalive: true,
-          })
-        }
-      } catch (err: unknown) {
-        if (isNetworkError(err)) {
-          if (!isRetry) this.failedQueue.push(e)
+        if (!res.ok) {
+          const error = await res.text().catch(() => 'Unknown error')
+          // construct a "network error" for `isNetworkError` to work
+          throw new Error(`${res.status} Failed to fetch — ${error}`)
         }
       }
+
+      this.backoffMs = 0
+      this.backoffUntil = 0
+    } catch (e: any) {
+      if (isNetworkError(e)) {
+        this.backoffMs = Math.min(
+          this.backoffMs === 0 ? MIN_BACKOFF_MS : this.backoffMs * 2,
+          MAX_BACKOFF_MS,
+        )
+        this.backoffUntil = Date.now() + this.backoffMs
+        if (isRetry) return // retry once
+        this.failedQueue.push(...events)
+        this.trim(this.failedQueue)
+        return
+      }
+      logger.error(`Failed to send metrics`, {
+        safeMessage: e.toString(),
+      })
     }
   }
 
@@ -113,5 +136,15 @@ export class MetricsClient<M extends Record<string, unknown>> {
     if (!this.failedQueue.length) return
     const events = this.failedQueue.splice(0, this.failedQueue.length)
     this.sendBatch(events, true)
+  }
+
+  /**
+   * Drop the oldest events so a queue can't grow without bound while the
+   * endpoint is unreachable.
+   */
+  private trim(queue: Event<M>[]) {
+    if (queue.length > this.maxBatchSize) {
+      queue.splice(0, queue.length - this.maxBatchSize)
+    }
   }
 }

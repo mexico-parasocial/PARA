@@ -277,6 +277,7 @@ module.exports = function (_config) {
         ],
       },
       web: {
+        bundler: 'metro',
         favicon: './assets/favicon.png',
       },
       updates: {
@@ -288,6 +289,8 @@ module.exports = function (_config) {
       },
       plugins: [
         'expo-secure-store',
+        'expo-asset',
+        'expo-sharing',
         'expo-video',
         'expo-localization',
         'expo-web-browser',
@@ -303,6 +306,10 @@ module.exports = function (_config) {
             organization: 'pararepo',
             project: 'para-app',
             url: 'https://sentry.io',
+            experimental_android: {
+              enableAndroidGradlePlugin: true,
+            },
+
           },
         ],
         [
@@ -318,6 +325,7 @@ module.exports = function (_config) {
               targetSdkVersion: 36,
               buildToolsVersion: '36.0.0',
               buildReactNativeFromSource: IS_PRODUCTION,
+              enableMinifyInReleaseBuilds: true,
             },
           },
         ],
@@ -498,6 +506,9 @@ module.exports = function (_config) {
           },
           projectId: '2b1d8af4-dd93-43b6-8655-39fe7cff2f2a',
         },
+      },
+      experiments: {
+        baseUrl: '/static',
       },
     },
   }

@@ -3,7 +3,7 @@ import {useQuery} from '@tanstack/react-query'
 import {type CivicCategoryKey} from '#/lib/interests'
 import {STALE} from '#/state/queries'
 import {useAgent} from '#/state/session'
-import {app, com} from '#/lexicons'
+import {type app, com} from '#/lexicons'
 
 const RQKEY_ROOT = 'para-suggested-users'
 

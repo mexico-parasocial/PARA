@@ -33,7 +33,7 @@ import * as FeedCard from '#/components/FeedCard'
 import {HashtagWide_Stroke1_Corner0_Rounded as HashtagWideIcon} from '#/components/icons/Hashtag'
 import {ListFooter} from '#/components/Lists'
 import {IS_IOS, IS_NATIVE, IS_WEB} from '#/env'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 const LOADING = {_reactKey: '__loading__' as const}
 const EMPTY = {_reactKey: '__empty__' as const}

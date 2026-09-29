@@ -3,50 +3,43 @@ import {View} from 'react-native'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import {MediaVisual, MediaVisualMeta} from '../cardPrimitives'
-import {buildSubmetaLabel, DECK_VISUAL_HEIGHT} from '../helpers'
+import {buildMetaLabel} from '../helpers'
 import {styles} from '../styles'
-import {type MediaItem, type Mode} from '../types'
+import {type MediaItem} from '../types'
 
-export function MediaDeckCard({item, mode}: {item: MediaItem; mode: Mode}) {
+export function MediaDeckCard({
+  item,
+  height,
+}: {
+  item: MediaItem
+  height: number
+}) {
   const t = useTheme()
+  const metaLabel = buildMetaLabel(item)
 
   return (
-    <View style={styles.deckCardShell}>
+    <View style={[styles.deckCardShell, t.atoms.bg_contrast_50, {height}]}>
       <MediaVisual
         fallbackColor={item.color}
         thumbUri={item.thumbUri}
-        style={[styles.deckVisual, {minHeight: DECK_VISUAL_HEIGHT}]}>
+        style={[styles.deckVisual, {height: Math.max(100, height - 66)}]}>
         <View style={styles.deckVisualBottom}>
-          <Text
-            style={[
-              styles.deckTitle,
-              item.thumbUri && styles.deckTitleOnImage,
-            ]}>
+          <Text emoji numberOfLines={2} style={styles.deckTitle}>
             {item.title}
           </Text>
-          <MediaVisualMeta item={item} mode={mode} />
+          <MediaVisualMeta item={item} />
         </View>
       </MediaVisual>
 
-      <View style={styles.deckBody}>
-        <View style={[styles.deckBodyContent, t.atoms.bg_contrast_50]}>
-          <Text style={[styles.cardMeta, t.atoms.text_contrast_medium]}>
-            {item.party} · {item.state}
+      {metaLabel ? (
+        <View style={styles.deckBodyContent}>
+          <Text
+            numberOfLines={1}
+            style={[styles.cardMeta, t.atoms.text_contrast_medium]}>
+            {metaLabel}
           </Text>
-          <View style={styles.deckInfoRow}>
-            <Text
-              numberOfLines={1}
-              style={[
-                styles.cardSubmeta,
-                styles.deckSubmeta,
-                t.atoms.text_contrast_medium,
-              ]}>
-              {buildSubmetaLabel(item, mode)}
-            </Text>
-          </View>
         </View>
-        <View style={styles.deckBodyGlassTail} />
-      </View>
+      ) : null}
     </View>
   )
 }

@@ -1,42 +1,52 @@
-import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
+import {useEffect, useRef, useState} from 'react'
 import {
   Animated,
-  type GestureResponderEvent,
+  type LayoutChangeEvent,
   PanResponder,
   Pressable,
   useWindowDimensions,
   View,
 } from 'react-native'
+import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import {AtUri} from '@atproto/syntax'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
-import {Trans} from '@lingui/react/macro'
+import {Trans, useLingui} from '@lingui/react/macro'
 import {useIsFocused, useNavigation} from '@react-navigation/native'
+import {useQueryClient} from '@tanstack/react-query'
 
 import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
-import {useWebMediaQueries} from '#/lib/hooks/useWebMediaQueries'
 import {type NavigationProp} from '#/lib/routes/types'
+import {cleanError} from '#/lib/strings/errors'
 import {
+  createMemesFeedQueryKey,
   useMemesFeedQuery,
-  useMemeVoteMutation,
 } from '#/state/queries/para-memes'
+import {truncateAndInvalidate} from '#/state/queries/util'
+import {useSession} from '#/state/session'
 import {useCompassFilter} from '#/state/shell/compass-filter'
 import {useMinimalShellMode} from '#/state/shell/minimal-mode'
+import {FAB} from '#/view/com/util/fab/FAB'
+import {List} from '#/view/com/util/List'
 import {Text} from '#/view/com/util/text/Text'
-import {useTheme} from '#/alf'
+import {atoms as a, useTheme} from '#/alf'
+import {Button, ButtonText} from '#/components/Button'
 import {ActiveFiltersStackButton} from '#/components/CompassFilterControls'
 import {SearchInput} from '#/components/forms/SearchInput'
 import {MagnifyingGlass_Stroke2_Corner0_Rounded as SearchIcon} from '#/components/icons/MagnifyingGlass'
+import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/Plus'
 import {SquareBehindSquare4_Stroke2_Corner0_Rounded as DeckIcon} from '#/components/icons/SquareBehindSquare4'
+import {TimesLarge_Stroke2_Corner0_Rounded as CloseIcon} from '#/components/icons/Times'
 import * as Layout from '#/components/Layout'
+import {ListFooter} from '#/components/Lists'
 import {Loader} from '#/components/Loader'
-import * as Toast from '#/components/Toast'
+import {IS_WEB} from '#/env'
 import {DeckCommandCenter} from './MemesScreen/cardPrimitives'
 import {ExpandedMediaCardModal} from './MemesScreen/ExpandedMediaCardModal/ExpandedMediaCardModal'
 import {
-  DECK_CARD_HEIGHT,
   DECK_CURRENT_X_DRIFT,
-  DECK_SECONDARY_TOP,
+  DECK_MAX_WIDTH,
+  DECK_OVERLAP,
+  DECK_PREFETCH_THRESHOLD,
+  DECK_STACK_INSET,
   DECK_STACK_X_DRIFT,
   DECK_VELOCITY_SCALE,
   matchesCompassFilter,
@@ -45,11 +55,7 @@ import {
 import {MediaBoardCard} from './MemesScreen/MediaBoardCard/MediaBoardCard'
 import {MediaDeckCard} from './MemesScreen/MediaDeckCard/MediaDeckCard'
 import {styles} from './MemesScreen/styles'
-import {
-  type MediaItem,
-  type Mode,
-  type ViewStyleMode,
-} from './MemesScreen/types'
+import {type MediaItem, type ViewStyleMode} from './MemesScreen/types'
 
 export function MemesScreen({
   route,
@@ -57,327 +63,373 @@ export function MemesScreen({
   route: {params?: {view?: ViewStyleMode}}
 }) {
   const t = useTheme()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const navigation = useNavigation<NavigationProp>()
+  const queryClient = useQueryClient()
+  const {currentAccount} = useSession()
   const {openComposer} = useOpenComposer()
   const {width} = useWindowDimensions()
   const {activeFilters} = useCompassFilter()
-  const {isDesktop, isTablet} = useWebMediaQueries()
+  const isFocused = useIsFocused()
+  const {footerMode} = useMinimalShellMode()
 
-  const activeMode: Mode = 'Memes'
   const [viewStyle, setViewStyle] = useState<ViewStyleMode>(
     route.params?.view === 'deck' ? 'deck' : 'board',
   )
-  const isFocused = useIsFocused()
-  const {footerMode} = useMinimalShellMode()
   const [query, setQuery] = useState('')
-  const [localVotes, setLocalVotes] = useState<Record<string, 1 | -1 | 0>>({})
-  const voteMutation = useMemeVoteMutation()
-
-  const voteForItem = useCallback(
-    (item: MediaItem): 1 | -1 | 0 => {
-      if (item.post) {
-        return item.post.viewer?.like ? 1 : 0
-      }
-      return localVotes[item.id] ?? 0
-    },
-    [localVotes],
-  )
-
-  const handleVoteChange = useCallback(
-    (item: MediaItem, vote: 1 | -1 | 0) => {
-      if (item.post) {
-        voteMutation.mutate({post: item.post, vote})
-      } else {
-        setLocalVotes(prev => ({...prev, [item.id]: vote}))
-      }
-    },
-    [voteMutation],
-  )
-  const [focusedItemId, setFocusedItemId] = useState<string | undefined>()
-  const [expandedItem, setExpandedItem] = useState<MediaItem | null>(null)
   const [showSearch, setShowSearch] = useState(false)
   const isSearchOpen = showSearch || Boolean(query)
+  const [focusedItemId, setFocusedItemId] = useState<string | undefined>()
+  const [expandedItem, setExpandedItem] = useState<MediaItem | null>(null)
+  const [isPTRing, setIsPTRing] = useState(false)
 
   const {
     data,
     isLoading,
     error,
+    refetch,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
   } = useMemesFeedQuery()
 
-  const memes = useMemo(
-    () => data?.pages.flatMap(page => page.items) ?? [],
-    [data],
-  )
-
-  const filteredMemes = useMemo(() => {
-    return memes.filter(item => {
-      return (
-        matchesCompassFilter(item, activeFilters) &&
-        matchesSearch(
-          [item.title, item.author, item.community, item.party, item.state],
-          query,
-        )
+  const memes = data?.pages.flatMap(page => page.items) ?? []
+  const filteredMemes = memes.filter(item => {
+    return (
+      matchesCompassFilter(item, activeFilters) &&
+      matchesSearch(
+        [item.title, item.author, item.community, item.party, item.state],
+        query,
       )
-    })
-  }, [activeFilters, memes, query])
+    )
+  })
+  const isFiltered = Boolean(query.trim()) || activeFilters.length > 0
 
-  const activeItems = filteredMemes
-  const boardWidth = width > 900 ? (width - 44) / 2 : undefined
+  // The web List is always constrained to the center column.
+  const columns = !IS_WEB && width >= 700 ? 2 : 1
+  const rows: MediaItem[][] = []
+  for (let i = 0; i < filteredMemes.length; i += columns) {
+    rows.push(filteredMemes.slice(i, i + columns))
+  }
 
   const setNextView = (next: ViewStyleMode) => {
     setViewStyle(next)
     navigation.setParams({view: next})
   }
 
-  const handleOpenComments = useCallback(
-    (item: MediaItem) => {
-      if (!item.post) {
-        Toast.show(_(msg`Comments are not available for this item`), {
-          type: 'info',
-        })
-        return
-      }
-      const postUri = new AtUri(item.post.uri)
-      navigation.navigate('PostThread', {
-        name: item.post.author.did,
-        rkey: postUri.rkey,
-      })
-    },
-    [navigation, _],
-  )
+  const loadMore = () => {
+    if (hasNextPage && !isFetchingNextPage && !error) {
+      void fetchNextPage()
+    }
+  }
+
+  const onRefresh = async () => {
+    setIsPTRing(true)
+    try {
+      await truncateAndInvalidate(
+        queryClient,
+        createMemesFeedQueryKey(currentAccount?.did),
+      )
+    } finally {
+      setIsPTRing(false)
+    }
+  }
+
+  const openComments = (item: MediaItem) => {
+    if (!item.post) return
+    const postUri = new AtUri(item.post.uri)
+    navigation.navigate('PostThread', {
+      name: item.post.author.did,
+      rkey: postUri.rkey,
+    })
+  }
+
+  const openCommentsFromModal = (item: MediaItem) => {
+    // The modal must be gone before navigating, or it stays on top on native.
+    setExpandedItem(null)
+    requestAnimationFrame(() => openComments(item))
+  }
 
   useEffect(() => {
-    if (!isFocused) {
-      footerMode.set(0)
-      return
-    }
-    const hideFooter = viewStyle === 'deck'
-    footerMode.set(hideFooter ? 1 : 0)
+    if (!isFocused) return
+    footerMode.set(viewStyle === 'deck' ? 1 : 0)
     return () => {
       footerMode.set(0)
     }
   }, [isFocused, viewStyle, footerMode])
+
+  const emptyContent = isLoading ? (
+    <View style={styles.centeredState}>
+      <Loader size="xl" />
+    </View>
+  ) : error && !memes.length ? (
+    <EmptyState
+      title={l`Could not load memes`}
+      description={cleanError(error)}
+      actionLabel={l`Try again`}
+      onAction={() => void refetch()}
+    />
+  ) : isFiltered ? (
+    <EmptyState
+      title={l`No memes match those filters`}
+      description={l`Try a different search or clear your compass filters.`}
+    />
+  ) : (
+    <EmptyState
+      title={l`No memes yet`}
+      description={l`Be the first to share one with your community.`}
+      actionLabel={l`Create a meme`}
+      onAction={() => openComposer({logContext: 'Fab'})}
+    />
+  )
 
   return (
     <Layout.Screen testID="memesScreen">
       <View style={[styles.topChrome, t.atoms.bg]}>
         <Layout.Header.Outer noBottomBorder>
           <Layout.Header.BackButton />
-          {isSearchOpen ? (
-            <Layout.Header.Content>
+          <Layout.Header.Content>
+            {isSearchOpen ? (
               <View style={styles.headerSearchContent}>
                 <SearchInput
                   value={query}
                   onChangeText={setQuery}
                   onClearText={() => setQuery('')}
-                  placeholder={_(msg`Search memes, authors, or communities`)}
+                  placeholder={l`Search memes, authors, or communities`}
                 />
               </View>
-            </Layout.Header.Content>
-          ) : (
-            <Layout.Header.Content>
+            ) : (
               <Layout.Header.TitleText>
                 <Trans>Memes</Trans>
               </Layout.Header.TitleText>
-            </Layout.Header.Content>
-          )}
+            )}
+          </Layout.Header.Content>
 
           <View style={styles.headerActions}>
-            <Pressable
-              accessibilityHint={_(msg`Change the card presentation`)}
-              accessibilityLabel={_(msg`Switch between board and deck view`)}
-              accessibilityRole="button"
-              onPress={() =>
-                setNextView(viewStyle === 'board' ? 'deck' : 'board')
-              }
-              style={[
-                styles.headerViewToggleButton,
-                t.atoms.bg_contrast_25,
-                viewStyle === 'deck' && styles.headerViewToggleButtonActive,
-              ]}>
-              <DeckIcon
-                size="md"
-                style={viewStyle === 'deck' ? {color: '#fff'} : t.atoms.text}
-              />
-            </Pressable>
-            <Pressable
-              accessibilityHint={_(msg`Open or close search`)}
-              accessibilityLabel={_(msg`Toggle search`)}
-              accessibilityRole="button"
-              onPress={() => {
-                if (isSearchOpen) {
+            {isSearchOpen ? (
+              <HeaderIconButton
+                label={l`Close search`}
+                hint={l`Clears the search and closes it`}
+                onPress={() => {
                   setQuery('')
                   setShowSearch(false)
-                } else {
-                  setShowSearch(true)
-                }
-              }}
-              style={styles.headerSearchButton}>
-              <SearchIcon size="lg" style={t.atoms.text} />
-            </Pressable>
-            <ActiveFiltersStackButton />
+                }}>
+                <CloseIcon size="md" style={t.atoms.text} />
+              </HeaderIconButton>
+            ) : (
+              <>
+                <HeaderIconButton
+                  label={
+                    viewStyle === 'deck'
+                      ? l`Switch to board view`
+                      : l`Switch to deck view`
+                  }
+                  hint={l`Changes the card presentation`}
+                  active={viewStyle === 'deck'}
+                  onPress={() =>
+                    setNextView(viewStyle === 'board' ? 'deck' : 'board')
+                  }>
+                  <DeckIcon
+                    size="md"
+                    style={
+                      viewStyle === 'deck'
+                        ? {color: t.palette.white}
+                        : t.atoms.text
+                    }
+                  />
+                </HeaderIconButton>
+                <HeaderIconButton
+                  label={l`Search memes`}
+                  hint={l`Opens the search field`}
+                  onPress={() => setShowSearch(true)}>
+                  <SearchIcon size="md" style={t.atoms.text} />
+                </HeaderIconButton>
+                <ActiveFiltersStackButton />
+              </>
+            )}
           </View>
         </Layout.Header.Outer>
       </View>
 
       <View style={styles.contentShell}>
         {viewStyle === 'board' ? (
-          <Layout.Content
-            bounces
-            contentContainerStyle={styles.contentContainer}
-            showsVerticalScrollIndicator>
-            {isLoading ? (
-              <View style={styles.loadingContainer}>
-                <Loader size="xl" />
-              </View>
-            ) : error ? (
-              <EmptyState
-                description={_(msg`Could not load memes.`)}
-                title={_(msg`Something went wrong`)}
-              />
-            ) : activeItems.length === 0 ? (
-              <EmptyState
-                description={_(
-                  msg`Open more communities or clear search to fill this view.`,
-                )}
-                title={_(msg`No memes match those filters`)}
-              />
-            ) : (
-              <>
-                <View style={styles.boardGrid}>
-                  {activeItems.map(item => (
+          <List
+            testID="memesBoard"
+            data={rows}
+            keyExtractor={boardRowKey}
+            renderItem={({item: row}: {item: MediaItem[]}) => (
+              <View style={styles.boardRow}>
+                {row.map(item => (
+                  <View key={item.id} style={styles.boardCell}>
                     <MediaBoardCard
-                      key={item.id}
                       item={item}
-                      mode={activeMode}
-                      onVoteChange={vote => handleVoteChange(item, vote)}
                       onExpand={() => setExpandedItem(item)}
-                      vote={voteForItem(item)}
-                      width={boardWidth}
+                      onOpenComments={() => openComments(item)}
                     />
-                  ))}
-                </View>
-                {hasNextPage && (
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel={_(msg`Load more memes`)}
-                    accessibilityHint={_(msg`Loads more memes`)}
-                    onPress={() => fetchNextPage()}
-                    style={[styles.loadMoreButton, t.atoms.bg_contrast_25]}
-                    disabled={isFetchingNextPage}>
-                    <Text style={t.atoms.text}>
-                      {isFetchingNextPage
-                        ? _(msg`Loading...`)
-                        : _(msg`Load more`)}
-                    </Text>
-                  </Pressable>
-                )}
-              </>
-            )}
-          </Layout.Content>
-        ) : (
-          <View style={styles.deckContentShell}>
-            {activeItems.length === 0 ? (
-              <View style={styles.contentContainer}>
-                <EmptyState
-                  description={_(
-                    msg`Open more communities or clear search to fill this view.`,
-                  )}
-                  title={_(msg`No memes match those filters`)}
-                />
+                  </View>
+                ))}
+                {row.length < columns ? (
+                  <View style={styles.boardCell} />
+                ) : null}
               </View>
+            )}
+            contentContainerStyle={styles.contentContainer}
+            ListEmptyComponent={emptyContent}
+            ListFooterComponent={
+              rows.length ? (
+                <ListFooter
+                  hasNextPage={hasNextPage}
+                  isFetchingNextPage={isFetchingNextPage}
+                  error={cleanError(error)}
+                  onRetry={fetchNextPage}
+                  showEndMessage
+                  endMessageText={l`You’ve seen every meme`}
+                  style={a.border_0}
+                />
+              ) : undefined
+            }
+            onEndReached={loadMore}
+            onEndReachedThreshold={2}
+            refreshing={isPTRing}
+            onRefresh={onRefresh}
+            showsVerticalScrollIndicator
+          />
+        ) : (
+          <Layout.Center style={a.flex_1}>
+            {filteredMemes.length === 0 ? (
+              <View style={styles.contentContainer}>{emptyContent}</View>
             ) : (
               <DeckChain
                 anchorId={focusedItemId}
-                isDesktop={isDesktop}
-                isTablet={isTablet}
-                items={activeItems}
-                mode={activeMode}
+                isExpanded={Boolean(expandedItem)}
+                items={filteredMemes}
+                hasNextPage={Boolean(hasNextPage)}
+                isFetchingNextPage={isFetchingNextPage}
+                onNearEnd={loadMore}
                 onExpandItem={setExpandedItem}
                 onFocusChange={setFocusedItemId}
-                onVoteChange={(id, vote) => {
-                  const item = activeItems.find(i => i.id === id)
-                  if (item) handleVoteChange(item, vote)
-                }}
-                votes={Object.fromEntries(
-                  activeItems.map(item => [item.id, voteForItem(item)]),
-                )}
+                onOpenComments={openComments}
               />
             )}
-          </View>
+          </Layout.Center>
         )}
       </View>
 
       <ExpandedMediaCardModal
         item={expandedItem}
-        mode={activeMode}
         onClose={() => setExpandedItem(null)}
-        onOpenComments={
-          expandedItem ? () => handleOpenComments(expandedItem) : undefined
-        }
-        onVoteChange={vote => {
-          if (!expandedItem) return
-          handleVoteChange(expandedItem, vote)
-        }}
-        vote={expandedItem ? voteForItem(expandedItem) : 0}
+        onOpenComments={openCommentsFromModal}
       />
 
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={_(msg`Create meme`)}
-        accessibilityHint={_(msg`Opens the meme composer`)}
-        onPress={() => openComposer({logContext: 'Fab'})}
-        style={[styles.fab, t.atoms.bg, {borderColor: t.palette.contrast_200}]}>
-        <Text style={[styles.fabText, t.atoms.text]}>+</Text>
-      </Pressable>
+      {viewStyle === 'board' ? (
+        <FAB
+          testID="memesComposeFAB"
+          onPress={() => openComposer({logContext: 'Fab'})}
+          icon={<PlusIcon size="lg" fill={t.palette.white} />}
+          accessibilityRole="button"
+          accessibilityLabel={l`Create meme`}
+          accessibilityHint={l`Opens the composer`}
+        />
+      ) : null}
     </Layout.Screen>
+  )
+}
+
+function boardRowKey(row: MediaItem[]) {
+  return row.map(item => item.id).join('|')
+}
+
+function HeaderIconButton({
+  label,
+  hint,
+  active = false,
+  onPress,
+  children,
+}: {
+  label: string
+  hint: string
+  active?: boolean
+  onPress: () => void
+  children: React.ReactNode
+}) {
+  const t = useTheme()
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityHint={hint}
+      accessibilityState={{selected: active}}
+      hitSlop={6}
+      onPress={onPress}
+      style={({pressed}) => [
+        styles.headerIconButton,
+        active
+          ? {backgroundColor: t.palette.primary_500}
+          : pressed && t.atoms.bg_contrast_25,
+      ]}>
+      {children}
+    </Pressable>
   )
 }
 
 function DeckChain({
   items,
-  mode,
   anchorId,
+  isExpanded,
+  hasNextPage,
+  isFetchingNextPage,
+  onNearEnd,
   onFocusChange,
   onExpandItem,
-  votes,
-  onVoteChange,
-  isDesktop,
-  isTablet,
+  onOpenComments,
 }: {
   items: MediaItem[]
-  mode: Mode
   anchorId?: string
+  isExpanded: boolean
+  hasNextPage: boolean
+  isFetchingNextPage: boolean
+  onNearEnd: () => void
   onFocusChange: (id?: string) => void
   onExpandItem: (item: MediaItem) => void
-  votes: Record<string, 1 | -1 | 0>
-  onVoteChange: (id: string, vote: 1 | -1 | 0) => void
-  isDesktop: boolean
-  isTablet: boolean
+  onOpenComments: (item: MediaItem) => void
 }) {
   const t = useTheme()
-  const {width} = useWindowDimensions()
-  const animation = useMemo(() => new Animated.Value(0), [])
-  const [startIndex, setStartIndex] = useState(0)
-  const [isAnimating, setIsAnimating] = useState(false)
-  const isAnimatingRef = useRef(isAnimating)
+  const {t: l} = useLingui()
+  const isFocused = useIsFocused()
+  const [animation] = useState(() => new Animated.Value(0))
+  const {bottom} = useSafeAreaInsets()
+  const [stageSize, setStageSize] = useState({width: 0, height: 0})
+  // Fit both cards into the viewport, including the home indicator.
+  const cardHeight = Math.max(
+    160,
+    (stageSize.height - bottom - 24 + DECK_OVERLAP) / 2,
+  )
+  const secondaryTop = cardHeight - DECK_OVERLAP
+  const secondaryTopRef = useRef(secondaryTop)
   useEffect(() => {
-    isAnimatingRef.current = isAnimating
-  }, [isAnimating])
+    secondaryTopRef.current = secondaryTop
+  }, [secondaryTop])
   const [boundaryNotice, setBoundaryNotice] = useState<string | null>(null)
-  const [topLayer, setTopLayer] = useState<'current' | 'next'>('current')
+  const isAnimatingRef = useRef(false)
   const progressRef = useRef(0)
   const boundaryTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const isLargeScreen = isDesktop || isTablet
-  const deckMaxWidth = isDesktop ? 520 : isTablet ? 480 : undefined
-  const deckHorizontalMargin = isLargeScreen
-    ? Math.max(0, (width - (deckMaxWidth ?? 0)) / 2)
+  /*
+   * The position is derived from the focused item's id rather than stored as
+   * an index, so new pages or filter changes never shift or reset the deck.
+   */
+  const anchorIndex = anchorId
+    ? items.findIndex(item => item.id === anchorId)
     : 0
+  const startIndex = anchorIndex < 0 ? 0 : anchorIndex
+
+  const prev = items[startIndex - 1]
+  const current = items[startIndex]
+  const next = items[startIndex + 1]
+  const third = items[startIndex + 2]
+
+  const frameWidth = Math.min(Math.max(stageSize.width - 24, 0), DECK_MAX_WIDTH)
+  const cardWidth = Math.max(frameWidth - DECK_STACK_INSET, 0)
 
   useEffect(() => {
     const id = animation.addListener(({value}) => {
@@ -394,100 +446,57 @@ function DeckChain({
     }
   }, [])
 
+  const remaining = items.length - 1 - startIndex
   useEffect(() => {
-    const index = anchorId
-      ? Math.max(
-          0,
-          items.findIndex(item => item.id === anchorId),
-        )
-      : 0
-    setStartIndex(index)
-    animation.setValue(0)
-  }, [anchorId, animation, items])
+    if (remaining <= DECK_PREFETCH_THRESHOLD) {
+      onNearEnd()
+    }
+  }, [remaining, onNearEnd])
 
-  const prev = items[startIndex - 1]
-  const current = items[startIndex]
-  const next = items[startIndex + 1]
-  const third = items[startIndex + 2]
-
-  const springTo = useCallback(
-    (toValue: number, velocity = 0, onComplete?: () => void) => {
-      animation.stopAnimation()
-      Animated.spring(animation, {
-        damping: 24,
-        mass: 0.9,
-        overshootClamping: true,
-        restDisplacementThreshold: 0.001,
-        restSpeedThreshold: 0.001,
-        stiffness: 220,
-        toValue,
-        useNativeDriver: true,
-        velocity,
-      }).start(({finished}) => {
-        if (finished) {
-          onComplete?.()
-        }
-      })
-    },
-    [animation],
-  )
-
-  const advance = useCallback(
-    (releaseVelocity = 0) => {
-      if (!next || isAnimatingRef.current) return
-      setIsAnimating(true)
-      springTo(1, releaseVelocity, () => {
-        setStartIndex(prevIndex =>
-          Math.min(prevIndex + 1, Math.max(items.length - 1, 0)),
-        )
-        onFocusChange(next.id)
+  const springTo = (toValue: number, velocity = 0, onComplete?: () => void) => {
+    animation.stopAnimation()
+    Animated.spring(animation, {
+      damping: 24,
+      mass: 0.9,
+      overshootClamping: true,
+      restDisplacementThreshold: 0.001,
+      restSpeedThreshold: 0.001,
+      stiffness: 220,
+      toValue,
+      useNativeDriver: !IS_WEB,
+      velocity,
+    }).start(({finished}) => {
+      if (finished) {
+        onComplete?.()
+      } else {
+        // Never leave the deck locked if an animation is interrupted.
         animation.setValue(0)
-        setIsAnimating(false)
-        setTopLayer('current')
-      })
-    },
-    [animation, items.length, next, onFocusChange, springTo],
-  )
-
-  const retreat = useCallback(
-    (releaseVelocity = 0) => {
-      if (!prev || isAnimatingRef.current) return
-      setIsAnimating(true)
-      springTo(-1, releaseVelocity, () => {
-        setStartIndex(prevIndex => Math.max(prevIndex - 1, 0))
-        onFocusChange(prev.id)
-        animation.setValue(0)
-        setIsAnimating(false)
-        setTopLayer('current')
-      })
-    },
-    [animation, onFocusChange, prev, springTo],
-  )
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
-        e.preventDefault()
-        advance()
-      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
-        e.preventDefault()
-        retreat()
+        isAnimatingRef.current = false
       }
-    }
-    if (typeof document !== 'undefined') {
-      document.addEventListener('keydown', handleKeyDown)
-      return () => document.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [advance, retreat])
+    })
+  }
 
-  const resetPosition = useCallback(
-    (releaseVelocity = 0) => {
-      springTo(0, releaseVelocity)
-    },
-    [springTo],
-  )
+  const advance = (releaseVelocity = 0) => {
+    if (!next || isAnimatingRef.current) return
+    isAnimatingRef.current = true
+    springTo(1, releaseVelocity, () => {
+      onFocusChange(next.id)
+      animation.setValue(0)
+      isAnimatingRef.current = false
+    })
+  }
 
-  const showBoundaryMessage = useCallback((message: string) => {
+  const retreat = (releaseVelocity = 0) => {
+    if (!prev || isAnimatingRef.current) return
+    isAnimatingRef.current = true
+    springTo(-1, releaseVelocity, () => {
+      onFocusChange(prev.id)
+      animation.setValue(0)
+      isAnimatingRef.current = false
+    })
+  }
+
+  const showBoundaryMessage = (message: string) => {
     if (boundaryTimeoutRef.current) {
       clearTimeout(boundaryTimeoutRef.current)
     }
@@ -496,101 +505,120 @@ function DeckChain({
       setBoundaryNotice(null)
       boundaryTimeoutRef.current = null
     }, 1200)
-  }, [])
+  }
 
-  const panResponder = useMemo(
-    () =>
-      // PanResponder invokes these callbacks after render during gestures.
-      // eslint-disable-next-line react-hooks/refs
-      PanResponder.create({
-        onMoveShouldSetPanResponderCapture: (_, gestureState) => {
-          return (
-            !isAnimatingRef.current &&
-            (Boolean(next) || Boolean(prev)) &&
-            Math.abs(gestureState.dy) > 4 &&
-            Math.abs(gestureState.dy) > Math.abs(gestureState.dx)
-          )
-        },
-        onMoveShouldSetPanResponder: (_, gestureState) => {
-          return (
-            !isAnimatingRef.current &&
-            (Boolean(next) || Boolean(prev)) &&
-            Math.abs(gestureState.dy) > 4 &&
-            Math.abs(gestureState.dy) > Math.abs(gestureState.dx)
-          )
-        },
-        onPanResponderMove: (_, gestureState) => {
-          const progress =
-            gestureState.dy < 0 && next
-              ? Math.max(0, Math.min(1, -gestureState.dy / DECK_SECONDARY_TOP))
-              : gestureState.dy > 0 && prev
-                ? -Math.max(
-                    0,
-                    Math.min(1, gestureState.dy / (DECK_SECONDARY_TOP * 0.55)),
-                  )
-                : 0
-          animation.setValue(progress)
-        },
-        onPanResponderRelease: (_, gestureState) => {
-          const normalizedVelocity = -gestureState.vy * DECK_VELOCITY_SCALE
+  // Stable handles for the PanResponder and key listener, which outlive renders.
+  const handlersRef = useRef({advance, retreat, showBoundaryMessage})
+  useEffect(() => {
+    handlersRef.current = {advance, retreat, showBoundaryMessage}
+  })
+  const edgesRef = useRef({hasNext: false, hasPrev: false})
+  useEffect(() => {
+    edgesRef.current = {hasNext: Boolean(next), hasPrev: Boolean(prev)}
+  })
 
-          if (progressRef.current > 0.18 || gestureState.vy < -0.45) {
-            advance(normalizedVelocity)
-          } else if (progressRef.current < -0.08 || gestureState.vy > 0.18) {
-            retreat(normalizedVelocity)
-          } else if (
-            (gestureState.dy < -24 || gestureState.vy < -0.3) &&
-            !next
-          ) {
-            showBoundaryMessage('You have reached the last card')
-            resetPosition(normalizedVelocity)
+  useEffect(() => {
+    if (!IS_WEB || !isFocused || isExpanded || typeof document === 'undefined')
+      return
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement | null
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.isContentEditable)
+      ) {
+        return
+      }
+      if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+        e.preventDefault()
+        handlersRef.current.advance()
+      } else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+        e.preventDefault()
+        handlersRef.current.retreat()
+      }
+    }
+    let lastWheelAt = 0
+    const handleWheel = (e: WheelEvent) => {
+      if (
+        !(e.target instanceof Element) ||
+        !e.target.closest('[data-testid="memesDeck"]')
+      )
+        return
+      e.preventDefault()
+      if (Math.abs(e.deltaY) < 12 || Date.now() - lastWheelAt < 450) return
+      lastWheelAt = Date.now()
+      if (e.deltaY > 0) handlersRef.current.advance()
+      else handlersRef.current.retreat()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    document.addEventListener('wheel', handleWheel, {passive: false})
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown)
+      document.removeEventListener('wheel', handleWheel)
+    }
+  }, [isFocused, isExpanded])
+
+  const [panResponder] = useState(() => {
+    const shouldCapture = (dx: number, dy: number) =>
+      !isAnimatingRef.current &&
+      (edgesRef.current.hasNext || edgesRef.current.hasPrev) &&
+      Math.abs(dy) > 6 &&
+      Math.abs(dy) > Math.abs(dx)
+    const reset = (velocity = 0) => {
+      Animated.spring(animation, {
+        damping: 24,
+        mass: 0.9,
+        overshootClamping: true,
+        stiffness: 220,
+        toValue: 0,
+        useNativeDriver: !IS_WEB,
+        velocity,
+      }).start()
+    }
+    return PanResponder.create({
+      onMoveShouldSetPanResponderCapture: (_e, g) => shouldCapture(g.dx, g.dy),
+      onMoveShouldSetPanResponder: (_e, g) => shouldCapture(g.dx, g.dy),
+      onPanResponderMove: (_e, g) => {
+        const {hasNext, hasPrev} = edgesRef.current
+        const progress =
+          g.dy < 0 && hasNext
+            ? Math.max(0, Math.min(1, -g.dy / secondaryTopRef.current))
+            : g.dy > 0 && hasPrev
+              ? -Math.max(
+                  0,
+                  Math.min(1, g.dy / (secondaryTopRef.current * 0.55)),
+                )
+              : 0
+        animation.setValue(progress)
+      },
+      onPanResponderRelease: (_e, g) => {
+        const {hasNext} = edgesRef.current
+        const handlers = handlersRef.current
+        const velocity = -g.vy * DECK_VELOCITY_SCALE
+        if (progressRef.current > 0.18 || (g.vy < -0.45 && hasNext)) {
+          handlers.advance(velocity)
+        } else if (progressRef.current < -0.08 || g.vy > 0.18) {
+          if (progressRef.current < 0 || edgesRef.current.hasPrev) {
+            handlers.retreat(velocity)
           } else {
-            resetPosition(normalizedVelocity)
+            reset(velocity)
           }
-        },
-        onPanResponderTerminate: () => {
-          resetPosition()
-        },
-        onPanResponderTerminationRequest: () => false,
-      }),
-    [
-      advance,
-      animation,
-      next,
-      prev,
-      resetPosition,
-      retreat,
-      showBoundaryMessage,
-    ],
-  )
+        } else {
+          if ((g.dy < -24 || g.vy < -0.3) && !hasNext) {
+            handlers.showBoundaryMessage(l`You’ve reached the last card`)
+          }
+          reset(velocity)
+        }
+      },
+      onPanResponderTerminate: () => reset(),
+      onPanResponderTerminationRequest: () => false,
+    })
+  })
 
-  const handleDeckPress = useCallback(
-    (e: GestureResponderEvent) => {
-      if (typeof e?.nativeEvent?.locationY !== 'number') return
-      const tapY = e.nativeEvent.locationY
-      const stageHeight = DECK_CARD_HEIGHT + DECK_SECONDARY_TOP
-      if (tapY > stageHeight * 0.55 && next) {
-        advance()
-      } else if (tapY < stageHeight * 0.25 && prev) {
-        retreat()
-      }
-    },
-    [advance, retreat, next, prev],
-  )
-
-  const handleWebClick = useCallback(
-    (e: React.MouseEvent) => {
-      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect()
-      const clickY = e.clientY - rect.top
-      const stageHeight = DECK_CARD_HEIGHT + DECK_SECONDARY_TOP
-      if (clickY > stageHeight * 0.55 && next) {
-        advance()
-      } else if (clickY < stageHeight * 0.25 && prev) {
-        retreat()
-      }
-    },
-    [advance, retreat, next, prev],
-  )
+  const onLayout = (e: LayoutChangeEvent) => {
+    setStageSize(e.nativeEvent.layout)
+  }
 
   if (!current) return null
 
@@ -609,7 +637,7 @@ function DeckChain({
       {
         translateY: animation.interpolate({
           inputRange: [-1, 0, 1],
-          outputRange: [0, -DECK_SECONDARY_TOP, -DECK_SECONDARY_TOP],
+          outputRange: [0, -secondaryTop, -secondaryTop],
         }),
       },
     ],
@@ -617,20 +645,21 @@ function DeckChain({
 
   const currentStyle = {
     opacity: animation.interpolate({
-      inputRange: [-1, -0.2, 0, 0.8, 1],
-      outputRange: [0.16, 0.62, 1, 0.18, 0],
+      inputRange: [-1, 0, 0.8, 1],
+      outputRange: [1, 1, 0.18, 0],
     }),
     transform: [
       {
         translateX: animation.interpolate({
           inputRange: [-1, 0, 1],
-          outputRange: [34 + DECK_CURRENT_X_DRIFT, 0, -DECK_CURRENT_X_DRIFT],
+          // Retreating slides the front card into the "next" slot exactly.
+          outputRange: [DECK_STACK_INSET, 0, -DECK_CURRENT_X_DRIFT],
         }),
       },
       {
         translateY: animation.interpolate({
           inputRange: [-1, 0, 1],
-          outputRange: [DECK_CARD_HEIGHT * 0.72, 0, -170],
+          outputRange: [secondaryTop, 0, -secondaryTop],
         }),
       },
     ],
@@ -639,19 +668,20 @@ function DeckChain({
   const nextStyle = {
     opacity: animation.interpolate({
       inputRange: [-1, -0.1, 0, 1],
-      outputRange: [0.18, 0.58, 1, 1],
+      outputRange: [0, 0.58, 1, 1],
     }),
     transform: [
       {
         translateX: animation.interpolate({
           inputRange: [-1, 0, 1],
-          outputRange: [DECK_STACK_X_DRIFT * 0.4, 0, -10 - DECK_STACK_X_DRIFT],
+          // Lands exactly on the front card's slot so nothing snaps on commit.
+          outputRange: [DECK_STACK_X_DRIFT * 0.4, 0, -DECK_STACK_INSET],
         }),
       },
       {
         translateY: animation.interpolate({
           inputRange: [-1, 0, 1],
-          outputRange: [DECK_SECONDARY_TOP, 0, -DECK_SECONDARY_TOP],
+          outputRange: [secondaryTop, 0, -secondaryTop],
         }),
       },
     ],
@@ -664,129 +694,125 @@ function DeckChain({
     }),
     transform: [
       {
-        translateX: animation.interpolate({
-          inputRange: [-1, 0, 1],
-          outputRange: [DECK_STACK_X_DRIFT * 0.4, 0, 10 + DECK_STACK_X_DRIFT],
-        }),
-      },
-      {
         translateY: animation.interpolate({
           inputRange: [-1, 0, 1],
-          outputRange: [DECK_SECONDARY_TOP, 0, -DECK_SECONDARY_TOP],
+          outputRange: [secondaryTop, 0, -secondaryTop],
         }),
       },
     ],
   }
 
+  const cardBorder = {borderColor: t.palette.contrast_300}
+
   return (
-    <View
-      {...panResponder.panHandlers}
-      onTouchEnd={handleDeckPress}
-      // @ts-expect-error web only
-      onClick={handleWebClick}
-      style={[
-        styles.deckStage,
-        isLargeScreen && {
-          minHeight: DECK_CARD_HEIGHT + DECK_SECONDARY_TOP + 28,
-          maxWidth: deckMaxWidth,
-          marginHorizontal: deckHorizontalMargin,
-          alignSelf: 'center',
-        },
-      ]}>
-      {boundaryNotice ? (
-        <View style={styles.deckBoundaryNotice}>
-          <Text style={styles.deckBoundaryNoticeText}>{boundaryNotice}</Text>
-        </View>
-      ) : null}
-
-      {prev ? (
-        <Animated.View
-          style={[
-            styles.deckPrevIncoming,
-            t.atoms.border_contrast_low,
-            isLargeScreen && {right: 34 + deckHorizontalMargin * 0.1},
-            prevStyle,
-          ]}>
-          <Pressable
-            accessibilityHint="Bring this card to the front"
-            accessibilityLabel="Previous card"
-            accessibilityRole="button"
-            onPress={() => setTopLayer('current')}
-            style={styles.deckCardPressable}>
-            <MediaDeckCard item={prev} mode={mode} />
-          </Pressable>
-        </Animated.View>
-      ) : null}
-
-      {third ? (
-        <Animated.View
-          style={[
-            styles.deckHidden,
-            {borderColor: t.palette.contrast_300},
-            isLargeScreen && {left: 52 + deckHorizontalMargin * 0.15},
-            thirdStyle,
-          ]}>
-          <MediaDeckCard item={third} mode={mode} />
-        </Animated.View>
-      ) : null}
-
-      {next ? (
-        <Animated.View
-          style={[
-            styles.deckSecondary,
-            {borderColor: t.palette.contrast_300},
-            isLargeScreen && {left: 52 + deckHorizontalMargin * 0.15},
-            nextStyle,
-            topLayer === 'next' && {zIndex: 5},
-          ]}>
-          <Pressable
-            accessibilityHint="Bring this card to the front"
-            accessibilityLabel="Next card"
-            accessibilityRole="button"
-            onPress={() => setTopLayer('next')}
-            style={styles.deckCardPressable}>
-            <MediaDeckCard item={next} mode={mode} />
-          </Pressable>
-        </Animated.View>
-      ) : null}
-
-      <Animated.View
-        style={[
-          styles.deckPrimary,
-          {borderColor: t.palette.contrast_300},
-          isLargeScreen && {right: 52 + deckHorizontalMargin * 0.05},
-          currentStyle,
-          topLayer === 'next' && {zIndex: 1},
-        ]}>
-        <MediaDeckCard item={current} mode={mode} />
-
-        <DeckCommandCenter
-          activeItem={topLayer === 'next' ? next : current}
-          activeVote={votes[(topLayer === 'next' ? next : current).id] ?? 0}
-          onExpandActive={() =>
-            onExpandItem(topLayer === 'next' ? next : current)
-          }
-          onExpandBottom={next ? () => onExpandItem(next) : undefined}
-          onExpandTop={() => onExpandItem(current)}
-          onVoteChange={vote =>
-            onVoteChange((topLayer === 'next' ? next : current).id, vote)
-          }
-        />
-      </Animated.View>
-
-      {!next ? (
+    <View testID="memesDeck" style={styles.deckShell} onLayout={onLayout}>
+      {cardWidth > 0 ? (
         <View
-          style={[
-            styles.deckEndCard,
-            isLargeScreen && {
-              left: 34 + deckHorizontalMargin * 0.1,
-              right: 34 + deckHorizontalMargin * 0.1,
-            },
-          ]}>
-          <Text style={styles.deckEndTitle}>That is everything for now</Text>
-          <Text style={styles.deckEndBody}>
-            Swipe down to revisit earlier cards.
-          </Text>
+          {...panResponder.panHandlers}
+          style={[styles.deckStage, {width: frameWidth}]}>
+          {boundaryNotice ? (
+            <View pointerEvents="none" style={styles.deckBoundaryNotice}>
+              <View style={styles.deckBoundaryNoticeInner}>
+                <Text style={styles.deckBoundaryNoticeText}>
+                  {boundaryNotice}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
+          {prev ? (
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.deckCard,
+                styles.deckPrevIncoming,
+                t.atoms.border_contrast_low,
+                {width: cardWidth},
+                prevStyle,
+              ]}>
+              <MediaDeckCard item={prev} height={cardHeight} />
+            </Animated.View>
+          ) : null}
+
+          {third ? (
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.deckCard,
+                styles.deckHidden,
+                {top: secondaryTop * 2},
+                cardBorder,
+                {width: cardWidth},
+                thirdStyle,
+              ]}>
+              <MediaDeckCard item={third} height={cardHeight} />
+            </Animated.View>
+          ) : null}
+
+          {next ? (
+            <Animated.View
+              style={[
+                styles.deckCard,
+                styles.deckSecondary,
+                {top: secondaryTop},
+                cardBorder,
+                {width: cardWidth},
+                nextStyle,
+              ]}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={next.title}
+                accessibilityHint={l`Opens this card in a larger view`}
+                onPress={() => onExpandItem(next)}>
+                <MediaDeckCard item={next} height={cardHeight} />
+              </Pressable>
+            </Animated.View>
+          ) : (
+            <View
+              style={[
+                styles.deckEndCard,
+                {width: cardWidth, top: secondaryTop + 16},
+              ]}>
+              {isFetchingNextPage || hasNextPage ? (
+                <Loader size="md" style={{color: '#F8FAFC'}} />
+              ) : (
+                <>
+                  <Text style={styles.deckEndTitle}>
+                    <Trans>That’s everything for now</Trans>
+                  </Text>
+                  <Text style={styles.deckEndBody}>
+                    <Trans>Swipe down to revisit earlier cards.</Trans>
+                  </Text>
+                </>
+              )}
+            </View>
+          )}
+
+          <Animated.View
+            style={[
+              styles.deckCard,
+              styles.deckPrimary,
+              cardBorder,
+              {width: cardWidth},
+              currentStyle,
+            ]}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={current.title}
+              accessibilityHint={l`Opens this card in a larger view`}
+              onPress={() => onExpandItem(current)}>
+              <MediaDeckCard item={current} height={cardHeight} />
+            </Pressable>
+
+            <DeckCommandCenter
+              activeItem={current}
+              top={secondaryTop - 44}
+              left={26}
+              width={cardWidth - 52}
+              onOpenComments={() => onOpenComments(current)}
+              onExpand={() => onExpandItem(current)}
+            />
+          </Animated.View>
         </View>
       ) : null}
     </View>
@@ -796,9 +822,13 @@ function DeckChain({
 function EmptyState({
   title,
   description,
+  actionLabel,
+  onAction,
 }: {
   title: string
   description: string
+  actionLabel?: string
+  onAction?: () => void
 }) {
   const t = useTheme()
 
@@ -813,6 +843,16 @@ function EmptyState({
       <Text style={[styles.emptyDescription, t.atoms.text_contrast_medium]}>
         {description}
       </Text>
+      {actionLabel && onAction ? (
+        <Button
+          label={actionLabel}
+          size="small"
+          color="primary"
+          onPress={onAction}
+          style={a.mt_sm}>
+          <ButtonText>{actionLabel}</ButtonText>
+        </Button>
+      ) : null}
     </View>
   )
 }

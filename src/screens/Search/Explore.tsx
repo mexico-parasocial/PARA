@@ -5,6 +5,7 @@ import {type ViewabilityConfig} from '@react-native/virtualized-lists'
 import {useQueryClient} from '@tanstack/react-query'
 import * as bcp47Match from 'bcp-47-match'
 
+import {popularInterests, useInterestsDisplayNames} from '#/lib/interests'
 import {cleanError} from '#/lib/strings/errors'
 import {sanitizeHandle} from '#/lib/strings/handles'
 import {useLanguagePrefs} from '#/state/preferences/languages'
@@ -26,12 +27,20 @@ import {
   useGetSuggestedUsersForExploreQuery,
 } from '#/state/queries/trending/useGetSuggestedUsersForExploreQuery'
 import {createGetTrendsQueryKey} from '#/state/queries/trending/useGetTrendsQuery'
+import {
+  createSuggestedStarterPacksQueryKey,
+  useSuggestedStarterPacksQuery,
+} from '#/state/queries/useSuggestedStarterPacksQuery'
 import {isThreadChildAt, isThreadParentAt} from '#/view/com/posts/PostFeed'
 import {PostFeedItem} from '#/view/com/posts/PostFeedItem'
 import {ViewFullThread} from '#/view/com/posts/ViewFullThread'
 import {List} from '#/view/com/util/List'
 import {FeedFeedLoadingPlaceholder} from '#/view/com/util/LoadingPlaceholder'
 import {LoadMoreRetryBtn} from '#/view/com/util/LoadMoreRetryBtn'
+import {
+  StarterPackCard,
+  StarterPackCardSkeleton,
+} from '#/screens/Search/components/StarterPackCard'
 import {ExploreInterestsCard} from '#/screens/Search/modules/ExploreInterestsCard'
 import {ExploreTrendingTopics} from '#/screens/Search/modules/ExploreTrendingTopics'
 import {ExploreTrendingVideos} from '#/screens/Search/modules/ExploreTrendingVideos'
@@ -46,25 +55,34 @@ import {
   type Props as SVGIconProps,
 } from '#/components/icons/common'
 import {ListSparkle_Stroke2_Corner0_Rounded as ListSparkle} from '#/components/icons/ListSparkle'
+import {StarterPackMultiPathLarge as StarterPackIcon} from '#/components/icons/StarterPack'
 import {UserCircle_Stroke2_Corner0_Rounded as Person} from '#/components/icons/UserCircle'
+import {boostInterests} from '#/components/InterestTabs'
 import {Loader} from '#/components/Loader'
 import * as ProfileCard from '#/components/ProfileCard'
 import {SubtleHover} from '#/components/SubtleHover'
 import {Text} from '#/components/Typography'
 import {type Metrics, useAnalytics} from '#/analytics'
 import {ExploreScreenLiveEventFeedsBanner} from '#/features/liveEvents/components/ExploreScreenLiveEventFeedsBanner'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import * as ModuleHeader from './components/ModuleHeader'
-import {SuggestedProfileCard} from './modules/ExploreSuggestedAccounts'
+import {
+  SuggestedAccountsTabBar,
+  SuggestedProfileCard,
+} from './modules/ExploreSuggestedAccounts'
 
 function LoadMore({item}: {item: ExploreScreenItems & {type: 'loadMore'}}) {
   const t = useTheme()
   const {t: l} = useLingui()
 
+  const handleOnPress = () => {
+    void item.onLoadMore()
+  }
+
   return (
     <Button
       label={l`Load more`}
-      onPress={item.onLoadMore}
+      onPress={handleOnPress}
       style={[a.relative, a.w_full]}>
       {({hovered, pressed}) => (
         <>
@@ -135,7 +153,7 @@ type ExploreScreenItems =
       type: 'profile'
       key: string
       profile: app.bsky.actor.defs.ProfileView
-      recId?: number
+      recId?: string
     }
   | {
       type: 'profileEmpty'
@@ -145,13 +163,17 @@ type ExploreScreenItems =
       type: 'feed'
       key: string
       feed: app.bsky.feed.defs.GeneratorView
+      recommendation?: {
+        recId?: string
+        position: number
+      }
     }
   | {
       type: 'loadMore'
       key: string
       message: string
       isLoadingMore: boolean
-      onLoadMore: () => void
+      onLoadMore: () => void | Promise<void>
     }
   | {
       type: 'profilePlaceholder'
@@ -166,6 +188,19 @@ type ExploreScreenItems =
       key: string
       message: string
       error: string
+    }
+  | {
+      type: 'starterPack'
+      key: string
+      view: app.bsky.graph.defs.StarterPackView
+      recommendation: {
+        recId?: string
+        position: number
+      }
+    }
+  | {
+      type: 'starterPackSkeleton'
+      key: string
     }
   | FeedPreviewItem
   | {
@@ -188,6 +223,7 @@ export function Explore({
   const t = useTheme()
   const {data: preferences, error: preferencesError} = usePreferencesQuery()
   const moderationOpts = useModerationOpts()
+  const [selectedInterest, setSelectedInterest] = useState<string | null>(null)
 
   /*
    * Begin special language handling
@@ -197,14 +233,18 @@ export function Explore({
     if (contentLanguages.length === 0) return true
     return bcp47Match.basicFilter('en', contentLanguages).length > 0
   }, [contentLanguages])
+  const personalizedInterests = preferences?.interests?.tags
+  const interestsDisplayNames = useInterestsDisplayNames()
+  const interests = Object.keys(interestsDisplayNames)
+    .sort(boostInterests(popularInterests))
+    .sort(boostInterests(personalizedInterests))
   const {
     data: suggestedUsers,
     isLoading: suggestedUsersIsLoading,
     error: suggestedUsersError,
     isRefetching: suggestedUsersIsRefetching,
   } = useGetSuggestedUsersForExploreQuery({
-    // Ignore Suggested Accounts interest filters for now.
-    category: null,
+    category: selectedInterest || (useFullExperience ? null : interests[0]),
   })
   /* End special language handling */
 
@@ -219,6 +259,13 @@ export function Explore({
   const interestsNux = useNux(Nux.ExploreInterestsCard)
   const showInterestsNux =
     interestsNux.status === 'ready' && !interestsNux.nux?.completed
+
+  const {
+    data: suggestedSPs,
+    isLoading: isLoadingSuggestedSPs,
+    error: suggestedSPsError,
+    isRefetching: isRefetchingSuggestedSPs,
+  } = useSuggestedStarterPacksQuery({enabled: useFullExperience})
 
   const isLoadingMoreFeeds = isFetchingNextFeedsPage && !isLoadingFeeds
   const [hasPressedLoadMoreFeeds, setHasPressedLoadMoreFeeds] = useState(false)
@@ -246,6 +293,7 @@ export function Explore({
     useGetSuggestedFeedsQuery({
       enabled: useFullExperience,
     })
+  const [feedPreviewsEnabled, setFeedPreviewsEnabled] = useState(false)
   const {
     data: feedPreviewSlices,
     query: {
@@ -255,7 +303,10 @@ export function Explore({
       hasNextPage: hasNextPageFeedPreviews,
       error: feedPreviewSlicesError,
     },
-  } = useFeedPreviews(suggestedFeeds?.feeds ?? [], useFullExperience)
+  } = useFeedPreviews(
+    suggestedFeeds?.feeds.map(({feed}) => feed) ?? [],
+    useFullExperience && feedPreviewsEnabled,
+  )
 
   const qc = useQueryClient()
   const [isPTR, setIsPTR] = useState(false)
@@ -265,7 +316,9 @@ export function Explore({
       qc.resetQueries({
         queryKey: createGetTrendsQueryKey(),
       }),
-
+      qc.resetQueries({
+        queryKey: createSuggestedStarterPacksQueryKey(),
+      }),
       qc.resetQueries({
         queryKey: [getSuggestedUsersForExploreQueryKeyRoot],
       }),
@@ -302,25 +355,35 @@ export function Explore({
   ])
 
   const topBorder = useMemo(
-    () => ({type: 'topBorder', key: 'top-border'}) as const,
+    () =>
+      ({
+        type: 'topBorder',
+        key: 'top-border',
+      }) as const,
     [],
   )
   const trendingTopicsModule = useMemo(
-    () => ({type: 'trendingTopics', key: 'trending-topics'}) as const,
+    () =>
+      ({
+        type: 'trendingTopics',
+        key: 'trending-topics',
+      }) as const,
     [],
   )
   const suggestedFollowsModule = useMemo(() => {
     const i: ExploreScreenItems[] = []
     i.push({
-      type: 'header',
+      type: 'tabbedHeader',
       key: 'suggested-accounts-header',
-      title: l`Suggested Accounts`,
+      title: l`Suggested accounts`,
       icon: Person,
+      iconSize: 'md',
       searchButton: {
         label: l`Search for more accounts`,
         metricsTag: 'suggestedAccounts',
         tab: 'user',
       },
+      hideDefaultTab: !useFullExperience,
     })
 
     if (suggestedUsersIsLoading || suggestedUsersIsRefetching) {
@@ -347,6 +410,7 @@ export function Explore({
                 type: 'profile',
                 key: actor.did,
                 profile: actor,
+                recId: suggestedUsers.recId,
               })
             }
           }
@@ -357,7 +421,7 @@ export function Explore({
               key: 'profileEmpty',
             })
           } else {
-            if (useFullExperience) {
+            if (selectedInterest === null && useFullExperience) {
               // First "For You" tab, only show 5 to keep screen short
               i.push(...profileItems.slice(0, 5))
             } else {
@@ -382,6 +446,7 @@ export function Explore({
     suggestedUsersIsLoading,
     suggestedUsersIsRefetching,
     suggestedUsersError,
+    selectedInterest,
     useFullExperience,
   ])
   const suggestedFeedsModule = useMemo(() => {
@@ -389,7 +454,7 @@ export function Explore({
     i.push({
       type: 'header',
       key: 'suggested-feeds-header',
-      title: l`Discover Feeds`,
+      title: l`Discover feeds`,
       icon: ListSparkle,
       iconSize: 'md',
       searchButton: {
@@ -403,13 +468,17 @@ export function Explore({
       if (suggestedFeeds && preferences) {
         let seen = new Set()
         const feedItems: ExploreScreenItems[] = []
-        for (const feed of suggestedFeeds.feeds) {
+        for (const {feed, position} of suggestedFeeds.feeds) {
           if (!seen.has(feed.uri)) {
             seen.add(feed.uri)
             feedItems.push({
               type: 'feed',
               key: feed.uri,
               feed,
+              recommendation: {
+                recId: suggestedFeeds.recId,
+                position,
+              },
             })
           }
         }
@@ -418,9 +487,9 @@ export function Explore({
         if (suggestedFeedsError) {
           i.push({
             type: 'error',
-            key: 'feedsError',
+            key: 'suggestedFeedsError',
             message: l`Failed to load suggested feeds`,
-            error: cleanError(feedsError),
+            error: cleanError(suggestedFeedsError),
           })
         } else if (preferencesError) {
           i.push({
@@ -440,17 +509,6 @@ export function Explore({
             } else {
               i.push(...feedItems)
             }
-
-            for (const [index, item] of feedItems.entries()) {
-              if (item.type !== 'feed') {
-                continue
-              }
-              // don't log the ones we've already sent
-              if (hasPressedLoadMoreFeeds && index < 6) {
-                continue
-              }
-              ax.metric('feed:suggestion:seen', {feedUrl: item.feed.uri})
-            }
           }
           if (!hasPressedLoadMoreFeeds) {
             i.push({
@@ -463,19 +521,19 @@ export function Explore({
           }
         }
       } else {
-        if (suggestedFeedsError) {
+        if (feedsError) {
+          i.push({
+            type: 'error',
+            key: 'feedsError',
+            message: l`Failed to load feeds`,
+            error: cleanError(feedsError),
+          })
+        } else if (suggestedFeedsError) {
           i.push({
             type: 'error',
             key: 'suggestedFeedsError',
             message: l`Failed to load suggested feeds`,
             error: cleanError(suggestedFeedsError),
-          })
-        } else if (feedsError) {
-          i.push({
-            type: 'error',
-            key: 'feedsError',
-            message: l`Failed to load suggested feeds`,
-            error: cleanError(feedsError),
           })
         } else if (preferencesError) {
           i.push({
@@ -512,8 +570,15 @@ export function Explore({
           i.push({
             type: 'error',
             key: 'feedsError',
-            message: l`Failed to load suggested feeds`,
+            message: l`Failed to load feeds`,
             error: cleanError(feedsError),
+          })
+        } else if (suggestedFeedsError) {
+          i.push({
+            type: 'error',
+            key: 'suggestedFeedsError',
+            message: l`Failed to load suggested feeds`,
+            error: cleanError(suggestedFeedsError),
           })
         } else if (preferencesError) {
           i.push({
@@ -551,8 +616,15 @@ export function Explore({
           i.push({
             type: 'error',
             key: 'feedsError',
-            message: l`Failed to load suggested feeds`,
+            message: l`Failed to load feeds`,
             error: cleanError(feedsError),
+          })
+        } else if (suggestedFeedsError) {
+          i.push({
+            type: 'error',
+            key: 'feedsError',
+            message: l`Failed to load suggested feeds`,
+            error: cleanError(suggestedFeedsError),
           })
         } else if (preferencesError) {
           i.push({
@@ -583,6 +655,47 @@ export function Explore({
     feeds,
   ])
 
+  const suggestedStarterPacksModule = useMemo(() => {
+    const i: ExploreScreenItems[] = []
+    i.push({
+      type: 'header',
+      key: 'suggested-starterPacks-header',
+      title: l`Starter Packs`,
+      icon: StarterPackIcon,
+      iconSize: 'md',
+    })
+
+    if (isLoadingSuggestedSPs || isRefetchingSuggestedSPs) {
+      Array.from({length: 3}).forEach((__, index) =>
+        i.push({
+          type: 'starterPackSkeleton',
+          key: `starterPackSkeleton-${index}`,
+        }),
+      )
+    } else if (suggestedSPsError || !suggestedSPs) {
+      // just get rid of the section
+      i.pop()
+    } else {
+      suggestedSPs.starterPacks.map((s, position) => {
+        i.push({
+          type: 'starterPack',
+          key: s.uri,
+          view: s,
+          recommendation: {
+            recId: suggestedSPs.recId,
+            position,
+          },
+        })
+      })
+    }
+    return i
+  }, [
+    suggestedSPs,
+    l,
+    isLoadingSuggestedSPs,
+    suggestedSPsError,
+    isRefetchingSuggestedSPs,
+  ])
   const feedPreviewsModule = useMemo(() => {
     const i: ExploreScreenItems[] = []
     i.push(...feedPreviewSlices)
@@ -619,7 +732,7 @@ export function Explore({
       i.push(trendingTopicsModule)
       i.push(...suggestedFeedsModule)
       i.push(...suggestedFollowsModule)
-
+      i.push(...suggestedStarterPacksModule)
       i.push(...feedPreviewsModule)
     } else {
       i.push(...suggestedFollowsModule)
@@ -629,7 +742,7 @@ export function Explore({
   }, [
     topBorder,
     suggestedFollowsModule,
-
+    suggestedStarterPacksModule,
     suggestedFeedsModule,
     trendingTopicsModule,
     feedPreviewsModule,
@@ -639,6 +752,9 @@ export function Explore({
 
   const renderItem = useCallback(
     ({item, index}: {item: ExploreScreenItems; index: number}) => {
+      const handleOnPressRetry = () => {
+        void fetchNextPageFeedPreviews()
+      }
       switch (item.type) {
         case 'topBorder':
           return (
@@ -662,18 +778,25 @@ export function Explore({
         }
         case 'tabbedHeader': {
           return (
-            <ModuleHeader.Container style={[a.pb_xs]}>
-              <ModuleHeader.Icon icon={item.icon} size={item.iconSize} />
-              <ModuleHeader.TitleText>{item.title}</ModuleHeader.TitleText>
-              {item.searchButton && (
-                <ModuleHeader.SearchButton
-                  {...item.searchButton}
-                  onPress={() =>
-                    focusSearchInput(item.searchButton?.tab || 'user')
-                  }
-                />
-              )}
-            </ModuleHeader.Container>
+            <View style={[a.pb_md]}>
+              <ModuleHeader.Container style={[a.pb_xs]}>
+                <ModuleHeader.Icon icon={item.icon} size={item.iconSize} />
+                <ModuleHeader.TitleText>{item.title}</ModuleHeader.TitleText>
+                {item.searchButton && (
+                  <ModuleHeader.SearchButton
+                    {...item.searchButton}
+                    onPress={() =>
+                      focusSearchInput(item.searchButton?.tab || 'user')
+                    }
+                  />
+                )}
+              </ModuleHeader.Container>
+              <SuggestedAccountsTabBar
+                selectedInterest={selectedInterest}
+                onSelectInterest={setSelectedInterest}
+                hideDefaultTab={item.hideDefaultTab}
+              />
+            </View>
           )
         }
         case 'trendingTopics': {
@@ -696,7 +819,13 @@ export function Explore({
           return (
             <View style={[a.px_lg, a.pb_lg]}>
               <Admonition>
-                <Trans>No results.</Trans>
+                {selectedInterest ? (
+                  <Trans>
+                    No results for "{interestsDisplayNames[selectedInterest]}".
+                  </Trans>
+                ) : (
+                  <Trans>No results.</Trans>
+                )}
               </Admonition>
             </View>
           )
@@ -713,18 +842,61 @@ export function Explore({
               <FeedCard.Default
                 view={item.feed}
                 onPress={() => {
-                  if (!useFullExperience) {
-                    return
-                  }
+                  if (!item.recommendation) return
                   ax.metric('feed:suggestion:press', {
                     feedUrl: item.feed.uri,
+                    logContext: 'Explore',
+                    recId: item.recommendation.recId,
+                    position: item.recommendation.position,
+                  })
+                }}
+                onSavedFeedChange={action => {
+                  if (!item.recommendation?.recId) return
+                  const payload = {
+                    feedUrl: item.feed.uri,
+                    logContext: 'Explore' as const,
+                    recId: item.recommendation.recId,
+                    position: item.recommendation.position,
+                  }
+                  if (action === 'save') {
+                    ax.metric('feed:save', payload)
+                  } else if (action === 'unsave') {
+                    ax.metric('feed:unsave', payload)
+                  } else if (action === 'pin') {
+                    ax.metric('feed:pin', payload)
+                  } else {
+                    ax.metric('feed:unpin', payload)
+                  }
+                }}
+              />
+            </View>
+          )
+        }
+        case 'starterPack': {
+          return (
+            <View style={[a.px_lg, a.pb_lg]}>
+              <StarterPackCard
+                view={item.view}
+                onPress={() => {
+                  if (!item.recommendation.recId) return
+                  ax.metric('starterPack:suggestion:press', {
+                    logContext: 'Explore',
+                    starterPack: item.view.uri,
+                    recId: item.recommendation.recId,
+                    position: item.recommendation.position,
                   })
                 }}
               />
             </View>
           )
         }
-
+        case 'starterPackSkeleton': {
+          return (
+            <View style={[a.px_lg, a.pb_lg]}>
+              <StarterPackCardSkeleton />
+            </View>
+          )
+        }
         case 'loadMore': {
           return (
             <View style={[a.border_t, t.atoms.border_contrast_low]}>
@@ -878,7 +1050,7 @@ export function Explore({
           return (
             <LoadMoreRetryBtn
               label={l`There was an issue fetching posts. Tap here to try again.`}
-              onPress={fetchNextPageFeedPreviews}
+              onPress={handleOnPressRetry}
             />
           )
         }
@@ -898,7 +1070,9 @@ export function Explore({
       t.atoms.bg,
       t.palette.negative_400,
       focusSearchInput,
+      selectedInterest,
       moderationOpts,
+      interestsDisplayNames,
       useFullExperience,
       l,
       fetchNextPageFeedPreviews,
@@ -920,6 +1094,8 @@ export function Explore({
   // track headers and report module viewability
   const alreadyReportedRef = useRef<Map<string, string>>(new Map())
   const seenProfilesRef = useRef<Set<string>>(new Set())
+  const seenFeedsRef = useRef<Set<string>>(new Set())
+  const seenStarterPacksRef = useRef<Set<string>>(new Set())
   const onItemSeen = useCallback(
     (item: ExploreScreenItems) => {
       let module: Metrics['explore:module:seen']['module']
@@ -943,18 +1119,58 @@ export function Explore({
         }
       } else if (item.type === 'feed') {
         module = 'suggestedFeeds'
+        if (item.recommendation) {
+          const key = `${item.recommendation.recId ?? 'legacy'}:${item.feed.uri}`
+          if (!seenFeedsRef.current.has(key)) {
+            seenFeedsRef.current.add(key)
+            ax.metric('feed:suggestion:seen', {
+              feedUrl: item.feed.uri,
+              logContext: 'Explore',
+              recId: item.recommendation.recId,
+              position: item.recommendation.position,
+            })
+          }
+        }
+      } else if (item.type === 'starterPack') {
+        module = 'suggestedStarterPacks'
       } else if (item.type === 'preview:sliceItem') {
         module = `feed:feedgen|${item.feed.uri}`
+        const key = `${item.recommendation.recId ?? 'legacy'}:${item.view.uri}`
+        if (
+          item.recommendation.recId &&
+          !seenStarterPacksRef.current.has(key)
+        ) {
+          seenStarterPacksRef.current.add(key)
+          ax.metric('starterPack:suggestion:seen', {
+            logContext: 'Explore',
+            starterPack: item.view.uri,
+            recId: item.recommendation.recId,
+            position: item.recommendation.position,
+          })
+        }
       } else {
         return
       }
       if (!alreadyReportedRef.current.has(module)) {
         alreadyReportedRef.current.set(module, module)
-        ax.metric('explore:module:seen', {module}, {statsig: false})
+        ax.metric('explore:module:seen', {module})
       }
     },
     [ax, suggestedFollowsModule],
   )
+
+  const handleOnEndReached = () => {
+    if (!useFullExperience) return
+    if (!feedPreviewsEnabled) {
+      setFeedPreviewsEnabled(true)
+      return
+    }
+    void onLoadMoreFeedPreviews()
+  }
+
+  const handleOnRefresh = () => {
+    void onPTR()
+  }
 
   return (
     <List
@@ -968,7 +1184,7 @@ export function Explore({
       stickyHeaderIndices={native(stickyHeaderIndices)}
       viewabilityConfig={viewabilityConfig}
       onItemSeen={onItemSeen}
-      onEndReached={onLoadMoreFeedPreviews}
+      onEndReached={handleOnEndReached}
       /**
        * Default: 2
        */
@@ -1004,7 +1220,7 @@ export function Explore({
        */
       updateCellsBatchingPeriod={50}
       refreshing={isPTR}
-      onRefresh={onPTR}
+      onRefresh={handleOnRefresh}
     />
   )
 }

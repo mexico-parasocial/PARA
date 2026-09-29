@@ -11,7 +11,7 @@ import {atoms as a, platform, useTheme} from '#/alf'
 import {Text} from '#/components/Typography'
 import {useSimpleVerificationState} from '#/components/verification'
 import {VerificationCheck} from '#/components/verification/VerificationCheck'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import {
   type CivicAutocompleteItem,
   type ComposerAutocompleteContext,

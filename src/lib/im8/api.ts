@@ -296,6 +296,37 @@ export async function postCivicVoteProof(payload: {
   return body.proof
 }
 
+export async function postCivicDelegationProof(
+  payload:
+    | {mode: 'active'; delegateTo: string; cabildeo: string}
+    | {
+        mode: 'passive'
+        delegateTo: string
+        party: string
+        community: string
+        scopeFlairs: string[]
+      },
+): Promise<{eligibilityProofRef: string}> {
+  const res = await m8Fetch('/identity/civic-delegation-proof', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+  if (!res.ok) {
+    const err = (await res.json().catch(() => ({}))) as {error?: string}
+    throw new Error(err.error ?? `Delegation proof failed (${res.status})`)
+  }
+  const body = (await res.json()) as {proof?: {eligibilityProofRef?: string}}
+  if (
+    !body.proof?.eligibilityProofRef ||
+    !/^m8:delegation:v1:[0-9a-f-]{36}:[A-Za-z0-9_-]{43}$/.test(
+      body.proof.eligibilityProofRef,
+    )
+  ) {
+    throw new Error('El emisor no devolvió una autorización de cesión válida')
+  }
+  return {eligibilityProofRef: body.proof.eligibilityProofRef}
+}
+
 export async function getParaProviderStatus(): Promise<
   ProofBrokerSession['paraStatus']
 > {

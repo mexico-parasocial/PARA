@@ -8,7 +8,7 @@ import {useSession} from '#/state/session'
 import {atoms as a, useBreakpoints, useTheme} from '#/alf'
 import {Text} from '#/components/Typography'
 import {useSimpleVerificationState} from '#/components/verification'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 export function ProfileHeaderDisplayName({
   profile,

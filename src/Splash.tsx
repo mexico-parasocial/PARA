@@ -37,7 +37,7 @@ export function Splash(props: PropsWithChildren<Props>) {
   const intro = useSharedValue(0)
   const outroLogo = useSharedValue(0)
   const outroApp = useSharedValue(0)
-  const outroAppOpacity = useSharedValue(0)
+  const outroSplashOpacity = useSharedValue(0)
   const [isAnimationComplete, setIsAnimationComplete] = useState(false)
   const [isImageLoaded, setIsImageLoaded] = useState(false)
   const [isLayoutReady, setIsLayoutReady] = useState(false)
@@ -84,7 +84,7 @@ export function Splash(props: PropsWithChildren<Props>) {
   const logoWrapperAnimation = useAnimatedStyle(() => {
     return {
       opacity: interpolate(
-        outroAppOpacity.get(),
+        outroSplashOpacity.get(),
         [0, 0.1, 0.2, 1],
         [1, 1, 0, 0],
         'clamp',
@@ -92,6 +92,10 @@ export function Splash(props: PropsWithChildren<Props>) {
     }
   })
 
+  /**
+   * Keep the app opaque so iOS blur/glass effects can initialize while the
+   * splash hides it.
+   */
   const appAnimation = useAnimatedStyle(() => {
     return {
       transform: [
@@ -99,10 +103,15 @@ export function Splash(props: PropsWithChildren<Props>) {
           scale: interpolate(outroApp.get(), [0, 1], [1.1, 1], 'clamp'),
         },
       ],
+    }
+  })
+
+  const splashAnimation = useAnimatedStyle(() => {
+    return {
       opacity: interpolate(
-        outroAppOpacity.get(),
+        outroSplashOpacity.get(),
         [0, 0.1, 0.2, 1],
-        [0.02, 0.02, 1, 1], // first two values cant be 0 for the iOS blur/glass effects to work, the values obtained by trial and error
+        [1, 1, 0, 0],
         'clamp',
       ),
     }
@@ -149,7 +158,7 @@ export function Splash(props: PropsWithChildren<Props>) {
                     easing: Easing.inOut(Easing.cubic),
                   }),
                 )
-                outroAppOpacity.set(
+                outroSplashOpacity.set(
                   withTiming(1, {
                     duration: 1200,
                     easing: Easing.in(Easing.cubic),
@@ -161,7 +170,7 @@ export function Splash(props: PropsWithChildren<Props>) {
         })
         .catch(() => {})
     }
-  }, [onFinish, intro, outroLogo, outroApp, outroAppOpacity, isReady])
+  }, [onFinish, intro, outroLogo, outroApp, outroSplashOpacity, isReady])
 
   useEffect(() => {
     AccessibilityInfo.isReduceMotionEnabled()
@@ -179,8 +188,25 @@ export function Splash(props: PropsWithChildren<Props>) {
         backgroundColor: logoBg,
       }}
       onLayout={onLayout}>
+      {isReady && (
+        <Animated.View style={[{flex: 1}, appAnimation]}>
+          {props.children}
+        </Animated.View>
+      )}
+
       {!isAnimationComplete && (
-        <View style={[a.absolute, a.inset_0]}>
+        <Animated.View
+          style={[
+            a.absolute,
+            a.inset_0,
+            /*
+             * The splash PNGs contain partially transparent pixels, so the
+             * overlay needs an opaque backdrop. PARA's illustrations follow
+             * the theme; upstream hardcodes its own brand blues here.
+             */
+            {backgroundColor: logoBg},
+            splashAnimation,
+          ]}>
           <Image
             accessibilityIgnoresInvertColors
             onError={onLoadEnd}
@@ -188,34 +214,26 @@ export function Splash(props: PropsWithChildren<Props>) {
             source={{uri: isDarkMode ? darkSplashImageUri : splashImageUri}}
             style={[a.absolute, a.inset_0]}
           />
-        </View>
+        </Animated.View>
       )}
 
-      {isReady && (
-        <>
-          <Animated.View style={[{flex: 1}, appAnimation]}>
-            {props.children}
+      {isReady && !isAnimationComplete && (
+        <Animated.View
+          style={[
+            a.absolute,
+            a.inset_0,
+            logoWrapperAnimation,
+            {
+              flex: 1,
+              justifyContent: 'center',
+              alignItems: 'center',
+              transform: [{translateY: -(insets.top / 2)}, {scale: 0.1}], // scale from 1000px to 100px
+            },
+          ]}>
+          <Animated.View style={[logoAnimations]}>
+            <Logomark allowVariants={false} fill={logoBg} width={1000} />
           </Animated.View>
-
-          {!isAnimationComplete && (
-            <Animated.View
-              style={[
-                a.absolute,
-                a.inset_0,
-                logoWrapperAnimation,
-                {
-                  flex: 1,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  transform: [{translateY: -(insets.top / 2)}, {scale: 0.1}], // scale from 1000px to 100px
-                },
-              ]}>
-              <Animated.View style={[logoAnimations]}>
-                <Logomark allowVariants={false} fill={logoBg} width={1000} />
-              </Animated.View>
-            </Animated.View>
-          )}
-        </>
+        </Animated.View>
       )}
     </View>
   )

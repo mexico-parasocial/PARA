@@ -32,7 +32,7 @@ import {ChevronBottom_Stroke2_Corner0_Rounded as ChevronDownIcon} from '#/compon
 import * as Layout from '#/components/Layout'
 import * as Menu from '#/components/Menu'
 import {useAnalytics} from '#/analytics'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 export function CreateCommunityScreen() {
   const t = useTheme()

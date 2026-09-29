@@ -1,10 +1,9 @@
 import {useMemo} from 'react'
 import {View} from 'react-native'
-import {type ModerationOpts} from '@bsky/sdk/moderation'
+import {moderateProfile, type ModerationOpts} from '@bsky/sdk/moderation'
 import {useLingui} from '@lingui/react/macro'
 
 import {createSanitizedDisplayName} from '#/lib/moderation/create-sanitized-display-name'
-import {moderateProfile} from '#/lib/moderation/subjects'
 import {makeProfileLink} from '#/lib/routes/links'
 import {sanitizeHandle} from '#/lib/strings/handles'
 import {useProfileShadow} from '#/state/cache/profile-shadow'
@@ -43,7 +42,7 @@ export function MessagesListHeader({convo}: {convo?: ConvoWithDetails | null}) {
           convo.kind === 'direct' ? (
             <ProfileHeaderReady convo={convo} moderationOpts={moderationOpts} />
           ) : (
-            <GroupHeaderReady convo={convo} moderationOpts={moderationOpts} />
+            <GroupHeaderReady convo={convo} />
           )
         ) : (
           <>
@@ -117,6 +116,7 @@ function ProfileHeaderReady({
             profile={profile}
             moderation={moderation.ui('avatar')}
             disableHoverCard={moderation.blocked}
+            disableLink
           />
           <View style={[a.flex_1]}>
             <View style={[a.flex_row, a.align_center, a.flex_1, web(a.mb_2xs)]}>
@@ -153,10 +153,8 @@ function ProfileHeaderReady({
 
 function GroupHeaderReady({
   convo,
-  moderationOpts: _moderationOpts,
 }: {
   convo: Extract<ConvoWithDetails, {kind: 'group'}>
-  moderationOpts: ModerationOpts
 }) {
   const {t: l} = useLingui()
 

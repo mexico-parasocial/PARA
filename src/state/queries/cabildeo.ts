@@ -1,9 +1,9 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {
+  advanceCabildeoPhase,
   type CabildeoDelegationEntry,
   type CabildeoDelegationMode,
-  type CabildeoDelegationSignal,
   castCabildeoVote,
   delegateCabildeoVote,
   fetchCabildeo,
@@ -19,11 +19,6 @@ import {
   mapCabildeoReadViewToView,
   mapCabildeosToView,
 } from '#/lib/cabildeo-client'
-import {
-  MOCK_CABILDEO_POSITIONS_BY_URI,
-  MOCK_CABILDEO_VIEWS,
-} from '#/lib/mock-data/cabildeos'
-import {USE_MOCK_DATA} from '#/lib/services/config'
 import {STALE} from '#/state/queries'
 import {useAgent} from '#/state/session'
 
@@ -65,32 +60,8 @@ export function useCabildeosQuery() {
     queryKey: cabildeosQueryKey,
     placeholderData: previous => previous,
     queryFn: async () => {
-      try {
-        const records = await fetchCabildeos(agent)
-        const views = mapCabildeosToView(records)
-        // In dev mode, if the backend returns empty (migrations missing,
-        // seed not run, etc.) inject mock data so the screen never shows a
-        // blank slate during active development.
-        if (USE_MOCK_DATA && views.length === 0) {
-          console.warn(
-            '[useCabildeosQuery] Backend returned empty — serving mock cabildeos for dev preview.',
-          )
-          return MOCK_CABILDEO_VIEWS
-        }
-        return views
-      } catch (err: unknown) {
-        // In dev mode, serve mocks so UI work can continue even when the
-        // backend isn't fully wired. In production, let the error propagate
-        // so React Query's isError state is surfaced to the user.
-        if (USE_MOCK_DATA) {
-          console.warn(
-            '[useCabildeosQuery] Fetch failed — serving mock cabildeos for dev preview. Error:',
-            err instanceof Error ? err.message : String(err),
-          )
-          return MOCK_CABILDEO_VIEWS
-        }
-        throw err
-      }
+      const records = await fetchCabildeos(agent)
+      return mapCabildeosToView(records)
     },
   })
 }
@@ -104,30 +75,8 @@ export function useCabildeoQuery(cabildeoUri: string | undefined) {
     placeholderData: previous => previous,
     queryFn: async () => {
       if (!cabildeoUri) return null
-      const mock = USE_MOCK_DATA
-        ? MOCK_CABILDEO_VIEWS.find(c => c.uri === cabildeoUri)
-        : undefined
-      try {
-        const cabildeo = await fetchCabildeo(agent, cabildeoUri)
-        if (cabildeo) {
-          return mapCabildeoReadViewToView(cabildeo)
-        }
-        if (mock) {
-          console.warn(
-            '[useCabildeoQuery] Backend returned NotFound — serving mock cabildeo for dev preview.',
-          )
-          return mock
-        }
-        return null
-      } catch (err: unknown) {
-        if (mock) {
-          console.warn(
-            '[useCabildeoQuery] Fetch failed — serving mock cabildeo for dev preview.',
-          )
-          return mock
-        }
-        throw err
-      }
+      const cabildeo = await fetchCabildeo(agent, cabildeoUri)
+      return cabildeo ? mapCabildeoReadViewToView(cabildeo) : null
     },
   })
 }
@@ -141,24 +90,8 @@ export function useCabildeoPositionsQuery(cabildeoUri: string | undefined) {
     placeholderData: previous => previous,
     queryFn: async () => {
       if (!cabildeoUri) return []
-      const mock = USE_MOCK_DATA
-        ? MOCK_CABILDEO_POSITIONS_BY_URI[cabildeoUri]
-        : undefined
-      try {
-        const positions = await fetchCabildeoPositions(agent, {cabildeoUri})
-        if (positions.length > 0) {
-          return mapCabildeoPositionsFromRead(positions)
-        }
-        return mock ?? []
-      } catch (err: unknown) {
-        if (mock) {
-          console.warn(
-            '[useCabildeoPositionsQuery] Fetch failed — serving mock cabildeo positions for dev preview.',
-          )
-          return mock
-        }
-        throw err
-      }
+      const positions = await fetchCabildeoPositions(agent, {cabildeoUri})
+      return mapCabildeoPositionsFromRead(positions)
     },
   })
 }
@@ -200,8 +133,6 @@ export function useDelegateCabildeoVoteMutation() {
       mode = 'active',
       party,
       community,
-      preferredOption,
-      signal,
     }: {
       cabildeoUri?: string
       delegateTo?: string
@@ -210,8 +141,6 @@ export function useDelegateCabildeoVoteMutation() {
       scopeFlairs?: string[]
       party?: string
       community?: string
-      preferredOption?: number
-      signal?: CabildeoDelegationSignal
     }) =>
       delegateCabildeoVote(agent, {
         cabildeo: cabildeoUri,
@@ -221,10 +150,16 @@ export function useDelegateCabildeoVoteMutation() {
         scopeFlairs,
         party,
         community,
-        preferredOption,
-        signal,
       }),
     onSuccess: (_data, variables) => {
+      void queryClient.invalidateQueries({
+        queryKey: myDelegationsQueryKey(variables.cabildeoUri),
+      })
+      if (variables.cabildeoUri) {
+        void queryClient.invalidateQueries({
+          queryKey: myDelegationsQueryKey(),
+        })
+      }
       if (variables.cabildeoUri) {
         void queryClient.invalidateQueries({
           queryKey: cabildeoDetailQueryKey(variables.cabildeoUri),
@@ -257,6 +192,29 @@ export function useDelegateCabildeoVoteMutation() {
   })
 }
 
+export function useAdvanceCabildeoPhaseMutation(cabildeoUri?: string) {
+  const agent = useAgent()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: (uri: string) => advanceCabildeoPhase(agent, uri),
+    onSuccess: nextPhase => {
+      if (cabildeoUri) {
+        // Optimistic phase so the timeline moves instantly; the invalidate
+        // then catches the AppView's re-indexed row.
+        queryClient.setQueryData<CabildeoView | null>(
+          cabildeoDetailQueryKey(cabildeoUri),
+          previous => (previous ? {...previous, phase: nextPhase} : previous),
+        )
+        void queryClient.invalidateQueries({
+          queryKey: cabildeoDetailQueryKey(cabildeoUri),
+        })
+      }
+      void queryClient.invalidateQueries({queryKey: cabildeosQueryKey})
+    },
+  })
+}
+
 export function useVoteMutation() {
   const agent = useAgent()
   const queryClient = useQueryClient()
@@ -265,74 +223,28 @@ export function useVoteMutation() {
     mutationFn: async ({
       cabildeoUri,
       selectedOption,
-      isDirect,
     }: {
       cabildeoUri: string
       selectedOption: number
-      isDirect: boolean
     }) => {
       await castCabildeoVote(agent, {
         cabildeo: cabildeoUri,
-        subject: cabildeoUri,
-        subjectType: 'cabildeo',
         selectedOption,
-        isDirect,
       })
     },
-    onMutate: async ({cabildeoUri, selectedOption, isDirect}) => {
+    onMutate: async ({cabildeoUri, selectedOption}) => {
       const queryKey = cabildeoDetailQueryKey(cabildeoUri)
       await queryClient.cancelQueries({queryKey})
       const previous = queryClient.getQueryData<CabildeoView>(queryKey)
 
       if (previous) {
-        const nextOptionSummary = previous.optionSummary.map(s =>
-          s.optionIndex === selectedOption ? {...s, votes: s.votes + 1} : s,
-        )
-        const previousOption = previous.userContext?.viewerVoteOption
-        if (
-          typeof previousOption === 'number' &&
-          previousOption !== selectedOption
-        ) {
-          const previousSummary = nextOptionSummary.find(
-            s => s.optionIndex === previousOption,
-          )
-          if (previousSummary) {
-            previousSummary.votes = Math.max(0, previousSummary.votes - 1)
-          }
-        }
-        // Add entry if this option hasn't been voted on yet
-        if (!nextOptionSummary.find(s => s.optionIndex === selectedOption)) {
-          const optionLabel =
-            previous.options[selectedOption]?.label ||
-            `Opción ${selectedOption + 1}`
-          nextOptionSummary.push({
-            optionIndex: selectedOption,
-            label: optionLabel,
-            votes: 1,
-            positions: 0,
-          })
-        }
-
         queryClient.setQueryData(queryKey, {
           ...previous,
           userContext: {
             ...previous.userContext,
             viewerVoteOption: selectedOption,
-            viewerVoteIsDirect: isDirect,
+            viewerVoteIsDirect: true,
             viewerVoteCreatedAt: new Date().toISOString(),
-          },
-          optionSummary: nextOptionSummary,
-          voteTotals: {
-            ...previous.voteTotals,
-            total:
-              typeof previousOption === 'number'
-                ? previous.voteTotals.total
-                : previous.voteTotals.total + 1,
-            direct:
-              typeof previousOption === 'number' &&
-              previous.userContext?.viewerVoteIsDirect
-                ? previous.voteTotals.direct
-                : previous.voteTotals.direct + (isDirect ? 1 : 0),
           },
         })
       }

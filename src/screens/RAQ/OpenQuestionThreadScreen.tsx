@@ -22,7 +22,7 @@ import {atoms as a, useBreakpoints, web} from '#/alf'
 import * as Layout from '#/components/Layout'
 import {ListFooter} from '#/components/Lists'
 import {Text} from '#/components/Typography'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import {
   flattenReplies,
   OpenQuestionAnchor,

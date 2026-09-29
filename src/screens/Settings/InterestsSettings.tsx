@@ -1,5 +1,6 @@
 import {useMemo, useState} from 'react'
 import {View} from 'react-native'
+import {currentDatetimeString} from '@atproto/syntax'
 import {setInterestsPref} from '@bsky/sdk'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -108,12 +109,23 @@ function Inner({
 
       try {
         await pdsClient.call(setInterestsPref, {tags: interests})
+        /*
+         * The SDK timestamps the preference during the request, so this local
+         * timestamp may differ slightly from the persisted value.
+         */
+        const updatedAt = currentDatetimeString()
         qc.setQueriesData(
           {queryKey: preferencesQueryKey},
           (old?: UsePreferencesQueryResponse) => {
             if (!old) return old
-            old.interests.tags = interests
-            return old
+            return {
+              ...old,
+              interests: {
+                ...old.interests,
+                tags: interests,
+                updatedAt,
+              },
+            }
           },
         )
         await Promise.all([

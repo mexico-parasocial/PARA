@@ -31,7 +31,7 @@ import {RichText, type RichTextProps} from '#/components/RichText'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {useActiveLiveEventFeedUris} from '#/features/liveEvents/context'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import type * as bsky from '#/types/bsky'
 import {Trash_Stroke2_Corner0_Rounded as TrashIcon} from './icons/Trash'
 
@@ -40,10 +40,17 @@ type Props = {
   onPress?: () => void
 }
 
-export function Default(props: Props) {
-  const {view} = props
+export type SavedFeedAction = 'save' | 'unsave' | 'pin' | 'unpin'
+
+export function Default({
+  view,
+  onSavedFeedChange,
+  ...props
+}: Props & {
+  onSavedFeedChange?: (action: SavedFeedAction) => void
+}) {
   return (
-    <Link {...props}>
+    <Link view={view} {...props}>
       <Outer>
         <Header>
           <Avatar src={view.avatar} />
@@ -52,10 +59,10 @@ export function Default(props: Props) {
             creator={view.creator}
             uri={view.uri}
           />
-          <SaveButton view={view} pin />
+          <SaveButton view={view} pin onSavedFeedChange={onSavedFeedChange} />
         </Header>
         <Description description={view.description} />
-        <Footer indexedAt={view.indexedAt} likes={view.likeCount || 0} />
+        <Likes count={view.likeCount || 0} />
       </Outer>
     </Link>
   )
@@ -92,11 +99,7 @@ export function Outer({children}: {children: React.ReactNode}) {
 }
 
 export function Header({children}: {children: React.ReactNode}) {
-  return (
-    <View style={[a.flex_row, a.align_center, a.gap_sm, styles.header]}>
-      {children}
-    </View>
-  )
+  return <View style={[a.flex_row, a.align_center, a.gap_sm]}>{children}</View>
 }
 
 export type AvatarProps = {src: string | undefined; size?: number}
@@ -143,7 +146,7 @@ export function TitleAndByline({
   )
 
   return (
-    <View style={[a.flex_1, styles.textColumn]}>
+    <View style={[a.flex_1]}>
       {uri && activeLiveEvents.has(uri) && (
         <View style={[a.flex_row, a.align_center, a.gap_2xs]}>
           <LiveIcon size="xs" fill={liveColor} />
@@ -179,7 +182,7 @@ export function TitleAndBylinePlaceholder({creator}: {creator?: boolean}) {
   const t = useTheme()
 
   return (
-    <View style={[a.flex_1, a.gap_xs, styles.textColumn]}>
+    <View style={[a.flex_1, a.gap_xs]}>
       <View
         style={[
           a.rounded_xs,
@@ -243,48 +246,6 @@ export function DescriptionPlaceholder() {
   )
 }
 
-export function Footer({
-  indexedAt,
-  likes,
-}: {
-  indexedAt?: string
-  likes: number
-}) {
-  const t = useTheme()
-  const {i18n} = useLingui()
-
-  const timeAgo = useMemo(() => {
-    if (!indexedAt) return null
-    const date = new Date(indexedAt)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffH = Math.floor(diffMs / (1000 * 60 * 60))
-    const diffD = Math.floor(diffH / 24)
-    if (diffD > 30) {
-      return date.toLocaleDateString(i18n.locale, {
-        month: 'short',
-        year: 'numeric',
-      })
-    }
-    if (diffD > 0) return `${diffD}d`
-    if (diffH > 0) return `${diffH}h`
-    return 'now'
-  }, [indexedAt, i18n.locale])
-
-  return (
-    <View style={[a.flex_row, a.align_center, a.gap_sm]}>
-      <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.font_semi_bold]}>
-        <Trans>
-          Liked by <Plural value={likes || 0} one="# user" other="# users" />
-        </Trans>
-      </Text>
-      {timeAgo && (
-        <Text style={[a.text_xs, t.atoms.text_contrast_low]}>· {timeAgo}</Text>
-      )}
-    </View>
-  )
-}
-
 export function Likes({count}: {count: number}) {
   const t = useTheme()
   return (
@@ -299,26 +260,37 @@ export function Likes({count}: {count: number}) {
 export function SaveButton({
   view,
   pin,
+  onSavedFeedChange,
   ...props
 }: {
   view: app.bsky.feed.defs.GeneratorView | app.bsky.graph.defs.ListView
   pin?: boolean
   text?: boolean
+  onSavedFeedChange?: (action: SavedFeedAction) => void
 } & Partial<ButtonProps>) {
   const {hasSession} = useSession()
   if (!hasSession) return null
-  return <SaveButtonInner view={view} pin={pin} {...props} />
+  return (
+    <SaveButtonInner
+      view={view}
+      pin={pin}
+      onSavedFeedChange={onSavedFeedChange}
+      {...props}
+    />
+  )
 }
 
 function SaveButtonInner({
   view,
   pin,
   text = true,
+  onSavedFeedChange,
   ...buttonProps
 }: {
   view: app.bsky.feed.defs.GeneratorView | app.bsky.graph.defs.ListView
   pin?: boolean
   text?: boolean
+  onSavedFeedChange?: (action: SavedFeedAction) => void
 } & Partial<ButtonProps>) {
   const {t: l} = useLingui()
   const {data: preferences} = usePreferencesQuery()
@@ -341,30 +313,40 @@ function SaveButtonInner({
       e.preventDefault()
       e.stopPropagation()
 
+      const pinned = pin || false
+
       try {
         if (savedFeedConfig) {
           await removeFeed(savedFeedConfig)
+          onSavedFeedChange?.(pin ? 'unpin' : 'unsave')
         } else {
           await saveFeeds([
             {
               type,
               value: uri,
-              pinned: pin || false,
+              pinned,
             },
           ])
+          onSavedFeedChange?.(pin ? 'pin' : 'save')
         }
         Toast.show(l({message: 'Feeds updated!', context: 'toast'}))
-      } catch (err: unknown) {
-        logger.error(err instanceof Error ? err : String(err), {
-          message: `FeedCard: failed to update feeds`,
-          pin,
-        })
+      } catch (err: any) {
+        logger.error(err, {message: `FeedCard: failed to update feeds`, pin})
         Toast.show(l`Failed to update feeds`, {
           type: 'error',
         })
       }
     },
-    [l, pin, saveFeeds, removeFeed, uri, savedFeedConfig, type],
+    [
+      l,
+      pin,
+      saveFeeds,
+      removeFeed,
+      uri,
+      savedFeedConfig,
+      type,
+      onSavedFeedChange,
+    ],
   )
 
   const onPromptRemoveFeed = useCallback(
@@ -434,13 +416,4 @@ export function createProfileFeedHref({
   const urip = new AtUri(feed.uri)
   const handleOrDid = feed.creator.handle || feed.creator.did
   return `/profile/${handleOrDid}/feed/${urip.rkey}`
-}
-
-const styles = {
-  header: {
-    minWidth: 0,
-  },
-  textColumn: {
-    minWidth: 0,
-  },
 }

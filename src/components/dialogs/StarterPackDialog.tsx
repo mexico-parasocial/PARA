@@ -1,8 +1,6 @@
 import {useCallback, useState} from 'react'
 import {View} from 'react-native'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
-import {Plural, Trans} from '@lingui/react/macro'
+import {Plural, Trans, useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 import {useQueryClient} from '@tanstack/react-query'
 
@@ -67,7 +65,7 @@ export function StarterPackDialog({
   const wrappedNavToWizard = requireEmailVerification(navToWizard, {
     instructions: [
       <Trans key="nav">
-        Before creating a starter pack, you must first verify your email.
+        Before creating a Starter Pack, you must first verify your email.
       </Trans>,
     ],
   })
@@ -85,7 +83,7 @@ export function StarterPackDialog({
 }
 
 function Empty({onStartWizard}: {onStartWizard: () => void}) {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const t = useTheme()
 
   return (
@@ -96,18 +94,18 @@ function Empty({onStartWizard}: {onStartWizard: () => void}) {
           fill={t.atoms.border_contrast_medium.borderColor}
         />
         <Text style={[a.text_center]}>
-          <Trans>You have no starter packs.</Trans>
+          <Trans>You have no Starter Packs.</Trans>
         </Text>
       </View>
 
       <View style={[a.align_center]}>
         <Button
-          label={_(msg`Create starter pack`)}
+          label={l`Create Starter Pack`}
           color="secondary_inverted"
           size="small"
           onPress={onStartWizard}>
           <ButtonText>
-            <Trans comment="Text on button to create a new starter pack">
+            <Trans comment="Text on button to create a new Starter Pack">
               Create
             </Trans>
           </ButtonText>
@@ -128,7 +126,7 @@ function StarterPackList({
   enabled?: boolean
 }) {
   const control = Dialog.useDialogContext()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
 
   const {
     data,
@@ -171,10 +169,10 @@ function StarterPackList({
           a.align_center,
         ]}>
         <Text style={[a.text_lg, a.font_semi_bold]}>
-          <Trans>Add to starter packs</Trans>
+          <Trans>Add to Starter Packs</Trans>
         </Text>
         <Button
-          label={_(msg`Close`)}
+          label={l`Close`}
           onPress={onClose}
           variant="ghost"
           color="secondary"
@@ -188,15 +186,15 @@ function StarterPackList({
           <View
             style={[a.flex_row, a.justify_between, a.align_center, a.py_md]}>
             <Text style={[a.text_md, a.font_semi_bold]}>
-              <Trans>New starter pack</Trans>
+              <Trans>New Starter Pack</Trans>
             </Text>
             <Button
-              label={_(msg`Create starter pack`)}
+              label={`Create Starter Pack`}
               color="secondary_inverted"
               size="small"
               onPress={onStartWizard}>
               <ButtonText>
-                <Trans comment="Text on button to create a new starter pack">
+                <Trans comment="Text on button to create a new Starter Pack">
                   Create
                 </Trans>
               </ButtonText>
@@ -242,7 +240,7 @@ function StarterPackItem({
   starterPackWithMembership: StarterPackWithMembership
   targetDid: string
 }) {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const t = useTheme()
   const queryClient = useQueryClient()
 
@@ -253,7 +251,7 @@ function StarterPackItem({
 
   const {mutate: addMembership} = useListMembershipAddMutation({
     onSuccess: () => {
-      Toast.show(_(msg`Added to starter pack`))
+      Toast.show(l`Added to Starter Pack`)
       // Use a timeout to wait for the appview to update, matching the pattern
       // in list-memberships.ts
       setTimeout(() => {
@@ -265,7 +263,7 @@ function StarterPackItem({
       }, 1e3)
     },
     onError: () => {
-      Toast.show(_(msg`Failed to add to starter pack`), {
+      Toast.show(l`Failed to add to Starter Pack`, {
         type: 'error',
       })
       setIsPendingRefresh(false)
@@ -274,7 +272,7 @@ function StarterPackItem({
 
   const {mutate: removeMembership} = useListMembershipRemoveMutation({
     onSuccess: () => {
-      Toast.show(_(msg`Removed from starter pack`))
+      Toast.show(l`Removed from Starter Pack`)
       // Use a timeout to wait for the appview to update, matching the pattern
       // in list-memberships.ts
       setTimeout(() => {
@@ -286,7 +284,7 @@ function StarterPackItem({
       }, 1e3)
     },
     onError: () => {
-      Toast.show(_(msg`Failed to remove from starter pack`), {
+      Toast.show(l`Failed to remove from Starter Pack`, {
         type: 'error',
       })
       setIsPendingRefresh(false)
@@ -366,9 +364,8 @@ function StarterPackItem({
             )}
         </View>
       </View>
-
       <Button
-        label={isInPack ? _(msg`Remove`) : _(msg`Add`)}
+        label={isInPack ? l`Remove` : l`Add`}
         color={isInPack ? 'secondary' : 'primary_subtle'}
         size="tiny"
         disabled={isPendingRefresh}

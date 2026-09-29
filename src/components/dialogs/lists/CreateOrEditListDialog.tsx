@@ -27,7 +27,7 @@ import * as Prompt from '#/components/Prompt'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {IS_WEB} from '#/env'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 const DISPLAY_NAME_MAX_GRAPHEMES = 64
 const DESCRIPTION_MAX_GRAPHEMES = 300
@@ -187,7 +187,7 @@ function DialogInner({
     ImageMeta | undefined | null
   >()
 
-  // When creating with pre-filled values (from starter pack), consider dirty
+  // When creating with pre-filled values (from Starter Pack), consider dirty
   // immediately so the Save button is enabled.
   const hasInitialValuesForCreate = !list && initialValues != null
   const dirty =

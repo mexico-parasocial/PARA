@@ -4,6 +4,20 @@ PARA is a civic-social client for Mexico: a mobile and web app for communities, 
 
 The product direction is intentionally focused on Mexico. PARA is designed for Mexican citizens, local communities, civic organizations, journalists, organizers, and public representatives who need a healthier space to coordinate around public problems without giving up identity portability, transparency, or community autonomy.
 
+## Local demo sign-in
+
+For the local development stack, sign in to the **local PDS** with one of these test accounts. These credentials work only against your running local server, not `bsky.social` or a public PARA deployment.
+
+| Account | Password | Use |
+| --- | --- | --- |
+| `alice.test` | `hunter2` | General app walkthrough |
+| `bob.test` | `hunter2` | Second participant for social interactions |
+| `mod.test` | `mod-pass` | Built-in moderator account |
+
+Start the backend PDS on port `2583` before signing in. In a local dev build, the sign-in provider should be `http://localhost:2583` on web or the iOS simulator, `http://10.0.2.2:2583` on the Android emulator, or `http://<your-Mac-LAN-IP>:2583` on a physical phone. If the provider shows `bsky.social`, select the local PDS manually. For a phone, set `EXPO_PUBLIC_LOCAL_DEV_IP` in `.env.local` to the Mac's current LAN address, then restart Expo with `pnpm exec expo start --clear` so the app picks up the change.
+
+For more civic demo accounts and content, run `pnpm seed:civic:apply --profile dev-env` after starting the backend. The seed manifest includes `active-a.test` / `hunter2` for participation and `deleg-rep.test` / `hunter2` for delegation. These accounts are available after the seed creates them. The current seed has outdated vote fixtures that the PDS rejects, so seeded vote totals are incomplete; test voting through the app. Keep the local backend and AppView running while you test.
+
 ## Vision for Mexico
 
 Mexico has a strong civic culture, but participation is often fragmented across private chats, closed platforms, short-lived campaigns, and institutions that are difficult to audit from the outside. PARA aims to become a civic layer where people in Mexico can:

@@ -1,12 +1,13 @@
 {% extends "base.html" %} {% block head_title %}PARA{% endblock %} {% block html_head_extra -%}
 <meta property="og:title" content="PARA" />
+<meta property="og:type" content="website" />
 <meta name="twitter:title" content="PARA" />
 
 <meta
   name="description"
   content="Civic social infrastructure for communities, governance, and public participation." />
 <meta
-  name="og:description"
+  property="og:description"
   content="Civic social infrastructure for communities, governance, and public participation." />
 <meta
   name="twitter:description"
@@ -22,5 +23,7 @@
   content="https://paramx.social/static/logo.png" />
 
 <meta name="twitter:card" content="summary_large_image" />
-{%- endblock %} {% block noscript_extra %}
-<p>This is the home page. {% endblock %}</p>
+{%- endblock %} 
+{% block noscript_extra %}
+<h1 lang="en">PARA</h1>
+<p lang="en">Civic social infrastructure for communities, governance, and public participation.</p>

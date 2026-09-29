@@ -19,3 +19,4 @@ lib/react-compiler-runtime
 bskyweb/static
 coverage
 web-build
+dist

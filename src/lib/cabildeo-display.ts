@@ -61,6 +61,24 @@ export function getCabildeoBadge(cabildeo: Pick<CabildeoView, 'flairs'>) {
   } satisfies DebateBadge
 }
 
+export type CabildeoLinkKind = DebateKind
+
+/**
+ * Whether the cabildeo was created inside a policy/matter context, flagged
+ * by the `||policy` / `|matter` flair convention (same markers as
+ * PostFlairStrip). Linked cabildeos open in the policy surface
+ * (`PolicyDetails`); standalone community cabildeos open in
+ * `CabildeoDetail`.
+ */
+export function getCabildeoLinkKind(
+  cabildeo: Pick<CabildeoView, 'flairs'>,
+): CabildeoLinkKind | null {
+  const flairs = cabildeo.flairs ?? []
+  if (flairs.some(flair => flair.startsWith('||'))) return 'policy'
+  if (flairs.some(flair => flair.startsWith('|'))) return 'matter'
+  return null
+}
+
 export function getCabildeoPhaseMeta(phase: string) {
   return (
     CABILDEO_PHASE_META[phase as keyof typeof CABILDEO_PHASE_META] || {

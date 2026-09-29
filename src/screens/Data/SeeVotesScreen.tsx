@@ -8,6 +8,7 @@ import {type NativeStackScreenProps} from '@react-navigation/native-stack'
 
 import {type CabildeoPhase} from '#/lib/api/para-lexicons'
 import {type CabildeoView} from '#/lib/cabildeo-client'
+import {getCabildeoLinkKind} from '#/lib/cabildeo-display'
 import {
   type CommonNavigatorParams,
   type NavigationProp,
@@ -231,8 +232,14 @@ export function SeeVotesScreen({route}: Props) {
   ]
 
   const onPressCabildeo = useCallback(
-    (uri: string) => {
-      navigation.navigate('PolicyDetails', {cabildeoUri: uri})
+    (cabildeo: CabildeoView) => {
+      // Cabildeos linked to a policy/matter open in the policy surface;
+      // standalone community cabildeos open in the civic detail.
+      if (getCabildeoLinkKind(cabildeo)) {
+        navigation.navigate('PolicyDetails', {cabildeoUri: cabildeo.uri})
+      } else {
+        navigation.navigate('CabildeoDetail', {cabildeoUri: cabildeo.uri})
+      }
     },
     [navigation],
   )
@@ -364,7 +371,7 @@ export function SeeVotesScreen({route}: Props) {
                 <VoteCard
                   key={c.uri}
                   cabildeo={c}
-                  onPress={() => onPressCabildeo(c.uri)}
+                  onPress={() => onPressCabildeo(c)}
                 />
               ))}
             </View>

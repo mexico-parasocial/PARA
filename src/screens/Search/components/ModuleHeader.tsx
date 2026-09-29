@@ -14,7 +14,7 @@ import {DotGrid3x1_Stroke2_Corner0_Rounded as EllipsisIcon} from '#/components/i
 import {MagnifyingGlass_Stroke2_Corner0_Rounded as SearchIcon} from '#/components/icons/MagnifyingGlass'
 import {Link} from '#/components/Link'
 import {Text, type TextProps} from '#/components/Typography'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 export function Container({
   style,

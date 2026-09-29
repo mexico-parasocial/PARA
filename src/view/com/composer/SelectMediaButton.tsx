@@ -5,13 +5,17 @@ import {type ImagePickerAsset} from 'expo-image-picker'
 import {msg, plural} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 
-import {VIDEO_MAX_DURATION_MS, VIDEO_MAX_SIZE} from '#/lib/constants'
+import {
+  VIDEO_MAX_DURATION_MS,
+  VIDEO_MAX_SIZE,
+  VIDEO_MAX_SIZE_MB,
+} from '#/lib/constants'
 import {
   usePhotoLibraryPermission,
   useVideoLibraryPermission,
 } from '#/lib/hooks/usePermissions'
 import {openUnifiedPicker} from '#/lib/media/picker'
-import {extractDataUriMime} from '#/lib/media/util'
+import {blobToDataUri, extractDataUriMime} from '#/lib/media/util'
 import {MAX_GALLERY_IMAGES} from '#/view/com/composer/state/composer'
 import {atoms as a, useTheme} from '#/alf'
 import {Button} from '#/components/Button'
@@ -325,18 +329,21 @@ async function processImagePickerAssets(
     /*
      * All validations passed, we have an asset!
      */
+    let uri = asset.uri
+    if (IS_WEB && type === 'image' && asset.file) {
+      uri = await blobToDataUri(asset.file)
+    }
+
     supportedAssets.push({
       mimeType,
       ...asset,
       /*
        * In `expo-image-picker` >= v17, `uri` is now a `blob:` URL, not a
        * data-uri. Our handling elsewhere in the app (for web) relies on the
-       * base64 data-uri, so we construct it here for web only.
+       * data-uri, so read images only after their type has been validated.
+       * Videos retain their File/blob URL and avoid an expensive base64 read.
        */
-      uri:
-        IS_WEB && asset.base64
-          ? `data:${mimeType};base64,${asset.base64}`
-          : asset.uri,
+      uri,
     })
   }
 
@@ -397,6 +404,8 @@ export function SelectMediaButton({
   const t = useTheme()
   const hasAutoOpened = useRef(false)
 
+  // Picker uses the gallery cap; the reducer decides which embed variant
+  // to land in based on the final image count.
   const selectionCountRemaining = MAX_GALLERY_IMAGES - selectedAssetsCount
 
   const processSelectedAssets = useCallback(
@@ -427,7 +436,7 @@ export function SelectMediaButton({
               message: `You can select up to ${plural(MAX_GALLERY_IMAGES, {
                 other: '# images',
               })} in total.`,
-              comment: `Error message for maximum number of images that can be selected to add to a post, currently 4 but may change.`,
+              comment: `Error message for maximum number of images that can be selected to add to a post.`,
             }),
           ),
           [SelectedAssetError.MaxVideos]: _(
@@ -440,7 +449,7 @@ export function SelectMediaButton({
             msg`You can only select one GIF at a time.`,
           ),
           [SelectedAssetError.FileTooBig]: _(
-            msg`One or more of your selected files are too large. Maximum size is 300 MB.`,
+            msg`One or more of your selected files are too large. Maximum size is ${VIDEO_MAX_SIZE_MB} MB.`,
           ),
         }[error]
       })
@@ -517,11 +526,9 @@ export function SelectMediaButton({
         msg({
           message: `Opens device gallery to select up to ${plural(
             MAX_GALLERY_IMAGES,
-            {
-              other: '# images',
-            },
+            {other: '# images'},
           )}, or a single video or GIF.`,
-          comment: `Accessibility hint for button in composer to add images, a video, or a GIF to a post. Maximum number of images that can be selected is currently 4 but may change.`,
+          comment: `Accessibility hint for button in composer to add images, a video, or a GIF to a post.`,
         }),
       )}
       style={a.p_sm}
@@ -532,7 +539,7 @@ export function SelectMediaButton({
       <ImageIcon
         size="lg"
         style={disabled && t.atoms.text_contrast_low}
-        accessibilityIgnoresInvertColors={true}
+        {...(IS_NATIVE && {accessibilityIgnoresInvertColors: true})}
       />
     </Button>
   )

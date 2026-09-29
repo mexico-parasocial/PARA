@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=1, viewport-fit=cover" />
+      content="width=device-width, initial-scale=1, minimum-scale=1, viewport-fit=cover" />
     <meta name="referrer" content="origin-when-cross-origin" />
     <!--
     Preconnect to essential domains
@@ -14,38 +14,16 @@
 
     <!-- Hello Humans! API docs at https://atproto.com -->
 
-    <link
-      rel="preload"
-      as="font"
-      type="font/woff2"
-      href="{{ staticCDNHost }}/static/media/InterVariable.c504db5c06caaf7cdfba.woff2"
-      crossorigin />
+    {% include "fonts.html" %}
 
     <style>
       /**
-     * Minimum styles required to render splash.
-     *
-     * ALL OTHER STYLES BELONG IN `src/style.css`
-     *
-     * THIS NEEDS TO BE DUPLICATED IN `bskyweb/templates/base.html`
-     */
-      @font-face {
-        font-family: 'InterVariable';
-        src: url('{{ staticCDNHost }}/static/media/InterVariable.c504db5c06caaf7cdfba.woff2')
-          format('woff2');
-        font-weight: 300 1000;
-        font-style: normal;
-        font-display: swap;
-      }
-
-      @font-face {
-        font-family: 'InterVariableItalic';
-        src: url('{{ staticCDNHost }}/static/media/InterVariable-Italic.01dcbad1bac635f9c9cd.woff2')
-          format('woff2');
-        font-weight: 300 1000;
-        font-style: italic;
-        font-display: swap;
-      }
+       * Minimum styles required to render splash.
+       *
+       * ALL OTHER STYLES BELONG IN `src/style.css`
+       *
+       * THIS NEEDS TO BE DUPLICATED IN `bskyweb/templates/base.html`
+       */
       html,
       body {
         margin: 0px;
@@ -74,7 +52,6 @@
         --background: white;
         --backgroundLight: #e2e7ee;
       }
-
       @media (prefers-color-scheme: dark) {
         :root {
           color-scheme: dark;
@@ -83,7 +60,6 @@
           --backgroundLight: #232e3e;
         }
       }
-
       html,
       body,
       #root {
@@ -118,7 +94,6 @@
         --background: #151d28;
         --backgroundLight: #2c3a4e;
       }
-
       #splash {
         display: flex;
         position: fixed;
@@ -130,7 +105,10 @@
         justify-content: center;
         background-color: var(--background);
       }
-
+      /**
+       * PARA-branded splash: logo + wordmark + tagline + loader bar, replacing
+       * upstream's plain butterfly SVG.
+       */
       #splash .splash-content {
         display: flex;
         flex-direction: column;
@@ -139,7 +117,6 @@
         position: relative;
         top: -40px;
       }
-
       #splash .splash-logo {
         display: flex;
         flex-direction: row;
@@ -147,13 +124,11 @@
         gap: 6px;
         margin-bottom: 16px;
       }
-
       #splash .splash-logo img {
         width: 40px;
         height: 40px;
         object-fit: contain;
       }
-
       #splash .splash-logo-text {
         font-family: InterVariable, Georgia, 'Times New Roman', serif;
         font-size: 22px;
@@ -162,7 +137,6 @@
         color: var(--text);
         padding-top: 2px;
       }
-
       #splash .splash-tagline {
         font-size: 14px;
         color: var(--text);
@@ -170,7 +144,6 @@
         text-align: center;
         margin-bottom: 16px;
       }
-
       #splash .splash-loader {
         width: 140px;
         height: 2px;
@@ -178,20 +151,18 @@
         overflow: hidden;
         background-color: var(--backgroundLight);
       }
-
       #splash .splash-loader-bar {
         width: 30%;
         height: 100%;
         border-radius: 1px;
         background-color: var(--text);
       }
-
       /**
-     * We need these styles to prevent shifting due to scrollbar show/hide on
-     * OSs that have them enabled by default. This also handles cases where the
-     * screen wouldn't otherwise scroll, and therefore hide the scrollbar and
-     * shift the content, by forcing the page to show a scrollbar.
-     */
+       * We need these styles to prevent shifting due to scrollbar show/hide on
+       * OSs that have them enabled by default. This also handles cases where the
+       * screen wouldn't otherwise scroll, and therefore hide the scrollbar and
+       * shift the content, by forcing the page to show a scrollbar.
+       */
       body {
         width: 100%;
         overflow-y: scroll;
@@ -234,38 +205,36 @@
 
     {% block html_head_extra -%}{%- endblock %}
   </head>
-
   <body>
     {%- block body_all %}
-    <div id="root">
-      <div id="splash">
-        <div class="splash-content">
-          <div class="splash-logo">
-            <img src="{{ staticCDNHost }}/static/logo.png" alt="PARA" />
-            <span class="splash-logo-text">PARA</span>
-          </div>
-          <div class="splash-tagline">Real people. Real conversations.</div>
-          <div class="splash-loader">
-            <div class="splash-loader-bar"></div>
-          </div>
+    <div id="splash">
+      <!-- PARA splash -->
+      <div class="splash-content">
+        <div class="splash-logo">
+          <img src="{{ staticCDNHost }}/static/logo.png" alt="PARA" />
+          <span class="splash-logo-text">PARA</span>
+        </div>
+        <div class="splash-tagline">Real people. Real conversations.</div>
+        <div class="splash-loader">
+          <div class="splash-loader-bar"></div>
         </div>
       </div>
     </div>
+    <div id="root"></div>
 
     <noscript>
+        {% block noscript_extra %}{% endblock %}
       <h1 lang="en">JavaScript Required</h1>
       <p lang="en">
         This is a heavily interactive web application, and JavaScript is
         required. Simple HTML interfaces are possible, but that is not what this
         is.
       </p>
-
       <p lang="en">
-        Learn more about PARA at
-        <a href="https://paramx.social">paramx.social</a> and
-        <a href="https://atproto.com">atproto.com</a>. {% block noscript_extra %}{% endblock %}
-      </p></noscript
-    >
+        Learn more about PARA at <a href="https://paramx.social">paramx.social</a>
+        and <a href="https://atproto.com">atproto.com</a>.
+      </p>
+    </noscript>
     {% endblock -%}
   </body>
 </html>

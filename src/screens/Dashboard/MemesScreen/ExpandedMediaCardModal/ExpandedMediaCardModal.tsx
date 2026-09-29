@@ -1,117 +1,130 @@
-import {Modal, Pressable, View} from 'react-native'
+import {
+  Modal,
+  Pressable,
+  ScrollView,
+  useWindowDimensions,
+  View,
+} from 'react-native'
+import {useSafeAreaInsets} from 'react-native-safe-area-context'
+import {useLingui} from '@lingui/react/macro'
 
-import {useShowPartyShields} from '#/state/preferences/show-party-shields'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
-import {ArrowsDiagonalOut_Stroke2_Corner2_Rounded as ExpandIcon} from '#/components/icons/ArrowsDiagonal'
-import {Bubble_Stroke2_Corner2_Rounded as CommentIcon} from '#/components/icons/Bubble'
-import {RedditVoteButton} from '#/components/PostControls/VoteButton'
+import {TimesLarge_Stroke2_Corner0_Rounded as CloseIcon} from '#/components/icons/Times'
 import {
   ActionButton,
+  CommentsButton,
   MediaVisual,
   MediaVisualMeta,
-  PartyInsignia,
+  MemeVoteButton,
 } from '../cardPrimitives'
-import {buildSubmetaLabel} from '../helpers'
+import {buildMetaLabel} from '../helpers'
 import {styles} from '../styles'
-import {type MediaItem, type Mode} from '../types'
+import {type MediaItem} from '../types'
 
 export function ExpandedMediaCardModal({
   item,
-  mode,
-  vote,
   onClose,
   onOpenComments,
-  onVoteChange,
 }: {
   item: MediaItem | null
-  mode: Mode
-  vote: 1 | -1 | 0
   onClose: () => void
-  onOpenComments?: () => void
-  onVoteChange: (vote: 1 | -1 | 0) => void
+  onOpenComments: (item: MediaItem) => void
 }) {
-  const t = useTheme()
-  const showPartyShields = useShowPartyShields() ?? true
-
-  if (!item) return null
-
-  const score = item.votes + vote
-  const voteState = vote === 1 ? 'upvote' : vote === -1 ? 'downvote' : 'none'
   return (
     <Modal
       animationType="fade"
       transparent
       visible={Boolean(item)}
       onRequestClose={onClose}>
-      <View style={styles.expandedModalOverlay}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Close expanded view"
-          accessibilityHint="Closes the expanded card"
-          onPress={onClose}
-          style={styles.expandedModalDismiss}
+      {item ? (
+        <ExpandedMediaCard
+          item={item}
+          onClose={onClose}
+          onOpenComments={() => onOpenComments(item)}
         />
+      ) : null}
+    </Modal>
+  )
+}
 
-        <View style={[styles.expandedModalSheet, t.atoms.bg]}>
-          <View style={[styles.expandedHandle, t.atoms.bg_contrast_100]} />
+function ExpandedMediaCard({
+  item,
+  onClose,
+  onOpenComments,
+}: {
+  item: MediaItem
+  onClose: () => void
+  onOpenComments: () => void
+}) {
+  const t = useTheme()
+  const {t: l} = useLingui()
+  const {bottom, top} = useSafeAreaInsets()
+  const {height} = useWindowDimensions()
+  const metaLabel = buildMetaLabel(item)
 
+  return (
+    <View
+      style={[
+        styles.expandedModalOverlay,
+        {paddingTop: top + 12, paddingBottom: bottom + 12},
+      ]}>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={l`Close expanded view`}
+        accessibilityHint={l`Closes the expanded card`}
+        onPress={onClose}
+        style={styles.expandedModalDismiss}
+      />
+
+      <View
+        accessibilityViewIsModal
+        style={[
+          styles.expandedModalSheet,
+          t.atoms.bg,
+          {paddingBottom: Math.max(bottom, 16) + 12},
+        ]}>
+        <View style={[styles.expandedHandle, t.atoms.bg_contrast_100]} />
+
+        <ScrollView bounces={false} style={styles.expandedScroll}>
           <MediaVisual
             fallbackColor={item.color}
             thumbUri={item.thumbUri}
-            style={styles.expandedVisual}>
-            <View style={styles.cardBadgeRow}>
-              <PartyInsignia party={item.party} visible={showPartyShields} />
-            </View>
-
-            <View style={styles.cardVisualBottom}>
-              <Text
-                style={[
-                  styles.cardTitle,
-                  item.thumbUri && styles.cardTitleOnImage,
-                ]}>
-                {item.title}
-              </Text>
-              <MediaVisualMeta item={item} mode={mode} />
-            </View>
+            contentFit="contain"
+            dimmed={false}
+            style={[styles.expandedVisual, {height: height * 0.55}]}>
+            {null}
           </MediaVisual>
 
           <View style={styles.expandedBody}>
-            <Text style={[styles.cardMeta, t.atoms.text_contrast_medium]}>
-              {item.party} · {item.state}
+            <Text
+              emoji
+              style={[styles.cardTitle, t.atoms.text, {textShadowRadius: 0}]}>
+              {item.title}
             </Text>
-            <Text style={[styles.cardSubmeta, t.atoms.text_contrast_medium]}>
-              {buildSubmetaLabel(item, mode)}
-            </Text>
+            <MediaVisualMeta item={item} />
+            {metaLabel ? (
+              <Text style={[styles.cardMeta, t.atoms.text_contrast_medium]}>
+                {metaLabel}
+              </Text>
+            ) : null}
 
             <View style={styles.actionsRow}>
-              <RedditVoteButton
-                score={score}
-                currentVote={voteState}
-                hasBeenToggled={vote !== 0}
-                onUpvote={() => onVoteChange(vote === 1 ? 0 : 1)}
-                onDownvote={() => onVoteChange(vote === -1 ? 0 : -1)}
-              />
-
+              <MemeVoteButton item={item} />
+              <CommentsButton item={item} onPress={onOpenComments} />
               <ActionButton
                 icon={
-                  <CommentIcon size="sm" style={t.atoms.text_contrast_medium} />
+                  <CloseIcon size="sm" style={t.atoms.text_contrast_medium} />
                 }
-                label={String(item.comments)}
-                onPress={onOpenComments}
-              />
-
-              <ActionButton
-                icon={
-                  <ExpandIcon size="sm" style={t.atoms.text_contrast_medium} />
-                }
-                label="Close"
+                label={l`Close`}
+                accessibilityLabel={l`Close expanded view`}
+                accessibilityHint={l`Closes the expanded card`}
                 onPress={onClose}
               />
             </View>
           </View>
-        </View>
+        </ScrollView>
       </View>
-    </Modal>
+    </View>
   )
 }

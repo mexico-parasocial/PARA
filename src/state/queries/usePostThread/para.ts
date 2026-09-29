@@ -6,7 +6,7 @@ import {
   type ParaPostView,
 } from '#/lib/api/feed/para'
 import {type UsePostThreadQueryResult} from '#/state/queries/usePostThread/types'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 export function isParaPostUri(uri: string) {
   try {

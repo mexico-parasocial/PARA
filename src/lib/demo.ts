@@ -1,7 +1,7 @@
 import {type DatetimeString} from '@atproto/syntax'
 import {subDays, subMinutes} from 'date-fns'
 
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 const DID = `did:plc:z72i7hdynmk6r22z27h6tvur`
 const NOW = new Date()

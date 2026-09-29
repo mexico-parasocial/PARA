@@ -258,31 +258,6 @@ export function getOfficialActionsForSubject(subjectUri: string) {
   return actions.filter(action => action.subjectUri === subjectUri)
 }
 
-export function getOfficialCabildeoSignatures(cabildeoUri: string) {
-  return getOfficialActionsForSubject(cabildeoUri).filter(
-    action => action.actionType === 'cabildeo.signature',
-  )
-}
-
-export function signOfficialCabildeo(input: {
-  account: OfficialCivicAccount
-  controllerDid: string
-  cabildeoUri: string
-  summary: string
-}) {
-  return createOfficialAction({
-    entityId: input.account.id,
-    entityName: input.account.name,
-    controllerDid: input.controllerDid,
-    actionType: 'cabildeo.signature',
-    subjectUri: input.cabildeoUri,
-    summary: input.summary,
-    recordUri: input.account.entityDid
-      ? `at://${input.account.entityDid}/com.para.official.action/${Date.now()}`
-      : undefined,
-  })
-}
-
 export function evaluateCabildeoAccess({
   tier,
   viewerDid,

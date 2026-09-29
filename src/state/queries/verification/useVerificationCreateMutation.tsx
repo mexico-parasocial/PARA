@@ -28,9 +28,9 @@ export function useVerificationCreateMutation() {
 
       const {uri} = await pdsClient.create(app.bsky.graph.verification, {
         // the profile view is still legacy-typed, so its strings are unbranded
-        subject: profile.did as DidString,
+        subject: profile.did,
         createdAt: toDatetimeString(new Date()),
-        handle: profile.handle as HandleString,
+        handle: profile.handle,
         displayName: profile.displayName || '',
       })
 
@@ -49,7 +49,7 @@ export function useVerificationCreateMutation() {
         },
         () => {
           return appviewClient.call(app.bsky.actor.getProfile, {
-            actor: (profile.did ?? '') as AtIdentifierString,
+            actor: (profile.did ?? ''),
           })
         },
       )

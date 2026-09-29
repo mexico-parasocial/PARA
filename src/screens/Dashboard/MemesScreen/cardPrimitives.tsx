@@ -1,9 +1,19 @@
 import {type ReactNode} from 'react'
-import {Pressable, StyleSheet, useWindowDimensions, View} from 'react-native'
+import {
+  Pressable,
+  type StyleProp,
+  StyleSheet,
+  View,
+  type ViewStyle,
+} from 'react-native'
 import {Line, Polygon, Svg} from 'react-native-svg'
 import {Image} from 'expo-image'
+import {useLingui} from '@lingui/react/macro'
 
 import {getCommunityInsignia} from '#/lib/civic-insignias'
+import {sanitizeHandle} from '#/lib/strings/handles'
+import {POST_TOMBSTONE, usePostShadow} from '#/state/cache/post-shadow'
+import {usePostLikeMutationQueue} from '#/state/queries/post'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import {CivicInsignia} from '#/components/CivicInsignia'
@@ -12,7 +22,7 @@ import {Bubble_Stroke2_Corner2_Rounded as CommentIcon} from '#/components/icons/
 import {RedditVoteButton} from '#/components/PostControls/VoteButton'
 import {DECK_OVERLAP} from './helpers'
 import {styles} from './styles'
-import {type MediaItem, type Mode} from './types'
+import {type MediaItem} from './types'
 
 export function PartyInsignia({
   party,
@@ -21,7 +31,7 @@ export function PartyInsignia({
   party: string
   visible: boolean
 }) {
-  if (!visible) return null
+  if (!visible || !party) return null
 
   const displayParty = party.replace(/^p\//i, '')
   const colors = getCommunityInsignia(displayParty)
@@ -39,13 +49,17 @@ export function PartyInsignia({
 export function MediaVisual({
   thumbUri,
   fallbackColor,
+  contentFit = 'cover',
+  dimmed = true,
   children,
   style,
 }: {
   thumbUri?: string
   fallbackColor: string
+  contentFit?: 'cover' | 'contain'
+  dimmed?: boolean
   children: ReactNode
-  style?: any
+  style?: StyleProp<ViewStyle>
 }) {
   return (
     <View style={[styles.mediaVisual, style, {backgroundColor: fallbackColor}]}>
@@ -54,11 +68,12 @@ export function MediaVisual({
           <Image
             source={{uri: thumbUri}}
             style={StyleSheet.absoluteFill}
-            contentFit="cover"
+            contentFit={contentFit}
             cachePolicy="memory-disk"
+            transition={150}
             accessibilityIgnoresInvertColors
           />
-          <View style={styles.mediaVisualOverlay} />
+          {dimmed ? <View style={styles.mediaVisualOverlay} /> : null}
         </>
       ) : null}
       {children}
@@ -69,10 +84,14 @@ export function MediaVisual({
 export function ActionButton({
   icon,
   label,
+  accessibilityLabel,
+  accessibilityHint,
   onPress,
 }: {
   icon: ReactNode
   label: string
+  accessibilityLabel: string
+  accessibilityHint?: string
   onPress?: () => void
 }) {
   const t = useTheme()
@@ -80,70 +99,99 @@ export function ActionButton({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
       onPress={onPress}
-      style={[styles.actionButton, t.atoms.bg_contrast_25]}>
+      style={({pressed}) => [
+        styles.actionButton,
+        t.atoms.bg_contrast_25,
+        pressed && {opacity: 0.7},
+      ]}>
       {icon}
       <Text style={[styles.actionButtonText, t.atoms.text]}>{label}</Text>
     </Pressable>
   )
 }
 
-export function CommentChip({
-  comments,
-  compact,
+export function CommentsButton({
+  item,
   onPress,
 }: {
-  comments: number
-  compact?: boolean
-  onPress?: () => void
+  item: MediaItem
+  onPress: () => void
 }) {
   const t = useTheme()
-
-  const content = (
-    <>
-      <CommentIcon size="sm" style={t.atoms.text_contrast_medium} />
-      <Text style={[styles.commentChipText, t.atoms.text]}>{comments}</Text>
-    </>
-  )
-
-  if (onPress) {
-    return (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={`${comments} comments`}
-        accessibilityHint="Opens this card to view comments"
-        onPress={onPress}
-        style={[
-          styles.commentChip,
-          compact ? styles.commentChipCompact : styles.commentChipFloating,
-          t.atoms.bg_contrast_25,
-        ]}>
-        {content}
-      </Pressable>
-    )
-  }
+  const {t: l} = useLingui()
 
   return (
-    <View
-      style={[
-        styles.commentChip,
-        compact ? styles.commentChipCompact : styles.commentChipFloating,
-        t.atoms.bg_contrast_25,
-      ]}>
-      {content}
-    </View>
+    <ActionButton
+      icon={<CommentIcon size="sm" style={t.atoms.text_contrast_medium} />}
+      label={String(item.comments)}
+      accessibilityLabel={l`${item.comments} comments`}
+      accessibilityHint={l`Opens the post thread`}
+      onPress={onPress}
+    />
   )
 }
 
-function MetaPill({
-  label,
-  icon,
-  onImage,
+/**
+ * Meme votes are backed by likes. Reads and writes go through the post shadow
+ * so votes update instantly and stay in sync with the rest of the app. There
+ * is no persisted downvote, so the down arrow only clears an existing upvote.
+ */
+export function MemeVoteButton({
+  item,
+  style,
 }: {
-  label: string
-  icon?: ReactNode
-  onImage?: boolean
+  item: MediaItem
+  style?: StyleProp<ViewStyle>
 }) {
+  if (!item.post) return null
+  return <MemeVoteButtonInner post={item.post} style={style} />
+}
+
+function MemeVoteButtonInner({
+  post,
+  style,
+}: {
+  post: NonNullable<MediaItem['post']>
+  style?: StyleProp<ViewStyle>
+}) {
+  const shadow = usePostShadow(post)
+  if (shadow === POST_TOMBSTONE) return null
+  return <MemeVoteButtonControls post={shadow} style={style} />
+}
+
+function MemeVoteButtonControls({
+  post,
+  style,
+}: {
+  post: Exclude<ReturnType<typeof usePostShadow>, typeof POST_TOMBSTONE>
+  style?: StyleProp<ViewStyle>
+}) {
+  const [queueLike, queueUnlike] = usePostLikeMutationQueue(
+    post,
+    undefined,
+    undefined,
+    'FeedItem',
+  )
+  const isLiked = Boolean(post.viewer?.like)
+
+  return (
+    <RedditVoteButton
+      score={post.likeCount ?? 0}
+      currentVote={isLiked ? 'upvote' : 'none'}
+      hasBeenToggled={isLiked}
+      onUpvote={() => void (isLiked ? queueUnlike() : queueLike())}
+      onDownvote={() => {
+        if (isLiked) void queueUnlike()
+      }}
+      style={style}
+    />
+  )
+}
+
+function MetaPill({label, onImage}: {label: string; onImage?: boolean}) {
   const t = useTheme()
 
   return (
@@ -152,8 +200,8 @@ function MetaPill({
         styles.metaPill,
         onImage ? styles.metaPillOnImage : t.atoms.bg_contrast_25,
       ]}>
-      {icon}
       <Text
+        emoji
         numberOfLines={1}
         style={[
           styles.metaPillText,
@@ -165,41 +213,43 @@ function MetaPill({
   )
 }
 
-export function MediaVisualMeta({
-  item,
-  mode: _mode,
-}: {
-  item: MediaItem
-  mode: Mode
-}) {
-  const meme = item
-  const onImage = !!meme.thumbUri
+export function MediaVisualMeta({item}: {item: MediaItem}) {
+  const labels = [
+    item.author ? sanitizeHandle(item.author, '@') : '',
+    item.community,
+  ].filter(Boolean)
+  if (!labels.length) return null
   return (
     <View style={styles.metaPillRow}>
-      <MetaPill label={meme.author} onImage={onImage} />
-      <MetaPill label={meme.state} onImage={onImage} />
+      {labels.map(label => (
+        <MetaPill key={label} label={label} onImage />
+      ))}
     </View>
   )
 }
 
+/**
+ * Slanted control band that sits across the seam between the front card and
+ * the one peeking out behind it. Always acts on the front card.
+ */
 export function DeckCommandCenter({
   activeItem,
-  activeVote = 0,
-  onVoteChange,
-  onExpandActive,
-  onExpandTop,
-  onExpandBottom,
+  top,
+  left,
+  width,
+  onOpenComments,
+  onExpand,
 }: {
   activeItem: MediaItem
-  activeVote?: 1 | -1 | 0
-  onVoteChange: (vote: 1 | -1 | 0) => void
-  onExpandActive?: () => void
-  onExpandTop: () => void
-  onExpandBottom?: () => void
+  top: number
+  left: number
+  width: number
+  onOpenComments: () => void
+  onExpand: () => void
 }) {
   const t = useTheme()
-  const {width: screenWidth} = useWindowDimensions()
-  const shapeWidth = Math.max(0, screenWidth - 104)
+  const {t: l} = useLingui()
+  const shapeWidth = Math.max(0, width)
   const slant = DECK_OVERLAP
   const height = 44
   const totalHeight = slant + height
@@ -207,15 +257,17 @@ export function DeckCommandCenter({
   const bg = t.atoms.bg.backgroundColor
   const stroke = t.palette.contrast_200
 
-  const score = activeItem.votes + activeVote
-  const voteState =
-    activeVote === 1 ? 'upvote' : activeVote === -1 ? 'downvote' : 'none'
-
-  const zoneWidth = shapeWidth / 3
-  const bandCenterY = (x: number) => (slant * x) / shapeWidth + height / 2
+  const sideZoneWidth = shapeWidth * 0.22
+  const middleZoneWidth = shapeWidth - sideZoneWidth * 2
+  const bandCenterY = (x: number) =>
+    (slant * x) / (shapeWidth || 1) + height / 2
 
   return (
-    <View style={[styles.deckCommandCenter, {height: totalHeight}]}>
+    <View
+      style={[
+        styles.deckCommandCenter,
+        {height: totalHeight, top, left, width: shapeWidth},
+      ]}>
       <Svg
         pointerEvents="none"
         width={shapeWidth}
@@ -235,75 +287,63 @@ export function DeckCommandCenter({
           strokeLinejoin="round"
           strokeWidth="1"
         />
-        <Line
-          x1={zoneWidth}
-          y1={(slant * zoneWidth) / shapeWidth}
-          x2={zoneWidth}
-          y2={height + (slant * zoneWidth) / shapeWidth}
-          stroke={stroke}
-          strokeWidth="1"
-        />
-        <Line
-          x1={2 * zoneWidth}
-          y1={(2 * slant * zoneWidth) / shapeWidth}
-          x2={2 * zoneWidth}
-          y2={height + (2 * slant * zoneWidth) / shapeWidth}
-          stroke={stroke}
-          strokeWidth="1"
-        />
+        {[sideZoneWidth, sideZoneWidth + middleZoneWidth].map(x => (
+          <Line
+            key={x}
+            x1={x}
+            y1={(slant * x) / (shapeWidth || 1)}
+            x2={x}
+            y2={height + (slant * x) / (shapeWidth || 1)}
+            stroke={stroke}
+            strokeWidth="1"
+          />
+        ))}
       </Svg>
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Expand next card"
-        accessibilityHint="Opens the card behind in full view"
-        onPress={onExpandBottom ?? (() => {})}
+        accessibilityLabel={l`${activeItem.comments} comments`}
+        accessibilityHint={l`Opens the post thread`}
+        onPress={onOpenComments}
         style={[
           styles.deckCommandCenterZone,
           {
             left: 0,
-            paddingTop: bandCenterY(zoneWidth / 2) - 9,
-            width: zoneWidth,
+            paddingTop: bandCenterY(sideZoneWidth / 2) - 9,
+            width: sideZoneWidth,
           },
         ]}>
-        <ExpandIcon size="sm" style={t.atoms.text} />
+        <CommentIcon size="sm" style={t.atoms.text} />
+        <Text style={[styles.commentChipText, t.atoms.text]}>
+          {activeItem.comments}
+        </Text>
       </Pressable>
 
       <View
         style={[
           styles.deckCommandCenterZone,
           {
-            left: zoneWidth,
-            paddingTop: bandCenterY(zoneWidth * 1.5) - 18,
-            width: zoneWidth,
+            left: sideZoneWidth,
+            paddingTop: bandCenterY(shapeWidth / 2) - 18,
+            width: middleZoneWidth,
           },
         ]}>
-        <RedditVoteButton
-          currentVote={voteState}
-          hasBeenToggled={activeVote !== 0}
-          onDownvote={() => onVoteChange(activeVote === -1 ? 0 : -1)}
-          onUpvote={() => onVoteChange(activeVote === 1 ? 0 : 1)}
-          score={score}
-          style={{marginLeft: 0}}
-        />
-        <CommentChip
-          comments={activeItem.comments}
-          compact
-          onPress={onExpandActive}
-        />
+        <MemeVoteButton item={activeItem} style={{marginLeft: 0}} />
       </View>
 
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Expand current card"
-        accessibilityHint="Opens the front card in full view"
-        onPress={onExpandTop}
+        accessibilityLabel={l`Expand card`}
+        accessibilityHint={l`Opens the front card in full view`}
+        onPress={onExpand}
         style={[
           styles.deckCommandCenterZone,
           {
-            left: 2 * zoneWidth,
-            paddingTop: bandCenterY(zoneWidth * 2.5) - 9,
-            width: zoneWidth,
+            left: sideZoneWidth + middleZoneWidth,
+            paddingTop:
+              bandCenterY(sideZoneWidth + middleZoneWidth + sideZoneWidth / 2) -
+              9,
+            width: sideZoneWidth,
           },
         ]}>
         <ExpandIcon size="sm" style={t.atoms.text} />

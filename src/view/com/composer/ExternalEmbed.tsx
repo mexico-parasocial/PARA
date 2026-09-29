@@ -18,7 +18,7 @@ import {isStandardSiteEmbed} from '#/components/Post/Embed/StandardSiteEmbed/uti
 import {Embed as StarterPackEmbed} from '#/components/StarterPack/StarterPackCard'
 import {Text} from '#/components/Typography'
 import {type Gif} from '#/features/gifPicker/types'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 export const ExternalEmbedGif = ({
   onRemove,

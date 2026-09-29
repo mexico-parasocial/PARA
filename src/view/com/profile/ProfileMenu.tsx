@@ -56,7 +56,7 @@ import {useActorStatus, useLiveNowConfig} from '#/features/liveNow'
 import {EditLiveDialog} from '#/features/liveNow/components/EditLiveDialog'
 import {GoLiveDialog} from '#/features/liveNow/components/GoLiveDialog'
 import {GoLiveDisabledDialog} from '#/features/liveNow/components/GoLiveDisabledDialog'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import {useDevMode} from '#/storage/hooks/dev-mode'
 
 let ProfileMenu = ({
@@ -322,10 +322,10 @@ let ProfileMenu = ({
                 )}
                 <Menu.Item
                   testID="profileHeaderDropdownStarterPackAddRemoveBtn"
-                  label={l`Add to starter packs`}
+                  label={l`Add to Starter Packs`}
                   onPress={onPressAddToStarterPacks}>
                   <Menu.ItemText>
-                    <Trans>Add to starter packs</Trans>
+                    <Trans>Add to Starter Packs</Trans>
                   </Menu.ItemText>
                   <Menu.ItemIcon icon={StarterPack} />
                 </Menu.Item>

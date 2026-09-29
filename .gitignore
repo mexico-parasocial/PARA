@@ -125,7 +125,7 @@ stats.json
 # environment variables
 .env
 .env.*
-!.env.example
+!/.env.e2e
 
 # Firebase (Android) Google services
 google-services.json

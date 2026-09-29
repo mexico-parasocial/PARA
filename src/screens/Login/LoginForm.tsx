@@ -425,7 +425,7 @@ export const LoginForm = ({
               {hostingProviderState.status === 'overridden' &&
               hostingProviderState.pdsUrl
                 ? toNiceHostingUrl(hostingProviderState.pdsUrl)
-                : 'bsky.social'}
+                : toNiceHostingUrl(serviceUrl)}
             </Text>
           </View>
           <View
@@ -454,7 +454,7 @@ export const LoginForm = ({
           <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_sm]}>
             <Trans>
               Local demo login: use provider {LOCAL_DEV_SERVICE}, account{' '}
-              alice.test, password para-test-pw.
+              alice.test, password hunter2.
             </Trans>
           </Text>
         )}

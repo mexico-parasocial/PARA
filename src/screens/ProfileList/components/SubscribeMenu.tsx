@@ -12,7 +12,7 @@ import {Loader} from '#/components/Loader'
 import * as Menu from '#/components/Menu'
 import * as Prompt from '#/components/Prompt'
 import * as Toast from '#/components/Toast'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 export function SubscribeMenu({list}: {list: app.bsky.graph.defs.ListView}) {
   const {_} = useLingui()

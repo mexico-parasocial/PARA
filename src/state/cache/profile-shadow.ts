@@ -30,7 +30,7 @@ import {findAllProfilesInQueryData as findAllProfilesInSuggestedUsersForExploreQ
 import {findAllProfilesInQueryData as findAllProfilesInSuggestedUsersForSeeMoreQueryData} from '#/state/queries/trending/useGetSuggestedUsersForSeeMoreQuery'
 import {findAllProfilesInQueryData as findAllProfilesInSuggestedUsersQueryData} from '#/state/queries/trending/useGetSuggestedUsersQuery'
 import {findAllProfilesInQueryData as findAllProfilesInPostThreadV2QueryData} from '#/state/queries/usePostThread/queryCache'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import type * as bsky from '#/types/bsky'
 import {castAsShadow, type Shadow} from './types'
 

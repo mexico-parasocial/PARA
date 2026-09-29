@@ -434,7 +434,7 @@ function IdentityCard({
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel="Open voice profile"
-          accessibilityHint="Shows followers and karma for your main voice"
+          accessibilityHint="Shows followers and influence for your main voice"
           onPress={onOpenVoice}
           style={[
             styles.voiceLink,
@@ -444,7 +444,7 @@ function IdentityCard({
             },
           ]}>
           <Text style={[styles.voiceLinkText, {color: t.palette.primary_500}]}>
-            Open voice profile · followers & karma →
+            Open voice profile · followers & influence →
           </Text>
         </TouchableOpacity>
       ) : null}

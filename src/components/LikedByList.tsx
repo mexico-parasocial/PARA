@@ -1,6 +1,6 @@
 import {useCallback, useMemo, useState} from 'react'
 
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 type GetLikesLike = app.bsky.feed.getLikes.$OutputBody['likes'][number]
 

@@ -8,6 +8,7 @@ import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
 import {createSanitizedDisplayName} from '#/lib/moderation/create-sanitized-display-name'
 import {moderateProfile} from '#/lib/moderation/subjects'
 import {shareUrl} from '#/lib/sharing'
+import {formatDateTime} from '#/lib/strings/time'
 import {useCreateJoinLink} from '#/state/queries/messages/create-join-link'
 import {useDisableJoinLink} from '#/state/queries/messages/disable-join-link'
 import {useEditJoinLink} from '#/state/queries/messages/edit-join-link'
@@ -34,7 +35,7 @@ import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
 import {IS_WEB} from '#/env'
-import {chat} from '#/lexicons'
+import {type chat} from '#/lexicons'
 import {CopyTextButton} from './CopyTextButton'
 import {EditTextButton} from './EditTextButton'
 
@@ -352,7 +353,7 @@ export function InviteLinkDialog({
               <Text style={[a.mt_xs, a.text_xs, t.atoms.text_contrast_medium]}>
                 <Trans>
                   Created{' '}
-                  {i18n.date(createdAt, {
+                  {formatDateTime(i18n, createdAt, {
                     dateStyle: 'long',
                     timeStyle: 'short',
                   })}

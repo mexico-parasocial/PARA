@@ -78,8 +78,18 @@ export function NotificationFeed({
       if (isEmpty) {
         arr = arr.concat([EMPTY_FEED_ITEM])
       } else if (data) {
-        for (const page of data?.pages) {
-          arr = arr.concat(page.items)
+        /*
+         * The appview can return the same notification more than once (within
+         * a page or across overlapping pages), which would produce duplicate
+         * list keys. Keep the first occurrence.
+         */
+        const seen = new Set<string>()
+        for (const page of data.pages) {
+          for (const item of page.items) {
+            if (seen.has(item._reactKey)) continue
+            seen.add(item._reactKey)
+            arr.push(item)
+          }
         }
       }
       if (isError && !isEmpty) {

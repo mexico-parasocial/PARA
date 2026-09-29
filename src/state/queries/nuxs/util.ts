@@ -7,7 +7,7 @@ import {
   nuxNames,
   NuxSchemas,
 } from '#/state/queries/nuxs/definitions'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 export function parseAppNux(nux: app.bsky.actor.defs.Nux): AppNux | undefined {
   if (!nuxNames.has(nux.id as Nux)) return

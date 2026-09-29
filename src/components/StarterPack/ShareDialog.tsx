@@ -18,7 +18,7 @@ import {QrCode_Stroke2_Corner0_Rounded as QrCodeIcon} from '#/components/icons/Q
 import {Loader} from '#/components/Loader'
 import {Text} from '#/components/Typography'
 import {IS_NATIVE, IS_WEB} from '#/env'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 interface Props {
   starterPack: app.bsky.graph.defs.StarterPackView
@@ -80,11 +80,11 @@ function ShareDialogInner({
           <View style={[!gtMobile && a.gap_lg]}>
             <View style={[a.gap_sm, gtMobile && a.pb_lg]}>
               <Text style={[a.font_semi_bold, a.text_2xl]}>
-                <Trans>Invite people to this starter pack!</Trans>
+                <Trans>Invite people to this Starter Pack!</Trans>
               </Text>
               <Text style={[a.text_md, t.atoms.text_contrast_medium]}>
                 <Trans>
-                  Share this starter pack and help people join your community on
+                  Share this Starter Pack and help people join your community on
                   PARA.
                 </Trans>
               </Text>

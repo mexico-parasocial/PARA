@@ -27,9 +27,12 @@ import {
   type NativeStackScreenProps,
   type NavigationProp,
 } from '#/lib/routes/types'
+import {POST_FLAIRS} from '#/lib/tags'
 import {cabildeosQueryKey} from '#/state/queries/cabildeo'
+import {type CivicTreeItem} from '#/state/queries/collection-items'
 import {useAgent} from '#/state/session'
 import {useTheme} from '#/alf'
+import * as Dialog from '#/components/Dialog'
 import {
   GeoScopeSelector,
   type ResolvedGeoScope,
@@ -37,8 +40,29 @@ import {
 import * as Layout from '#/components/Layout'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
+import {CivicNodeResults} from '#/features/personalCivicTree/components/CivicNodePicker'
 
 type Props = NativeStackScreenProps<CommonNavigatorParams, 'CreateCabildeo'>
+
+/** Invented subjects become matter tags — official policy tags are curated. */
+function toFlairTag(title: string) {
+  return title
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9 ]/g, ' ')
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(word => word[0].toUpperCase() + word.slice(1).toLowerCase())
+    .join('')
+}
+
+function linkTagLabel(tag: string) {
+  const matched = Object.values(POST_FLAIRS).find(flair => flair.tag === tag)
+  if (matched) return matched.label
+  return (
+    tag.replace(/^(?:\|\|#?)/, '').replace(/([a-z])([A-Z])/g, '$1 $2') || tag
+  )
+}
 
 export function CreateCabildeoScreen(_props: Props) {
   const t = useTheme()
@@ -49,6 +73,11 @@ export function CreateCabildeoScreen(_props: Props) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [community, setCommunity] = useState('')
+  const [communitiesText, setCommunitiesText] = useState('')
+  const [linkedTags, setLinkedTags] = useState<string[]>([])
+  const linkPickerControl = Dialog.useDialogControl()
+  const [minQuorumText, setMinQuorumText] = useState('')
+  const [phaseDeadlineDays, setPhaseDeadlineDays] = useState<string>('')
   const [geoScope, setGeoScope] = useState<ResolvedGeoScope | undefined>(
     undefined,
   )
@@ -66,6 +95,16 @@ export function CreateCabildeoScreen(_props: Props) {
   ])
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const parseList = (value: string) =>
+    Array.from(
+      new Set(
+        value
+          .split(',')
+          .map(item => item.trim())
+          .filter(Boolean),
+      ),
+    )
 
   const handleAddOption = useCallback(() => {
     setOptions(prev => [...prev, {label: '', description: ''}])
@@ -86,6 +125,26 @@ export function CreateCabildeoScreen(_props: Props) {
     setOptions(prev => prev.filter((_, i) => i !== index))
   }, [])
 
+  const handlePickLink = useCallback(
+    (item: CivicTreeItem) => {
+      let tag: string | undefined
+      if (item.flairId) {
+        tag = Object.values(POST_FLAIRS).find(
+          flair => flair.id === item.flairId,
+        )?.tag
+      }
+      const inventedTitle = item.title?.trim()
+      if (!tag && inventedTitle) {
+        tag = `|#${toFlairTag(inventedTitle)}`
+      }
+      if (tag) {
+        setLinkedTags(prev => (prev.includes(tag) ? prev : [...prev, tag]))
+      }
+      linkPickerControl.close()
+    },
+    [linkPickerControl],
+  )
+
   const handlePublish = useCallback(async () => {
     if (!title.trim() || !description.trim() || !community.trim()) {
       Toast.show('Faltan campos requeridos')
@@ -101,6 +160,7 @@ export function CreateCabildeoScreen(_props: Props) {
     setIsSubmitting(true)
     try {
       // Build the record with geo-privacy scope data
+      const quorum = parseInt(minQuorumText, 10)
       const recordData = {
         title: title.trim(),
         description: description.trim(),
@@ -110,6 +170,19 @@ export function CreateCabildeoScreen(_props: Props) {
         minimumViewTier,
         minimumParticipationTier,
         voteVisibility,
+        ...(parseList(communitiesText).length
+          ? {communities: parseList(communitiesText)}
+          : {}),
+        ...(linkedTags.length ? {flairs: linkedTags} : {}),
+        ...(Number.isFinite(quorum) && quorum > 0 ? {minQuorum: quorum} : {}),
+        ...(phaseDeadlineDays
+          ? {
+              phaseDeadline: new Date(
+                Date.now() +
+                  parseInt(phaseDeadlineDays, 10) * 24 * 60 * 60 * 1000,
+              ).toISOString(),
+            }
+          : {}),
         ...(geoRestricted ? {geoRestricted: true} : {}),
         ...(geoScope
           ? {
@@ -147,6 +220,10 @@ export function CreateCabildeoScreen(_props: Props) {
     title,
     description,
     community,
+    communitiesText,
+    linkedTags,
+    minQuorumText,
+    phaseDeadlineDays,
     geoScope,
     geoRestricted,
     minimumParticipationTier,
@@ -233,6 +310,83 @@ export function CreateCabildeoScreen(_props: Props) {
               />
             </View>
 
+            {/* Additional communities */}
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, t.atoms.text]}>
+                Comunidades adicionales
+              </Text>
+              <Text style={[styles.hint, t.atoms.text_contrast_medium]}>
+                Separadas por comas. Con varias comunidades, el voto usa
+                ponderación cuadrática entre ellas.
+              </Text>
+              <TextInput
+                accessibilityLabel="Text input field"
+                accessibilityHint="Enter additional communities, comma separated"
+                style={[styles.input, t.atoms.bg_contrast_25, t.atoms.text]}
+                placeholder="p/NuevoLeón, p/Monterrey"
+                placeholderTextColor={t.palette.contrast_500}
+                value={communitiesText}
+                onChangeText={setCommunitiesText}
+                autoCapitalize="none"
+              />
+            </View>
+
+            {/* Policy/matter linkage */}
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, t.atoms.text]}>
+                Vinculación a política o materia
+              </Text>
+              <Text style={[styles.hint, t.atoms.text_contrast_medium]}>
+                Opcional. Los cabildeos vinculados se abren en la vista de
+                política o materia; los sueltos, en la vista cívica.
+              </Text>
+              {linkedTags.length > 0 && (
+                <View style={styles.linkChips}>
+                  {linkedTags.map(tag => (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      accessibilityLabel={`Quitar vinculación ${linkTagLabel(tag)}`}
+                      accessibilityHint="Quita esta vinculación del cabildeo"
+                      key={tag}
+                      onPress={() =>
+                        setLinkedTags(prev => prev.filter(item => item !== tag))
+                      }
+                      style={[
+                        styles.linkChip,
+                        {backgroundColor: t.palette.primary_500 + '15'},
+                      ]}>
+                      <Text
+                        style={[
+                          styles.linkChipText,
+                          {color: t.palette.primary_500},
+                        ]}>
+                        {linkTagLabel(tag)}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.linkChipX,
+                          {color: t.palette.primary_500},
+                        ]}>
+                        ✕
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+              <TouchableOpacity
+                accessibilityRole="button"
+                onPress={linkPickerControl.open}
+                style={[
+                  styles.addLinkBtn,
+                  {borderColor: t.palette.primary_500},
+                ]}>
+                <Text
+                  style={[styles.addLinkText, {color: t.palette.primary_500}]}>
+                  + Vincular a política o materia
+                </Text>
+              </TouchableOpacity>
+            </View>
+
             {/* Geo Scope Selector */}
             <GeoScopeSelector value={geoScope} onChange={setGeoScope} />
 
@@ -311,6 +465,65 @@ export function CreateCabildeoScreen(_props: Props) {
               value={voteVisibility}
               onChange={setVoteVisibility}
             />
+
+            {/* Voting configuration */}
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, t.atoms.text]}>
+                Quórum mínimo de participantes
+              </Text>
+              <Text style={[styles.hint, t.atoms.text_contrast_medium]}>
+                Opcional. Si no se alcanza, el resultado no es vinculante.
+              </Text>
+              <TextInput
+                accessibilityLabel="Text input field"
+                accessibilityHint="Enter the minimum number of participants"
+                style={[styles.input, t.atoms.bg_contrast_25, t.atoms.text]}
+                placeholder="Sin quórum mínimo"
+                placeholderTextColor={t.palette.contrast_500}
+                value={minQuorumText}
+                onChangeText={setMinQuorumText}
+                keyboardType="number-pad"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={[styles.label, t.atoms.text]}>
+                Plazo sugerido de la fase
+              </Text>
+              <Text style={[styles.hint, t.atoms.text_contrast_medium]}>
+                Opcional. Fecha límite sugerida para avanzar de fase.
+              </Text>
+              <View style={styles.deadlineRow}>
+                {[
+                  {value: '', label: 'Sin plazo'},
+                  {value: '7', label: '7 días'},
+                  {value: '14', label: '14 días'},
+                  {value: '30', label: '30 días'},
+                ].map(option => {
+                  const selected = phaseDeadlineDays === option.value
+                  return (
+                    <TouchableOpacity
+                      accessibilityRole="button"
+                      key={option.label}
+                      onPress={() => setPhaseDeadlineDays(option.value)}
+                      style={[
+                        styles.deadlineChip,
+                        selected
+                          ? {backgroundColor: t.palette.primary_500}
+                          : t.atoms.bg_contrast_25,
+                      ]}>
+                      <Text
+                        style={[
+                          styles.deadlineChipText,
+                          selected ? {color: 'white'} : t.atoms.text,
+                        ]}>
+                        {option.label}
+                      </Text>
+                    </TouchableOpacity>
+                  )
+                })}
+              </View>
+            </View>
 
             {/* Options */}
             <View style={styles.optionsSection}>
@@ -420,6 +633,21 @@ export function CreateCabildeoScreen(_props: Props) {
           </Layout.Center>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <Dialog.Outer control={linkPickerControl}>
+        <Dialog.Handle />
+        <Dialog.ScrollableInner
+          accessibilityDescribedBy="cabildeo-link-picker"
+          accessibilityLabelledBy="cabildeo-link-picker">
+          <View style={styles.linkPickerBody}>
+            <Text style={[styles.sectionTitle, t.atoms.text]}>
+              Vincular a política o materia
+            </Text>
+            <CivicNodeResults kind="topic" onPick={handlePickLink} />
+            <Dialog.Close />
+          </View>
+        </Dialog.ScrollableInner>
+      </Dialog.Outer>
     </Layout.Screen>
   )
 }
@@ -570,6 +798,46 @@ const styles = StyleSheet.create({
   inputGroup: {marginBottom: 16},
   row: {flexDirection: 'row', gap: 12},
   label: {fontSize: 13, fontWeight: '700', marginBottom: 8, marginLeft: 4},
+  hint: {fontSize: 12, lineHeight: 17, marginBottom: 8, marginLeft: 4},
+  linkChips: {flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 10},
+  linkChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  linkChipText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  linkChipX: {
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  addLinkBtn: {
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    alignItems: 'center',
+  },
+  addLinkText: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  linkPickerBody: {gap: 12, paddingBottom: 20},
+  deadlineRow: {flexDirection: 'row', flexWrap: 'wrap', gap: 8},
+  deadlineChip: {
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  deadlineChipText: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
   input: {
     borderRadius: 12,
     paddingHorizontal: 16,

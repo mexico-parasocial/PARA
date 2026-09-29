@@ -198,7 +198,7 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
 
   const post = postShadow
   /*
-   * LikesStat/KnownLikers read `viewer.knownLikers`, which exists on the
+   * KnownLikers reads `viewer.knownLikers`, which exists on the
    * generated lexicon PostView but not yet on the the legacy SDK type behind
    * `postShadow`; the runtime payload carries the field either way.
    */
@@ -477,7 +477,7 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
                 },
                 a.border_t,
                 a.mt_md,
-                a.py_md,
+                a.py_sm,
                 t.atoms.border_contrast_low,
               ]}>
               {paraSummaryMetrics.votes !== 0 ? (
@@ -486,8 +486,8 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
               {paraSummaryMetrics.comments !== 0 ? (
                 <Text
                   testID="commentsCount-expanded"
-                  style={[a.text_sm, t.atoms.text_contrast_high]}>
-                  <Text style={[a.text_sm, a.font_semi_bold, t.atoms.text]}>
+                  style={[a.text_md, t.atoms.text_contrast_medium]}>
+                  <Text style={[a.text_md, a.font_semi_bold, t.atoms.text]}>
                     {formatPostStatCount(paraSummaryMetrics.comments)}
                   </Text>{' '}
                   <Plural
@@ -501,8 +501,8 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
                 <Link to={highlightsHref} label={_`Highlights on this post`}>
                   <Text
                     testID="highlightCount-expanded"
-                    style={[a.text_sm, t.atoms.text_contrast_high]}>
-                    <Text style={[a.text_sm, a.font_semi_bold, t.atoms.text]}>
+                    style={[a.text_md, t.atoms.text_contrast_medium]}>
+                    <Text style={[a.text_md, a.font_semi_bold, t.atoms.text]}>
                       {formatPostStatCount(paraSummaryMetrics.highlights)}
                     </Text>{' '}
                     <Plural
@@ -518,8 +518,8 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
                 <Link to={quotesHref} label={_`Quotes of this post`}>
                   <Text
                     testID="quoteCount-expanded"
-                    style={[a.text_sm, t.atoms.text_contrast_high]}>
-                    <Text style={[a.text_sm, a.font_semi_bold, t.atoms.text]}>
+                    style={[a.text_md, t.atoms.text_contrast_medium]}>
+                    <Text style={[a.text_md, a.font_semi_bold, t.atoms.text]}>
                       {formatPostStatCount(paraSummaryMetrics.quotes)}
                     </Text>{' '}
                     <Plural
@@ -533,8 +533,8 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
               {paraSummaryMetrics.saves !== 0 ? (
                 <Text
                   testID="saveCount-expanded"
-                  style={[a.text_sm, t.atoms.text_contrast_high]}>
-                  <Text style={[a.text_sm, a.font_semi_bold, t.atoms.text]}>
+                  style={[a.text_md, t.atoms.text_contrast_medium]}>
+                  <Text style={[a.text_md, a.font_semi_bold, t.atoms.text]}>
                     {formatPostStatCount(paraSummaryMetrics.saves)}
                   </Text>{' '}
                   <Plural
@@ -549,10 +549,10 @@ const ThreadItemAnchorInner = memo(function ThreadItemAnchorInner({
           <KnownLikers
             post={postWithKnownLikers}
             feature={Features.PostThreadKnownLikersEnable}
+            outerStyle={[a.pt_xs, a.pb_sm]}
           />
           <View
             style={[
-              a.pt_sm,
               a.pb_2xs,
               {
                 marginLeft: -5,
@@ -630,7 +630,7 @@ function ExpandedPostDetails({
     <View style={[a.gap_md, a.pt_md, a.align_start]}>
       <BackdatedPostIndicator post={post} />
       <View style={[a.flex_row, a.align_center, a.flex_wrap, a.gap_sm]}>
-        <Text style={[a.text_xs, t.atoms.text_contrast_high]}>
+        <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
           {niceDate(i18n, post.indexedAt, 'dot separated')}
         </Text>
         {isRootPost && (

@@ -16,7 +16,7 @@ import {native} from '#/alf'
 import {ArrowShareRight_Stroke2_Corner2_Rounded as ArrowShareRightIcon} from '#/components/icons/ArrowShareRight'
 import * as Menu from '#/components/Menu'
 import {useMenuControl} from '#/components/Menu'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import {PostControlButton, PostControlButtonIcon} from '../PostControlButton'
 import {ShareMenuItems} from './ShareMenuItems'
 

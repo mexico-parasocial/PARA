@@ -33,7 +33,7 @@ import {BulletList_Stroke1_Corner0_Rounded as ListIcon} from '#/components/icons
 import * as ListCard from '#/components/ListCard'
 import {ListFooter} from '#/components/Lists'
 import {IS_IOS, IS_NATIVE, IS_WEB} from '#/env'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 const LOADING = {_reactKey: '__loading__' as const}
 const EMPTY = {_reactKey: '__empty__' as const}

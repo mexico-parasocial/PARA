@@ -95,7 +95,7 @@ export function TableContent({pal}: {pal: UsePaletteValue}) {
             paddingHorizontal: 8,
             justifyContent: 'center',
           },
-        ] as unknown as AnimatedStyle<ViewStyle>,
+        ],
         otherIndexContainerStyle: [
           pal.view,
           pal.border,
@@ -105,7 +105,7 @@ export function TableContent({pal}: {pal: UsePaletteValue}) {
             paddingHorizontal: 8,
             justifyContent: 'center',
           },
-        ] as unknown as AnimatedStyle<ViewStyle>,
+        ],
         separatorViewStyle: [
           pal.view,
           pal.border,

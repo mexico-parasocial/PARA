@@ -25,7 +25,7 @@ import {Text} from '#/components/Typography'
 import {useSimpleVerificationState} from '#/components/verification'
 import {VerificationCheck} from '#/components/verification/VerificationCheck'
 import {IS_ANDROID} from '#/env'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import {TimeElapsed} from './TimeElapsed'
 import {PreviewableUserAvatar} from './UserAvatar'
 

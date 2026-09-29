@@ -4,14 +4,23 @@ import {type Service} from '@atproto/lex'
 import {api} from '@bsky/sdk'
 
 import {BLUESKY_PROXY_DID, CHAT_PROXY_DID, IS_DEV} from '#/env'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
-// Physical devices must set EXPO_PUBLIC_LOCAL_DEV_IP in .env.local to reach
-// the dev machine (localhost on a phone is the phone itself). The localhost
-// fallback is deliberately wrong for that case — a confusing connection
-// error beats silently pointing at a machine that may not be the dev Mac.
-const LOCAL_DEV_IP = process.env.EXPO_PUBLIC_LOCAL_DEV_IP || 'localhost'
+// Physical devices reach the dev Mac over LAN. Prefer EXPO_PUBLIC_LOCAL_DEV_HOST
+// — the Mac's Bonjour name (e.g. Mikes-Mac-mini.local), which resolves on any
+// network the Mac joins, so no re-config is needed when the LAN IP changes
+// (school ↔ home). EXPO_PUBLIC_LOCAL_DEV_IP is the per-network fallback for
+// networks that block mDNS. Both are written by WatZappa's
+// scripts/sync-local-dev-service.sh, which runs automatically ahead of
+// `pnpm start` / `pnpm ios` / `pnpm android` / `pnpm web`. The bare-localhost
+// fallback is deliberately wrong for devices — a confusing connection error
+// beats silently pointing at a machine that may not be the dev Mac.
+const LOCAL_DEV_HOST = process.env.EXPO_PUBLIC_LOCAL_DEV_HOST || ''
+const LOCAL_DEV_IP = process.env.EXPO_PUBLIC_LOCAL_DEV_IP || ''
+const LOCAL_DEV_HOSTNAME = (LOCAL_DEV_HOST || LOCAL_DEV_IP || 'localhost').toLowerCase()
 const LOCAL_DEV_SERVICE_OVERRIDE = process.env.EXPO_PUBLIC_LOCAL_DEV_SERVICE
+const LOCAL_DEV_APPVIEW_SERVICE_OVERRIDE =
+  process.env.EXPO_PUBLIC_LOCAL_DEV_APPVIEW_SERVICE
 const DEFAULT_SERVICE_OVERRIDE = process.env.EXPO_PUBLIC_DEFAULT_SERVICE
 const USE_LOCAL_DEFAULT_SERVICE =
   process.env.EXPO_PUBLIC_USE_LOCAL_DEV_SERVICE === '1'
@@ -26,7 +35,7 @@ export const LOCAL_DEV_SERVICE =
     : Platform.OS === 'ios'
       ? IS_IOS_SIMULATOR
         ? 'http://localhost:2583'
-        : `http://${LOCAL_DEV_IP}:2583`
+        : `http://${LOCAL_DEV_HOSTNAME}:2583`
       : 'http://localhost:2583')
 export const STAGING_SERVICE = 'https://staging.bsky.dev'
 export const BSKY_SERVICE = 'https://bsky.social'
@@ -40,13 +49,15 @@ export const DEFAULT_SERVICE =
   DEFAULT_SERVICE_OVERRIDE ||
   (USE_LOCAL_DEMO_DEFAULTS ? LOCAL_DEV_SERVICE : BSKY_SERVICE)
 export const IS_LOCAL_DEV_MODE = DEFAULT_SERVICE === LOCAL_DEV_SERVICE
-export const DEV_ENV_APPVIEW = `http://${LOCAL_DEV_IP}:2584` // always the same
+export const DEV_ENV_APPVIEW =
+  LOCAL_DEV_APPVIEW_SERVICE_OVERRIDE || `http://${LOCAL_DEV_HOSTNAME}:2584`
 export const DEV_ENV_APPVIEW_DID = `did:plc:6gcjjmsoeyaq4xgvkofdklqc` // always the same
 export const HELP_DESK_URL = `https://para.social/support`
 export const EMBED_SERVICE = 'https://embed.bsky.app'
 export const EMBED_SCRIPT = `${EMBED_SERVICE}/static/embed.js`
 export const BSKY_DOWNLOAD_URL = 'https://bsky.app/download'
-export const STARTER_PACK_MAX_SIZE = 150
+export const STARTER_PACK_DEFAULT_SIZE = 150
+export const STARTER_PACK_MAX_SIZE = 500
 export const CARD_ASPECT_RATIO = 1200 / 630
 
 // HACK
@@ -367,6 +378,7 @@ function parseServiceHostname(serviceUrl?: string): string | null {
 }
 
 function isDirectLocalHostname(hostname: string): boolean {
+  const isBonjourName = hostname.endsWith('.local')
   const octets = hostname.split('.')
   const isIpv4 =
     octets.length === 4 &&
@@ -382,9 +394,10 @@ function isDirectLocalHostname(hostname: string): boolean {
       (firstOctet === 172 && secondOctet >= 16 && secondOctet <= 31))
 
   return (
+    isBonjourName ||
     hostname === 'localhost' ||
     hostname === '127.0.0.1' ||
-    hostname === LOCAL_DEV_IP ||
+    hostname === LOCAL_DEV_HOSTNAME ||
     isPrivateIpv4
   )
 }

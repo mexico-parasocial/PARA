@@ -6,7 +6,7 @@ import {
 } from '@atproto/syntax'
 
 import {DEFAULT_DISCOVER_FEED_URI, IS_LOCAL_DEV_MODE} from '#/lib/constants'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import {CustomFeedAPI} from './custom'
 import {FollowingFeedAPI} from './following'
 import {type FeedAPI, type FeedAPIResponse} from './types'

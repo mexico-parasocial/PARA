@@ -7,7 +7,7 @@ import {atoms as a, native, useTheme} from '#/alf'
 import {borderRadius} from '#/alf/tokens'
 import {Button} from '#/components/Button'
 import {Text} from '#/components/Typography'
-import {com} from '#/lexicons'
+import {type com} from '#/lexicons'
 
 export function HandleSuggestions({
   suggestions,

@@ -275,19 +275,19 @@ export function* getThreadPlaceholderCandidates(
   }
   for (let post of findAllPostsInQuoteQueryData(queryClient, uri)) {
     yield postViewToThreadPlaceholder(
-      post as unknown as app.bsky.feed.defs.PostView,
+      post,
       postNumbering,
     )
   }
   for (let post of findAllPostsInSearchQueryData(queryClient, uri)) {
     yield postViewToThreadPlaceholder(
-      post as unknown as app.bsky.feed.defs.PostView,
+      post,
       postNumbering,
     )
   }
   for (let post of findAllPostsInBookmarksQueryData(queryClient, uri)) {
     yield postViewToThreadPlaceholder(
-      post as unknown as app.bsky.feed.defs.PostView,
+      post,
       postNumbering,
     )
   }
@@ -296,7 +296,7 @@ export function* getThreadPlaceholderCandidates(
     uri,
   )) {
     yield postViewToThreadPlaceholder(
-      post as unknown as app.bsky.feed.defs.PostView,
+      post,
       postNumbering,
     )
   }

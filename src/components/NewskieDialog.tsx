@@ -19,7 +19,7 @@ import {Newskie} from '#/components/icons/Newskie'
 import * as StarterPackCard from '#/components/StarterPack/StarterPackCard'
 import {Text} from '#/components/Typography'
 import {IS_NATIVE} from '#/env'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 export function NewskieDialog({
   profile,
@@ -101,14 +101,14 @@ function DialogInner({
 
     if (isMe) {
       if (profile.joinedViaStarterPack) {
-        return _(msg`You joined PARA using a starter pack ${timeAgoString} ago`)
+        return _(msg`You joined PARA using a Starter Pack ${timeAgoString} ago`)
       } else {
         return _(msg`You joined PARA ${timeAgoString} ago`)
       }
     } else {
       if (profile.joinedViaStarterPack) {
         return _(
-          msg`${profileName} joined PARA using a starter pack ${timeAgoString} ago`,
+          msg`${profileName} joined PARA using a Starter Pack ${timeAgoString} ago`,
         )
       } else {
         return _(msg`${profileName} joined PARA ${timeAgoString} ago`)

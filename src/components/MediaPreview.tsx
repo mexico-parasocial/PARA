@@ -12,7 +12,7 @@ import {MediaInsetBorder} from '#/components/MediaInsetBorder'
 import * as PeekMenu from '#/components/PeekMenu'
 import {Text} from '#/components/Typography'
 import {PlayButtonIcon} from '#/components/video/PlayButtonIcon'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 
 /**

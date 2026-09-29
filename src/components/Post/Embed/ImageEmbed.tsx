@@ -15,7 +15,7 @@ import {type Dimensions} from '#/components/Lightbox/types'
 import {ImageContextMenu} from '#/components/Post/Embed/ImageContextMenu'
 import {PostEmbedViewContext} from '#/components/Post/Embed/types'
 import {useAnalytics} from '#/analytics'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import {type EmbedType} from '#/types/bsky/post'
 import {type CommonProps} from './types'
 

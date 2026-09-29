@@ -94,7 +94,7 @@ function SigninDialogInner({}: {control: Dialog.DialogOuterProps['control']}) {
               {maxWidth: 320},
             ]}>
             <Trans>
-              Local demo account: alice.test / para-test-pw on{' '}
+              Local demo account: alice.test / hunter2 on{' '}
               {LOCAL_DEV_SERVICE}
             </Trans>
           </Text>

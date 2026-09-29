@@ -33,7 +33,7 @@ import {PaperPlaneVertical_Filled_Stroke2_Corner1_Rounded as PaperPlaneIcon} fro
 import {Loader} from '#/components/Loader'
 import * as Toast from '#/components/Toast'
 import {IS_ANDROID, IS_IOS, IS_WEB} from '#/env'
-import {chat} from '#/lexicons'
+import {type chat} from '#/lexicons'
 import {ComposerContainer} from './MessageComposer'
 import {
   type MessageEmbedState,

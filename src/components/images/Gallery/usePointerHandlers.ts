@@ -1,6 +1,6 @@
 import {type FlatList} from 'react-native'
 
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 export function usePointerHandlers(_args: {
   flatListRef: React.RefObject<FlatList<app.bsky.embed.images.ViewImage> | null>
