@@ -816,15 +816,22 @@ export async function getDeviceTrustMe(): Promise<{
 
 export function getZkpProverUrl(params: {
   birthYear: number
-  salt: number
+  /** Decimal string: salts are ~248-bit field elements, beyond a JS number. */
+  salt: string
   currentYear: number
   ageThreshold: number
   circuit?: 'ine_age_proof' | 'nullifier_proof'
   communityId?: number
+  /**
+   * The enrollment's own commitment, required for nullifier proofs: the
+   * prover page uses it to find its leaf in the public enrollment tree
+   * (mubEZ CD-16). It is never sent to the server.
+   */
+  commitment?: string
 }): string {
   const search = new URLSearchParams({
     birthYear: String(params.birthYear),
-    salt: String(params.salt),
+    salt: params.salt,
     currentYear: String(params.currentYear),
     ageThreshold: String(params.ageThreshold),
     baseUrl: API_BASE,
@@ -833,19 +840,28 @@ export function getZkpProverUrl(params: {
   if (params.communityId !== undefined) {
     search.append('communityId', String(params.communityId))
   }
-  // Witness material (birthYear, salt) travels in the URL fragment so it is
-  // never sent to the server or written to access logs; the prover page
-  // reads location.hash.
+  if (params.commitment !== undefined) {
+    search.append('commitment', params.commitment)
+  }
+  /*
+   * Witness material (birthYear, salt, commitment) travels in the URL
+   * fragment so it is never sent to the server or written to access logs;
+   * the prover page reads location.hash.
+   */
   return `${API_BASE}/identity/ine/zkp-prover.html#${search.toString()}`
 }
 
+/**
+ * Nullifier proof v2 (mubEZ CD-16): publicSignals are [root, nullifier,
+ * communityId, currentYear, ageThreshold]. The proof reveals no commitment,
+ * and the server stores only the nullifier and community.
+ */
 export async function postZkpNullifier(payload: {
   proof: unknown
   publicSignals: string[]
   communityId: string
 }): Promise<{
   valid: boolean
-  commitment?: string
   nullifier?: string
   reason?: string
 }> {
@@ -855,7 +871,6 @@ export async function postZkpNullifier(payload: {
   })
   const body = (await res.json().catch(() => ({}))) as {
     valid: boolean
-    commitment?: string
     nullifier?: string
     reason?: string
   }
