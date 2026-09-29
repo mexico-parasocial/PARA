@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
 } from 'react'
+import {TID} from '@atproto/common-web'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import {
@@ -226,7 +227,9 @@ export function AcuerdoProvider({children}: {children: React.ReactNode}) {
       data: Omit<AcuerdoRecord, 'createdAt' | 'uri'>,
     ): Promise<AcuerdoView> => {
       const now = new Date().toISOString()
-      const uri = `at://${data.author}/com.para.civic.acuerdo/${Date.now()}`
+      // A TID, not Date.now(): two acuerdos created in the same millisecond
+      // would otherwise share a URI.
+      const uri = `at://${data.author}/com.para.civic.acuerdo/${TID.nextStr()}`
       const acuerdo: AcuerdoView = {
         ...data,
         createdAt: now,
