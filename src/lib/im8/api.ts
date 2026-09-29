@@ -11,9 +11,8 @@ import {
   type IneExtractedData,
   type IneVerificationResult,
   type M8CivicVoteProof,
-  type M8IdentityCredential,
   type M8IdentityRequest,
-  type M8IdentityVerificationResult,
+  type M8IneWalletIssuance,
   type M8PajareoEntry,
   type M8PajareoEntryType,
   type M8PajareoFeed,
@@ -21,7 +20,6 @@ import {
   type M8PajareoResponse,
   type M8PajareoSubject,
   type M8SessionStartResponse,
-  type M8WalletPresentation,
   type ProofBrokerGrant,
   type ProofBrokerProofArtifact,
   type ProofBrokerSession,
@@ -299,37 +297,6 @@ export async function postIdentityRequest(payload: {
   return (await res.json()) as M8IdentityRequest
 }
 
-export async function postIdentityPresent(
-  requestId: string,
-  subjectDid: string,
-  selectedElementIds?: string[],
-): Promise<M8WalletPresentation> {
-  const res = await m8Fetch('/identity/present', {
-    method: 'POST',
-    body: JSON.stringify({requestId, subjectDid, selectedElementIds}),
-  })
-  if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as {error?: string}
-    throw new Error(err.error ?? `Identity present failed (${res.status})`)
-  }
-  return (await res.json()) as M8WalletPresentation
-}
-
-export async function postIdentityVerify(
-  requestId: string,
-  presentation: M8WalletPresentation,
-): Promise<M8IdentityVerificationResult> {
-  const res = await m8Fetch('/identity/verify', {
-    method: 'POST',
-    body: JSON.stringify({requestId, presentation}),
-  })
-  if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as {error?: string}
-    throw new Error(err.error ?? `Identity verify failed (${res.status})`)
-  }
-  return (await res.json()) as M8IdentityVerificationResult
-}
-
 export async function postCivicVoteProof(payload: {
   subjectUri: string
   subjectType: M8CivicVoteProof['subjectType']
@@ -403,17 +370,14 @@ export async function postIneVerify(payload: {
 export async function postIneCredential(payload: {
   extracted: IneExtractedData
   verification: IneVerificationResult
+  issuanceChallenge: string
   ageProofs: {
     over18: {proof: unknown; publicSignals: string[]}
     over21?: {proof: unknown; publicSignals: string[]}
   }
-}): Promise<{
-  credential: M8IdentityCredential
-  proofArtifactId: string
-  verificationId: string
-  commitment: string
-  anonymousProfile: AnonymousProfile
-}> {
+  /** From requestWalletHolderBinding: the key lives in iM8, never here. */
+  walletBindingRequestId: string
+}): Promise<M8IneWalletIssuance> {
   const res = await m8Fetch('/identity/ine/credential', {
     method: 'POST',
     body: JSON.stringify(payload),
@@ -422,13 +386,7 @@ export async function postIneCredential(payload: {
     const err = (await res.json().catch(() => ({}))) as {error?: string}
     throw new Error(err.error ?? `INE credential failed (${res.status})`)
   }
-  return (await res.json()) as {
-    credential: M8IdentityCredential
-    proofArtifactId: string
-    verificationId: string
-    commitment: string
-    anonymousProfile: AnonymousProfile
-  }
+  return (await res.json()) as M8IneWalletIssuance
 }
 
 export async function postZkpVerify(payload: {
@@ -450,10 +408,11 @@ export async function postZkpVerify(payload: {
   return body
 }
 
-export async function postRevokeCredential(payload: {
-  revocationHash: string
-  reason?: string
-}): Promise<{revoked: boolean; revokedAt?: string}> {
+export async function postRevokeCredential(
+  payload: ({revocationHash: string} | {proofArtifactId: string}) & {
+    reason?: string
+  },
+): Promise<{revoked: boolean; revokedAt?: string}> {
   const res = await m8Fetch('/identity/revoke', {
     method: 'POST',
     body: JSON.stringify(payload),

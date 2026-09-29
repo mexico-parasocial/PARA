@@ -14,3 +14,16 @@ export const INE_INTEGRATION_APPROVED = false
 
 export const INE_PREVIEW_NOTICE =
   'Preview: INE integration is pending approval. This flow uses simulated data and does not issue a real credential.'
+
+/**
+ * mubEZ issues an INE credential only to a wallet that proves an Ed25519
+ * holder key (CD-13). PARA holds no key: it asks the iM8 wallet through the
+ * relay (requestWalletHolderBinding in ./wallet) and the credentials are
+ * delivered to iM8, not here (CD-14). Stays false until the iM8 wallet has
+ * passed device tests and a real issuer integration exists; it is separate
+ * from, and in addition to, INE_INTEGRATION_APPROVED.
+ */
+export const WALLET_HOLDER_KEY_SUPPORTED = false
+
+export const WALLET_HOLDER_KEY_UNSUPPORTED_MESSAGE =
+  'INE credentials are held by the iM8 wallet, which is not available for this yet.'

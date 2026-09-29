@@ -9,8 +9,6 @@ import {
   Vibration,
   View,
 } from 'react-native'
-// @ts-ignore - QRCode has no types
-import QRCode from 'react-native-qrcode-svg'
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -18,6 +16,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated'
 import {useLingui} from '@lingui/react'
+import {Trans} from '@lingui/react/macro'
 
 import {getGrants, postGrantRevoke, type ProofBrokerGrant} from '#/lib/im8'
 import {authenticateBiometric} from '#/lib/im8/biometric'
@@ -47,14 +46,6 @@ interface StoredCredential {
   }
   revocationHash: string
   deviceBinding: string
-}
-
-interface PresentationBundle {
-  credentialId: string
-  encryptedPayload: string
-  nonce: string
-  expiresAt: number
-  revealedClaims: string[]
 }
 
 // ─── Secure Storage (m8 integration) ────────────────────────────────────────
@@ -108,9 +99,6 @@ export default function WalletScreen() {
   const [selectedCredential, setSelectedCredential] =
     useState<StoredCredential | null>(null)
   const [isLocked, setIsLocked] = useState(true)
-  const [presentationBundle, setPresentationBundle] =
-    useState<PresentationBundle | null>(null)
-  const [showConsent, setShowConsent] = useState(false)
 
   // Scan line animation
   const scanLineY = useSharedValue(0)
@@ -158,8 +146,6 @@ export default function WalletScreen() {
       if (nextState === 'background') {
         setIsLocked(true)
         setSelectedCredential(null)
-        setPresentationBundle(null)
-        setShowConsent(false)
       }
     })
     return () => sub.remove()
@@ -174,33 +160,6 @@ export default function WalletScreen() {
       Alert.alert('Authentication Failed', 'Please try again.')
     }
   }, [])
-
-  const handlePresent = useCallback(() => {
-    setShowConsent(true)
-  }, [])
-
-  const handleConsentConfirm = useCallback(
-    (selectedClaims: (keyof StoredCredential['claims'])[]) => {
-      if (!selectedCredential) return
-      setShowConsent(false)
-
-      // Build presentation bundle
-      const jwsFragment = selectedCredential.proof.jws.slice(0, 20)
-      const bundle: PresentationBundle = {
-        credentialId: selectedCredential.id,
-        encryptedPayload: jwsFragment
-          ? `encrypted:${jwsFragment}...`
-          : 'encrypted:(pending INE issuance)',
-        nonce: `nonce:${Math.random().toString(36).slice(2)}`,
-        expiresAt: Date.now() + 5 * 60 * 1000, // 5 min
-        revealedClaims: selectedClaims,
-      }
-
-      setPresentationBundle(bundle)
-      Vibration.vibrate([0, 100, 50, 100])
-    },
-    [selectedCredential],
-  )
 
   // ─── Locked State ─────────────────────────────────────────────────────────
 
@@ -229,29 +188,6 @@ export default function WalletScreen() {
     )
   }
 
-  // ─── Presentation QR ─────────────────────────────────────────────────────
-
-  if (presentationBundle) {
-    return (
-      <PresentationQRView
-        bundle={presentationBundle}
-        onClose={() => setPresentationBundle(null)}
-      />
-    )
-  }
-
-  // ─── Consent Screen ────────────────────────────────────────────────────────
-
-  if (showConsent && selectedCredential) {
-    return (
-      <ConsentScreen
-        credential={selectedCredential}
-        onCancel={() => setShowConsent(false)}
-        onConfirm={handleConsentConfirm}
-      />
-    )
-  }
-
   // ─── Credential Detail ───────────────────────────────────────────────────
 
   if (selectedCredential) {
@@ -259,7 +195,6 @@ export default function WalletScreen() {
       <CredentialDetail
         credential={selectedCredential}
         onBack={() => setSelectedCredential(null)}
-        onPresent={handlePresent}
         onDeleted={async () => {
           await loadCredentials()
           setSelectedCredential(null)
@@ -405,12 +340,10 @@ export default function WalletScreen() {
 function CredentialDetail({
   credential,
   onBack,
-  onPresent,
   onDeleted,
 }: {
   credential: StoredCredential
   onBack: () => void
-  onPresent: () => void
   onDeleted: () => Promise<void>
 }) {
   const t = useTheme()
@@ -501,14 +434,24 @@ function CredentialDetail({
           </View>
         </View>
 
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel="Present credential"
-          accessibilityHint="Click to start presenting this credential to a verifier"
-          onPress={onPresent}
-          style={[styles.presentBtn, {backgroundColor: t.palette.primary_500}]}>
-          <Text style={styles.presentBtnText}>Present Credential</Text>
-        </TouchableOpacity>
+        {/*
+          PARA does not present credentials. Presenting happens in the iM8
+          wallet, which holds the key and shows everything a presentation
+          reveals (mubEZ CD-14).
+        */}
+        <View style={[styles.detailSection, {marginTop: 16}]}>
+          <Text style={[styles.detailLabel, t.atoms.text_contrast_medium]}>
+            <Trans>Sharing</Trans>
+          </Text>
+          <Text style={[styles.proofValue, t.atoms.text_contrast_medium]}>
+            <Trans>
+              Credentials are shared from your iM8 wallet, not from PARA. A
+              shared credential includes your account DID and every fact in it,
+              and apps can link repeat shares. It is not anonymous, and single
+              facts cannot be hidden.
+            </Trans>
+          </Text>
+        </View>
 
         <TouchableOpacity
           accessibilityRole="button"
@@ -544,219 +487,6 @@ function CredentialDetail({
           </Text>
         </TouchableOpacity>
       </ScrollView>
-    </View>
-  )
-}
-
-// ─── Consent Screen ────────────────────────────────────────────────────────
-
-function ConsentScreen({
-  credential,
-  onCancel,
-  onConfirm,
-}: {
-  credential: StoredCredential
-  onCancel: () => void
-  onConfirm: (claims: (keyof StoredCredential['claims'])[]) => void
-}) {
-  const t = useTheme()
-  const {} = useLingui()
-  const [selectedClaims, setSelectedClaims] = useState<
-    (keyof StoredCredential['claims'])[]
-  >(['ageOver18', 'citizenship'])
-
-  const toggleClaim = (claim: keyof StoredCredential['claims']) => {
-    setSelectedClaims(prev =>
-      prev.includes(claim) ? prev.filter(c => c !== claim) : [...prev, claim],
-    )
-  }
-
-  return (
-    <View style={[styles.container, t.atoms.bg]}>
-      <View style={styles.consentHeader}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          onPress={onCancel}
-          style={styles.backBtn}>
-          <Text style={[styles.backBtnText, t.atoms.text]}>✕</Text>
-        </TouchableOpacity>
-        <Text style={[styles.consentTitle, t.atoms.text]}>
-          Select Claims to Share
-        </Text>
-      </View>
-
-      <ScrollView style={styles.consentContent}>
-        <Text style={[styles.consentSubtitle, t.atoms.text_contrast_medium]}>
-          Choose which verified claims to reveal to the verifier. You control
-          your data.
-        </Text>
-
-        <View
-          style={[
-            styles.consentCard,
-            t.atoms.bg_contrast_25,
-            {borderColor: t.palette.contrast_100},
-          ]}>
-          {Object.entries(credential.claims).map(([key, value]) => {
-            const isSelected = selectedClaims.includes(
-              key as keyof StoredCredential['claims'],
-            )
-            return (
-              <TouchableOpacity
-                key={key}
-                accessibilityRole="checkbox"
-                accessibilityState={{checked: isSelected}}
-                onPress={() =>
-                  toggleClaim(key as keyof StoredCredential['claims'])
-                }
-                style={[
-                  styles.claimToggle,
-                  {borderBottomColor: t.palette.contrast_100},
-                ]}>
-                <View style={styles.claimToggleLeft}>
-                  <Text style={[styles.claimToggleKey, t.atoms.text]}>
-                    {key}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.claimToggleValue,
-                      t.atoms.text_contrast_medium,
-                    ]}>
-                    {String(value)}
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    styles.claimToggleCheck,
-                    {
-                      backgroundColor: isSelected
-                        ? t.palette.primary_500
-                        : t.palette.contrast_100,
-                    },
-                  ]}>
-                  {isSelected && <Text style={styles.checkMark}>✓</Text>}
-                </View>
-              </TouchableOpacity>
-            )
-          })}
-        </View>
-
-        <View
-          style={[
-            styles.securityBadge,
-            {backgroundColor: t.palette.primary_500 + '15'},
-          ]}>
-          <Text
-            style={[styles.securityBadgeText, {color: t.palette.primary_500}]}>
-            🔒 End-to-end encrypted
-          </Text>
-        </View>
-
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel="Confirm and generate QR"
-          accessibilityHint="Click to confirm your selection and generate the presentation QR code"
-          onPress={() => onConfirm(selectedClaims)}
-          style={[styles.confirmBtn, {backgroundColor: t.palette.primary_500}]}>
-          <Text style={styles.confirmBtnText}>Generate QR Code</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </View>
-  )
-}
-
-// ─── Presentation QR View ──────────────────────────────────────────────────
-
-function PresentationQRView({
-  bundle,
-  onClose,
-}: {
-  bundle: PresentationBundle
-  onClose: () => void
-}) {
-  const t = useTheme()
-  const {} = useLingui()
-  const [countdown, setCountdown] = useState(300) // 5 minutes
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCountdown(c => {
-        if (c <= 1) {
-          clearInterval(timer)
-          onClose()
-          return 0
-        }
-        return c - 1
-      })
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [onClose])
-
-  const mins = Math.floor(countdown / 60)
-  const secs = countdown % 60
-
-  return (
-    <View style={[styles.container, t.atoms.bg]}>
-      <View style={styles.qrHeader}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          onPress={onClose}
-          style={styles.backBtn}>
-          <Text style={[styles.backBtnText, t.atoms.text]}>✕</Text>
-        </TouchableOpacity>
-        <Text style={[styles.qrTitle, t.atoms.text]}>Scan to Verify</Text>
-      </View>
-
-      <View style={styles.qrContent}>
-        <View
-          style={[
-            styles.qrCard,
-            t.atoms.bg_contrast_25,
-            {borderColor: t.palette.contrast_100},
-          ]}>
-          <QRCode
-            value={JSON.stringify(bundle)}
-            size={220}
-            color={t.palette.contrast_500}
-            backgroundColor={t.atoms.bg.backgroundColor}
-          />
-        </View>
-
-        <Text style={[styles.qrSubtitle, t.atoms.text_contrast_medium]}>
-          Show this QR to the verifier. It contains your selected claims
-          encrypted with a one-time nonce.
-        </Text>
-
-        <View
-          style={[
-            styles.countdownBadge,
-            {backgroundColor: t.palette.primary_500 + '15'},
-          ]}>
-          <Text style={[styles.countdownText, {color: t.palette.primary_500}]}>
-            ⏱️ Expires in {mins}:{secs.toString().padStart(2, '0')}
-          </Text>
-        </View>
-
-        <View style={styles.revealedClaims}>
-          <Text style={[styles.revealedTitle, t.atoms.text]}>Revealing:</Text>
-          {bundle.revealedClaims.map(claim => (
-            <View
-              key={claim}
-              style={[
-                styles.revealedChip,
-                {backgroundColor: t.palette.primary_500 + '15'},
-              ]}>
-              <Text
-                style={[
-                  styles.revealedChipText,
-                  {color: t.palette.primary_500},
-                ]}>
-                {claim}
-              </Text>
-            </View>
-          ))}
-        </View>
-      </View>
     </View>
   )
 }
@@ -955,18 +685,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
   },
-  presentBtn: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  presentBtnText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
   deleteBtn: {
     marginHorizontal: 16,
     marginTop: 8,
@@ -980,150 +698,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   // Consent
-  consentHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    gap: 12,
-  },
-  consentTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  consentContent: {
-    flex: 1,
-  },
-  consentSubtitle: {
-    fontSize: 14,
-    paddingHorizontal: 16,
-    marginBottom: 16,
-    lineHeight: 20,
-  },
-  consentCard: {
-    marginHorizontal: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    overflow: 'hidden',
-  },
-  claimToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-  },
-  claimToggleLeft: {
-    flex: 1,
-    gap: 2,
-  },
-  claimToggleKey: {
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  claimToggleValue: {
-    fontSize: 12,
-  },
-  claimToggleCheck: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkMark: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  securityBadge: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  securityBadgeText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  confirmBtn: {
-    marginHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 32,
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  confirmBtnText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
   // QR
-  qrHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 12,
-    gap: 12,
-  },
-  qrTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-  },
-  qrContent: {
-    flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: 24,
-  },
-  qrCard: {
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 24,
-    marginBottom: 20,
-  },
-  qrSubtitle: {
-    fontSize: 14,
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  countdownBadge: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  countdownText: {
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  revealedClaims: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'center',
-  },
-  revealedTitle: {
-    fontSize: 12,
-    fontWeight: '600',
-    width: '100%',
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  revealedChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  revealedChipText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
 })
