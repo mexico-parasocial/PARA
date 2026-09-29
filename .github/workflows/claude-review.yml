@@ -26,7 +26,13 @@ jobs:
     # unvetted code). Branch PRs can only be
     # created by people with write access, i.e. org members.
     # Bot-authored PRs (dependabot, changesets) are also skipped.
+    #
+    # PARA: inherited from Bluesky, whose Agent Gateway endpoint and
+    # AGENT_GATEWAY_CLAUDE_GH_REVIEW_KEY secret this repository does not have,
+    # so the job could only fail. It runs once the repository variable
+    # CLAUDE_REVIEW_ENABLED is 'true' and the endpoint and secret are set up.
     if: >
+      vars.CLAUDE_REVIEW_ENABLED == 'true' &&
       github.event.pull_request.draft == false &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.user.type != 'Bot'

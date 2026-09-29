@@ -1,4 +1,3 @@
-import {type $Typed} from '@atproto/lex'
 import {type DidString} from '@atproto/syntax'
 import {
   type InfiniteData,

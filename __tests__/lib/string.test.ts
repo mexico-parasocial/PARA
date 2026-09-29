@@ -1,4 +1,5 @@
 import {RichText} from '@bsky/sdk/richtext'
+import {i18n} from '@lingui/core'
 
 import {parseEmbedPlayerFromUrl} from '#/lib/strings/embed-player'
 import {
@@ -201,6 +202,14 @@ describe('enforceLen', () => {
 })
 
 describe('cleanError', () => {
+  /*
+   * `cleanError` returns translated copy, so a locale has to be active. With
+   * no catalog loaded, Lingui falls back to the source message.
+   */
+  beforeAll(() => {
+    i18n.loadAndActivate({locale: 'en', messages: {}})
+  })
+
   const inputs = [
     'TypeError: Network request failed',
     'Error: Aborted',

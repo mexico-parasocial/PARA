@@ -184,7 +184,13 @@ module.exports = async function (env, argv) {
         openAnalyzer: OPEN_ANALYZER,
         generateStatsFile: true,
         statsFilename: '../stats.json',
-        analyzerMode: OPEN_ANALYZER ? 'server' : 'json',
+        /*
+         * CI only diffs asset sizes (NejcZdovc/bundle-size-diff reads
+         * `assets`). Full stats outgrew V8's maximum string length and broke
+         * that step, so write assets alone unless analysing interactively.
+         */
+        analyzerMode: OPEN_ANALYZER ? 'server' : 'disabled',
+        statsOptions: OPEN_ANALYZER ? null : {all: false, assets: true},
         defaultSizes: 'parsed',
       }),
     )

@@ -13,7 +13,6 @@ import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation, useRoute} from '@react-navigation/native'
 
-import {type CommunityGovernanceApplicant} from '#/lib/api/para-lexicons'
 import {getCommunityInsignia} from '#/lib/civic-insignias'
 import {
   canManageGovernance,

@@ -11,7 +11,7 @@ import {
 import {Trans} from '@lingui/react/macro'
 
 import {useSession} from '#/state/session'
-import {useAcuerdos} from '#/state/shell/acuerdos'
+import {isLockActive, useAcuerdos} from '#/state/shell/acuerdos'
 import {useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import {Lock_Stroke2_Corner0_Rounded as LockIcon} from '#/components/icons/Lock'
@@ -22,13 +22,21 @@ import {Text} from '#/components/Typography'
 
 export function AcuerdoListScreen() {
   const t = useTheme()
-  const {acuerdos, myLocks, requestExit, getCooldownRemainingMs, checkQuorum} =
-    useAcuerdos()
+  const {
+    acuerdos,
+    myLocks,
+    requestExit,
+    renewLock,
+    getCooldownRemainingMs,
+    checkQuorum,
+  } = useAcuerdos()
   const [showCreate, setShowCreate] = useState(false)
   const [selectedAcuerdo, setSelectedAcuerdo] = useState<string | null>(null)
 
   const publicAcuerdos = acuerdos.filter(a => a.visibility === 'public')
-  const myLockedUris = new Set(myLocks.map(l => l.acuerdo))
+  const myLockedUris = new Set(
+    myLocks.filter(l => isLockActive(l)).map(l => l.acuerdo),
+  )
 
   return (
     <Layout.Screen testID="acuerdoListScreen">
@@ -65,8 +73,7 @@ export function AcuerdoListScreen() {
             </Text>
             {myLocks.map(lock => {
               const acuerdo = acuerdos.find(a => a.uri === lock.acuerdo)
-              const isExiting =
-                !!lock.exitRequestedAt && !lock.exitCooldownEndsAt
+              const isActive = isLockActive(lock)
               const isCooldown =
                 !!lock.exitCooldownEndsAt &&
                 new Date(lock.exitCooldownEndsAt) > new Date()
@@ -87,7 +94,13 @@ export function AcuerdoListScreen() {
                     </Text>
                   </View>
                   <Text style={[styles.lockMeta, t.atoms.text_contrast_medium]}>
-                    Bloqueado: {new Date(lock.lockedAt).toLocaleDateString()}
+                    {isActive
+                      ? lock.expiresAt
+                        ? `Vigente hasta el ${new Date(lock.expiresAt).toLocaleDateString()}`
+                        : `Bloqueado: ${new Date(lock.lockedAt).toLocaleDateString()}`
+                      : lock.exitRequestedAt
+                        ? 'Saliste: tu voto ya no cuenta en este acuerdo'
+                        : 'Tu cesión venció: tu voto ya no cuenta. Únete de nuevo para renovarla.'}
                   </Text>
                   {lock.commitment.type === 'delegate-to-rep' && (
                     <Text
@@ -122,23 +135,30 @@ export function AcuerdoListScreen() {
                           styles.cooldownText,
                           {color: t.palette.negative_500},
                         ]}>
-                        Cooldown activo: {remainingHours}h restantes
+                        Podrás volver a unirte en {remainingHours}h
                       </Text>
                     </View>
                   )}
-                  <Button
-                    variant="ghost"
-                    color="negative"
-                    size="small"
-                    label="exit"
-                    onPress={() => requestExit(lock.id)}
-                    disabled={isCooldown || isExiting}>
-                    <ButtonText>
-                      {isCooldown
-                        ? `Esperar ${remainingHours}h...`
-                        : 'Solicitar salida'}
-                    </ButtonText>
-                  </Button>
+                  {isActive && (
+                    <View style={styles.lockActions}>
+                      <Button
+                        variant="ghost"
+                        color="primary"
+                        size="small"
+                        label="Renovar cesión"
+                        onPress={() => void renewLock(lock.id)}>
+                        <ButtonText>Renovar 90 días</ButtonText>
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        color="negative"
+                        size="small"
+                        label="Salir del acuerdo"
+                        onPress={() => void requestExit(lock.id)}>
+                        <ButtonText>Salir ahora</ButtonText>
+                      </Button>
+                    </View>
+                  )}
                 </View>
               )
             })}
@@ -610,6 +630,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   cooldownText: {fontSize: 12, fontWeight: '600'},
+  lockActions: {flexDirection: 'row', flexWrap: 'wrap', gap: 8},
   acuerdoCard: {
     padding: 16,
     borderRadius: 16,

@@ -1,4 +1,10 @@
 import {useCallback, useState} from 'react'
+import {
+  type Dispatch,
+  type ReactNode,
+  type Ref,
+  type SetStateAction,
+} from 'react'
 import {View} from 'react-native'
 import type Animated from 'react-native-reanimated'
 import {useAnimatedRef, useScrollOffset} from 'react-native-reanimated'
@@ -8,12 +14,6 @@ import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import {useFocusEffect, useNavigation} from '@react-navigation/native'
 import {type NativeStackScreenProps} from '@react-navigation/native-stack'
-import {
-  type Dispatch,
-  type ReactNode,
-  type Ref,
-  type SetStateAction,
-} from 'react'
 
 import {RECOMMENDED_SAVED_FEEDS, TIMELINE_SAVED_FEED} from '#/lib/constants'
 import {useHaptics} from '#/lib/haptics'

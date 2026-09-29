@@ -55,7 +55,10 @@ export interface AcuerdoLockRecord {
   acuerdo: string // URI of the acuerdo
   voter: string // DID of the locking voter
   lockedAt: string
-  expiresAt: string | null // null = until acuerdo resolves
+  // A lock is a standing mandate: it lapses at expiresAt unless renewed
+  // (docs/revocable-mandates-spec.md). null only on locks made before that.
+  expiresAt: string | null
+  renewedAt?: string
 
   // What the voter is committing
   commitment: {
@@ -64,9 +67,11 @@ export interface AcuerdoLockRecord {
     // delegate: voter delegates their vote power to acuerdo's chosen rep
   }
 
-  // Exit tracking
+  // Exit tracking. Leaving releases the vote at once (releasedAt); the 48h
+  // cooldown only delays joining the same acuerdo again.
   exitRequestedAt?: string
   exitCooldownEndsAt?: string // 48h from request
+  releasedAt?: string // exit or lapse; the vote no longer counts
 }
 
 /**

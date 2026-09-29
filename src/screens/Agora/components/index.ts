@@ -1,6 +1,7 @@
 export {BridgingInsight, type GroupAgreement} from './BridgingInsight'
 export {type Coalition, CoalitionsSection} from './CoalitionsSection'
 export {CommunityChip} from './CommunityChip'
+export {DelegateReachCard} from './DelegateReachCard'
 export {DelegationFlowMini} from './DelegationFlowMini'
 export {DeliberationPulse, type PulseStatement} from './DeliberationPulse'
 export {DemocracyScore} from './DemocracyScore'

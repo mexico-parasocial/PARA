@@ -1,7 +1,6 @@
 import {useMemo, useState} from 'react'
 import {View} from 'react-native'
 import {type Un$Typed} from '@atproto/lex'
-import {type DidString} from '@atproto/syntax'
 import {type ModerationOpts} from '@bsky/sdk/moderation'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'

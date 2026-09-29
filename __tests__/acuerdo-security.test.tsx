@@ -5,7 +5,20 @@
 import {renderHook, act, waitFor} from '@testing-library/react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-import {AcuerdoProvider, useAcuerdos} from '#/state/shell/acuerdos'
+import {
+  AcuerdoProvider,
+  isLockActive,
+  useAcuerdos,
+} from '#/state/shell/acuerdos'
+
+/*
+ * The provider only reads the viewer's DID (the tests act as did:plc:test,
+ * the author and admin they create). The real session module pulls in
+ * UI and native modules (Reanimated) that do not load under jest.
+ */
+jest.mock('#/state/session', () => ({
+  useSession: () => ({currentAccount: {did: 'did:plc:test'}}),
+}))
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(() => Promise.resolve()),
@@ -21,6 +34,8 @@ describe('Acuerdo Security — Vector 1: Cooldown enforcement', () => {
   it('prevents joining while cooldown is active', async () => {
     const {result} = renderHook(() => useAcuerdos(), {wrapper})
 
+    // One act per step: result.current only reflects state after a render.
+    let acuerdoUri = ''
     await act(async () => {
       const acuerdo = await result.current.createAcuerdo({
         title: 'Test',
@@ -32,12 +47,14 @@ describe('Acuerdo Security — Vector 1: Cooldown enforcement', () => {
         minLockQuorum: 5,
         phase: 'forming',
       })
-      await result.current.joinAcuerdo(acuerdo.uri, 'follow-acuerdo')
-      const lock = result.current.myLocks[0]
-      await result.current.requestExit(lock.id)
+      acuerdoUri = acuerdo.uri
     })
-
-    const acuerdoUri = result.current.acuerdos[0].uri
+    await act(async () => {
+      await result.current.joinAcuerdo(acuerdoUri, 'follow-acuerdo')
+    })
+    await act(async () => {
+      await result.current.requestExit(result.current.myLocks[0].id)
+    })
 
     await expect(
       act(async () => {
@@ -47,10 +64,114 @@ describe('Acuerdo Security — Vector 1: Cooldown enforcement', () => {
   })
 })
 
+describe('Acuerdo Security — Vector 1b: Revocable at any moment', () => {
+  async function joined(result: {current: ReturnType<typeof useAcuerdos>}) {
+    let uri = ''
+    await act(async () => {
+      const acuerdo = await result.current.createAcuerdo({
+        title: 'Mandato',
+        description: 'D',
+        author: 'did:plc:test',
+        scope: {type: 'policy', subjects: ['did:plc:subj']},
+        visibility: 'public',
+        admins: ['did:plc:test'],
+        minLockQuorum: 5,
+        phase: 'forming',
+      })
+      uri = acuerdo.uri
+    })
+    await act(async () => {
+      await result.current.joinAcuerdo(uri, 'follow-acuerdo')
+    })
+    return uri
+  }
+
+  it('releases the vote the moment the member leaves', async () => {
+    const {result} = renderHook(() => useAcuerdos(), {wrapper})
+    const uri = await joined(result)
+    expect(result.current.getAcuerdoByUri(uri)?.lockedCount).toBe(1)
+    expect(result.current.isSubjectLocked('did:plc:subj')).toBe(true)
+
+    await act(async () => {
+      await result.current.requestExit(result.current.myLocks[0].id)
+    })
+
+    const acuerdo = result.current.getAcuerdoByUri(uri)
+    expect(acuerdo?.lockedCount).toBe(0)
+    expect(acuerdo?.isLockedByViewer).toBe(false)
+    expect(result.current.isSubjectLocked('did:plc:subj')).toBe(false)
+    expect(isLockActive(result.current.myLocks[0])).toBe(false)
+  })
+
+  it('does not count a second exit', async () => {
+    const {result} = renderHook(() => useAcuerdos(), {wrapper})
+    const uri = await joined(result)
+    const lockId = result.current.myLocks[0].id
+    await act(async () => {
+      await result.current.requestExit(lockId)
+    })
+    await act(async () => {
+      await result.current.requestExit(lockId)
+    })
+    expect(result.current.getAcuerdoByUri(uri)?.lockedCount).toBe(0)
+  })
+
+  it('refuses joining twice, which would count the vote twice', async () => {
+    const {result} = renderHook(() => useAcuerdos(), {wrapper})
+    const uri = await joined(result)
+    await expect(
+      act(async () => {
+        await result.current.joinAcuerdo(uri, 'follow-acuerdo')
+      }),
+    ).rejects.toThrow(/Ya estás en este acuerdo/)
+    expect(result.current.getAcuerdoByUri(uri)?.lockedCount).toBe(1)
+  })
+
+  it('gives a lock a 90-day term, and renewing restarts it', async () => {
+    const {result} = renderHook(() => useAcuerdos(), {wrapper})
+    await joined(result)
+    const lock = result.current.myLocks[0]
+    const term = Date.parse(lock.expiresAt!) - Date.parse(lock.lockedAt)
+    expect(term).toBe(90 * 24 * 60 * 60 * 1000)
+
+    await act(async () => {
+      await result.current.renewLock(lock.id)
+    })
+    const renewed = result.current.myLocks[0]
+    expect(renewed.renewedAt).toBeDefined()
+    expect(Date.parse(renewed.expiresAt!)).toBeGreaterThanOrEqual(
+      Date.parse(lock.expiresAt!),
+    )
+  })
+
+  it('stops counting a lock that lapsed, without a cooldown', async () => {
+    jest.useFakeTimers()
+    try {
+      const {result} = renderHook(() => useAcuerdos(), {wrapper})
+      const uri = await joined(result)
+      expect(result.current.getAcuerdoByUri(uri)?.lockedCount).toBe(1)
+
+      jest.setSystemTime(Date.now() + 91 * 24 * 60 * 60 * 1000)
+      await act(async () => {
+        jest.advanceTimersByTime(30_000)
+      })
+
+      expect(result.current.getAcuerdoByUri(uri)?.lockedCount).toBe(0)
+      expect(result.current.myLocks[0].releasedAt).toBeDefined()
+      expect(result.current.isInCooldown(uri)).toBe(false)
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+})
+
 describe('Acuerdo Security — Vector 2: Cancellation cascading', () => {
   it('cancels parent and all child acuerdos', async () => {
     const {result} = renderHook(() => useAcuerdos(), {wrapper})
 
+    // One act per step: result.current only reflects state after a render.
+    let parentUri = ''
+    let childUri = ''
     await act(async () => {
       const parent = await result.current.createAcuerdo({
         title: 'Parent',
@@ -74,29 +195,36 @@ describe('Acuerdo Security — Vector 2: Cancellation cascading', () => {
         phase: 'forming',
         parentAcuerdo: parent.uri,
       })
-
-      await result.current.joinAcuerdo(parent.uri, 'follow-acuerdo')
-      await result.current.joinAcuerdo(child.uri, 'follow-acuerdo')
+      parentUri = parent.uri
+      childUri = child.uri
     })
-
     await act(async () => {
-      await result.current.cancelAcuerdo(result.current.acuerdos[0].uri, 'test')
+      await result.current.joinAcuerdo(parentUri, 'follow-acuerdo')
+    })
+    await act(async () => {
+      await result.current.joinAcuerdo(childUri, 'follow-acuerdo')
     })
 
-    expect(result.current.acuerdos[0].phase).toBe('cancelled')
-    expect(result.current.acuerdos[1].phase).toBe('cancelled')
+    // By URI: new acuerdos are listed first, so acuerdos[0] is the child.
+    await act(async () => {
+      await result.current.cancelAcuerdo(parentUri, 'test')
+    })
+
+    expect(result.current.getAcuerdoByUri(parentUri)?.phase).toBe('cancelled')
+    expect(result.current.getAcuerdoByUri(childUri)?.phase).toBe('cancelled')
     expect(result.current.myLocks).toHaveLength(0)
   })
 })
 
 describe('Acuerdo Security — Vector 3: Recursive delegation depth bomb', () => {
-  it('halts at max depth (5)', async () => {
-    const {result} = renderHook(() => useAcuerdos(), {wrapper})
-
-    // Build a chain: a1 -> a2 -> a3 -> a4 -> a5 -> a6
+  /** Builds a parent chain of `length` acuerdos; uris[0] is the root. */
+  async function buildChain(
+    result: {current: ReturnType<typeof useAcuerdos>},
+    length: number,
+  ) {
     const uris: string[] = []
     await act(async () => {
-      for (let i = 0; i < 6; i++) {
+      for (let i = 0; i < length; i++) {
         const a = await result.current.createAcuerdo({
           title: `A${i}`,
           description: 'D',
@@ -111,6 +239,32 @@ describe('Acuerdo Security — Vector 3: Recursive delegation depth bomb', () =>
         uris.push(a.uri)
       }
     })
+    return uris
+  }
+
+  // docs/horizontal-governance-spec.md: max delegation depth 1 hop.
+  it('resolves one hop to the parent', async () => {
+    const {result} = renderHook(() => useAcuerdos(), {wrapper})
+    const uris = await buildChain(result, 2)
+
+    const resolved = result.current.resolveEffectiveVote(uris[1])
+    expect(resolved.error).toBeUndefined()
+    expect(resolved.effectiveDid).toBe('did:plc:test')
+    expect(resolved.chain.map(c => c.acuerdoUri)).toEqual([uris[1], uris[0]])
+  })
+
+  it('halts at the second hop', async () => {
+    const {result} = renderHook(() => useAcuerdos(), {wrapper})
+    const uris = await buildChain(result, 3)
+
+    const deepest = result.current.resolveEffectiveVote(uris[2])
+    expect(deepest.error).toEqual({type: 'max-depth-exceeded', maxDepth: 1})
+    expect(deepest.effectiveDid).toBeNull()
+  })
+
+  it('halts a long chain (depth bomb)', async () => {
+    const {result} = renderHook(() => useAcuerdos(), {wrapper})
+    const uris = await buildChain(result, 6)
 
     const deepest = result.current.resolveEffectiveVote(uris[5])
     expect(deepest.error?.type).toBe('max-depth-exceeded')

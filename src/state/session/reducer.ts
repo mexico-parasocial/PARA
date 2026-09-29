@@ -1,5 +1,6 @@
 import {unregisterPushToken} from '#/lib/notifications/notifications'
 import {logger} from '#/lib/notifications/util'
+import {dedupeAccounts} from './account-utils'
 import {wrapSessionReducerForLogging} from './logging'
 import {createPublicSessionBundle} from './session-core'
 import {type AtpSessionEvent, type SessionAccount} from './types'
@@ -68,9 +69,12 @@ function createPublicBundleState(): BundleState {
   }
 }
 
-export function getInitialState(persistedAccounts: SessionAccount[]): State {
+export function getInitialState(
+  persistedAccounts: SessionAccount[],
+  preferredDid?: string,
+): State {
   return {
-    accounts: persistedAccounts,
+    accounts: dedupeAccounts(persistedAccounts, preferredDid),
     currentBundleState: createPublicBundleState(),
     needsPersist: false,
   }
@@ -124,10 +128,15 @@ let reducer = (state: State, action: Action): State => {
     case 'switched-to-account': {
       const {newAccount, newBundle} = action
       return {
-        accounts: [
-          newAccount,
-          ...state.accounts.filter(a => a.did !== newAccount.did),
-        ],
+        /*
+         * A local PDS reached as localhost and as 127.0.0.1, or an account
+         * recreated under the same handle, leaves a stale entry with another
+         * DID; keep the one just switched to.
+         */
+        accounts: dedupeAccounts(
+          [newAccount, ...state.accounts.filter(a => a.did !== newAccount.did)],
+          newAccount.did,
+        ),
         currentBundleState: {
           did: newAccount.did,
           bundle: newBundle,
@@ -234,7 +243,7 @@ let reducer = (state: State, action: Action): State => {
     case 'synced-accounts': {
       const {syncedAccounts, syncedCurrentDid} = action
       return {
-        accounts: syncedAccounts,
+        accounts: dedupeAccounts(syncedAccounts, syncedCurrentDid),
         currentBundleState:
           syncedCurrentDid === state.currentBundleState.did
             ? state.currentBundleState

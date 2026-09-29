@@ -186,7 +186,9 @@ jobs:
       - name: 📷 Check fingerprint and install dependencies
         id: fingerprint
         timeout-minutes: 5
-        uses: bluesky-social/github-actions/fingerprint-native@abc6a46eb4badf243f55bfd7d6cec42722456300 # v0.3.0
+        # v0.4.0 installs with the pnpm set up above; v0.3.0 forced pnpm
+        # 11.5.3, which fails the packageManager check (11.21.0).
+        uses: bluesky-social/github-actions/fingerprint-native@2287aefd4ddca2914fd85715cbe47124b7d9f360 # v0.4.0
         with:
           profile: pull-request
 
@@ -254,11 +256,16 @@ jobs:
   # and installing it on a store/TestFlight client is misleading at best. Those
   # PRs need a native build instead. A skipped or failed fingerprint job also
   # skips this one - without a verdict we can't say the OTA is representative.
+  #
+  # PARA: gated on the repository variable PR_OTA_ENABLED. This repository has
+  # no EXPO_TOKEN (nor the ENV_TOKEN and signing secrets that follow), so the
+  # job could only fail at setup. Set the secrets, then the variable to 'true'.
   publish-pr-ota:
     name: Publish PR OTA to denis
     needs: fingerprint-native
     runs-on: ubuntu-latest
     if: >-
+      vars.PR_OTA_ENABLED == 'true' &&
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.event.pull_request.user.type != 'Bot' &&

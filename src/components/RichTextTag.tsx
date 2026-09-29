@@ -23,7 +23,6 @@ import {
 import {Loader} from '#/components/Loader'
 import * as Menu from '#/components/Menu'
 import {IS_NATIVE, IS_WEB} from '#/env'
-import {app} from '#/lexicons'
 
 export function RichTextTag({
   tag,

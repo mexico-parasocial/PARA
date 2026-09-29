@@ -5,10 +5,7 @@ import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation, useRoute} from '@react-navigation/native'
 
-import {
-  type CommunityGovernanceOfficialRepresentative,
-  type CommunityGovernancePerson,
-} from '#/lib/api/para-lexicons'
+import {type CommunityGovernanceOfficialRepresentative} from '#/lib/api/para-lexicons'
 import {getCommunityInsignia} from '#/lib/civic-insignias'
 import {type CommunityGovernanceView} from '#/lib/community-governance'
 import {usePalette} from '#/lib/hooks/usePalette'

@@ -7,12 +7,14 @@ import {
   useRef,
   useState,
 } from 'react'
+import {TID} from '@atproto/common-web'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import {
   type AcuerdoLockRecord,
   type AcuerdoRecord,
 } from '#/lib/api/acuerdo-lexicon'
+import {STANDING_TERM_DAYS} from '#/lib/mandates/mandates'
 import {useSession} from '#/state/session'
 
 const STORAGE_KEY = 'para_acuerdos'
@@ -44,7 +46,12 @@ export type DelegationChain = {
   parentAcuerdo?: string
 }
 
-const MAX_DELEGATION_DEPTH = 5
+/*
+ * Hops a vote may travel up the parent chain: an acuerdo may defer to its
+ * parent, but not to its grandparent. docs/horizontal-governance-spec.md
+ * ("Max delegation depth: 1 hop").
+ */
+const MAX_DELEGATION_DEPTH = 1
 
 export type DelegationError =
   | {type: 'max-depth-exceeded'; maxDepth: number}
@@ -52,8 +59,19 @@ export type DelegationError =
   | {type: 'unresolved-delegate'; did: string}
 
 // ─── Cooldown Constants ─────────────────────────────────────────────────────
+// Only delays joining again. Leaving is never delayed.
 const COOLDOWN_HOURS = 48
 const COOLDOWN_MS = COOLDOWN_HOURS * 60 * 60 * 1000
+
+// ─── Mandate term ───────────────────────────────────────────────────────────
+// A lock is a standing mandate and lapses unless renewed.
+const LOCK_TERM_MS = STANDING_TERM_DAYS * 24 * 60 * 60 * 1000
+
+/** Whether the lock's vote still counts: not released, not lapsed. */
+export function isLockActive(lock: AcuerdoLockRecord, now = new Date()) {
+  if (lock.releasedAt) return false
+  return !lock.expiresAt || new Date(lock.expiresAt) > now
+}
 
 // ─── Quorum Constants ───────────────────────────────────────────────────────
 const QUORUM_CHECK_INTERVAL_MS = 30000 // Check quorum every 30s
@@ -81,6 +99,7 @@ type AcuerdoContextValue = {
     commitment: 'follow-acuerdo' | 'delegate-to-rep',
   ) => Promise<void>
   requestExit: (lockId: string) => Promise<void>
+  renewLock: (lockId: string) => Promise<void>
   cancelAcuerdo: (acuerdoUri: string, reason: string) => Promise<void>
   updateVisibility: (
     acuerdoUri: string,
@@ -200,9 +219,13 @@ export function AcuerdoProvider({children}: {children: React.ReactNode}) {
   // ─── Cooldown helpers ─────────────────────────────────────────────────────
   const isInCooldown = useCallback(
     (acuerdoUri: string) => {
-      const lock = myLocks.find(l => l.acuerdo === acuerdoUri)
-      if (!lock?.exitCooldownEndsAt) return false
-      return new Date(lock.exitCooldownEndsAt) > new Date()
+      const now = new Date()
+      return myLocks.some(
+        l =>
+          l.acuerdo === acuerdoUri &&
+          !!l.exitCooldownEndsAt &&
+          new Date(l.exitCooldownEndsAt) > now,
+      )
     },
     [myLocks],
   )
@@ -226,7 +249,9 @@ export function AcuerdoProvider({children}: {children: React.ReactNode}) {
       data: Omit<AcuerdoRecord, 'createdAt' | 'uri'>,
     ): Promise<AcuerdoView> => {
       const now = new Date().toISOString()
-      const uri = `at://${data.author}/com.para.civic.acuerdo/${Date.now()}`
+      // A TID, not Date.now(): two acuerdos created in the same millisecond
+      // would otherwise share a URI.
+      const uri = `at://${data.author}/com.para.civic.acuerdo/${TID.nextStr()}`
       const acuerdo: AcuerdoView = {
         ...data,
         createdAt: now,
@@ -248,8 +273,13 @@ export function AcuerdoProvider({children}: {children: React.ReactNode}) {
       commitment: 'follow-acuerdo' | 'delegate-to-rep',
     ) => {
       // FIX #1: Enforce cooldown
+      if (myLocks.some(l => l.acuerdo === acuerdoUri && isLockActive(l))) {
+        throw new Error('Ya estás en este acuerdo')
+      }
       if (isInCooldown(acuerdoUri)) {
-        const lock = myLocks.find(l => l.acuerdo === acuerdoUri)
+        const lock = myLocks.find(
+          l => l.acuerdo === acuerdoUri && !!l.exitCooldownEndsAt,
+        )
         const remainingMs = lock ? getCooldownRemainingMs(lock.id) : COOLDOWN_MS
         const remainingHours = Math.ceil(remainingMs / (60 * 60 * 1000))
         throw new Error(
@@ -269,15 +299,17 @@ export function AcuerdoProvider({children}: {children: React.ReactNode}) {
         }
       }
 
+      const now = Date.now()
       const lock: AcuerdoLockView = {
-        id: `lock_${Date.now()}`,
+        id: `lock_${TID.nextStr()}`,
         acuerdo: acuerdoUri,
         voter: viewerDid,
-        lockedAt: new Date().toISOString(),
-        expiresAt: null,
+        lockedAt: new Date(now).toISOString(),
+        expiresAt: new Date(now + LOCK_TERM_MS).toISOString(),
         commitment: {type: commitment},
       }
-      setMyLocks(prev => [...prev, lock])
+      // Released locks for this acuerdo only held the cooldown, now over.
+      setMyLocks(prev => [...prev.filter(l => l.acuerdo !== acuerdoUri), lock])
       setAcuerdos(prev =>
         prev.map(a =>
           a.uri === acuerdoUri
@@ -289,20 +321,89 @@ export function AcuerdoProvider({children}: {children: React.ReactNode}) {
     [acuerdos, myLocks, isInCooldown, getCooldownRemainingMs],
   )
 
-  const requestExit = useCallback(async (lockId: string) => {
-    const cooldownEnds = new Date(Date.now() + COOLDOWN_MS).toISOString()
-    setMyLocks(prev =>
-      prev.map(lock =>
-        lock.id === lockId
-          ? {
-              ...lock,
-              exitRequestedAt: new Date().toISOString(),
-              exitCooldownEndsAt: cooldownEnds,
-            }
-          : lock,
-      ),
+  /** Stops counting these locks' votes. */
+  const releaseLocks = useCallback(
+    (
+      released: AcuerdoLockView[],
+      patch: (lock: AcuerdoLockView) => Partial<AcuerdoLockView>,
+    ) => {
+      if (released.length === 0) return
+      const ids = new Set(released.map(l => l.id))
+      const perAcuerdo = new Map<string, number>()
+      for (const l of released) {
+        perAcuerdo.set(l.acuerdo, (perAcuerdo.get(l.acuerdo) ?? 0) + 1)
+      }
+      setMyLocks(prev =>
+        prev.map(lock => (ids.has(lock.id) ? {...lock, ...patch(lock)} : lock)),
+      )
+      setAcuerdos(prev =>
+        prev.map(a => {
+          const n = perAcuerdo.get(a.uri)
+          return n
+            ? {
+                ...a,
+                lockedCount: Math.max(0, a.lockedCount - n),
+                isLockedByViewer: false,
+              }
+            : a
+        }),
+      )
+    },
+    [],
+  )
+
+  // Leaving takes effect at once: revocable at any moment.
+  const requestExit = useCallback(
+    async (lockId: string) => {
+      const lock = myLocks.find(l => l.id === lockId)
+      if (!lock || !isLockActive(lock)) return
+      const now = Date.now()
+      releaseLocks([lock], () => ({
+        releasedAt: new Date(now).toISOString(),
+        exitRequestedAt: new Date(now).toISOString(),
+        exitCooldownEndsAt: new Date(now + COOLDOWN_MS).toISOString(),
+      }))
+    },
+    [myLocks, releaseLocks],
+  )
+
+  const renewLock = useCallback(
+    async (lockId: string) => {
+      const lock = myLocks.find(l => l.id === lockId)
+      if (!lock || !isLockActive(lock)) {
+        throw new Error('Esta cesión ya terminó. Vuelve a unirte al acuerdo.')
+      }
+      const now = Date.now()
+      setMyLocks(prev =>
+        prev.map(l =>
+          l.id === lockId
+            ? {
+                ...l,
+                renewedAt: new Date(now).toISOString(),
+                expiresAt: new Date(now + LOCK_TERM_MS).toISOString(),
+              }
+            : l,
+        ),
+      )
+    },
+    [myLocks],
+  )
+
+  // Lapsed locks stop counting without a cooldown: nobody chose to leave.
+  const releaseLapsed = useCallback(() => {
+    const now = new Date()
+    const lapsed = myLocks.filter(
+      l => !l.releasedAt && l.expiresAt && !isLockActive(l, now),
     )
-  }, [])
+    releaseLocks(lapsed, l => ({releasedAt: l.expiresAt ?? now.toISOString()}))
+  }, [myLocks, releaseLocks])
+
+  useEffect(() => {
+    if (isLoading) return
+    releaseLapsed()
+    const timer = setInterval(releaseLapsed, QUORUM_CHECK_INTERVAL_MS)
+    return () => clearInterval(timer)
+  }, [isLoading, releaseLapsed])
 
   // FIX #2: Admin cancellation with cascading cleanup
   const cancelAcuerdo = useCallback(
@@ -362,7 +463,9 @@ export function AcuerdoProvider({children}: {children: React.ReactNode}) {
       const acuerdoUris = acuerdos
         .filter(a => a.scope.subjects.includes(subjectUri))
         .map(a => a.uri)
-      return myLocks.filter(lock => acuerdoUris.includes(lock.acuerdo))
+      return myLocks.filter(
+        lock => acuerdoUris.includes(lock.acuerdo) && isLockActive(lock),
+      )
     },
     [acuerdos, myLocks],
   )
@@ -498,6 +601,7 @@ export function AcuerdoProvider({children}: {children: React.ReactNode}) {
       createAcuerdo,
       joinAcuerdo,
       requestExit,
+      renewLock,
       cancelAcuerdo,
       updateVisibility,
       getAcuerdoByUri,
@@ -517,6 +621,7 @@ export function AcuerdoProvider({children}: {children: React.ReactNode}) {
       createAcuerdo,
       joinAcuerdo,
       requestExit,
+      renewLock,
       cancelAcuerdo,
       updateVisibility,
       getAcuerdoByUri,
