@@ -46,12 +46,14 @@ npm-debug.log
 yarn-error.log
 
 
-#atproto
-atproto
-atproto-main
-watx
-atproto-refactor
-atproto_refactor
+# Sibling checkouts dropped at the repository root. Anchored, so vendored
+# directories that happen to be named `atproto` (indigo-main/atproto,
+# indigo-main/api/atproto, lexicons/com/atproto) are not ignored.
+/atproto
+/atproto-main
+/watx
+/atproto-refactor
+/atproto_refactor
 
 # BUCK
 buck-out/
