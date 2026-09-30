@@ -1,6 +1,6 @@
-import {ScrollView, TouchableOpacity, View} from 'react-native'
+import {ScrollView, View} from 'react-native'
 import {plural} from '@lingui/core/macro'
-import {Trans, useLingui} from '@lingui/react/macro'
+import {Trans} from '@lingui/react/macro'
 
 import {Text} from '#/view/com/util/text/Text'
 import {atoms as a, useTheme} from '#/alf'
@@ -16,81 +16,13 @@ import {type PersonalTreeGraph} from '#/features/personalCivicTree/graph'
  * relations the user drew. Only relation kinds actually present are shown -
  * a legend for seven kinds when the user has used one is noise.
  */
-export function PersonalTreeLegend({
-  graph,
-  activeGroups,
-  onToggleGroup,
-}: {
-  graph: PersonalTreeGraph
-  activeGroups: Set<string>
-  onToggleGroup: (groupId: string) => void
-}) {
+export function PersonalTreeLegend({graph}: {graph: PersonalTreeGraph}) {
   const t = useTheme()
-  const {t: l} = useLingui()
 
   const usedKinds = Array.from(new Set(graph.edges.map(e => e.kind)))
 
   return (
     <View style={[a.gap_xs]}>
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[a.gap_xs, a.px_md, a.py_2xs]}>
-        {graph.groups.map(group => {
-          const active = activeGroups.size === 0 || activeGroups.has(group.id)
-          return (
-            <TouchableOpacity
-              key={group.id}
-              accessibilityRole="button"
-              accessibilityLabel={group.name}
-              accessibilityHint={l`Shows or hides this collection in the tree`}
-              accessibilityState={{selected: active}}
-              onPress={() => onToggleGroup(group.id)}
-              style={[
-                a.flex_row,
-                a.align_center,
-                a.gap_xs,
-                a.rounded_full,
-                a.px_sm,
-                {
-                  paddingVertical: 5,
-                  borderWidth: 1,
-                  borderColor: active ? group.color : t.palette.contrast_100,
-                  backgroundColor: active ? group.color + '18' : 'transparent',
-                  opacity: active ? 1 : 0.55,
-                },
-              ]}>
-              <View
-                style={[
-                  a.rounded_full,
-                  {
-                    width: 9,
-                    height: 9,
-                    borderWidth: 2,
-                    borderColor: group.color,
-                  },
-                ]}
-              />
-              <Text
-                style={[
-                  a.text_xs,
-                  {
-                    color: active
-                      ? t.palette.contrast_800
-                      : t.palette.contrast_500,
-                  },
-                ]}
-                numberOfLines={1}>
-                {group.name}
-              </Text>
-              <Text style={[a.text_xs, {color: t.palette.contrast_400}]}>
-                {group.itemCount}
-              </Text>
-            </TouchableOpacity>
-          )
-        })}
-      </ScrollView>
-
       {usedKinds.length > 0 ? (
         <ScrollView
           horizontal

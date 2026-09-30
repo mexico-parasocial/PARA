@@ -69,7 +69,11 @@ export type PersonalTreeEdge = {
 export type PersonalTreeGraph = {
   nodes: PersonalTreeNode[]
   edges: PersonalTreeEdge[]
-  /** Collections that contributed at least one item, in display order. */
+  /**
+   * Every collection, in display order. An empty one is listed with
+   * `itemCount: 0` so a freshly created collection is visible before it holds
+   * anything; it just contributes no nodes.
+   */
   groups: {id: string; name: string; color: string; itemCount: number}[]
   totalItems: number
   totalRelations: number
@@ -114,7 +118,6 @@ export function buildPersonalTreeGraph(
   collections.forEach((collection, index) => {
     const collectionColor = getCollectionColor(collection.color, index)
     const items = collection.items ?? []
-    if (items.length === 0) return
 
     groups.push({
       id: collection.id,

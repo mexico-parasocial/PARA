@@ -189,17 +189,27 @@ function isUnsupportedMethodError(error: unknown): boolean {
   const {
     name,
     message,
+    status,
     error: errorCode,
   } = error as {
     name?: unknown
     message?: unknown
+    status?: unknown
     error?: unknown
   }
   if (name === 'MethodNotImplementedError') return true
-  if (errorCode === 'XRPCNotSupported') return true
+  if (
+    errorCode === 'XRPCNotSupported' ||
+    errorCode === 'MethodNotImplemented'
+  ) {
+    return true
+  }
+  if (status === 501) return true
+  // The lex client words it "Method Not Implemented" (with spaces); older
+  // clients used the camel-cased code.
   return (
     typeof message === 'string' &&
-    /methodnotimplemented|xrpc ?not ?supported/i.test(message)
+    /method ?not ?implemented|xrpc ?not ?supported/i.test(message)
   )
 }
 
