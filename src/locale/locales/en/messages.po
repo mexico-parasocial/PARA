@@ -173,6 +173,16 @@ msgstr "{0, plural, one {# new join request} other {# new join requests}}"
 msgid "{0, plural, one {# person} other {# people}} reacted – {1}"
 msgstr "{0, plural, one {# person} other {# people}} reacted – {1}"
 
+#. placeholder {0}: reach.returned.length
+#: src/screens/Agora/components/DelegateReachCard.tsx:138
+msgid "{0, plural, one {# persona recuperó su voto porque se pasaba del tope.} other {# personas recuperaron su voto porque se pasaba del tope.}}"
+msgstr "{0, plural, one {# persona recuperó su voto porque se pasaba del tope.} other {# personas recuperaron su voto porque se pasaba del tope.}}"
+
+#. placeholder {0}: reach.overridden.length
+#: src/screens/Agora/components/DelegateReachCard.tsx:129
+msgid "{0, plural, one {# persona votó por su cuenta: cuenta su voto, no este.} other {# personas votaron por su cuenta: cuenta su voto, no este.}}"
+msgstr "{0, plural, one {# persona votó por su cuenta: cuenta su voto, no este.} other {# personas votaron por su cuenta: cuenta su voto, no este.}}"
+
 #. placeholder {0}: quoteCount ?? 0
 #: src/screens/Post/PostQuotes.tsx:44
 msgid "{0, plural, one {# quote} other {# quotes}}"
@@ -197,6 +207,11 @@ msgstr ""
 #: src/view/shell/Drawer.tsx:671
 msgid "{0, plural, one {# unread item} other {# unread items}}"
 msgstr ""
+
+#. placeholder {0}: reach.votes
+#: src/screens/Agora/components/DelegateReachCard.tsx:69
+msgid "{0, plural, one {# voto} other {# votos}}"
+msgstr "{0, plural, one {# voto} other {# votos}}"
 
 #. How long it takes to read an article, in minutes. Displayed in a short form, e.g. "5m" for 5 minutes.
 #. placeholder {0}: view.readingTime
@@ -818,6 +833,10 @@ msgstr "{JOIN_REQUESTS_THRESHOLD}+ new join requests"
 msgid "{joinedAllTimeCount, plural, other {# users have}} joined!"
 msgstr ""
 
+#: src/screens/Agora/components/DelegateReachCard.tsx:79
+msgid "{lenders, plural, one {El suyo y el de # persona que se lo prestó.} other {El suyo y el de # personas que se lo prestaron.}}"
+msgstr "{lenders, plural, one {El suyo y el de # persona que se lo prestó.} other {El suyo y el de # personas que se lo prestaron.}}"
+
 #: src/screens/Profile/Header/EditProfileDialog.tsx:380
 msgid "{MAX_DESCRIPTION, plural, other {Description is too long. The maximum number of characters is #.}}"
 msgstr "{MAX_DESCRIPTION, plural, other {Description is too long. The maximum number of characters is #.}}"
@@ -873,6 +892,11 @@ msgstr "{oppose, plural, one {# opposing} other {# opposing}}"
 #: src/features/personalCivicTree/components/PersonalTreeNodeSheet.tsx:150
 msgid "{otherTitle} {label} this"
 msgstr "{otherTitle} {label} this"
+
+#. placeholder {0}: reach.capPeople
+#: src/screens/Agora/components/DelegateReachCard.tsx:118
+msgid "{pct}% de los votos de esta propuesta. Nadie puede llevar el voto de más de {0} personas."
+msgstr "{pct}% de los votos de esta propuesta. Nadie puede llevar el voto de más de {0} personas."
 
 #: src/components/NewskieDialog.tsx:114
 msgid "{profileName} joined PARA {timeAgoString} ago"
@@ -1072,6 +1096,10 @@ msgstr "✓ Posición confirmada"
 msgid "🗳️ Vote directly"
 msgstr "🗳️ Vote directly"
 
+#: src/screens/Agora/components/VoteComposer.tsx:125
+msgid "0 cuenta tu participación sin mover el resultado."
+msgstr "0 cuenta tu participación sin mover el resultado."
+
 #. Displayed when the number of requests is greater than 10
 #: src/screens/Messages/components/InboxRequests.tsx:57
 msgid "10+"
@@ -1160,6 +1188,10 @@ msgstr ""
 msgid "A new form of verification"
 msgstr ""
 
+#: src/screens/Agora/components/HowItWorksSheet.tsx:33
+msgid "A policy is counted by adding everyone's -3 to +3; a cabildeo by counting the votes for each option. Any other count shown beside them is an experiment in shadow and decides nothing."
+msgstr "A policy is counted by adding everyone's -3 to +3; a cabildeo by counting the votes for each option. Any other count shown beside them is an experiment in shadow and decides nothing."
+
 #: src/components/civic/PublicRecordNotice.tsx:112
 msgid "A quién"
 msgstr "A quién"
@@ -1193,7 +1225,7 @@ msgid "A selected recipient is not followed by the sender."
 msgstr "A selected recipient is not followed by the sender."
 
 #: src/Navigation.tsx:658
-#: src/screens/Communities/CommunityProfileScreen/index.tsx:601
+#: src/screens/Communities/CommunityProfileScreen/index.tsx:598
 #: src/screens/Settings/AboutSettings.tsx:78
 #: src/screens/Settings/Settings.tsx:267
 #: src/screens/Settings/Settings.tsx:270
@@ -1400,11 +1432,11 @@ msgid "active"
 msgstr "active"
 
 #: src/screens/Agora/AgoraScreen.tsx:691
-#: src/screens/Agora/ProposalDetailScreen.tsx:471
+#: src/screens/Agora/ProposalDetailScreen.tsx:507
 msgid "Active"
 msgstr "Active"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:1077
+#: src/screens/Agora/ProposalDetailScreen.tsx:1105
 msgid "Active Delegations"
 msgstr "Active Delegations"
 
@@ -1452,11 +1484,11 @@ msgstr "Activity published"
 msgid "Activity status"
 msgstr "Activity status"
 
-#: src/screens/Communities/AcuerdoListScreen.tsx:39
+#: src/screens/Communities/AcuerdoListScreen.tsx:47
 msgid "Acuerdos"
 msgstr "Acuerdos"
 
-#: src/screens/Communities/AcuerdoListScreen.tsx:151
+#: src/screens/Communities/AcuerdoListScreen.tsx:171
 msgid "Acuerdos Públicos"
 msgstr "Acuerdos Públicos"
 
@@ -1681,8 +1713,8 @@ msgstr ""
 msgid "Add some feeds to your starter pack!"
 msgstr ""
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:1038
-#: src/screens/Agora/ProposalDetailScreen.tsx:1043
+#: src/screens/Agora/ProposalDetailScreen.tsx:1066
+#: src/screens/Agora/ProposalDetailScreen.tsx:1071
 msgid "Add Statement"
 msgstr "Add Statement"
 
@@ -1852,7 +1884,7 @@ msgstr ""
 msgid "Advanced"
 msgstr ""
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:245
+#: src/screens/Agora/ProposalDetailScreen.tsx:281
 msgid "Against"
 msgstr "Against"
 
@@ -2464,12 +2496,12 @@ msgstr ""
 msgid "Appeal label"
 msgstr "Appeal label"
 
-#: src/features/liveNow/components/GoLiveDisabledDialog.tsx:93
+#: src/features/liveNow/components/GoLiveDisabledDialog.tsx:92
 msgid "Appeal livestream suspension"
 msgstr ""
 
 #: src/components/moderation/AppealForm.tsx:94
-#: src/features/liveNow/components/GoLiveDisabledDialog.tsx:83
+#: src/features/liveNow/components/GoLiveDisabledDialog.tsx:82
 #: src/screens/Messages/components/ChatDisabled.tsx:125
 msgctxt "toast"
 msgid "Appeal submitted"
@@ -2656,7 +2688,7 @@ msgstr ""
 msgid "Artistic or non-erotic nudity."
 msgstr ""
 
-#: src/screens/Communities/CommunityRolesScreen.tsx:1341
+#: src/screens/Communities/CommunityRolesScreen.tsx:1340
 msgid "As soon as the community has posts with flairs or post types, badge holders will appear here."
 msgstr "As soon as the community has posts with flairs or post types, badge holders will appear here."
 
@@ -2713,7 +2745,7 @@ msgstr "audio"
 msgid "Audit & Accountability"
 msgstr "Audit & Accountability"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:576
+#: src/screens/Agora/ProposalDetailScreen.tsx:612
 msgid "Audit Trail"
 msgstr "Audit Trail"
 
@@ -3337,6 +3369,14 @@ msgstr "Cabildeos"
 msgid "Cabildeos are the working items inside Civic Trees: proposals, evidence, arguments, vote windows, and delegated power in one place."
 msgstr "Cabildeos are the working items inside Civic Trees: proposals, evidence, arguments, vote windows, and delegated power in one place."
 
+#: src/screens/Agora/components/DelegateReachCard.tsx:150
+msgid "Cada voto prestado lleva la misma señal que el de {handle}, de −3 a +3, y cuenta una vez por persona. Puedes votar tú o retirarlo hasta el cierre."
+msgstr "Cada voto prestado lleva la misma señal que el de {handle}, de −3 a +3, y cuenta una vez por persona. Puedes votar tú o retirarlo hasta el cierre."
+
+#: src/screens/Agora/components/DelegateReachCard.tsx:156
+msgid "Cada voto prestado va a la opción que elija {handle} y cuenta una vez por persona. Puedes votar tú o retirarlo hasta el cierre."
+msgstr "Cada voto prestado va a la opción que elija {handle} y cuenta una vez por persona. Puedes votar tú o retirarlo hasta el cierre."
+
 #: src/screens/RAQ/RAQAssessment.tsx:108
 msgid "Calculate Anyway"
 msgstr "Calculate Anyway"
@@ -3369,7 +3409,7 @@ msgstr "Camera access needed"
 msgid "campaña electoral"
 msgstr "campaña electoral"
 
-#: src/components/activity-notifications/SubscribeProfileDialog.tsx:211
+#: src/components/activity-notifications/SubscribeProfileDialog.tsx:210
 #: src/components/AffiliationChangeModal.tsx:148
 #: src/components/AffiliationChangeModal.tsx:155
 #: src/components/ageAssurance/AgeAssuranceAppealDialog.tsx:135
@@ -3539,19 +3579,19 @@ msgstr "Cargar más"
 msgid "carousel"
 msgstr "carousel"
 
-#: src/components/RichTextTag.tsx:54
+#: src/components/RichTextTag.tsx:53
 msgid "Cashtag {tag}"
 msgstr ""
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:909
+#: src/screens/Agora/ProposalDetailScreen.tsx:938
 msgid "Cast the same vote below, or choose your own signal to override."
 msgstr "Cast the same vote below, or choose your own signal to override."
 
-#: src/screens/Agora/components/VoteComposer.tsx:40
+#: src/screens/Agora/components/VoteComposer.tsx:32
 msgid "Cast vote"
 msgstr "Cast vote"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:928
+#: src/screens/Agora/ProposalDetailScreen.tsx:957
 #: src/screens/Communities/CabildeoDetailScreen.tsx:1371
 msgid "Cast your vote"
 msgstr "Cast your vote"
@@ -3691,7 +3731,7 @@ msgstr ""
 msgid "Changes hosting provider"
 msgstr ""
 
-#: src/components/activity-notifications/SubscribeProfileDialog.tsx:177
+#: src/components/activity-notifications/SubscribeProfileDialog.tsx:176
 msgid "Changes saved"
 msgstr ""
 
@@ -4121,7 +4161,7 @@ msgid "Click here to view the invite link for this group chat"
 msgstr "Click here to view the invite link for this group chat"
 
 #. placeholder {0}: isCashtag ? tag : `#${tag}`
-#: src/components/RichTextTag.tsx:57
+#: src/components/RichTextTag.tsx:56
 msgid "Click to open tag menu for {0}"
 msgstr ""
 
@@ -4402,7 +4442,7 @@ msgid "community"
 msgstr "community"
 
 #: src/Navigation.tsx:1351
-#: src/screens/Communities/CommunityProfileScreen/index.tsx:459
+#: src/screens/Communities/CommunityProfileScreen/index.tsx:456
 msgid "Community"
 msgstr "Community"
 
@@ -4456,8 +4496,8 @@ msgstr "Community RAQ"
 msgid "Community RAQ appends"
 msgstr "Community RAQ appends"
 
-#: src/screens/Communities/CommunityRolesScreen.tsx:428
-#: src/screens/Communities/CommunityRolesScreen.tsx:564
+#: src/screens/Communities/CommunityRolesScreen.tsx:427
+#: src/screens/Communities/CommunityRolesScreen.tsx:563
 msgid "Community Roles"
 msgstr "Community Roles"
 
@@ -4697,7 +4737,7 @@ msgstr "Connections"
 msgid "Consenso requerido"
 msgstr "Consenso requerido"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:1004
+#: src/screens/Agora/ProposalDetailScreen.tsx:1032
 msgid "Consensus"
 msgstr "Consensus"
 
@@ -5057,10 +5097,6 @@ msgstr "Correlated voters (same community, similar history) are discounted. Effe
 msgid "Corruption"
 msgstr "Corruption"
 
-#: src/screens/Agora/components/VoteComposer.tsx:181
-msgid "Cost: {cost} credits"
-msgstr "Cost: {cost} credits"
-
 #: src/features/inviteFriends/InviteFriendsDialogInner.tsx:83
 msgid "Could not capture QR code"
 msgstr "Could not capture QR code"
@@ -5172,7 +5208,7 @@ msgid "Could not remove member."
 msgstr "Could not remove member."
 
 #. placeholder {0}: cleanError(error)
-#: src/components/activity-notifications/SubscribeProfileDialog.tsx:293
+#: src/components/activity-notifications/SubscribeProfileDialog.tsx:292
 msgid "Could not save changes: {0}"
 msgstr ""
 
@@ -5325,7 +5361,7 @@ msgstr "Create Community"
 msgid "Create connection"
 msgstr "Create connection"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:1110
+#: src/screens/Agora/ProposalDetailScreen.tsx:1149
 msgid "Create Delegation"
 msgstr "Create Delegation"
 
@@ -5436,10 +5472,6 @@ msgstr ""
 msgid "Credentials are shared from your iM8 wallet, not from PARA. A shared credential includes your account DID and every fact in it, and apps can link repeat shares. It is not anonymous, and single facts cannot be hidden."
 msgstr "Credentials are shared from your iM8 wallet, not from PARA. A shared credential includes your account DID and every fact in it, and apps can link repeat shares. It is not anonymous, and single facts cannot be hidden."
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:865
-msgid "credits spent"
-msgstr "credits spent"
-
 #: src/screens/Agora/components/HowItWorksSheet.tsx:45
 msgid "Cross-Community Intelligence"
 msgstr "Cross-Community Intelligence"
@@ -5460,6 +5492,10 @@ msgstr "cualquiera, para siempre"
 #: src/components/civic/PublicRecordNotice.tsx:78
 msgid "Cuándo"
 msgstr "Cuándo"
+
+#: src/screens/Agora/components/DelegateReachCard.tsx:96
+msgid "Cuántos votos decide esta persona frente a todos los demás"
+msgstr "Cuántos votos decide esta persona frente a todos los demás"
 
 #: src/screens/Profile/Sections/Pajareo.tsx:286
 msgid "Cuenta cívica oficial"
@@ -5548,8 +5584,8 @@ msgstr "Dawn"
 msgid "Day"
 msgstr "Day"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:322
-#: src/screens/Agora/ProposalDetailScreen.tsx:405
+#: src/screens/Agora/ProposalDetailScreen.tsx:358
+#: src/screens/Agora/ProposalDetailScreen.tsx:441
 msgid "De acuerdo"
 msgstr "De acuerdo"
 
@@ -5583,10 +5619,6 @@ msgstr "Decide where every peso goes before any money moves. The split and the p
 msgid "Decline this language suggestion"
 msgstr "Decline this language suggestion"
 
-#: src/screens/Agora/components/VoteComposer.tsx:128
-msgid "Decrease units"
-msgstr "Decrease units"
-
 #: src/components/moderation/ReportDialog/utils/useReportOptions.ts:85
 msgid "Deepfake adult content"
 msgstr ""
@@ -5604,9 +5636,9 @@ msgstr ""
 msgid "Delegado"
 msgstr "Delegado"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:710
-#: src/screens/Agora/ProposalDetailScreen.tsx:1145
-#: src/screens/Agora/ProposalDetailScreen.tsx:1150
+#: src/screens/Agora/ProposalDetailScreen.tsx:748
+#: src/screens/Agora/ProposalDetailScreen.tsx:1184
+#: src/screens/Agora/ProposalDetailScreen.tsx:1189
 msgid "Delegate"
 msgstr "Delegate"
 
@@ -5653,7 +5685,7 @@ msgstr "Delegation"
 msgid "Delegation Dashboard"
 msgstr "Delegation Dashboard"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:604
+#: src/screens/Agora/ProposalDetailScreen.tsx:640
 #: src/screens/Data/components/CivicDashboard.tsx:151
 msgid "Delegations"
 msgstr "Delegations"
@@ -5794,7 +5826,7 @@ msgstr "Deliberación cívica"
 msgid "Deliberación masiva sin sorteo"
 msgstr "Deliberación masiva sin sorteo"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:708
+#: src/screens/Agora/ProposalDetailScreen.tsx:746
 msgid "Deliberate"
 msgstr "Deliberate"
 
@@ -6216,10 +6248,6 @@ msgstr ""
 #: src/components/dialogs/EmailDialog/screens/Verify.tsx:381
 msgid "Don't have a code or need a new one? <0>Click here.</0>"
 msgstr ""
-
-#: src/screens/Agora/components/HowItWorksSheet.tsx:26
-msgid "Don't have time to research every proposal? Delegate your vote to someone you trust for a specific community, topic, or single proposal. You can revoke at any time. Your delegate's vote is transparent — you always know how they voted on your behalf."
-msgstr "Don't have time to research every proposal? Delegate your vote to someone you trust for a specific community, topic, or single proposal. You can revoke at any time. Your delegate's vote is transparent — you always know how they voted on your behalf."
 
 #: src/screens/Settings/components/DeleteAccountDialog.tsx:276
 msgid "Don’t see a code? <0>Click here to resend.</0>"
@@ -6673,6 +6701,10 @@ msgstr "El mensaje ya no está en el servidor; pudo expirar por la política de 
 msgid "El voto cuadrático está en desarrollo"
 msgstr "El voto cuadrático está en desarrollo"
 
+#: src/screens/Agora/components/DelegateReachCard.tsx:66
+msgid "El voto de {handle} en esta propuesta"
+msgstr "El voto de {handle} en esta propuesta"
+
 #. placeholder {0}: eligibility.areaLabel
 #: src/screens/Profile/Sections/Pajareo.tsx:271
 msgid "Elegibilidad verificada para {0}"
@@ -6768,8 +6800,8 @@ msgstr "Employment"
 msgid "Empty posts in the middle of your thread will be skipped."
 msgstr "Empty posts in the middle of your thread will be skipped."
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:326
-#: src/screens/Agora/ProposalDetailScreen.tsx:406
+#: src/screens/Agora/ProposalDetailScreen.tsx:362
+#: src/screens/Agora/ProposalDetailScreen.tsx:442
 msgid "En contra"
 msgstr "En contra"
 
@@ -6779,6 +6811,7 @@ msgstr "En contra"
 msgid "En respuesta a {0}: {1}"
 msgstr "En respuesta a {0}: {1}"
 
+#: src/screens/Agora/components/DelegateReachCard.tsx:55
 #: src/screens/Agora/components/QuadraticTallyPanel.tsx:172
 msgid "EN SOMBRA"
 msgstr "EN SOMBRA"
@@ -7153,10 +7186,6 @@ msgstr "Every entry is a signed record in the organizer's account."
 msgid "Every item needs a name."
 msgstr "Every item needs a name."
 
-#: src/screens/Agora/components/HowItWorksSheet.tsx:33
-msgid "Every proposal computes three results: Flat (one person, one vote), √n-weighted (discounts highly correlated voters), and Correlation-adjusted (also weights by deliberation quality). Flat is binding; the others are advisory transparency layers."
-msgstr "Every proposal computes three results: Flat (one person, one vote), √n-weighted (discounts highly correlated voters), and Correlation-adjusted (also weights by deliberation quality). Flat is binding; the others are advisory transparency layers."
-
 #: src/components/WhoCanReply.tsx:71
 msgid "Everybody can reply"
 msgstr ""
@@ -7179,6 +7208,10 @@ msgstr "Everyone"
 msgctxt "allow messages from"
 msgid "Everyone"
 msgstr "Everyone"
+
+#: src/screens/Agora/components/HowItWorksSheet.tsx:19
+msgid "Everyone has one vote. On a policy you vote from -3 to +3, and the number says how much your vote weighs: +3 adds three times what +1 does. On a cabildeo you pick one option, and every vote counts the same."
+msgstr "Everyone has one vote. On a policy you vote from -3 to +3, and the number says how much your vote weighs: +3 adds three times what +1 does. On a cabildeo you pick one option, and every vote counts the same."
 
 #: src/screens/Settings/NotificationSettings/index.tsx:251
 #: src/screens/Settings/NotificationSettings/index.tsx:313
@@ -7745,7 +7778,7 @@ msgid "Failed to send to agent"
 msgstr "Failed to send to agent"
 
 #: src/components/moderation/AppealForm.tsx:88
-#: src/features/liveNow/components/GoLiveDisabledDialog.tsx:77
+#: src/features/liveNow/components/GoLiveDisabledDialog.tsx:76
 #: src/screens/Messages/components/ChatDisabled.tsx:119
 msgid "Failed to submit appeal, please try again."
 msgstr ""
@@ -8203,7 +8236,7 @@ msgctxt "Name of app icon variant"
 msgid "Flat Blue"
 msgstr ""
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:1190
+#: src/screens/Agora/ProposalDetailScreen.tsx:1229
 msgid "Flat tally is binding. √n and Correlation tallies are advisory only."
 msgstr "Flat tally is binding. √n and Correlation tallies are advisory only."
 
@@ -8440,7 +8473,7 @@ msgstr ""
 msgid "Food"
 msgstr ""
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:239
+#: src/screens/Agora/ProposalDetailScreen.tsx:275
 msgid "For"
 msgstr "For"
 
@@ -8657,11 +8690,11 @@ msgstr ""
 msgid "Get notified about posts and replies from accounts you choose."
 msgstr "Get notified about posts and replies from accounts you choose."
 
-#: src/components/activity-notifications/SubscribeProfileDialog.tsx:224
+#: src/components/activity-notifications/SubscribeProfileDialog.tsx:223
 msgid "Get notified of new posts from {name}"
 msgstr ""
 
-#: src/components/activity-notifications/SubscribeProfileDialog.tsx:231
+#: src/components/activity-notifications/SubscribeProfileDialog.tsx:230
 msgid "Get notified of this account’s activity"
 msgstr ""
 
@@ -8844,7 +8877,7 @@ msgstr "Goal"
 msgid "Gobernanza Abierta"
 msgstr "Gobernanza Abierta"
 
-#: src/features/liveNow/components/GoLiveDisabledDialog.tsx:105
+#: src/features/liveNow/components/GoLiveDisabledDialog.tsx:104
 msgid "Going live is currently disabled for your account"
 msgstr ""
 
@@ -9041,7 +9074,7 @@ msgstr ""
 msgid "Hashtag"
 msgstr ""
 
-#: src/components/RichTextTag.tsx:54
+#: src/components/RichTextTag.tsx:53
 msgid "Hashtag {tag}"
 msgstr ""
 
@@ -9371,6 +9404,10 @@ msgstr "How to give"
 #: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:419
 msgid "How to give (one per line)"
 msgstr "How to give (one per line)"
+
+#: src/screens/Agora/components/HowItWorksSheet.tsx:31
+msgid "How votes are counted"
+msgstr "How votes are counted"
 
 #: src/components/contacts/screens/PhoneInput.tsx:277
 msgid "How we use your number:"
@@ -9768,14 +9805,6 @@ msgstr "Income"
 msgid "Incomplete"
 msgstr "Incomplete"
 
-#: src/screens/Agora/components/VoteComposer.tsx:154
-msgid "Increase units"
-msgstr "Increase units"
-
-#: src/screens/Agora/components/VoteComposer.tsx:155
-msgid "Increases vote intensity by one unit"
-msgstr "Increases vote intensity by one unit"
-
 #: src/lib/interests.ts:97
 msgid "Indigenous Rights"
 msgstr "Indigenous Rights"
@@ -9851,7 +9880,7 @@ msgstr "Instrument type"
 msgid "Inteligencia del Discurso"
 msgstr "Inteligencia del Discurso"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:596
+#: src/screens/Agora/ProposalDetailScreen.tsx:632
 msgid "Intensity"
 msgstr "Intensity"
 
@@ -10149,7 +10178,7 @@ msgstr "Karma"
 msgid "Keep editing"
 msgstr ""
 
-#: src/components/activity-notifications/SubscribeProfileDialog.tsx:228
+#: src/components/activity-notifications/SubscribeProfileDialog.tsx:227
 msgid "Keep me posted"
 msgstr ""
 
@@ -10269,15 +10298,15 @@ msgstr "Leading option"
 
 #: src/screens/Agora/components/SignalBadge.tsx:21
 #: src/screens/Agora/components/SignalBadge.tsx:54
-#: src/screens/Agora/components/VoteComposer.tsx:61
-#: src/screens/Agora/components/VoteComposer.tsx:113
+#: src/screens/Agora/components/VoteComposer.tsx:53
+#: src/screens/Agora/components/VoteComposer.tsx:105
 msgid "Lean Oppose"
 msgstr "Lean Oppose"
 
 #: src/screens/Agora/components/SignalBadge.tsx:23
 #: src/screens/Agora/components/SignalBadge.tsx:58
-#: src/screens/Agora/components/VoteComposer.tsx:65
-#: src/screens/Agora/components/VoteComposer.tsx:117
+#: src/screens/Agora/components/VoteComposer.tsx:57
+#: src/screens/Agora/components/VoteComposer.tsx:109
 msgid "Lean Support"
 msgstr "Lean Support"
 
@@ -10435,8 +10464,8 @@ msgstr "Left group chat."
 msgid "left to go."
 msgstr ""
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:330
-#: src/screens/Agora/ProposalDetailScreen.tsx:407
+#: src/screens/Agora/ProposalDetailScreen.tsx:366
+#: src/screens/Agora/ProposalDetailScreen.tsx:443
 msgid "Leído"
 msgstr "Leído"
 
@@ -10444,6 +10473,10 @@ msgstr "Leído"
 #: src/screens/Communities/NativeChatRoom.tsx:564
 msgid "Leído por {0}"
 msgstr "Leído por {0}"
+
+#: src/screens/Agora/components/HowItWorksSheet.tsx:24
+msgid "Lending your vote"
+msgstr "Lending your vote"
 
 #: src/components/StarterPack/ProfileStarterPacks.tsx:357
 msgid "Let me choose"
@@ -10601,10 +10634,6 @@ msgstr "Linked"
 #: src/features/personalCivicTree/components/ConnectTreeItemsDialog.tsx:281
 msgid "Links the two items"
 msgstr "Links the two items"
-
-#: src/screens/Agora/components/HowItWorksSheet.tsx:24
-msgid "Liquid Delegation"
-msgstr "Liquid Delegation"
 
 #: src/Navigation.tsx:337
 msgid "List"
@@ -10916,7 +10945,7 @@ msgid "Logo by <0>@sawaratsuki.bsky.social</0>"
 msgstr ""
 
 #. placeholder {0}: isCashtag ? tag : `#${tag}`
-#: src/components/RichTextTag.tsx:56
+#: src/components/RichTextTag.tsx:55
 msgid "Long press to open tag menu for {0}"
 msgstr ""
 
@@ -11209,7 +11238,7 @@ msgid "Mentions of these people"
 msgstr "Mentions of these people"
 
 #: src/components/Menu/index.tsx:119
-#: src/screens/Communities/CommunityProfileScreen/index.tsx:602
+#: src/screens/Communities/CommunityProfileScreen/index.tsx:599
 msgid "Menu"
 msgstr ""
 
@@ -11346,7 +11375,7 @@ msgstr "Mis Constituyentes ({0})"
 msgid "Mis Proxies ({0})"
 msgstr "Mis Proxies ({0})"
 
-#: src/screens/Communities/AcuerdoListScreen.tsx:64
+#: src/screens/Communities/AcuerdoListScreen.tsx:72
 msgid "Mis Votos Bloqueados"
 msgstr "Mis Votos Bloqueados"
 
@@ -11532,8 +11561,8 @@ msgid "Mute"
 msgstr ""
 
 #. placeholder {0}: isCashtag ? tag : `#${tag}`
-#: src/components/RichTextTag.tsx:155
-#: src/components/RichTextTag.tsx:171
+#: src/components/RichTextTag.tsx:154
+#: src/components/RichTextTag.tsx:170
 msgid "Mute {0}"
 msgstr "Mute {0}"
 
@@ -11774,9 +11803,9 @@ msgstr "neutral"
 
 #: src/screens/Agora/components/SignalBadge.tsx:22
 #: src/screens/Agora/components/SignalBadge.tsx:56
-#: src/screens/Agora/components/VoteComposer.tsx:63
-#: src/screens/Agora/components/VoteComposer.tsx:115
-#: src/screens/Agora/ProposalDetailScreen.tsx:251
+#: src/screens/Agora/components/VoteComposer.tsx:55
+#: src/screens/Agora/components/VoteComposer.tsx:107
+#: src/screens/Agora/ProposalDetailScreen.tsx:287
 #: src/screens/Data/components/CommunityPulseSheet.tsx:135
 msgid "Neutral"
 msgstr "Neutral"
@@ -12009,7 +12038,7 @@ msgstr "No"
 msgid "No action taken"
 msgstr "No action taken"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:1082
+#: src/screens/Agora/ProposalDetailScreen.tsx:1110
 msgid "No active delegations"
 msgstr "No active delegations"
 
@@ -12033,7 +12062,7 @@ msgstr "No apareces en el set elegible usado por este sorteo. Puedes leer el pro
 msgid "No app passwords yet"
 msgstr ""
 
-#: src/screens/Communities/CommunityRolesScreen.tsx:1338
+#: src/screens/Communities/CommunityRolesScreen.tsx:1337
 msgid "No badges yet"
 msgstr "No badges yet"
 
@@ -12092,6 +12121,7 @@ msgstr ""
 msgid "No custom feeds"
 msgstr "No custom feeds"
 
+#: src/screens/Agora/components/DelegateReachCard.tsx:59
 #: src/screens/Agora/components/QuadraticTallyPanel.tsx:51
 msgid "No decide nada"
 msgstr "No decide nada"
@@ -12460,7 +12490,7 @@ msgstr "No se pudo firmar la postura oficial."
 msgid "No se pudo programar el sorteo."
 msgstr "No se pudo programar el sorteo."
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:694
+#: src/screens/Agora/ProposalDetailScreen.tsx:732
 msgid "No se pudo registrar tu postura."
 msgstr "No se pudo registrar tu postura."
 
@@ -12762,7 +12792,7 @@ msgstr "Official Appends"
 msgid "Official axes"
 msgstr "Official axes"
 
-#: src/screens/Communities/CommunityRolesScreen.tsx:1069
+#: src/screens/Communities/CommunityRolesScreen.tsx:1068
 msgid "Official Moderator Controls"
 msgstr "Official Moderator Controls"
 
@@ -13404,8 +13434,8 @@ msgstr "Opinion Landscape"
 
 #: src/screens/Agora/components/SignalBadge.tsx:20
 #: src/screens/Agora/components/SignalBadge.tsx:52
-#: src/screens/Agora/components/VoteComposer.tsx:59
-#: src/screens/Agora/components/VoteComposer.tsx:111
+#: src/screens/Agora/components/VoteComposer.tsx:51
+#: src/screens/Agora/components/VoteComposer.tsx:103
 msgid "Oppose"
 msgstr "Oppose"
 
@@ -13696,6 +13726,10 @@ msgstr "PARA+ icons"
 #: src/screens/Communities/CommunityProfileScreen/CommunityAbout.tsx:569
 msgid "Parent communities:"
 msgstr "Parent communities:"
+
+#: src/screens/Agora/components/DelegateReachCard.tsx:94
+msgid "Parte de todos los votos de la propuesta"
+msgstr "Parte de todos los votos de la propuesta"
 
 #. Advanced search: Example of an “all of these words” civic search. Paired with “campaña electoral”.
 #: src/screens/Search/components/AdvancedSearchDialog/index.tsx:229
@@ -14181,7 +14215,7 @@ msgstr ""
 msgid "Please explain why you think your chats were incorrectly disabled"
 msgstr ""
 
-#: src/features/liveNow/components/GoLiveDisabledDialog.tsx:124
+#: src/features/liveNow/components/GoLiveDisabledDialog.tsx:123
 msgid "Please explain why you think your Go Live access was incorrectly disabled."
 msgstr ""
 
@@ -14480,10 +14514,10 @@ msgctxt "toast"
 msgid "Post unpinned"
 msgstr ""
 
-#: src/components/activity-notifications/SubscribeProfileDialog.tsx:255
-#: src/components/activity-notifications/SubscribeProfileDialog.tsx:267
+#: src/components/activity-notifications/SubscribeProfileDialog.tsx:254
+#: src/components/activity-notifications/SubscribeProfileDialog.tsx:266
 #: src/Navigation.tsx:541
-#: src/screens/Communities/CommunityProfileScreen/index.tsx:600
+#: src/screens/Communities/CommunityProfileScreen/index.tsx:597
 #: src/screens/Data/components/MyBaseDashboard.tsx:181
 #: src/screens/Data/SeePostsScreen.tsx:38
 #: src/screens/ProfileList/index.tsx:166
@@ -14694,16 +14728,16 @@ msgid "Promoting or selling prohibited items or services"
 msgstr ""
 
 #: src/Navigation.tsx:958
-#: src/screens/Agora/ProposalDetailScreen.tsx:725
-#: src/screens/Agora/ProposalDetailScreen.tsx:749
+#: src/screens/Agora/ProposalDetailScreen.tsx:763
+#: src/screens/Agora/ProposalDetailScreen.tsx:787
 msgid "Proposal"
 msgstr "Proposal"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:732
+#: src/screens/Agora/ProposalDetailScreen.tsx:770
 msgid "Proposal not found"
 msgstr "Proposal not found"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:802
+#: src/screens/Agora/ProposalDetailScreen.tsx:840
 msgid "Proposal tabs"
 msgstr "Proposal tabs"
 
@@ -14947,10 +14981,6 @@ msgstr ""
 msgid "QR code saved to your camera roll!"
 msgstr ""
 
-#: src/screens/Agora/components/HowItWorksSheet.tsx:17
-msgid "Quadratic Voting"
-msgstr "Quadratic Voting"
-
 #: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:97
 msgid "Quantities must be whole numbers."
 msgstr "Quantities must be whole numbers."
@@ -15002,7 +15032,7 @@ msgid "Quita el mensaje citado de la respuesta"
 msgstr "Quita el mensaje citado de la respuesta"
 
 #: src/screens/Agora/AgoraScreen.tsx:420
-#: src/screens/Agora/ProposalDetailScreen.tsx:788
+#: src/screens/Agora/ProposalDetailScreen.tsx:826
 msgid "Quorum"
 msgstr "Quorum"
 
@@ -15217,7 +15247,7 @@ msgstr ""
 msgid "Receive push notifications"
 msgstr ""
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:1028
+#: src/screens/Agora/ProposalDetailScreen.tsx:1056
 msgid "Recent"
 msgstr "Recent"
 
@@ -15258,10 +15288,6 @@ msgstr "Recommended {activeMode}"
 #: src/screens/Messages/components/MessageListError.tsx:19
 msgid "Reconnect"
 msgstr ""
-
-#: src/screens/Agora/components/VoteComposer.tsx:129
-msgid "Reduces vote intensity by one unit"
-msgstr "Reduces vote intensity by one unit"
 
 #: src/lib/community-activities.ts:102
 msgid "Referendum"
@@ -15678,8 +15704,8 @@ msgstr "Replied-to message, tap to scroll to it"
 msgid "replies"
 msgstr "replies"
 
-#: src/components/activity-notifications/SubscribeProfileDialog.tsx:272
-#: src/components/activity-notifications/SubscribeProfileDialog.tsx:284
+#: src/components/activity-notifications/SubscribeProfileDialog.tsx:271
+#: src/components/activity-notifications/SubscribeProfileDialog.tsx:283
 #: src/lib/hooks/useNotificationHandler.ts:171
 #: src/screens/Settings/NotificationSettings/ActivityNotificationSettings.tsx:218
 #: src/screens/Settings/NotificationSettings/index.tsx:171
@@ -16191,10 +16217,10 @@ msgstr "Revoke"
 msgid "Revoke access for {0}"
 msgstr "Revoke access for {0}"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:490
-#: src/screens/Agora/ProposalDetailScreen.tsx:493
-#: src/screens/Agora/ProposalDetailScreen.tsx:961
-#: src/screens/Agora/ProposalDetailScreen.tsx:966
+#: src/screens/Agora/ProposalDetailScreen.tsx:526
+#: src/screens/Agora/ProposalDetailScreen.tsx:529
+#: src/screens/Agora/ProposalDetailScreen.tsx:989
+#: src/screens/Agora/ProposalDetailScreen.tsx:994
 msgid "Revoke delegation"
 msgstr "Revoke delegation"
 
@@ -16202,7 +16228,7 @@ msgstr "Revoke delegation"
 msgid "Revoke Grant"
 msgstr "Revoke Grant"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:471
+#: src/screens/Agora/ProposalDetailScreen.tsx:507
 #: src/screens/m8/ConsentAuditScreen.tsx:187
 msgid "Revoked"
 msgstr "Revoked"
@@ -16280,8 +16306,8 @@ msgstr ""
 msgid "Save birthday"
 msgstr "Save birthday"
 
-#: src/components/activity-notifications/SubscribeProfileDialog.tsx:196
-#: src/components/activity-notifications/SubscribeProfileDialog.tsx:205
+#: src/components/activity-notifications/SubscribeProfileDialog.tsx:195
+#: src/components/activity-notifications/SubscribeProfileDialog.tsx:204
 #: src/screens/Data/MyAffiliationsScreen.tsx:333
 #: src/screens/SavedFeeds.tsx:143
 #: src/screens/SavedFeeds.tsx:147
@@ -16465,7 +16491,7 @@ msgstr ""
 msgid "SE PUBLICA EN TU REPOSITORIO"
 msgstr "SE PUBLICA EN TU REPOSITORIO"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:1057
+#: src/screens/Agora/ProposalDetailScreen.tsx:1085
 msgid "Sé quien abra el debate sobre esta propuesta."
 msgstr "Sé quien abra el debate sobre esta propuesta."
 
@@ -16506,7 +16532,7 @@ msgstr "Search communities..."
 msgid "Search contacts"
 msgstr ""
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:1123
+#: src/screens/Agora/ProposalDetailScreen.tsx:1162
 msgid "Search delegate..."
 msgstr "Search delegate..."
 
@@ -16665,28 +16691,28 @@ msgid "Security step required"
 msgstr ""
 
 #. placeholder {0}: isCashtag ? tag : `#${tag}`
-#: src/components/RichTextTag.tsx:115
+#: src/components/RichTextTag.tsx:114
 msgid "See {0} posts"
 msgstr ""
 
 #. placeholder {0}: isCashtag ? tag : `#${tag}`
-#: src/components/RichTextTag.tsx:132
+#: src/components/RichTextTag.tsx:131
 msgid "See {0} posts by user"
 msgstr ""
 
-#: src/components/RichTextTag.tsx:123
+#: src/components/RichTextTag.tsx:122
 msgid "See {tag} posts"
 msgstr ""
 
-#: src/components/RichTextTag.tsx:141
+#: src/components/RichTextTag.tsx:140
 msgid "See {tag} posts by user"
 msgstr ""
 
-#: src/components/RichTextTag.tsx:125
+#: src/components/RichTextTag.tsx:124
 msgid "See #{tag} posts"
 msgstr ""
 
-#: src/components/RichTextTag.tsx:143
+#: src/components/RichTextTag.tsx:142
 msgid "See #{tag} posts by user"
 msgstr ""
 
@@ -16950,7 +16976,7 @@ msgstr "Select Post Type"
 msgid "Select primary language"
 msgstr ""
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:1137
+#: src/screens/Agora/ProposalDetailScreen.tsx:1176
 msgid "Select scope..."
 msgstr "Select scope..."
 
@@ -17036,7 +17062,7 @@ msgstr "Selects the item to connect to"
 msgid "Selects this flair for your post"
 msgstr "Selects this flair for your post"
 
-#: src/screens/Agora/components/VoteComposer.tsx:70
+#: src/screens/Agora/components/VoteComposer.tsx:62
 msgid "Selects this signal strength"
 msgstr "Selects this signal strength"
 
@@ -17797,6 +17823,10 @@ msgstr "Social proofing on posts"
 msgid "Software Dev"
 msgstr ""
 
+#: src/screens/Agora/components/DelegateReachCard.tsx:77
+msgid "Solo el suyo."
+msgstr "Solo el suyo."
+
 #: src/screens/Profile/Sections/Pajareo.tsx:275
 msgid "Solo lectura: verifica residencia para participar."
 msgstr "Solo lectura: verifica residencia para participar."
@@ -18089,7 +18119,7 @@ msgstr "State entity"
 msgid "State overview"
 msgstr "State overview"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:980
+#: src/screens/Agora/ProposalDetailScreen.tsx:1008
 msgid "Statements"
 msgstr "Statements"
 
@@ -18138,15 +18168,15 @@ msgstr "Streaming on Twitch? Set your live status on PARA to add a badge to your
 
 #: src/screens/Agora/components/SignalBadge.tsx:19
 #: src/screens/Agora/components/SignalBadge.tsx:50
-#: src/screens/Agora/components/VoteComposer.tsx:57
-#: src/screens/Agora/components/VoteComposer.tsx:109
+#: src/screens/Agora/components/VoteComposer.tsx:49
+#: src/screens/Agora/components/VoteComposer.tsx:101
 msgid "Strongly Oppose"
 msgstr "Strongly Oppose"
 
 #: src/screens/Agora/components/SignalBadge.tsx:25
 #: src/screens/Agora/components/SignalBadge.tsx:61
-#: src/screens/Agora/components/VoteComposer.tsx:68
-#: src/screens/Agora/components/VoteComposer.tsx:120
+#: src/screens/Agora/components/VoteComposer.tsx:60
+#: src/screens/Agora/components/VoteComposer.tsx:112
 msgid "Strongly Support"
 msgstr "Strongly Support"
 
@@ -18160,8 +18190,8 @@ msgstr "Su autor borró este mensaje. El reporte se conserva, pero ya no hay con
 #: src/components/moderation/AppealForm.tsx:166
 #: src/components/SendErrorReportDialog.tsx:90
 #: src/components/SendErrorReportDialog.tsx:95
+#: src/features/liveNow/components/GoLiveDisabledDialog.tsx:138
 #: src/features/liveNow/components/GoLiveDisabledDialog.tsx:139
-#: src/features/liveNow/components/GoLiveDisabledDialog.tsx:140
 #: src/screens/Messages/components/ChatDisabled.tsx:175
 #: src/screens/Messages/components/ChatDisabled.tsx:177
 #: src/screens/Settings/components/BetaFeaturesFeedbackDialog.tsx:133
@@ -18220,7 +18250,7 @@ msgstr "Subscribe to {publicationTitle} on {0}"
 msgid "Subscribe to @{0} to use these labels:"
 msgstr ""
 
-#: src/components/activity-notifications/SubscribeProfileDialog.tsx:250
+#: src/components/activity-notifications/SubscribeProfileDialog.tsx:249
 msgid "Subscribe to account activity"
 msgstr ""
 
@@ -18317,8 +18347,8 @@ msgstr "Suplantación de identidad"
 #: src/Navigation.tsx:412
 #: src/screens/Agora/components/SignalBadge.tsx:24
 #: src/screens/Agora/components/SignalBadge.tsx:60
-#: src/screens/Agora/components/VoteComposer.tsx:67
-#: src/screens/Agora/components/VoteComposer.tsx:119
+#: src/screens/Agora/components/VoteComposer.tsx:59
+#: src/screens/Agora/components/VoteComposer.tsx:111
 #: src/view/screens/Support.tsx:35
 #: src/view/screens/Support.tsx:38
 msgid "Support"
@@ -18409,7 +18439,7 @@ msgstr "Take the standard 96-question assessment to determine your ideological a
 msgid "Tallies diverge — tap to learn why"
 msgstr "Tallies diverge — tap to learn why"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:712
+#: src/screens/Agora/ProposalDetailScreen.tsx:750
 msgid "Tally"
 msgstr "Tally"
 
@@ -18590,7 +18620,7 @@ msgid "Text & tags"
 msgstr ""
 
 #: src/components/moderation/AppealForm.tsx:129
-#: src/features/liveNow/components/GoLiveDisabledDialog.tsx:122
+#: src/features/liveNow/components/GoLiveDisabledDialog.tsx:121
 #: src/screens/Messages/components/ChatDisabled.tsx:142
 msgid "Text input field"
 msgstr ""
@@ -18746,7 +18776,7 @@ msgstr "The post you’re replying to was marked as being written in {suggestedL
 msgid "The Privacy Policy has been moved to <0/>"
 msgstr ""
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:734
+#: src/screens/Agora/ProposalDetailScreen.tsx:772
 msgid "The proposal you are looking for does not exist or has been removed."
 msgstr "The proposal you are looking for does not exist or has been removed."
 
@@ -19016,7 +19046,7 @@ msgstr ""
 msgid "This appeal will be sent to Bluesky's moderation service."
 msgstr ""
 
-#: src/features/liveNow/components/GoLiveDisabledDialog.tsx:114
+#: src/features/liveNow/components/GoLiveDisabledDialog.tsx:113
 msgid "This appeal will be sent to PARA's moderation service."
 msgstr "This appeal will be sent to PARA's moderation service."
 
@@ -19449,10 +19479,6 @@ msgstr ""
 msgid "Threats or incitement"
 msgstr ""
 
-#: src/screens/Agora/components/HowItWorksSheet.tsx:31
-msgid "Three Tallies"
-msgstr "Three Tallies"
-
 #: src/screens/Agora/components/TripleSignalIndicator.tsx:81
 msgid "Three tallies measure different things. Flat = one person, one vote. √n discounts highly correlated voters. Correlation-adjusted also weights by deliberation participation."
 msgstr "Three tallies measure different things. Flat = one person, one vote. √n discounts highly correlated voters. Correlation-adjusted also weights by deliberation participation."
@@ -19538,13 +19564,17 @@ msgstr ""
 msgid "To log out, <0>click here</0>. Or if you’d prefer, you can <1>delete your account</1>."
 msgstr "To log out, <0>click here</0>. Or if you’d prefer, you can <1>delete your account</1>."
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:1055
+#: src/screens/Agora/ProposalDetailScreen.tsx:1083
 msgid "Todavía no hay argumentos"
 msgstr "Todavía no hay argumentos"
 
 #: src/screens/Profile/Sections/Pajareo.tsx:662
 msgid "Todavía no hay Pajareo para este representante."
 msgstr "Todavía no hay Pajareo para este representante."
+
+#: src/screens/Agora/components/DelegateReachCard.tsx:73
+msgid "Todavía no vota, así que no lleva ningún voto prestado."
+msgstr "Todavía no vota, así que no lleva ningún voto prestado."
 
 #: src/components/dms/DateDivider.tsx:27
 msgid "Today"
@@ -19824,6 +19854,10 @@ msgstr "Tu prueba es válida. Puedes participar en la deliberación de esta asam
 #: src/components/civic/PublicRecordNotice.tsx:73
 msgid "Tu voto será público"
 msgstr "Tu voto será público"
+
+#: src/screens/Agora/components/VoteComposer.tsx:126
+msgid "Tu voto suma {signed} al conteo: +3 pesa el triple que +1."
+msgstr "Tu voto suma {signed} al conteo: +3 pesa el triple que +1."
 
 #: src/screens/Onboarding/StepFinished/ValuePropositionPager.shared.tsx:40
 msgid "Turn attention into action"
@@ -20107,8 +20141,8 @@ msgid "Unmute"
 msgstr ""
 
 #. placeholder {0}: isCashtag ? tag : `#${tag}`
-#: src/components/RichTextTag.tsx:154
-#: src/components/RichTextTag.tsx:170
+#: src/components/RichTextTag.tsx:153
+#: src/components/RichTextTag.tsx:169
 msgid "Unmute {0}"
 msgstr "Unmute {0}"
 
@@ -20829,8 +20863,8 @@ msgstr ""
 msgid "View details"
 msgstr ""
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:632
-#: src/screens/Agora/ProposalDetailScreen.tsx:638
+#: src/screens/Agora/ProposalDetailScreen.tsx:668
+#: src/screens/Agora/ProposalDetailScreen.tsx:674
 msgid "View full audit trail"
 msgstr "View full audit trail"
 
@@ -21032,7 +21066,7 @@ msgstr "Volver a cargar el mensaje reportado"
 msgid "Volver a intentar descifrar"
 msgstr "Volver a intentar descifrar"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:706
+#: src/screens/Agora/ProposalDetailScreen.tsx:744
 msgid "Vote"
 msgstr "Vote"
 
@@ -21041,7 +21075,7 @@ msgstr "Vote"
 msgid "Vote Analysis"
 msgstr "Vote Analysis"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:514
+#: src/screens/Agora/ProposalDetailScreen.tsx:550
 msgid "Vote Distribution"
 msgstr "Vote Distribution"
 
@@ -21068,18 +21102,17 @@ msgstr "Vote registered"
 
 #. placeholder {0}: proposal.delegateVote.signal > 0 ? '+' : ''
 #. placeholder {1}: proposal.delegateVote.signal
-#. placeholder {2}: proposal.delegateVote.units
-#: src/screens/Agora/ProposalDetailScreen.tsx:898
-msgid "voted {0}{1} ({2} units)"
-msgstr "voted {0}{1} ({2} units)"
+#: src/screens/Agora/ProposalDetailScreen.tsx:928
+msgid "voted {0}{1}"
+msgstr "voted {0}{1}"
 
 #: src/screens/Agora/AgoraScreen.tsx:397
 #: src/screens/Agora/AgoraScreen.tsx:503
-#: src/screens/Agora/ProposalDetailScreen.tsx:789
+#: src/screens/Agora/ProposalDetailScreen.tsx:827
 msgid "votes"
 msgstr "votes"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:588
+#: src/screens/Agora/ProposalDetailScreen.tsx:624
 #: src/screens/Data/components/MyBaseDashboard.tsx:156
 #: src/screens/Data/SeeVotesScreen.tsx:246
 #: src/screens/Settings/ProfileVisibility.tsx:274
@@ -21200,7 +21233,7 @@ msgstr ""
 msgid "We couldn't find any results for that topic."
 msgstr ""
 
-#: src/screens/Communities/CommunityRolesScreen.tsx:441
+#: src/screens/Communities/CommunityRolesScreen.tsx:440
 msgid "We couldn't load the community governance record."
 msgstr "We couldn't load the community governance record."
 
@@ -21407,6 +21440,10 @@ msgstr ""
 #: src/screens/Communities/CabildeoDetailScreen.tsx:1400
 msgid "Weight: 1.0 (direct vote)"
 msgstr "Weight: 1.0 (direct vote)"
+
+#: src/screens/Agora/components/HowItWorksSheet.tsx:17
+msgid "Weighted votes on policies"
+msgstr "Weighted votes on policies"
 
 #: src/screens/Deactivated.tsx:121
 msgid "Welcome back!"
@@ -21727,7 +21764,7 @@ msgstr "You are blocking this person"
 msgid "You are creating an account on"
 msgstr ""
 
-#: src/features/liveNow/components/GoLiveDisabledDialog.tsx:108
+#: src/features/liveNow/components/GoLiveDisabledDialog.tsx:107
 msgid "You are currently blocked from using the Go Live feature. To appeal this moderation decision, please submit the form below."
 msgstr ""
 
@@ -21812,6 +21849,10 @@ msgstr ""
 msgid "You can continue ongoing conversations regardless of which setting you choose."
 msgstr ""
 
+#: src/screens/Agora/components/HowItWorksSheet.tsx:26
+msgid "You can lend your vote to someone you trust, for one proposal or for a topic, renewing every 90 days. They cannot pass it on. It still counts once, as yours, and votes the way they vote. If you vote yourself, your vote counts instead, and you can take it back at any moment. Lending is public today: anyone can see whom you trust."
+msgstr "You can lend your vote to someone you trust, for one proposal or for a topic, renewing every 90 days. They cannot pass it on. It still counts once, as yours, and votes the way they vote. If you vote yourself, your vote counts instead, and you can take it back at any moment. Lending is public today: anyone can see whom you trust."
+
 #: src/components/dialogs/nuxs/ActivitySubscriptions.tsx:150
 msgid "You can now choose to be notified when specific people post. If there’s someone you want timely updates from, go to their profile and find the new bell icon near the follow button."
 msgstr ""
@@ -21846,10 +21887,6 @@ msgstr "You can select up to {MAX_GALLERY_IMAGES, plural, other {# images}} in t
 #: src/components/TrendingTopics.tsx:53
 msgid "You can update this later from your settings."
 msgstr ""
-
-#: src/screens/Agora/components/HowItWorksSheet.tsx:19
-msgid "You can vote from -3 (strongly oppose) to +3 (strongly support). But intensity matters: each additional \"unit\" of conviction costs the square of that unit in credits. 1 unit = 1 credit, 2 units = 4 credits, 4 units = 16 credits. This makes extreme positions expensive and encourages honest signaling."
-msgstr "You can vote from -3 (strongly oppose) to +3 (strongly support). But intensity matters: each additional \"unit\" of conviction costs the square of that unit in credits. 1 unit = 1 credit, 2 units = 4 credits, 4 units = 16 credits. This makes extreme positions expensive and encourages honest signaling."
 
 #: src/components/dms/ActionsWrapper.web.tsx:82
 #: src/components/dms/MessageContextMenu.tsx:127
@@ -21950,7 +21987,7 @@ msgstr ""
 msgid "You have not blocked any accounts yet. To block an account, go to their profile and select \"Block account\" from the menu on their account."
 msgstr ""
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:1084
+#: src/screens/Agora/ProposalDetailScreen.tsx:1112
 msgid "You have not delegated your vote for this proposal."
 msgstr "You have not delegated your vote for this proposal."
 
@@ -22124,10 +22161,9 @@ msgid "You unfollowed this lobbying"
 msgstr "You unfollowed this lobbying"
 
 #. placeholder {0}: (proposal.yourSignal! > 0 ? '+' : '') + String(proposal.yourSignal)
-#. placeholder {1}: String(proposal.yourUnits ?? 0)
-#: src/screens/Agora/ProposalDetailScreen.tsx:856
-msgid "You voted {0} with {1} intensity units"
-msgstr "You voted {0} with {1} intensity units"
+#: src/screens/Agora/ProposalDetailScreen.tsx:894
+msgid "You voted {0}"
+msgstr "You voted {0}"
 
 #: src/screens/Data/SeeVotesScreen.tsx:160
 msgid "You voted: {votedOption}"
@@ -22149,7 +22185,7 @@ msgid "You will no longer appear in this starter pack. The creator will be able 
 msgstr "You will no longer appear in this starter pack. The creator will be able to see that you've opted out and remove you if they wish."
 
 #. placeholder {0}: sanitizeHandle(profile.handle, '@')
-#: src/components/activity-notifications/SubscribeProfileDialog.tsx:138
+#: src/components/activity-notifications/SubscribeProfileDialog.tsx:137
 msgid "You will no longer receive notifications for {0}"
 msgstr ""
 
@@ -22196,7 +22232,7 @@ msgid "You'll need to go to the System Settings for PARA and give permission if 
 msgstr "You'll need to go to the System Settings for PARA and give permission if you want to use this feature."
 
 #. placeholder {0}: sanitizeHandle(profile.handle, '@')
-#: src/components/activity-notifications/SubscribeProfileDialog.tsx:170
+#: src/components/activity-notifications/SubscribeProfileDialog.tsx:169
 msgid "You'll start receiving notifications for {0}!"
 msgstr ""
 
@@ -22405,7 +22441,7 @@ msgstr ""
 msgid "Your delegate has voted"
 msgstr "Your delegate has voted"
 
-#: src/screens/Agora/ProposalDetailScreen.tsx:885
+#: src/screens/Agora/ProposalDetailScreen.tsx:915
 msgid "Your delegate voted"
 msgstr "Your delegate voted"
 
@@ -22623,7 +22659,7 @@ msgstr "Your vote has been registered"
 
 #. placeholder {0}: activeDelegations[0].delegate
 #. placeholder {1}: activeDelegations[0].scope
-#: src/screens/Agora/ProposalDetailScreen.tsx:953
+#: src/screens/Agora/ProposalDetailScreen.tsx:981
 msgid "Your vote is delegated to {0} for {1}"
 msgstr "Your vote is delegated to {0} for {1}"
 
