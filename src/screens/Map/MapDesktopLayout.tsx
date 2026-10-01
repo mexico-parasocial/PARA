@@ -1,31 +1,19 @@
-import {type ReactNode, useState} from 'react'
-import {ScrollView, TouchableOpacity, View} from 'react-native'
+import {type ReactNode} from 'react'
+import {TouchableOpacity, View} from 'react-native'
 import Animated, {FadeInRight, SlideInLeft} from 'react-native-reanimated'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import {useIsFocused} from '@react-navigation/native'
 
 import {useSession} from '#/state/session'
+import {LEFT_NAV_MINIMAL_WIDTH} from '#/view/shell/desktop/LeftNav'
 import {SplitViewProvider} from '#/screens/Messages/components/splitView/context'
-import {atoms as a, useLayoutBreakpoints, useTheme, web} from '#/alf'
-import {Menu_Stroke2_Corner0_Rounded as MenuIcon} from '#/components/icons/Menu'
-
-const scrollbarStyles = web({
-  scrollbarWidth: 'thin',
-  scrollbarColor: 'rgba(128,128,128,0.3) transparent',
-  '::-webkit-scrollbar': {
-    width: '6px',
-  },
-  '::-webkit-scrollbar-track': {
-    background: 'transparent',
-  },
-  '::-webkit-scrollbar-thumb': {
-    backgroundColor: 'rgba(128,128,128,0.3)',
-    borderRadius: '3px',
-  },
-  '::-webkit-scrollbar-thumb:hover': {
-    backgroundColor: 'rgba(128,128,128,0.5)',
-  },
-})
+import {
+  atoms as a,
+  useBreakpoints,
+  useLayoutBreakpoints,
+  useTheme,
+  web,
+} from '#/alf'
 import {LockScroll} from '#/components/LockScroll'
 import {Text} from '#/components/Typography'
 
@@ -41,16 +29,22 @@ const DESKTOP_LEFT_RAIL_WIDTH = 86
 export function MapSplitPaneLayout({
   sidebar,
   map,
+  drawerOpen = false,
+  onDrawerOpenChange,
 }: {
   sidebar: ReactNode
   map: ReactNode
+  /** Narrow-layout drawer state; the toggle lives in the screen's top bar. */
+  drawerOpen?: boolean
+  onDrawerOpenChange?: (open: boolean) => void
 }) {
   const t = useTheme()
   const insets = useSafeAreaInsets()
   const {rightNavVisible, centerColumnOffset} = useLayoutBreakpoints()
-  const [drawerOpen, setDrawerOpen] = useState(false)
+  const setDrawerOpen = (open: boolean) => onDrawerOpenChange?.(open)
   const isFocused = useIsFocused()
   const {hasSession} = useSession()
+  const {gtMobile} = useBreakpoints()
 
   if (rightNavVisible) {
     const sidebarWidth = centerColumnOffset
@@ -115,7 +109,12 @@ export function MapSplitPaneLayout({
         a.flex_1,
         a.flex_row,
         a.overflow_hidden,
-        {paddingBottom: insets.bottom},
+        // The fixed left nav rail floats over the page from the left edge;
+        // keep the drawer and map clear of it.
+        {
+          paddingBottom: insets.bottom,
+          marginLeft: hasSession && gtMobile ? LEFT_NAV_MINIMAL_WIDTH : 0,
+        },
       ]}>
       {/* Drawer */}
       {drawerOpen && (
@@ -168,59 +167,7 @@ export function MapSplitPaneLayout({
         />
       )}
 
-      <View style={[a.flex_1, a.relative, a.overflow_hidden]}>
-        {map}
-
-        {!drawerOpen && (
-          <View style={[a.absolute, {left: 16, top: 16, zIndex: 20}]}>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Open sidebar"
-              accessibilityHint=""
-              onPress={() => setDrawerOpen(true)}
-              style={[
-                a.align_center,
-                a.justify_center,
-                a.rounded_full,
-                t.atoms.bg_contrast_25,
-                web({backdropFilter: 'blur(10px)'}),
-                a.border,
-                t.atoms.border_contrast_low,
-                a.shadow_md,
-                {width: 44, height: 44},
-              ]}>
-              <MenuIcon width={20} height={20} fill={t.atoms.text.color} />
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
+      <View style={[a.flex_1, a.relative, a.overflow_hidden]}>{map}</View>
     </View>
   )
-}
-
-/**
- * Scrollable sidebar panel that hosts overlay content.
- * Used inside both desktop sidebar and mobile drawer.
- */
-export function MapSidebarPanel({
-  children,
-  scrollable = true,
-}: {
-  children: ReactNode
-  scrollable?: boolean
-}) {
-  const content = <View style={[a.flex_1, a.p_lg, a.gap_md]}>{children}</View>
-
-  if (scrollable) {
-    return (
-      <ScrollView
-        style={[a.flex_1, scrollbarStyles]}
-        contentContainerStyle={[a.gap_md, a.pb_xl]}
-        showsVerticalScrollIndicator={false}>
-        {content}
-      </ScrollView>
-    )
-  }
-
-  return content
 }

@@ -1,18 +1,9 @@
-import {useMemo, useState} from 'react'
+import {useState} from 'react'
 import {ScrollView, TextInput, TouchableOpacity, View} from 'react-native'
-import {useNavigation} from '@react-navigation/native'
 
-import {
-  type ElectoralDistrict,
-  getDistrictsByState,
-} from '#/lib/constants/electoralDistrictsData'
 import {type SearchResult} from '#/lib/constants/mapHelpers'
-import {normalizeMexicoStateName} from '#/lib/constants/mexico'
 import {MEXICO_CITY_DATA} from '#/lib/constants/mexicoCityData'
-import {MOCK_DISTRICT_RAQS, STATE_DEMOGRAPHICS} from '#/lib/constants/mockData'
-import {type NavigationProp} from '#/lib/routes/types'
 import {IS_WEB} from '#/platform/detection'
-import {useCabildeosQuery} from '#/state/queries/cabildeo'
 import {atoms as a, useTheme, web} from '#/alf'
 import {Check_Stroke2_Corner0_Rounded as Check} from '#/components/icons/Check'
 import {
@@ -24,7 +15,7 @@ import {Filter_Stroke2_Corner0_Rounded as FilterIcon} from '#/components/icons/F
 import {MagnifyingGlass_Stroke2_Corner0_Rounded as MagnifyingGlass} from '#/components/icons/MagnifyingGlass'
 import {SquareBehindSquare4_Stroke2_Corner0_Rounded as LayersIcon} from '#/components/icons/SquareBehindSquare4'
 import {Text} from '#/components/Typography'
-import {MapSidebarPanel} from './MapDesktopLayout'
+import {CivicHeatToggle} from './CivicHeatToggle'
 import {MapDiscourseLensContent} from './MapDiscourseLensContent'
 
 // ---------------------------------------------------------------------------
@@ -32,52 +23,6 @@ import {MapDiscourseLensContent} from './MapDiscourseLensContent'
 // ---------------------------------------------------------------------------
 
 export type MapLayer = 'states' | 'districts' | 'cities' | 'civic'
-
-// ---------------------------------------------------------------------------
-// Shared mini action
-// ---------------------------------------------------------------------------
-
-function MiniAction({
-  label,
-  active = false,
-  onPress,
-}: {
-  label: string
-  active?: boolean
-  onPress: () => void
-}) {
-  const t = useTheme()
-
-  return (
-    <TouchableOpacity
-      accessibilityRole="button"
-      onPress={onPress}
-      style={[
-        a.px_sm,
-        a.py_xs,
-        a.rounded_full,
-        a.border,
-        active
-          ? {borderColor: t.palette.primary_500, backgroundColor: '#ffffff14'}
-          : t.atoms.border_contrast_low,
-        web({cursor: 'pointer'}),
-        web({transition: 'background-color 0.1s ease'}),
-        !active &&
-          web({':hover': {backgroundColor: t.palette.contrast_100 + '30'}}),
-      ]}>
-      <Text
-        style={[
-          a.text_xs,
-          a.font_bold,
-          active
-            ? {color: t.palette.primary_500}
-            : t.atoms.text_contrast_medium,
-        ]}>
-        {label}
-      </Text>
-    </TouchableOpacity>
-  )
-}
 
 function SectionHeader({label}: {label: string}) {
   const t = useTheme()
@@ -324,9 +269,15 @@ const TOTAL_MAJOR_CITIES = Object.values(MEXICO_CITY_DATA).reduce(
 export function MapSidebarLayers({
   activeLayer,
   onSelectLayer,
+  civicHeatOn,
+  onToggleCivicHeat,
+  civicPointCount,
 }: {
   activeLayer: MapLayer
   onSelectLayer: (layer: MapLayer) => void
+  civicHeatOn: boolean
+  onToggleCivicHeat: () => void
+  civicPointCount: number
 }) {
   const t = useTheme()
 
@@ -353,11 +304,6 @@ export function MapSidebarLayers({
       label: 'Cities',
       description: 'Major urban centers',
       count: TOTAL_MAJOR_CITIES,
-    },
-    {
-      id: 'civic',
-      label: 'Civic',
-      description: 'Cabildeo activity density',
     },
   ]
 
@@ -480,6 +426,12 @@ export function MapSidebarLayers({
             </TouchableOpacity>
           )
         })}
+
+        <CivicHeatToggle
+          on={civicHeatOn}
+          onToggle={onToggleCivicHeat}
+          pointCount={civicPointCount}
+        />
       </View>
     </View>
   )
@@ -748,520 +700,5 @@ export function MapSidebarZoneFilters({
         </View>
       )}
     </View>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// State Summary Panel
-// ---------------------------------------------------------------------------
-
-export function StateSummarySidebar({
-  selectedState,
-  onShowCities,
-  onShowDistricts,
-  onClear,
-}: {
-  selectedState: {name: string}
-  onShowCities: () => void
-  onShowDistricts: () => void
-  onClear: () => void
-}) {
-  const t = useTheme()
-  const navRef = useNavigation<NavigationProp>()
-  const {data: allCabildeos = []} = useCabildeosQuery()
-
-  const activeCabildeos = allCabildeos.filter(
-    c =>
-      normalizeMexicoStateName(c.region || '') ===
-        normalizeMexicoStateName(selectedState.name) && c.phase !== 'resolved',
-  )
-  const districtCount = getDistrictsByState(selectedState.name).length
-  const cityCount =
-    Object.entries(MEXICO_CITY_DATA).find(
-      ([candidate]) =>
-        normalizeMexicoStateName(candidate) ===
-        normalizeMexicoStateName(selectedState.name),
-    )?.[1].length || 0
-  const stats =
-    STATE_DEMOGRAPHICS[selectedState.name] || STATE_DEMOGRAPHICS['default']
-
-  return (
-    <MapSidebarPanel>
-      <View style={[a.flex_row, a.justify_between, a.align_center]}>
-        <View style={[a.flex_1]}>
-          <Text style={[a.text_xs, a.font_bold, t.atoms.text_contrast_medium]}>
-            STATE SUMMARY
-          </Text>
-          <Text style={[a.text_2xl, a.font_bold, t.atoms.text, a.mt_2xs]}>
-            {selectedState.name}
-          </Text>
-        </View>
-        <TouchableOpacity
-          accessibilityRole="button"
-          onPress={onClear}
-          style={[a.p_xs, a.rounded_full, t.atoms.bg_contrast_100]}>
-          <Text style={[a.text_md, a.font_bold, t.atoms.text_contrast_medium]}>
-            ✕
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={[a.flex_row, a.gap_sm]}>
-        <View style={[a.flex_1, a.p_sm, t.atoms.bg_contrast_100, a.rounded_md]}>
-          <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>
-            Dominant party
-          </Text>
-          <Text style={[a.text_lg, a.font_bold, t.atoms.text, a.mt_2xs]}>
-            {stats.dominantParty}
-          </Text>
-        </View>
-        <View style={[a.flex_1, a.p_sm, t.atoms.bg_contrast_100, a.rounded_md]}>
-          <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>
-            Leading community
-          </Text>
-          <Text style={[a.text_lg, a.font_bold, t.atoms.text, a.mt_2xs]}>
-            {stats.leadingCommunity}
-          </Text>
-        </View>
-      </View>
-
-      <View style={[a.flex_row, a.gap_sm]}>
-        <View
-          style={[
-            a.flex_1,
-            a.p_sm,
-            a.rounded_md,
-            t.atoms.bg_contrast_25,
-            a.align_center,
-          ]}>
-          <Text style={[a.text_xl, a.font_bold, t.atoms.text]}>
-            {stats.approval}
-          </Text>
-          <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>
-            Approval
-          </Text>
-        </View>
-        <View
-          style={[
-            a.flex_1,
-            a.p_sm,
-            a.rounded_md,
-            t.atoms.bg_contrast_25,
-            a.align_center,
-          ]}>
-          <Text style={[a.text_xl, a.font_bold, t.atoms.text]}>
-            {stats.active}
-          </Text>
-          <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>Active</Text>
-        </View>
-      </View>
-
-      <View style={[a.flex_row, a.flex_wrap, a.gap_sm]}>
-        <MiniAction
-          label={`Explore ${districtCount} districts`}
-          onPress={onShowDistricts}
-        />
-        <MiniAction
-          label={cityCount > 0 ? `Browse ${cityCount} cities` : 'Major cities'}
-          onPress={onShowCities}
-        />
-        {activeCabildeos.length > 0 && (
-          <MiniAction
-            label={`${activeCabildeos.length} active lobbying`}
-            onPress={() => navRef.navigate('CabildeoList')}
-          />
-        )}
-      </View>
-    </MapSidebarPanel>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Districts Browser Panel
-// ---------------------------------------------------------------------------
-
-export function DistrictsSidebar({
-  selectedState,
-  selectedDistrictId,
-  onSelectDistrict,
-  onBackToState,
-}: {
-  selectedState: {name: string}
-  selectedDistrictId: number | null
-  onSelectDistrict: (districtId: number) => void
-  onBackToState: () => void
-}) {
-  const t = useTheme()
-  const navRef = useNavigation<NavigationProp>()
-  const {data: allCabildeos = []} = useCabildeosQuery()
-
-  const districts = useMemo(
-    () =>
-      [...getDistrictsByState(selectedState.name)].sort(
-        (a, b) => a.districtNumber - b.districtNumber,
-      ),
-    [selectedState.name],
-  )
-
-  const selectedDistrict =
-    districts.find(d => d.id === selectedDistrictId) || null
-
-  return (
-    <MapSidebarPanel>
-      <View style={[a.flex_row, a.justify_between, a.align_center]}>
-        <View style={[a.flex_1]}>
-          <Text style={[a.text_xs, a.font_bold, t.atoms.text_contrast_medium]}>
-            FEDERAL DISTRICTS
-          </Text>
-          <Text style={[a.text_2xl, a.font_bold, t.atoms.text, a.mt_2xs]}>
-            {selectedState.name}
-          </Text>
-        </View>
-        <TouchableOpacity
-          accessibilityRole="button"
-          onPress={onBackToState}
-          style={[a.p_xs, a.rounded_full, t.atoms.bg_contrast_100]}>
-          <Text style={[a.text_md, a.font_bold, t.atoms.text_contrast_medium]}>
-            ←
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View
-        style={[
-          a.p_md,
-          a.rounded_lg,
-          t.atoms.bg_contrast_25,
-          a.border,
-          t.atoms.border_contrast_low,
-        ]}>
-        <Text style={[a.text_xs, a.font_bold, t.atoms.text_contrast_medium]}>
-          STATE COVERAGE
-        </Text>
-        <Text style={[a.text_lg, a.font_bold, t.atoms.text, a.mt_xs]}>
-          {districts.length} federal districts
-        </Text>
-      </View>
-
-      {selectedDistrict && <DistrictContextCard district={selectedDistrict} />}
-
-      <ScrollView
-        style={[a.flex_1]}
-        contentContainerStyle={[a.gap_md, a.pb_lg]}
-        showsVerticalScrollIndicator={false}>
-        {districts.map(district => {
-          const isSelected = selectedDistrictId === district.id
-          const districtCabildeos = allCabildeos.filter(
-            c =>
-              (c as {districtKeys?: string[]}).districtKeys?.includes(
-                district.districtKey,
-              ) ||
-              normalizeMexicoStateName(c.region || '') ===
-                normalizeMexicoStateName(district.stateName),
-          )
-          const districtQuestions = MOCK_DISTRICT_RAQS.filter(item =>
-            item.districtKeys.includes(district.districtKey),
-          )
-
-          return (
-            <TouchableOpacity
-              key={district.id}
-              accessibilityRole="button"
-              onPress={() => onSelectDistrict(district.id)}
-              style={[
-                a.p_md,
-                a.rounded_lg,
-                a.border,
-                isSelected
-                  ? {
-                      backgroundColor: district.accent + '18',
-                      borderColor: district.accent + '40',
-                    }
-                  : [t.atoms.bg_contrast_25, t.atoms.border_contrast_low],
-                web({cursor: 'pointer'}),
-                web({transition: 'transform 0.1s ease, box-shadow 0.1s ease'}),
-                !isSelected &&
-                  web({
-                    ':hover': {
-                      transform: 'translateY(-1px)',
-                      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                    },
-                  }),
-              ]}>
-              <View
-                style={[
-                  a.flex_row,
-                  a.justify_between,
-                  a.align_baseline,
-                  a.mb_xs,
-                ]}>
-                <Text style={[a.text_lg, a.font_bold, t.atoms.text]}>
-                  Distrito {district.districtNumber}
-                </Text>
-                <View
-                  style={[
-                    a.px_sm,
-                    a.py_xs,
-                    a.rounded_full,
-                    {backgroundColor: district.accent + '20'},
-                  ]}>
-                  <Text
-                    style={[a.text_xs, a.font_bold, {color: district.accent}]}>
-                    {district.dominantParty}
-                  </Text>
-                </View>
-              </View>
-              <Text style={[a.text_sm, t.atoms.text_contrast_high]}>
-                Turnout <Text style={[a.font_bold]}>{district.turnout}%</Text>
-                {' · '}Registered{' '}
-                <Text style={[a.font_bold]}>
-                  {district.registeredVoters.toLocaleString()}
-                </Text>
-              </Text>
-              <Text
-                style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_xs]}
-                numberOfLines={1}>
-                Deputy: {district.currentDeputy} ({district.deputyParty})
-              </Text>
-              <Text style={[a.text_xs, t.atoms.text_contrast_medium, a.mt_sm]}>
-                {districtCabildeos.length} cabildeo
-                {districtCabildeos.length === 1 ? '' : 's'} ·{' '}
-                {districtQuestions.length} open question
-                {districtQuestions.length === 1 ? '' : 's'}
-              </Text>
-
-              <View style={[a.flex_row, a.gap_sm, a.flex_wrap, a.mt_md]}>
-                <MiniAction
-                  label="Profile"
-                  active={isSelected}
-                  onPress={() =>
-                    navRef.navigate('DistrictProfile', {
-                      districtId: district.id,
-                      initialTab: 'overview',
-                    })
-                  }
-                />
-                <MiniAction
-                  label="Activity"
-                  onPress={() =>
-                    navRef.navigate('DistrictProfile', {
-                      districtId: district.id,
-                      initialTab: 'activity',
-                    })
-                  }
-                />
-              </View>
-            </TouchableOpacity>
-          )
-        })}
-      </ScrollView>
-    </MapSidebarPanel>
-  )
-}
-
-function DistrictContextCard({district}: {district: ElectoralDistrict}) {
-  const t = useTheme()
-  const navRef = useNavigation<NavigationProp>()
-  const {data: allCabildeos = []} = useCabildeosQuery()
-  const districtCabildeos = allCabildeos.filter(
-    c =>
-      (c as {districtKeys?: string[]}).districtKeys?.includes(
-        district.districtKey,
-      ) ||
-      normalizeMexicoStateName(c.region || '') ===
-        normalizeMexicoStateName(district.stateName),
-  )
-  const districtQuestions = MOCK_DISTRICT_RAQS.filter(item =>
-    item.districtKeys.includes(district.districtKey),
-  )
-
-  return (
-    <View
-      style={[
-        a.p_md,
-        a.rounded_lg,
-        {backgroundColor: district.accent + '14'},
-        a.border,
-        {borderColor: district.accent + '32'},
-      ]}>
-      <Text style={[a.text_xs, a.font_bold, {color: district.accent}]}>
-        DISTRITO ACTIVO
-      </Text>
-      <Text style={[a.text_lg, a.font_bold, t.atoms.text, a.mt_xs]}>
-        Distrito {district.districtNumber}
-      </Text>
-      <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_2xs]}>
-        {district.stateName} · {district.currentDeputy}
-      </Text>
-
-      <View style={[a.flex_row, a.gap_sm, a.mt_md]}>
-        <View
-          style={[
-            a.flex_1,
-            a.p_sm,
-            a.rounded_md,
-            t.atoms.bg_contrast_25,
-            a.align_center,
-          ]}>
-          <Text style={[a.text_xl, a.font_bold, t.atoms.text]}>
-            {district.turnout}%
-          </Text>
-          <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>
-            Turnout
-          </Text>
-        </View>
-        <View
-          style={[
-            a.flex_1,
-            a.p_sm,
-            a.rounded_md,
-            t.atoms.bg_contrast_25,
-            a.align_center,
-          ]}>
-          <Text style={[a.text_xl, a.font_bold, t.atoms.text]}>
-            {districtCabildeos.length + districtQuestions.length}
-          </Text>
-          <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>
-            Civic items
-          </Text>
-        </View>
-      </View>
-
-      <View style={[a.flex_row, a.gap_sm, a.mt_md]}>
-        <MiniAction
-          label="Open profile"
-          onPress={() =>
-            navRef.navigate('DistrictProfile', {
-              districtId: district.id,
-              initialTab: 'overview',
-            })
-          }
-        />
-        <MiniAction
-          label="Open activity"
-          onPress={() =>
-            navRef.navigate('DistrictProfile', {
-              districtId: district.id,
-              initialTab: 'activity',
-            })
-          }
-        />
-      </View>
-    </View>
-  )
-}
-
-// ---------------------------------------------------------------------------
-// Cities Panel
-// ---------------------------------------------------------------------------
-
-export function CitiesSidebar({
-  selectedState,
-  onBackToState,
-}: {
-  selectedState: {name: string}
-  onBackToState: () => void
-}) {
-  const t = useTheme()
-
-  const cityData =
-    Object.entries(MEXICO_CITY_DATA).find(
-      ([candidate]) =>
-        normalizeMexicoStateName(candidate) ===
-        normalizeMexicoStateName(selectedState.name),
-    )?.[1] || []
-
-  return (
-    <MapSidebarPanel>
-      <View style={[a.flex_row, a.justify_between, a.align_center]}>
-        <View style={[a.flex_1]}>
-          <Text style={[a.text_xs, a.font_bold, t.atoms.text_contrast_medium]}>
-            MAJOR CITIES
-          </Text>
-          <Text style={[a.text_2xl, a.font_bold, t.atoms.text, a.mt_2xs]}>
-            {selectedState.name}
-          </Text>
-        </View>
-        <TouchableOpacity
-          accessibilityRole="button"
-          onPress={onBackToState}
-          style={[a.p_xs, a.rounded_full, t.atoms.bg_contrast_100]}>
-          <Text style={[a.text_md, a.font_bold, t.atoms.text_contrast_medium]}>
-            ←
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      <View
-        style={[
-          a.p_md,
-          a.rounded_lg,
-          t.atoms.bg_contrast_25,
-          a.border,
-          t.atoms.border_contrast_low,
-        ]}>
-        <Text style={[a.text_xs, a.font_bold, t.atoms.text_contrast_medium]}>
-          URBAN SNAPSHOT
-        </Text>
-        <Text style={[a.text_lg, a.font_bold, t.atoms.text, a.mt_xs]}>
-          {cityData.length} mapped major cit
-          {cityData.length === 1 ? 'y' : 'ies'}
-        </Text>
-      </View>
-
-      <ScrollView
-        style={[a.flex_1]}
-        contentContainerStyle={[a.gap_md, a.pb_lg]}
-        showsVerticalScrollIndicator={false}>
-        {cityData.length > 0 ? (
-          cityData.map((city, index) => (
-            <View
-              key={`${city.name}-${index}`}
-              style={[
-                a.p_md,
-                t.atoms.bg_contrast_25,
-                a.rounded_lg,
-                a.border,
-                t.atoms.border_contrast_low,
-              ]}>
-              <View
-                style={[
-                  a.flex_row,
-                  a.justify_between,
-                  a.align_baseline,
-                  a.mb_xs,
-                ]}>
-                <Text style={[a.text_lg, a.font_bold, t.atoms.text]}>
-                  {city.name}
-                </Text>
-                <View
-                  style={[
-                    a.px_sm,
-                    a.py_xs,
-                    a.rounded_full,
-                    t.atoms.bg_contrast_100,
-                  ]}>
-                  <Text style={[a.text_xs, a.font_bold, t.atoms.text]}>
-                    {city.dominantParty}
-                  </Text>
-                </View>
-              </View>
-              <Text style={[a.text_sm, t.atoms.text_contrast_high]}>
-                Population: <Text style={[a.font_bold]}>{city.population}</Text>
-              </Text>
-              <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_xs]}>
-                Mayor: {city.governing_mayor}
-              </Text>
-            </View>
-          ))
-        ) : (
-          <View style={[a.p_xl, a.align_center]}>
-            <Text style={[t.atoms.text_contrast_medium]}>
-              No city data available for this state.
-            </Text>
-          </View>
-        )}
-      </ScrollView>
-    </MapSidebarPanel>
   )
 }

@@ -58,9 +58,12 @@ import {
   useTheme,
   web,
 } from '#/alf'
+import {Button, ButtonIcon} from '#/components/Button'
 import {Filter_Stroke2_Corner0_Rounded as FilterIcon} from '#/components/icons/Filter'
+import {Menu_Stroke2_Corner0_Rounded as MenuIcon} from '#/components/icons/Menu'
 import {PinLocation_Stroke2_Corner0_Rounded as PinLocationIcon} from '#/components/icons/PinLocation'
 import {Header, Screen} from '#/components/Layout'
+import {BUTTON_VISUAL_ALIGNMENT_OFFSET} from '#/components/Layout/const'
 import {Loader} from '#/components/Loader'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
@@ -124,6 +127,7 @@ export type MapViewProps = {
     stateName: string
     coordinate: Coordinate
     color: string
+    selected?: boolean
     onPress?: () => void
   }>
   districtPolygonsData?: Array<{
@@ -198,25 +202,6 @@ type GeoFeature = {
   }
 }
 
-type DesktopSidebarComponents = {
-  StateSummary: ComponentType<{
-    selectedState: {name: string}
-    onShowCities: () => void
-    onShowDistricts: () => void
-    onClear: () => void
-  }>
-  Districts: ComponentType<{
-    selectedState: {name: string}
-    selectedDistrictId: number | null
-    onSelectDistrict: (districtId: number) => void
-    onBackToState: () => void
-  }>
-  Cities: ComponentType<{
-    selectedState: {name: string}
-    onBackToState: () => void
-  }>
-}
-
 type MapScreenImplProps = Props & {
   MapViewComponent?: ComponentType<MapViewProps>
   PolygonComponent?: ComponentType<PolygonProps>
@@ -226,8 +211,15 @@ type MapScreenImplProps = Props & {
   DesktopLayout?: ComponentType<{
     sidebar: ReactNode
     map: ReactNode
+    drawerOpen?: boolean
+    onDrawerOpenChange?: (open: boolean) => void
   }>
-  DesktopSidebarComponents?: DesktopSidebarComponents
+  /**
+   * Narrow-layout sidebar drawer, owned by the platform screen so the toggle
+   * can live in the top bar next to the back button.
+   */
+  drawerOpen?: boolean
+  onDrawerOpenChange?: (open: boolean) => void
 }
 
 type MapRegion = typeof INITIAL_REGION
@@ -412,6 +404,7 @@ function normalizeLocatedMexicoState(regionCode: string) {
 
 function getLayerFillColor({
   activeLayer,
+  civicHeatOn,
   isSelected,
   selectedDiscourseItem,
   theme,
@@ -419,6 +412,7 @@ function getLayerFillColor({
   maxCivicCount,
 }: {
   activeLayer: MapLayer
+  civicHeatOn: boolean
   isSelected: boolean
   selectedDiscourseItem: string
   theme: ReturnType<typeof useTheme>
@@ -436,7 +430,7 @@ function getLayerFillColor({
     return `#FF5A36${alpha}`
   }
 
-  if (activeLayer === 'civic' && maxCivicCount && maxCivicCount > 0) {
+  if (civicHeatOn && maxCivicCount && maxCivicCount > 0) {
     const density = (civicCount || 0) / maxCivicCount
     const alpha = Math.round(20 + density * 100)
       .toString(16)
@@ -526,7 +520,8 @@ export function MapScreenImpl({
   MarkerClustererComponent,
   unavailableMessage,
   DesktopLayout,
-  DesktopSidebarComponents,
+  drawerOpen,
+  onDrawerOpenChange,
 }: MapScreenImplProps) {
   const {_: translate} = useLingui()
   const t = useTheme()
@@ -552,6 +547,8 @@ export function MapScreenImpl({
   const [searchExpanded, setSearchExpanded] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
   const [activeLayer, setActiveLayer] = useState<MapLayer>('states')
+  // Civic heat is an overlay that stays on across States/Districts/Cities.
+  const [civicHeatOn, setCivicHeatOn] = useState(false)
   const [showDiscourseModal, setShowDiscourseModal] = useState(false)
   const [discourseType, setDiscourseType] = useState<'Matter' | 'Policy'>(
     'Matter',
@@ -820,11 +817,16 @@ export function MapScreenImpl({
     if (!params) return
 
     const requestedDistrictId = getRouteDistrictId(params.districtId)
+    const routeLayer = getRouteLayer(params.layer)
+    // `layer=civic` links predate the heat toggle; they now turn the heat on.
+    if (routeLayer === 'civic') setCivicHeatOn(true)
     const requestedLayer = params.city
       ? 'cities'
       : requestedDistrictId
         ? 'districts'
-        : getRouteLayer(params.layer)
+        : routeLayer === 'civic'
+          ? 'states'
+          : routeLayer
 
     if (lastAppliedRouteSelection.current === routeSelectionKey) return
     lastAppliedRouteSelection.current = routeSelectionKey
@@ -1039,6 +1041,7 @@ export function MapScreenImpl({
       const civicCount = cabildeosPerState.get(normalizedName)
       const fillColor = getLayerFillColor({
         activeLayer,
+        civicHeatOn,
         isSelected,
         selectedDiscourseItem,
         theme: t,
@@ -1069,6 +1072,7 @@ export function MapScreenImpl({
     })
   }, [
     activeLayer,
+    civicHeatOn,
     cabildeosPerState,
     focusState,
     maxCivicCount,
@@ -1312,9 +1316,15 @@ export function MapScreenImpl({
     setMapRouteParams,
   ])
 
+  const civicPointCount = useMemo(
+    () => filteredCabildeos.filter(c => !!c.geo).length,
+    [filteredCabildeos],
+  )
+  const toggleCivicHeat = useCallback(() => setCivicHeatOn(on => !on), [])
+
   // Raw civic point data for native MapLibre heatmap + clustering (web only)
   const civicPointsData = useMemo(() => {
-    if (activeLayer !== 'civic') return []
+    if (!civicHeatOn) return []
     return filteredCabildeos
       .filter(
         (c): c is CabildeoView & {geo: {latE7: number; lngE7: number}} =>
@@ -1327,10 +1337,10 @@ export function MapScreenImpl({
         uri: c.uri,
         title: c.title,
       }))
-  }, [activeLayer, filteredCabildeos])
+  }, [civicHeatOn, filteredCabildeos])
 
   const civicMarkers = useMemo(() => {
-    if (!MarkerComponent || activeLayer !== 'civic') return []
+    if (!MarkerComponent || !civicHeatOn) return []
 
     return civicPointsData.map(cabildeo => {
       const cab = filteredCabildeos.find(c => c.uri === cabildeo.uri)
@@ -1388,7 +1398,7 @@ export function MapScreenImpl({
     })
   }, [
     MarkerComponent,
-    activeLayer,
+    civicHeatOn,
     civicPointsData,
     filteredCabildeos,
     navigation,
@@ -1403,12 +1413,19 @@ export function MapScreenImpl({
       stateName: city.stateName,
       coordinate: city.coordinate,
       color: getPartyColor(city.dominantParty),
+      selected: selectedCityName === city.name,
       onPress: () => {
         setSelectedCityName(city.name)
         focusCity(city.stateName, city.name)
       },
     }))
-  }, [showCities, selectedState, selectedStateCities, focusCity])
+  }, [
+    showCities,
+    selectedState,
+    selectedStateCities,
+    selectedCityName,
+    focusCity,
+  ])
 
   const districtPolygonsData = useMemo(() => {
     if (activeLayer !== 'districts' || !selectedState) return []
@@ -1456,7 +1473,7 @@ export function MapScreenImpl({
       })
   }, [activeLayer, selectedDistrictId, selectedState, setMapRouteParams])
 
-  const hasSplitPane = DesktopLayout && DesktopSidebarComponents
+  const hasSplitPane = !!DesktopLayout
   const isDesktopSplitPane = !!hasSplitPane && rightNavVisible
 
   const mapViewElement =
@@ -1510,9 +1527,10 @@ export function MapScreenImpl({
 
   // The mobile bottom overlays (state summary, cities, districts) occupy the
   // same corner as the zoom cluster; hide the cluster while one is open —
-  // pinch still zooms. Overlays only render in the non-split-pane branch.
+  // pinch still zooms. On the wide web layout the sheets sit bottom-left, clear
+  // of the cluster, so only full-width (phone) sheets need this.
   const bottomOverlayOpen =
-    !hasSplitPane &&
+    (!hasSplitPane || !gtMobile) &&
     ((!!selectedState &&
       activeLayer === 'states' &&
       !showCities &&
@@ -1523,7 +1541,7 @@ export function MapScreenImpl({
   const floatingControls = (
     <>
       {MapViewComponent &&
-        (!gtMobile || isDesktopSplitPane) &&
+        (!gtMobile || hasSplitPane) &&
         !bottomOverlayOpen && (
           <View
             style={[
@@ -1749,6 +1767,9 @@ export function MapScreenImpl({
         <MapSidebarLayers
           activeLayer={activeLayer}
           onSelectLayer={handleSelectLayer}
+          civicHeatOn={civicHeatOn}
+          onToggleCivicHeat={toggleCivicHeat}
+          civicPointCount={civicPointCount}
         />
 
         <MapSidebarZoneFilters
@@ -1763,78 +1784,6 @@ export function MapScreenImpl({
           onOpenPicker={() => setShowDiscourseModal(true)}
         />
       </View>
-
-      {selectedState &&
-        activeLayer === 'states' &&
-        !showCities &&
-        !showDistricts && (
-          <DesktopSidebarComponents.StateSummary
-            selectedState={selectedState}
-            onShowCities={() => {
-              setActiveLayer('cities')
-              setShowCities(true)
-              setShowDistricts(false)
-              setSelectedDistrictId(null)
-              setSelectedCityName(null)
-              if (selectedState) {
-                setMapRouteParams({
-                  state: selectedState.name,
-                  layer: 'cities',
-                })
-              }
-            }}
-            onShowDistricts={() => {
-              setActiveLayer('districts')
-              setShowDistricts(true)
-              setShowCities(false)
-              setSelectedDistrictId(null)
-              setSelectedCityName(null)
-              if (selectedState) {
-                setMapRouteParams({
-                  state: selectedState.name,
-                  layer: 'districts',
-                })
-              }
-            }}
-            onClear={() => clearMapSelection()}
-          />
-        )}
-
-      {selectedState && showDistricts && (
-        <DesktopSidebarComponents.Districts
-          selectedState={selectedState}
-          selectedDistrictId={selectedDistrictId}
-          onSelectDistrict={handleSelectDistrict}
-          onBackToState={() => {
-            setActiveLayer('states')
-            setShowDistricts(false)
-            setSelectedDistrictId(null)
-            if (selectedState) {
-              setMapRouteParams({
-                state: selectedState.name,
-                layer: 'states',
-              })
-            }
-          }}
-        />
-      )}
-
-      {selectedState && showCities && (
-        <DesktopSidebarComponents.Cities
-          selectedState={selectedState}
-          onBackToState={() => {
-            setActiveLayer('states')
-            setShowCities(false)
-            setSelectedCityName(null)
-            if (selectedState) {
-              setMapRouteParams({
-                state: selectedState.name,
-                layer: 'states',
-              })
-            }
-          }}
-        />
-      )}
     </>
   ) : null
 
@@ -1842,12 +1791,31 @@ export function MapScreenImpl({
     <Screen hideBorders noInsetTop={isDesktopSplitPane}>
       {!isDesktopSplitPane && (
         <Header.Outer noBottomBorder>
-          <Header.BackButton />
+          <Header.BackButton
+            style={{marginLeft: -(BUTTON_VISUAL_ALIGNMENT_OFFSET + 8)}}
+          />
+          {hasSplitPane && onDrawerOpenChange && (
+            <Header.Slot>
+              <Button
+                label={translate(msg`Open sidebar`)}
+                size="small"
+                variant="ghost"
+                color="secondary"
+                shape="round"
+                onPress={() => onDrawerOpenChange(!drawerOpen)}
+                style={[
+                  a.bg_transparent,
+                  {marginLeft: -BUTTON_VISUAL_ALIGNMENT_OFFSET},
+                ]}>
+                <ButtonIcon icon={MenuIcon} size="lg" />
+              </Button>
+            </Header.Slot>
+          )}
           <Header.Content>
             <Header.TitleText>
               {selectedState
-                ? `${selectedState.name}${showDistricts ? ' · Districts' : showCities ? ' · Cities' : activeLayer === 'civic' ? ' · Civic' : ''}`
-                : activeLayer === 'civic'
+                ? `${selectedState.name}${showDistricts ? ' · Districts' : showCities ? ' · Cities' : civicHeatOn ? ' · Civic' : ''}`
+                : civicHeatOn
                   ? translate(msg`Civic Activity`)
                   : translate(msg`Mexico Map`)}
             </Header.TitleText>
@@ -1859,6 +1827,8 @@ export function MapScreenImpl({
       {hasSplitPane ? (
         <DesktopLayout
           sidebar={desktopSidebar}
+          drawerOpen={drawerOpen}
+          onDrawerOpenChange={onDrawerOpenChange}
           map={
             <View style={[a.flex_1, a.relative]}>
               {mapViewElement}
@@ -1876,6 +1846,7 @@ export function MapScreenImpl({
                 </View>
               )}
               {floatingControls}
+              {mobileOverlays}
             </View>
           }
         />
@@ -1912,6 +1883,9 @@ export function MapScreenImpl({
               <MapLayersPanel
                 activeLayer={activeLayer}
                 onSelectLayer={handleSelectLayer}
+                civicHeatOn={civicHeatOn}
+                onToggleCivicHeat={toggleCivicHeat}
+                civicPointCount={civicPointCount}
               />
             )}
 

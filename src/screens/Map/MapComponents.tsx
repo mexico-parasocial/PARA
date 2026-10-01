@@ -8,7 +8,6 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import {Gesture, GestureDetector} from 'react-native-gesture-handler'
 import Animated, {
   FadeInDown,
   runOnJS,
@@ -40,6 +39,8 @@ import {CircleX_Stroke2_Corner0_Rounded as CircleX} from '#/components/icons/Cir
 import {MagnifyingGlass_Stroke2_Corner0_Rounded as MagnifyingGlass} from '#/components/icons/MagnifyingGlass'
 import {SquareBehindSquare4_Stroke2_Corner0_Rounded as LayersIcon} from '#/components/icons/SquareBehindSquare4'
 import {Text} from '#/components/Typography'
+import {CivicHeatToggle} from './CivicHeatToggle'
+import {SheetDragDetector, useSheetDragGesture} from './sheetDragGesture'
 
 export type MapLayer = 'states' | 'districts' | 'cities' | 'civic'
 
@@ -81,14 +82,12 @@ type DistrictsDataOverlayProps = {
 type MapLayersPanelProps = {
   activeLayer: MapLayer
   onSelectLayer: (layer: MapLayer) => void
+  civicHeatOn: boolean
+  onToggleCivicHeat: () => void
+  civicPointCount: number
 }
 
 type SearchResultType = SearchResult['type']
-
-// A drag past this distance, or released with this much downward velocity,
-// dismisses the state summary sheet.
-const SHEET_DISMISS_OFFSET = 100
-const SHEET_DISMISS_VELOCITY = 800
 
 const SEARCH_GROUPS: Array<{type: SearchResultType; label: string}> = [
   {type: 'state', label: 'States'},
@@ -656,35 +655,11 @@ export function SelectedStateOverlay({
     )
   }, [isReducedMotion, onClose, translateY])
 
-  const panGesture = useMemo(
-    () =>
-      Gesture.Pan()
-        .activeOffsetY([-10, 10])
-        .onChange(e => {
-          'worklet'
-          // Track downward travel only; upward drags pin the sheet in place.
-          translateY.set(Math.max(0, e.translationY))
-        })
-        .onEnd(e => {
-          'worklet'
-          if (
-            e.translationY > SHEET_DISMISS_OFFSET ||
-            e.velocityY > SHEET_DISMISS_VELOCITY
-          ) {
-            dismissing.set(true)
-            runOnJS(closeSheet)()
-          }
-        })
-        .onFinalize(() => {
-          'worklet'
-          // Runs on both end and cancellation, so an interrupted drag always
-          // settles back home.
-          if (!dismissing.get()) {
-            translateY.set(withTiming(0, {duration: 200}))
-          }
-        }),
-    [translateY, dismissing, closeSheet],
-  )
+  const panGesture = useSheetDragGesture({
+    translateY,
+    dismissing,
+    onDismiss: closeSheet,
+  })
 
   const sheetAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{translateY: translateY.get()}],
@@ -820,7 +795,7 @@ export function SelectedStateOverlay({
 
   if (gtMobile) return sheet
 
-  return <GestureDetector gesture={panGesture}>{sheet}</GestureDetector>
+  return <SheetDragDetector gesture={panGesture}>{sheet}</SheetDragDetector>
 }
 
 export function BigCitiesDataOverlay({
@@ -1410,6 +1385,9 @@ export function DistrictsDataOverlay({
 export function MapLayersPanel({
   activeLayer,
   onSelectLayer,
+  civicHeatOn,
+  onToggleCivicHeat,
+  civicPointCount,
 }: MapLayersPanelProps) {
   const {gtMobile} = useBreakpoints()
   const t = useTheme()
@@ -1437,11 +1415,6 @@ export function MapLayersPanel({
       label: 'Cities',
       description: 'Urban centers',
       count: TOTAL_MAJOR_CITIES,
-    },
-    {
-      id: 'civic',
-      label: 'Civic',
-      description: 'Activity density',
     },
   ]
 
@@ -1525,6 +1498,12 @@ export function MapLayersPanel({
             </TouchableOpacity>
           )
         })}
+
+        <CivicHeatToggle
+          on={civicHeatOn}
+          onToggle={onToggleCivicHeat}
+          pointCount={civicPointCount}
+        />
       </View>
     </View>
   )
