@@ -1,6 +1,7 @@
-import {useMemo, useState} from 'react'
+import {useEffect, useMemo, useState} from 'react'
 import {
   ActivityIndicator,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,27 +12,46 @@ import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
 import {type CommunityBriefingPackStatus} from '#/lib/api/para-lexicons'
+import {COMPASS_POSITION_NAMES} from '#/lib/compass/compassColors'
 import {
   type PartyLobbyingBriefingPackView,
   useBriefingPacksListQuery,
 } from '#/state/queries/briefing-packs'
+import {
+  useCommunityBoardsQuery,
+  useCommunityTreeDirectoryQuery,
+} from '#/state/queries/community-boards'
+import {useCommunityBooksQuery} from '#/state/queries/community-books'
 import {Text} from '#/view/com/util/text/Text'
+import {
+  type DocumentsScope,
+  resolveDocumentsScope,
+  scopeFromBoard,
+} from '#/screens/Dashboard/documentsScope'
 import {useTheme} from '#/alf'
+import {Button, ButtonText} from '#/components/Button'
+import * as Dialog from '#/components/Dialog'
 import {EmptyStateError} from '#/components/EmptyStates'
 import {SearchInput} from '#/components/forms/SearchInput'
 import {CalendarDays_Stroke2_Corner0_Rounded as CalendarIcon} from '#/components/icons/CalendarDays'
+import {Library_Stroke2_Corner0_Rounded as BookIcon} from '#/components/icons/Library'
 import {MagnifyingGlass_Stroke2_Corner0_Rounded as SearchIcon} from '#/components/icons/MagnifyingGlass'
 import {PageText_Stroke2_Corner0_Rounded as DocIcon} from '#/components/icons/PageText'
 import * as Layout from '#/components/Layout'
+import {type BookView} from '#/features/civicTree/books'
+import {PERSONAL_ITEM_KIND_COLORS} from '#/features/civicTree/colors'
+import {collapseCommunityTreeTwins} from '#/features/communityCivicTree/communitySelection'
+import {AddBookDialog} from '#/features/communityCivicTree/components/AddBookDialog'
+import {CommunityTreeSelector} from '#/features/communityCivicTree/components/CommunityTreeSelector'
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
-const TABS = ['All', 'Published', 'Drafts', 'Archived'] as const
+const TABS = ['All', 'Published', 'Drafts', 'Archived', 'Books'] as const
 type Tab = (typeof TABS)[number]
 
 const TAB_TO_STATUS: Record<
-  Exclude<Tab, 'All'>,
+  Exclude<Tab, 'All' | 'Books'>,
   CommunityBriefingPackStatus
 > = {
   Published: 'published',
@@ -77,6 +97,7 @@ function initialTab(param: string | undefined): Tab {
   if (normalized === 'published') return 'Published'
   if (normalized === 'draft' || normalized === 'drafts') return 'Drafts'
   if (normalized === 'archived') return 'Archived'
+  if (normalized === 'books' || normalized === 'book') return 'Books'
   return 'All'
 }
 
@@ -86,7 +107,13 @@ function initialTab(param: string | undefined): Tab {
 export function DocumentsScreen({
   route,
 }: {
-  route: {params?: {category?: string}}
+  route: {
+    params?: {
+      category?: string
+      communityUri?: string
+      communityName?: string
+    }
+  }
 }) {
   const t = useTheme()
   const {_} = useLingui()
@@ -98,11 +125,74 @@ export function DocumentsScreen({
   const [showSearch, setShowSearch] = useState(false)
   const isSearchOpen = showSearch || Boolean(query)
 
+  // Which community's documents to show. A party is a community, so opening
+  // Documents from a party profile scopes it to that party; everywhere else it
+  // starts global and the dropdown narrows it. `override` holds the viewer's
+  // own pick: `undefined` defers to the route, `null` means "all".
+  const routeCommunityUri = route.params?.communityUri
+  const routeCommunityName = route.params?.communityName
+  const directory = useCommunityTreeDirectoryQuery()
+  const needsNameLookup = !routeCommunityUri && !!routeCommunityName
+  const nameLookup = useCommunityBoardsQuery(
+    {limit: 100, query: routeCommunityName},
+    needsNameLookup,
+  )
+  const boards = useMemo(() => {
+    const all = [
+      ...(directory.data?.pages.flatMap(page => page.boards) ?? []),
+      ...(nameLookup.data?.boards ?? []),
+    ]
+    return Array.from(new Map(all.map(board => [board.uri, board])).values())
+  }, [directory.data, nameLookup.data])
+  const [override, setOverride] = useState<DocumentsScope | null | undefined>()
+  // This screen stays mounted in the stack, so a new profile's params must win
+  // over a filter picked for the previous one.
+  useEffect(() => {
+    setOverride(undefined)
+  }, [routeCommunityUri, routeCommunityName])
+  const routeScope = useMemo(
+    () =>
+      resolveDocumentsScope(
+        {communityUri: routeCommunityUri, communityName: routeCommunityName},
+        boards,
+      ),
+    [routeCommunityUri, routeCommunityName, boards],
+  )
+  const scope = override === undefined ? routeScope : (override ?? undefined)
+  // A scope with no boards is "not found", but only once we have looked.
+  const isScopeResolving =
+    !!scope &&
+    scope.uris.length === 0 &&
+    override === undefined &&
+    (directory.isFetching || nameLookup.isFetching)
+  const isScopeMissing = !!scope && scope.uris.length === 0 && !isScopeResolving
+  const scopeBoards = useMemo(
+    () => (scope ? boards.filter(b => scope.uris.includes(b.uri)) : []),
+    [boards, scope],
+  )
+  const selectedBoard = collapseCommunityTreeTwins(scopeBoards)[0]
+
   // NOTE: the compass filter is intentionally not offered here — the backend
   // listBriefingPacks handler currently returns `party: ''` for every pack,
-  // so compass filtering would silently hide everything.
-  const {data, isPending, isError, refetch} = useBriefingPacksListQuery({})
-  const packs = useMemo(() => data?.packs ?? [], [data])
+  // so compass filtering would silently hide everything. Scoping is by
+  // community, which the handler does honor.
+  const {
+    packs,
+    isPending: isPacksPending,
+    isError,
+    refetch,
+  } = useBriefingPacksListQuery({communityUris: scope?.uris})
+  const isPending = isPacksPending || isScopeResolving
+  const communityNames = useMemo(
+    () => new Map(boards.map(b => [b.uri, b.name])),
+    [boards],
+  )
+
+  // Books live in community civic trees, not in briefing packs, so they have
+  // their own query and are only ever listed under the Books tab.
+  const booksQuery = useCommunityBooksQuery()
+  const addBookControl = Dialog.useDialogControl()
+  const isBooksTab = activeTab === 'Books'
 
   const tabCountMap = useMemo(() => {
     const map: Record<Tab, number> = {
@@ -110,6 +200,10 @@ export function DocumentsScreen({
       Published: 0,
       Drafts: 0,
       Archived: 0,
+      Books: scope
+        ? booksQuery.books.filter(b => scope.uris.includes(b.communityUri))
+            .length
+        : booksQuery.books.length,
     }
     for (const pack of packs) {
       if (pack.status === 'published') map.Published += 1
@@ -117,9 +211,10 @@ export function DocumentsScreen({
       else if (pack.status === 'archived') map.Archived += 1
     }
     return map
-  }, [packs])
+  }, [packs, booksQuery.books, scope])
 
   const filteredPacks = useMemo(() => {
+    if (activeTab === 'Books') return []
     const status = activeTab === 'All' ? undefined : TAB_TO_STATUS[activeTab]
     return packs.filter(pack => {
       if (status && pack.status !== status) return false
@@ -128,12 +223,27 @@ export function DocumentsScreen({
           pack.title,
           pack.summary,
           pack.party,
-          communityLabel(pack.communityUri),
+          communityNames.get(pack.communityUri) ??
+            communityLabel(pack.communityUri),
         ],
         query,
       )
     })
-  }, [activeTab, packs, query])
+  }, [activeTab, packs, query, communityNames])
+
+  const filteredBooks = useMemo(
+    () =>
+      booksQuery.books.filter(
+        book =>
+          (!scope || scope.uris.includes(book.communityUri)) &&
+          matchesSearch(
+            [book.title, book.author, book.note, book.communityName],
+            query,
+          ),
+      ),
+    [booksQuery.books, query, scope],
+  )
+  const visibleCount = isBooksTab ? filteredBooks.length : filteredPacks.length
 
   return (
     <Layout.Screen testID="documentsScreen">
@@ -148,7 +258,7 @@ export function DocumentsScreen({
                   onChangeText={setQuery}
                   onClearText={() => setQuery('')}
                   placeholder={_(
-                    msg`Search documents, parties, or communities`,
+                    msg`Search documents, books, parties, or communities`,
                   )}
                 />
               </View>
@@ -179,6 +289,37 @@ export function DocumentsScreen({
             </Pressable>
           </View>
         </Layout.Header.Outer>
+
+        {/* Community filter */}
+        <Layout.Center style={styles.scopeRow}>
+          <CommunityTreeSelector
+            boards={boards}
+            selectedCommunity={selectedBoard}
+            selectedUri={selectedBoard?.uri}
+            selectedName={scope?.name}
+            onSelect={uri => {
+              const board = boards.find(b => b.uri === uri)
+              if (board) setOverride(scopeFromBoard(board, boards))
+            }}
+            onSelectNinth={ninth =>
+              setOverride(
+                resolveDocumentsScope(
+                  {communityName: COMPASS_POSITION_NAMES[ninth]},
+                  boards,
+                ),
+              )
+            }
+            onSelectAll={() => setOverride(null)}
+            allLabel={_(msg`All communities`)}
+            defaultCategory="official"
+            collapseTwins
+            isLoading={directory.isFetching}
+            isError={directory.isError}
+            onRetry={() => void directory.refetch()}
+            hasNextPage={directory.hasNextPage}
+            onLoadMore={() => void directory.fetchNextPage()}
+          />
+        </Layout.Center>
 
         {/* Status Tabs */}
         <Layout.Center
@@ -250,34 +391,87 @@ export function DocumentsScreen({
       </View>
 
       {/* Summary Bar */}
-      <View
+      {/*
+       * The background and border sit on the centered column itself. Wrapping
+       * this in a full-width View painted the bar edge to edge on web, past the
+       * center-column borders that Layout.Screen draws.
+       */}
+      <Layout.Center
         style={[
+          styles.summaryBar,
           t.atoms.bg_contrast_25,
           t.atoms.border_contrast_low,
           {borderBottomWidth: StyleSheet.hairlineWidth},
         ]}>
-        <Layout.Center style={styles.summaryBar}>
-          <DocIcon size="sm" style={t.atoms.text_contrast_medium} />
-          <Text style={[styles.summaryText, t.atoms.text]}>
-            {plural(filteredPacks.length, {
-              one: '# document',
-              other: '# documents',
-            })}
-          </Text>
-          <Text style={[styles.summarySubtext, t.atoms.text_contrast_medium]}>
-            {activeTab === 'All'
+        <DocIcon size="sm" style={t.atoms.text_contrast_medium} />
+        <Text style={[styles.summaryText, t.atoms.text]}>
+          {isBooksTab
+            ? plural(visibleCount, {one: '# book', other: '# books'})
+            : plural(visibleCount, {
+                one: '# document',
+                other: '# documents',
+              })}
+        </Text>
+        <Text
+          style={[
+            styles.summarySubtext,
+            styles.summarySubtextFlex,
+            t.atoms.text_contrast_medium,
+          ]}
+          numberOfLines={1}>
+          {isBooksTab
+            ? _(msg`from your communities`)
+            : activeTab === 'All'
               ? _(msg`across all statuses`)
               : _(msg`in ${activeTab}`)}
-          </Text>
-        </Layout.Center>
-      </View>
+        </Text>
+        {isBooksTab ? (
+          <Button
+            label={_(msg`Add a book`)}
+            size="small"
+            color="primary"
+            onPress={() => addBookControl.open()}>
+            <ButtonText>
+              <Trans>Add book</Trans>
+            </ButtonText>
+          </Button>
+        ) : null}
+      </Layout.Center>
 
       {/* Document List */}
       <Layout.Content
         bounces
         contentContainerStyle={styles.contentContainer}
         showsVerticalScrollIndicator>
-        {isPending ? (
+        {isScopeMissing ? (
+          <View
+            style={[
+              styles.emptyState,
+              t.atoms.bg_contrast_25,
+              t.atoms.border_contrast_low,
+            ]}>
+            <DocIcon size="xl" style={t.atoms.text_contrast_low} />
+            <Text style={[styles.emptyTitle, t.atoms.text]}>
+              <Trans>No community found</Trans>
+            </Text>
+            <Text
+              style={[styles.emptyDescription, t.atoms.text_contrast_medium]}>
+              <Trans>
+                There is no community for {scope?.name} yet, so there are no
+                documents to show. Pick another community above.
+              </Trans>
+            </Text>
+          </View>
+        ) : isBooksTab ? (
+          <BooksList
+            books={filteredBooks}
+            isPending={booksQuery.isPending}
+            isError={booksQuery.isError}
+            hasCommunities={booksQuery.hasCommunities}
+            isFiltering={query.trim().length > 0}
+            onRetry={booksQuery.refetch}
+          />
+        ) : isPending ? (
           <View style={styles.centerState}>
             <ActivityIndicator size="large" color={t.palette.primary_500} />
           </View>
@@ -311,19 +505,207 @@ export function DocumentsScreen({
         ) : (
           <View style={styles.documentList}>
             {filteredPacks.map(pack => (
-              <DocumentCard key={pack.uri} pack={pack} />
+              <DocumentCard
+                key={pack.uri}
+                pack={pack}
+                communityName={communityNames.get(pack.communityUri)}
+              />
             ))}
           </View>
         )}
       </Layout.Content>
+      <AddBookDialog
+        control={addBookControl}
+        defaultCommunityUris={scope?.uris}
+      />
     </Layout.Screen>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Books
+// ---------------------------------------------------------------------------
+function BooksList({
+  books,
+  isPending,
+  isError,
+  hasCommunities,
+  isFiltering,
+  onRetry,
+}: {
+  books: BookView[]
+  isPending: boolean
+  isError: boolean
+  hasCommunities: boolean
+  isFiltering: boolean
+  onRetry: () => void
+}) {
+  const t = useTheme()
+  const {_} = useLingui()
+
+  if (isPending) {
+    return (
+      <View style={styles.centerState}>
+        <ActivityIndicator size="large" color={t.palette.primary_500} />
+      </View>
+    )
+  }
+  if (isError) {
+    return (
+      <EmptyStateError
+        message={_(
+          msg`Books could not be loaded. Check your connection and try again.`,
+        )}
+        onRetry={onRetry}
+      />
+    )
+  }
+  if (books.length === 0) {
+    return (
+      <View
+        style={[
+          styles.emptyState,
+          t.atoms.bg_contrast_25,
+          t.atoms.border_contrast_low,
+        ]}>
+        <BookIcon size="xl" style={t.atoms.text_contrast_low} />
+        <Text style={[styles.emptyTitle, t.atoms.text]}>
+          <Trans>No books found</Trans>
+        </Text>
+        <Text style={[styles.emptyDescription, t.atoms.text_contrast_medium]}>
+          {isFiltering ? (
+            <Trans>Try clearing your search.</Trans>
+          ) : hasCommunities ? (
+            <Trans>
+              Books added to your communities appear here. Use Add book to share
+              the first one.
+            </Trans>
+          ) : (
+            <Trans>Join a community to see and add its books.</Trans>
+          )}
+        </Text>
+      </View>
+    )
+  }
+  return (
+    <View style={styles.documentList}>
+      {books.map(book => (
+        <BookCard key={`${book.status}:${book.id}`} book={book} />
+      ))}
+    </View>
+  )
+}
+
+function BookCard({book}: {book: BookView}) {
+  const t = useTheme()
+  const {_} = useLingui()
+  const isPending = book.status === 'pending'
+  const accent = PERSONAL_ITEM_KIND_COLORS.book
+
+  return (
+    <View
+      accessible
+      accessibilityLabel={
+        book.author ? _(msg`${book.title} by ${book.author}`) : book.title
+      }
+      accessibilityHint={_(msg`Book shared in ${book.communityName}`)}
+      style={[
+        styles.docCard,
+        t.atoms.bg,
+        {
+          borderWidth: 1,
+          borderColor:
+            t.scheme === 'dark'
+              ? 'rgba(255,255,255,0.06)'
+              : 'rgba(15,23,42,0.08)',
+        },
+      ]}>
+      <View style={[styles.docAccentStrip, {backgroundColor: accent}]}>
+        <BookIcon size="md" style={{color: '#fff'}} />
+      </View>
+      <View style={styles.docContent}>
+        <View style={styles.docTopRow}>
+          <View
+            style={[
+              styles.docCategoryBadge,
+              {
+                backgroundColor:
+                  t.scheme === 'dark'
+                    ? 'rgba(255,255,255,0.06)'
+                    : 'rgba(15,23,42,0.05)',
+              },
+            ]}>
+            <Text
+              style={[
+                styles.docCategoryText,
+                {color: isPending ? STATUS_COLORS.draft : accent},
+              ]}>
+              {isPending ? _(msg`Pending review`) : _(msg`Book`)}
+            </Text>
+          </View>
+          <Text
+            style={[styles.docPackType, t.atoms.text_contrast_medium]}
+            numberOfLines={1}>
+            {book.communityName}
+          </Text>
+        </View>
+
+        <Text style={[styles.docTitle, t.atoms.text]} numberOfLines={2}>
+          {book.title}
+        </Text>
+        {book.author || book.publishedYear ? (
+          <Text style={[styles.docMetaText, t.atoms.text_contrast_medium]}>
+            {[
+              book.author ? _(msg`by ${book.author}`) : undefined,
+              book.publishedYear,
+            ]
+              .filter(Boolean)
+              .join(' · ')}
+          </Text>
+        ) : null}
+        {book.note ? (
+          <Text
+            style={[styles.docSummary, t.atoms.text_contrast_medium]}
+            numberOfLines={3}>
+            {book.note}
+          </Text>
+        ) : null}
+
+        {book.url ? (
+          <Text
+            style={[styles.docMetaText, {color: t.palette.primary_500}]}
+            numberOfLines={1}
+            accessibilityRole="link"
+            onPress={() => {
+              void Linking.openURL(book.url!)
+            }}>
+            {book.url}
+          </Text>
+        ) : null}
+
+        {book.createdAt && formatDateLabel(book.createdAt) ? (
+          <View style={styles.docDateRow}>
+            <CalendarIcon size="xs" style={t.atoms.text_contrast_low} />
+            <Text style={[styles.docDateText, t.atoms.text_contrast_medium]}>
+              {formatDateLabel(book.createdAt)}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+    </View>
   )
 }
 
 // ---------------------------------------------------------------------------
 // DocumentCard
 // ---------------------------------------------------------------------------
-function DocumentCard({pack}: {pack: PartyLobbyingBriefingPackView}) {
+function DocumentCard({
+  pack,
+  communityName,
+}: {
+  pack: PartyLobbyingBriefingPackView
+  communityName?: string
+}) {
   const t = useTheme()
   const {_} = useLingui()
   const statusColor = STATUS_COLORS[pack.status] ?? t.palette.primary_500
@@ -385,7 +767,7 @@ function DocumentCard({pack}: {pack: PartyLobbyingBriefingPackView}) {
 
         <View style={styles.docMetaRow}>
           <Text style={[styles.docMetaText, t.atoms.text_contrast_medium]}>
-            {communityLabel(pack.communityUri)}
+            {communityName ?? communityLabel(pack.communityUri)}
           </Text>
           {pack.party ? (
             <>
@@ -467,6 +849,10 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
   },
+  scopeRow: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
   summaryBar: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -480,6 +866,9 @@ const styles = StyleSheet.create({
   },
   summarySubtext: {
     fontSize: 13,
+  },
+  summarySubtextFlex: {
+    flex: 1,
   },
   contentContainer: {
     gap: 12,

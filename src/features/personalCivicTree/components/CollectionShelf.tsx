@@ -24,7 +24,7 @@ export function CollectionShelf({
   activeGroups: Set<string>
   onToggleGroup: (groupId: string) => void
   onOpenCollection: (groupId: string) => void
-  onNewCollection: () => void
+  onNewCollection?: () => void
 }) {
   const t = useTheme()
   const {t: l} = useLingui()
@@ -72,29 +72,32 @@ export function CollectionShelf({
           </TouchableOpacity>
         )
       })}
-      <TouchableOpacity
-        accessibilityRole="button"
-        accessibilityLabel={l`New collection`}
-        accessibilityHint={l`Opens the form to create a collection`}
-        onPress={onNewCollection}
-        style={[
-          a.rounded_md,
-          a.px_md,
-          a.py_sm,
-          a.flex_row,
-          a.align_center,
-          a.gap_xs,
-          {
-            borderWidth: 1,
-            borderStyle: 'dashed',
-            borderColor: t.palette.contrast_100,
-          },
-        ]}>
-        <PlusIcon size="sm" style={{color: t.palette.primary_500}} />
-        <Text style={[a.text_sm, a.font_bold, {color: t.palette.primary_500}]}>
-          <Trans>New</Trans>
-        </Text>
-      </TouchableOpacity>
+      {onNewCollection ? (
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={l`New collection`}
+          accessibilityHint={l`Opens the form to create a collection`}
+          onPress={onNewCollection}
+          style={[
+            a.rounded_md,
+            a.px_md,
+            a.py_sm,
+            a.flex_row,
+            a.align_center,
+            a.gap_xs,
+            {
+              borderWidth: 1,
+              borderStyle: 'dashed',
+              borderColor: t.palette.contrast_100,
+            },
+          ]}>
+          <PlusIcon size="sm" style={{color: t.palette.primary_500}} />
+          <Text
+            style={[a.text_sm, a.font_bold, {color: t.palette.primary_500}]}>
+            <Trans>New</Trans>
+          </Text>
+        </TouchableOpacity>
+      ) : null}
     </ScrollView>
   )
 }

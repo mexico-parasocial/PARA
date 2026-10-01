@@ -6,7 +6,7 @@ import {Trans} from '@lingui/react/macro'
 
 import {
   type CivicTreeCollection,
-  useUpdateCollectionMutation,
+  useApplyCollectionOpMutation,
 } from '#/state/queries/collections'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
@@ -58,7 +58,7 @@ function CollectionActionsInner({
 }) {
   const {_} = useLingui()
   const t = useTheme()
-  const updateMutation = useUpdateCollectionMutation()
+  const updateMutation = useApplyCollectionOpMutation()
   const [name, setName] = useState(collection.name)
   const [description, setDescription] = useState(collection.description ?? '')
 
@@ -68,14 +68,13 @@ function CollectionActionsInner({
     if (!canSave) return
     updateMutation.mutate(
       {
-        id: collection.id,
-        collection: {
-          id: collection.id,
-          name: name.trim(),
-          description: description.trim() || undefined,
-          color: collection.color,
-          items: collection.items,
-          relations: collection.relations,
+        collectionId: collection.id,
+        op: {
+          type: 'updateDetails',
+          fields: {
+            name: name.trim(),
+            description: description.trim() || null,
+          },
         },
       },
       {

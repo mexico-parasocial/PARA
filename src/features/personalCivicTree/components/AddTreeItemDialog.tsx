@@ -14,6 +14,8 @@ import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import * as Dialog from '#/components/Dialog'
 import * as Toast from '#/components/Toast'
+import {parsePublishedYear} from '#/features/civicTree/books'
+import {BookTitleField} from '#/features/civicTree/components/BookTitleField'
 import {CivicNodeResults} from '#/features/personalCivicTree/components/CivicNodePicker'
 
 type TreeItemKind = NonNullable<CivicTreeItem['kind']>
@@ -28,6 +30,7 @@ const KIND_OPTIONS: TreeItemKind[] = [
   'topic',
   'policy',
   'evidence',
+  'book',
   'link',
   'note',
 ]
@@ -36,6 +39,7 @@ const KIND_LABELS: Record<string, string> = {
   topic: 'Topic',
   policy: 'Policy',
   evidence: 'Evidence',
+  book: 'Book',
   link: 'Link',
   note: 'Note',
 }
@@ -73,6 +77,10 @@ function AddTreeItemDialogInner({
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [url, setUrl] = useState('')
+  const [author, setAuthor] = useState('')
+  const [year, setYear] = useState('')
+  const publishedYear = parsePublishedYear(year)
+  const yearInvalid = kind === 'book' && year.length > 0 && !publishedYear
 
   const save = useCallback(
     (item: CivicTreeItem) => {
@@ -85,6 +93,8 @@ function AddTreeItemDialogInner({
             setTitle('')
             setDescription('')
             setUrl('')
+            setAuthor('')
+            setYear('')
             control.close()
             Toast.show(_(msg`Added to your personal civic tree`))
           },
@@ -111,6 +121,8 @@ function AddTreeItemDialogInner({
       title: title.trim(),
       description: description.trim() || undefined,
       url: trimmedUrl || undefined,
+      sourceLabel: (kind === 'book' && author.trim()) || undefined,
+      publishedYear: kind === 'book' ? publishedYear : undefined,
       addedAt: new Date().toISOString(),
     }
 
@@ -126,6 +138,8 @@ function AddTreeItemDialogInner({
           setTitle('')
           setDescription('')
           setUrl('')
+          setAuthor('')
+          setYear('')
           control.close()
           Toast.show(_(msg`Added to your personal civic tree`))
         },
@@ -134,7 +148,18 @@ function AddTreeItemDialogInner({
         },
       },
     )
-  }, [addMutation, collection, control, description, kind, title, url, _])
+  }, [
+    addMutation,
+    collection,
+    control,
+    description,
+    kind,
+    title,
+    url,
+    author,
+    publishedYear,
+    _,
+  ])
 
   return (
     <Dialog.Inner label={_(msg`Add item to civic tree`)}>
@@ -143,9 +168,19 @@ function AddTreeItemDialogInner({
       </Text>
       <Text style={[styles.subtitle, t.atoms.text_contrast_medium]}>
         <Trans>
-          Save evidence, links, notes, and references into this collection.
+          Save evidence, links, notes, books, and references into this
+          collection.
         </Trans>
       </Text>
+      {kind === 'book' ? (
+        <Text style={[styles.bookHint, t.atoms.text_contrast_medium]}>
+          <Trans>
+            Books here show what you read and how it shapes your politics. They
+            stay in your personal tree and do not appear in Documents unless you
+            choose to contribute one to a community.
+          </Trans>
+        </Text>
+      ) : null}
 
       <View style={styles.kindRow}>
         {KIND_OPTIONS.map(option => (
@@ -177,20 +212,80 @@ function AddTreeItemDialogInner({
         />
       ) : (
         <>
-          <TextInput
-            accessibilityLabel={_(msg`Item title`)}
-            accessibilityHint={_(msg`Names the item saved in this collection`)}
-            value={title}
-            onChangeText={setTitle}
-            placeholder={_(msg`Title`)}
-            placeholderTextColor={t.palette.contrast_400}
-            style={[
-              styles.input,
-              t.atoms.text,
-              {borderColor: t.palette.contrast_100},
-            ]}
-            autoFocus
-          />
+          {kind === 'book' ? (
+            <View style={styles.bookTitle}>
+              <BookTitleField
+                value={title}
+                onChangeText={setTitle}
+                onPick={book => {
+                  setTitle(book.title)
+                  setAuthor(book.author ?? '')
+                  setYear(book.year ? String(book.year) : '')
+                }}
+                inputStyle={[
+                  styles.input,
+                  t.atoms.text,
+                  {borderColor: t.palette.contrast_100},
+                ]}
+                autoFocus
+              />
+            </View>
+          ) : (
+            <TextInput
+              accessibilityLabel={_(msg`Item title`)}
+              accessibilityHint={_(
+                msg`Names the item saved in this collection`,
+              )}
+              value={title}
+              onChangeText={setTitle}
+              placeholder={_(msg`Title`)}
+              placeholderTextColor={t.palette.contrast_400}
+              style={[
+                styles.input,
+                t.atoms.text,
+                {borderColor: t.palette.contrast_100},
+              ]}
+              autoFocus
+            />
+          )}
+          {kind === 'book' ? (
+            <TextInput
+              accessibilityLabel={_(msg`Book author`)}
+              accessibilityHint={_(msg`Names the author of this book`)}
+              value={author}
+              onChangeText={setAuthor}
+              placeholder={_(msg`Author (optional)`)}
+              placeholderTextColor={t.palette.contrast_400}
+              style={[
+                styles.input,
+                t.atoms.text,
+                {borderColor: t.palette.contrast_100},
+              ]}
+            />
+          ) : null}
+          {kind === 'book' ? (
+            <TextInput
+              accessibilityLabel={_(msg`Year published`)}
+              accessibilityHint={_(msg`The year this book was first published`)}
+              value={year}
+              onChangeText={text =>
+                setYear(text.replace(/[^0-9]/g, '').slice(0, 4))
+              }
+              placeholder={_(msg`Year published (optional)`)}
+              placeholderTextColor={t.palette.contrast_400}
+              keyboardType="number-pad"
+              maxLength={4}
+              style={[
+                styles.input,
+                t.atoms.text,
+                {
+                  borderColor: yearInvalid
+                    ? t.palette.negative_500
+                    : t.palette.contrast_100,
+                },
+              ]}
+            />
+          ) : null}
           <TextInput
             accessibilityLabel={_(msg`Item description`)}
             accessibilityHint={_(
@@ -248,12 +343,20 @@ function AddTreeItemDialogInner({
             accessibilityLabel={_(msg`Save`)}
             accessibilityHint={_(msg`Adds the item to the selected collection`)}
             onPress={onSave}
-            disabled={!collection || !title.trim() || addMutation.isPending}>
+            disabled={
+              !collection ||
+              !title.trim() ||
+              yearInvalid ||
+              addMutation.isPending
+            }>
             <Text
               style={[
                 t.atoms.text,
                 {fontWeight: '700'},
-                (!collection || !title.trim() || addMutation.isPending) && {
+                (!collection ||
+                  !title.trim() ||
+                  yearInvalid ||
+                  addMutation.isPending) && {
                   opacity: 0.5,
                 },
               ]}>
@@ -278,8 +381,17 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginBottom: 14,
   },
+  bookTitle: {
+    marginBottom: 10,
+  },
+  bookHint: {
+    fontSize: 13,
+    lineHeight: 18,
+    marginBottom: 12,
+  },
   kindRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
     marginBottom: 12,
   },

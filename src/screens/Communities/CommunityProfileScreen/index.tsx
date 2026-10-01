@@ -246,11 +246,10 @@ export function CommunityProfileScreen() {
     COMMUNITY_AGENT_PROFILE.displayName
   const agentRoleLabel = 'AI Agent'
   const agentGovernanceRole =
-    (featuredRepresentative as CommunityGovernanceOfficialRepresentative)
-      ?.office || (governance.deputies[0] ? governance.deputies[0].role : '')
+    featuredRepresentative?.office ||
+    (governance.deputies[0] ? governance.deputies[0].role : '')
   const agentMandate =
-    (featuredRepresentative as CommunityGovernanceOfficialRepresentative)
-      ?.mandate ||
+    featuredRepresentative?.mandate ||
     (governance.deputies[0] ? governance.deputies[0].description : '') ||
     COMMUNITY_AGENT_PROFILE.bio
   const agentActorId =
@@ -387,7 +386,10 @@ export function CommunityProfileScreen() {
   // Navigation handlers
   // ---------------------------------------------------------------------------
   const onPressDocuments = () => {
-    navigation.navigate('Documents', {})
+    navigation.navigate('Documents', {
+      communityUri: board?.uri,
+      communityName: resolvedCommunityName,
+    })
   }
 
   const onPressPolicies = () => {

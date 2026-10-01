@@ -1,3 +1,4 @@
+import {CivicTreeWorkspaceProvider} from './civic-tree-workspace'
 import {Provider as ColorModeProvider} from './color-mode'
 import {CompassFilterProvider} from './compass-filter'
 import {Provider as DrawerOpenProvider} from './drawer-open'
@@ -31,7 +32,11 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
             <MinimalModeProvider>
               <ColorModeProvider>
                 <PoliticalAffiliationProvider>
-                  <TickEveryMinuteProvider>{children}</TickEveryMinuteProvider>
+                  <CivicTreeWorkspaceProvider>
+                    <TickEveryMinuteProvider>
+                      {children}
+                    </TickEveryMinuteProvider>
+                  </CivicTreeWorkspaceProvider>
                 </PoliticalAffiliationProvider>
               </ColorModeProvider>
             </MinimalModeProvider>

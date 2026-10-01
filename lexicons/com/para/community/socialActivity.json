@@ -4,7 +4,7 @@
   "defs": {
     "main": {
       "type": "record",
-      "description": "A dated civic activity that involves no money: a peaceful march, a signature drive for a bill or law, an assembly. Economic activities use com.para.community.economicActivity instead.",
+      "description": "A dated civic activity that involves no money: a peaceful march, a signature drive for a bill or law, an assembly, a cabildeo (a recorded conversation). Economic activities use com.para.community.economicActivity instead.",
       "key": "tid",
       "record": {
         "type": "object",
@@ -32,7 +32,7 @@
           },
           "details": {
             "type": "union",
-            "refs": ["#peacefulMarch", "#signatureDrive", "#assembly"]
+            "refs": ["#peacefulMarch", "#signatureDrive", "#assembly", "#cabildeo"]
           },
           "links": {
             "type": "array",
@@ -116,6 +116,31 @@
           "maxLength": 30
         },
         "quorumRequired": {"type": "integer", "minimum": 0}
+      }
+    },
+    "cabildeo": {
+      "type": "object",
+      "description": "A conversation held over a period of time: who took part, what each side argued, and where it landed. Voting and delegation are optional extras attached elsewhere, not part of this record.",
+      "required": ["format"],
+      "properties": {
+        "format": {
+          "type": "string",
+          "maxLength": 32,
+          "knownValues": ["in_person", "online", "hybrid"]
+        },
+        "meetingUrl": {"type": "string", "format": "uri"},
+        "recordingUrl": {"type": "string", "format": "uri"},
+        "participants": {
+          "type": "array",
+          "items": {"type": "string", "maxLength": 200},
+          "maxLength": 100
+        },
+        "arguments": {
+          "type": "array",
+          "items": {"type": "string", "maxLength": 500},
+          "maxLength": 50
+        },
+        "outcome": {"type": "string", "maxLength": 2000}
       }
     }
   }

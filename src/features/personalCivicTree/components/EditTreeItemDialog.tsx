@@ -8,7 +8,7 @@ import {
   type CivicTreeCollection,
   type CivicTreeItem,
   getCivicTreeItemKey,
-  useUpdateCollectionMutation,
+  useApplyCollectionOpMutation,
 } from '#/state/queries/collections'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
@@ -16,9 +16,9 @@ import * as Dialog from '#/components/Dialog'
 import * as Toast from '#/components/Toast'
 
 /*
- * Edits an item in place. The collection is written back whole because the
- * update endpoint replaces items and relations together; the item keeps its
- * key, so every relation that points at it stays attached.
+ * Edits an item in place as an `updateItem` operation. The operation pins the
+ * item's key before patching, so every relation that points at it stays
+ * attached even when a legacy item's key is derived from the field being edited.
  */
 export function EditTreeItemDialog({
   control,
@@ -55,7 +55,7 @@ function EditTreeItemDialogInner({
 }) {
   const {_} = useLingui()
   const t = useTheme()
-  const updateMutation = useUpdateCollectionMutation()
+  const updateMutation = useApplyCollectionOpMutation()
 
   /*
    * A topic or policy picked from shared vocabulary is identified by its title
@@ -72,27 +72,17 @@ function EditTreeItemDialogInner({
 
   const onSave = useCallback(() => {
     if (!canSave) return
-    const key = getCivicTreeItemKey(item)
-    const items = collection.items.map(existing =>
-      getCivicTreeItemKey(existing) === key
-        ? {
-            ...existing,
+    updateMutation.mutate(
+      {
+        collectionId: collection.id,
+        op: {
+          type: 'updateItem',
+          itemKey: getCivicTreeItemKey(item),
+          patch: {
             ...(titleLocked ? {} : {title: title.trim()}),
             description: description.trim() || undefined,
             url: url.trim() || undefined,
-          }
-        : existing,
-    )
-    updateMutation.mutate(
-      {
-        id: collection.id,
-        collection: {
-          id: collection.id,
-          name: collection.name,
-          description: collection.description,
-          color: collection.color,
-          items,
-          relations: collection.relations,
+          },
         },
       },
       {

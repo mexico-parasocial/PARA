@@ -32,8 +32,8 @@ import {
 import {CircleQuestion_Stroke2_Corner2_Rounded as QuestionIcon} from '#/components/icons/CircleQuestion'
 import {CommunityIcon_Stroke as CommunityIcon} from '#/components/icons/Community'
 import {Compass_Stroke2_Corner0_Rounded as CompassIcon} from '#/components/icons/Compass'
-import {Globe_Stroke2_Corner0_Rounded as GlobeIcon} from '#/components/icons/Globe'
 import {Image_Stroke2_Corner2_Rounded as ImageIcon} from '#/components/icons/Image'
+import {Map_Stroke2_Corner0_Rounded as MapIcon} from '#/components/icons/Map'
 import {Message_Stroke2_Corner0_Rounded as MessageIcon} from '#/components/icons/Message'
 import {PageText_Stroke2_Corner0_Rounded as PageTextIcon} from '#/components/icons/PageText'
 import {
@@ -578,7 +578,7 @@ export function DataScreen() {
                   title="Map"
                   onPress={() => navigation.navigate('Map')}
                   icon={
-                    <GlobeIcon
+                    <MapIcon
                       width={48}
                       style={{color: t.palette.primary_500}}
                     />

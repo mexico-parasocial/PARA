@@ -1,5 +1,11 @@
+import {useMemo} from 'react'
 import {type AtIdentifierString, type AtUriString} from '@atproto/syntax'
-import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 
 import {
   type CommunityBriefingPackRecord,
@@ -84,31 +90,64 @@ export type BriefingPacksListResponse = {
 }
 
 /**
- * Global briefing-pack listing for the viewer (Dashboard → Documents).
+ * Briefing-pack listing for the viewer (Dashboard → Documents).
  * Unlike usePartyLobbyingBriefingPacksQuery this is always enabled and does
  * NOT swallow errors — loading/error states are surfaced to the screen.
+ *
+ * `communityUris` narrows the list to those communities' packs, one request
+ * each (a party is normally one board, occasionally a few). Omit it for every
+ * community; an empty array means "no community" and lists nothing.
  */
 export function useBriefingPacksListQuery(input: {
   status?: CommunityBriefingPackStatus
+  communityUris?: string[]
   limit?: number
 }) {
   const agent = useAgent()
   const limit = input.limit ?? 100
-  return useQuery<BriefingPacksListResponse>({
-    queryKey: ['briefing-packs', 'list', input.status ?? '', limit],
-    queryFn: async () => {
-      const res = await agent.appviewClient.call(
-        com.para.community.listBriefingPacks,
-        {
-          status: input.status,
-          limit,
-        },
-      )
-      const data = res as Partial<BriefingPacksListResponse>
-      return {packs: data.packs ?? [], cursor: data.cursor}
-    },
-    staleTime: 1000 * 30,
+  const uris = input.communityUris
+  const targets: Array<string | undefined> = uris ?? [undefined]
+
+  const results = useQueries({
+    queries: targets.map(uri => ({
+      queryKey: [
+        'briefing-packs',
+        'list',
+        input.status ?? '',
+        uri ?? '',
+        limit,
+      ],
+      staleTime: 1000 * 30,
+      queryFn: async (): Promise<BriefingPacksListResponse> => {
+        const res = await agent.appviewClient.call(
+          com.para.community.listBriefingPacks,
+          {
+            community: uri as AtUriString | undefined,
+            status: input.status,
+            limit,
+          },
+        )
+        const data = res as Partial<BriefingPacksListResponse>
+        return {packs: data.packs ?? [], cursor: data.cursor}
+      },
+    })),
   })
+
+  const packs = useMemo(() => {
+    const seen = new Set<string>()
+    return results
+      .flatMap(result => result.data?.packs ?? [])
+      .filter(pack => !seen.has(pack.uri) && !!seen.add(pack.uri))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  }, [results])
+
+  return {
+    packs,
+    isPending: results.some(result => result.isPending),
+    // One community failing is a partial list, every one failing is an error.
+    isError: results.length > 0 && results.every(result => result.isError),
+    refetch: () => results.forEach(result => void result.refetch()),
+  }
 }
 
 export function useCreatePartyLobbyingBriefingPackMutation() {

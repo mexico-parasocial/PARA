@@ -30,7 +30,7 @@ type RelationKind = CivicTreeRelation['kind']
 
 /*
  * Order is deliberate: the two kinds a user reaches for most sit first, and the
- * symmetric pair (duplicates, related_to) sits last. Colours and phrasing come
+ * symmetric kind (related_to) sits last. Colours and phrasing come
  * from deliberation-colors so the dialog, the graph and the legend cannot drift.
  */
 const RELATION_KINDS: RelationKind[] = [
@@ -39,7 +39,6 @@ const RELATION_KINDS: RelationKind[] = [
   'evidence_for',
   'context_for',
   'depends_on',
-  'duplicates',
   'related_to',
 ]
 

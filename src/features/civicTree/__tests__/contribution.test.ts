@@ -51,6 +51,39 @@ describe('contributionFromItem', () => {
     expect(draft.title).toEqual('My thought')
   })
 
+  it('keeps a book typed as a book and carries its author', () => {
+    const draft = contributionFromItem(
+      item({title: 'Amazon Prime', kind: 'book', sourceLabel: ' Ana '}),
+    )
+
+    // The title would infer as `book` only by luck; a plain title would not.
+    expect(draft.sourceType).toEqual('book')
+    expect(draft.author).toEqual('Ana')
+    expect(
+      contributionFromItem(item({title: 'Walden', kind: 'book'})).sourceType,
+    ).toEqual('book')
+  })
+
+  it('carries the publication year of a book, and only for books', () => {
+    expect(
+      contributionFromItem(
+        item({title: 'Walden', kind: 'book', publishedYear: 1854}),
+      ).publishedYear,
+    ).toBe(1854)
+    expect(
+      contributionFromItem(
+        item({title: 'Study', kind: 'link', publishedYear: 1854}),
+      ).publishedYear,
+    ).toBeUndefined()
+  })
+
+  it('does not carry an author on a non-book item', () => {
+    const draft = contributionFromItem(
+      item({title: 'Study', kind: 'link', sourceLabel: 'Someone'}),
+    )
+    expect(draft.author).toBeUndefined()
+  })
+
   it('keeps a topic typed as a topic rather than guessing', () => {
     const draft = contributionFromItem(
       item({title: 'Vivienda', kind: 'topic', flairId: 'matter_vivienda'}),

@@ -212,6 +212,15 @@ Raise the full local demo with the current workspace split:
 - **Important**:
   - Use the introspection URL on `apply` so AppView catches up after the seed writes.
   - If this command fails, do not continue to the demo UI until AppView responds for `active-a.test`.
+  - Expected failures (2026-09-30): the seed's `app.bsky.feed.repost` records are refused (PARA has no reposts), and every `com.para.civic.vote` is refused with "A valid cabildeo vote proof is required". Votes need an m8-issued nullifier and `eligibilityProofRef`, verified by `PARA_CIVIC_VOTE_VERIFIER_URL` (fail closed by design), so the seed cannot write them. Cabildeos and positions do seed; VS/Comparativas shows position stances but 0 votes until a real m8 verifier is wired up.
+  - After the manifest, `apply` also runs `scripts/civic-seed/demo-content.mjs`
+    (skip with `--skip-demo-content`; run alone with `pnpm seed:demo-content`).
+    As the dev-env accounts it seeds eight image memes with threaded comments
+    and up/down reactions, alice.test's personal civic tree, and the
+    "Medio Ambiente y Clima" / "Movilidad Sostenible Norte" community trees
+    (cards go through submit → three approvals → relationships). Content lives
+    in `demo-content.json`; re-runs skip what exists.
+  - The seeded cabildeos carry specific flairs (e.g. `||#EmpresaPublicaDeAgua`) so the six fields in `FLAIR_GROUPS` are exercised. Live thematic-board cabildeos from other seeders use board URIs in `community` and never match VS entities like `p/Jalisco`.
 
 ### Terminal 6: PARA BSKYWEB FRONTEND
 
@@ -392,9 +401,10 @@ decision is made.
     `MethodNotImplemented` (501) responses at warn level. The local watx
     AppView intentionally throws "Suggestions/Topics agent not available"
     because IRIS is not part of the dev stack.
-- **Remaining local-dev red-screen sources (not yet handled):** "Search v2 is
-  not enabled" (Open Questions screen calls search v2 while the
-  `SearchV2Enable` flag is off — GrowthBook 404s locally) and chat
+- **Open Questions search fixed (2026-09-30):** Uses the compatibility
+  `app.bsky.feed.searchPosts` endpoint (`q`, `sort: 'latest'`) so AppView
+  selects the available search implementation without requiring the v2 gate.
+- **Remaining local-dev red-screen source (not yet handled):** chat
   "Poll latest failed" 500s from the local AppView chat routes.
 
 ---
@@ -640,3 +650,166 @@ pnpm test src/screens/Search/__tests__/searchParams.test.ts
 ### Backend counterpart
 
 `com.para.feed.searchPosts` lives in `WatZappa/packages/bsky/src/api/com/para/feed/searchPosts.ts` and the data-plane SQL in `WatZappa/packages/bsky/src/data-plane/server/routes/search.ts`. After any lexicon change, run `cd WatZappa && make codegen`.
+
+## 2026-09-30: Community civic tree selection
+
+- Profile entry must honor the exact `communityUri`, including on cached
+  navigation screens and for non-members. Name-only lookup must match an exact
+  normalized community identity, never an unrelated first search result;
+  published versions of that identity remain accessible in the version chooser.
+- The compact selector has mutually exclusive Official / Unofficial / Ninths
+  lists. Ninths shows only the nine canonical compass positions; geographic
+  board `quadrant` values do not identify political ninths.
+- Official currently means the existing official-party catalog, not verified
+  board ownership. The board lexicon has no official-status field.
+- Ninth selection resolves a real backend board. Missing boards show an empty
+  state; never synthesize a URI or silently retain the previous tree.
+- The right-side workspace toggle uses `Earth_Stroke2_Corner0_Rounded` from
+  `components/icons/Globe`, matching `assets/icons/earth_stroke2_corner0_rounded.svg`.
+
+## 2026-09-30: Personal civic tree 2D map workspace
+
+- `CivicTreeScreen` has labeled Collections / Tree / Interactive Map modes.
+  Keep all three views. Interactive Map uses the Earth icon specified above and is the
+  default and expands into the desktop right-column area. The focus-scoped
+  claim in `src/state/shell/civic-tree-workspace.tsx` restores the sidebar when
+  leaving the screen or changing modes; do not hide the sidebar by pathname
+  alone or keep a claim from an unfocused cached screen.
+- `src/features/personalCivicTree/map.ts` derives collection, data-type,
+  information-size (saved item count), and six civic-field clusters without
+  changing stored collections. Civic fields resolve from `FLAIR_GROUPS`
+  metadata or an unambiguous directly connected topic. Unclassified or
+  conflicting items stay Unassigned; do not infer a field from free text.
+- `CivicTreeMap` uses authored relations only. Web pointer/wheel/keyboard and
+  native pan/pinch interaction live in the paired `MapViewport` components.
+  Keep node tap regions proportional to displayed nodes: fixed 44px targets
+  overlap in zoomed-out maps and select the wrong item.
+
+## 2026-09-30: Community civic tree workspace parity
+
+- Community Civic Tree has Collections / Tree / Interactive Map views. The
+  Tree view retains the argument outline toggle. Interactive Map expands
+  into the desktop right-column area with the shared focus-scoped claim.
+- Community Collections are read-only groups derived from topics and their
+  authored connections, not private collection records. A card can appear in
+  several collection lists. The map places it once under its first topic in
+  stable ID order and preserves all visible authored links.
+- Filters change visible cards and links while retaining topic membership and
+  explicit civic metadata from the complete community graph. Civic fields use
+  flairs/metadata or an unambiguous directly connected classified card; do not
+  infer classification from titles or content.
+- The community picker lists each normalized community name once. Same-named
+  records remain separate: the Tree version chooser exposes their creator and
+  record key, preserves exact profile URI selection, and never merges or deletes
+  records. Name/ninth entry chooses the most joined, then newest matching tree.
+
+## 2026-09-30: RAQ menu reliability
+
+- Open Questions must keep genuine request failures distinct from successful
+  empty results. Empty states invite real questions; never substitute sample
+  authors, timestamps or reply counts. An error shows retry controls. Cards show actual reply counts, never invented
+  vote scores or voting controls without a backing mutation.
+- `RAQMenu` must mount `AddRAQDialog` for its Add / Propose New controls.
+- The `react-native-drawer-layout@4.2.3` pnpm patch removes dependency arrays
+  from both native drawer animated styles (source and compiled module).
+  Reanimated 4.6 derives native dependencies from worklet closures; explicit
+  arrays emit warnings. Keep web implementation dependencies unchanged.
+
+## 2026-09-30: Lexicon generation while Metro is running
+
+- `pnpm lexicons:generate` uses `scripts/generate-lexicons.mjs`. Generate into
+  staging first, preserve unchanged files and watched directories, and replace
+  changed files atomically. Do not restore `lex build --clear` on the live
+  `src/lexicons` directory: install-time regeneration can otherwise make Metro
+  fail to resolve generated `.defs` imports while the tree is deleted.
+
+## 2026-09-30: SDK 57 patch maintenance
+
+- Current tooling is Node `24.18.0` and pnpm `11.21.0`. Use
+  `pnpm exec expo install --check`; `npx` invokes npm, which the repository's
+  `devEngines.packageManager` rejects.
+- Patched SDK packages are pinned to exact versions in `package.json`, with
+  matching version keys and patch filenames in `pnpm-workspace.yaml`:
+  Expo `57.0.26`, Haptics `57.0.3`, Media Library `57.0.5`, Modules Core
+  `57.0.20`, Notifications `57.0.21`, Updates `57.0.24`, and React Native
+  `0.86.3`. Rebase and verify each patch before upgrading its package; do not
+  suppress unused-patch errors or discard application fixes to unblock installs.
+- Modules Core `57.0.20` already includes the native Worklets `runSync`
+  changes, and React Native `0.86.3` includes the font-weight correction.
+  Their rebased patches omit those upstream fixes and retain the other hunks.
+- Keep Reanimated `4.6.0` paired with Worklets `0.12.1`: Reanimated's
+  compatibility manifest requires Worklets `0.12.x`. Both packages are
+  overridden in the workspace and excluded from Expo dependency validation,
+  whose default Worklets `0.10.x` recommendation targets Reanimated `4.5.x`.
+- TypeScript uses the official `typescript@~6.0.3` package. The former
+  `@typescript/typescript6` alias only publishes through `6.0.2` and cannot
+  satisfy Expo's `~6.0.3` recommendation.
+
+## Influence
+
+- Account Settings, profile metrics, and Influence details share the viewer-keyed
+  `useInfluenceQuery`. Scores come from `com.para.actor.getProfileStats`; do not
+  use mocked profile fields or m8 Karma awards. Visibility lives in the PARA
+  profile's `revealInfluence` field, defaults to false, and preserves other
+  profile fields through `upsertProfile`.
+
+## 2026-09-30: Meme votes and PARA post threads
+
+- Memes are `com.para.post` records. Their up/down votes are public
+  reactions: `com.para.civic.openQuestionVote` (-1/0/+1) in the voter's repo,
+  one record per meme updated in place (`src/state/queries/para-meme-reactions.ts`).
+  OD-7 §5h designates that collection as the public reaction whose count
+  decides nothing. A signed reaction overrides a legacy like by the same voter.
+- The meme score (`voteScore` from `getParaPostMeta`) is net public reactions
+  computed in the WatZappa data-plane, mirroring `para-influence.ts`. The
+  author's `postMeta.voteScore` is ignored: metadata never awards points.
+- `usePostThread` must route `com.para.post` anchors to
+  `com.para.feed.getPostThread`; Bluesky's thread endpoint returns
+  `threadItemNotFound` for them ("post not found"). Replies to a
+  `com.para.post` are written as `com.para.post`, and their parent/root are
+  resolved from the PARA thread because `app.bsky.feed.getPosts` does not
+  return PARA posts. The routing was lost in `e84864423`; keep it on SDK syncs.
+
+## 2026-10-01: RAQ flows and questionnaire answer snapshots
+
+- Official axis cards route to `AxisDetail`, not `CommunityRAQ`. Community RAQ
+  queries and new proposals use the exact community identifier from the route.
+- There is no standalone unofficial-axis catalog. Discovery groups real
+  proposals by `targetAxis`, excludes canonical questionnaire axes, and labels
+  them as proposed. Support reactions never establish official status.
+- Proposal lists share the paginated, viewer-keyed `useProposedQuestions` hook.
+  Creation and reactions invalidate both that cache and the legacy RAQ cache.
+- `AnswerScale` is the questionnaire's explicit -3…+3 input on native and web.
+  Keep it separate from public proposal support reactions. Only valid answers
+  to current questionnaire IDs count toward progress; explicit zero counts.
+- `RAQResults` receives the individual answer snapshot alongside calculated
+  results. Never publish axis raw totals as question answers. When reopening
+  local results, attach answers only if they still reproduce the saved result.
+- My RAQ distinguishes on-device results from published alignment. Community
+  alignment comes from the backend; do not invent matches, regional deltas,
+  participation counts, or result dates from questionnaire progress.
+
+## 2026-10-01: Books, book autocomplete and unique community names
+
+- Books are not a record type. A community book is a civic-tree card or
+  contribution with `card_type`/`source_type` `book`; the author and
+  `publishedYear` live in its JSON `metadata` (`features/civicTree/books.ts`).
+  A personal book is a `civicTreeItem` with `kind: 'book'`, the author in
+  `sourceLabel` and `publishedYear` as a real field. Personal books never
+  appear in Documents; only an explicit contribution reaches a community.
+- Book autocomplete is `com.para.book.searchBooks`, an AppView endpoint that
+  proxies Open Library (free, keyless; cached 10 min, 4 s timeout, signed-in
+  viewers only). The app never calls Open Library directly, so a user's reading
+  searches are not shared with a third party. It returns title, authors and
+  first publication year only: no covers. Failures degrade to typing by hand.
+  Set `PARA_BOOK_SEARCH_USER_AGENT` (with a contact) in production, as Open
+  Library asks API users to identify themselves.
+- The AppView registers `com.para.book.searchBooks` by hand
+  (`api/com/para/book/schemas.ts`) because its generated registry is frozen.
+- Community names are unique. PDS `createBoard` checks the creator's repo and
+  the AppView index (`name-uniqueness.ts`) and refuses with `CommunityNameTaken`;
+  the create screen checks as you type. It is check-then-write, so a race can
+  still produce a duplicate. Pickers collapse same-named boards to one entry
+  (`collapseCommunityTreeTwins`); the civic tree screen still lists every board.
+- The personal civic tree has no "duplicates" relation, and collections have no
+  "Duplicate" button.

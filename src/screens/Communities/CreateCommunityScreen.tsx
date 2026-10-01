@@ -18,6 +18,7 @@ import {
 } from '#/lib/compass/compassColors'
 import {useHorizontalGovernanceEnabled} from '#/lib/hooks/useHorizontalGovernance'
 import {type NavigationProp} from '#/lib/routes/types'
+import {normalizeCommunitySearchName} from '#/lib/strings/community-names'
 import {cleanError} from '#/lib/strings/errors'
 import {useActorAutocompleteQuery} from '#/state/queries/actor-autocomplete'
 import {
@@ -30,9 +31,10 @@ import {useTheme} from '#/alf'
 import * as SegmentedControl from '#/components/forms/SegmentedControl'
 import {ChevronBottom_Stroke2_Corner0_Rounded as ChevronDownIcon} from '#/components/icons/Chevron'
 import * as Layout from '#/components/Layout'
+import {useDebouncedValue} from '#/components/live/utils'
 import * as Menu from '#/components/Menu'
 import {useAnalytics} from '#/analytics'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 export function CreateCommunityScreen() {
   const t = useTheme()
@@ -71,6 +73,28 @@ export function CreateCommunityScreen() {
     isFetching: isFetchingFoundingMemberSuggestions,
   } = useActorAutocompleteQuery(mentionQuery, true, 6)
   const createMutation = useCreateCommunityMutation()
+
+  // Community names are unique: two boards with the same name cannot be told
+  // apart in any picker. Checked against the directory as the name is typed;
+  // the submit button waits for the check so a fast tap cannot skip it.
+  const trimmedName = name.trim()
+  const debouncedName = useDebouncedValue(trimmedName, 400)
+  const nameLookup = useCommunityBoardsQuery(
+    {limit: 25, query: debouncedName},
+    debouncedName.length >= 2,
+  )
+  const isCheckingName =
+    trimmedName.length >= 2 &&
+    (trimmedName !== debouncedName || nameLookup.isFetching)
+  const isNameTaken = useMemo(() => {
+    const wanted = normalizeCommunitySearchName(trimmedName)
+    return (
+      wanted.length > 0 &&
+      (nameLookup.data?.boards ?? []).some(
+        board => normalizeCommunitySearchName(board.name) === wanted,
+      )
+    )
+  }, [nameLookup.data, trimmedName])
   const {
     data: createdBoardData,
     isLoading: isHydratingBoard,
@@ -148,6 +172,8 @@ export function CreateCommunityScreen() {
   const formDisabled =
     !canCreateCommunity ||
     isSubmitting ||
+    isNameTaken ||
+    isCheckingName ||
     name.trim().length === 0 ||
     quadrant.trim().length === 0
 
@@ -313,6 +339,16 @@ export function CreateCommunityScreen() {
                   placeholder="Nuevo León Water Table"
                   description="Use the public name people will recognize when they receive the draft invite."
                 />
+                {isNameTaken ? (
+                  <Text
+                    style={[
+                      styles.fieldDescription,
+                      {color: t.palette.negative_500},
+                    ]}>
+                    A community named "{trimmedName}" already exists. Choose a
+                    different name.
+                  </Text>
+                ) : null}
                 <NonantPicker
                   theme={t}
                   value={quadrant}

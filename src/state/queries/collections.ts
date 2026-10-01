@@ -1,16 +1,26 @@
-import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
+import {
+  type QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 
+import {isUnsupportedMethodError} from '#/lib/api/unsupported-method'
 import {
   PERSISTED_QUERY_GCTIME,
   PERSISTED_QUERY_ROOT,
 } from '#/state/queries/index'
 import {useAgent} from '#/state/session'
 import {com} from '#/lexicons'
+import {type CivicTreeItem, type CivicTreeRelation} from './collection-items'
+import {applyCollectionOp, type CollectionOp} from './collection-ops'
 import {
-  type CivicTreeItem,
-  type CivicTreeRelation,
-  getCivicTreeItemKey,
-} from './collection-items'
+  enqueueCollectionWrite,
+  forgetCollectionWrite,
+  hasPendingCollectionWrite,
+  recallCollectionWrite,
+  rememberCollectionWrite,
+} from './collection-write-queue'
 
 export type {CivicTreeItem, CivicTreeRelation} from './collection-items'
 export {
@@ -20,6 +30,7 @@ export {
   getCivicTreeItemKind,
   getCivicTreeItemTitle,
 } from './collection-items'
+export type {CollectionOp} from './collection-ops'
 
 const STALE_TIME = 60 * 1000 // 1 minute
 const RQKEY_ROOT = 'collections'
@@ -35,25 +46,163 @@ export interface CivicTreeCollection {
   updatedAt: string
 }
 
-function getListQueryKey(): [string, string, string] {
+const OPTIMISTIC_PREFIX = 'optimistic-'
+/** Collections past this many pages (50 each) are not loaded. */
+const MAX_LIST_PAGES = 10
+
+export function getCollectionsListQueryKey(): [string, string, string] {
   return [PERSISTED_QUERY_ROOT, RQKEY_ROOT, 'list']
 }
 
-function getDetailQueryKey(id: string): [string, string, string, string] {
+export function getCollectionDetailQueryKey(
+  id: string,
+): [string, string, string, string] {
   return [PERSISTED_QUERY_ROOT, RQKEY_ROOT, 'get', id]
+}
+
+const getListQueryKey = getCollectionsListQueryKey
+const getDetailQueryKey = getCollectionDetailQueryKey
+
+/**
+ * A collection that exists only in the local cache while its create request is
+ * in flight. The server has never heard of this id, so it must not be opened,
+ * targeted by an add, or written to.
+ */
+export function isOptimisticCollectionId(id: string | undefined): boolean {
+  return !!id && id.startsWith(OPTIMISTIC_PREFIX)
+}
+
+type Agent = ReturnType<typeof useAgent>
+
+/** Every collection, following the cursor, up to {@link MAX_LIST_PAGES}. */
+export async function fetchAllCollections(
+  agent: Agent,
+): Promise<CivicTreeCollection[]> {
+  const all: CivicTreeCollection[] = []
+  let cursor: string | undefined
+  for (let page = 0; page < MAX_LIST_PAGES; page++) {
+    const res = await agent.appviewClient.call(
+      com.para.collection.listCollections,
+      cursor ? {cursor} : {},
+    )
+    all.push(...((res.collections || []) as CivicTreeCollection[]))
+    cursor = res.cursor
+    if (!cursor) break
+  }
+  return all
+}
+
+const NOT_READY_MESSAGE =
+  'This collection is still being created. Try again in a moment.'
+
+/*
+ * Whether the backend has `applyOps`. Unknown until the first write; once an
+ * old server answers "not implemented" the client sticks to read-modify-write
+ * for the rest of the session instead of probing on every edit.
+ */
+let applyOpsSupported: boolean | undefined
+
+/** Forgets what was learned about the backend. Exported for tests. */
+export function resetApplyOpsSupport() {
+  applyOpsSupported = undefined
+}
+
+/**
+ * The wire form of an op. JSON drops `undefined`, so "clear this field" is sent
+ * as an empty string, which is how the server reads it.
+ */
+function toWireOp(op: CollectionOp) {
+  if (op.type === 'updateItem') {
+    return {
+      type: op.type,
+      itemKey: op.itemKey,
+      patch: Object.fromEntries(
+        Object.entries(op.patch).map(([k, v]) => [k, v ?? '']),
+      ),
+    }
+  }
+  if (op.type === 'updateDetails') {
+    const {name, description, color} = op.fields
+    return {
+      type: op.type,
+      fields: {
+        ...(name !== undefined ? {name} : {}),
+        ...(description !== undefined ? {description: description ?? ''} : {}),
+        ...(color !== undefined ? {color} : {}),
+      },
+    }
+  }
+  return op
+}
+
+/**
+ * Applies one operation to a collection, serialised with every other write to
+ * it.
+ *
+ * With `applyOps` the edit is sent as an operation and the server applies it to
+ * the collection's current state in log order, so edits from different devices
+ * merge and nothing is read first. Against a server without it, the edit is
+ * applied to the freshest copy this device has - the collection it wrote last,
+ * else a fresh read - and the whole collection is written back; see
+ * collection-write-queue for why that is only safe on one device.
+ *
+ * Resolves to the written collection on the read-modify-write path, and to
+ * `undefined` on `applyOps`, where the server holds the result.
+ */
+export function writeCollectionOp(
+  agent: Agent,
+  collectionId: string,
+  op: CollectionOp,
+): Promise<CivicTreeCollection | undefined> {
+  if (isOptimisticCollectionId(collectionId)) {
+    return Promise.reject(new Error(NOT_READY_MESSAGE))
+  }
+  return enqueueCollectionWrite(collectionId, async () => {
+    if (applyOpsSupported !== false) {
+      try {
+        await agent.appviewClient.call(com.para.collection.applyOps, {
+          id: collectionId,
+          ops: [toWireOp(op)],
+        } as com.para.collection.applyOps.$InputBody)
+        applyOpsSupported = true
+        // Any copy remembered for the legacy path is now behind the server.
+        forgetCollectionWrite(collectionId)
+        return undefined
+      } catch (err) {
+        if (!isUnsupportedMethodError(err)) throw err
+        applyOpsSupported = false
+      }
+    }
+
+    const base =
+      recallCollectionWrite<CivicTreeCollection>(collectionId) ??
+      ((
+        await agent.appviewClient.call(com.para.collection.getCollection, {
+          id: collectionId,
+        })
+      ).collection as CivicTreeCollection)
+    const next = applyCollectionOp(base, op)
+    if (next === base) return base
+    try {
+      await agent.appviewClient.call(com.para.collection.updateCollection, {
+        id: collectionId,
+        collection: toWire(next),
+      } as com.para.collection.updateCollection.$InputBody)
+    } catch (err) {
+      // Unknown whether the write landed; trust a fresh read next time.
+      forgetCollectionWrite(collectionId)
+      throw err
+    }
+    rememberCollectionWrite(collectionId, next)
+    return next
+  })
 }
 
 export function useCollectionsQuery() {
   const agent = useAgent()
   return useQuery<CivicTreeCollection[]>({
     queryKey: getListQueryKey(),
-    queryFn: async () => {
-      const res = await agent.appviewClient.call(
-        com.para.collection.listCollections,
-        {},
-      )
-      return (res.collections || []) as CivicTreeCollection[]
-    },
+    queryFn: () => fetchAllCollections(agent),
     staleTime: STALE_TIME,
     gcTime: PERSISTED_QUERY_GCTIME,
   })
@@ -61,31 +210,123 @@ export function useCollectionsQuery() {
 
 export function useCollectionQuery(id: string | undefined) {
   const agent = useAgent()
+  const queryClient = useQueryClient()
   return useQuery<CivicTreeCollection>({
     queryKey: id ? getDetailQueryKey(id) : ['collections', 'get', 'disabled'],
     queryFn: async () => {
       if (!id) throw new Error('No collection id')
       const res = await agent.appviewClient.call(
         com.para.collection.getCollection,
-        {
-          id,
-        },
+        {id},
       )
       return res.collection as CivicTreeCollection
     },
-    enabled: !!id,
+    /*
+     * Seed from the list so opening a collection from the tree is instant, and
+     * so a collection just created (not yet readable by id) still renders.
+     */
+    initialData: () =>
+      id
+        ? queryClient
+            .getQueryData<CivicTreeCollection[]>(getListQueryKey())
+            ?.find(c => c.id === id)
+        : undefined,
+    initialDataUpdatedAt: () =>
+      queryClient.getQueryState(getListQueryKey())?.dataUpdatedAt,
+    enabled: !!id && !isOptimisticCollectionId(id),
     staleTime: STALE_TIME,
     gcTime: PERSISTED_QUERY_GCTIME,
   })
 }
 
-interface ListContext {
-  previousList: CivicTreeCollection[] | undefined
+// ─── Cache helpers ─────────────────────────────────────────────────────────
+
+/**
+ * What a mutation needs to undo itself. Rollback restores only the one
+ * collection it touched; restoring the whole list would also erase any other
+ * optimistic edit that landed while this one was in flight.
+ */
+interface CollectionSnapshot {
+  detail: CivicTreeCollection | undefined
+  entry: CivicTreeCollection | undefined
 }
 
-interface DetailListContext {
-  previousDetail: CivicTreeCollection | undefined
-  previousList: CivicTreeCollection[] | undefined
+function snapshotCollection(
+  queryClient: QueryClient,
+  id: string,
+): CollectionSnapshot {
+  return {
+    detail: queryClient.getQueryData<CivicTreeCollection>(
+      getDetailQueryKey(id),
+    ),
+    entry: queryClient
+      .getQueryData<CivicTreeCollection[]>(getListQueryKey())
+      ?.find(c => c.id === id),
+  }
+}
+
+function writeCollectionToCaches(
+  queryClient: QueryClient,
+  id: string,
+  next: CivicTreeCollection,
+) {
+  queryClient.setQueryData<CivicTreeCollection>(getDetailQueryKey(id), next)
+  queryClient.setQueryData<CivicTreeCollection[]>(getListQueryKey(), old =>
+    old?.map(c => (c.id === id ? next : c)),
+  )
+}
+
+function restoreCollection(
+  queryClient: QueryClient,
+  id: string,
+  snapshot: CollectionSnapshot | undefined,
+) {
+  if (!snapshot) return
+  if (snapshot.detail) {
+    queryClient.setQueryData(getDetailQueryKey(id), snapshot.detail)
+  }
+  if (snapshot.entry) {
+    const entry = snapshot.entry
+    queryClient.setQueryData<CivicTreeCollection[]>(getListQueryKey(), old =>
+      old?.map(c => (c.id === id ? entry : c)),
+    )
+  }
+}
+
+/**
+ * Marks the collection stale without refetching it now. An immediate refetch
+ * can read a model that has not caught up with the write and overwrite the
+ * correct optimistic state with the old one, which is how edits used to flicker
+ * away. The next mount or focus picks up server truth.
+ */
+export function markCollectionsStale(queryClient: QueryClient, id?: string) {
+  void queryClient.invalidateQueries({
+    queryKey: getListQueryKey(),
+    refetchType: 'none',
+  })
+  if (id) {
+    void queryClient.invalidateQueries({
+      queryKey: getDetailQueryKey(id),
+      refetchType: 'none',
+    })
+  }
+}
+
+function toWire(c: CivicTreeCollection) {
+  return {
+    id: c.id,
+    name: c.name,
+    description: c.description,
+    color: c.color,
+    items: c.items,
+    relations: c.relations || [],
+  }
+}
+
+// ─── Mutations ─────────────────────────────────────────────────────────────
+
+interface CreateContext {
+  optimisticId: string
 }
 
 export function useCreateCollectionMutation() {
@@ -95,7 +336,7 @@ export function useCreateCollectionMutation() {
     {id: string},
     Error,
     {name: string; description?: string; color?: string},
-    ListContext
+    CreateContext
   >({
     mutationFn: async input => {
       const res = await agent.appviewClient.call(
@@ -106,34 +347,169 @@ export function useCreateCollectionMutation() {
     },
     onMutate: async input => {
       await queryClient.cancelQueries({queryKey: getListQueryKey()})
-      const previousList =
-        queryClient.getQueryData<CivicTreeCollection[]>(getListQueryKey())
-      const optimisticCollection: CivicTreeCollection = {
-        id: `optimistic-${Date.now()}`,
+      const now = new Date().toISOString()
+      const optimisticId = `${OPTIMISTIC_PREFIX}${Date.now()}`
+      const optimistic: CivicTreeCollection = {
+        id: optimisticId,
         name: input.name,
         description: input.description,
         color: input.color,
         items: [],
         relations: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: now,
+        updatedAt: now,
       }
       queryClient.setQueryData<CivicTreeCollection[]>(getListQueryKey(), old =>
-        old ? [optimisticCollection, ...old] : [optimisticCollection],
+        old ? [optimistic, ...old] : [optimistic],
       )
-      return {previousList}
+      return {optimisticId}
     },
-    onError: (_err, _variables, context) => {
-      if (context?.previousList) {
-        queryClient.setQueryData(getListQueryKey(), context.previousList)
+    onSuccess: (data, _input, context) => {
+      /*
+       * Swap the placeholder for the real id right away, and seed the detail
+       * cache, so nothing downstream ever holds a fake id after the create has
+       * succeeded.
+       */
+      queryClient.setQueryData<CivicTreeCollection[]>(getListQueryKey(), old =>
+        old?.map(c =>
+          c.id === context?.optimisticId ? {...c, id: data.id} : c,
+        ),
+      )
+      const created = queryClient
+        .getQueryData<CivicTreeCollection[]>(getListQueryKey())
+        ?.find(c => c.id === data.id)
+      if (created) {
+        queryClient.setQueryData(getDetailQueryKey(data.id), created)
+        /*
+         * The read model may not have indexed the new collection yet. Seed the
+         * write base so the first edit does not depend on reading it back.
+         */
+        rememberCollectionWrite(data.id, created)
       }
+      markCollectionsStale(queryClient)
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({queryKey: getListQueryKey()})
+    onError: (_err, _input, context) => {
+      queryClient.setQueryData<CivicTreeCollection[]>(getListQueryKey(), old =>
+        old?.filter(c => c.id !== context?.optimisticId),
+      )
     },
   })
 }
 
+interface OpContext {
+  snapshot: CollectionSnapshot
+}
+
+/**
+ * One write path for every edit to a collection's contents.
+ *
+ * The edit is an operation applied to the freshest copy available - the
+ * collection this device wrote last, else a fresh read - and writes to one
+ * collection run one at a time. See collection-write-queue for why.
+ */
+function useCollectionOpMutation<V>(toInput: (vars: V) => CollectionOpInput) {
+  const queryClient = useQueryClient()
+  const agent = useAgent()
+
+  return useMutation<CivicTreeCollection | undefined, Error, V, OpContext>({
+    mutationFn: vars => {
+      const {collectionId, op} = toInput(vars)
+      return writeCollectionOp(agent, collectionId, op)
+    },
+    onMutate: async vars => {
+      const {collectionId, op} = toInput(vars)
+      await queryClient.cancelQueries({
+        queryKey: getDetailQueryKey(collectionId),
+      })
+      await queryClient.cancelQueries({queryKey: getListQueryKey()})
+      const snapshot = snapshotCollection(queryClient, collectionId)
+      const current = snapshot.detail ?? snapshot.entry
+      if (current) {
+        writeCollectionToCaches(queryClient, collectionId, {
+          ...applyCollectionOp(current, op),
+          updatedAt: new Date().toISOString(),
+        })
+      }
+      return {snapshot}
+    },
+    onError: (_err, vars, context) => {
+      restoreCollection(
+        queryClient,
+        toInput(vars).collectionId,
+        context?.snapshot,
+      )
+    },
+    onSuccess: (written, vars) => {
+      const {collectionId} = toInput(vars)
+      /*
+       * Only the last write in a burst reconciles the cache; an earlier one
+       * would overwrite newer optimistic state with its own older result.
+       */
+      if (written && !hasPendingCollectionWrite(collectionId)) {
+        writeCollectionToCaches(queryClient, collectionId, {
+          ...written,
+          updatedAt: new Date().toISOString(),
+        })
+      }
+    },
+    onSettled: (_data, _err, vars) => {
+      markCollectionsStale(queryClient, toInput(vars).collectionId)
+    },
+  })
+}
+
+export interface CollectionOpInput {
+  collectionId: string
+  op: CollectionOp
+}
+
+/** Applies any {@link CollectionOp}; the specific hooks below are sugar. */
+export function useApplyCollectionOpMutation() {
+  return useCollectionOpMutation<CollectionOpInput>(input => input)
+}
+
+export function useAddToCollectionMutation() {
+  return useCollectionOpMutation<{
+    collectionId: string
+    item: CivicTreeItem
+    /** Ignored: duplicates are detected against the freshest copy. */
+    existingItems?: CivicTreeItem[]
+  }>(({collectionId, item}) => ({collectionId, op: {type: 'addItem', item}}))
+}
+
+export function useRemoveFromCollectionMutation() {
+  return useCollectionOpMutation<{collectionId: string; itemKey: string}>(
+    ({collectionId, itemKey}) => ({
+      collectionId,
+      op: {type: 'removeItem', itemKey},
+    }),
+  )
+}
+
+export function useAddCivicTreeRelationMutation() {
+  return useCollectionOpMutation<{
+    collectionId: string
+    relation: CivicTreeRelation
+  }>(({collectionId, relation}) => ({
+    collectionId,
+    op: {type: 'addRelation', relation},
+  }))
+}
+
+export function useRemoveCivicTreeRelationMutation() {
+  return useCollectionOpMutation<{collectionId: string; relationId: string}>(
+    ({collectionId, relationId}) => ({
+      collectionId,
+      op: {type: 'removeRelation', relationId},
+    }),
+  )
+}
+
+/**
+ * Replaces a whole collection. Prefer {@link useApplyCollectionOpMutation}:
+ * this sends back exactly what the caller holds, so it can erase newer edits.
+ * Kept for callers that genuinely reorder or rewrite every item.
+ */
 export function useUpdateCollectionMutation() {
   const queryClient = useQueryClient()
   const agent = useAgent()
@@ -141,66 +517,51 @@ export function useUpdateCollectionMutation() {
     void,
     Error,
     {id: string; collection: CivicTreeCollectionInput},
-    DetailListContext
+    OpContext
   >({
-    mutationFn: async input => {
-      await agent.appviewClient.call(
-        com.para.collection.updateCollection,
-        input as com.para.collection.updateCollection.$InputBody,
-      )
-    },
-    onMutate: async input => {
-      const detailKey = getDetailQueryKey(input.id)
-      const listKey = getListQueryKey()
-      await queryClient.cancelQueries({queryKey: detailKey})
-      await queryClient.cancelQueries({queryKey: listKey})
-
-      const previousDetail =
-        queryClient.getQueryData<CivicTreeCollection>(detailKey)
-      const previousList =
-        queryClient.getQueryData<CivicTreeCollection[]>(listKey)
-
-      const optimisticCollection: CivicTreeCollection = {
-        ...(previousDetail ?? {
-          id: input.id,
-          name: input.collection.name,
-          description: input.collection.description,
-          color: input.collection.color,
-          items: input.collection.items,
-          relations: input.collection.relations ?? [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        }),
-        ...input.collection,
-        updatedAt: new Date().toISOString(),
+    mutationFn: ({id, collection}) => {
+      if (isOptimisticCollectionId(id)) {
+        return Promise.reject(new Error(NOT_READY_MESSAGE))
       }
-
-      queryClient.setQueryData<CivicTreeCollection>(
-        detailKey,
-        optimisticCollection,
-      )
-      queryClient.setQueryData<CivicTreeCollection[]>(listKey, old =>
-        old
-          ? old.map(c => (c.id === input.id ? optimisticCollection : c))
-          : old,
-      )
-
-      return {previousDetail, previousList}
-    },
-    onError: (_err, variables, context) => {
-      const detailKey = getDetailQueryKey(variables.id)
-      if (context?.previousDetail) {
-        queryClient.setQueryData(detailKey, context.previousDetail)
-      }
-      if (context?.previousList) {
-        queryClient.setQueryData(getListQueryKey(), context.previousList)
-      }
-    },
-    onSettled: (_data, _error, variables) => {
-      queryClient.invalidateQueries({queryKey: getListQueryKey()})
-      queryClient.invalidateQueries({
-        queryKey: getDetailQueryKey(variables.id),
+      return enqueueCollectionWrite(id, async () => {
+        try {
+          await agent.appviewClient.call(com.para.collection.updateCollection, {
+            id,
+            collection,
+          } as com.para.collection.updateCollection.$InputBody)
+        } catch (err) {
+          forgetCollectionWrite(id)
+          throw err
+        }
+        const current = queryClient.getQueryData<CivicTreeCollection>(
+          getDetailQueryKey(id),
+        )
+        rememberCollectionWrite(id, {
+          ...(current ?? {createdAt: '', updatedAt: ''}),
+          ...collection,
+          relations: collection.relations ?? [],
+        })
       })
+    },
+    onMutate: async ({id, collection}) => {
+      await queryClient.cancelQueries({queryKey: getDetailQueryKey(id)})
+      await queryClient.cancelQueries({queryKey: getListQueryKey()})
+      const snapshot = snapshotCollection(queryClient, id)
+      const now = new Date().toISOString()
+      writeCollectionToCaches(queryClient, id, {
+        createdAt: now,
+        ...(snapshot.detail ?? snapshot.entry),
+        ...collection,
+        relations: collection.relations ?? [],
+        updatedAt: now,
+      })
+      return {snapshot}
+    },
+    onError: (_err, {id}, context) => {
+      restoreCollection(queryClient, id, context?.snapshot)
+    },
+    onSettled: (_data, _err, {id}) => {
+      markCollectionsStale(queryClient, id)
     },
   })
 }
@@ -208,436 +569,49 @@ export function useUpdateCollectionMutation() {
 export function useDeleteCollectionMutation() {
   const queryClient = useQueryClient()
   const agent = useAgent()
-  return useMutation<void, Error, {id: string}, ListContext>({
-    mutationFn: async input => {
-      await agent.appviewClient.call(
-        com.para.collection.deleteCollection,
-        input,
-      )
-    },
-    onMutate: async input => {
-      await queryClient.cancelQueries({queryKey: getListQueryKey()})
-      const previousList =
-        queryClient.getQueryData<CivicTreeCollection[]>(getListQueryKey())
-      queryClient.setQueryData<CivicTreeCollection[]>(getListQueryKey(), old =>
-        old ? old.filter(c => c.id !== input.id) : old,
-      )
-      return {previousList}
-    },
-    onError: (_err, _variables, context) => {
-      if (context?.previousList) {
-        queryClient.setQueryData(getListQueryKey(), context.previousList)
-      }
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({queryKey: getListQueryKey()})
-    },
-  })
-}
-
-export function useDuplicateCollectionMutation() {
-  const queryClient = useQueryClient()
-  const agent = useAgent()
   return useMutation<
+    void,
+    Error,
     {id: string},
-    Error,
-    {sourceId: string; newName: string},
-    ListContext
+    {removed: CivicTreeCollection | undefined; index: number}
   >({
-    mutationFn: async input => {
-      const {sourceId, newName} = input
-      const res0 = await agent.appviewClient.call(
-        com.para.collection.getCollection,
-        {
-          id: sourceId,
-        },
-      )
-      const source = res0.collection
-      if (!source) throw new Error('Source collection not found')
-      const res = await agent.appviewClient.call(
-        com.para.collection.createCollection,
-        {
-          name: newName,
-          description: source.description,
-          color: source.color,
-        },
-      )
-      const newId = res.id
-      if (source.items.length > 0 || (source.relations || []).length > 0) {
-        await agent.appviewClient.call(com.para.collection.updateCollection, {
-          id: newId,
-          collection: {
-            id: newId,
-            name: newName,
-            description: source.description,
-            color: source.color,
-            items: source.items,
-            relations: source.relations || [],
-          },
+    mutationFn: ({id}) => {
+      if (isOptimisticCollectionId(id)) {
+        return Promise.reject(new Error(NOT_READY_MESSAGE))
+      }
+      return enqueueCollectionWrite(id, async () => {
+        await agent.appviewClient.call(com.para.collection.deleteCollection, {
+          id,
         })
-      }
-      return {id: newId}
+        forgetCollectionWrite(id)
+      })
     },
-    onMutate: async input => {
+    onMutate: async ({id}) => {
       await queryClient.cancelQueries({queryKey: getListQueryKey()})
-      const previousList =
+      const list =
         queryClient.getQueryData<CivicTreeCollection[]>(getListQueryKey())
-      const source = previousList?.find(c => c.id === input.sourceId)
-      const optimisticCollection: CivicTreeCollection = {
-        id: `optimistic-${Date.now()}`,
-        name: input.newName,
-        description: source?.description,
-        color: source?.color,
-        items: source?.items ?? [],
-        relations: source?.relations ?? [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }
+      const index = list?.findIndex(c => c.id === id) ?? -1
+      const removed = index >= 0 ? list?.[index] : undefined
       queryClient.setQueryData<CivicTreeCollection[]>(getListQueryKey(), old =>
-        old ? [optimisticCollection, ...old] : [optimisticCollection],
+        old?.filter(c => c.id !== id),
       )
-      return {previousList}
+      return {removed, index}
     },
-    onError: (_err, _variables, context) => {
-      if (context?.previousList) {
-        queryClient.setQueryData(getListQueryKey(), context.previousList)
-      }
+    onError: (_err, _vars, context) => {
+      const removed = context?.removed
+      if (!removed) return
+      queryClient.setQueryData<CivicTreeCollection[]>(
+        getListQueryKey(),
+        old => {
+          if (!old || old.some(c => c.id === removed.id)) return old
+          const next = [...old]
+          next.splice(Math.min(context.index, next.length), 0, removed)
+          return next
+        },
+      )
     },
     onSettled: () => {
-      queryClient.invalidateQueries({queryKey: getListQueryKey()})
-    },
-  })
-}
-
-export function useAddToCollectionMutation() {
-  const queryClient = useQueryClient()
-  const agent = useAgent()
-  return useMutation<
-    void,
-    Error,
-    {collectionId: string; item: CivicTreeItem; existingItems: CivicTreeItem[]},
-    DetailListContext
-  >({
-    mutationFn: async input => {
-      const {collectionId, item, existingItems} = input
-      // Avoid duplicates
-      const itemKey = getCivicTreeItemKey(item)
-      if (existingItems.some(i => getCivicTreeItemKey(i) === itemKey)) {
-        return
-      }
-      const collection = await agent.appviewClient.call(
-        com.para.collection.getCollection,
-        {id: collectionId},
-      )
-      const view = collection.collection as CivicTreeCollection
-      await agent.appviewClient.call(com.para.collection.updateCollection, {
-        id: collectionId,
-        collection: {
-          id: view.id,
-          name: view.name,
-          description: view.description,
-          color: view.color,
-          items: [...view.items, item],
-          relations: view.relations || [],
-        },
-      } as com.para.collection.updateCollection.$InputBody)
-    },
-    onMutate: async input => {
-      const detailKey = getDetailQueryKey(input.collectionId)
-      const listKey = getListQueryKey()
-      await queryClient.cancelQueries({queryKey: detailKey})
-      await queryClient.cancelQueries({queryKey: listKey})
-
-      const previousDetail =
-        queryClient.getQueryData<CivicTreeCollection>(detailKey)
-      const previousList =
-        queryClient.getQueryData<CivicTreeCollection[]>(listKey)
-
-      const itemKey = getCivicTreeItemKey(input.item)
-      const shouldAdd = !input.existingItems.some(
-        i => getCivicTreeItemKey(i) === itemKey,
-      )
-
-      if (!shouldAdd) return {previousDetail, previousList}
-
-      const updater = (old: CivicTreeCollection | undefined) => {
-        if (!old) return old
-        return {
-          ...old,
-          items: [...old.items, input.item],
-          updatedAt: new Date().toISOString(),
-        }
-      }
-
-      queryClient.setQueryData<CivicTreeCollection>(detailKey, updater)
-      queryClient.setQueryData<CivicTreeCollection[]>(
-        listKey,
-        old =>
-          old?.map(c => (c.id === input.collectionId ? updater(c)! : c)) ?? old,
-      )
-
-      return {previousDetail, previousList}
-    },
-    onError: (_err, variables, context) => {
-      const detailKey = getDetailQueryKey(variables.collectionId)
-      if (context?.previousDetail) {
-        queryClient.setQueryData(detailKey, context.previousDetail)
-      }
-      if (context?.previousList) {
-        queryClient.setQueryData(getListQueryKey(), context.previousList)
-      }
-    },
-    onSettled: (_data, _error, variables) => {
-      queryClient.invalidateQueries({queryKey: getListQueryKey()})
-      queryClient.invalidateQueries({
-        queryKey: getDetailQueryKey(variables.collectionId),
-      })
-    },
-  })
-}
-
-export function useRemoveFromCollectionMutation() {
-  const queryClient = useQueryClient()
-  const agent = useAgent()
-  return useMutation<
-    void,
-    Error,
-    {collectionId: string; itemKey: string},
-    DetailListContext
-  >({
-    mutationFn: async input => {
-      const {collectionId, itemKey} = input
-      const collection = await agent.appviewClient.call(
-        com.para.collection.getCollection,
-        {id: collectionId},
-      )
-      const view = collection.collection as CivicTreeCollection
-      await agent.appviewClient.call(com.para.collection.updateCollection, {
-        id: collectionId,
-        collection: {
-          id: view.id,
-          name: view.name,
-          description: view.description,
-          color: view.color,
-          items: view.items.filter(i => getCivicTreeItemKey(i) !== itemKey),
-          relations: (view.relations || []).filter(
-            relation =>
-              relation.fromItemId !== itemKey && relation.toItemId !== itemKey,
-          ),
-        },
-      } as com.para.collection.updateCollection.$InputBody)
-    },
-    onMutate: async input => {
-      const detailKey = getDetailQueryKey(input.collectionId)
-      const listKey = getListQueryKey()
-      await queryClient.cancelQueries({queryKey: detailKey})
-      await queryClient.cancelQueries({queryKey: listKey})
-
-      const previousDetail =
-        queryClient.getQueryData<CivicTreeCollection>(detailKey)
-      const previousList =
-        queryClient.getQueryData<CivicTreeCollection[]>(listKey)
-
-      const updater = (old: CivicTreeCollection | undefined) => {
-        if (!old) return old
-        return {
-          ...old,
-          items: old.items.filter(
-            i => getCivicTreeItemKey(i) !== input.itemKey,
-          ),
-          relations: (old.relations || []).filter(
-            relation =>
-              relation.fromItemId !== input.itemKey &&
-              relation.toItemId !== input.itemKey,
-          ),
-          updatedAt: new Date().toISOString(),
-        }
-      }
-
-      queryClient.setQueryData<CivicTreeCollection>(detailKey, updater)
-      queryClient.setQueryData<CivicTreeCollection[]>(
-        listKey,
-        old =>
-          old?.map(c => (c.id === input.collectionId ? updater(c)! : c)) ?? old,
-      )
-
-      return {previousDetail, previousList}
-    },
-    onError: (_err, variables, context) => {
-      const detailKey = getDetailQueryKey(variables.collectionId)
-      if (context?.previousDetail) {
-        queryClient.setQueryData(detailKey, context.previousDetail)
-      }
-      if (context?.previousList) {
-        queryClient.setQueryData(getListQueryKey(), context.previousList)
-      }
-    },
-    onSettled: (_data, _error, variables) => {
-      queryClient.invalidateQueries({queryKey: getListQueryKey()})
-      queryClient.invalidateQueries({
-        queryKey: getDetailQueryKey(variables.collectionId),
-      })
-    },
-  })
-}
-
-export function useAddCivicTreeRelationMutation() {
-  const queryClient = useQueryClient()
-  const agent = useAgent()
-  return useMutation<
-    void,
-    Error,
-    {collectionId: string; relation: CivicTreeRelation},
-    DetailListContext
-  >({
-    mutationFn: async input => {
-      const {collectionId, relation} = input
-      const collection = await agent.appviewClient.call(
-        com.para.collection.getCollection,
-        {id: collectionId},
-      )
-      const view = collection.collection as CivicTreeCollection
-      const relations = view.relations || []
-      if (relations.some(existing => existing.id === relation.id)) {
-        return
-      }
-      await agent.appviewClient.call(com.para.collection.updateCollection, {
-        id: collectionId,
-        collection: {
-          id: view.id,
-          name: view.name,
-          description: view.description,
-          color: view.color,
-          items: view.items,
-          relations: [...relations, relation],
-        },
-      } as com.para.collection.updateCollection.$InputBody)
-    },
-    onMutate: async input => {
-      const detailKey = getDetailQueryKey(input.collectionId)
-      const listKey = getListQueryKey()
-      await queryClient.cancelQueries({queryKey: detailKey})
-      await queryClient.cancelQueries({queryKey: listKey})
-
-      const previousDetail =
-        queryClient.getQueryData<CivicTreeCollection>(detailKey)
-      const previousList =
-        queryClient.getQueryData<CivicTreeCollection[]>(listKey)
-
-      const updater = (old: CivicTreeCollection | undefined) => {
-        if (!old) return old
-        if ((old.relations || []).some(r => r.id === input.relation.id)) {
-          return old
-        }
-        return {
-          ...old,
-          relations: [...(old.relations || []), input.relation],
-          updatedAt: new Date().toISOString(),
-        }
-      }
-
-      queryClient.setQueryData<CivicTreeCollection>(detailKey, updater)
-      queryClient.setQueryData<CivicTreeCollection[]>(
-        listKey,
-        old =>
-          old?.map(c => (c.id === input.collectionId ? updater(c)! : c)) ?? old,
-      )
-
-      return {previousDetail, previousList}
-    },
-    onError: (_err, variables, context) => {
-      const detailKey = getDetailQueryKey(variables.collectionId)
-      if (context?.previousDetail) {
-        queryClient.setQueryData(detailKey, context.previousDetail)
-      }
-      if (context?.previousList) {
-        queryClient.setQueryData(getListQueryKey(), context.previousList)
-      }
-    },
-    onSettled: (_data, _error, variables) => {
-      queryClient.invalidateQueries({queryKey: getListQueryKey()})
-      queryClient.invalidateQueries({
-        queryKey: getDetailQueryKey(variables.collectionId),
-      })
-    },
-  })
-}
-
-export function useRemoveCivicTreeRelationMutation() {
-  const queryClient = useQueryClient()
-  const agent = useAgent()
-  return useMutation<
-    void,
-    Error,
-    {collectionId: string; relationId: string},
-    DetailListContext
-  >({
-    mutationFn: async input => {
-      const {collectionId, relationId} = input
-      const collection = await agent.appviewClient.call(
-        com.para.collection.getCollection,
-        {id: collectionId},
-      )
-      const view = collection.collection as CivicTreeCollection
-      await agent.appviewClient.call(com.para.collection.updateCollection, {
-        id: collectionId,
-        collection: {
-          id: view.id,
-          name: view.name,
-          description: view.description,
-          color: view.color,
-          items: view.items,
-          relations: (view.relations || []).filter(
-            relation => relation.id !== relationId,
-          ),
-        },
-      } as com.para.collection.updateCollection.$InputBody)
-    },
-    onMutate: async input => {
-      const detailKey = getDetailQueryKey(input.collectionId)
-      const listKey = getListQueryKey()
-      await queryClient.cancelQueries({queryKey: detailKey})
-      await queryClient.cancelQueries({queryKey: listKey})
-
-      const previousDetail =
-        queryClient.getQueryData<CivicTreeCollection>(detailKey)
-      const previousList =
-        queryClient.getQueryData<CivicTreeCollection[]>(listKey)
-
-      const updater = (old: CivicTreeCollection | undefined) => {
-        if (!old) return old
-        return {
-          ...old,
-          relations: (old.relations || []).filter(
-            relation => relation.id !== input.relationId,
-          ),
-          updatedAt: new Date().toISOString(),
-        }
-      }
-
-      queryClient.setQueryData<CivicTreeCollection>(detailKey, updater)
-      queryClient.setQueryData<CivicTreeCollection[]>(
-        listKey,
-        old =>
-          old?.map(c => (c.id === input.collectionId ? updater(c)! : c)) ?? old,
-      )
-
-      return {previousDetail, previousList}
-    },
-    onError: (_err, variables, context) => {
-      const detailKey = getDetailQueryKey(variables.collectionId)
-      if (context?.previousDetail) {
-        queryClient.setQueryData(detailKey, context.previousDetail)
-      }
-      if (context?.previousList) {
-        queryClient.setQueryData(getListQueryKey(), context.previousList)
-      }
-    },
-    onSettled: (_data, _error, variables) => {
-      queryClient.invalidateQueries({queryKey: getListQueryKey()})
-      queryClient.invalidateQueries({
-        queryKey: getDetailQueryKey(variables.collectionId),
-      })
+      markCollectionsStale(queryClient)
     },
   })
 }

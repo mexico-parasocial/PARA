@@ -1,4 +1,4 @@
-import {useCallback, useState} from 'react'
+import {useCallback, useMemo, useState} from 'react'
 import {
   FlatList,
   Linking,
@@ -19,7 +19,6 @@ import {
   getCivicTreeItemKind,
   getCivicTreeItemTitle,
   useCollectionQuery,
-  useDuplicateCollectionMutation,
   useRemoveFromCollectionMutation,
   useUpdateCollectionMutation,
 } from '#/state/queries/collections'
@@ -64,7 +63,6 @@ export function CollectionDetailScreen() {
   const {data: collection, isLoading} = useCollectionQuery(collectionId)
   const removeMutation = useRemoveFromCollectionMutation()
   const updateMutation = useUpdateCollectionMutation()
-  const duplicateMutation = useDuplicateCollectionMutation()
   const exportMutation = useExportCollectionToSembleMutation()
   const addItemControl = Dialog.useDialogControl()
   const connectControl = Dialog.useDialogControl()
@@ -165,25 +163,6 @@ export function CollectionDetailScreen() {
     [collection, collectionId, updateMutation],
   )
 
-  const onDuplicate = useCallback(() => {
-    if (!collection) return
-    const newName = `${collection.name} (${_(msg`copy`)})`
-    duplicateMutation.mutate(
-      {sourceId: collectionId, newName},
-      {
-        onSuccess: data => {
-          Toast.show(_(msg`Collection duplicated`))
-          navigation.navigate('CollectionDetail', {collectionId: data.id})
-        },
-        onError: (err: Error) => {
-          Toast.show(err.message || _(msg`Failed to duplicate`), {
-            type: 'error',
-          })
-        },
-      },
-    )
-  }, [collection, collectionId, duplicateMutation, navigation, _])
-
   /*
    * Browsing used to navigate to Agora and lose the user's place. A policy is
    * a node in this collection, so the picker brings it here instead - and the
@@ -218,6 +197,16 @@ export function CollectionDetailScreen() {
       },
     )
   }, [collection, exportMutation, currentAccount?.handle, _])
+
+  const contributionDraft = useMemo(
+    () =>
+      contributionFromItem(
+        collection?.items.find(
+          i => getCivicTreeItemKey(i) === contributeSourceKey,
+        ) ?? {addedAt: ''},
+      ),
+    [collection, contributeSourceKey],
+  )
 
   return (
     <Layout.Screen>
@@ -381,22 +370,6 @@ export function CollectionDetailScreen() {
                   </TouchableOpacity>
                   <TouchableOpacity
                     accessibilityRole="button"
-                    accessibilityLabel={_(msg`Duplicate collection`)}
-                    accessibilityHint={_(
-                      msg`Creates a copy of this collection`,
-                    )}
-                    onPress={onDuplicate}
-                    disabled={duplicateMutation.isPending}
-                    style={[
-                      styles.secondaryBtn,
-                      {borderColor: t.palette.contrast_100},
-                    ]}>
-                    <Text style={[styles.secondaryBtnText, t.atoms.text]}>
-                      <Trans>Duplicate</Trans>
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    accessibilityRole="button"
                     accessibilityLabel={_(msg`Export to Semble.so`)}
                     accessibilityHint={_(
                       msg`Exports this collection to Semble.so as a research trail`,
@@ -498,11 +471,13 @@ export function CollectionDetailScreen() {
        */}
       <ContributeToCommunityTreeDialog
         control={contributeControl}
-        {...contributionFromItem(
-          collection?.items.find(
-            i => getCivicTreeItemKey(i) === contributeSourceKey,
-          ) ?? {addedAt: ''},
-        )}
+        title={contributionDraft.title}
+        sourceUri={contributionDraft.sourceUri}
+        sourceUrl={contributionDraft.sourceUrl}
+        category={contributionDraft.category}
+        author={contributionDraft.author}
+        publishedYear={contributionDraft.publishedYear}
+        defaultSourceType={contributionDraft.sourceType}
       />
       <ConnectTreeItemsDialog
         control={connectControl}
@@ -567,6 +542,7 @@ function CivicTreeItemRow({
           {kind}
           {item.policyCategory ? ` - ${item.policyCategory}` : ''}
           {item.sourceLabel ? ` - ${item.sourceLabel}` : ''}
+          {item.publishedYear ? ` (${item.publishedYear})` : ''}
         </Text>
         {item.description ? (
           <Text

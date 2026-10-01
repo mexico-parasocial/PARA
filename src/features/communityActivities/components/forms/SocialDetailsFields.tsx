@@ -7,6 +7,7 @@ import {
   type PeacefulMarchPermitStatus,
   type SignatureDriveInstrumentType,
   SOCIAL_ACTIVITY_ASSEMBLY,
+  SOCIAL_ACTIVITY_CABILDEO,
   SOCIAL_ACTIVITY_PEACEFUL_MARCH,
   SOCIAL_ACTIVITY_SIGNATURE_DRIVE,
   type SocialActivityDetails,
@@ -59,6 +60,14 @@ export type SocialDraft = {
     agenda: string
     quorumRequired: string
   }
+  cabildeo: {
+    format: AssemblyFormat
+    meetingUrl: string
+    recordingUrl: string
+    participants: string
+    arguments: string
+    outcome: string
+  }
 }
 
 export const EMPTY_SOCIAL_DRAFT: SocialDraft = {
@@ -87,6 +96,14 @@ export const EMPTY_SOCIAL_DRAFT: SocialDraft = {
     meetingUrl: '',
     agenda: '',
     quorumRequired: '',
+  },
+  cabildeo: {
+    format: 'in_person',
+    meetingUrl: '',
+    recordingUrl: '',
+    participants: '',
+    arguments: '',
+    outcome: '',
   },
 }
 
@@ -141,6 +158,24 @@ export function buildSocialDetails(
       },
     }
   }
+  if (draft.kind === SOCIAL_ACTIVITY_CABILDEO) {
+    const c = draft.cabildeo
+    if (c.format !== 'in_person' && !c.meetingUrl.trim()) {
+      problems.push(_(msg`Add the link to join online.`))
+    }
+    return {
+      problems,
+      value: {
+        $type: SOCIAL_ACTIVITY_CABILDEO,
+        format: c.format,
+        meetingUrl: orUndefined(c.meetingUrl),
+        recordingUrl: orUndefined(c.recordingUrl),
+        participants: splitLines(c.participants),
+        arguments: splitLines(c.arguments),
+        outcome: orUndefined(c.outcome),
+      },
+    }
+  }
   const as = draft.assembly
   const quorum = optionalCount(as.quorumRequired)
   if (Number.isNaN(quorum))
@@ -168,7 +203,7 @@ export function SocialDetailsFields({
   onChange: (draft: SocialDraft) => void
 }) {
   const {_, i18n} = useLingui()
-  const set = <K extends 'march' | 'signature' | 'assembly'>(
+  const set = <K extends 'march' | 'signature' | 'assembly' | 'cabildeo'>(
     key: K,
     patch: Partial<SocialDraft[K]>,
   ) => onChange({...draft, [key]: {...draft[key], ...patch}})
@@ -341,6 +376,60 @@ export function SocialDetailsFields({
             value={draft.assembly.quorumRequired}
             onChange={quorumRequired => set('assembly', {quorumRequired})}
             keyboardType="number-pad"
+          />
+        </Section>
+      ) : null}
+
+      {draft.kind === SOCIAL_ACTIVITY_CABILDEO ? (
+        <Section
+          title={_(msg`Cabildeo`)}
+          subtitle={_(
+            msg`A conversation held over a set period: who spoke, what they argued, and where it landed.`,
+          )}>
+          <View style={[a.gap_sm]}>
+            <TextField.LabelText>{_(msg`Format`)}</TextField.LabelText>
+            <ChoiceChips
+              label={_(msg`Cabildeo format`)}
+              value={draft.cabildeo.format}
+              onChange={format => set('cabildeo', {format})}
+              options={ASSEMBLY_FORMATS.map(f => ({
+                value: f.value,
+                label: i18n._(f.label),
+              }))}
+            />
+          </View>
+          {draft.cabildeo.format !== 'in_person' ? (
+            <TextRow
+              label={_(msg`Link to join`)}
+              value={draft.cabildeo.meetingUrl}
+              onChange={meetingUrl => set('cabildeo', {meetingUrl})}
+              keyboardType="url"
+            />
+          ) : null}
+          <TextRow
+            label={_(msg`Who took part (one per line)`)}
+            value={draft.cabildeo.participants}
+            onChange={participants => set('cabildeo', {participants})}
+            multiline
+          />
+          <TextRow
+            label={_(msg`What was argued (one point per line)`)}
+            value={draft.cabildeo.arguments}
+            onChange={args => set('cabildeo', {arguments: args})}
+            multiline
+          />
+          <TextRow
+            label={_(msg`Where it landed (optional)`)}
+            value={draft.cabildeo.outcome}
+            onChange={outcome => set('cabildeo', {outcome})}
+            multiline
+            maxLength={2000}
+          />
+          <TextRow
+            label={_(msg`Link to the recording (optional)`)}
+            value={draft.cabildeo.recordingUrl}
+            onChange={recordingUrl => set('cabildeo', {recordingUrl})}
+            keyboardType="url"
           />
         </Section>
       ) : null}

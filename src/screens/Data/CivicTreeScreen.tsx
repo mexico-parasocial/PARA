@@ -1,9 +1,10 @@
-import {useCallback, useMemo, useState} from 'react'
+import {useCallback, useEffect, useMemo, useState} from 'react'
 import {
   FlatList,
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native'
 import {msg} from '@lingui/core/macro'
@@ -14,34 +15,34 @@ import {useNavigation} from '@react-navigation/native'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
   getCivicTreeItemKey,
+  isOptimisticCollectionId,
   useCollectionsQuery,
   useDeleteCollectionMutation,
   useRemoveFromCollectionMutation,
 } from '#/state/queries/collections'
 import {useSession} from '#/state/session'
+import {useExpandCivicTreeWorkspace} from '#/state/shell/civic-tree-workspace'
 import {Text} from '#/view/com/util/text/Text'
-import {useTheme} from '#/alf'
+import {atoms as a, useBreakpoints, useLayoutBreakpoints, useTheme} from '#/alf'
+import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
 import {GraphCanvas} from '#/components/graph/GraphCanvas'
 import {Bookmark as BookmarkIcon} from '#/components/icons/Bookmark'
 import {BulletList_Stroke2_Corner0_Rounded as ListIcon} from '#/components/icons/BulletList'
-import {
-  DotGrid_Stroke2_Corner0_Rounded as GridIcon,
-  DotGrid3x1_Stroke2_Corner0_Rounded as EllipsisIcon,
-} from '#/components/icons/DotGrid'
+import {DotGrid3x1_Stroke2_Corner0_Rounded as EllipsisIcon} from '#/components/icons/DotGrid'
 import {Earth_Stroke2_Corner0_Rounded as EarthIcon} from '#/components/icons/Globe'
+import {Leaf_Stroke2_Corner0_Rounded as LeafIcon} from '#/components/icons/Leaf'
 import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/Plus'
-import {Trash_Stroke2_Corner0_Rounded as TrashIcon} from '#/components/icons/Trash'
 import * as Layout from '#/components/Layout'
-import * as Menu from '#/components/Menu'
 import * as Prompt from '#/components/Prompt'
 import * as Toast from '#/components/Toast'
+import {IS_WEB} from '#/env'
 import {CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
 import {AddTreeItemDialog} from '#/features/personalCivicTree/components/AddTreeItemDialog'
+import {CivicTreeMap} from '#/features/personalCivicTree/components/CivicTreeMap'
 import {CollectionActionsDialog} from '#/features/personalCivicTree/components/CollectionActionsDialog'
 import {CollectionShelf} from '#/features/personalCivicTree/components/CollectionShelf'
 import {EditTreeItemDialog} from '#/features/personalCivicTree/components/EditTreeItemDialog'
-import {ExploreView} from '#/features/personalCivicTree/components/ExploreView'
 import {NewCollectionDialog} from '#/features/personalCivicTree/components/NewCollectionDialog'
 import {
   PersonalTreeLegend,
@@ -49,10 +50,11 @@ import {
 } from '#/features/personalCivicTree/components/PersonalTreeLegend'
 import {PersonalTreeNodeSheet} from '#/features/personalCivicTree/components/PersonalTreeNodeSheet'
 import {buildPersonalTreeGraph} from '#/features/personalCivicTree/graph'
+import {matchesCivicTreeSearch} from '#/features/personalCivicTree/map'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
-type ViewMode = 'list' | 'graph' | 'explore'
+type ViewMode = 'list' | 'graph' | 'map'
 
 // ─── Component ─────────────────────────────────────────────────────────────
 
@@ -117,7 +119,12 @@ function CivicTreeInner({
   const {currentAccount} = useSession()
   const myDid = currentAccount?.did
 
-  const {data: collections = [], isLoading} = useCollectionsQuery()
+  const {
+    data: collections = [],
+    isLoading,
+    isError,
+    refetch,
+  } = useCollectionsQuery()
   const addItemControl = Dialog.useDialogControl()
   const newCollectionControl = Dialog.useDialogControl()
   const collectionActionsControl = Dialog.useDialogControl()
@@ -125,7 +132,17 @@ function CivicTreeInner({
   const removeItemPrompt = Prompt.usePromptControl()
   const removeItemMutation = useRemoveFromCollectionMutation()
 
-  const [viewMode, setViewMode] = useState<ViewMode>('graph')
+  const [viewMode, setViewMode] = useState<ViewMode>('map')
+  const {width: windowWidth} = useWindowDimensions()
+  const {gtMobile} = useBreakpoints()
+  const {centerColumnOffset} = useLayoutBreakpoints()
+  const expanded = IS_WEB && gtMobile && viewMode === 'map' && !!myDid
+  useExpandCivicTreeWorkspace(expanded)
+  const workspaceLeft =
+    windowWidth / 2 -
+    300 +
+    (centerColumnOffset ? Layout.CENTER_COLUMN_OFFSET : 0)
+  const [addCollectionId, setAddCollectionId] = useState<string>()
   const [selectedNodeId, setSelectedNodeId] = useState<string | undefined>()
   const [searchQuery, setSearchQuery] = useState('')
   const [actionsCollectionId, setActionsCollectionId] = useState<
@@ -143,6 +160,18 @@ function CivicTreeInner({
     () => buildPersonalTreeGraph(collections),
     [collections],
   )
+  const filteredGraph = useMemo(() => {
+    const nodes = graph.nodes.filter(node =>
+      matchesCivicTreeSearch(node, searchQuery),
+    )
+    const ids = new Set(nodes.map(node => node.id))
+    return {
+      nodes,
+      edges: graph.edges.filter(
+        edge => ids.has(edge.source) && ids.has(edge.target),
+      ),
+    }
+  }, [graph, searchQuery])
 
   /*
    * selectedNodeId identifies an item node, not a collection, so the add-item
@@ -150,13 +179,19 @@ function CivicTreeInner({
    * falls back to the first collection when nothing is selected.
    */
   const selectedCollection = useMemo(() => {
+    const explicit = collections.find(c => c.id === addCollectionId)
+    if (explicit) return explicit
     const node = graph.nodes.find(n => n.id === selectedNodeId)
     if (node) {
       const owner = collections.find(c => c.id === node.metadata.collectionId)
       if (owner) return owner
     }
-    return collections[0]
-  }, [collections, graph.nodes, selectedNodeId])
+    /*
+     * A collection whose create is still in flight has no server id yet, so it
+     * cannot take an item; default to the first one that does.
+     */
+    return collections.find(c => !isOptimisticCollectionId(c.id))
+  }, [collections, graph.nodes, selectedNodeId, addCollectionId])
 
   /*
    * Adds into the selected collection, or the first one. With no collection at
@@ -224,6 +259,26 @@ function CivicTreeInner({
 
   const [activeGroups, setActiveGroups] = useState<Set<string>>(() => new Set())
 
+  /*
+   * Drop a selection or filter whose target no longer exists. A deleted
+   * collection (or an optimistic id replaced by the real one) would otherwise
+   * leave a filter the shelf has no chip to clear, dimming every node.
+   */
+  useEffect(() => {
+    if (selectedNodeId && !graph.nodes.some(n => n.id === selectedNodeId)) {
+      setSelectedNodeId(undefined)
+    }
+  }, [graph.nodes, selectedNodeId])
+
+  useEffect(() => {
+    setActiveGroups(prev => {
+      if (prev.size === 0) return prev
+      const live = new Set(collections.map(c => c.id))
+      const next = new Set([...prev].filter(id => live.has(id)))
+      return next.size === prev.size ? prev : next
+    })
+  }, [collections])
+
   const toggleGroup = useCallback((groupId: string) => {
     setActiveGroups(prev => {
       const next = new Set(prev)
@@ -246,194 +301,189 @@ function CivicTreeInner({
   }
 
   return (
-    <Layout.Screen>
-      <Layout.Header.Outer>
-        <Layout.Header.BackButton />
-        <Layout.Header.Content>
-          <Layout.Header.TitleText>
-            {CIVIC_TREE_LABELS.personal}
-          </Layout.Header.TitleText>
-        </Layout.Header.Content>
-        <Layout.Header.Slot>
-          <View style={styles.modeSwitch}>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel={_(msg`Toggle list view`)}
-              accessibilityHint={_(msg`Shows collections in a list format`)}
-              accessibilityState={{selected: viewMode === 'list'}}
-              onPress={() => setViewMode('list')}
-              style={[
-                styles.modeBtn,
-                viewMode === 'list' && {backgroundColor: t.palette.primary_500},
-              ]}>
-              <ListIcon
-                size="sm"
-                style={{
-                  color: viewMode === 'list' ? '#fff' : t.palette.contrast_500,
-                }}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel={_(msg`Toggle graph view`)}
-              accessibilityHint={_(
-                msg`Shows collections in an interactive tree format`,
-              )}
-              accessibilityState={{selected: viewMode === 'graph'}}
-              onPress={() => setViewMode('graph')}
-              style={[
-                styles.modeBtn,
-                viewMode === 'graph' && {
-                  backgroundColor: t.palette.primary_500,
-                },
-              ]}>
-              <GridIcon
-                size="sm"
-                style={{
-                  color: viewMode === 'graph' ? '#fff' : t.palette.contrast_500,
-                }}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel={_(msg`Toggle explore view`)}
-              accessibilityHint={_(
-                msg`Shows an interactive view for moving through your civic tree`,
-              )}
-              accessibilityState={{selected: viewMode === 'explore'}}
-              onPress={() => setViewMode('explore')}
-              style={[
-                styles.modeBtn,
-                viewMode === 'explore' && {
-                  backgroundColor: t.palette.primary_500,
-                },
-              ]}>
-              <EarthIcon
-                size="sm"
-                style={{
-                  color:
-                    viewMode === 'explore' ? '#fff' : t.palette.contrast_500,
-                }}
-              />
-            </TouchableOpacity>
+    <Layout.Screen hideBorders={expanded}>
+      <Layout.Center
+        style={[
+          styles.contentCenter,
+          expanded && {
+            maxWidth: windowWidth - workspaceLeft - 24,
+            width: windowWidth - workspaceLeft - 24,
+            marginLeft: workspaceLeft,
+            marginRight: 24,
+            transform: [],
+          },
+        ]}>
+        <View
+          style={[
+            a.flex_row,
+            a.align_center,
+            a.gap_sm,
+            a.p_md,
+            a.border_b,
+            t.atoms.border_contrast_low,
+          ]}>
+          <Layout.Header.BackButton />
+          <View style={[a.flex_1, a.gap_xs]}>
+            <Text style={[a.text_lg, a.font_bold, t.atoms.text]}>
+              {CIVIC_TREE_LABELS.personal}
+            </Text>
+            <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
+              <Trans>
+                {collections.length} collections · {graph.totalItems} items ·{' '}
+                {graph.totalRelations} connections
+              </Trans>
+            </Text>
           </View>
-          <Menu.Root>
-            <Menu.Trigger label={_(msg`Civic tree options`)}>
-              {({props}) => (
-                <TouchableOpacity
-                  {...props}
-                  accessibilityRole="button"
-                  accessibilityHint={_(
-                    msg`Opens actions for your personal civic tree`,
-                  )}
-                  hitSlop={8}
-                  style={styles.modeBtn}>
-                  <EllipsisIcon
-                    size="md"
-                    style={{color: t.palette.contrast_500}}
-                  />
-                </TouchableOpacity>
-              )}
-            </Menu.Trigger>
-            <Menu.Outer>
-              <Menu.Group>
-                <Menu.Item
-                  label={_(msg`New collection`)}
-                  onPress={() => newCollectionControl.open()}>
-                  <Menu.ItemText>
-                    <Trans>New collection</Trans>
-                  </Menu.ItemText>
-                  <Menu.ItemIcon icon={PlusIcon} />
-                </Menu.Item>
-                <Menu.Item label={_(msg`Add item`)} onPress={onPressAddItem}>
-                  <Menu.ItemText>
-                    <Trans>Add item</Trans>
-                  </Menu.ItemText>
-                  <Menu.ItemIcon icon={BookmarkIcon} />
-                </Menu.Item>
-              </Menu.Group>
-            </Menu.Outer>
-          </Menu.Root>
-        </Layout.Header.Slot>
-      </Layout.Header.Outer>
-
-      <Layout.Center style={styles.contentCenter}>
+          <Button
+            label={_(msg`New collection`)}
+            variant="solid"
+            color="primary"
+            size="small"
+            onPress={() => newCollectionControl.open()}>
+            <ButtonIcon icon={PlusIcon} />
+            <ButtonText>
+              <Trans>New collection</Trans>
+            </ButtonText>
+          </Button>
+        </View>
+        <View
+          style={[a.p_md, a.gap_sm, a.border_b, t.atoms.border_contrast_low]}>
+          <View
+            style={[
+              a.flex_row,
+              a.flex_wrap,
+              a.align_center,
+              a.justify_between,
+              a.gap_sm,
+            ]}>
+            <View
+              style={[
+                a.flex_row,
+                a.gap_xs,
+                a.p_xs,
+                a.rounded_md,
+                t.atoms.bg_contrast_25,
+              ]}>
+              {(
+                [
+                  {id: 'list', label: _(msg`Collections`), icon: ListIcon},
+                  {id: 'graph', label: _(msg`Tree`), icon: LeafIcon},
+                  {id: 'map', label: _(msg`Interactive Map`), icon: EarthIcon},
+                ] as const
+              ).map(mode => (
+                <Button
+                  key={mode.id}
+                  label={mode.label}
+                  variant={viewMode === mode.id ? 'solid' : 'ghost'}
+                  color={viewMode === mode.id ? 'primary' : 'secondary'}
+                  size="small"
+                  accessibilityState={{selected: viewMode === mode.id}}
+                  onPress={() => setViewMode(mode.id)}>
+                  <ButtonIcon icon={mode.icon} />
+                  <ButtonText style={!gtMobile && a.text_xs}>
+                    {mode.label}
+                  </ButtonText>
+                </Button>
+              ))}
+            </View>
+            {collections.length > 0 ? (
+              <Button
+                label={_(msg`Add item`)}
+                variant="outline"
+                color="secondary"
+                size="small"
+                onPress={onPressAddItem}>
+                <ButtonIcon icon={PlusIcon} />
+                <ButtonText>
+                  <Trans>Add item</Trans>
+                </ButtonText>
+              </Button>
+            ) : null}
+          </View>
+          <View style={[a.relative]}>
+            <TextInput
+              accessibilityLabel={_(msg`Search civic tree`)}
+              accessibilityHint={_(msg`Filters collections and saved items`)}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder={_(msg`Find a collection or saved item…`)}
+              placeholderTextColor={t.palette.contrast_400}
+              style={[
+                a.border,
+                a.rounded_md,
+                a.px_md,
+                a.text_sm,
+                t.atoms.text,
+                t.atoms.border_contrast_low,
+                {height: 40, paddingRight: 40},
+              ]}
+            />
+            {searchQuery ? (
+              <View style={[a.absolute, {right: 4, top: 4}]}>
+                <Button
+                  label={_(msg`Clear search`)}
+                  variant="ghost"
+                  color="secondary"
+                  size="small"
+                  onPress={() => setSearchQuery('')}>
+                  <ButtonText>×</ButtonText>
+                </Button>
+              </View>
+            ) : null}
+          </View>
+        </View>
         {isLoading ? (
           <View style={styles.centeredState}>
             <Text style={t.atoms.text_contrast_medium}>
               <Trans>Loading your civic tree...</Trans>
             </Text>
           </View>
-        ) : viewMode === 'explore' ? (
-          graph.nodes.length === 0 ? (
-            <EmptyTreeCanvas
-              hasCollections={collections.length > 0}
-              onAddItem={onPressAddItem}
-              onNewCollection={() => newCollectionControl.open()}
-            />
-          ) : (
-            <ExploreView
-              graph={graph}
-              collections={collections}
-              onOpenCollection={collectionId =>
-                navigation.navigate('CollectionDetail', {collectionId})
-              }
-              onEditItem={onEditItem}
-              onRemoveItem={onRequestRemoveItem}
-            />
-          )
+        ) : isError && collections.length === 0 ? (
+          <View style={[a.p_xl, a.align_center, a.gap_md]}>
+            <Text style={t.atoms.text}>
+              <Trans>Your civic tree could not be loaded.</Trans>
+            </Text>
+            <Button
+              label={_(msg`Try again`)}
+              variant="solid"
+              color="primary"
+              onPress={() => refetch()}>
+              <ButtonText>
+                <Trans>Try again</Trans>
+              </ButtonText>
+            </Button>
+          </View>
+        ) : viewMode === 'map' ? (
+          <CivicTreeMap
+            graph={graph}
+            collections={collections}
+            onSelectCollection={setAddCollectionId}
+            searchQuery={searchQuery}
+            onOpenCollection={collectionId =>
+              navigation.navigate('CollectionDetail', {collectionId})
+            }
+            onEditItem={onEditItem}
+            onRemoveItem={onRequestRemoveItem}
+            onAddToCollection={collectionId => {
+              setAddCollectionId(collectionId)
+              addItemControl.open()
+            }}
+          />
         ) : viewMode === 'graph' ? (
           <View style={styles.graphPane}>
-            <View style={styles.searchBar}>
-              <TextInput
-                accessibilityLabel={_(msg`Search items`)}
-                accessibilityHint={_(
-                  msg`Filters the items in your civic tree by title`,
-                )}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                placeholder={_(msg`Search items...`)}
-                placeholderTextColor={t.palette.contrast_400}
-                style={[
-                  styles.searchInput,
-                  t.atoms.text,
-                  {
-                    borderColor: t.palette.contrast_100,
-                    backgroundColor: t.palette.contrast_25,
-                  },
-                ]}
-              />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel={_(msg`Clear search`)}
-                  accessibilityHint={_(msg`Clears the current search query`)}
-                  onPress={() => setSearchQuery('')}
-                  style={styles.clearSearchBtn}>
-                  <Text style={{color: t.palette.contrast_500, fontSize: 16}}>
-                    ✕
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
             {graph.groups.length > 0 ? (
               <CollectionShelf
                 groups={graph.groups}
                 activeGroups={activeGroups}
                 onToggleGroup={toggleGroup}
                 onOpenCollection={onPressCollectionActions}
-                onNewCollection={() => newCollectionControl.open()}
               />
             ) : null}
             {graph.nodes.length > 0 ? (
               <PersonalTreeLegend graph={graph} />
             ) : null}
             {graph.nodes.length === 0 ? (
-              <EmptyTreeCanvas
-                hasCollections={collections.length > 0}
-                onAddItem={onPressAddItem}
-                onNewCollection={() => newCollectionControl.open()}
-              />
+              <EmptyTreeCanvas hasCollections={collections.length > 0} />
             ) : (
               <>
                 <PersonalTreeUnconnectedNotice
@@ -453,14 +503,16 @@ function CivicTreeInner({
                   />
                 ) : null}
                 <GraphCanvas
-                  nodes={graph.nodes}
-                  edges={graph.edges}
+                  nodes={filteredGraph.nodes}
+                  edges={filteredGraph.edges}
                   activeGroups={
                     activeGroups.size > 0 ? activeGroups : undefined
                   }
-                  onNodePress={nodeId => setSelectedNodeId(nodeId)}
+                  onNodePress={nodeId => {
+                    setAddCollectionId(undefined)
+                    setSelectedNodeId(nodeId)
+                  }}
                   selectedNodeId={selectedNodeId}
-                  searchQuery={searchQuery}
                   emptyTitle={_(msg`Nothing matches that search`)}
                   emptySubtitle={_(
                     msg`Try another term, or clear the collection filters above.`,
@@ -473,7 +525,20 @@ function CivicTreeInner({
         ) : (
           <FlatList
             style={styles.list}
-            data={collections}
+            data={collections.filter(
+              c =>
+                !searchQuery.trim() ||
+                [
+                  c.name,
+                  c.description,
+                  ...c.items.map(i =>
+                    [i.title, i.policyTitle, i.note].join(' '),
+                  ),
+                ]
+                  .join(' ')
+                  .toLowerCase()
+                  .includes(searchQuery.trim().toLowerCase()),
+            )}
             keyExtractor={item => item.id}
             contentContainerStyle={styles.listContent}
             ListEmptyComponent={
@@ -488,28 +553,6 @@ function CivicTreeInner({
                     links, and notes under your own control.
                   </Trans>
                 </Text>
-              </View>
-            }
-            ListFooterComponent={
-              <View style={{paddingTop: 16}}>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel={_(msg`New collection`)}
-                  accessibilityHint={_(
-                    msg`Opens the form to create a collection`,
-                  )}
-                  onPress={() => newCollectionControl.open()}
-                  style={[
-                    styles.addBtn,
-                    t.atoms.bg_contrast_25,
-                    {borderWidth: 1, borderColor: t.palette.contrast_100},
-                  ]}>
-                  <PlusIcon size="md" style={{color: t.palette.primary_500}} />
-                  <Text
-                    style={[styles.addBtnText, {color: t.palette.primary_500}]}>
-                    <Trans>New collection</Trans>
-                  </Text>
-                </TouchableOpacity>
               </View>
             }
             renderItem={({item}) => (
@@ -562,14 +605,14 @@ function CivicTreeInner({
                 </View>
                 <TouchableOpacity
                   accessibilityRole="button"
-                  accessibilityLabel={_(msg`Delete collection ${item.name}`)}
-                  accessibilityHint={_(
-                    msg`Opens the confirmation to delete this collection`,
+                  accessibilityLabel={_(
+                    msg`Collection options for ${item.name}`,
                   )}
-                  onPress={() => onRequestDelete(item.id)}
+                  accessibilityHint={_(msg`Opens actions for this collection`)}
+                  onPress={() => onPressCollectionActions(item.id)}
                   hitSlop={12}
                   style={styles.deleteBtn}>
-                  <TrashIcon
+                  <EllipsisIcon
                     size="sm"
                     style={{color: t.palette.contrast_400}}
                   />
@@ -612,106 +655,50 @@ function CivicTreeInner({
   )
 }
 
-function EmptyTreeCanvas({
-  hasCollections,
-  onAddItem,
-  onNewCollection,
-}: {
-  hasCollections: boolean
-  onAddItem: () => void
-  onNewCollection: () => void
-}) {
+function EmptyTreeCanvas({hasCollections}: {hasCollections: boolean}) {
   const t = useTheme()
-  const {_} = useLingui()
   return (
     <View
-      style={[styles.emptyTreeCanvas, {borderColor: t.palette.contrast_100}]}>
-      <View style={styles.emptyTreeNode} />
-      <View
-        style={[
-          styles.emptyTreeLine,
-          {backgroundColor: t.palette.contrast_100},
-        ]}
-      />
-      <View style={styles.emptyTreeNodeSmall} />
-      <Text style={[styles.emptyTitle, t.atoms.text]}>
+      style={[
+        a.flex_1,
+        a.p_xl,
+        a.align_center,
+        a.justify_center,
+        a.gap_md,
+        {minHeight: 320},
+      ]}>
+      <BookmarkIcon size="xl" style={{color: t.palette.primary_500}} />
+      <Text style={[a.text_lg, a.font_bold, a.text_center, t.atoms.text]}>
         {hasCollections ? (
           <Trans>Your collections have no items yet</Trans>
         ) : (
-          <Trans>Your personal civic tree is empty</Trans>
+          <Trans>Start your personal civic tree</Trans>
         )}
       </Text>
-      <Text style={[styles.emptySubtitle, t.atoms.text_contrast_medium]}>
+      <Text
+        style={[
+          a.text_sm,
+          a.text_center,
+          t.atoms.text_contrast_medium,
+          {maxWidth: 360},
+        ]}>
         {hasCollections ? (
           <Trans>
-            Items appear here as nodes. Add a topic, policy, evidence card, link
-            or note to a collection to start connecting them.
+            Use Add item above to save a topic, policy, evidence, link or note.
+            Connect items to give your tree its shape.
           </Trans>
         ) : (
           <Trans>
-            Create a collection, then add topics, policies and evidence to start
-            connecting knowledge, votes, and references.
+            Create your first collection above to give your topics, evidence and
+            ideas a home.
           </Trans>
         )}
       </Text>
-      <View style={styles.emptyActions}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={
-            hasCollections ? _(msg`Add item`) : _(msg`New collection`)
-          }
-          accessibilityHint={
-            hasCollections
-              ? _(msg`Starts adding an item to your personal civic tree`)
-              : _(msg`Opens the form to create a collection`)
-          }
-          onPress={hasCollections ? onAddItem : onNewCollection}
-          style={[
-            styles.primaryAction,
-            {backgroundColor: t.palette.primary_500},
-          ]}>
-          <Text style={styles.primaryActionText}>
-            {hasCollections ? (
-              <Trans>Add item</Trans>
-            ) : (
-              <Trans>New collection</Trans>
-            )}
-          </Text>
-        </TouchableOpacity>
-        {hasCollections ? (
-          <TouchableOpacity
-            accessibilityRole="button"
-            accessibilityLabel={_(msg`New collection`)}
-            accessibilityHint={_(msg`Opens the form to create a collection`)}
-            onPress={onNewCollection}
-            style={[
-              styles.secondaryAction,
-              {borderColor: t.palette.contrast_100},
-            ]}>
-            <Text style={[styles.secondaryActionText, t.atoms.text]}>
-              <Trans>New collection</Trans>
-            </Text>
-          </TouchableOpacity>
-        ) : null}
-      </View>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
-  modeSwitch: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 8,
-  },
-  modeBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   contentCenter: {
     flex: 1,
   },
@@ -748,65 +735,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-  emptyTreeCanvas: {
-    minHeight: 420,
-    margin: 16,
-    borderWidth: 1,
-    borderStyle: 'dashed',
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 24,
-  },
-  emptyTreeNode: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: '#8b9bb4',
-    opacity: 0.7,
-  },
-  emptyTreeLine: {
-    width: 2,
-    height: 28,
-    opacity: 0.7,
-  },
-  emptyTreeNodeSmall: {
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: '#8b9bb4',
-    opacity: 0.45,
-    marginBottom: 18,
-  },
-  emptyActions: {
-    flexDirection: 'row',
-    gap: 10,
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    paddingTop: 18,
-  },
-  primaryAction: {
-    minHeight: 40,
-    borderRadius: 8,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  primaryActionText: {
-    color: 'white',
-    fontWeight: '700',
-  },
-  secondaryAction: {
-    minHeight: 40,
-    borderRadius: 8,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  secondaryActionText: {
-    fontWeight: '700',
-  },
   collectionCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -839,40 +767,5 @@ const styles = StyleSheet.create({
   },
   deleteBtn: {
     padding: 4,
-  },
-  addBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    padding: 14,
-    borderRadius: 10,
-    borderStyle: 'dashed',
-  },
-  addBtnText: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  searchBar: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    position: 'relative',
-  },
-  searchInput: {
-    height: 40,
-    borderRadius: 8,
-    borderWidth: 1,
-    paddingHorizontal: 12,
-    paddingRight: 36,
-    fontSize: 15,
-  },
-  clearSearchBtn: {
-    position: 'absolute',
-    right: 24,
-    top: 18,
-    width: 24,
-    height: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 })

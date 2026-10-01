@@ -30,7 +30,6 @@ function mapRelationKindToConnectionType(kind: string): SembleConnectionType {
     case 'depends_on':
       return 'LEADS_TO'
     case 'context_for':
-    case 'duplicates':
     case 'related_to':
     default:
       return 'RELATED'
