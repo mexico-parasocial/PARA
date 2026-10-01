@@ -59,4 +59,12 @@ describe('PARA has no reposts', () => {
     expect(controls).toMatch(/<QuoteButton\b/)
     expect(controls).toMatch(/onHighlight=\{onHighlight\}/)
   })
+  it('votes up/down in the post controls instead of liking', () => {
+    const controls = fs.readFileSync(
+      path.join(SRC, 'components', 'PostControls', 'index.tsx'),
+      'utf8',
+    )
+    expect(controls).toMatch(/<PostVoteButton\b/)
+    expect(controls).not.toMatch(/testID="likeBtn"|usePostLikeMutationQueue/)
+  })
 })

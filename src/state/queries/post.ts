@@ -11,6 +11,7 @@ import {
 import {useToggleMutationQueue} from '#/lib/hooks/useToggleMutationQueue'
 import {updatePostShadow} from '#/state/cache/post-shadow'
 import {type Shadow} from '#/state/cache/types'
+import {INFLUENCE_QUERY_KEY} from '#/state/queries/influence'
 import {
   useAgent,
   useAppviewClient,
@@ -156,6 +157,7 @@ export function usePostLikeMutationQueue(
       }
     },
     onSuccess(finalLikeUri) {
+      void queryClient.invalidateQueries({queryKey: INFLUENCE_QUERY_KEY})
       // finalize
       updatePostShadow(queryClient, postUri, {
         likeUri: finalLikeUri,

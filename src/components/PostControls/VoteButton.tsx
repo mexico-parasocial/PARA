@@ -22,6 +22,7 @@ type Props = {
   onUpvote: () => void
   onDownvote: () => void
   style?: StyleProp<ViewStyle>
+  disabled?: boolean
 }
 
 export const RedditVoteButton = memo(function RedditVoteButton({
@@ -32,6 +33,7 @@ export const RedditVoteButton = memo(function RedditVoteButton({
   onUpvote,
   onDownvote,
   style,
+  disabled,
 }: Props) {
   const {_} = useLingui()
   const playHaptic = useHaptics()
@@ -55,6 +57,7 @@ export const RedditVoteButton = memo(function RedditVoteButton({
       {/* Upvote button */}
       <PostControlButton
         testID="upvoteBtn"
+        disabled={disabled}
         big={big}
         onPress={handleUpvote}
         active={isUpvoted}
@@ -114,6 +117,7 @@ export const RedditVoteButton = memo(function RedditVoteButton({
       {/* Downvote button */}
       <PostControlButton
         testID="downvoteBtn"
+        disabled={disabled}
         big={big}
         onPress={handleDownvote}
         active={isDownvoted}
@@ -128,22 +132,20 @@ export const RedditVoteButton = memo(function RedditVoteButton({
               'Accessibility label for the downvote button, verb form followed by number of downvotes and noun form',
           }),
         )}>
-        <PostControlButtonIcon
-          icon={isDownvoted ? UpArrowFilled : UpArrow}
-          style={[
-            hasBeenToggled && isDownvoted
-              ? {
-                  transform: [
-                    {rotate: '180deg'},
-                    {translateY: -1.6},
-                    {translateX: -0.5},
-                  ],
-                }
-              : {
-                  transform: [{rotate: '180deg'}, {translateX: -0.5}],
+        {/* Rotate a wrapper, not the icon: react-native-svg applies style
+            transforms around the SVG origin, which spins the arrow out of
+            view on native. */}
+        <View style={{transform: [{rotate: '180deg'}]}}>
+          <PostControlButtonIcon
+            icon={isDownvoted ? UpArrowFilled : UpArrow}
+            style={[
+              hasBeenToggled &&
+                isDownvoted && {
+                  transform: [{translateY: -1.6}],
                 },
-          ]}
-        />
+            ]}
+          />
+        </View>
       </PostControlButton>
     </View>
   )

@@ -11,7 +11,6 @@ import {useMinimalShellFooterTransform} from '#/lib/hooks/useMinimalShellTransfo
 import {getCurrentRoute, isTab} from '#/lib/routes/helpers'
 import {makeProfileLink} from '#/lib/routes/links'
 import {type CommonNavigatorParams} from '#/lib/routes/types'
-import {useTotalChatUnread} from '#/state/chat/useTotalChatUnread'
 import {useUnreadNotifications} from '#/state/queries/notifications/unread'
 import {useProfileQuery} from '#/state/queries/profile'
 import {useSession} from '#/state/session'
@@ -42,10 +41,6 @@ import {
   MagnifyingGlass_Filled_Stroke2_Corner0_Rounded as MagnifyingGlassFilled,
   MagnifyingGlass_Stroke2_Corner0_Rounded as MagnifyingGlass,
 } from '#/components/icons/MagnifyingGlass'
-import {
-  Message_Stroke2_Corner0_Rounded as MessageIcon,
-  Message_Stroke2_Corner0_Rounded_Filled as MessageFilledIcon,
-} from '#/components/icons/Message'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
 import {styles} from './BottomBarStyles'
@@ -67,7 +62,6 @@ export function BottomBarWeb() {
   const iconWidth = 26
 
   const notificationCountStr = useUnreadNotifications()
-  const {numUnread: chatUnreadStr} = useTotalChatUnread()
 
   const showSignIn = useCallback(() => {
     closeAllActiveElements()
@@ -129,26 +123,6 @@ export function BottomBarWeb() {
 
             {hasSession && (
               <>
-                <NavItem
-                  routeName="Messages"
-                  href="/messages"
-                  navItem="chat"
-                  notificationCount={chatUnreadStr}>
-                  {({isActive}) => {
-                    const Icon = isActive ? MessageFilledIcon : MessageIcon
-                    return (
-                      <Icon
-                        aria-hidden={true}
-                        width={iconWidth}
-                        style={[
-                          styles.ctrlIcon,
-                          t.atoms.text,
-                          styles.messagesIcon,
-                        ]}
-                      />
-                    )
-                  }}
-                </NavItem>
                 <NavItem routeName="Data" href="/data" navItem="data">
                   {({isActive}) => {
                     const Icon = isActive ? BookFilled : Book

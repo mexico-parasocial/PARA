@@ -18,6 +18,7 @@ import {EventEmitter} from 'eventemitter3'
 
 import BroadcastChannel from '#/lib/broadcast'
 import {resetBadgeCount} from '#/lib/notifications/notifications'
+import {logger} from '#/logger'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
 import {truncateAndInvalidate} from '#/state/queries/util'
 import {useAppviewClient, useSession} from '#/state/session'
@@ -199,6 +200,13 @@ export function Provider({children}: PropsWithChildren<{}>) {
             truncateAndInvalidate(queryClient, RQKEY_NOTIFS('mentions'))
           }
           broadcast.postMessage({event: unreadCountStr})
+        } catch (e) {
+          // Background sync: callers fire and forget, so a rejection here
+          // surfaces as an unhandled-error red screen over the whole app
+          // whenever the server is down or erroring.
+          logger.warn('notifications: unread check failed', {
+            safeMessage: e instanceof Error ? e.message : String(e),
+          })
         } finally {
           isFetchingRef.current = false
         }

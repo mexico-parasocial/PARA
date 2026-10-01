@@ -1,9 +1,7 @@
-import {deleteLike, like} from '@bsky/sdk'
 import {
   type InfiniteData,
+  type QueryClient,
   useInfiniteQuery,
-  useMutation,
-  useQueryClient,
 } from '@tanstack/react-query'
 
 import {
@@ -12,7 +10,6 @@ import {
 } from '#/state/queries/index'
 import {useAgent} from '#/state/session'
 import {type MemeMediaItem} from '#/screens/Dashboard/MemesScreen/types'
-import * as Toast from '#/components/Toast'
 import {app, com} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 
@@ -26,6 +23,11 @@ export interface MemesFeedPage {
 
 function getQueryKey(): [string, string] {
   return [PERSISTED_QUERY_ROOT, RQKEY_ROOT]
+}
+
+/** Refetch meme scores, e.g. after the viewer reacted to one. */
+export function invalidateMemesFeed(queryClient: QueryClient) {
+  return queryClient.invalidateQueries({queryKey: getQueryKey()})
 }
 
 export function useMemesFeedQuery() {
@@ -87,6 +89,7 @@ function toMemeMediaItem(view: MemeView): MemeMediaItem {
   const meta = view.meta
   const author = post.author
   const thumbUri = getMemeThumbnailUri(post.embed)
+  const fullsizeUri = getMemeFullsizeUri(post.embed) ?? thumbUri
 
   // Use the post text as a title fallback.
   const record = post.record as Record<string, unknown> | undefined
@@ -105,6 +108,7 @@ function toMemeMediaItem(view: MemeView): MemeMediaItem {
     state: '',
     party: meta?.party || '',
     thumbUri,
+    fullsizeUri,
     post,
     meta,
   }
@@ -136,35 +140,21 @@ function getMemeThumbnailUri(
   return undefined
 }
 
-export function useMemeVoteMutation() {
-  const agent = useAgent()
-  const queryClient = useQueryClient()
+function getMemeFullsizeUri(
+  embed: app.bsky.feed.defs.PostView['embed'],
+): string | undefined {
+  if (!embed) return undefined
 
-  return useMutation<
-    void,
-    Error,
-    {post: app.bsky.feed.defs.PostView; vote: 1 | -1 | 0}
-  >({
-    mutationFn: async ({post, vote}) => {
-      const likeUri = post.viewer?.like
-      if (vote === 1) {
-        if (!likeUri) {
-          await agent.pdsClient.call(like, {
-            uri: post.uri,
-            cid: post.cid,
-          })
-        }
-      } else {
-        if (likeUri) {
-          await agent.pdsClient.call(deleteLike, likeUri)
-        }
-      }
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({queryKey: getQueryKey()})
-    },
-    onError: error => {
-      Toast.show(`Vote failed: ${error.message}`, {type: 'error'})
-    },
-  })
+  if (bsky.isType(app.bsky.embed.images.view, embed)) {
+    return embed.images[0]?.fullsize
+  }
+
+  if (
+    bsky.isType(app.bsky.embed.recordWithMedia.view, embed) &&
+    bsky.isType(app.bsky.embed.images.view, embed.media)
+  ) {
+    return embed.media.images[0]?.fullsize
+  }
+
+  return undefined
 }

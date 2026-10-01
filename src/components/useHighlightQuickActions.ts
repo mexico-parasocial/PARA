@@ -4,10 +4,14 @@ import {useLingui} from '@lingui/react'
 import {useQueryClient} from '@tanstack/react-query'
 
 import {COMMUNITY_AGENT_PROFILE} from '#/lib/mock-data/community-agent'
+import {rememberCollectionWrite} from '#/state/queries/collection-write-queue'
 import {
   type CivicTreeCollection,
   type CivicTreeItem,
   createCivicTreeItemId,
+  fetchAllCollections,
+  markCollectionsStale,
+  writeCollectionOp,
 } from '#/state/queries/collections'
 import {useAgent} from '#/state/session'
 import {type HighlightActionPayload} from '#/components/HighlightOptionsModal'
@@ -65,21 +69,13 @@ export function useHighlightQuickActions({
         const collection = await getHighlightCollection(agent)
         const item = buildCivicTreeItem(payload, postUri, highlight?.text)
 
-        await agent.appviewClient.call(com.para.collection.updateCollection, {
-          id: collection.id,
-          collection: {
-            id: collection.id,
-            name: collection.name,
-            description: collection.description,
-            color: collection.color,
-            items: [...collection.items, item],
-            relations: collection.relations || [],
-          },
-        } as com.para.collection.updateCollection.$InputBody)
-        void queryClient.invalidateQueries({queryKey: ['collections', 'list']})
-        void queryClient.invalidateQueries({
-          queryKey: ['collections', 'get', collection.id],
-        })
+        /*
+         * Goes through the same serialised write path as the tree screens, so a
+         * highlight saved while the tree is being edited cannot erase it, and
+         * the cache is marked stale under the keys the queries actually use.
+         */
+        await writeCollectionOp(agent, collection.id, {type: 'addItem', item})
+        markCollectionsStale(queryClient, collection.id)
         onDone()
         Toast.show(_(msg`Saved as a Civic Tree note`))
       } catch {
@@ -92,27 +88,31 @@ export function useHighlightQuickActions({
   return {sendToAgent, saveToCivicTree}
 }
 
-async function getHighlightCollection(agent: ReturnType<typeof useAgent>) {
-  const listRes = await agent.appviewClient.call(
-    com.para.collection.listCollections,
-    {},
-  )
-  const listData = listRes as {collections?: CivicTreeCollection[]}
-  const collections = listData.collections || []
+/*
+ * Find-or-create must not race with itself: two highlights saved back to back
+ * both see "no collection yet" and would each create one. Share the lookup.
+ */
+let highlightCollectionLookup: Promise<CivicTreeCollection> | undefined
+
+function getHighlightCollection(agent: ReturnType<typeof useAgent>) {
+  if (!highlightCollectionLookup) {
+    highlightCollectionLookup = findOrCreateHighlightCollection(agent).finally(
+      () => {
+        highlightCollectionLookup = undefined
+      },
+    )
+  }
+  return highlightCollectionLookup
+}
+
+async function findOrCreateHighlightCollection(
+  agent: ReturnType<typeof useAgent>,
+): Promise<CivicTreeCollection> {
+  const collections = await fetchAllCollections(agent)
   const existing = collections.find(
     collection => collection.name === HIGHLIGHT_COLLECTION_NAME,
   )
-
-  if (existing) {
-    const latest = await agent.appviewClient.call(
-      com.para.collection.getCollection,
-      {
-        id: existing.id,
-      },
-    )
-    const latestData = latest as {collection: CivicTreeCollection}
-    return latestData.collection
-  }
+  if (existing) return existing
 
   const created = await agent.appviewClient.call(
     com.para.collection.createCollection,
@@ -123,9 +123,8 @@ async function getHighlightCollection(agent: ReturnType<typeof useAgent>) {
       color: '#3B82F6',
     },
   )
-  const id = created.id
-  return {
-    id,
+  const collection: CivicTreeCollection = {
+    id: created.id,
     name: HIGHLIGHT_COLLECTION_NAME,
     description:
       'Highlighted civic notes with source text, compass color, and annotation context.',
@@ -134,7 +133,10 @@ async function getHighlightCollection(agent: ReturnType<typeof useAgent>) {
     relations: [],
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),
-  } satisfies CivicTreeCollection
+  }
+  // The read model may not have indexed it yet; base the first write on this.
+  rememberCollectionWrite(collection.id, collection)
+  return collection
 }
 
 function buildAgentMessage(payload: HighlightActionPayload, postUri: string) {
