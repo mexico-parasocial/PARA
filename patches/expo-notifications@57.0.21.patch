@@ -1,5 +1,5 @@
 diff --git a/android/build.gradle b/android/build.gradle
-index 18a1c56507a1c0da7eb3b6e1f80a1f25a0a8f171..305e10998b99d0c0256930de669e51b5ba4c98c4 100644
+index c275f9d..2fa456d 100644
 --- a/android/build.gradle
 +++ b/android/build.gradle
 @@ -43,6 +43,7 @@ dependencies {
@@ -11,7 +11,7 @@ index 18a1c56507a1c0da7eb3b6e1f80a1f25a0a8f171..305e10998b99d0c0256930de669e51b5
    if (project.findProject(':expo-modules-test-core')) {
      testImplementation project(':expo-modules-test-core')
 diff --git a/android/src/main/java/expo/modules/notifications/notifications/interfaces/INotificationContent.kt b/android/src/main/java/expo/modules/notifications/notifications/interfaces/INotificationContent.kt
-index 7b99e6cf8ee1b0de07a79fe4486c49ff25e489c6..45a450da1c5fff13461b77d3a7b20d0217035687 100644
+index 7b99e6c..45a450d 100644
 --- a/android/src/main/java/expo/modules/notifications/notifications/interfaces/INotificationContent.kt
 +++ b/android/src/main/java/expo/modules/notifications/notifications/interfaces/INotificationContent.kt
 @@ -15,6 +15,7 @@ import org.json.JSONObject
@@ -23,7 +23,7 @@ index 7b99e6cf8ee1b0de07a79fe4486c49ff25e489c6..45a450da1c5fff13461b77d3a7b20d02
    val text: String?
    val subText: String?
 diff --git a/android/src/main/java/expo/modules/notifications/notifications/model/NotificationContent.java b/android/src/main/java/expo/modules/notifications/notifications/model/NotificationContent.java
-index 191b64e101c03eeec37920c2d6582bfd50d8b902..fe8b3c51d6f7c661484467f0d820836145824676 100644
+index 191b64e..fe8b3c5 100644
 --- a/android/src/main/java/expo/modules/notifications/notifications/model/NotificationContent.java
 +++ b/android/src/main/java/expo/modules/notifications/notifications/model/NotificationContent.java
 @@ -35,6 +35,7 @@ import kotlin.coroutines.Continuation;
@@ -83,7 +83,7 @@ index 191b64e101c03eeec37920c2d6582bfd50d8b902..fe8b3c51d6f7c661484467f0d8208361
        content.mTitle = title;
        return this;
 diff --git a/android/src/main/java/expo/modules/notifications/notifications/model/NotificationData.kt b/android/src/main/java/expo/modules/notifications/notifications/model/NotificationData.kt
-index 3af254c6b5fecb8f850c023422db4d80bd4815a5..3c77e9d774f2d8fcfa5d34dc7b088958676cba71 100644
+index 3af254c..3c77e9d 100644
 --- a/android/src/main/java/expo/modules/notifications/notifications/model/NotificationData.kt
 +++ b/android/src/main/java/expo/modules/notifications/notifications/model/NotificationData.kt
 @@ -11,6 +11,9 @@ import org.json.JSONObject
@@ -97,7 +97,7 @@ index 3af254c6b5fecb8f850c023422db4d80bd4815a5..3c77e9d774f2d8fcfa5d34dc7b088958
      get() = data["title"]
  
 diff --git a/android/src/main/java/expo/modules/notifications/notifications/model/RemoteNotificationContent.kt b/android/src/main/java/expo/modules/notifications/notifications/model/RemoteNotificationContent.kt
-index cdbc237948ae9de7e85aeb3902e724c44557453c..6d970066decfa47d68299a5bd8febd953f9c2060 100644
+index cdbc237..6d97006 100644
 --- a/android/src/main/java/expo/modules/notifications/notifications/model/RemoteNotificationContent.kt
 +++ b/android/src/main/java/expo/modules/notifications/notifications/model/RemoteNotificationContent.kt
 @@ -31,6 +31,8 @@ class RemoteNotificationContent(private val remoteMessage: RemoteMessage) : INot
@@ -110,7 +110,7 @@ index cdbc237948ae9de7e85aeb3902e724c44557453c..6d970066decfa47d68299a5bd8febd95
  
    override val text = remoteMessage.notification?.body ?: notificationData.message
 diff --git a/android/src/main/java/expo/modules/notifications/notifications/presentation/builders/ExpoNotificationBuilder.kt b/android/src/main/java/expo/modules/notifications/notifications/presentation/builders/ExpoNotificationBuilder.kt
-index 610d3039cefd589647538ad8ba14587d29fab338..3655fc3121ebc0a97820d9653b61a90bd7c34fc2 100644
+index 610d303..3655fc3 100644
 --- a/android/src/main/java/expo/modules/notifications/notifications/presentation/builders/ExpoNotificationBuilder.kt
 +++ b/android/src/main/java/expo/modules/notifications/notifications/presentation/builders/ExpoNotificationBuilder.kt
 @@ -101,6 +101,9 @@ open class ExpoNotificationBuilder(
@@ -124,7 +124,7 @@ index 610d3039cefd589647538ad8ba14587d29fab338..3655fc3121ebc0a97820d9653b61a90b
      builder.setContentText(content.text)
      builder.setSubText(content.subText)
 diff --git a/android/src/main/java/expo/modules/notifications/service/delegates/FirebaseMessagingDelegate.kt b/android/src/main/java/expo/modules/notifications/service/delegates/FirebaseMessagingDelegate.kt
-index eecdae82e99d2997687e3f3e199c94c3aeffbfe0..216891213fb2eac5a9a382b4f075eadccdcfeb5a 100644
+index eecdae8..2168912 100644
 --- a/android/src/main/java/expo/modules/notifications/service/delegates/FirebaseMessagingDelegate.kt
 +++ b/android/src/main/java/expo/modules/notifications/service/delegates/FirebaseMessagingDelegate.kt
 @@ -3,6 +3,9 @@ package expo.modules.notifications.service.delegates

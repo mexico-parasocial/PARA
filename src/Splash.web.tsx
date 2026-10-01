@@ -3,14 +3,12 @@
  * already. Once the React tree mounts, this is what gets rendered first, until
  * the app is ready to go.
  */
+/* eslint-disable bsky-internal/avoid-unwrapped-text -- This web-only splash mirrors HTML and renders before text providers are available. */
 
 import {useEffect, useRef, useState} from 'react'
-import Svg, {Path} from 'react-native-svg'
 
+import {Logomark} from '#/view/icons/Logomark'
 import {atoms as a, flattenToCSS} from '#/alf'
-
-const size = 100
-const ratio = 57 / 64
 
 export function Splash({
   isReady,
@@ -20,48 +18,64 @@ export function Splash({
 }>) {
   const [isAnimationComplete, setIsAnimationComplete] = useState(false)
   const splashRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
 
   // hide the static one that's baked into the HTML - gets replaced by our React version below
   useEffect(() => {
     // double rAF ensures that the React version gets painted first
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
+    let frame = requestAnimationFrame(() => {
+      frame = requestAnimationFrame(() => {
         const splash = document.getElementById('splash')
         if (splash) {
           splash.remove()
         }
       })
     })
+
+    return () => cancelAnimationFrame(frame)
   }, [])
 
   // when ready, we fade/scale out
   useEffect(() => {
     if (!isReady) return
 
-    const reduceMotion = window.matchMedia(
+    const reduceMotion = window.matchMedia?.(
       '(prefers-reduced-motion: reduce)',
     ).matches
     const node = splashRef.current
-    if (!node || reduceMotion) {
+    const content = contentRef.current
+    if (!node?.animate || !content?.animate || reduceMotion) {
       setIsAnimationComplete(true)
       return
     }
 
-    const animation = node.animate(
-      [
-        {opacity: 1, transform: 'scale(1)'},
-        {opacity: 0, transform: 'scale(1.5)'},
-      ],
-      {
+    const animations: Animation[] = []
+    try {
+      const options: KeyframeAnimationOptions = {
         duration: 300,
         easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
         fill: 'forwards',
-      },
-    )
-    animation.onfinish = () => setIsAnimationComplete(true)
+      }
+      const fade = node.animate([{opacity: 1}, {opacity: 0}], options)
+      animations.push(fade)
+      animations.push(
+        content.animate(
+          [{transform: 'scale(1)'}, {transform: 'scale(1.5)'}],
+          options,
+        ),
+      )
+      fade.onfinish = () => setIsAnimationComplete(true)
+    } catch {
+      // Animation failures must never keep the app behind the splash.
+      animations.forEach(animation => animation.cancel())
+      setIsAnimationComplete(true)
+    }
 
     return () => {
-      animation.cancel()
+      animations.forEach(animation => {
+        animation.onfinish = null
+        animation.cancel()
+      })
     }
   }, [isReady])
 
@@ -72,24 +86,36 @@ export function Splash({
       {!isAnimationComplete && (
         <div
           ref={splashRef}
+          className="para-splash"
+          data-ready={isReady}
           style={flattenToCSS([
             a.fixed,
             a.inset_0,
             a.flex,
             a.align_center,
             a.justify_center,
-            // to compensate for the `top: -50px` below
-            {transformOrigin: 'center calc(50% - 50px)'},
+            {pointerEvents: isReady ? 'none' : 'auto'},
           ])}>
-          <Svg
-            fill="none"
-            viewBox="0 0 64 57"
-            style={[a.relative, {width: size, height: size * ratio, top: -50}]}>
-            <Path
-              fill="#006AFF"
-              d="M13.873 3.805C21.21 9.332 29.103 20.537 32 26.55v15.882c0-.338-.13.044-.41.867-1.512 4.456-7.418 21.847-20.923 7.944-7.111-7.32-3.819-14.64 9.125-16.85-7.405 1.264-15.73-.825-18.014-9.015C1.12 23.022 0 8.51 0 6.55 0-3.268 8.579-.182 13.873 3.805ZM50.127 3.805C42.79 9.332 34.897 20.537 32 26.55v15.882c0-.338.13.044.41.867 1.512 4.456 7.418 21.847 20.923 7.944 7.111-7.32 3.819-14.64-9.125-16.85 7.405 1.264 15.73-.825 18.014-9.015C62.88 23.022 64 8.51 64 6.55c0-9.818-8.578-6.732-13.873-2.745Z"
-            />
-          </Svg>
+          <div ref={contentRef} className="splash-content">
+            <div className="splash-logo">
+              <Logomark
+                allowVariants={false}
+                width={40}
+                fill="var(--text)"
+                aria-hidden
+              />
+              <span className="splash-logo-text">PARA</span>
+            </div>
+            <div className="splash-tagline">
+              Real people. Real conversations.
+            </div>
+            <div
+              className="splash-loader"
+              role="progressbar"
+              aria-label="Loading PARA">
+              <div className="splash-loader-bar" />
+            </div>
+          </div>
         </div>
       )}
     </>

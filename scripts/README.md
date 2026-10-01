@@ -4,6 +4,15 @@
 
 Updates the extensions in `/modules` with the current iOS/Android project changes.
 
+## generate-lexicons.mjs
+
+`pnpm lexicons:generate` builds schemas in a temporary directory, then publishes
+them into `src/lexicons`. It preserves unchanged files and watched directories
+so generation during a running Metro session does not delete its module tree.
+Changed files are replaced atomically; obsolete generated schemas are removed.
+
+Run its regression checks with `node --test scripts/generate-lexicons.test.mjs`.
+
 ## AT Protocol client helper (`lib/para-client.mjs`)
 
 Shared login/client factory for the seed & verification utilities below. All

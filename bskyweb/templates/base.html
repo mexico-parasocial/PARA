@@ -21,6 +21,13 @@
       href="{{ staticCDNHost }}/static/media/InterVariable.c504db5c06caaf7cdfba.woff2"
       crossorigin />
 
+    <link
+      rel="preload"
+      as="font"
+      type="font/ttf"
+      href="{{ staticCDNHost }}/static/media/Cinzel-SemiBold.8b57978500270d0d95f7.ttf"
+      crossorigin />
+
     <style>
       /**
      * Minimum styles required to render splash.
@@ -29,6 +36,15 @@
      *
      * THIS NEEDS TO BE DUPLICATED IN `bskyweb/templates/base.html`
      */
+      @font-face {
+        font-family: 'Cinzel';
+        src: url('{{ staticCDNHost }}/static/media/Cinzel-SemiBold.8b57978500270d0d95f7.ttf')
+          format('truetype');
+        font-weight: 600;
+        font-style: normal;
+        font-display: swap;
+      }
+
       @font-face {
         font-family: 'InterVariable';
         src: url('{{ staticCDNHost }}/static/media/InterVariable.c504db5c06caaf7cdfba.woff2')
@@ -119,7 +135,7 @@
         --backgroundLight: #2c3a4e;
       }
 
-      #splash {
+      .para-splash {
         display: flex;
         position: fixed;
         top: 0;
@@ -129,9 +145,10 @@
         align-items: center;
         justify-content: center;
         background-color: var(--background);
+        z-index: 1000;
       }
 
-      #splash .splash-content {
+      .para-splash .splash-content {
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -140,7 +157,7 @@
         top: -40px;
       }
 
-      #splash .splash-logo {
+      .para-splash .splash-logo {
         display: flex;
         flex-direction: row;
         align-items: center;
@@ -148,22 +165,22 @@
         margin-bottom: 16px;
       }
 
-      #splash .splash-logo img {
+      .para-splash .splash-logo svg {
         width: 40px;
         height: 40px;
-        object-fit: contain;
+        fill: var(--text);
       }
 
-      #splash .splash-logo-text {
-        font-family: InterVariable, Georgia, 'Times New Roman', serif;
+      .para-splash .splash-logo-text {
+        font-family: 'Cinzel', Georgia, 'Times New Roman', serif;
         font-size: 22px;
-        font-weight: 700;
-        letter-spacing: 2px;
+        font-weight: 600;
+        letter-spacing: 0.4px;
         color: var(--text);
         padding-top: 2px;
       }
 
-      #splash .splash-tagline {
+      .para-splash .splash-tagline {
         font-size: 14px;
         color: var(--text);
         opacity: 0.7;
@@ -171,7 +188,7 @@
         margin-bottom: 16px;
       }
 
-      #splash .splash-loader {
+      .para-splash .splash-loader {
         width: 140px;
         height: 2px;
         border-radius: 1px;
@@ -179,11 +196,33 @@
         background-color: var(--backgroundLight);
       }
 
-      #splash .splash-loader-bar {
+      .para-splash .splash-loader-bar {
         width: 30%;
         height: 100%;
         border-radius: 1px;
         background-color: var(--text);
+        animation: para-splash-loading 1.2s ease-in-out infinite;
+      }
+
+      @keyframes para-splash-loading {
+        from {
+          transform: translateX(-100%);
+        }
+        to {
+          transform: translateX(333.333%);
+        }
+      }
+
+      .para-splash[data-ready='true'] .splash-loader-bar {
+        animation: none;
+        transform: translateX(116.667%);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .para-splash .splash-loader-bar {
+          animation: none;
+          transform: translateX(116.667%);
+        }
       }
 
       /**
@@ -238,14 +277,27 @@
   <body>
     {%- block body_all %}
     <div id="root">
-      <div id="splash">
+      <div id="splash" class="para-splash">
         <div class="splash-content">
           <div class="splash-logo">
-            <img src="{{ staticCDNHost }}/static/logo.png" alt="PARA" />
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              aria-hidden="true"
+              viewBox="0 0 2048 2048">
+              <path
+                d="M155 155c-.4 6 .2 788.5.5 788.9.6.5 445.9.8 469.3.3l13.2-.3V646l-95.7-.2-95.8-.3v-199h201l.1 94c.1 51.7.2 94.8.3 95.7.1 1.7 7.9 1.8 149.1 1.8h149l-.2-241.6-.3-241.7-395.2-.1c-217.4 0-395.3.1-395.3.4m694.8 243.2-.3 146.3-53.7.3-53.8.2v-72.2c0-39.8-.2-81.3-.4-92.3s-.5-22.4-.5-25.3l-.1-5.2H350v390h195v108H251V252h599zm252.2-2V638h299V446l100.3.2 100.2.3.3 99.7.2 99.8h-192v298.5h241.8l241.7-.1V154.9l-395.8-.2-395.7-.2zM1797.3 550l-.3 297.5h-293.5v-107l97.3-.3 97.2-.2V350h-391l-.1 71.7c-.1 39.5-.1 82.4 0 95.3 0 12.9-.2 24.5-.4 25.8l-.5 2.2-53.8-.2-53.7-.3-.3-145c-.1-79.8 0-145.6.3-146.3.3-1 60.8-1.2 299.7-1l299.3.3z" />
+              <path
+                d="M748 1024v276h552V748H748zm455.1-180.1c1.5.1 1.6 14.7 1.3 177.8-.1 97.8-.3 178.8-.3 180l-.1 2.3H844V844.1l4.8-.3c4.2-.3 350.3-.2 354.3.1" />
+              <path
+                d="M937 1024v87h174l.2-80.8c0-44.4.1-81.6.1-82.7s-.1-3.9-.2-6.3l-.1-4.2H937zm-782 79.2c-.3 1.6-.5 776.5-.3 782.5l.5 8.3H946v-484H646l-.2 95.7-.3 95.8h-199v-197l95.8-.3 95.7-.2v-301H396.5c-132.8 0-241.5.1-241.5.2m390 150.3v53.5l-2.2.1c-1.3 0-45 .1-97.3.2l-95 .2v390.6l194.5-.1h195.8c.9 0 1.2-20.2 1.2-97.5V1503h106.9l.3 10.2c.2 5.7.3 71.7.3 146.8v136.5l-299.3.3-299.2.2v-597h294zm865 0V1404l95.8.2 95.7.3.3 98.7.2 98.8h-200v-192h-300v484l395.8-.2 395.7-.3.3-395.3.2-395.2h-484zm387 245V1797h-598v-294h107l.2 97.7.3 97.7 9-.1c5 0 93-.1 195.8-.2l186.7-.1v-390.5h-95.2c-52.4 0-96.3-.2-97.5-.4l-2.3-.3V1200h294z" />
+            </svg>
             <span class="splash-logo-text">PARA</span>
           </div>
           <div class="splash-tagline">Real people. Real conversations.</div>
-          <div class="splash-loader">
+          <div
+            class="splash-loader"
+            role="progressbar"
+            aria-label="Loading PARA">
             <div class="splash-loader-bar"></div>
           </div>
         </div>
