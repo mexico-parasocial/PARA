@@ -15,6 +15,7 @@ import {s} from '#/lib/styles'
 import {logger} from '#/logger'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
 import {useNotificationFeedQuery} from '#/state/queries/notifications/feed'
+import {getNotificationFeedItems} from '#/state/queries/notifications/feed-items'
 import {type FeedNotification} from '#/state/queries/notifications/types'
 import {EmptyState} from '#/view/com/util/EmptyState'
 import {ErrorMessage} from '#/view/com/util/error/ErrorMessage'
@@ -78,9 +79,7 @@ export function NotificationFeed({
       if (isEmpty) {
         arr = arr.concat([EMPTY_FEED_ITEM])
       } else if (data) {
-        for (const page of data?.pages) {
-          arr = arr.concat(page.items)
-        }
+        arr = getNotificationFeedItems(data.pages)
       }
       if (isError && !isEmpty) {
         arr = arr.concat([LOAD_MORE_ERROR_ITEM])

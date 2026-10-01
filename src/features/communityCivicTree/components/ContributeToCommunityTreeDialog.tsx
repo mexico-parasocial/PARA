@@ -11,11 +11,13 @@ import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import * as Dialog from '#/components/Dialog'
 import * as Toast from '#/components/Toast'
+import {BOOK_SOURCE_TYPE, bookDetailsMetadata} from '#/features/civicTree/books'
 import {CIVIC_TREE_COPY, CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
 import {
   CIVIC_TREE_SOURCE_TYPES,
   inferCivicTreeSourceType,
 } from '#/features/civicTree/sourceTypes'
+import {CommunityPicker} from '#/features/communityCivicTree/components/CommunityPicker'
 
 /*
  * A contribution can originate from a record in the network (an AT-URI), a page
@@ -29,6 +31,8 @@ export function ContributeToCommunityTreeDialog({
   title,
   category,
   defaultSourceType,
+  author,
+  publishedYear,
 }: {
   control: Dialog.DialogControlProps
   sourceUri?: string
@@ -37,6 +41,10 @@ export function ContributeToCommunityTreeDialog({
   category?: string
   /** Overrides the inferred type, e.g. `topic` for a topic item. */
   defaultSourceType?: string
+  /** A book's author; only sent when the type is `book`. */
+  author?: string
+  /** A book's first publication year; only sent when the type is `book`. */
+  publishedYear?: number
 }) {
   return (
     <Dialog.Outer control={control} testID="contributeToCommunityTreeDialog">
@@ -48,6 +56,8 @@ export function ContributeToCommunityTreeDialog({
         title={title}
         category={category}
         defaultSourceType={defaultSourceType}
+        author={author}
+        publishedYear={publishedYear}
       />
     </Dialog.Outer>
   )
@@ -60,6 +70,8 @@ function ContributeToCommunityTreeDialogInner({
   title,
   category,
   defaultSourceType,
+  author,
+  publishedYear,
 }: {
   control: Dialog.DialogControlProps
   sourceUri?: string
@@ -67,6 +79,8 @@ function ContributeToCommunityTreeDialogInner({
   title: string
   category?: string
   defaultSourceType?: string
+  author?: string
+  publishedYear?: number
 }) {
   const t = useTheme()
   const navigation = useNavigation<NavigationProp>()
@@ -120,6 +134,9 @@ function ContributeToCommunityTreeDialogInner({
           contributionContext: 'community_civic_tree',
           origin: 'personal_civic_tree_item',
           personalCollectionShared: false,
+          ...(sourceType === BOOK_SOURCE_TYPE
+            ? bookDetailsMetadata({author, publishedYear})
+            : {}),
         }),
       },
       {
@@ -177,34 +194,11 @@ function ContributeToCommunityTreeDialogInner({
             <Trans>Únete a una comunidad para aportar a su árbol cívico.</Trans>
           </Text>
         ) : (
-          activeBoards.map(board => {
-            const selected = board.uri === selectedCommunityUri
-            return (
-              <TouchableOpacity
-                key={board.uri}
-                accessibilityRole="button"
-                accessibilityLabel={`Seleccionar ${board.name}`}
-                accessibilityHint="Elige la comunidad donde se publicará este aporte"
-                accessibilityState={{selected}}
-                onPress={() => setSelectedCommunityUri(board.uri)}
-                style={[
-                  styles.communityRow,
-                  t.atoms.bg_contrast_25,
-                  {
-                    borderColor: selected
-                      ? t.palette.primary_500
-                      : t.palette.contrast_100,
-                  },
-                ]}>
-                <Text style={[styles.communityName, t.atoms.text]}>
-                  {board.name}
-                </Text>
-                {selected ? (
-                  <Text style={{color: t.palette.primary_500}}>✓</Text>
-                ) : null}
-              </TouchableOpacity>
-            )
-          })
+          <CommunityPicker
+            boards={activeBoards}
+            selectedUri={selectedCommunityUri}
+            onSelect={setSelectedCommunityUri}
+          />
         )}
       </View>
 
@@ -349,21 +343,6 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: 13,
     fontWeight: '800',
-  },
-  communityRow: {
-    minHeight: 44,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  communityName: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '700',
   },
   noteInput: {
     minHeight: 82,

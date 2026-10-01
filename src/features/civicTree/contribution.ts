@@ -22,6 +22,10 @@ export type ContributionDraft = {
   /** http(s) URL, when the item references a page on the web. */
   sourceUrl?: string
   sourceType: string
+  /** A book's author, carried into the community card's metadata. */
+  author?: string
+  /** A book's first publication year, carried into the card's metadata. */
+  publishedYear?: number
   /** Shown in the preview so the user sees what they are sharing. */
   category?: string
 }
@@ -47,12 +51,13 @@ export function contributionFromItem(item: CivicTreeItem): ContributionDraft {
 
   /*
    * A topic is a subject rather than an artifact, so it keeps its own type
-   * instead of being guessed at from a URL it does not have. Everything else
-   * infers from whatever reference it carries.
+   * instead of being guessed at from a URL it does not have. A book keeps its
+   * type too: its title is not a URL, so inference would call it an article.
+   * Everything else infers from whatever reference it carries.
    */
   const sourceType =
-    kind === 'topic'
-      ? 'topic'
+    kind === 'topic' || kind === 'book'
+      ? kind
       : inferCivicTreeSourceType(
           [sourceUrl, sourceUri, item.policyCategory, title]
             .filter(Boolean)
@@ -64,6 +69,8 @@ export function contributionFromItem(item: CivicTreeItem): ContributionDraft {
     sourceUri,
     sourceUrl,
     sourceType,
+    author: kind === 'book' ? item.sourceLabel?.trim() || undefined : undefined,
+    publishedYear: kind === 'book' ? item.publishedYear : undefined,
     category: item.policyCategory || undefined,
   }
 }

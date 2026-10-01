@@ -103,6 +103,7 @@ import {ModeratorDashboardScreen} from '#/screens/Communities/ModeratorDashboard
 import {MyCommunitiesScreen} from '#/screens/Communities/MyCommunitiesScreen'
 import {DiscourseAnalysisScreen} from '#/screens/Dashboard/DiscourseAnalysis'
 import {DocumentsScreen} from '#/screens/Dashboard/DocumentsScreen'
+import {MatterDetailsScreen} from '#/screens/Dashboard/MatterDetails'
 import {MemesScreen} from '#/screens/Dashboard/MemesScreen'
 import {PoliciesDashboard} from '#/screens/Dashboard/PoliciesAndMatters'
 import {PolicyDetailsScreen} from '#/screens/Dashboard/PolicyDetails'
@@ -172,6 +173,7 @@ import {ActivityPrivacySettingsScreen} from '#/screens/Settings/ActivityPrivacyS
 import {AppearanceSettingsScreen} from '#/screens/Settings/AppearanceSettings'
 import {AppIconSettingsScreen} from '#/screens/Settings/AppIconSettings'
 import {AppPasswordsScreen} from '#/screens/Settings/AppPasswords'
+import {BetaFeaturesSettingsScreen} from '#/screens/Settings/BetaFeaturesSettings'
 import {ContentAndMediaSettingsScreen} from '#/screens/Settings/ContentAndMediaSettings'
 import {ExternalMediaPreferencesScreen} from '#/screens/Settings/ExternalMediaPreferences'
 import {FindContactsSettingsScreen} from '#/screens/Settings/FindContactsSettings'
@@ -660,6 +662,14 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
         }}
       />
       <Stack.Screen
+        name="BetaFeaturesSettings"
+        getComponent={() => BetaFeaturesSettingsScreen}
+        options={{
+          title: title(msg`Beta features`),
+          requireAuth: true,
+        }}
+      />
+      <Stack.Screen
         name="AppIconSettings"
         getComponent={() => AppIconSettingsScreen}
         options={{
@@ -895,7 +905,7 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
       <Stack.Screen
         name="CommunityDirectory"
         getComponent={() => CommunityDirectoryScreen}
-        options={{title: title(msg`Community Directory`), requireAuth: true}}
+        options={{title: title(msg`Community activities`), requireAuth: true}}
       />
       <Stack.Screen
         name="CivicTree"
@@ -1230,6 +1240,11 @@ function DataTabNavigator() {
         options={{title: 'Policy Details'}}
       />
       <DataTab.Screen
+        name="MatterDetails"
+        getComponent={() => MatterDetailsScreen}
+        options={{title: 'Matter Details'}}
+      />
+      <DataTab.Screen
         name="Representatives"
         getComponent={() => RepresentativesScreen}
         options={{title: 'Representatives'}}
@@ -1369,6 +1384,11 @@ const FlatNavigator = ({
         name="PolicyDetails"
         getComponent={() => PolicyDetailsScreen}
         options={{title: title(msg`Policy Details`)}}
+      />
+      <Flat.Screen
+        name="MatterDetails"
+        getComponent={() => MatterDetailsScreen}
+        options={{title: title(msg`Matter Details`)}}
       />
       {commonScreens(Flat, numUnread)}
     </Flat.Navigator>

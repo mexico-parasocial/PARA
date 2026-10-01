@@ -5,11 +5,12 @@ export interface CivicTreeItem {
    * a URI or URL; a `topic` names a subject those artifacts are about and has
    * no target of its own.
    */
-  kind?: 'policy' | 'post' | 'link' | 'note' | 'evidence' | 'topic'
+  kind?: 'policy' | 'post' | 'link' | 'note' | 'evidence' | 'topic' | 'book'
   title?: string
   description?: string
   url?: string
   sourceUri?: string
+  /** Where the item came from; for a `book`, its author. */
   sourceLabel?: string
   policyUri?: string
   policyCid?: string
@@ -22,6 +23,8 @@ export interface CivicTreeItem {
    * the same key, which is what makes personal trees comparable later.
    */
   flairId?: string
+  /** For a `book`, the year it was first published. */
+  publishedYear?: number
   note?: string
   addedAt: string
 }
@@ -35,7 +38,6 @@ export interface CivicTreeRelation {
     | 'opposes'
     | 'evidence_for'
     | 'context_for'
-    | 'duplicates'
     | 'depends_on'
     | 'related_to'
   note?: string

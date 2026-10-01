@@ -17,9 +17,7 @@ import {useNavigationTabState} from '#/lib/hooks/useNavigationTabState'
 import {clamp} from '#/lib/numbers'
 import {getTabState, TabState} from '#/lib/routes/helpers'
 import {type SharedNavTab, TAB_TO_NAV_ITEM} from '#/lib/routes/tab-to-nav-item'
-import {useTotalChatUnread} from '#/state/chat/useTotalChatUnread'
 import {emitSoftReset} from '#/state/events'
-import {useUpdateAllRead} from '#/state/queries/messages/update-all-read'
 import {useUnreadNotifications} from '#/state/queries/notifications/unread'
 import {useProfileQuery} from '#/state/queries/profile'
 import {useSession} from '#/state/session'
@@ -34,27 +32,22 @@ import {Button, ButtonText} from '#/components/Button'
 import {useDialogControl} from '#/components/Dialog'
 import {SwitchAccountDialog} from '#/components/dialogs/SwitchAccount'
 import {
+  Book_Filled_Corner0_Rounded as BookFilled,
+  Book_Stroke2_Corner0_Rounded as Book,
+} from '#/components/icons/Base'
+import {
   Bell_Filled_Corner0_Rounded as BellFilled,
   Bell_Stroke2_Corner0_Rounded as Bell,
 } from '#/components/icons/Bell'
-import {CircleCheck_Stroke2_Corner0_Rounded as CircleCheckIcon} from '#/components/icons/CircleCheck'
 import {
   HomeOpen_Filled_Corner0_Rounded as HomeFilled,
   HomeOpen_Stoke2_Corner0_Rounded as Home,
 } from '#/components/icons/HomeOpen'
-import {Inbox_Stroke2_Corner2_Rounded as InboxIcon} from '#/components/icons/Inbox'
 import {
   MagnifyingGlass_Filled_Stroke2_Corner0_Rounded as MagnifyingGlassFilled,
   MagnifyingGlass_Stroke2_Corner0_Rounded as MagnifyingGlass,
 } from '#/components/icons/MagnifyingGlass'
-import {
-  Message_Stroke2_Corner0_Rounded as Message,
-  Message_Stroke2_Corner0_Rounded_Filled as MessageFilled,
-} from '#/components/icons/Message'
-import * as Menu from '#/components/Menu'
-import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
-import {useAgeAssurance} from '#/ageAssurance'
 import {useAnalytics} from '#/analytics'
 import {useActorStatus} from '#/features/liveNow'
 import {useDemoMode} from '#/storage/hooks/demo-mode'
@@ -67,18 +60,15 @@ export function BottomBar({navigation}: BottomTabBarProps) {
   const ax = useAnalytics()
   const safeAreaInsets = useSafeAreaInsets()
   const {footerHeight} = useShellLayout()
-  const {isAtHome, isAtSearch, isAtNotifications, isAtMyProfile, isAtMessages} =
+  const {isAtHome, isAtSearch, isAtNotifications, isAtMyProfile, isAtData} =
     useNavigationTabState()
   const numUnreadNotifications = useUnreadNotifications()
-  const numUnreadMessages = useTotalChatUnread()
-  const aa = useAgeAssurance()
   const footerMinimalShellTransform = useMinimalShellFooterTransform()
   const {data: profile} = useProfileQuery({did: currentAccount?.did})
   const {requestSwitchToAccount} = useLoggedOutViewControls()
   const closeAllActiveElements = useCloseAllActiveElements()
   const dedupe = useDedupe()
   const accountSwitchControl = useDialogControl()
-  const messagesMenuControl = Menu.useMenuControl()
   const playHaptic = useHaptics()
   const hideBorder = useHideBottomBarBorder()
   const iconWidth = 28
@@ -138,20 +128,14 @@ export function BottomBar({navigation}: BottomTabBarProps) {
   const onPressProfile = useCallback(() => {
     onPressTab('MyProfile')
   }, [onPressTab])
-  const onPressMessages = useCallback(() => {
-    onPressTab('Messages')
+  const onPressData = useCallback(() => {
+    onPressTab('Data')
   }, [onPressTab])
 
   const onLongPressProfile = useCallback(() => {
     playHaptic()
     accountSwitchControl.open()
   }, [accountSwitchControl, playHaptic])
-
-  const onLongPressMessages = useCallback(() => {
-    if (aa.flags.chatDisabled) return
-    playHaptic()
-    messagesMenuControl.open()
-  }, [aa.flags.chatDisabled, messagesMenuControl, playHaptic])
 
   const [demoMode] = useDemoMode()
   const {isActive: live} = useActorStatus(profile)
@@ -160,7 +144,6 @@ export function BottomBar({navigation}: BottomTabBarProps) {
   return (
     <>
       <SwitchAccountDialog control={accountSwitchControl} />
-      <MessagesTabMenu control={messagesMenuControl} />
       <Animated.View
         style={[
           styles.bottomBar,
@@ -217,39 +200,25 @@ export function BottomBar({navigation}: BottomTabBarProps) {
               accessibilityHint=""
             />
             <Btn
-              testID="bottomBarMessagesBtn"
+              testID="bottomBarDataBtn"
               icon={
-                isAtMessages ? (
-                  <MessageFilled
+                isAtData ? (
+                  <BookFilled
                     width={iconWidth - 1}
                     style={[styles.ctrlIcon, t.atoms.text, styles.feedsIcon]}
                   />
                 ) : (
-                  <Message
+                  <Book
                     width={iconWidth - 1}
                     style={[styles.ctrlIcon, t.atoms.text, styles.feedsIcon]}
                   />
                 )
               }
-              onPress={onPressMessages}
-              onLongPress={onLongPressMessages}
-              notificationCount={
-                aa.flags.chatDisabled ? undefined : numUnreadMessages.numUnread
-              }
-              hasNew={aa.flags.chatDisabled ? false : numUnreadMessages.hasNew}
+              onPress={onPressData}
               accessible={true}
               accessibilityRole="tab"
-              accessibilityLabel={l`Chat`}
-              accessibilityHint={
-                !aa.flags.chatDisabled && numUnreadMessages.count > 0
-                  ? l({
-                      message: plural(numUnreadMessages.numUnread ?? 0, {
-                        one: '# unread item',
-                        other: '# unread items',
-                      }),
-                    })
-                  : ''
-              }
+              accessibilityLabel={l`Data`}
+              accessibilityHint=""
             />
             <Btn
               testID="bottomBarNotificationsBtn"
@@ -431,52 +400,5 @@ function Btn({
         />
       ) : null}
     </PressableScale>
-  )
-}
-
-function MessagesTabMenu({control}: {control: Menu.MenuControlProps}) {
-  const {t: l} = useLingui()
-
-  const {mutate: markAllChatsRead} = useUpdateAllRead('accepted', {
-    onMutate: () => {
-      Toast.show(l`Marked all chats as read`, {type: 'success'})
-    },
-    onError: () => {
-      Toast.show(l`Failed to mark all chats as read`, {type: 'error'})
-    },
-  })
-
-  const {mutate: markAllRequestsRead} = useUpdateAllRead('request', {
-    onMutate: () => {
-      Toast.show(l`Marked all requests as read`, {type: 'success'})
-    },
-    onError: () => {
-      Toast.show(l`Failed to mark all requests as read`, {type: 'error'})
-    },
-  })
-
-  return (
-    <Menu.Root control={control}>
-      <Menu.Outer showCancel>
-        <Menu.Group>
-          <Menu.Item
-            label={l`Mark all chats as read`}
-            onPress={() => markAllChatsRead()}>
-            <Menu.ItemIcon icon={CircleCheckIcon} />
-            <Menu.ItemText>
-              <Trans>Mark all chats as read</Trans>
-            </Menu.ItemText>
-          </Menu.Item>
-          <Menu.Item
-            label={l`Mark all requests as read`}
-            onPress={() => markAllRequestsRead()}>
-            <Menu.ItemIcon icon={InboxIcon} />
-            <Menu.ItemText>
-              <Trans>Mark all requests as read</Trans>
-            </Menu.ItemText>
-          </Menu.Item>
-        </Menu.Group>
-      </Menu.Outer>
-    </Menu.Root>
   )
 }

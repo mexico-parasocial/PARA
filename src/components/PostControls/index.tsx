@@ -1,4 +1,4 @@
-import {memo, useMemo, useState} from 'react'
+import {memo, useMemo} from 'react'
 import {type StyleProp, View, type ViewStyle} from 'react-native'
 import {AtUri} from '@atproto/syntax'
 import {type RichText as RichTextAPI} from '@bsky/sdk/richtext'
@@ -6,20 +6,13 @@ import {plural} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
-import {CountWheel} from '#/lib/custom-animations/CountWheel'
-import {AnimatedLikeIcon} from '#/lib/custom-animations/LikeIcon'
 import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
 import {type NavigationProp} from '#/lib/routes/types'
 import {type Shadow} from '#/state/cache/types'
 import {useFeedFeedbackContext} from '#/state/feed-feedback'
 import {useHighlightMode, useHighlights} from '#/state/highlights'
-import {usePostLikeMutationQueue} from '#/state/queries/post'
 import {useRequireAuth} from '#/state/session'
-import {
-  ProgressGuideAction,
-  useProgressGuideControls,
-} from '#/state/shell/progress-guide'
-import {atoms as a, useBreakpoints, useTheme} from '#/alf'
+import {atoms as a, useBreakpoints} from '#/alf'
 import {Reply as Bubble} from '#/components/icons/Reply'
 import {useFormatPostStatCount} from '#/components/PostControls/util'
 import * as Skele from '#/components/Skeleton'
@@ -34,6 +27,7 @@ import {
 } from './PostControlButton'
 import {PostMenuButton} from './PostMenu'
 import {QuoteButton} from './QuoteButton'
+import {PostVoteButton} from './ReactionVoteButton'
 import {ShareMenuButton} from './ShareMenu'
 
 let PostControls = ({
@@ -68,21 +62,14 @@ let PostControls = ({
   forceGoogleTranslate?: boolean
 }): React.ReactNode => {
   const ax = useAnalytics()
-  const t = useTheme()
   const {t: l} = useLingui()
   const {openComposer} = useOpenComposer()
   const {feedDescriptor} = useFeedFeedbackContext()
   const navigation = useNavigation<NavigationProp>()
-  const [queueLike, queueUnlike] = usePostLikeMutationQueue(
-    post,
-    feedDescriptor,
-    logContext,
-  )
   const {enterHighlightMode} = useHighlightMode()
   const {highlights, clearAll: clearAllHighlights} = useHighlights(post.uri)
   const requireAuth = useRequireAuth()
   const {sendInteraction} = useFeedFeedbackContext()
-  const {captureAction} = useProgressGuideControls()
   const isBlocked = Boolean(
     post.author.viewer?.blocking ||
     post.author.viewer?.blockedBy ||
@@ -91,38 +78,6 @@ let PostControls = ({
   const replyDisabled = post.viewer?.replyDisabled
   const {gtPhone} = useBreakpoints()
   const formatPostStatCount = useFormatPostStatCount()
-
-  const [hasLikeIconBeenToggled, setHasLikeIconBeenToggled] = useState(false)
-
-  const onPressToggleLike = async () => {
-    if (isBlocked) {
-      Toast.show(l`Cannot interact with a blocked user`, {
-        type: 'warning',
-      })
-      return
-    }
-
-    try {
-      setHasLikeIconBeenToggled(true)
-      if (!post.viewer?.like) {
-        sendInteraction({
-          item: post.uri,
-          event: 'app.bsky.feed.defs#interactionLike',
-          feedContext,
-          reqId,
-        })
-        captureAction(ProgressGuideAction.Like)
-        await queueLike()
-      } else {
-        await queueUnlike()
-      }
-    } catch (err) {
-      const e = err as Error
-      if (e?.name !== 'AbortError') {
-        throw e
-      }
-    }
-  }
 
   // PARA has no reposts: a post is shared by quoting it or by highlighting
   // part of its text. Text is only selectable in the post's own thread view,
@@ -198,12 +153,27 @@ let PostControls = ({
         a.gap_md,
         style,
       ]}>
-      <View style={[a.flex_row, a.flex_1, {maxWidth: 320}]}>
+      <View style={[a.flex_row, a.flex_1, {maxWidth: 360}]}>
+        {/* The vote control is wider than the other buttons, so it sizes to
+            its content and keeps a gap before quote. */}
+        <View style={[a.align_start, {marginRight: 20}]}>
+          <PostVoteButton big={big} disabled={isBlocked} post={post} />
+        </View>
+        <View style={[a.flex_1, a.align_start]}>
+          <QuoteButton
+            quoteCount={post.quoteCount ?? 0}
+            onQuote={onQuote}
+            onHighlight={onHighlight}
+            onRemoveAllHighlights={onRemoveAllHighlights}
+            hasHighlights={highlights.length > 0}
+            big={big}
+            embeddingDisabled={Boolean(post.viewer?.embeddingDisabled)}
+          />
+        </View>
         <View
           style={[
             a.flex_1,
             a.align_start,
-            {marginLeft: big ? -2 : -6},
             replyDisabled ? {opacity: 0.6} : undefined,
           ]}>
           <PostControlButton
@@ -237,56 +207,6 @@ let PostControls = ({
                 {formatPostStatCount(post.replyCount)}
               </PostControlButtonText>
             )}
-          </PostControlButton>
-        </View>
-        <View style={[a.flex_1, a.align_start]}>
-          <QuoteButton
-            quoteCount={post.quoteCount ?? 0}
-            onQuote={onQuote}
-            onHighlight={onHighlight}
-            onRemoveAllHighlights={onRemoveAllHighlights}
-            hasHighlights={highlights.length > 0}
-            big={big}
-            embeddingDisabled={Boolean(post.viewer?.embeddingDisabled)}
-          />
-        </View>
-        <View style={[a.flex_1, a.align_start]}>
-          <PostControlButton
-            testID="likeBtn"
-            big={big}
-            active={Boolean(post.viewer?.like)}
-            activeColor={t.palette.pink}
-            onPress={() => requireAuth(() => onPressToggleLike())}
-            label={
-              post.viewer?.like
-                ? l({
-                    message: `Unlike (${plural(post.likeCount || 0, {
-                      one: '# like',
-                      other: '# likes',
-                    })})`,
-                    comment:
-                      'Accessibility label for the like button when the post has been liked, verb followed by number of likes and noun',
-                  })
-                : l({
-                    message: `Like (${plural(post.likeCount || 0, {
-                      one: '# like',
-                      other: '# likes',
-                    })})`,
-                    comment:
-                      'Accessibility label for the like button when the post has not been liked, verb form followed by number of likes and noun form',
-                  })
-            }>
-            <AnimatedLikeIcon
-              isLiked={Boolean(post.viewer?.like)}
-              big={big}
-              hasBeenToggled={hasLikeIconBeenToggled}
-            />
-            <CountWheel
-              likeCount={post.likeCount ?? 0}
-              big={big}
-              isLiked={Boolean(post.viewer?.like)}
-              hasBeenToggled={hasLikeIconBeenToggled}
-            />
           </PostControlButton>
         </View>
         {/* Spacer! */}

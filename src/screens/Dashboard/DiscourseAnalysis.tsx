@@ -390,7 +390,7 @@ export function DiscourseAnalysisScreen() {
               inter-ideológico. Un score de 50% indica equilibrio; desviaciones
               muestran consenso o polarización.
             </Text>
-            <ContestedAxesChart axes={topo.contestedAxes} />
+            <ContestedAxesChart axes={topo.contestedAxes ?? []} />
           </View>
 
           {/* Estructura Argumentativa */}
@@ -413,31 +413,32 @@ export function DiscourseAnalysisScreen() {
             </Text>
             <View style={{gap: 12, marginTop: 12}}>
               {topics?.map((topic, i) => {
-                let parsedKeywords: string[] = []
-                try {
-                  parsedKeywords = JSON.parse(topic.keywords)
-                } catch (e) {
-                  parsedKeywords = topic.keywords.split(',').map(k => k.trim())
-                }
-                const dominantPosition = topPositions[i % topPositions.length]
+                const parsedKeywords = topic.relatedKeywords ?? []
+                const dominantPosition = topPositions.length
+                  ? topPositions[i % topPositions.length]
+                  : undefined
                 return (
                   <View key={i} style={styles.topicRow}>
-                    <View
-                      style={[
-                        styles.topicDot,
-                        {backgroundColor: COMPASS_COLORS[dominantPosition]},
-                      ]}
-                    />
+                    {dominantPosition && (
+                      <View
+                        style={[
+                          styles.topicDot,
+                          {backgroundColor: COMPASS_COLORS[dominantPosition]},
+                        ]}
+                      />
+                    )}
                     <View style={{flex: 1}}>
                       <Text style={[styles.topicLabel, t.atoms.text]}>
-                        {topic.clusterLabel}{' '}
-                        <Text
-                          style={[
-                            styles.topicPosition,
-                            {color: COMPASS_LABEL_COLORS[dominantPosition]},
-                          ]}>
-                          ({dominantPosition.replace('-', ' ')})
-                        </Text>
+                        {topic.label}{' '}
+                        {dominantPosition && (
+                          <Text
+                            style={[
+                              styles.topicPosition,
+                              {color: COMPASS_LABEL_COLORS[dominantPosition]},
+                            ]}>
+                            ({dominantPosition.replace('-', ' ')})
+                          </Text>
+                        )}
                       </Text>
                       <View style={styles.topicPills}>
                         {parsedKeywords.map((kw: string) => (
@@ -480,7 +481,9 @@ export function DiscourseAnalysisScreen() {
               terreno común, basado en solapamiento de temas y ausencia de
               conexiones en el grafo de deliberación.
             </Text>
-            <BridgeOpportunities opportunities={topo.bridgeOpportunities} />
+            <BridgeOpportunities
+              opportunities={topo.bridgeOpportunities ?? []}
+            />
           </View>
 
           {/* Tendencias Emergentes */}

@@ -1,22 +1,15 @@
 import {type ReactElement, type ReactNode} from 'react'
 import {View} from 'react-native'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
 
-import {HITSLOP_10} from '#/lib/constants'
 import {useCinzelFont} from '#/lib/hooks/useCinzelFont'
 import {useSession} from '#/state/session'
 import {useShellLayout} from '#/state/shell/shell-layout'
+import {HomeHeaderChatButton} from '#/view/com/home/HomeHeaderChatButton'
 import {HomeHeaderLayoutMobile} from '#/view/com/home/HomeHeaderLayoutMobile'
 import {Logomark} from '#/view/icons/Logomark'
 import {Logotype} from '#/view/icons/Logotype'
 import {atoms as a, useBreakpoints, useGutters, useTheme} from '#/alf'
-import {ButtonIcon} from '#/components/Button'
-import {Compass_Stroke2_Corner0_Rounded as CompassIcon} from '#/components/icons/Compass'
-import {Hashtag_Stroke2_Corner0_Rounded as FeedsIcon} from '#/components/icons/Hashtag'
 import * as Layout from '#/components/Layout'
-import {Link} from '#/components/Link'
-import {useAnalytics} from '#/analytics'
 
 export function HomeHeaderLayout(props: {
   children: ReactNode
@@ -41,8 +34,6 @@ function HomeHeaderLayoutDesktopAndTablet({
   const t = useTheme()
   const {headerHeight} = useShellLayout()
   const {hasSession} = useSession()
-  const {_} = useLingui()
-  const ax = useAnalytics()
   const gutters = useGutters([0, 'base'])
 
   return (
@@ -137,31 +128,7 @@ function HomeHeaderLayoutDesktopAndTablet({
                 </View>
               </View>
             </View>
-            <Link
-              to="/feeds"
-              hitSlop={HITSLOP_10}
-              label={_(msg`View your feeds and explore more`)}
-              size="small"
-              variant="ghost"
-              color="secondary"
-              shape="square"
-              onPress={() => {
-                ax.metric('nav:click', {item: 'feeds', surface: 'topBar'})
-              }}
-              style={[a.justify_center]}>
-              <ButtonIcon icon={FeedsIcon} size="lg" />
-            </Link>
-            <Link
-              to="/compass"
-              hitSlop={HITSLOP_10}
-              label={_(msg`Open compass`)}
-              size="small"
-              variant="ghost"
-              color="secondary"
-              shape="square"
-              style={[a.justify_center]}>
-              <ButtonIcon icon={CompassIcon} size="lg" />
-            </Link>
+            <HomeHeaderChatButton />
           </View>
         </Layout.Center>
       )}

@@ -1,4 +1,4 @@
-import {useCallback, useMemo, useState} from 'react'
+import {useCallback, useEffect, useMemo, useState} from 'react'
 import {
   Pressable,
   RefreshControl,
@@ -168,15 +168,18 @@ function AnimatedCard({
   const reducedMotion = useReducedMotion()
   const progress = useSharedValue(reducedMotion ? 1 : 0)
 
-  progress.set(() =>
-    withDelay(
-      index * 70,
-      withTiming(1, {
-        duration: 400,
-        easing: Easing.out(Easing.cubic),
-      }),
-    ),
-  )
+  useEffect(() => {
+    if (reducedMotion) return
+    progress.set(() =>
+      withDelay(
+        index * 70,
+        withTiming(1, {
+          duration: 400,
+          easing: Easing.out(Easing.cubic),
+        }),
+      ),
+    )
+  }, [index, progress, reducedMotion])
 
   const animatedStyle = useAnimatedStyle(() => ({
     opacity: progress.get(),
@@ -513,8 +516,8 @@ function LobbyingFocusCard({
   )
 }
 
-/** Community Directory card */
-function CommunityDirectoryCard({onPress}: {onPress: () => void}) {
+/** Community activity explorer entry */
+function CommunityActivitiesCard({onPress}: {onPress: () => void}) {
   const t = useTheme()
   return (
     <PressableScale
@@ -535,11 +538,11 @@ function CommunityDirectoryCard({onPress}: {onPress: () => void}) {
         </View>
         <View style={a.flex_1}>
           <Text style={[styles.featureCardTitle, t.atoms.text]}>
-            <Trans>Community Directory</Trans>
+            <Trans>Community Activities</Trans>
           </Text>
           <Text
             style={[styles.featureCardSubtitle, t.atoms.text_contrast_medium]}>
-            <Trans>Browse and join community Civic Trees</Trans>
+            <Trans>Explore social events and public financial activity</Trans>
           </Text>
         </View>
         <Text style={[styles.featureCardArrow, t.atoms.text_contrast_medium]}>
@@ -843,9 +846,10 @@ function LobbyingSection({
             </Text>
             <Text style={[a.text_md, t.atoms.text_contrast_high]}>
               <Trans>
-                Cabildeos are the working items inside Civic Trees: proposals,
-                evidence, arguments, vote windows, and delegated power in one
-                place.
+                A cabildeo is a conversation held over a set period. It records
+                who took part, what each side argued, and where it landed. It is
+                one kind of community activity; votes and delegation are
+                optional extras.
               </Trans>
             </Text>
             <Dialog.Close />
@@ -1110,7 +1114,7 @@ export function AgoraScreen() {
     navigation.navigate('MyCommunities')
   }, [navigation])
 
-  const handlePressCommunityDirectory = useCallback(() => {
+  const handlePressCommunityActivities = useCallback(() => {
     navigation.navigate('CommunityDirectory')
   }, [navigation])
 
@@ -1160,7 +1164,9 @@ export function AgoraScreen() {
           <View style={styles.sectionWrap}>
             <View style={styles.featureGrid}>
               <YourCommunitiesCard onPress={handlePressCommunities} />
-              <CommunityDirectoryCard onPress={handlePressCommunityDirectory} />
+              <CommunityActivitiesCard
+                onPress={handlePressCommunityActivities}
+              />
               <YourCommunityCivicTreeCard
                 onPress={handlePressYourCommunityCivicTree}
               />

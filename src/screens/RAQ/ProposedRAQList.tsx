@@ -1,72 +1,21 @@
-import {FlatList, StyleSheet, View} from 'react-native'
-import {useSafeAreaInsets} from 'react-native-safe-area-context'
+import {FlatList} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
-import {useVoteOnProposedQuestionMutation} from '#/state/mutations/raq'
-import {
-  type ProposedQuestionView,
-  useProposedQuestions,
-} from '#/state/queries/useProposedQuestions'
-import {Text} from '#/view/com/util/text/Text'
-import {useTheme} from '#/alf'
+import {useProposedQuestions} from '#/state/queries/useProposedQuestions'
+import {atoms as a} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
 import * as Layout from '#/components/Layout'
-import {ListMaybePlaceholder} from '#/components/Lists'
-import {RedditVoteButton} from '#/components/PostControls/VoteButton'
 import {AddRAQDialog} from './components/AddRAQDialog'
+import {ProposalCard} from './components/ProposalCard'
+import {QueryStatus} from './components/QueryStatus'
 
 export default function ProposedRAQListScreen() {
-  const t = useTheme()
   const {_} = useLingui()
-  const insets = useSafeAreaInsets()
-  const addDialogControl = Dialog.useDialogControl()
-
-  const {
-    data: questions = [],
-    isLoading,
-    isError,
-    refetch,
-  } = useProposedQuestions()
-  const {mutate: voteOnProposal} = useVoteOnProposedQuestionMutation()
-
-  const renderItem = ({item}: {item: ProposedQuestionView}) => (
-    <View style={[styles.itemCard, t.atoms.bg, t.atoms.border_contrast_low]}>
-      <View style={styles.header}>
-        <Text style={[styles.questionText, t.atoms.text]}>{item.text}</Text>
-        {item.targetCommunity && (
-          <Text style={[t.atoms.text_contrast_medium, styles.metaText]}>
-            <Trans>Proposed for: {item.targetCommunity}</Trans>
-          </Text>
-        )}
-      </View>
-
-      <View style={styles.controlsRow}>
-        {/* Support vote: shown as a count, promotes nothing (OD-7 §5h) */}
-        <View style={styles.group}>
-          <Text style={[t.atoms.text_contrast_medium, styles.label]}>
-            <Trans>Support:</Trans>
-          </Text>
-          <RedditVoteButton
-            score={item.upvotes - item.downvotes}
-            currentVote={
-              item.viewerHasUpvoted
-                ? 'upvote'
-                : item.viewerHasDownvoted
-                  ? 'downvote'
-                  : 'none'
-            }
-            hasBeenToggled={false}
-            onUpvote={() => voteOnProposal({uri: item.id, direction: 'up'})}
-            onDownvote={() => voteOnProposal({uri: item.id, direction: 'down'})}
-          />
-        </View>
-      </View>
-    </View>
-  )
-
+  const add = Dialog.useDialogControl()
+  const query = useProposedQuestions()
   return (
     <Layout.Screen>
       <Layout.Header.Outer>
@@ -76,114 +25,54 @@ export default function ProposedRAQListScreen() {
             <Trans>Proposed RAQs</Trans>
           </Layout.Header.TitleText>
         </Layout.Header.Content>
+        <Button
+          label={_(msg`Add`)}
+          onPress={() => add.open()}
+          size="small"
+          variant="solid"
+          color="primary">
+          <ButtonText>
+            <Trans>Add</Trans>
+          </ButtonText>
+        </Button>
       </Layout.Header.Outer>
-
-      <Layout.Center style={{flex: 1}}>
-        {!questions.length ? (
-          isLoading || isError ? (
-            <ListMaybePlaceholder
-              isLoading={isLoading}
-              isError={isError}
-              onRetry={refetch}
-              emptyType="results"
+      <Layout.Center style={a.flex_1}>
+        <FlatList
+          style={a.flex_1}
+          data={query.data ?? []}
+          keyExtractor={item => item.id}
+          renderItem={({item}) => <ProposalCard proposal={item} />}
+          refreshing={query.isRefetching}
+          onRefresh={() => void query.refresh()}
+          contentContainerStyle={{padding: 16, paddingBottom: 100, gap: 16}}
+          ListHeaderComponent={
+            <QueryStatus
+              loading={query.isLoading}
+              error={query.isError}
+              empty={!query.data?.length}
+              emptyMessageText={<Trans>No proposed RAQs yet</Trans>}
+              retry={query.refresh}
+              refreshing={query.isRefetching}
             />
-          ) : (
-            <View style={[styles.emptyState, t.atoms.bg_contrast_25]}>
-              <Text style={[styles.emptyTitle, t.atoms.text]}>
-                <Trans>No proposed RAQs yet</Trans>
-              </Text>
-              <Text style={[styles.emptyText, t.atoms.text_contrast_medium]}>
-                <Trans>
-                  Proposed RAQs are loaded from the PARA backend. This space
-                  will fill once people submit community questions.
-                </Trans>
-              </Text>
+          }
+          ListFooterComponent={
+            query.hasNextPage ? (
               <Button
-                label={_(msg`Propose a question`)}
-                onPress={() => addDialogControl.open()}
+                label={_(msg`Load more`)}
                 size="large"
                 variant="solid"
-                color="primary"
-                style={styles.emptyButton}>
+                color="secondary"
+                disabled={query.isFetching}
+                onPress={() => void query.fetchNextPage()}>
                 <ButtonText>
-                  <Trans>Propose a question</Trans>
+                  <Trans>Load more</Trans>
                 </ButtonText>
               </Button>
-            </View>
-          )
-        ) : (
-          <FlatList
-            data={questions}
-            renderItem={renderItem}
-            keyExtractor={item => item.id}
-            contentContainerStyle={[
-              styles.list,
-              {paddingBottom: insets.bottom + 20},
-            ]}
-          />
-        )}
+            ) : undefined
+          }
+        />
       </Layout.Center>
-      <AddRAQDialog control={addDialogControl} />
+      <AddRAQDialog control={add} />
     </Layout.Screen>
   )
 }
-
-const styles = StyleSheet.create({
-  list: {
-    padding: 16,
-    gap: 16,
-  },
-  itemCard: {
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    gap: 12,
-  },
-  header: {
-    gap: 4,
-  },
-  questionText: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  metaText: {
-    fontSize: 12,
-  },
-  controlsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 16,
-    marginTop: 8,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderColor: '#333',
-    paddingTop: 12,
-  },
-  group: {
-    gap: 6,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  emptyState: {
-    margin: 16,
-    padding: 20,
-    borderRadius: 16,
-    alignItems: 'center',
-    gap: 10,
-  },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '800',
-  },
-  emptyText: {
-    fontSize: 14,
-    lineHeight: 20,
-    textAlign: 'center',
-  },
-  emptyButton: {
-    marginTop: 8,
-    width: '100%',
-  },
-})

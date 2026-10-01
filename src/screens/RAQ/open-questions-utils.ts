@@ -1,7 +1,7 @@
 import {AtUri} from '@atproto/syntax'
 
 import {type OpenQuestion} from '#/lib/mock-data/types'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 export type OpenQuestionListItem = {
   id: string

@@ -1,7 +1,8 @@
-import {type ReactNode} from 'react'
-import {Pressable, StyleSheet, useWindowDimensions, View} from 'react-native'
-import {Line, Polygon, Svg} from 'react-native-svg'
+import {type ReactNode, useState} from 'react'
+import {Pressable, StyleSheet, View} from 'react-native'
 import {Image} from 'expo-image'
+import {msg} from '@lingui/core/macro'
+import {useLingui} from '@lingui/react'
 
 import {getCommunityInsignia} from '#/lib/civic-insignias'
 import {Text} from '#/view/com/util/text/Text'
@@ -9,8 +10,8 @@ import {useTheme} from '#/alf'
 import {CivicInsignia} from '#/components/CivicInsignia'
 import {ArrowsDiagonalOut_Stroke2_Corner2_Rounded as ExpandIcon} from '#/components/icons/ArrowsDiagonal'
 import {Bubble_Stroke2_Corner2_Rounded as CommentIcon} from '#/components/icons/Bubble'
+import {ReactionVoteButton} from '#/components/PostControls/ReactionVoteButton'
 import {RedditVoteButton} from '#/components/PostControls/VoteButton'
-import {DECK_OVERLAP} from './helpers'
 import {styles} from './styles'
 import {type MediaItem, type Mode} from './types'
 
@@ -168,146 +169,146 @@ function MetaPill({
 export function MediaVisualMeta({
   item,
   mode: _mode,
+  showCategory,
 }: {
   item: MediaItem
   mode: Mode
+  showCategory?: boolean
 }) {
   const meme = item
   const onImage = !!meme.thumbUri
   return (
     <View style={styles.metaPillRow}>
-      <MetaPill label={meme.author} onImage={onImage} />
-      <MetaPill label={meme.state} onImage={onImage} />
+      {[
+        meme.author,
+        showCategory ? meme.category : undefined,
+        meme.community,
+        meme.state,
+      ]
+        .filter((label): label is string => Boolean(label))
+        .map(label => (
+          <MetaPill key={label} label={label} onImage={onImage} />
+        ))}
     </View>
   )
 }
 
+/**
+ * The control band shared by the two visible deck cards. It fills the overlap
+ * between the current card (upper left) and the next card (lower right): the
+ * quarter disc on the left sits on the next card's top-left corner and expands
+ * it, the one on the right sits on the current card's bottom-right corner and
+ * expands that one. Votes in the middle apply to whichever card is active.
+ */
 export function DeckCommandCenter({
+  inset,
   activeItem,
-  activeVote = 0,
-  onVoteChange,
-  onExpandActive,
-  onExpandTop,
-  onExpandBottom,
+  activeSide,
+  onOpenComments,
+  onPressCurrent,
+  onPressNext,
 }: {
+  /** Distance from each stage edge: the gutter plus the current stagger. */
+  inset: number
   activeItem: MediaItem
-  activeVote?: 1 | -1 | 0
-  onVoteChange: (vote: 1 | -1 | 0) => void
-  onExpandActive?: () => void
-  onExpandTop: () => void
-  onExpandBottom?: () => void
+  activeSide: 'current' | 'next'
+  onOpenComments: () => void
+  onPressCurrent: () => void
+  onPressNext?: () => void
 }) {
   const t = useTheme()
-  const {width: screenWidth} = useWindowDimensions()
-  const shapeWidth = Math.max(0, screenWidth - 104)
-  const slant = DECK_OVERLAP
-  const height = 44
-  const totalHeight = slant + height
-  const points = `0,0 ${shapeWidth},${slant} ${shapeWidth},${slant + height} 0,${height}`
-  const bg = t.atoms.bg.backgroundColor
-  const stroke = t.palette.contrast_200
+  const {_} = useLingui()
 
-  const score = activeItem.votes + activeVote
-  const voteState =
-    activeVote === 1 ? 'upvote' : activeVote === -1 ? 'downvote' : 'none'
-
-  const zoneWidth = shapeWidth / 3
-  const bandCenterY = (x: number) => (slant * x) / shapeWidth + height / 2
+  const corner = (side: 'current' | 'next', onPress?: () => void) => {
+    if (!onPress) return null
+    const isActive = activeSide === side
+    return (
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={
+          side === 'current'
+            ? _(msg`Expand upper card`)
+            : _(msg`Expand lower card`)
+        }
+        accessibilityHint={_(msg`Opens this card in a larger view`)}
+        onPress={onPress}
+        style={[
+          styles.deckBandCorner,
+          side === 'next'
+            ? styles.deckBandCornerStart
+            : styles.deckBandCornerEnd,
+          isActive
+            ? {backgroundColor: t.palette.contrast_900}
+            : t.atoms.bg_contrast_50,
+        ]}>
+        <ExpandIcon
+          size="md"
+          style={{
+            color: isActive ? t.palette.contrast_0 : t.palette.contrast_700,
+          }}
+        />
+      </Pressable>
+    )
+  }
 
   return (
-    <View style={[styles.deckCommandCenter, {height: totalHeight}]}>
-      <Svg
-        pointerEvents="none"
-        width={shapeWidth}
-        height={totalHeight}
-        viewBox={`0 0 ${shapeWidth} ${totalHeight}`}>
-        <Polygon
-          points={points}
-          fill={bg}
-          stroke={bg}
-          strokeLinejoin="round"
-          strokeWidth="10"
-        />
-        <Polygon
-          points={points}
-          fill="none"
-          stroke={stroke}
-          strokeLinejoin="round"
-          strokeWidth="1"
-        />
-        <Line
-          x1={zoneWidth}
-          y1={(slant * zoneWidth) / shapeWidth}
-          x2={zoneWidth}
-          y2={height + (slant * zoneWidth) / shapeWidth}
-          stroke={stroke}
-          strokeWidth="1"
-        />
-        <Line
-          x1={2 * zoneWidth}
-          y1={(2 * slant * zoneWidth) / shapeWidth}
-          x2={2 * zoneWidth}
-          y2={height + (2 * slant * zoneWidth) / shapeWidth}
-          stroke={stroke}
-          strokeWidth="1"
-        />
-      </Svg>
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Expand next card"
-        accessibilityHint="Opens the card behind in full view"
-        onPress={onExpandBottom ?? (() => {})}
-        style={[
-          styles.deckCommandCenterZone,
-          {
-            left: 0,
-            paddingTop: bandCenterY(zoneWidth / 2) - 9,
-            width: zoneWidth,
-          },
-        ]}>
-        <ExpandIcon size="sm" style={t.atoms.text} />
-      </Pressable>
-
-      <View
-        style={[
-          styles.deckCommandCenterZone,
-          {
-            left: zoneWidth,
-            paddingTop: bandCenterY(zoneWidth * 1.5) - 18,
-            width: zoneWidth,
-          },
-        ]}>
-        <RedditVoteButton
-          currentVote={voteState}
-          hasBeenToggled={activeVote !== 0}
-          onDownvote={() => onVoteChange(activeVote === -1 ? 0 : -1)}
-          onUpvote={() => onVoteChange(activeVote === 1 ? 0 : 1)}
-          score={score}
-          style={{marginLeft: 0}}
-        />
-        <CommentChip
-          comments={activeItem.comments}
-          compact
-          onPress={onExpandActive}
-        />
+    <View
+      style={[
+        styles.deckBand,
+        {left: inset, right: inset},
+        t.atoms.bg,
+        {borderColor: t.palette.contrast_100},
+      ]}>
+      <View pointerEvents="box-none" style={styles.deckBandCenter}>
+        <MemeVoteButton key={activeItem.id} big item={activeItem} />
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={_(msg`${activeItem.comments} comments`)}
+          accessibilityHint={_(msg`Opens the comments for this meme`)}
+          hitSlop={8}
+          onPress={onOpenComments}
+          style={styles.deckBandComments}>
+          <CommentIcon size="md" style={t.atoms.text_contrast_medium} />
+          <Text
+            style={[styles.deckBandCommentsText, t.atoms.text_contrast_medium]}>
+            {activeItem.comments}
+          </Text>
+        </Pressable>
       </View>
-
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Expand current card"
-        accessibilityHint="Opens the front card in full view"
-        onPress={onExpandTop}
-        style={[
-          styles.deckCommandCenterZone,
-          {
-            left: 2 * zoneWidth,
-            paddingTop: bandCenterY(zoneWidth * 2.5) - 9,
-            width: zoneWidth,
-          },
-        ]}>
-        <ExpandIcon size="sm" style={t.atoms.text} />
-      </Pressable>
+      {corner('next', onPressNext)}
+      {corner('current', onPressCurrent)}
     </View>
+  )
+}
+
+/**
+ * Up/down votes for a meme, stored as public reactions (see
+ * para-meme-reactions.ts). The score comes from the AppView; the viewer's
+ * change shows immediately and is reconciled when the feed refetches.
+ */
+export function MemeVoteButton({item, big}: {item: MediaItem; big?: boolean}) {
+  if (!item.post) return <LocalMemeVoteButton big={big} item={item} />
+  return (
+    <ReactionVoteButton
+      big={big}
+      hasLegacyLike={Boolean(item.post.viewer?.like)}
+      serverScore={item.votes}
+      subject={item.post.uri}
+    />
+  )
+}
+
+/** Items without a post (mock data) keep their vote in local state only. */
+function LocalMemeVoteButton({item, big}: {item: MediaItem; big?: boolean}) {
+  const [vote, setVote] = useState<1 | -1 | 0>(0)
+  return (
+    <RedditVoteButton
+      big={big}
+      currentVote={vote === 1 ? 'upvote' : vote === -1 ? 'downvote' : 'none'}
+      hasBeenToggled={vote !== 0}
+      onDownvote={() => setVote(v => (v === -1 ? 0 : -1))}
+      onUpvote={() => setVote(v => (v === 1 ? 0 : 1))}
+      score={item.votes + vote}
+    />
   )
 }

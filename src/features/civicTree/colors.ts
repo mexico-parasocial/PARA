@@ -44,7 +44,6 @@ export const PERSONAL_RELATION_DIRECTED: Record<string, boolean> = {
   evidence_for: true,
   context_for: true,
   depends_on: true,
-  duplicates: false,
   related_to: false,
 }
 
@@ -54,7 +53,6 @@ export const PERSONAL_RELATION_COLORS: Record<string, string> = {
   evidence_for: '#3b82f6',
   context_for: '#f59e0b',
   depends_on: '#8b5cf6',
-  duplicates: '#9ca3af',
   related_to: '#9ca3af',
 }
 
@@ -65,7 +63,6 @@ export const PERSONAL_RELATION_LABELS: Record<string, string> = {
   evidence_for: 'is evidence for',
   context_for: 'gives context for',
   depends_on: 'depends on',
-  duplicates: 'duplicates',
   related_to: 'relates to',
 }
 
@@ -80,6 +77,7 @@ export const PERSONAL_ITEM_KIND_COLORS: Record<string, string> = {
   evidence: '#3b82f6',
   post: '#ec4899',
   link: '#06b6d4',
+  book: '#b45309',
   note: '#64748b',
 }
 

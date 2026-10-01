@@ -1,4 +1,7 @@
-import {type CabildeoReadView} from '#/lib/api/cabildeo'
+import {
+  type CabildeoPartyVoteSummary,
+  type CabildeoReadView,
+} from '#/lib/api/cabildeo'
 import {type ParaRaqAxisResult} from '#/lib/api/para-lexicons'
 import {COMMUNITY_DATA} from '#/lib/constants/mockData'
 import {RAQ_AXES} from '#/lib/mock-data'
@@ -7,7 +10,7 @@ import {
   normalizeCommunityPlainName,
   normalizeCommunitySlug,
 } from '#/lib/strings/community-names'
-import {POST_FLAIRS} from '#/lib/tags'
+import {FLAIR_GROUPS} from '#/lib/tags'
 
 const DEFAULT_ENTITIES = ['p/Jalisco', 'p/CDMX'] as const
 
@@ -44,105 +47,119 @@ export const VS_TIME_FILTERS = [
   {key: '90d', label: '90 dias'},
 ] as const
 
+/**
+ * The six fields every policy and matter is filed under in the flair picker
+ * (`FLAIR_GROUPS`). `group` must match the key used there. Keywords are only a
+ * fallback for cabildeos that carry no recognised flair.
+ */
 export const VS_POLICY_AXES = [
   {
-    key: 'economy',
-    label: 'Economia',
+    key: 'servicios-publicos',
+    group: '1. SERVICIOS PÚBLICOS',
+    label: 'Servicios públicos',
     keywords: [
-      'economic',
-      'economia',
-      'economy',
-      'tax',
-      'impuesto',
-      'market',
-      'mercado',
-      'salary',
-      'salario',
-      'budget',
-      'presupuesto',
-    ],
-  },
-  {
-    key: 'welfare',
-    label: 'Bienestar',
-    keywords: [
-      'health',
       'salud',
-      'education',
+      'health',
       'educacion',
-      'housing',
-      'vivienda',
-      'welfare',
-      'pension',
-      'care',
-      'cuidados',
-    ],
-  },
-  {
-    key: 'environment',
-    label: 'Ambiente',
-    keywords: [
-      'environment',
-      'ambiente',
-      'climate',
-      'clima',
-      'water',
+      'education',
+      'escuela',
       'agua',
-      'energy',
+      'water',
       'energia',
+      'energy',
+      'transporte',
       'transport',
       'movilidad',
-      'park',
       'parque',
+      'park',
+      'vivienda',
+      'housing',
+      'ciencia',
+      'artes',
+      'medios',
     ],
   },
   {
-    key: 'governance',
-    label: 'Gobernanza',
+    key: 'hacienda',
+    group: '2. HACIENDA',
+    label: 'Hacienda',
     keywords: [
-      'governance',
-      'gobierno',
-      'governanza',
-      'corruption',
-      'corrupcion',
-      'security',
-      'seguridad',
-      'justice',
-      'justicia',
-      'transparency',
-      'transparencia',
+      'hacienda',
+      'impuesto',
+      'tax',
+      'fiscal',
+      'budget',
+      'presupuesto',
+      'deuda',
+      'debt',
+      'recaudacion',
     ],
   },
   {
-    key: 'rights',
-    label: 'Derechos',
+    key: 'economia',
+    group: '3. ECONOMÍA',
+    label: 'Economía',
     keywords: [
-      'rights',
+      'economia',
+      'economic',
+      'economy',
+      'mercado',
+      'market',
+      'salario',
+      'salary',
+      'empleo',
+      'trabajo',
+      'comercio',
+      'inflacion',
+    ],
+  },
+  {
+    key: 'asuntos-sociales',
+    group: '4. ASUNTOS SOCIALES',
+    label: 'Asuntos sociales',
+    keywords: [
+      'pension',
+      'welfare',
       'derechos',
-      'liberty',
-      'libertad',
-      'privacy',
-      'privacidad',
-      'gender',
+      'rights',
       'genero',
-      'indigenous',
+      'gender',
+      'aborto',
       'indigena',
+      'familia',
+      'cuidados',
+      'pobreza',
     ],
   },
   {
-    key: 'culture',
-    label: 'Cultura',
+    key: 'asuntos-exteriores',
+    group: '5. ASUNTOS EXTERIORES',
+    label: 'Asuntos exteriores',
     keywords: [
-      'culture',
-      'cultura',
-      'media',
-      'memes',
-      'identity',
-      'identidad',
-      'sports',
-      'deporte',
-      'heritage',
-      'patrimonio',
+      'migra',
+      'exterior',
+      'internacional',
+      'extranjer',
+      'frontera',
+      'foreign',
+    ],
+  },
+  {
+    key: 'interior',
+    group: '6. INTERIOR',
+    label: 'Interior',
+    keywords: [
+      'seguridad',
+      'security',
+      'justicia',
+      'justice',
+      'corrupci',
+      'transparen',
+      'gobierno',
+      'policia',
+      'carcel',
+      'delit',
+      'crime',
     ],
   },
 ] as const
@@ -151,6 +168,48 @@ export type VsStatusFilter = (typeof VS_STATUS_FILTERS)[number]['key']
 export type VsTimeFilter = (typeof VS_TIME_FILTERS)[number]['key']
 export type VsPolicyAxisKey = (typeof VS_POLICY_AXES)[number]['key']
 export type VsAxisFilter = 'all' | VsPolicyAxisKey
+export type VsCardAxisKey = VsPolicyAxisKey | 'other'
+
+/** A concrete policy or matter from the flair picker. */
+export type VsIssue = {
+  id: string
+  label: string
+  kind: 'policy' | 'matter'
+  fieldKey: VsPolicyAxisKey
+  fieldLabel: string
+}
+
+export type VsStance = {for: number; against: number; amendment: number}
+
+export type VsIssueComparison = VsIssue & {
+  entityVotes: [number, number]
+  entityDebateCounts: [number, number]
+  totalVotes: number
+  /**
+   * Position stances per side. A debate listing both entities has one shared
+   * tally, so its positions can't be attributed to either side and are kept
+   * apart in `jointStance`; `entityStance` only counts each side's own debates.
+   */
+  entityStance: [VsStance, VsStance]
+  jointStance: VsStance
+  jointDebateCount: number
+  /** Share of positions "a favor" among for+against, or null with no data. */
+  entityForShare: [number | null, number | null]
+}
+
+export type VsPartyVoteOption = {
+  label: string
+  /** Each side's share (0-1) of its own votes on this option, or null. */
+  shares: [number | null, number | null]
+}
+
+export type VsPartyVoteComparison = {
+  uri: string
+  title: string
+  phaseLabel: string
+  totals: [number, number]
+  options: VsPartyVoteOption[]
+}
 
 export type VsTopicFilter = {
   key: string
@@ -203,13 +262,17 @@ export type VsDebateCard = {
   createdLabel: string
   flairs: string[]
   topics: string[]
-  policyAxis: VsPolicyAxisKey
+  policyAxis: VsCardAxisKey
   policyAxisLabel: string
+  issues: VsIssue[]
   relevantEntities: string[]
   totalVotes: number
   directVotes: number
   delegatedVotes: number
   totalPositions: number
+  positionStance: VsStance
+  optionLabels: string[]
+  partyVotes: CabildeoPartyVoteSummary[]
   participationTotal: number
   consensusRate: number
   consensusLabel: string
@@ -258,11 +321,58 @@ export type VsScreenViewModel = {
   popular: VsDebateCard[]
   tableRows: VsDebateCard[]
   policyAxisComparisons: VsPolicyAxisComparison[]
+  issueComparisons: VsIssueComparison[]
+  partyVoteComparisons: VsPartyVoteComparison[]
+  selectedIssue: VsIssue | null
   raqAxisComparisons: VsRaqAxisComparison[]
   divergenceRows: VsDivergenceRow[]
   totalRelevant: number
   totalVotes: number
   totalPositions: number
+}
+
+type FlairEntry = {tag: string; id: string; label: string}
+
+const FLAIR_ISSUES = (() => {
+  const byId = new Map<string, VsIssue>()
+  const byTag = new Map<string, VsIssue>()
+  const byLooseTag = new Map<string, VsIssue>()
+  for (const kind of ['policy', 'matter'] as const) {
+    const groups = FLAIR_GROUPS[
+      kind === 'policy' ? 'POLICY' : 'MATTER'
+    ] as Record<string, readonly FlairEntry[]>
+    for (const axis of VS_POLICY_AXES) {
+      for (const flair of groups[axis.group] || []) {
+        const issue: VsIssue = {
+          id: flair.id,
+          label: flair.label,
+          kind,
+          fieldKey: axis.key,
+          fieldLabel: axis.label,
+        }
+        byId.set(flair.id, issue)
+        byTag.set(flair.tag, issue)
+        const loose = looseFlairTag(flair.tag)
+        if (!byLooseTag.has(loose)) byLooseTag.set(loose, issue)
+      }
+    }
+  }
+  return {byId, byTag, byLooseTag}
+})()
+
+// `|#X` (matter / unofficial) and `||#X` (official policy) share a subject.
+function looseFlairTag(tag: string) {
+  return tag.trim().replace(/^\|+/, '').replace(/^#/, '').toLowerCase()
+}
+
+export function resolveVsIssue(idOrTag: string | undefined): VsIssue | null {
+  if (!idOrTag) return null
+  return (
+    FLAIR_ISSUES.byId.get(idOrTag) ||
+    FLAIR_ISSUES.byTag.get(idOrTag) ||
+    FLAIR_ISSUES.byLooseTag.get(looseFlairTag(idOrTag)) ||
+    null
+  )
 }
 
 export function resolveVsEntities(
@@ -379,9 +489,11 @@ export function buildVsScreenViewModel({
     .map(cabildeo => mapVsDebateCard(cabildeo, entities))
 
   const topics = buildTopicFilters(relevantDebates)
-  const effectiveTopic = topics.some(topic => topic.key === selectedTopic)
-    ? selectedTopic
-    : 'all'
+  const effectiveTopic =
+    topics.some(topic => topic.key === selectedTopic) ||
+    FLAIR_ISSUES.byId.has(selectedTopic)
+      ? selectedTopic
+      : 'all'
   const effectiveAxis = VS_POLICY_AXES.some(axis => axis.key === selectedAxis)
     ? selectedAxis
     : 'all'
@@ -450,15 +562,26 @@ export function buildVsScreenViewModel({
     debates: filteredDebates,
     entities,
   })
+  const issueComparisons = buildIssueComparisons({
+    debates: filteredDebates,
+    entities,
+  })
+  const partyVoteComparisons = buildPartyVoteComparisons({
+    debates: filteredDebates,
+    entities,
+  })
   const raqAxisComparisons = buildRaqAxisComparisons(raqAlignments)
 
   return {
     entities: entitySummaries,
     topics,
     policyAxes: [
-      {key: 'all', label: 'Todos los ejes'},
+      {key: 'all', label: 'Todos los campos'},
       ...VS_POLICY_AXES.map(axis => ({key: axis.key, label: axis.label})),
     ],
+    issueComparisons,
+    partyVoteComparisons,
+    selectedIssue: resolveVsIssue(effectiveTopic),
     selectedTopic: effectiveTopic,
     selectedAxis: effectiveAxis,
     selectedStatus: effectiveStatus,
@@ -580,9 +703,15 @@ function mapVsDebateCard(
   const delegatedVotes = cabildeo.voteTotals.delegated || 0
   const participationTotal = normalizedVotes + normalizedPositions
   const meta = getCommunityMeta(cabildeo.community)
-  const policyAxis = classifyPolicyAxis(cabildeo)
+  const issues = dedupeIssues(
+    (cabildeo.flairs || [])
+      .map(flair => resolveVsIssue(flair))
+      .filter((issue): issue is VsIssue => Boolean(issue)),
+  )
+  const policyAxis = classifyPolicyAxis(cabildeo, issues)
   const policyAxisLabel =
-    VS_POLICY_AXES.find(axis => axis.key === policyAxis)?.label || 'Politica'
+    VS_POLICY_AXES.find(axis => axis.key === policyAxis)?.label ||
+    'Sin clasificar'
 
   return {
     uri: cabildeo.uri,
@@ -598,11 +727,19 @@ function mapVsDebateCard(
     topics,
     policyAxis,
     policyAxisLabel,
+    issues,
     relevantEntities,
     totalVotes: normalizedVotes,
     directVotes,
     delegatedVotes,
     totalPositions: normalizedPositions,
+    positionStance: {
+      for: cabildeo.positionCounts.for || 0,
+      against: cabildeo.positionCounts.against || 0,
+      amendment: cabildeo.positionCounts.amendment || 0,
+    },
+    optionLabels: (cabildeo.options || []).map(option => option.label),
+    partyVotes: cabildeo.partyVoteSummary || [],
     participationTotal,
     consensusRate: leading.consensusRate,
     consensusLabel: `${Math.round(leading.consensusRate * 100)}%`,
@@ -710,7 +847,11 @@ function buildDivergenceRows(
       delta: row.delta || 0,
     }))
 
-  return [...policy, ...raq].sort((a, b) => b.delta - a.delta).slice(0, 8)
+  // A tie is not a divergence, and would falsely name a "leader".
+  return [...policy, ...raq]
+    .filter(row => row.delta > 0)
+    .sort((a, b) => b.delta - a.delta)
+    .slice(0, 8)
 }
 
 function findRaqAxisResult(
@@ -731,7 +872,13 @@ function normalizeScore(value: number | undefined) {
   return Math.max(0, Math.min(100, Math.round(value)))
 }
 
-function classifyPolicyAxis(cabildeo: CabildeoReadView): VsPolicyAxisKey {
+function classifyPolicyAxis(
+  cabildeo: CabildeoReadView,
+  issues: VsIssue[],
+): VsCardAxisKey {
+  // The flairs are the source of truth; keywords only catch untagged debates.
+  if (issues.length > 0) return issues[0].fieldKey
+
   const text = [
     cabildeo.title,
     cabildeo.description,
@@ -742,12 +889,145 @@ function classifyPolicyAxis(cabildeo: CabildeoReadView): VsPolicyAxisKey {
     .filter(Boolean)
     .join(' ')
     .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
 
   const match = VS_POLICY_AXES.find(axis =>
     axis.keywords.some(keyword => text.includes(keyword)),
   )
 
-  return match?.key || 'governance'
+  return match?.key || 'other'
+}
+
+function dedupeIssues(issues: VsIssue[]) {
+  const seen = new Set<string>()
+  return issues.filter(issue => {
+    if (seen.has(issue.id)) return false
+    seen.add(issue.id)
+    return true
+  })
+}
+
+function emptyStance(): VsStance {
+  return {for: 0, against: 0, amendment: 0}
+}
+
+function addStance(target: VsStance, source: VsStance) {
+  target.for += source.for
+  target.against += source.against
+  target.amendment += source.amendment
+}
+
+function forShare(stance: VsStance) {
+  const decided = stance.for + stance.against
+  return decided > 0 ? stance.for / decided : null
+}
+
+function buildIssueComparisons({
+  debates,
+  entities,
+}: {
+  debates: VsDebateCard[]
+  entities: [string, string]
+}): VsIssueComparison[] {
+  const slugs = entities.map(entity => normalizeCommunitySlug(entity))
+  const rows = new Map<string, VsIssueComparison>()
+  for (const card of debates) {
+    const relevant = slugs.map(slug =>
+      card.relevantEntities.some(name => normalizeCommunitySlug(name) === slug),
+    )
+    const isJoint = relevant[0] && relevant[1]
+    for (const issue of card.issues) {
+      const row = rows.get(issue.id) || {
+        ...issue,
+        entityVotes: [0, 0] as [number, number],
+        entityDebateCounts: [0, 0] as [number, number],
+        totalVotes: 0,
+        entityStance: [emptyStance(), emptyStance()] as [VsStance, VsStance],
+        jointStance: emptyStance(),
+        jointDebateCount: 0,
+        entityForShare: [null, null] as [number | null, number | null],
+      }
+      relevant.forEach((isRelevant, index) => {
+        if (!isRelevant) return
+        row.entityVotes[index] += card.totalVotes
+        row.entityDebateCounts[index] += 1
+        if (!isJoint) addStance(row.entityStance[index], card.positionStance)
+      })
+      if (isJoint) {
+        row.jointDebateCount += 1
+        addStance(row.jointStance, card.positionStance)
+      }
+      row.totalVotes = row.entityVotes[0] + row.entityVotes[1]
+      row.entityForShare = [
+        forShare(row.entityStance[0]),
+        forShare(row.entityStance[1]),
+      ]
+      rows.set(issue.id, row)
+    }
+  }
+  return [...rows.values()]
+    .sort(
+      (a, b) =>
+        b.totalVotes - a.totalVotes ||
+        stanceTotal(b) - stanceTotal(a) ||
+        b.entityDebateCounts[0] +
+          b.entityDebateCounts[1] -
+          (a.entityDebateCounts[0] + a.entityDebateCounts[1]),
+    )
+    .slice(0, 12)
+}
+
+function stanceTotal(row: VsIssueComparison) {
+  const sum = (stance: VsStance) =>
+    stance.for + stance.against + stance.amendment
+  return (
+    sum(row.entityStance[0]) + sum(row.entityStance[1]) + sum(row.jointStance)
+  )
+}
+
+/**
+ * Per-option vote shares of each side on the same cabildeo. Only possible
+ * where the API reports a party breakdown that covers both compared entities.
+ */
+function buildPartyVoteComparisons({
+  debates,
+  entities,
+}: {
+  debates: VsDebateCard[]
+  entities: [string, string]
+}): VsPartyVoteComparison[] {
+  const slugs = entities.map(entity => normalizeCommunitySlug(entity))
+  const rows: VsPartyVoteComparison[] = []
+  for (const card of debates) {
+    const summaries = slugs.map(slug =>
+      card.partyVotes.find(
+        entry => normalizeCommunitySlug(entry.party) === slug,
+      ),
+    )
+    const [first, second] = summaries
+    if (!first || !second) continue
+    const shareOf = (
+      summary: CabildeoPartyVoteSummary,
+      optionIndex: number,
+    ): number | null =>
+      summary.total > 0
+        ? (summary.byOption[optionIndex] || 0) / summary.total
+        : null
+    rows.push({
+      uri: card.uri,
+      title: card.title,
+      phaseLabel: card.phaseLabel,
+      totals: [first.total, second.total],
+      options: card.optionLabels.map((label, index) => ({
+        label,
+        shares: [shareOf(first, index), shareOf(second, index)],
+      })),
+    })
+  }
+  return rows
+    .sort((a, b) => b.totals[0] + b.totals[1] - (a.totals[0] + a.totals[1]))
+    .slice(0, 6)
 }
 
 function pickLeadingOption(cabildeo: CabildeoReadView) {
@@ -822,8 +1102,8 @@ function classifyTopicKey(value: string) {
   if (/policy/i.test(normalized)) return 'policy'
   if (/matter/i.test(normalized)) return 'matter'
 
-  const flair = Object.values(POST_FLAIRS).find(item => item.tag === normalized)
-  if (flair) return flair.id
+  const issue = resolveVsIssue(normalized)
+  if (issue) return issue.id
 
   return normalized.toLowerCase()
 }
@@ -833,8 +1113,8 @@ function labelForTopicKey(key: string) {
   if (key === 'policy') return 'Policy'
   if (key === 'matter') return 'Matter'
 
-  const flair = Object.values(POST_FLAIRS).find(item => item.id === key)
-  if (flair) return flair.label
+  const issue = FLAIR_ISSUES.byId.get(key)
+  if (issue) return issue.label
 
   return key
     .replace(/^[|#]+/, '')

@@ -113,13 +113,17 @@ describe('buildPersonalTreeGraph', () => {
     expect(graph.unconnectedCount).toEqual(1)
   })
 
-  it('skips empty collections in the group legend', () => {
+  it('lists empty collections as groups without adding nodes', () => {
     const graph = buildPersonalTreeGraph([
       collection({id: 'c1', items: [item('a')]}),
       collection({id: 'empty'}),
     ])
 
-    expect(graph.groups.map(g => g.id)).toEqual(['c1'])
+    expect(graph.groups.map(g => [g.id, g.itemCount])).toEqual([
+      ['c1', 1],
+      ['empty', 0],
+    ])
+    expect(graph.nodes).toHaveLength(1)
   })
 
   it('gives uncoloured collections distinct fallback colours', () => {

@@ -1,11 +1,37 @@
 import {StyleSheet} from 'react-native'
 
-import {DECK_CARD_HEIGHT, DECK_SECONDARY_TOP, DECK_THIRD_TOP} from './helpers'
+import {
+  DECK_CARD_HEIGHT,
+  DECK_CARD_RADIUS,
+  DECK_GUTTER,
+  DECK_OVERLAP,
+  DECK_SECONDARY_TOP,
+  DECK_STAGGER,
+  DECK_THIRD_TOP,
+} from './helpers'
+
+// Icon inset that puts a 20pt icon's center on the quarter disc's centroid.
+const DECK_CORNER_ICON_INSET = Math.round(
+  (4 * DECK_OVERLAP) / (3 * Math.PI) - 10,
+)
 
 export const styles = StyleSheet.create({
   topChrome: {
     elevation: 20,
     zIndex: 20,
+  },
+  // Zero-height, full-width rows that web fixes to the viewport's top and
+  // bottom edges to carry the floating buttons (see MemesScreen).
+  webFixedRow: {
+    height: 0,
+    left: 0,
+    right: 0,
+    zIndex: 25,
+  },
+  // Layout.Content centers children on web but applies contentContainerStyle
+  // outside the column, so the board adds its own inner gutter there.
+  webColumnPadding: {
+    paddingHorizontal: 16,
   },
   contentShell: {
     flex: 1,
@@ -17,48 +43,43 @@ export const styles = StyleSheet.create({
     paddingBottom: 48,
     paddingTop: 8,
   },
+  contentContainerUnderChrome: {
+    paddingTop: 64,
+  },
   deckContentShell: {
     flex: 1,
     justifyContent: 'flex-start',
     paddingBottom: 0,
     paddingHorizontal: 0,
-    paddingTop: 20,
-  },
-  headerActions: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 10,
+    paddingTop: 8,
   },
   headerSearchContent: {
-    paddingRight: 8,
-    width: '100%',
+    flex: 1,
+    paddingLeft: 4,
   },
-  headerSearchButton: {
+  floatingChrome: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    left: 0,
+    paddingHorizontal: 26,
+    position: 'absolute',
+    right: 0,
+    top: 18,
+    zIndex: 25,
+  },
+  floatingButton: {
     alignItems: 'center',
-    height: 44,
+    backgroundColor: 'rgba(15, 23, 42, 0.45)',
+    borderRadius: 999,
+    height: 40,
     justifyContent: 'center',
-    width: 44,
+    width: 40,
   },
-  headerViewToggleButton: {
-    alignItems: 'center',
-    borderRadius: 8,
-    height: 44,
-    justifyContent: 'center',
-    width: 44,
-  },
-  headerViewToggleButtonActive: {
+  floatingButtonActive: {
     backgroundColor: '#1E293B',
   },
-  viewToggleButton: {
-    alignSelf: 'center',
-    alignItems: 'center',
-    borderRadius: 8,
-    height: 48,
-    justifyContent: 'center',
-    width: 48,
-  },
-  viewToggleButtonActive: {
-    backgroundColor: '#1E293B',
+  floatingButtonIcon: {
+    color: '#ffffff',
   },
   boardGrid: {
     flexDirection: 'row',
@@ -76,10 +97,12 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  fab: {
+  fabPosition: {
+    bottom: 28,
     position: 'absolute',
     right: 20,
-    bottom: 28,
+  },
+  fab: {
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -91,11 +114,6 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.15,
     shadowRadius: 8,
     elevation: 5,
-  },
-  fabText: {
-    fontSize: 32,
-    fontWeight: '300',
-    lineHeight: 36,
   },
   cardShell: {
     width: '100%',
@@ -189,21 +207,18 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
   },
   deckStage: {
-    marginTop: 8,
-    minHeight: DECK_CARD_HEIGHT + DECK_SECONDARY_TOP + 100,
+    minHeight: DECK_SECONDARY_TOP + DECK_CARD_HEIGHT,
     position: 'relative',
     width: '100%',
   },
   deckBoundaryNotice: {
-    alignItems: 'center',
+    alignSelf: 'center',
     backgroundColor: 'rgba(15, 23, 42, 0.86)',
     borderRadius: 8,
-    left: '50%',
     paddingHorizontal: 14,
     paddingVertical: 8,
     position: 'absolute',
     top: -4,
-    transform: [{translateX: -92}],
     zIndex: 20,
   },
   deckBoundaryNoticeText: {
@@ -212,115 +227,93 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
   },
   deckEndCard: {
-    backgroundColor: '#0F172A',
-    borderRadius: 8,
-    left: 34,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    alignItems: 'center',
+    borderRadius: 12,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    height: DECK_CARD_HEIGHT * 0.4,
+    justifyContent: 'center',
+    left: DECK_GUTTER + DECK_STAGGER,
+    paddingHorizontal: 24,
     position: 'absolute',
-    right: 34,
-    top: DECK_SECONDARY_TOP + DECK_CARD_HEIGHT + 14,
-    zIndex: 2,
+    right: DECK_GUTTER,
+    top: DECK_CARD_HEIGHT + 12,
+    zIndex: 1,
   },
   deckEndTitle: {
-    color: '#F8FAFC',
     fontSize: 16,
     fontWeight: '800',
+    textAlign: 'center',
   },
   deckEndBody: {
-    color: '#CBD5E1',
     fontSize: 13,
     lineHeight: 18,
     marginTop: 4,
+    textAlign: 'center',
   },
-  deckPrimary: {
-    backgroundColor: 'transparent',
-    borderRadius: 8,
-    borderWidth: 1,
-    left: 0,
-    overflow: 'hidden',
+  deckSlot: {
+    borderRadius: DECK_CARD_RADIUS,
+    height: DECK_CARD_HEIGHT,
     position: 'absolute',
-    right: 52,
+    shadowColor: '#000',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.12,
+    shadowRadius: 10,
+  },
+  deckSlotRaised: {
+    elevation: 8,
+    shadowOffset: {width: 0, height: 10},
+    shadowOpacity: 0.28,
+    shadowRadius: 18,
+  },
+  deckSlotInner: {
+    borderRadius: DECK_CARD_RADIUS,
+    borderWidth: StyleSheet.hairlineWidth,
+    flex: 1,
+    overflow: 'hidden',
+  },
+  deckSlotCurrent: {
+    left: DECK_GUTTER,
+    right: DECK_GUTTER + DECK_STAGGER,
     top: 0,
-    zIndex: 3,
   },
-  deckPrevIncoming: {
-    backgroundColor: 'transparent',
-    borderRadius: 8,
-    borderWidth: 1,
-    left: 0,
-    overflow: 'hidden',
-    position: 'absolute',
-    right: 34,
+  deckSlotPrev: {
+    left: DECK_GUTTER,
+    right: DECK_GUTTER + DECK_STAGGER,
     top: 0,
-    zIndex: 5,
+    zIndex: 6,
   },
-  deckSecondary: {
-    backgroundColor: 'transparent',
-    borderRadius: 8,
-    borderWidth: 1,
-    left: 52,
-    overflow: 'hidden',
-    position: 'absolute',
-    right: 0,
+  deckSlotNext: {
+    left: DECK_GUTTER + DECK_STAGGER,
+    right: DECK_GUTTER,
     top: DECK_SECONDARY_TOP,
-    zIndex: 2,
   },
-  deckHidden: {
-    backgroundColor: 'transparent',
-    borderRadius: 8,
-    borderWidth: 1,
-    left: 52,
-    overflow: 'hidden',
-    position: 'absolute',
-    right: 0,
+  deckSlotThird: {
+    left: DECK_GUTTER + DECK_STAGGER,
+    right: DECK_GUTTER,
     top: DECK_THIRD_TOP,
     zIndex: 1,
   },
   deckCardShell: {
-    minHeight: DECK_CARD_HEIGHT,
-    position: 'relative',
+    height: DECK_CARD_HEIGHT,
   },
   deckVisual: {
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-    justifyContent: 'space-between',
-    padding: 15,
+    flex: 1,
+    justifyContent: 'flex-end',
+    // Keep the title and pills above the overlap so they stay readable when
+    // the card below is raised over this one.
+    paddingBottom: DECK_OVERLAP + 14,
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   deckVisualBottom: {
-    gap: 8,
-    paddingTop: 8,
-  },
-  deckBody: {
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  deckBodyContent: {
-    borderBottomLeftRadius: 8,
-    borderBottomRightRadius: 8,
-    gap: 2,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    zIndex: 1,
-  },
-  deckBodyGlassTail: {
-    display: 'none',
-  },
-  deckInfoRow: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    gap: 8,
-  },
-  deckSubmeta: {
-    flex: 1,
+    gap: 10,
   },
   deckTitle: {
     color: '#121212',
     fontSize: 25,
     fontWeight: '800',
-    lineHeight: 28,
-    width: '86%',
+    lineHeight: 29,
   },
   deckTitleOnImage: {
     color: '#ffffff',
@@ -328,20 +321,112 @@ export const styles = StyleSheet.create({
     textShadowOffset: {width: 0, height: 1},
     textShadowRadius: 3,
   },
-  deckCommandCenter: {
-    alignItems: 'flex-start',
-    alignSelf: 'center',
-    position: 'absolute',
-    top: DECK_SECONDARY_TOP - 44,
+  deckDim: {
+    ...StyleSheet.absoluteFill,
+  },
+  deckBandLayer: {
+    ...StyleSheet.absoluteFill,
     zIndex: 10,
   },
-  deckCommandCenterZone: {
-    alignItems: 'center',
+  deckBand: {
+    borderBottomRightRadius: DECK_CARD_RADIUS,
+    borderTopLeftRadius: DECK_CARD_RADIUS,
+    borderWidth: StyleSheet.hairlineWidth,
+    elevation: 12,
+    height: DECK_OVERLAP,
+    left: DECK_GUTTER + DECK_STAGGER,
+    overflow: 'hidden',
+    position: 'absolute',
+    right: DECK_GUTTER + DECK_STAGGER,
+    top: DECK_SECONDARY_TOP,
+    zIndex: 10,
+  },
+  // Quarter discs anchored on the two card corners inside the band. The icon
+  // sits on the disc's visual center, 4r/3π in from the corner.
+  deckBandCorner: {
+    height: DECK_OVERLAP,
+    position: 'absolute',
+    width: DECK_OVERLAP,
+  },
+  deckBandCornerStart: {
+    alignItems: 'flex-start',
+    borderBottomRightRadius: DECK_OVERLAP,
+    borderTopLeftRadius: DECK_CARD_RADIUS,
+    justifyContent: 'flex-start',
+    left: 0,
+    padding: DECK_CORNER_ICON_INSET,
+    top: 0,
+  },
+  deckBandCornerEnd: {
+    alignItems: 'flex-end',
+    borderBottomRightRadius: DECK_CARD_RADIUS,
+    borderTopLeftRadius: DECK_OVERLAP,
     bottom: 0,
+    justifyContent: 'flex-end',
+    padding: DECK_CORNER_ICON_INSET,
+    right: 0,
+  },
+  deckBandComments: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 4,
+    paddingHorizontal: 2,
+  },
+  deckBandCommentsText: {
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  deckBandCenter: {
+    ...StyleSheet.absoluteFill,
+    alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'center',
-    position: 'absolute',
-    top: 0,
+    // Just clear of the quarter discs, which leaves room for votes and
+    // comments on 375pt-wide phones.
+    marginHorizontal: DECK_OVERLAP * 0.42,
+  },
+  searchSuggest: {
+    ...StyleSheet.absoluteFill,
+    zIndex: 30,
+  },
+  searchSuggestContent: {
+    paddingBottom: 48,
+    paddingTop: 4,
+  },
+  searchSuggestRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    minHeight: 48,
+    paddingHorizontal: 16,
+  },
+  searchMemeRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  searchMemeThumb: {
+    borderRadius: 8,
+    height: 44,
+    overflow: 'hidden',
+    width: 44,
+  },
+  searchChipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    paddingHorizontal: 16,
+  },
+  searchChip: {
+    alignItems: 'center',
+    borderRadius: 999,
+    flexDirection: 'row',
+    gap: 6,
+    maxWidth: '100%',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
   },
   commentChip: {
     alignItems: 'center',
@@ -393,39 +478,41 @@ export const styles = StyleSheet.create({
   deckCardPressable: {
     flex: 1,
   },
-  expandedModalOverlay: {
-    backgroundColor: 'rgba(15, 23, 42, 0.42)',
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  expandedModalDismiss: {
+  viewerRoot: {
+    backgroundColor: '#000',
     flex: 1,
   },
-  expandedModalSheet: {
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
-    paddingBottom: 34,
-    paddingHorizontal: 16,
-    paddingTop: 12,
+  viewerHeader: {
+    left: 0,
+    paddingHorizontal: 12,
+    position: 'absolute',
+    right: 0,
+    top: 0,
   },
-  expandedHandle: {
-    alignSelf: 'center',
-    borderRadius: 8,
-    height: 5,
-    marginBottom: 14,
-    width: 44,
+  viewerBackButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.35)',
+    borderRadius: 999,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
   },
-  expandedVisual: {
-    borderRadius: 8,
-    justifyContent: 'space-between',
-    minHeight: 236,
-    overflow: 'hidden',
-    padding: 18,
+  viewerFooter: {
+    bottom: 0,
+    left: 0,
+    paddingTop: 48,
+    position: 'absolute',
+    right: 0,
   },
-  expandedBody: {
-    gap: 10,
-    paddingHorizontal: 4,
-    paddingTop: 16,
+  viewerControls: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 20,
+  },
+  viewerControl: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
   },
   emptyState: {
     alignItems: 'center',

@@ -18,6 +18,7 @@ import {
   type PeacefulMarchPermitStatus,
   type SignatureDriveInstrumentType,
   SOCIAL_ACTIVITY_ASSEMBLY,
+  SOCIAL_ACTIVITY_CABILDEO,
   SOCIAL_ACTIVITY_PEACEFUL_MARCH,
   SOCIAL_ACTIVITY_SIGNATURE_DRIVE,
 } from '#/lib/api/para-lexicons'
@@ -36,6 +37,7 @@ export type SocialActivityKind =
   | typeof SOCIAL_ACTIVITY_PEACEFUL_MARCH
   | typeof SOCIAL_ACTIVITY_SIGNATURE_DRIVE
   | typeof SOCIAL_ACTIVITY_ASSEMBLY
+  | typeof SOCIAL_ACTIVITY_CABILDEO
 
 export type EconomicActivityKind = EconomicActivityDetails['$type']
 
@@ -57,6 +59,7 @@ export const SOCIAL_ACTIVITY_KINDS: KindMeta<SocialActivityKind>[] = [
     emoji: '✍️',
   },
   {value: SOCIAL_ACTIVITY_ASSEMBLY, label: msg`Assembly`, emoji: '🏛️'},
+  {value: SOCIAL_ACTIVITY_CABILDEO, label: msg`Cabildeo`, emoji: '🗣️'},
 ]
 
 export const ECONOMIC_ACTIVITY_KINDS: KindMeta<EconomicActivityKind>[] = [

@@ -10,17 +10,14 @@ import {
   getStoredAnonymousProfile,
   setStoredAnonymousProfile,
 } from '#/lib/im8/anonymous'
-import {
-  getKarmaMe,
-  getKarmaProfile,
-  getMe,
-  postAnonymousDisable,
-  postAnonymousEnable,
-  putKarmaRevelation,
-} from '#/lib/im8/api'
+import {getMe, postAnonymousDisable, postAnonymousEnable} from '#/lib/im8/api'
 import {type AnonymousProfile} from '#/lib/im8/types'
 import {type CommonNavigatorParams} from '#/lib/routes/types'
 import * as Storage from '#/lib/storage'
+import {
+  useInfluenceQuery,
+  useInfluenceVisibilityMutation,
+} from '#/state/queries/influence'
 import {useSession} from '#/state/session'
 import * as SettingsList from '#/screens/Settings/components/SettingsList'
 import {atoms as a, useTheme} from '#/alf'
@@ -39,6 +36,7 @@ import {Envelope_Stroke2_Corner2_Rounded as EnvelopeIcon} from '#/components/ico
 import {EyeSlash_Stroke2_Corner0_Rounded as EyeSlashIcon} from '#/components/icons/EyeSlash'
 import {Freeze_Stroke2_Corner2_Rounded as FreezeIcon} from '#/components/icons/Freeze'
 import {Group3_Stroke2_Corner0_Rounded as AttributesIcon} from '#/components/icons/Group'
+import {Influence_Stroke_Icon as InfluenceIcon} from '#/components/icons/Influence'
 import {Lock_Stroke2_Corner2_Rounded as LockIcon} from '#/components/icons/Lock'
 import {PencilLine_Stroke2_Corner2_Rounded as PencilIcon} from '#/components/icons/Pencil'
 import {Person_Stroke2_Corner2_Rounded as PersonIcon} from '#/components/icons/Person'
@@ -70,9 +68,8 @@ export function AccountSettingsScreen({navigation}: Props) {
   const [anonProfile, setAnonProfile] = useState<AnonymousProfile | null>(null)
   const [loadingAnon, setLoadingAnon] = useState(false)
 
-  const [karmaGlobal, setKarmaGlobal] = useState(0)
-  const [revealGlobalKarma, setRevealGlobalKarma] = useState(false)
-  const [loadingKarma, setLoadingKarma] = useState(false)
+  const influence = useInfluenceQuery(currentAccount?.did)
+  const visibilityMutation = useInfluenceVisibilityMutation()
 
   const loadAnonymousMode = useCallback(async () => {
     try {
@@ -99,35 +96,19 @@ export function AccountSettingsScreen({navigation}: Props) {
   useFocusEffect(
     useCallback(() => {
       void loadAnonymousMode()
-      void loadKarma()
     }, [loadAnonymousMode]),
   )
 
-  const loadKarma = useCallback(async () => {
+  const toggleRevealInfluence = async (value: boolean) => {
     try {
-      const karma = await getKarmaMe()
-      setKarmaGlobal(karma.global)
-      const profile = await getKarmaProfile(karma.profileId)
-      setRevealGlobalKarma(profile.revealed.global)
-    } catch (e) {
-      console.error('Failed to load karma', e)
-    }
-  }, [])
-
-  const toggleRevealGlobalKarma = async (value: boolean) => {
-    try {
-      setLoadingKarma(true)
-      await putKarmaRevelation({revealGlobal: value})
-      setRevealGlobalKarma(value)
+      await visibilityMutation.mutateAsync(value)
       Toast.show(
         value
-          ? _(msg`Global karma is now visible`)
-          : _(msg`Global karma is now private`),
+          ? _(msg`Global Influence is now visible`)
+          : _(msg`Global Influence is now hidden`),
       )
-    } catch (e) {
-      Toast.show(_(msg`Failed to update karma visibility`))
-    } finally {
-      setLoadingKarma(false)
+    } catch {
+      Toast.show(_(msg`Failed to update Influence visibility`))
     }
   }
 
@@ -247,7 +228,7 @@ export function AccountSettingsScreen({navigation}: Props) {
                 hoverStyle={[{backgroundColor: t.palette.primary_100}]}
                 contentContainerStyle={[a.rounded_md, a.px_lg]}>
                 <SettingsList.ItemIcon
-                  icon={ShieldIcon}
+                  icon={InfluenceIcon}
                   color={t.palette.primary_500}
                 />
                 <SettingsList.ItemText
@@ -282,7 +263,7 @@ export function AccountSettingsScreen({navigation}: Props) {
 
                 navigation.navigate('INEVerification' as never)
               }}>
-              <SettingsList.ItemIcon icon={ShieldIcon} />
+              <SettingsList.ItemIcon icon={InfluenceIcon} />
               <SettingsList.ItemText>
                 <Trans>Verify Identity (INE)</Trans>
               </SettingsList.ItemText>
@@ -361,9 +342,9 @@ export function AccountSettingsScreen({navigation}: Props) {
             </SettingsList.Group>
             <SettingsList.Divider />
             <SettingsList.Group>
-              <SettingsList.ItemIcon icon={ShieldIcon} />
+              <SettingsList.ItemIcon icon={InfluenceIcon} />
               <SettingsList.ItemText>
-                <Trans>Karma</Trans>
+                <Trans>Influence</Trans>
               </SettingsList.ItemText>
               <View style={[a.pb_sm, a.pt_xs]}>
                 <Text
@@ -373,8 +354,8 @@ export function AccountSettingsScreen({navigation}: Props) {
                     t.atoms.text_contrast_medium,
                   ]}>
                   <Trans>
-                    Your reputation across communities. You control what others
-                    can see.
+                    Upvotes received over time minus downvotes, across all your
+                    communities. You control whether others see your score.
                   </Trans>
                 </Text>
               </View>
@@ -385,21 +366,27 @@ export function AccountSettingsScreen({navigation}: Props) {
                     a.font_semi_bold,
                     t.atoms.text_contrast_high,
                   ]}>
-                  {karmaGlobal}
+                  {influence.isError
+                    ? _(msg`Unable to load Influence`)
+                    : (influence.data?.stats.influence ?? '…')}
                 </Text>
                 <Text style={[a.text_sm, t.atoms.text_contrast_low]}>
-                  <Trans>Global Karma</Trans>
+                  <Trans>Global Influence</Trans>
                 </Text>
               </View>
               <Toggle.Item
-                name="reveal_global_karma"
-                label={_(msg`Reveal Global Karma`)}
-                value={revealGlobalKarma}
-                onChange={toggleRevealGlobalKarma}
-                disabled={loadingKarma}
+                name="reveal_global_influence"
+                label={_(msg`Reveal Global Influence`)}
+                value={influence.data?.influenceVisible ?? false}
+                onChange={toggleRevealInfluence}
+                disabled={
+                  !influence.data ||
+                  influence.isError ||
+                  visibilityMutation.isPending
+                }
                 style={[a.w_full, a.py_xs]}>
                 <Toggle.LabelText style={[a.flex_1]}>
-                  <Trans>Reveal Global Karma</Trans>
+                  <Trans>Reveal Global Influence</Trans>
                 </Toggle.LabelText>
                 <Toggle.Platform />
               </Toggle.Item>

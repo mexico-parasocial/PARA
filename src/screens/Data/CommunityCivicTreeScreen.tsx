@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
@@ -13,11 +14,13 @@ import {Trans, useLingui} from '@lingui/react/macro'
 import {useRoute} from '@react-navigation/native'
 
 import {buildCommunityCivicTreeVaultManifest} from '#/lib/civic-export/obsidian'
+import {COMPASS_POSITION_NAMES} from '#/lib/compass/compassColors'
 import {useAnonymousMode} from '#/lib/im8/hooks/useAnonymousMode'
 import {usePartyLobbyingBriefingPacksQuery} from '#/state/queries/briefing-packs'
 import {
-  type CommunityBoardView,
+  useCommunityBoardQuery,
   useCommunityBoardsQuery,
+  useCommunityTreeDirectoryQuery,
 } from '#/state/queries/community-boards'
 import {
   COMMUNITY_CIVIC_TREE_CARD_TYPES,
@@ -38,22 +41,37 @@ import {
   useVoteCommunityTreeContributionMutation,
 } from '#/state/queries/community-civic-tree'
 import {useSession} from '#/state/session'
-import {useBreakpoints, useTheme} from '#/alf'
+import {useExpandCivicTreeWorkspace} from '#/state/shell/civic-tree-workspace'
+import {atoms as a, useBreakpoints, useLayoutBreakpoints, useTheme} from '#/alf'
+import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import {useDialogControl} from '#/components/Dialog'
 import {SortitionConfigDialog} from '#/components/dialogs/SortitionConfigDialog'
 import {SearchInput} from '#/components/forms/SearchInput'
+import {BulletList_Stroke2_Corner0_Rounded as ListIcon} from '#/components/icons/BulletList'
+import {Earth_Stroke2_Corner0_Rounded as EarthIcon} from '#/components/icons/Globe'
+import {Leaf_Stroke2_Corner0_Rounded as LeafIcon} from '#/components/icons/Leaf'
 import * as Layout from '#/components/Layout'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
+import {IS_WEB} from '#/env'
 import {type GraphData} from '#/features/civicTree/types'
+import {
+  collapseCommunityTreeTwins,
+  findCommunityTreeTwinGroup,
+  resolveCommunityTreeUri,
+} from '#/features/communityCivicTree/communitySelection'
 import {
   CivicTreeFilterMenu,
   CivicTreeFilterRow,
 } from '#/features/communityCivicTree/components/CivicTreeFilterMenu'
+import {CommunityCivicTreeCollections} from '#/features/communityCivicTree/components/CommunityCivicTreeCollections'
 import {CommunityCivicTreeGraph} from '#/features/communityCivicTree/components/CommunityCivicTreeGraph'
+import {CommunityCivicTreeMap} from '#/features/communityCivicTree/components/CommunityCivicTreeMap'
 import {CommunityCivicTreeOutline} from '#/features/communityCivicTree/components/CommunityCivicTreeOutline'
 import {CommunityHelpWanted} from '#/features/communityCivicTree/components/CommunityHelpWanted'
 import {CommunityTopicRail} from '#/features/communityCivicTree/components/CommunityTopicRail'
+import {CommunityTreeSelector} from '#/features/communityCivicTree/components/CommunityTreeSelector'
+import {filterCommunityWorkspace} from '#/features/communityCivicTree/workspace'
 import {CommunityPulseSheet} from './components/CommunityPulseSheet'
 import {ContributionReviewDetail} from './components/ContributionReviewDetail'
 import {NodeDetailSheet} from './components/NodeDetailSheet'
@@ -80,6 +98,17 @@ export function CommunityCivicTreeScreen() {
   }>()
   const t = useTheme()
   const {gtMobile} = useBreakpoints()
+  const {width: windowWidth} = useWindowDimensions()
+  const {centerColumnOffset} = useLayoutBreakpoints()
+  const [viewMode, setViewMode] = useState<'list' | 'graph' | 'map'>('map')
+  const [showOutline, setShowOutline] = useState(false)
+  const [showGovernance, setShowGovernance] = useState(false)
+  const expanded = IS_WEB && gtMobile && viewMode === 'map'
+  useExpandCivicTreeWorkspace(expanded)
+  const workspaceLeft =
+    windowWidth / 2 -
+    300 +
+    (centerColumnOffset ? Layout.CENTER_COLUMN_OFFSET : 0)
   const {currentAccount} = useSession()
   const myDid = currentAccount?.did
   const {isEnabled: isAnonymous, profile: anonProfile} = useAnonymousMode()
@@ -89,21 +118,24 @@ export function CommunityCivicTreeScreen() {
   const entryPoint = route.params?.entryPoint
   const initialHighlightCardId = route.params?.highlightCardId
 
-  const {data: boardsData, isLoading: boardsLoading} = useCommunityBoardsQuery()
-  const myBoards = useMemo(() => {
-    return (
-      boardsData?.boards.filter(
-        b =>
-          b.viewerMembershipState === 'active' ||
-          b.viewerMembershipState === 'pending',
-      ) ?? []
-    )
-  }, [boardsData])
-
-  const [selectedCommunityUri, setSelectedCommunityUri] = useState<
-    string | undefined
-  >(initialUri)
-  const [showPicker, setShowPicker] = useState(false)
+  const directory = useCommunityTreeDirectoryQuery()
+  const boards = useMemo(
+    () => directory.data?.pages.flatMap(page => page.boards) ?? [],
+    [directory.data],
+  )
+  const entryKey = JSON.stringify([route.key, initialUri, initialName])
+  const [selection, setSelection] = useState<{
+    entryKey: string
+    uri?: string
+    name?: string
+  }>({entryKey, uri: initialUri, name: initialName})
+  const selectedCommunityUri = resolveCommunityTreeUri({
+    entryKey,
+    selection,
+    initialUri,
+  })
+  const selectionName =
+    selection.entryKey === entryKey ? selection.name : initialName
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [showSummary, setShowSummary] = useState(false)
   const [showPulse, setShowPulse] = useState(false)
@@ -134,81 +166,57 @@ export function CommunityCivicTreeScreen() {
    * argued. Both read the same filtered data, so switching never changes what
    * is on screen - only how it is arranged.
    */
-  const [viewMode, setViewMode] = useState<'graph' | 'outline'>('graph')
   const [showIdeologicalOverlay, setShowIdeologicalOverlay] = useState(false)
 
-  const selectedCommunityFromBoards = useMemo(() => {
-    // First try explicit selection
-    if (selectedCommunityUri) {
-      const selected = myBoards.find(b => b.uri === selectedCommunityUri)
-      if (selected) return selected
-    }
-    // Then try matching by name from URL param (e.g. ?communityName=pan)
-    if (initialName) {
-      const byName = myBoards.find(
-        b =>
-          b.name?.toLowerCase() === initialName.toLowerCase() ||
-          b.slug?.toLowerCase() === initialName.toLowerCase(),
-      )
-      if (byName) return byName
-      // Name was explicitly provided but no match found — don't fall back
-      return undefined
-    }
-    // Then try initial URI
-    if (initialUri) {
-      const initial = myBoards.find(b => b.uri === initialUri)
-      if (initial) return initial
-      // URI was explicitly provided but no match found — don't fall back
-      return undefined
-    }
-    // No explicit selection — auto-select if user has exactly one community
-    if (myBoards.length === 1) return myBoards[0]
-    // Multiple communities — show picker
-    return undefined
-  }, [initialName, initialUri, myBoards, selectedCommunityUri])
-
-  // If community not found in user's boards, try searching all public boards
-  // by name/slug (allows viewing public communities without membership)
-  const needsFallbackLookup = Boolean(
-    initialName && !boardsLoading && !selectedCommunityFromBoards,
+  // Resolve the exact profile URI even when it is not in the directory or
+  // the viewer has never joined. Search results are matched, never guessed.
+  const {data: selectedBoardData} = useCommunityBoardQuery({
+    uri: selectedCommunityUri,
+  })
+  const needsNameLookup = !selectedCommunityUri && !!selectionName
+  const {data: nameBoardsData, isLoading: nameLoading} =
+    useCommunityBoardsQuery({limit: 100, query: selectionName}, needsNameLookup)
+  const selectedCommunity = selectedCommunityUri
+    ? selectedBoardData?.board?.uri === selectedCommunityUri
+      ? selectedBoardData.board
+      : boards.find(board => board.uri === selectedCommunityUri)
+    : selectionName
+      ? collapseCommunityTreeTwins(
+          findCommunityTreeTwinGroup(
+            nameBoardsData?.boards ?? boards,
+            selectionName,
+          ),
+        )[0]
+      : boards.filter(board => board.viewerMembershipState === 'active')
+            .length === 1
+        ? boards.find(board => board.viewerMembershipState === 'active')
+        : undefined
+  const communityUri = selectedCommunityUri ?? selectedCommunity?.uri
+  const availableBoards = useMemo(
+    () => (selectedCommunity ? [...boards, selectedCommunity] : boards),
+    [boards, selectedCommunity],
   )
-  const {data: fallbackBoardsData, isLoading: fallbackLoading} =
-    useCommunityBoardsQuery(
-      {
-        query: needsFallbackLookup ? initialName : undefined,
-      },
-      needsFallbackLookup,
-    )
-  const fallbackBoard = fallbackBoardsData?.boards?.[0]
-
-  /*
-   * A deep link can point at a community the viewer has not joined, or one
-   * that falls outside the boards query's first page. The tree stays viewable
-   * via a stub derived from the route params; member-only actions are then
-   * rejected server-side with NotAMember.
-   */
-  const deepLinkedCommunity = useMemo<CommunityBoardView | undefined>(() => {
-    if (!initialUri || selectedCommunityFromBoards) return undefined
-    return {
-      uri: initialUri,
-      cid: '',
-      creatorDid: '',
-      communityId: initialUri,
-      slug: initialName ?? '',
-      name: initialName ?? 'Community',
-      quadrant: '',
-      delegatesChatId: '',
-      subdelegatesChatId: '',
-      memberCount: 0,
-      viewerMembershipState: 'none',
-      createdAt: '',
-    }
-  }, [initialName, initialUri, selectedCommunityFromBoards])
-
-  const selectedCommunity =
-    selectedCommunityFromBoards ?? fallbackBoard ?? deepLinkedCommunity
-
-  const communityUri = selectedCommunity?.uri
+  const selectCommunity = useCallback(
+    (uri?: string, name?: string) => {
+      setSelection({entryKey, uri, name})
+      setSelectedNodeId(undefined)
+      setSelectedContributionId(undefined)
+      setPendingHighlightCardId(undefined)
+      setShowContributionDetail(false)
+      setShowContributionNotice(false)
+      setShowReviewPanel(false)
+      setShowSummary(false)
+      setShowPulse(false)
+      setShowSuggestions(false)
+      setShowGovernance(false)
+      setSortitionStatus('none')
+      setSearchQuery('')
+      setActiveCardTypes(new Set())
+      setActiveRelTypes(new Set())
+      setActiveStances(new Set())
+    },
+    [entryKey],
+  )
 
   const {
     data: graphData,
@@ -248,10 +256,46 @@ export function CommunityCivicTreeScreen() {
     undefined,
   )
 
+  useEffect(() => {
+    setSelectedNodeId(undefined)
+    setSelectedContributionId(pendingContributionId)
+    setPendingHighlightCardId(initialHighlightCardId)
+    setShowContributionNotice(entryPoint === 'contribution_submitted')
+    setShowReviewPanel(entryPoint === 'contribution_submitted')
+    setShowContributionDetail(false)
+    setShowSummary(false)
+    setShowPulse(false)
+    setShowSuggestions(false)
+    setSortitionStatus('none')
+    setSearchQuery('')
+    setActiveCardTypes(new Set())
+    setActiveRelTypes(new Set())
+    setActiveStances(new Set())
+  }, [entryKey, pendingContributionId, initialHighlightCardId, entryPoint])
+
   const graphDataForRender: GraphData | null = useMemo(() => {
     if (!graphData) return null
     return normalizeCommunityCivicTreeGraph(graphData)
   }, [graphData])
+  const filteredWorkspace = useMemo(
+    () =>
+      graphDataForRender
+        ? filterCommunityWorkspace(
+            graphDataForRender,
+            searchQuery,
+            activeCardTypes,
+            activeRelTypes,
+            activeStances,
+          )
+        : null,
+    [
+      graphDataForRender,
+      searchQuery,
+      activeCardTypes,
+      activeRelTypes,
+      activeStances,
+    ],
+  )
 
   const selectedNode = useMemo(() => {
     if (!selectedNodeId || !graphData) return null
@@ -300,7 +344,9 @@ export function CommunityCivicTreeScreen() {
     activeRelTypes.size > 0 ||
     activeStances.size > 0
 
-  const isLoading = boardsLoading || fallbackLoading || graphLoading
+  const isLoading =
+    graphLoading ||
+    (!communityUri && (directory.isLoading || (needsNameLookup && nameLoading)))
 
   const onVoteContribution = useCallback(
     (
@@ -344,54 +390,152 @@ export function CommunityCivicTreeScreen() {
   }, [communityUri, graphData, selectedCommunity?.name])
 
   return (
-    <Layout.Screen>
-      <Layout.Header.Outer>
-        <Layout.Header.BackButton fallback="MyBase" />
-        <Layout.Header.Content>
-          <Layout.Header.TitleText>
-            <Trans>Community Civic Tree</Trans>
-          </Layout.Header.TitleText>
-        </Layout.Header.Content>
-        <Layout.Header.Slot />
-      </Layout.Header.Outer>
-
-      <Layout.Center style={styles.centerColumn}>
+    <Layout.Screen hideBorders={expanded}>
+      <Layout.Center
+        style={[
+          styles.centerColumn,
+          expanded && {
+            maxWidth: windowWidth,
+            width: windowWidth - workspaceLeft - 24,
+            marginLeft: workspaceLeft,
+            marginRight: 24,
+            transform: [],
+          },
+        ]}>
+        <View
+          style={[
+            a.flex_row,
+            a.align_center,
+            a.gap_sm,
+            a.px_md,
+            a.py_xs,
+            a.border_b,
+            t.atoms.bg,
+            t.atoms.border_contrast_low,
+            {minHeight: 52},
+          ]}>
+          <Layout.Header.BackButton fallback="MyBase" />
+          <Layout.Header.Content>
+            <Layout.Header.TitleText>
+              <Trans>Community Civic Tree</Trans>
+            </Layout.Header.TitleText>
+          </Layout.Header.Content>
+          <Layout.Header.Slot />
+        </View>
         <View style={styles.columnContent}>
+          <View
+            style={[
+              a.p_md,
+              a.border_b,
+              a.flex_row,
+              a.flex_wrap,
+              a.align_center,
+              a.justify_between,
+              a.gap_sm,
+              t.atoms.border_contrast_low,
+            ]}>
+            <CommunityTreeSelector
+              boards={availableBoards}
+              selectedCommunity={selectedCommunity}
+              selectedUri={communityUri}
+              selectedName={selectionName}
+              onSelect={selectCommunity}
+              onSelectNinth={ninth =>
+                selectCommunity(undefined, COMPASS_POSITION_NAMES[ninth])
+              }
+              isLoading={directory.isFetching}
+              isError={directory.isError}
+              onRetry={() => void directory.refetch()}
+              hasNextPage={directory.hasNextPage}
+              onLoadMore={() => void directory.fetchNextPage()}
+              collapseTwins
+              showTreeVersions
+            />
+          </View>
+          <View style={[a.p_md, a.border_b, t.atoms.border_contrast_low]}>
+            <View
+              style={[
+                a.flex_row,
+                a.flex_wrap,
+                a.gap_xs,
+                a.p_xs,
+                a.rounded_md,
+                t.atoms.bg_contrast_25,
+                a.self_start,
+              ]}>
+              {(
+                [
+                  {id: 'list', label: l`Collections`, icon: ListIcon},
+                  {id: 'graph', label: l`Tree`, icon: LeafIcon},
+                  {id: 'map', label: l`Interactive Map`, icon: EarthIcon},
+                ] as const
+              ).map(mode => (
+                <Button
+                  key={mode.id}
+                  label={mode.label}
+                  variant={viewMode === mode.id ? 'solid' : 'ghost'}
+                  color={viewMode === mode.id ? 'primary' : 'secondary'}
+                  size="small"
+                  accessibilityState={{selected: viewMode === mode.id}}
+                  onPress={() => setViewMode(mode.id)}>
+                  <ButtonIcon icon={mode.icon} />
+                  <ButtonText style={!gtMobile && a.text_xs}>
+                    {mode.label}
+                  </ButtonText>
+                </Button>
+              ))}
+            </View>
+          </View>
           {communityUri && (
             <View style={styles.topControls}>
-              <SortitionStatusCard
-                status={sortitionStatus}
-                onConfigure={() => sortitionControl.open()}
-                canConfigure={true}
-              />
+              {viewMode === 'graph' || showGovernance ? (
+                <SortitionStatusCard
+                  status={sortitionStatus}
+                  onConfigure={() => sortitionControl.open()}
+                  canConfigure={true}
+                />
+              ) : null}
               <View style={styles.communityActions}>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel={
-                    viewMode === 'graph'
-                      ? 'Switch to outline view'
-                      : 'Switch to graph view'
-                  }
-                  accessibilityHint="Toggles between the connection graph and the argument outline"
-                  onPress={() =>
-                    setViewMode(m => (m === 'graph' ? 'outline' : 'graph'))
-                  }
-                  style={[
-                    styles.pulseBtn,
-                    {backgroundColor: t.palette.primary_500 + '15'},
-                  ]}>
-                  <Text
+                {viewMode !== 'graph' ? (
+                  <Button
+                    label={l`Governance`}
+                    size="small"
+                    variant="ghost"
+                    color="secondary"
+                    accessibilityState={{expanded: showGovernance}}
+                    onPress={() => setShowGovernance(previous => !previous)}>
+                    <ButtonText>
+                      <Trans>Governance</Trans>
+                    </ButtonText>
+                  </Button>
+                ) : null}
+                {viewMode === 'graph' ? (
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      !showOutline
+                        ? 'Switch to outline view'
+                        : 'Switch to graph view'
+                    }
+                    accessibilityHint="Toggles between the connection graph and the argument outline"
+                    onPress={() => setShowOutline(previous => !previous)}
                     style={[
-                      styles.topActionText,
-                      {color: t.palette.primary_500},
+                      styles.pulseBtn,
+                      {backgroundColor: t.palette.primary_500 + '15'},
                     ]}>
-                    {viewMode === 'graph' ? (
-                      <Trans>Outline</Trans>
-                    ) : (
-                      <Trans>Graph</Trans>
-                    )}
-                  </Text>
-                </TouchableOpacity>
+                    <Text
+                      style={[
+                        styles.topActionText,
+                        {color: t.palette.primary_500},
+                      ]}>
+                      {!showOutline ? (
+                        <Trans>Outline</Trans>
+                      ) : (
+                        <Trans>Graph</Trans>
+                      )}
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
                 <TouchableOpacity
                   accessibilityRole="button"
                   accessibilityLabel="Community pulse"
@@ -459,23 +603,6 @@ export function CommunityCivicTreeScreen() {
                     </Text>
                   </TouchableOpacity>
                 )}
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel="Select community"
-                  accessibilityHint="Opens community picker"
-                  onPress={() => setShowPicker(true)}
-                  style={[
-                    styles.communityButton,
-                    {borderColor: t.palette.contrast_100},
-                  ]}>
-                  <Text
-                    style={[
-                      styles.communityButtonText,
-                      {color: t.palette.primary_500},
-                    ]}>
-                    {selectedCommunity?.name ?? 'Select Community'}
-                  </Text>
-                </TouchableOpacity>
               </View>
             </View>
           )}
@@ -702,7 +829,7 @@ export function CommunityCivicTreeScreen() {
            * Topics first: what the community is working on together, ranked by
            * how many members have joined each one rather than by activity.
            */}
-          {graphData && graphData.nodes.length > 0 ? (
+          {viewMode === 'graph' && graphData && graphData.nodes.length > 0 ? (
             <>
               <CommunityTopicRail
                 data={graphData}
@@ -828,38 +955,19 @@ export function CommunityCivicTreeScreen() {
               <Text
                 style={[styles.emptyTitle, {color: t.palette.contrast_900}]}>
                 <Trans>
-                  {initialName
-                    ? `Community "${initialName}" not found`
+                  {selectionName
+                    ? `No community tree found for "${selectionName}"`
                     : 'Select a community'}
                 </Trans>
               </Text>
               <Text
                 style={[styles.emptySubtitle, {color: t.palette.contrast_500}]}>
                 <Trans>
-                  {initialName
-                    ? 'Verify the name is correct or that you are a community member.'
-                    : 'Join a community to see its civic tree.'}
+                  {selectionName
+                    ? 'Choose an available community above or verify the community name.'
+                    : 'Choose a community above to explore its civic tree.'}
                 </Trans>
               </Text>
-              {myBoards.length > 0 && (
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  onPress={() => setShowPicker(true)}
-                  style={[
-                    styles.noticeAction,
-                    {
-                      backgroundColor: t.palette.primary_500,
-                      borderRadius: 8,
-                      paddingHorizontal: 16,
-                      paddingVertical: 10,
-                      marginTop: 12,
-                    },
-                  ]}>
-                  <Text style={[styles.noticeActionText, {color: 'white'}]}>
-                    <Trans>Select community</Trans>
-                  </Text>
-                </TouchableOpacity>
-              )}
             </View>
           ) : graphData && graphData.nodes.length === 0 ? (
             <View style={styles.centered}>
@@ -875,22 +983,63 @@ export function CommunityCivicTreeScreen() {
                 </Trans>
               </Text>
             </View>
-          ) : graphDataForRender && viewMode === 'outline' ? (
+          ) : filteredWorkspace &&
+            filteredWorkspace.nodes.length === 0 &&
+            viewMode === 'graph' ? (
+            <View
+              style={[
+                a.flex_1,
+                a.p_xl,
+                a.align_center,
+                a.justify_center,
+                a.gap_md,
+              ]}>
+              <Text style={t.atoms.text_contrast_medium}>
+                <Trans>No cards match these filters.</Trans>
+              </Text>
+              <Button
+                label={l`Clear filters`}
+                variant="outline"
+                color="secondary"
+                size="small"
+                onPress={clearAllFilters}>
+                <ButtonText>
+                  <Trans>Clear filters</Trans>
+                </ButtonText>
+              </Button>
+            </View>
+          ) : filteredWorkspace && viewMode === 'map' ? (
+            <CommunityCivicTreeMap
+              key={communityUri}
+              data={filteredWorkspace}
+              context={graphDataForRender ?? undefined}
+              onNodePress={setSelectedNodeId}
+              selectedNodeId={selectedNodeId}
+              showIdeologicalOverlay={showIdeologicalOverlay}
+            />
+          ) : filteredWorkspace && viewMode === 'list' ? (
+            <CommunityCivicTreeCollections
+              key={communityUri}
+              data={filteredWorkspace}
+              context={graphDataForRender ?? undefined}
+              onNodePress={setSelectedNodeId}
+            />
+          ) : filteredWorkspace && showOutline ? (
             <CommunityCivicTreeOutline
-              data={graphDataForRender}
-              searchQuery={searchQuery}
-              activeCardTypes={activeCardTypes}
-              activeStances={activeStances}
+              data={filteredWorkspace}
+              searchQuery=""
+              activeCardTypes={new Set()}
+              activeStances={new Set()}
               onNodePress={setSelectedNodeId}
               selectedNodeId={selectedNodeId}
             />
-          ) : graphDataForRender ? (
+          ) : filteredWorkspace ? (
             <CommunityCivicTreeGraph
-              data={graphDataForRender}
-              searchQuery={searchQuery}
-              activeCardTypes={activeCardTypes}
-              activeRelTypes={activeRelTypes}
-              activeStances={activeStances}
+              data={filteredWorkspace}
+              searchQuery=""
+              activeCardTypes={new Set()}
+              activeRelTypes={new Set()}
+              activeStances={new Set()}
               showIdeologicalOverlay={showIdeologicalOverlay}
               onNodePress={setSelectedNodeId}
               selectedNodeId={selectedNodeId}
@@ -971,64 +1120,6 @@ export function CommunityCivicTreeScreen() {
           </View>
         </Modal>
       ) : null}
-
-      <Modal
-        visible={showPicker}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowPicker(false)}>
-        <View style={styles.modalOverlay}>
-          <View
-            style={[
-              styles.modalContent,
-              {backgroundColor: t.palette.contrast_0},
-            ]}>
-            <Text style={[styles.modalTitle, {color: t.palette.contrast_900}]}>
-              <Trans>Select Community</Trans>
-            </Text>
-            <ScrollView>
-              {myBoards.map(board => (
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel={board.name}
-                  accessibilityHint={`Select ${board.name}`}
-                  key={board.uri}
-                  style={[
-                    styles.boardRow,
-                    board.uri === communityUri && {
-                      backgroundColor: t.palette.primary_500 + '15',
-                    },
-                  ]}
-                  onPress={() => {
-                    setSelectedCommunityUri(board.uri)
-                    setShowPicker(false)
-                  }}>
-                  <Text
-                    style={[styles.boardName, {color: t.palette.contrast_900}]}>
-                    {board.name}
-                  </Text>
-                  {board.uri === communityUri && (
-                    <Text style={{color: t.palette.primary_500}}>✓</Text>
-                  )}
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Cancel"
-              accessibilityHint="Closes community picker"
-              style={[
-                styles.closeButton,
-                {borderColor: t.palette.contrast_200},
-              ]}
-              onPress={() => setShowPicker(false)}>
-              <Text style={{color: t.palette.primary_500}}>
-                <Trans>Cancel</Trans>
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
 
       {/* Suggestions Modal */}
       <Modal
@@ -1174,10 +1265,10 @@ export function CommunityCivicTreeScreen() {
           </View>
         </View>
       </Modal>
-      {selectedCommunityUri && (
+      {communityUri && (
         <SortitionConfigDialog
           control={sortitionControl}
-          communityUri={selectedCommunityUri}
+          communityUri={communityUri}
           onConfirm={config => {
             console.log('Iniciando sorteo:', config)
             setSortitionStatus('pending')
@@ -1413,16 +1504,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
   },
-  communityButton: {
-    borderWidth: 1,
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-  },
-  communityButtonText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -1438,17 +1519,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     marginBottom: 12,
-  },
-  boardRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
-  boardName: {
-    fontSize: 15,
   },
   closeButton: {
     marginTop: 12,

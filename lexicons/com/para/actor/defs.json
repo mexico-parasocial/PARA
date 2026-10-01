@@ -16,11 +16,11 @@
       "properties": {
         "influence": {
           "type": "integer",
-          "description": "All-time influence score (Para equivalent of cumulative karma)."
+          "description": "Net public reactions received across all authored content: upvotes minus downvotes. Changed and removed reactions adjust the score."
         },
         "votesReceivedAllTime": {
           "type": "integer",
-          "description": "Total support received by this actor's Para posts across all time."
+          "description": "Net public reactions received across all authored content (the Influence score)."
         },
         "votesCastAllTime": {
           "type": "integer",
@@ -49,17 +49,30 @@
     "contributions": {
       "type": "object",
       "description": "All-time contribution counters.",
-      "required": ["policies", "matters", "comments"],
+      "required": [
+        "policies",
+        "matters",
+        "comments"
+      ],
       "properties": {
-        "policies": { "type": "integer" },
-        "matters": { "type": "integer" },
-        "comments": { "type": "integer" }
+        "policies": {
+          "type": "integer"
+        },
+        "matters": {
+          "type": "integer"
+        },
+        "comments": {
+          "type": "integer"
+        }
       }
     },
     "statusView": {
       "type": "object",
       "description": "Resolved Para account status view.",
-      "required": ["status", "createdAt"],
+      "required": [
+        "status",
+        "createdAt"
+      ],
       "properties": {
         "status": {
           "type": "string",

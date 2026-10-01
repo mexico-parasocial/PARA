@@ -23,11 +23,15 @@ export function PersonalTreeNodeSheet({
   nodeId,
   onClose,
   onOpenCollection,
+  onEdit,
+  onRemove,
 }: {
   graph: PersonalTreeGraph
   nodeId: string
   onClose: () => void
   onOpenCollection: (collectionId: string) => void
+  onEdit?: (nodeId: string) => void
+  onRemove?: (nodeId: string) => void
 }) {
   const t = useTheme()
   const {t: l} = useLingui()
@@ -176,6 +180,52 @@ export function PersonalTreeNodeSheet({
           </ScrollView>
         )}
       </View>
+
+      {onEdit || onRemove ? (
+        <View
+          style={[
+            a.flex_row,
+            a.gap_lg,
+            a.px_md,
+            a.py_sm,
+            {borderTopWidth: 1, borderTopColor: t.palette.contrast_50},
+          ]}>
+          {onEdit ? (
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={l`Edit item`}
+              accessibilityHint={l`Changes this item's title, description or link`}
+              onPress={() => onEdit(nodeId)}
+              hitSlop={8}>
+              <Text
+                style={[
+                  a.text_sm,
+                  a.font_bold,
+                  {color: t.palette.primary_500},
+                ]}>
+                <Trans>Edit</Trans>
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+          {onRemove ? (
+            <TouchableOpacity
+              accessibilityRole="button"
+              accessibilityLabel={l`Remove item`}
+              accessibilityHint={l`Removes this item from its collection`}
+              onPress={() => onRemove(nodeId)}
+              hitSlop={8}>
+              <Text
+                style={[
+                  a.text_sm,
+                  a.font_bold,
+                  {color: t.palette.negative_500},
+                ]}>
+                <Trans>Remove</Trans>
+              </Text>
+            </TouchableOpacity>
+          ) : null}
+        </View>
+      ) : null}
     </View>
   )
 }

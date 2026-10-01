@@ -6,6 +6,8 @@ import {useSession} from '#/state/session'
 export type MapProvider = 'google' | 'maplibre'
 export type MapViewMode = 'standard' | 'satellite' | 'terrain' | 'hybrid'
 
+const mapProviderListeners = new Set<(provider: MapProvider) => void>()
+
 /**
  * Resolves which map provider + view mode to use.
  *
@@ -26,9 +28,12 @@ export function useMapProvider() {
   >(() => persisted.get('mapViewMode'))
 
   useEffect(() => {
-    return persisted.onUpdate('mapProvider', next => {
-      setStoredProvider(next)
-    })
+    const unsubscribe = persisted.onUpdate('mapProvider', setStoredProvider)
+    mapProviderListeners.add(setStoredProvider)
+    return () => {
+      unsubscribe()
+      mapProviderListeners.delete(setStoredProvider)
+    }
   }, [])
 
   useEffect(() => {
@@ -51,6 +56,9 @@ export function useMapProvider() {
     (value: MapProvider) => {
       if (!hasSession) return // locked in anonymous
       void persisted.write('mapProvider', value)
+      // Web broadcasts only reach other tabs. Notify mounted map/settings hooks
+      // here too, including a map kept mounted behind the settings screen.
+      for (const listener of mapProviderListeners) listener(value)
     },
     [hasSession],
   )

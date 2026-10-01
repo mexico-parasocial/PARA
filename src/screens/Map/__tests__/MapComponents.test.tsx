@@ -155,18 +155,45 @@ describe('SelectedStateOverlay', () => {
 })
 
 describe('MapLayersPanel', () => {
-  it('lists every layer and reports selections', () => {
+  const renderPanel = (overrides: {civicHeatOn?: boolean} = {}) => {
     const onSelectLayer = jest.fn()
-    const {getByText} = render(
-      <MapLayersPanel activeLayer="states" onSelectLayer={onSelectLayer} />,
+    const onToggleCivicHeat = jest.fn()
+    const utils = render(
+      <MapLayersPanel
+        activeLayer="states"
+        onSelectLayer={onSelectLayer}
+        civicHeatOn={overrides.civicHeatOn ?? false}
+        onToggleCivicHeat={onToggleCivicHeat}
+        civicPointCount={3}
+      />,
     )
+    return {...utils, onSelectLayer, onToggleCivicHeat}
+  }
+
+  it('lists the map views and reports selections', () => {
+    const {getByText, onSelectLayer} = renderPanel()
 
     expect(getByText('States')).toBeTruthy()
     expect(getByText('Districts')).toBeTruthy()
     expect(getByText('Cities')).toBeTruthy()
-    expect(getByText('Civic')).toBeTruthy()
 
-    fireEvent.press(getByText('Civic'))
-    expect(onSelectLayer).toHaveBeenCalledWith('civic')
+    fireEvent.press(getByText('Districts'))
+    expect(onSelectLayer).toHaveBeenCalledWith('districts')
+  })
+
+  it('offers civic heat as an independent on/off switch, not a view', () => {
+    const {getByRole, onSelectLayer, onToggleCivicHeat} = renderPanel()
+
+    const toggle = getByRole('switch')
+    expect(toggle.props.accessibilityState.checked).toBe(false)
+
+    fireEvent.press(toggle)
+    expect(onToggleCivicHeat).toHaveBeenCalledTimes(1)
+    expect(onSelectLayer).not.toHaveBeenCalled()
+  })
+
+  it('shows the switch as on while the heat is enabled', () => {
+    const {getByRole} = renderPanel({civicHeatOn: true})
+    expect(getByRole('switch').props.accessibilityState.checked).toBe(true)
   })
 })

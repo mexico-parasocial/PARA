@@ -1,5 +1,5 @@
 diff --git a/lib/module/views/Drawer.native.js b/lib/module/views/Drawer.native.js
-index 38470a658878a63919186257041098747ec55473..b9d25798c9be229efeb676166f89bfbc72615793 100644
+index 38470a658878a63919186257041098747ec55473..5ec1ccf3214aaacb8d8db8fa253db5309f1a5ef9 100644
 --- a/lib/module/views/Drawer.native.js
 +++ b/lib/module/views/Drawer.native.js
 @@ -124,15 +124,21 @@ export function Drawer({
@@ -36,3 +36,50 @@ index 38470a658878a63919186257041098747ec55473..b9d25798c9be229efeb676166f89bfbc
      if (open) {
        runOnJS(onOpen)();
      } else {
+@@ -236,7 +245,7 @@ export function Drawer({
+         (drawerType === 'back' ? 0 : translateX.value) + (direction === 'rtl' ? drawerPosition === 'left' ? -distanceFromEdge : 0 : drawerPosition === 'left' ? 0 : distanceFromEdge)
+       }]
+     };
+-  }, [direction, drawerPosition, drawerType, drawerWidth, layout.width, translateX]);
++  });
+   const contentAnimatedStyle = useAnimatedStyle(() => {
+     return {
+       // FIXME: Force Reanimated to commit to the shadow tree
+@@ -250,7 +259,7 @@ export function Drawer({
+         drawerType === 'front' ? 0 : translateX.value + drawerWidth * (drawerPosition === 'left' ? 1 : -1)
+       }]
+     };
+-  }, [drawerPosition, drawerType, drawerWidth, translateX]);
++  });
+   const progress = useDerivedValue(() => {
+     return drawerType === 'permanent' ? 1 : interpolate(translateX.value, [getDrawerTranslationX(false), getDrawerTranslationX(true)], [0, 1]);
+   });
+diff --git a/src/views/Drawer.native.tsx b/src/views/Drawer.native.tsx
+index 94773982e5f4282ae8973d955bd0d5634b3d570d..76213f0b1a33698380ea216f3474ad5170210e25 100644
+--- a/src/views/Drawer.native.tsx
++++ b/src/views/Drawer.native.tsx
+@@ -381,14 +381,7 @@ export function Drawer({
+               },
+             ],
+     };
+-  }, [
+-    direction,
+-    drawerPosition,
+-    drawerType,
+-    drawerWidth,
+-    layout.width,
+-    translateX,
+-  ]);
++  });
+ 
+   const contentAnimatedStyle = useAnimatedStyle(() => {
+     return {
+@@ -410,7 +403,7 @@ export function Drawer({
+               },
+             ],
+     };
+-  }, [drawerPosition, drawerType, drawerWidth, translateX]);
++  });
+ 
+   const progress = useDerivedValue(() => {
+     return drawerType === 'permanent'

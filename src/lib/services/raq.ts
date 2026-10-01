@@ -4,6 +4,7 @@
  * Real API integration — no mock data.
  */
 
+import {TID} from '@atproto/common-web'
 import {type LexMap} from '@atproto/lex'
 import {type AtIdentifierString, type DidString} from '@atproto/syntax'
 
@@ -19,6 +20,7 @@ import {
   type ParaRaqProposalVoteRecord,
 } from '#/lib/api/para-lexicons'
 import {RAQ_AXES} from '#/lib/mock-data'
+import {getOpenQuestionSearchQuery} from '#/lib/tags'
 import {
   type PublicSessionBundle,
   type SessionBundle,
@@ -51,7 +53,9 @@ export async function submitOpenQuestion(
     collection: 'app.bsky.feed.post',
     record: {
       $type: 'app.bsky.feed.post',
-      text,
+      text: text.includes(getOpenQuestionSearchQuery())
+        ? text.trim()
+        : `${text.trim()}\n\n${getOpenQuestionSearchQuery()}`,
       tags: ['?OpenQuestion'],
       createdAt: new Date().toISOString(),
     },
@@ -62,11 +66,25 @@ export async function submitOpenQuestion(
 // User Alignment
 // ------------------------------------------------------------------
 
+function isAlignmentNotFound(error: unknown) {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'error' in error &&
+    error.error === 'NotFound'
+  )
+}
+
 export async function fetchUserAlignment(agent: ParaServiceAgent, did: string) {
-  const res = await agent.appviewClient.call(com.para.raq.getUserAlignment, {
-    did: did as DidString,
-  })
-  return res.assessment
+  try {
+    const res = await agent.appviewClient.call(com.para.raq.getUserAlignment, {
+      did: did as DidString,
+    })
+    return res.assessment
+  } catch (error) {
+    if (isAlignmentNotFound(error)) return null
+    throw error
+  }
 }
 
 // ------------------------------------------------------------------
@@ -77,11 +95,9 @@ export async function fetchCommunityAlignment(
   agent: ParaServiceAgent,
   community: string,
 ) {
-  const res = await agent.appviewClient.call(
-    com.para.raq.getCommunityAlignment,
-    {community},
-  )
-  return res
+  return await agent.appviewClient.call(com.para.raq.getCommunityAlignment, {
+    community,
+  })
 }
 
 // ------------------------------------------------------------------
@@ -121,7 +137,7 @@ export async function submitProposedQuestion(
   await agent.pdsClient.call(com.atproto.repo.putRecord, {
     repo: did,
     collection: PARA_RAQ_PROPOSAL_COLLECTION,
-    rkey: await generateTid(),
+    rkey: TID.nextStr(),
     record: record as unknown as LexMap,
     validate: false,
   })
@@ -169,7 +185,7 @@ export async function submitAxisVote(
   await agent.pdsClient.call(com.atproto.repo.putRecord, {
     repo: did,
     collection: PARA_RAQ_AXIS_VOTE_COLLECTION,
-    rkey: await generateTid(),
+    rkey: TID.nextStr(),
     record: record as unknown as LexMap,
     validate: false,
   })
@@ -192,7 +208,7 @@ export async function submitProposalVote(
   await agent.pdsClient.call(com.atproto.repo.putRecord, {
     repo: did,
     collection: PARA_RAQ_PROPOSAL_VOTE_COLLECTION,
-    rkey: await generateTid(),
+    rkey: TID.nextStr(),
     record: record as unknown as LexMap,
     validate: false,
   })
@@ -219,22 +235,8 @@ export async function publishRaqAssessment(
   await agent.pdsClient.call(com.atproto.repo.putRecord, {
     repo: did,
     collection: PARA_RAQ_ASSESSMENT_COLLECTION,
-    rkey: await generateTid(),
+    rkey: TID.nextStr(),
     record: assessment as unknown as LexMap,
     validate: false,
   })
-}
-
-// ------------------------------------------------------------------
-// Helpers
-// ------------------------------------------------------------------
-
-async function generateTid(): Promise<string> {
-  // Use a simple timestamp-based TID for now
-  // In production this should use @atproto/common-web TID
-  const now = Date.now()
-  const random = Math.floor(Math.random() * 1000)
-    .toString(36)
-    .padStart(3, '0')
-  return `r${now.toString(36)}${random}`
 }

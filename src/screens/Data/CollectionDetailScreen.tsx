@@ -1,4 +1,4 @@
-import {useCallback, useState} from 'react'
+import {useCallback, useMemo, useState} from 'react'
 import {
   FlatList,
   Linking,
@@ -7,13 +7,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import * as Clipboard from 'expo-clipboard'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation, useRoute} from '@react-navigation/native'
 
-import {buildPersonalCivicTreeVaultManifest} from '#/lib/civic-export/obsidian'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
   type CivicTreeItem,
@@ -21,7 +19,6 @@ import {
   getCivicTreeItemKind,
   getCivicTreeItemTitle,
   useCollectionQuery,
-  useDuplicateCollectionMutation,
   useRemoveFromCollectionMutation,
   useUpdateCollectionMutation,
 } from '#/state/queries/collections'
@@ -66,7 +63,6 @@ export function CollectionDetailScreen() {
   const {data: collection, isLoading} = useCollectionQuery(collectionId)
   const removeMutation = useRemoveFromCollectionMutation()
   const updateMutation = useUpdateCollectionMutation()
-  const duplicateMutation = useDuplicateCollectionMutation()
   const exportMutation = useExportCollectionToSembleMutation()
   const addItemControl = Dialog.useDialogControl()
   const connectControl = Dialog.useDialogControl()
@@ -167,25 +163,6 @@ export function CollectionDetailScreen() {
     [collection, collectionId, updateMutation],
   )
 
-  const onDuplicate = useCallback(() => {
-    if (!collection) return
-    const newName = `${collection.name} (${_(msg`copy`)})`
-    duplicateMutation.mutate(
-      {sourceId: collectionId, newName},
-      {
-        onSuccess: data => {
-          Toast.show(_(msg`Collection duplicated`))
-          navigation.navigate('CollectionDetail', {collectionId: data.id})
-        },
-        onError: (err: Error) => {
-          Toast.show(err.message || _(msg`Failed to duplicate`), {
-            type: 'error',
-          })
-        },
-      },
-    )
-  }, [collection, collectionId, duplicateMutation, navigation, _])
-
   /*
    * Browsing used to navigate to Agora and lose the user's place. A policy is
    * a node in this collection, so the picker brings it here instead - and the
@@ -221,19 +198,15 @@ export function CollectionDetailScreen() {
     )
   }, [collection, exportMutation, currentAccount?.handle, _])
 
-  const onExportToObsidian = useCallback(() => {
-    if (!collection) return
-    const manifest = buildPersonalCivicTreeVaultManifest([collection])
-    Clipboard.setStringAsync(JSON.stringify(manifest, null, 2))
-      .then(() => {
-        Toast.show(_(msg`Obsidian vault manifest copied`))
-      })
-      .catch((err: Error) => {
-        Toast.show(err.message || _(msg`Failed to copy export`), {
-          type: 'error',
-        })
-      })
-  }, [collection, _])
+  const contributionDraft = useMemo(
+    () =>
+      contributionFromItem(
+        collection?.items.find(
+          i => getCivicTreeItemKey(i) === contributeSourceKey,
+        ) ?? {addedAt: ''},
+      ),
+    [collection, contributeSourceKey],
+  )
 
   return (
     <Layout.Screen>
@@ -397,22 +370,6 @@ export function CollectionDetailScreen() {
                   </TouchableOpacity>
                   <TouchableOpacity
                     accessibilityRole="button"
-                    accessibilityLabel={_(msg`Duplicate collection`)}
-                    accessibilityHint={_(
-                      msg`Creates a copy of this collection`,
-                    )}
-                    onPress={onDuplicate}
-                    disabled={duplicateMutation.isPending}
-                    style={[
-                      styles.secondaryBtn,
-                      {borderColor: t.palette.contrast_100},
-                    ]}>
-                    <Text style={[styles.secondaryBtnText, t.atoms.text]}>
-                      <Trans>Duplicate</Trans>
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    accessibilityRole="button"
                     accessibilityLabel={_(msg`Export to Semble.so`)}
                     accessibilityHint={_(
                       msg`Exports this collection to Semble.so as a research trail`,
@@ -429,23 +386,6 @@ export function CollectionDetailScreen() {
                       size="sm"
                       style={{color: t.palette.contrast_400}}
                     />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    accessibilityLabel={_(msg`Export to Obsidian`)}
-                    accessibilityHint={_(
-                      msg`Copies an Obsidian-ready vault manifest for this collection`,
-                    )}
-                    onPress={onExportToObsidian}
-                    disabled={collection.items.length === 0}
-                    style={[
-                      styles.secondaryBtn,
-                      {borderColor: t.palette.contrast_100},
-                      collection.items.length === 0 && {opacity: 0.5},
-                    ]}>
-                    <Text style={[styles.secondaryBtnText, t.atoms.text]}>
-                      <Trans>Obsidian</Trans>
-                    </Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -531,11 +471,13 @@ export function CollectionDetailScreen() {
        */}
       <ContributeToCommunityTreeDialog
         control={contributeControl}
-        {...contributionFromItem(
-          collection?.items.find(
-            i => getCivicTreeItemKey(i) === contributeSourceKey,
-          ) ?? {addedAt: ''},
-        )}
+        title={contributionDraft.title}
+        sourceUri={contributionDraft.sourceUri}
+        sourceUrl={contributionDraft.sourceUrl}
+        category={contributionDraft.category}
+        author={contributionDraft.author}
+        publishedYear={contributionDraft.publishedYear}
+        defaultSourceType={contributionDraft.sourceType}
       />
       <ConnectTreeItemsDialog
         control={connectControl}
@@ -600,6 +542,7 @@ function CivicTreeItemRow({
           {kind}
           {item.policyCategory ? ` - ${item.policyCategory}` : ''}
           {item.sourceLabel ? ` - ${item.sourceLabel}` : ''}
+          {item.publishedYear ? ` (${item.publishedYear})` : ''}
         </Text>
         {item.description ? (
           <Text

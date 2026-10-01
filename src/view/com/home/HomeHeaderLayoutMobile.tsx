@@ -1,21 +1,15 @@
 import {Platform, View} from 'react-native'
 import Animated from 'react-native-reanimated'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
 
-import {HITSLOP_10} from '#/lib/constants'
 import {useSession} from '#/state/session'
 import {useShellLayout} from '#/state/shell/shell-layout'
+import {HomeHeaderChatButton} from '#/view/com/home/HomeHeaderChatButton'
 import {useHomeHeaderTransform} from '#/view/com/util/MainScrollProvider'
 import {Logomark} from '#/view/icons/Logomark'
 import {Logotype} from '#/view/icons/Logotype'
 import {atoms as a, useTheme} from '#/alf'
-import {ButtonIcon} from '#/components/Button'
-import {Hashtag_Stroke2_Corner0_Rounded as FeedsIcon} from '#/components/icons/Hashtag'
 import * as Layout from '#/components/Layout'
-import {Link} from '#/components/Link'
-import {useAnalytics} from '#/analytics'
 import {IS_IOS} from '#/env'
 
 const HOME_HEADER_TOP_ROW_HEIGHT = 52
@@ -27,8 +21,6 @@ export function HomeHeaderLayoutMobile({
   tabBarAnchor: React.ReactElement | null | undefined
 }) {
   const t = useTheme()
-  const {_} = useLingui()
-  const ax = useAnalytics()
   const {headerHeight} = useShellLayout()
   const insets = useSafeAreaInsets()
   const headerMinimalShellTransform = useHomeHeaderTransform()
@@ -174,25 +166,7 @@ export function HomeHeaderLayoutMobile({
 
           {hasSession && (
             <View style={[a.flex_row, a.align_center, a.gap_xs, a.z_50]}>
-              <Link
-                testID="viewHeaderHomeFeedPrefsBtn"
-                to={{screen: 'Feeds'}}
-                hitSlop={HITSLOP_10}
-                label={_(msg`View your feeds and explore more`)}
-                size="small"
-                variant="ghost"
-                color="secondary"
-                shape="square"
-                onPress={() => {
-                  ax.metric('nav:click', {item: 'feeds', surface: 'topBar'})
-                }}
-                style={[
-                  a.justify_center,
-                  {marginRight: -Layout.BUTTON_VISUAL_ALIGNMENT_OFFSET},
-                  a.bg_transparent,
-                ]}>
-                <ButtonIcon icon={FeedsIcon} size="lg" />
-              </Link>
+              <HomeHeaderChatButton alignToEdge />
             </View>
           )}
         </Layout.Header.Outer>

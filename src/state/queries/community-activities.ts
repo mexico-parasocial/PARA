@@ -210,28 +210,40 @@ export function useCommunityActivitiesQuery({
   const agent = useAgent()
   return useQuery<CommunityActivityView[]>({
     queryKey: communityActivitiesQueryKey(communityUri, organizerDids),
-    queryFn: async () => {
-      const keep = (value: {communityUri?: string} | undefined) =>
-        value?.communityUri === communityUri
-      const [social, economic] = await Promise.all(
-        (['social', 'economic'] as const).map(async category =>
-          (
-            await listFromRepos<{communityUri?: string}>(
-              agent,
-              organizerDids,
-              ACTIVITY_COLLECTIONS[category],
-              keep,
-            )
-          ).map(item => toActivityView(category, item)),
-        ),
-      )
-      return [...social, ...economic].sort((a, b) =>
-        a.record.startsAt.localeCompare(b.record.startsAt),
-      )
-    },
+    queryFn: () =>
+      fetchCommunityActivities({agent, communityUri, organizerDids}),
     enabled: Boolean(communityUri) && organizerDids.length > 0,
     staleTime: STALE.SECONDS.THIRTY,
   })
+}
+
+export async function fetchCommunityActivities({
+  agent,
+  communityUri,
+  organizerDids,
+}: {
+  agent: Agent
+  communityUri: string | undefined
+  organizerDids: string[]
+}): Promise<CommunityActivityView[]> {
+  if (!communityUri || organizerDids.length === 0) return []
+  const keep = (value: {communityUri?: string} | undefined) =>
+    value?.communityUri === communityUri
+  const [social, economic] = await Promise.all(
+    (['social', 'economic'] as const).map(async category =>
+      (
+        await listFromRepos<{communityUri?: string}>(
+          agent,
+          organizerDids,
+          ACTIVITY_COLLECTIONS[category],
+          keep,
+        )
+      ).map(item => toActivityView(category, item)),
+    ),
+  )
+  return [...social, ...economic].sort((a, b) =>
+    a.record.startsAt.localeCompare(b.record.startsAt),
+  )
 }
 
 export type CommunityActivityDetail = {

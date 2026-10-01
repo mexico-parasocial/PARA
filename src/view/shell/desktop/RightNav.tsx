@@ -7,6 +7,7 @@ import {useNavigation} from '@react-navigation/native'
 
 import {FEEDBACK_FORM_URL, HELP_DESK_URL} from '#/lib/constants'
 import {useSession} from '#/state/session'
+import {useCivicTreeWorkspace} from '#/state/shell/civic-tree-workspace'
 import {useLogoVariant} from '#/view/icons/useLogoVariant'
 import {DesktopFeeds} from '#/view/shell/desktop/Feeds'
 import {DesktopSearch} from '#/view/shell/desktop/Search'
@@ -43,6 +44,7 @@ function useWebQueryParams() {
 }
 
 export function DesktopRightNav({routeName}: {routeName: string}) {
+  const civicTreeExpanded = useCivicTreeWorkspace()
   const t = useTheme()
   const {_} = useLingui()
   const {hasSession, currentAccount} = useSession()
@@ -59,6 +61,8 @@ export function DesktopRightNav({routeName}: {routeName: string}) {
 
   if (
     !rightNavVisible ||
+    ((routeName === 'CivicTree' || routeName === 'CommunityCivicTree') &&
+      civicTreeExpanded) ||
     isMessagesRelatedScreen ||
     routeName === 'Map' ||
     routeName === 'VSScreenV2' ||

@@ -1,15 +1,20 @@
 import {type Meme} from '#/lib/mock-data/types'
 import {type MediaItem} from './types'
 
-export const DECK_CARD_HEIGHT = 425
-export const DECK_VISUAL_HEIGHT = 322
-export const DECK_OVERLAP = 36
+// Deck geometry. The current card sits top-left and the next card sits
+// bottom-right, staggered by DECK_STAGGER and overlapping by DECK_OVERLAP.
+// The shared command band fills exactly that overlap: its left end is the next
+// card's top-left corner and its right end is the current card's bottom-right
+// corner.
+export const DECK_GUTTER = 16
+export const DECK_STAGGER = 64
+export const DECK_CARD_HEIGHT = 452
+export const DECK_OVERLAP = 56
 export const DECK_SECONDARY_TOP = DECK_CARD_HEIGHT - DECK_OVERLAP
-export const DECK_THIRD_TOP =
-  DECK_SECONDARY_TOP + DECK_CARD_HEIGHT - DECK_OVERLAP
+export const DECK_THIRD_TOP = DECK_SECONDARY_TOP * 2
+export const DECK_CARD_RADIUS = 12
+export const DECK_INACTIVE_DIM = 0.45
 export const DECK_VELOCITY_SCALE = 0.18
-export const DECK_CURRENT_X_DRIFT = 24
-export const DECK_STACK_X_DRIFT = 18
 
 export function matchesSearch(
   values: Array<string | undefined>,
@@ -41,7 +46,10 @@ export function formatDateLabel(value: string) {
   }).format(new Date(`${value}T12:00:00`))
 }
 
+export function buildMetaLabel(item: MediaItem) {
+  return [item.party, item.state].filter(Boolean).join(' · ') || item.community
+}
+
 export function buildSubmetaLabel(item: MediaItem, _mode: string) {
-  const meme = item
-  return `${meme.author} · ${meme.category}`
+  return [item.author, item.category].filter(Boolean).join(' · ')
 }

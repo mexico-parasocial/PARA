@@ -1,13 +1,14 @@
 import {useCallback, useMemo, useRef} from 'react'
 import {useWindowDimensions, View} from 'react-native'
 import Animated, {useAnimatedStyle} from 'react-native-reanimated'
-import {type DidString, type HandleString} from '@atproto/syntax'
+import {type DidString} from '@atproto/syntax'
 import {Trans} from '@lingui/react/macro'
 import {type RouteProp, useRoute} from '@react-navigation/native'
 
 import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
 import {type OpenQuestion} from '#/lib/mock-data'
 import {type CommonNavigatorParams} from '#/lib/routes/types'
+import {useProfilesQuery} from '#/state/queries/profile'
 import {
   type OpenQuestionThread,
   type OpenQuestionThreadReply,
@@ -22,7 +23,7 @@ import {atoms as a, useBreakpoints, web} from '#/alf'
 import * as Layout from '#/components/Layout'
 import {ListFooter} from '#/components/Lists'
 import {Text} from '#/components/Typography'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import {
   flattenReplies,
   OpenQuestionAnchor,
@@ -32,6 +33,7 @@ import {
   OpenQuestionReplySkeleton,
   type OQThreadItem,
 } from './components/OpenQuestionItem'
+import {QueryStatus} from './components/QueryStatus'
 
 function buildThreadItems(
   question: OpenQuestion,
@@ -66,18 +68,40 @@ export default function OpenQuestionThreadScreen(_props: Props) {
   const {height: windowHeight} = useWindowDimensions()
   const thread = useOpenQuestionThread(id)
   const voteMutation = useOpenQuestionVoteMutation(id)
+  const authors = useMemo(
+    () =>
+      thread.data
+        ? [
+            ...new Set([
+              thread.data.post.author,
+              ...flattenReplies(mapThreadReplies(thread.data.replies)).map(
+                item => item.reply.author.handle,
+              ),
+            ]),
+          ].slice(0, 25)
+        : [],
+    [thread.data],
+  )
+  const profilesQuery = useProfilesQuery({handles: authors})
+  const profiles = useMemo(
+    () =>
+      new Map<string, app.bsky.actor.defs.ProfileViewDetailed>(
+        profilesQuery.data?.profiles.map(profile => [profile.did, profile]),
+      ),
+    [profilesQuery.data],
+  )
 
   const listRef = useRef<ListMethods>(null)
   const headerRef = useRef<React.ComponentRef<typeof View> | null>(null)
   const anchorRef = useRef<React.ComponentRef<typeof View> | null>(null)
 
   const question = useMemo(
-    () => (thread.data ? mapThreadQuestion(thread.data) : undefined),
-    [thread.data],
+    () => (thread.data ? mapThreadQuestion(thread.data, profiles) : undefined),
+    [thread.data, profiles],
   )
   const replies = useMemo(
-    () => (thread.data ? mapThreadReplies(thread.data.replies) : []),
-    [thread.data],
+    () => (thread.data ? mapThreadReplies(thread.data.replies, profiles) : []),
+    [thread.data, profiles],
   )
   const isLoading = thread.isLoading
 
@@ -104,7 +128,7 @@ export default function OpenQuestionThreadScreen(_props: Props) {
 
   const openReplyComposer = useCallback(
     (target?: OpenQuestionReplyData) => {
-      if (!thread.data) return
+      if (!hasSession || !thread.data) return
       const post = target
         ? findReply(thread.data.replies, target.id)
         : thread.data.post
@@ -115,20 +139,24 @@ export default function OpenQuestionThreadScreen(_props: Props) {
           uri: post.uri,
           cid: post.cid,
           text: post.text,
-          author: didAuthor(post.author),
+          author: profiles.has(post.author)
+            ? didAuthor(post.author, profiles.get(post.author))
+            : didAuthor(post.author),
           langs: 'langs' in post ? post.langs : undefined,
         },
         logContext: 'PostReply',
+        onPost: () => void thread.refetch(),
       })
     },
-    [openComposer, thread.data],
+    [openComposer, thread, hasSession, profiles],
   )
 
   const onVote = useCallback(
     (reply: OpenQuestionReplyData, value: -1 | 0 | 1) => {
+      if (!hasSession || voteMutation.isPending) return
       voteMutation.mutate({subject: reply.id, value})
     },
-    [voteMutation],
+    [voteMutation, hasSession],
   )
 
   const renderItem = useCallback(
@@ -155,14 +183,14 @@ export default function OpenQuestionThreadScreen(_props: Props) {
             showParentLine={item.showParentLine}
             showChildLine={item.showChildLine}
             isFirst={item.isFirst}
-            onVote={onVote}
-            onReply={openReplyComposer}
+            onVote={hasSession && !voteMutation.isPending ? onVote : undefined}
+            onReply={hasSession ? openReplyComposer : undefined}
           />
         )
       }
       return null
     },
-    [onVote, openReplyComposer],
+    [onVote, openReplyComposer, hasSession, voteMutation.isPending],
   )
 
   const keyExtractor = useCallback((item: OQThreadItem, index: number) => {
@@ -184,9 +212,13 @@ export default function OpenQuestionThreadScreen(_props: Props) {
         </Layout.Header.Outer>
         <Layout.Center>
           <View style={[a.p_lg]}>
-            <Text style={[a.text_md]}>
-              <Trans>Question not found</Trans>
-            </Text>
+            <QueryStatus
+              error={thread.isError}
+              empty={!question}
+              emptyMessageText={<Trans>Question not found</Trans>}
+              retry={thread.refetch}
+              refreshing={thread.isRefetching}
+            />
           </View>
         </Layout.Center>
       </Layout.Screen>
@@ -204,9 +236,18 @@ export default function OpenQuestionThreadScreen(_props: Props) {
         </Layout.Header.Content>
       </Layout.Header.Outer>
 
+      {voteMutation.isError && (
+        <View style={a.p_md}>
+          <Text>
+            <Trans>Vote failed. Please try again.</Trans>
+          </Text>
+        </View>
+      )}
       <List
         ref={listRef}
         data={items}
+        refreshing={thread.isRefetching}
+        onRefresh={() => void thread.refetch()}
         renderItem={renderItem as never}
         keyExtractor={keyExtractor as never}
         onContentSizeChange={onContentSizeChange}
@@ -234,13 +275,17 @@ export default function OpenQuestionThreadScreen(_props: Props) {
   )
 }
 
-function mapThreadQuestion(thread: OpenQuestionThread): OpenQuestion {
+type Profiles = Map<string, app.bsky.actor.defs.ProfileViewDetailed>
+function mapThreadQuestion(
+  thread: OpenQuestionThread,
+  profiles: Profiles,
+): OpenQuestion {
   return {
     id: thread.post.uri,
-    text: thread.post.text,
+    text: thread.post.text.replace(/\|#\?OpenQuestion/g, '').trim(),
     author: {
-      handle: thread.post.author,
-      avatar: '',
+      handle: profiles.get(thread.post.author)?.handle ?? thread.post.author,
+      avatar: profiles.get(thread.post.author)?.avatar ?? '',
     },
     replyCount: countReplies(thread.replies),
     timestamp: thread.post.createdAt,
@@ -249,19 +294,21 @@ function mapThreadQuestion(thread: OpenQuestionThread): OpenQuestion {
 
 function mapThreadReplies(
   replies: OpenQuestionThreadReply[],
+  profiles?: Profiles,
 ): OpenQuestionReplyData[] {
   return replies.map(reply => ({
     id: reply.uri,
     text: reply.text,
     author: {
-      handle: reply.author,
-      avatar: '',
+      handle: profiles?.get(reply.author)?.handle ?? reply.author,
+      avatar: profiles?.get(reply.author)?.avatar ?? '',
+      displayName: profiles?.get(reply.author)?.displayName,
     },
     votes: reply.voteScore,
     viewerVote: reply.viewerVote ?? 0,
     timestamp: reply.createdAt,
     replies: reply.replies?.length
-      ? mapThreadReplies(reply.replies)
+      ? mapThreadReplies(reply.replies, profiles)
       : undefined,
   }))
 }
@@ -284,12 +331,15 @@ function findReply(
   }
 }
 
-function didAuthor(did: string): app.bsky.actor.defs.ProfileViewBasic {
+function didAuthor(
+  did: string,
+  profile?: app.bsky.actor.defs.ProfileViewDetailed,
+): app.bsky.actor.defs.ProfileViewBasic {
   return {
     did: did as DidString,
-    handle: did as HandleString,
-    displayName: did,
-    avatar: undefined,
+    handle: profile?.handle ?? 'handle.invalid',
+    displayName: profile?.displayName ?? did,
+    avatar: profile?.avatar,
   }
 }
 

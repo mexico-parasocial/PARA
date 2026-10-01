@@ -3,6 +3,7 @@ import {View} from 'react-native'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {type NativeStackScreenProps} from '@react-navigation/native-stack'
 
+import {type MapProvider, useMapProvider} from '#/lib/hooks/useMapProvider'
 import {type CommonNavigatorParams} from '#/lib/routes/types'
 import {logger} from '#/logger'
 import {
@@ -16,6 +17,7 @@ import {atoms as a, useTheme} from '#/alf'
 import {Admonition} from '#/components/Admonition'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
+import * as SegmentedControl from '#/components/forms/SegmentedControl'
 import * as Toggle from '#/components/forms/Toggle'
 import {Beaker_Stroke2_Corner2_Rounded as BeakerIcon} from '#/components/icons/Beaker'
 import {BubbleInfo_Stroke2_Corner2_Rounded as BubbleInfoIcon} from '#/components/icons/BubbleInfo'
@@ -146,6 +148,8 @@ export function BetaFeaturesSettingsScreen({}: Props) {
             </SettingsList.Item>
           </Toggle.Item>
 
+          {IS_WEB && <MapProviderSettings />}
+
           <View style={[a.px_xl, a.gap_md]}>
             <Admonition type="info">
               {IS_WEB
@@ -236,5 +240,49 @@ export function BetaFeaturesSettingsScreen({}: Props) {
         betaFeatureKeys={betaFeatures.map(feature => feature.key)}
       />
     </Layout.Screen>
+  )
+}
+
+function MapProviderSettings() {
+  const t = useTheme()
+  const {t: l} = useLingui()
+  const {provider, canChangeProvider, setProvider} = useMapProvider()
+
+  return (
+    <>
+      <SettingsList.Divider />
+      <View style={[a.px_xl, a.py_md, a.gap_sm]}>
+        <Text style={[a.text_md, a.font_semi_bold]}>
+          <Trans>Map provider</Trans>
+        </Text>
+        <Text style={[a.text_sm, a.leading_snug, t.atoms.text_contrast_medium]}>
+          <Trans>Choose which provider to use on the map screen.</Trans>
+        </Text>
+        {!canChangeProvider && (
+          <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
+            <Trans>MapLibre is used in anonymous mode for privacy.</Trans>
+          </Text>
+        )}
+        <SegmentedControl.Root<MapProvider>
+          type="radio"
+          label={l`Map provider`}
+          value={provider}
+          onChange={setProvider}>
+          <SegmentedControl.Item
+            label="Google Maps"
+            value="google"
+            disabled={!canChangeProvider}>
+            <SegmentedControl.ItemText>Google Maps</SegmentedControl.ItemText>
+          </SegmentedControl.Item>
+          <SegmentedControl.Item
+            label="MapLibre"
+            value="maplibre"
+            disabled={!canChangeProvider}>
+            <SegmentedControl.ItemText>MapLibre</SegmentedControl.ItemText>
+          </SegmentedControl.Item>
+        </SegmentedControl.Root>
+      </View>
+      <SettingsList.Divider />
+    </>
   )
 }

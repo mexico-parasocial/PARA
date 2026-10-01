@@ -14,7 +14,6 @@ const PROFILE_CREDENTIALS = {
 const TID_COLLECTIONS = new Set([
   'app.bsky.feed.like',
   'app.bsky.feed.post',
-  'app.bsky.feed.repost',
   'app.bsky.graph.follow',
   'app.bsky.graph.verification',
   'com.para.civic.cabildeo',
@@ -46,6 +45,7 @@ export function resolveCliConfig(argv, env = process.env) {
     createAccounts: parseBoolEnv(env.PARA_CIVIC_SEED_CREATE_ACCOUNTS, true),
     dryRun: false,
     verbose: false,
+    demoContent: true,
   }
 
   for (let i = 0; i < args.length; i++) {
@@ -77,6 +77,9 @@ export function resolveCliConfig(argv, env = process.env) {
         break
       case '--verbose':
         config.verbose = true
+        break
+      case '--skip-demo-content':
+        config.demoContent = false
         break
       default:
         throw new Error(`Unknown argument: ${arg}`)
@@ -184,6 +187,15 @@ export function buildActorInputs(manifest, credentials) {
 }
 
 export function buildSeedOperations({manifest, actorsByAlias}) {
+  // PARA has no reposts: the PDS refuses `app.bsky.feed.repost` writes (a post
+  // is shared by quoting it). Fail loudly instead of seeding records that can
+  // only be rejected.
+  if ((manifest.reposts || []).length > 0) {
+    throw new Error(
+      'Seed manifests must not contain reposts: PARA has no reposts.',
+    )
+  }
+
   const operations = []
   // Cabildeo rkeys are generated as TIDs at build time (the PDS enforces TID
   // keys for this collection) so that cabildeoUriByAlias matches the rkeys
@@ -359,17 +371,6 @@ export function buildSeedOperations({manifest, actorsByAlias}) {
         actorsByAlias,
         group: 'like',
         context: 'like actor',
-      }),
-    )
-  }
-
-  for (const entry of manifest.reposts || []) {
-    operations.push(
-      buildRepostOperation({
-        entry,
-        actorsByAlias,
-        group: 'repost',
-        context: 'repost actor',
       }),
     )
   }
@@ -647,10 +648,10 @@ function buildHighActivityOperations({
       rkey: `seed-bulk-vote-${scenario.cabildeoAlias}-${String(i).padStart(4, '0')}`,
       record: compactObject({
         $type: 'com.para.civic.vote',
+        subjectType: 'cabildeo',
         cabildeo: cabildeoUri,
         selectedOption,
         isDirect: !delegatedFrom,
-        delegatedFrom,
         createdAt: plusMinutes(baseDate, i + scenario.positionCount),
       }),
     })
@@ -676,7 +677,6 @@ function buildDemoSocialGraphOperations({scenario, actorsByAlias}) {
   const postsPerActor = Math.max(1, scenario.postsPerActor || 3)
   const replyCount = Math.max(0, scenario.replyCount || actorAliases.length * 2)
   const likesPerPost = Math.max(0, scenario.likesPerPost || 2)
-  const repostEvery = Math.max(1, scenario.repostEvery || 4)
   const baseDate = scenario.startAt || new Date().toISOString()
   const bridgeActors = dedupeList([
     ...(scenario.bridgeActors || []),
@@ -840,30 +840,6 @@ function buildDemoSocialGraphOperations({scenario, actorsByAlias}) {
       )
     })
 
-    if ((index + 1) % repostEvery === 0) {
-      const repostActor = rotateUniqueOtherActors({
-        actorAliases,
-        excludedAlias: postRef.actorAlias,
-        startIndex: index + 2,
-        count: 1,
-      })[0]
-      if (repostActor) {
-        operations.push(
-          buildRepostOperation({
-            entry: {
-              actor: repostActor,
-              subjectRef: postRef.refKey,
-              rkey: `seed-demo-repost-${sanitizeRkeyComponent(repostActor)}-${String(index).padStart(4, '0')}`,
-              createdAt: plusMinutes(baseDate, minuteCursor + 1),
-            },
-            actorsByAlias,
-            group: 'demo-repost',
-            context: 'demo social repost actor',
-          }),
-        )
-      }
-    }
-
     minuteCursor += Math.max(1, likesPerPost)
   })
 
@@ -1023,15 +999,16 @@ function buildPositionRecord(entry, cabildeoUriByAlias) {
   })
 }
 
+// The PDS only accepts cabildeo ballots (`subjectType: 'cabildeo'`) and refuses
+// any vote carrying `delegatedFrom` (OD-7 §5c), so delegation is not written
+// on the ballot; use `com.para.civic.delegation` records for that.
 function buildVoteRecord(entry, actorsByAlias, cabildeoUriByAlias) {
   return compactObject({
     $type: 'com.para.civic.vote',
+    subjectType: 'cabildeo',
     cabildeo: resolveCabildeoUri(entry.cabildeoAlias, cabildeoUriByAlias),
     selectedOption: entry.selectedOption,
     isDirect: entry.isDirect,
-    delegatedFrom: (entry.delegatedFrom || []).map(aliasOrDid =>
-      resolveDid(aliasOrDid, actorsByAlias),
-    ),
     createdAt: entry.createdAt,
   })
 }
@@ -1136,30 +1113,6 @@ function buildLikeOperation({entry, actorsByAlias, group, context}) {
   }
 }
 
-function buildRepostOperation({entry, actorsByAlias, group, context}) {
-  const actor = getActor(actorsByAlias, entry.actor, context)
-  return {
-    group,
-    actorAlias: entry.actor,
-    did: actor.did,
-    collection: 'app.bsky.feed.repost',
-    createdAt: entry.createdAt,
-    rkey:
-      entry.rkey ||
-      `seed-repost-${sanitizeRkeyComponent(entry.actor)}-${sanitizeRkeyComponent(entry.subjectRef)}`,
-    recordBuilder(runtimeState) {
-      return buildRepostRecord({
-        ...entry,
-        subject: resolveRecordRef(
-          runtimeState,
-          entry.subjectRef,
-          `repost subject for ${entry.actor}`,
-        ),
-      })
-    },
-  }
-}
-
 function buildPostRecord(entry) {
   return compactObject({
     $type: 'app.bsky.feed.post',
@@ -1174,15 +1127,6 @@ function buildPostRecord(entry) {
 function buildLikeRecord(entry) {
   return compactObject({
     $type: 'app.bsky.feed.like',
-    subject: entry.subject,
-    via: entry.via,
-    createdAt: entry.createdAt || new Date().toISOString(),
-  })
-}
-
-function buildRepostRecord(entry) {
-  return compactObject({
-    $type: 'app.bsky.feed.repost',
     subject: entry.subject,
     via: entry.via,
     createdAt: entry.createdAt || new Date().toISOString(),

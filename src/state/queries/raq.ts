@@ -65,7 +65,18 @@ export function useCommunityAlignment(community: string | undefined) {
     queryKey: RAQ_COMMUNITY_ALIGNMENT_QUERY_KEY(community || ''),
     queryFn: async () => {
       if (!community) throw new Error('Community required')
-      return fetchCommunityAlignment(agent, community)
+      try {
+        return await fetchCommunityAlignment(agent, community)
+      } catch (error) {
+        if (
+          typeof error === 'object' &&
+          error !== null &&
+          'error' in error &&
+          error.error === 'NotFound'
+        )
+          return null
+        throw error
+      }
     },
     enabled: Boolean(community),
     staleTime: 1000 * 60 * 5,
@@ -139,6 +150,7 @@ export function useSubmitProposedQuestionMutation() {
       await submitProposedQuestion(agent, text, targetAxis, targetCommunity)
     },
     onSuccess: () => {
+      void queryClient.invalidateQueries({queryKey: ['raq_proposed_questions']})
       queryClient.invalidateQueries({
         queryKey: RAQ_PROPOSED_QUESTIONS_QUERY_KEY(agent.session?.did ?? ''),
       })

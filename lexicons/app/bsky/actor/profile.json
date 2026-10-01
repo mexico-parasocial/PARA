@@ -64,6 +64,10 @@
           "joinedViaStarterPack": {
             "ref": "com.atproto.repo.strongRef",
             "type": "ref"
+          },
+          "revealInfluence": {
+            "type": "boolean",
+            "description": "Whether to display the global Influence score to other viewers. Defaults to false when absent."
           }
         }
       },

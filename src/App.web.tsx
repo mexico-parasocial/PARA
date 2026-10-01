@@ -197,7 +197,7 @@ function App() {
   }, [])
 
   if (!isReady) {
-    return <Splash isReady />
+    return <Splash isReady={false} />
   }
 
   /*

@@ -1,5 +1,6 @@
 import {useCallback, useMemo, useState} from 'react'
-import {type AtUriString} from '@atproto/syntax'
+import {type Client} from '@atproto/lex'
+import {type AtIdentifierString, type AtUriString} from '@atproto/syntax'
 import {useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
@@ -12,6 +13,11 @@ import {
   TREE_VIEW_BF,
 } from '#/state/queries/usePostThread/const'
 import {type PostThreadContextType} from '#/state/queries/usePostThread/context'
+import {
+  adaptParaPostThread,
+  getParaThreadAuthors,
+  isParaPostUri,
+} from '#/state/queries/usePostThread/para'
 import {
   createCacheMutator,
   getThreadPlaceholder,
@@ -32,7 +38,7 @@ import {useAppviewClient, useSession} from '#/state/session'
 import {useMergeThreadgateHiddenReplies} from '#/state/threadgate-hidden-replies'
 import {useBreakpoints} from '#/alf'
 import {IS_WEB} from '#/env'
-import {app} from '#/lexicons'
+import {app, com} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 
 export * from '#/state/queries/usePostThread/context'
@@ -74,6 +80,12 @@ export function usePostThread({anchor}: {anchor?: string}) {
     enabled: isThreadPreferencesLoaded && !!anchor && !!moderationOpts,
     queryKey: postThreadQueryKey,
     async queryFn(ctx) {
+      // com.para.post threads live in PARA's own index; Bluesky's thread
+      // endpoint answers "not found" for them.
+      if (isParaPostUri(anchor!)) {
+        return getParaPostThread(client, anchor!, below)
+      }
+
       const placeholder = getThreadPlaceholder(qc, anchor!)
       const data = await client.call(app.bsky.unspecced.getPostThreadV2, {
         anchor: anchor! as AtUriString,
@@ -357,4 +369,35 @@ export function usePostThread({anchor}: {anchor?: string}) {
     postThreadQueryKey,
     postThreadOtherQueryKey,
   ])
+}
+
+const PROFILES_PER_REQUEST = 25
+
+async function getParaPostThread(
+  client: Client,
+  anchor: string,
+  below: number,
+): Promise<UsePostThreadQueryResult> {
+  const data = await client.call(com.para.feed.getPostThread, {
+    uri: anchor as AtUriString,
+    depth: below,
+    parentHeight: LINEAR_VIEW_BELOW,
+  })
+
+  const authors = getParaThreadAuthors(data)
+  const profiles = new Map<string, app.bsky.actor.defs.ProfileViewDetailed>()
+  for (let i = 0; i < authors.length; i += PROFILES_PER_REQUEST) {
+    try {
+      const res = await client.call(app.bsky.actor.getProfiles, {
+        actors: authors.slice(
+          i,
+          i + PROFILES_PER_REQUEST,
+        ) as AtIdentifierString[],
+      })
+      for (const profile of res.profiles) profiles.set(profile.did, profile)
+    } catch {
+      // Authors without a profile fall back to their DID in the adapter.
+    }
+  }
+  return adaptParaPostThread(data, profiles)
 }

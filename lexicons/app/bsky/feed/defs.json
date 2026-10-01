@@ -59,6 +59,10 @@
         "likeCount": {
           "type": "integer"
         },
+        "voteScore": {
+          "type": "integer",
+          "description": "PARA: net public reactions (up minus down). A viewer's signed vote overrides their like."
+        },
         "quoteCount": {
           "type": "integer"
         },

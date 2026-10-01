@@ -4,6 +4,7 @@ import {
   useImperativeHandle,
   useMemo,
   useRef,
+  useState,
 } from 'react'
 import MapView, {Marker, Polygon} from 'react-native-maps'
 
@@ -19,11 +20,6 @@ import {
   type PolygonProps,
   type Props,
 } from './MapScreen.shared'
-import {
-  CitiesSidebar,
-  DistrictsSidebar,
-  StateSummarySidebar,
-} from './MapSidebarContent'
 
 /**
  * Adapts MapLibreWeb to the MapViewComponent interface expected by
@@ -66,6 +62,10 @@ const MapLibreAdapter = forwardRef<MapViewRef, MapViewProps>(
       () => props.cityMarkersData || [],
       [props.cityMarkersData],
     )
+    const districtPolygons = useMemo(
+      () => props.districtPolygonsData || [],
+      [props.districtPolygonsData],
+    )
     const districtCentroids = useMemo(
       () => props.districtCentroidsData || [],
       [props.districtCentroidsData],
@@ -80,6 +80,7 @@ const MapLibreAdapter = forwardRef<MapViewRef, MapViewProps>(
         polygons={polygons}
         civicPoints={civicPoints}
         cityMarkers={cityMarkers}
+        districtPolygons={districtPolygons}
         districtCentroids={districtCentroids}
         onRegionChangeComplete={props.onRegionChangeComplete}
         onPress={props.onPress}
@@ -124,6 +125,7 @@ export function MapScreen(props: Props) {
   const {provider} = useMapProvider()
 
   const isMapLibre = provider === 'maplibre'
+  const [drawerOpen, setDrawerOpen] = useState(false)
 
   return (
     <MapScreenImpl
@@ -144,11 +146,8 @@ export function MapScreen(props: Props) {
           : (Polygon as unknown as ComponentType<PolygonProps>)
       }
       DesktopLayout={MapSplitPaneLayout}
-      DesktopSidebarComponents={{
-        StateSummary: StateSummarySidebar,
-        Districts: DistrictsSidebar,
-        Cities: CitiesSidebar,
-      }}
+      drawerOpen={drawerOpen}
+      onDrawerOpenChange={setDrawerOpen}
     />
   )
 }

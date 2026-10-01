@@ -1,8 +1,13 @@
 import {type AtUriString} from '@atproto/syntax'
-import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 
 import {STALE} from '#/state/queries'
-import {useAgent} from '#/state/session'
+import {useAgent, useSession} from '#/state/session'
 import {com} from '#/lexicons'
 
 const RQKEY_ROOT = 'community-boards'
@@ -166,6 +171,20 @@ export function useCommunityBoardsQuery(
   })
 }
 
+// Tree browsing includes public boards, not just the viewer's memberships.
+export function useCommunityTreeDirectoryQuery() {
+  const agent = useAgent()
+  const {currentAccount} = useSession()
+  return useInfiniteQuery({
+    queryKey: [RQKEY_ROOT, 'tree-directory', currentAccount?.did],
+    staleTime: STALE.SECONDS.THIRTY,
+    initialPageParam: undefined as string | undefined,
+    queryFn: ({pageParam}) =>
+      fetchCommunityBoards({agent, opts: {limit: 100, cursor: pageParam}}),
+    getNextPageParam: page => page.cursor || undefined,
+  })
+}
+
 export function useCommunityBoardQuery({
   communityId,
   uri,
@@ -276,7 +295,7 @@ export function useLeaveCommunityMutation() {
   })
 }
 
-async function fetchCommunityBoards({
+export async function fetchCommunityBoards({
   agent,
   opts,
 }: {

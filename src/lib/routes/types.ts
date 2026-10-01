@@ -162,6 +162,7 @@ export type CommonNavigatorParams = {
     mode?: 'Policies' | 'Matters'
   }
   PolicyDetails: {item?: Record<string, unknown>; cabildeoUri?: string}
+  MatterDetails: {item?: Record<string, unknown>; cabildeoUri?: string}
   Representatives: {category?: string; q?: string}
   NotificationsActivityList: {posts: string}
   LegacyNotificationSettings: undefined
@@ -180,7 +181,12 @@ export type CommonNavigatorParams = {
   Bookmarks: undefined
   FindContactsFlow: undefined
   Memes: {view?: 'board' | 'deck'}
-  Documents: {category?: string}
+  Documents: {
+    category?: string
+    /** Scope the list to one community (e.g. a party's profile). */
+    communityUri?: string
+    communityName?: string
+  }
   DiscourseAnalysis: undefined
   VSScreenV2: {entities?: string[]; matter?: string}
   AgentChat: {agentId: string}
@@ -192,7 +198,10 @@ export type CommonNavigatorParams = {
   OpenQuestionsList: undefined
   AxesDiscoveryList: {initialTab?: 'official' | 'unofficial'}
   AxisDetail: {axisId: string}
-  RAQResults: {results: AxisResult[]}
+  RAQResults: {
+    results: AxisResult[]
+    answers?: {questionId: string; value: number}[]
+  }
   OpenQuestionThread: {id: string}
   CommunityRAQ: {communityId: string; communityName: string}
   CommunityVoters: {communityId: string; communityName: string}
@@ -309,6 +318,7 @@ export type FlatNavigatorParams = CommonNavigatorParams & {
     mode?: 'Policies' | 'Matters'
   }
   PolicyDetails: {item?: Record<string, unknown>; cabildeoUri?: string}
+  MatterDetails: {item?: Record<string, unknown>; cabildeoUri?: string}
   Representatives: {category?: string; q?: string}
   Data: undefined
   CreatePost: undefined
@@ -322,13 +332,21 @@ export type FlatNavigatorParams = CommonNavigatorParams & {
   AnonymousVoice: {profileId: string}
   MyAffiliations: undefined
   Memes: {view?: 'board' | 'deck'}
-  Documents: {category?: string}
+  Documents: {
+    category?: string
+    /** Scope the list to one community (e.g. a party's profile). */
+    communityUri?: string
+    communityName?: string
+  }
   RAQ: undefined
   ProposedRAQList: undefined
   OpenQuestionsList: undefined
   AxesDiscoveryList: {initialTab?: 'official' | 'unofficial'}
   AxisDetail: {axisId: string}
-  RAQResults: {results: AxisResult[]}
+  RAQResults: {
+    results: AxisResult[]
+    answers?: {questionId: string; value: number}[]
+  }
   OpenQuestionThread: {id: string}
 }
 
@@ -340,6 +358,7 @@ export type AllNavigatorParams = CommonNavigatorParams & {
     mode?: 'Policies' | 'Matters'
   }
   PolicyDetails: {item?: Record<string, unknown>; cabildeoUri?: string}
+  MatterDetails: {item?: Record<string, unknown>; cabildeoUri?: string}
   Representatives: {category?: string; q?: string}
   SearchTab: undefined
   Search: SearchParams
@@ -376,7 +395,10 @@ export type AllNavigatorParams = CommonNavigatorParams & {
   OpenQuestionsList: undefined
   AxesDiscoveryList: {initialTab?: 'official' | 'unofficial'}
   AxisDetail: {axisId: string}
-  RAQResults: {results: AxisResult[]}
+  RAQResults: {
+    results: AxisResult[]
+    answers?: {questionId: string; value: number}[]
+  }
   OpenQuestionThread: {id: string}
   Highlights: HighlightsRouteParams
   SeeHighlightDetails: {highlightId: string}

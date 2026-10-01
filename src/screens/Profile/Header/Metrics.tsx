@@ -1,18 +1,21 @@
 import {TouchableOpacity, View} from 'react-native'
 import {msg, plural} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
+import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {makeProfileLink} from '#/lib/routes/links'
 import {type NavigationProp} from '#/lib/routes/types'
 import {type Shadow} from '#/state/cache/types'
+import {useInfluenceQuery} from '#/state/queries/influence'
+import {useSession} from '#/state/session'
 import {formatCount} from '#/view/com/util/numeric/format'
 import {atoms as a, useTheme} from '#/alf'
 import {Influence_Stroke_Icon as InfluenceIcon} from '#/components/icons/Influence'
 import {RaisingHand4Finger_Stroke2_Corner2_Rounded as VoteIcon} from '#/components/icons/RaisingHand'
 import {InlineLinkText} from '#/components/Link'
 import {Text} from '#/components/Typography'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 export function ProfileHeaderMetrics({
   profile,
@@ -21,6 +24,11 @@ export function ProfileHeaderMetrics({
 }) {
   const t = useTheme()
   const {_, i18n} = useLingui()
+  const {currentAccount} = useSession()
+  const influence = useInfluenceQuery(profile.did)
+  const canSeeInfluence =
+    influence.data?.influenceVisible === true ||
+    currentAccount?.did === profile.did
   const navigation = useNavigation<NavigationProp>()
   const following = formatCount(i18n, profile.followsCount || 0)
   const followers = formatCount(i18n, profile.followersCount || 0)
@@ -86,13 +94,16 @@ export function ProfileHeaderMetrics({
           }>
           <InfluenceIcon size="md" style={[t.atoms.text, {top: 3}]} />
           <Text style={[a.font_semi_bold, t.atoms.text, a.text_md]}>
-            {formatCount(
-              i18n,
-              (profile as {influenceScore?: number}).influenceScore || 0,
-            )}{' '}
+            {influence.isError
+              ? '—'
+              : !influence.data
+                ? '…'
+                : canSeeInfluence
+                  ? formatCount(i18n, influence.data.stats.influence)
+                  : _(msg`Hidden`)}{' '}
             <Text
               style={[t.atoms.text_contrast_medium, a.font_normal, a.text_md]}>
-              influence
+              <Trans>influence</Trans>
             </Text>
           </Text>
         </TouchableOpacity>

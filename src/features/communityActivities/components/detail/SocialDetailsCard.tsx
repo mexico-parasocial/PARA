@@ -6,6 +6,7 @@ import {Trans} from '@lingui/react/macro'
 
 import {
   SOCIAL_ACTIVITY_ASSEMBLY,
+  SOCIAL_ACTIVITY_CABILDEO,
   SOCIAL_ACTIVITY_PEACEFUL_MARCH,
   SOCIAL_ACTIVITY_SIGNATURE_DRIVE,
   type SocialActivitySignatureDrive,
@@ -105,6 +106,40 @@ export function SocialDetailsCard({
           }
         />
         <BulletList title={_(msg`Agenda`)} items={details.agenda} />
+      </Card>
+    )
+  }
+
+  if (details.$type === SOCIAL_ACTIVITY_CABILDEO) {
+    const format = ASSEMBLY_FORMATS.find(f => f.value === details.format)
+    return (
+      <Card title={_(msg`Cabildeo`)}>
+        <Row
+          label={_(msg`Format`)}
+          value={format ? i18n._(format.label) : details.format}
+        />
+        {details.meetingUrl ? (
+          <InlineLinkText
+            to={details.meetingUrl}
+            label={_(msg`Join online`)}
+            style={[a.text_md, a.font_semi_bold]}>
+            {_(msg`Join online`)}
+          </InlineLinkText>
+        ) : null}
+        <BulletList
+          title={_(msg`Who took part`)}
+          items={details.participants}
+        />
+        <BulletList title={_(msg`What was argued`)} items={details.arguments} />
+        <Row label={_(msg`Where it landed`)} value={details.outcome} emphasis />
+        {details.recordingUrl ? (
+          <InlineLinkText
+            to={details.recordingUrl}
+            label={_(msg`Watch the recording`)}
+            style={[a.text_md, a.font_semi_bold]}>
+            {_(msg`Watch the recording`)}
+          </InlineLinkText>
+        ) : null}
       </Card>
     )
   }
