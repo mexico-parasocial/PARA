@@ -108,10 +108,13 @@ export function PolicyMatterDashboard({
     'Communities' | 'Parties' | 'Both' | undefined
 
   const onPressItem = (item: PolicyItem) => {
-    navigation.navigate('PolicyDetails', {
-      item: item as unknown as Record<string, unknown>,
-      cabildeoUri: item.cabildeoUri,
-    })
+    navigation.navigate(
+      item.type === 'Matter' ? 'MatterDetails' : 'PolicyDetails',
+      {
+        item: item as unknown as Record<string, unknown>,
+        cabildeoUri: item.cabildeoUri,
+      },
+    )
   }
 
   const [activeTab, setActiveTab] = useState<PolicyMatterMode>(

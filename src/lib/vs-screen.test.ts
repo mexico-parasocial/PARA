@@ -78,7 +78,7 @@ describe('buildVsScreenViewModel', () => {
     expect(view.entities[0].sharedCount).toBe(1)
   })
 
-  it('classifies cabildeos into the local six policy axes', () => {
+  it('files untagged cabildeos under the six flair fields by keyword', () => {
     const view = buildVsScreenViewModel({
       cabildeos: [
         cabildeo({
@@ -87,7 +87,7 @@ describe('buildVsScreenViewModel', () => {
           community: 'p/Jalisco',
         }),
         cabildeo({
-          uri: 'at://environment',
+          uri: 'at://services',
           title: 'Water and park recovery',
           community: 'p/CDMX',
         }),
@@ -96,15 +96,173 @@ describe('buildVsScreenViewModel', () => {
       selectedTopic: 'all',
     })
 
+    expect(view.policyAxisComparisons.map(row => row.label)).toEqual([
+      'Servicios públicos',
+      'Hacienda',
+      'Economía',
+      'Asuntos sociales',
+      'Asuntos exteriores',
+      'Interior',
+    ])
     const economy = view.policyAxisComparisons.find(
-      row => row.key === 'economy',
+      row => row.key === 'economia',
     )
-    const environment = view.policyAxisComparisons.find(
-      row => row.key === 'environment',
+    const services = view.policyAxisComparisons.find(
+      row => row.key === 'servicios-publicos',
     )
 
     expect(economy?.entityDebateCounts).toEqual([1, 0])
-    expect(environment?.entityDebateCounts).toEqual([0, 1])
+    expect(services?.entityDebateCounts).toEqual([0, 1])
+  })
+
+  it('classifies by flair field and compares votes per policy', () => {
+    const view = buildVsScreenViewModel({
+      cabildeos: [
+        cabildeo({
+          uri: 'at://water-a',
+          title: 'Anything',
+          community: 'p/Jalisco',
+          flairs: ['||#EmpresaPublicaDeAgua'],
+          voteTotals: {total: 30, direct: 20, delegated: 10},
+        }),
+        cabildeo({
+          uri: 'at://water-b',
+          title: 'Anything else',
+          community: 'p/CDMX',
+          flairs: ['|#EmpresaPublicaDeAgua'],
+          voteTotals: {total: 10, direct: 10, delegated: 0},
+        }),
+        cabildeo({
+          uri: 'at://tax',
+          title: 'Tax plan',
+          community: 'p/CDMX',
+          flairs: ['||#Impuestos'],
+        }),
+      ],
+      entities: ['p/Jalisco', 'p/CDMX'],
+      selectedTopic: 'all',
+    })
+
+    const water = view.issueComparisons.find(
+      row => row.label === 'Empresa pública de agua',
+    )
+    expect(water?.fieldKey).toBe('servicios-publicos')
+    expect(water?.entityVotes).toEqual([30, 10])
+    expect(water?.entityDebateCounts).toEqual([1, 1])
+  })
+
+  it("compares stance on each side's own debates, keeping joint ones apart", () => {
+    const positions = (
+      forCount: number,
+      against: number,
+    ): CabildeoReadView['positionCounts'] => ({
+      total: forCount + against,
+      for: forCount,
+      against,
+      amendment: 0,
+      byOption: [],
+    })
+    const view = buildVsScreenViewModel({
+      cabildeos: [
+        cabildeo({
+          uri: 'at://jal-water',
+          title: 'Jalisco water',
+          community: 'p/Jalisco',
+          flairs: ['||#EmpresaPublicaDeAgua'],
+          positionCounts: positions(5, 1),
+        }),
+        cabildeo({
+          uri: 'at://cdmx-water',
+          title: 'CDMX water',
+          community: 'p/CDMX',
+          flairs: ['||#EmpresaPublicaDeAgua'],
+          positionCounts: positions(1, 3),
+        }),
+        cabildeo({
+          uri: 'at://joint-water',
+          title: 'Joint water',
+          community: 'p/Jalisco',
+          communities: ['p/CDMX'],
+          flairs: ['||#EmpresaPublicaDeAgua'],
+          positionCounts: positions(10, 0),
+        }),
+        cabildeo({
+          uri: 'at://joint-housing',
+          title: 'Joint housing',
+          community: 'p/CDMX',
+          communities: ['p/Jalisco'],
+          flairs: ['||#ViviendaPublica'],
+          positionCounts: positions(2, 2),
+        }),
+      ],
+      entities: ['p/Jalisco', 'p/CDMX'],
+      selectedTopic: 'all',
+    })
+
+    const water = view.issueComparisons.find(
+      row => row.id === 'policy_empresa_publica_agua',
+    )
+    expect(water?.entityStance[0].for).toBe(5)
+    expect(water?.entityStance[1].against).toBe(3)
+    expect(water?.jointStance.for).toBe(10)
+    expect(water?.jointDebateCount).toBe(1)
+    expect(water?.entityForShare).toEqual([5 / 6, 1 / 4])
+
+    const housing = view.issueComparisons.find(
+      row => row.id === 'policy_vivienda_publica',
+    )
+    expect(housing?.entityForShare).toEqual([null, null])
+    expect(housing?.jointStance).toEqual({for: 2, against: 2, amendment: 0})
+  })
+
+  it('compares per-option party votes only when both parties are reported', () => {
+    const view = buildVsScreenViewModel({
+      cabildeos: [
+        {
+          ...cabildeo({
+            uri: 'at://both',
+            title: 'Reforma',
+            community: 'p/PAN',
+            communities: ['p/Morena'],
+          }),
+          partyVoteSummary: [
+            {party: 'PAN', total: 10, byOption: [8, 2]},
+            {party: 'p/Morena', total: 20, byOption: [4, 16]},
+          ],
+        },
+        {
+          ...cabildeo({
+            uri: 'at://one-party',
+            title: 'Solo PAN',
+            community: 'p/PAN',
+            communities: ['p/Morena'],
+          }),
+          partyVoteSummary: [{party: 'PAN', total: 5, byOption: [5, 0]}],
+        },
+      ],
+      entities: ['p/PAN', 'p/Morena'],
+      selectedTopic: 'all',
+    })
+
+    expect(view.partyVoteComparisons).toHaveLength(1)
+    const [row] = view.partyVoteComparisons
+    expect(row.totals).toEqual([10, 20])
+    expect(row.options.map(option => option.shares)).toEqual([
+      [0.8, 0.2],
+      [0.2, 0.8],
+    ])
+  })
+
+  it('keeps a selected policy even when the pair has no debates for it', () => {
+    const view = buildVsScreenViewModel({
+      cabildeos: [],
+      entities: ['p/Jalisco', 'p/CDMX'],
+      selectedTopic: 'policy_empresa_publica_agua',
+    })
+
+    expect(view.selectedTopic).toBe('policy_empresa_publica_agua')
+    expect(view.selectedIssue?.fieldKey).toBe('servicios-publicos')
+    expect(view.totalRelevant).toBe(0)
   })
 
   it('merges RAQ community alignment without inventing missing scores', () => {

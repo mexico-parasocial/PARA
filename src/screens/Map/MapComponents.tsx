@@ -10,6 +10,7 @@ import {
 } from 'react-native'
 import Animated, {
   FadeInDown,
+  FadeInLeft,
   runOnJS,
   SlideInDown,
   useAnimatedStyle,
@@ -32,6 +33,7 @@ import {normalizeMexicoStateName} from '#/lib/constants/mexico'
 import {MEXICO_CITY_DATA} from '#/lib/constants/mexicoCityData'
 import {MOCK_DISTRICT_RAQS, STATE_DEMOGRAPHICS} from '#/lib/constants/mockData'
 import {type NavigationProp} from '#/lib/routes/types'
+import {IS_WEB} from '#/platform/detection'
 import {useCabildeosQuery} from '#/state/queries/cabildeo'
 import {atoms as a, useBreakpoints, useTheme, web} from '#/alf'
 import {Check_Stroke2_Corner0_Rounded as Check} from '#/components/icons/Check'
@@ -118,12 +120,35 @@ function getCitiesForState(stateName: string) {
   return match?.[1] || []
 }
 
+/**
+ * Web shows these as a panel docked to the map's top-left corner (like a
+ * desktop map's info card), not a bottom sheet: there is no touch drag to
+ * dismiss it, so it fades in, has no grab handle, and closes with its button
+ * or Escape.
+ */
 function getPanelFrame(gtMobile: boolean, insets: {bottom: number}) {
+  if (IS_WEB) {
+    return gtMobile
+      ? {top: 20, bottom: 20, left: 20, width: 360}
+      : {left: 12, right: 12, bottom: 12, maxHeight: '70%' as const}
+  }
+
   if (gtMobile) {
     return {top: 136, bottom: 20, left: 20, width: 360}
   }
 
   return {left: 12, right: 12, bottom: 12 + insets.bottom, maxHeight: 430}
+}
+
+function useEscapeToClose(onClose: () => void, enabled: boolean) {
+  useEffect(() => {
+    if (!IS_WEB || !enabled) return
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [onClose, enabled])
 }
 
 function SectionHeader({label}: {label: string}) {
@@ -194,7 +219,12 @@ function SheetHeader({
       </View>
       <TouchableOpacity
         accessibilityRole="button"
-        style={[a.p_xs, a.rounded_full, t.atoms.bg_contrast_25]}
+        style={[
+          a.p_xs,
+          a.rounded_full,
+          t.atoms.bg_contrast_25,
+          web({cursor: 'pointer'}),
+        ]}
         onPress={onClose}>
         <CircleX fill={t.atoms.text.color} width={20} height={20} />
       </TouchableOpacity>
@@ -254,10 +284,11 @@ function OverlayFrame({
   const {gtMobile} = useBreakpoints()
   const t = useTheme()
   const insets = useSafeAreaInsets()
+  useEscapeToClose(onClose, true)
 
   return (
     <Animated.View
-      entering={SlideInDown.duration(280)}
+      entering={IS_WEB ? FadeInLeft.duration(180) : SlideInDown.duration(280)}
       style={[
         a.absolute,
         getPanelFrame(gtMobile, insets),
@@ -269,7 +300,7 @@ function OverlayFrame({
         a.overflow_hidden,
         {zIndex: 18},
       ]}>
-      {!gtMobile && (
+      {!gtMobile && !IS_WEB && (
         <View style={[a.pt_sm, a.align_center]}>
           <View
             style={[
@@ -665,6 +696,8 @@ export function SelectedStateOverlay({
     transform: [{translateY: translateY.get()}],
   }))
 
+  useEscapeToClose(closeSheet, !!selectedState && visible)
+
   if (!selectedState || !visible) return null
 
   const activeCabildeos = allCabildeos.filter(
@@ -679,12 +712,16 @@ export function SelectedStateOverlay({
 
   const sheet = (
     <Animated.View
-      entering={SlideInDown.duration(280)}
+      entering={IS_WEB ? FadeInLeft.duration(180) : SlideInDown.duration(280)}
       style={[
         a.absolute,
-        gtMobile
-          ? {left: 20, bottom: 28, width: 348}
-          : {left: 12, right: 12, bottom: 12 + insets.bottom},
+        IS_WEB
+          ? gtMobile
+            ? {top: 20, left: 20, width: 360}
+            : {left: 12, right: 12, bottom: 12}
+          : gtMobile
+            ? {left: 20, bottom: 28, width: 348}
+            : {left: 12, right: 12, bottom: 12 + insets.bottom},
         a.p_lg,
         a.rounded_xl,
         t.atoms.bg_contrast_25,
@@ -695,7 +732,7 @@ export function SelectedStateOverlay({
         sheetAnimatedStyle,
         {zIndex: 18},
       ]}>
-      {!gtMobile && (
+      {!gtMobile && !IS_WEB && (
         <View style={[a.align_center, a.mb_md]}>
           <View
             style={[
@@ -719,7 +756,12 @@ export function SelectedStateOverlay({
         <TouchableOpacity
           accessibilityRole="button"
           onPress={closeSheet}
-          style={[a.p_xs, a.rounded_full, t.atoms.bg_contrast_100]}>
+          style={[
+            a.p_xs,
+            a.rounded_full,
+            t.atoms.bg_contrast_100,
+            web({cursor: 'pointer'}),
+          ]}>
           <CircleX fill={t.atoms.text.color} width={20} height={20} />
         </TouchableOpacity>
       </View>

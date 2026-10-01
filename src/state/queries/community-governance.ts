@@ -203,7 +203,7 @@ export function applyForDeputyRole(
   }
 }
 
-async function fetchGovernanceFromXrpc({
+export async function fetchGovernanceFromXrpc({
   agent,
   communityName,
   communityId,

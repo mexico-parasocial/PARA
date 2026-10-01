@@ -5,11 +5,20 @@ import {
   type SessionBundle,
 } from '#/state/session/session-core'
 import {com} from '#/lexicons'
-import {
-  type DiscourseSnapshot,
-  type DiscourseTopology,
-  type TopicCluster,
-} from './para-lexicons'
+import {type Topic} from '#/lexicons/com/para/discourse/getTopics'
+import {type DiscourseSnapshot, type DiscourseTopology} from './para-lexicons'
+
+const DENSITY_KEYS = {
+  'auth-left': 'authLeft',
+  'auth-center': 'authCenter',
+  'auth-right': 'authRight',
+  'center-left': 'centerLeft',
+  center: 'center',
+  'center-right': 'centerRight',
+  'lib-left': 'libLeft',
+  'lib-center': 'libCenter',
+  'lib-right': 'libRight',
+} as const
 
 export class DiscourseAPI {
   constructor(public agent: SessionBundle | PublicSessionBundle) {}
@@ -31,7 +40,7 @@ export class DiscourseAPI {
   async getTopics(params: {
     community?: string
     timeframe: '1h' | '24h' | '7d' | '30d'
-  }): Promise<TopicCluster[]> {
+  }): Promise<Topic[]> {
     if (!params.community) return []
     const res = await this.agent.appviewClient.call(
       com.para.discourse.getTopics,
@@ -39,10 +48,7 @@ export class DiscourseAPI {
         community: params.community as AtUriString,
       },
     )
-    // The lexicon's Topic shape (label/weight/growthRate) no longer matches
-    // the legacy TopicCluster view; cast keeps the consumer contract while
-    // the screen is updated to the new fields.
-    return (res.topics as unknown as TopicCluster[]) ?? []
+    return res.topics ?? []
   }
 
   async getTopology(params: {
@@ -56,6 +62,22 @@ export class DiscourseAPI {
         timeframe: params.timeframe,
       },
     )
-    return (res.topology as unknown as DiscourseTopology) ?? null
+    const topology = res.topology
+    if (!topology) return null
+
+    // The lexicon uses camelCase density keys and optional analysis lists.
+    // Adapt them to the chart contract, excluding protocol metadata ($type).
+    const positionDensity: Record<string, number> = {}
+    for (const [position, key] of Object.entries(DENSITY_KEYS)) {
+      const density = topology.positionDensity[key]
+      if (density !== undefined) positionDensity[position] = density
+    }
+
+    return {
+      ...topology,
+      positionDensity,
+      contestedAxes: topology.contestedAxes ?? [],
+      bridgeOpportunities: topology.bridgeOpportunities ?? [],
+    }
   }
 }

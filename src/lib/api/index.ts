@@ -30,6 +30,7 @@ import {
   createThreadgateRecord,
   threadgateAllowUISettingToAllowRecordValue,
 } from '#/state/queries/threadgate'
+import {isParaPostUri} from '#/state/queries/usePostThread/para'
 import {
   type EmbedDraft,
   type PostDraft,
@@ -39,6 +40,7 @@ import {app, chat, com} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 import {createGIFDescription} from '../gif-alt-text'
 import {computeCid} from './computeCid'
+import {PARA_POST_COLLECTION} from './para-lexicons'
 import {uploadBlob} from './upload-blob'
 
 export {uploadBlob}
@@ -132,6 +134,13 @@ interface PostOpts {
 
 export async function post(queryClient: QueryClient, opts: PostOpts) {
   const thread = opts.thread
+  // A reply to a com.para.post is itself a com.para.post: PARA threads (and
+  // their reply counts) only index that collection.
+  const collection =
+    opts.collection ??
+    (opts.replyTo && isParaPostUri(opts.replyTo)
+      ? PARA_POST_COLLECTION
+      : undefined)
   opts.onStateChange?.(t`Processing...`)
 
   let replyPromise:
@@ -182,7 +191,8 @@ export async function post(queryClient: QueryClient, opts: PostOpts) {
     now.setMilliseconds(now.getMilliseconds() + 1)
     tid = TID.next(tid)
     const rkey = tid.toString()
-    const uri = `at://${did}/app.bsky.feed.post/${rkey}` as AtUriString
+    const uri =
+      `at://${did}/${collection || 'app.bsky.feed.post'}/${rkey}` as AtUriString
     uris.push(uri)
 
     const rt = await rtPromise
@@ -191,7 +201,7 @@ export async function post(queryClient: QueryClient, opts: PostOpts) {
     const record: Record<string, unknown> = {
       // IMPORTANT: $type has to exist, CID is calculated with the `$type` field
       // present and will produce the wrong CID if you omit it.
-      $type: opts.collection || 'app.bsky.feed.post',
+      $type: collection || 'app.bsky.feed.post',
       createdAt: toDatetimeString(now),
       text: rt.text,
       facets: rt.facets,
@@ -202,7 +212,7 @@ export async function post(queryClient: QueryClient, opts: PostOpts) {
       tags: buildTagsArray(draft),
       // Para-specific fields: persist flairs, postType, party, and community
       // when writing to com.para.post so the backend can index them directly.
-      ...(opts.collection === 'com.para.post' && {
+      ...(collection === PARA_POST_COLLECTION && {
         flairs: buildFlairsArray(draft),
         postType: derivePostTypeId(draft),
         party: opts.party || undefined,
@@ -211,7 +221,7 @@ export async function post(queryClient: QueryClient, opts: PostOpts) {
     }
     writes.push({
       $type: 'com.atproto.repo.applyWrites#create',
-      collection: (opts.collection || 'app.bsky.feed.post') as NsidString,
+      collection: (collection || 'app.bsky.feed.post') as NsidString,
       rkey: rkey,
       value: record as unknown as LexMap,
     })
@@ -302,6 +312,9 @@ export class ReplyDeletedError extends Error {
 }
 
 async function resolveReply(appviewClient: Client, replyTo: string) {
+  if (isParaPostUri(replyTo)) {
+    return resolveParaReply(appviewClient, replyTo)
+  }
   const data = await appviewClient.call(app.bsky.feed.getPosts, {
     uris: [replyTo as AtUriString],
   })
@@ -325,6 +338,30 @@ async function resolveReply(appviewClient: Client, replyTo: string) {
   return {
     root: rootRef,
     parent: parentRef,
+  }
+}
+
+/**
+ * `app.bsky.feed.getPosts` doesn't return com.para.post records, so a PARA
+ * parent (and its thread root) is resolved from PARA's thread endpoint.
+ */
+async function resolveParaReply(appviewClient: Client, replyTo: string) {
+  let thread: com.para.feed.getPostThread.$OutputBody
+  try {
+    thread = await appviewClient.call(com.para.feed.getPostThread, {
+      uri: replyTo as AtUriString,
+      depth: 0,
+      parentHeight: 80,
+    })
+  } catch {
+    throw new ReplyDeletedError()
+  }
+  const parent = {uri: thread.post.uri, cid: thread.post.cid}
+  const rootUri = thread.post.replyRoot
+  const root = rootUri ? thread.parents.find(p => p.uri === rootUri) : undefined
+  return {
+    root: root ? {uri: root.uri, cid: root.cid} : parent,
+    parent,
   }
 }
 

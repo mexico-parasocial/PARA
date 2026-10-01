@@ -5,16 +5,19 @@ import {
   ECONOMIC_ACTIVITY_SALE,
   type EconomicActivityRaffle,
   type EconomicActivitySale,
+  SOCIAL_ACTIVITY_CABILDEO,
 } from '#/lib/api/para-lexicons'
 import {
   computeTermsDigest,
   type EconomicTerms,
   formatMinor,
+  getActivityKindMeta,
   parseMoneyToMinor,
   parsePercentToBps,
   parseThreadReference,
   parseWikiBody,
   slugifyWikiTitle,
+  SOCIAL_ACTIVITY_KINDS,
   summarizeLedger,
   validateFinancialPlan,
 } from '#/lib/community-activities'
@@ -301,5 +304,20 @@ describe('parseThreadReference', () => {
   it('rejects anything else', () => {
     expect(parseThreadReference('https://example.com/x')).toBeUndefined()
     expect(parseThreadReference('')).toBeUndefined()
+  })
+})
+
+describe('cabildeo as an activity kind', () => {
+  it('is selectable when creating a social activity', () => {
+    expect(SOCIAL_ACTIVITY_KINDS.map(kind => kind.value)).toContain(
+      SOCIAL_ACTIVITY_CABILDEO,
+    )
+  })
+
+  it('has its own metadata rather than the generic fallback', () => {
+    const meta = getActivityKindMeta(SOCIAL_ACTIVITY_CABILDEO)
+
+    expect(meta.value).toBe(SOCIAL_ACTIVITY_CABILDEO)
+    expect(meta.emoji).not.toBe(getActivityKindMeta(undefined).emoji)
   })
 })

@@ -438,6 +438,8 @@ export const SOCIAL_ACTIVITY_SIGNATURE_DRIVE =
   'com.para.community.socialActivity#signatureDrive'
 export const SOCIAL_ACTIVITY_ASSEMBLY =
   'com.para.community.socialActivity#assembly'
+export const SOCIAL_ACTIVITY_CABILDEO =
+  'com.para.community.socialActivity#cabildeo'
 
 export type PeacefulMarchPermitStatus =
   'not_required' | 'requested' | 'granted' | 'denied'
@@ -479,10 +481,27 @@ export interface SocialActivityAssembly {
   quorumRequired?: number
 }
 
+/*
+ * A cabildeo is a recorded conversation: who took part, what each side argued,
+ * and where it landed. Votes and delegation are optional extras that live
+ * elsewhere (a community civic tree can attach them); they are not part of the
+ * activity record.
+ */
+export interface SocialActivityCabildeo {
+  $type: typeof SOCIAL_ACTIVITY_CABILDEO
+  format: AssemblyFormat
+  meetingUrl?: string
+  recordingUrl?: string
+  participants?: string[]
+  arguments?: string[]
+  outcome?: string
+}
+
 export type SocialActivityDetails =
   | SocialActivityPeacefulMarch
   | SocialActivitySignatureDrive
   | SocialActivityAssembly
+  | SocialActivityCabildeo
 
 export interface SocialActivityRecord extends CommunityActivityBase {
   details: SocialActivityDetails

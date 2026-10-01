@@ -1,4 +1,4 @@
-import {type ReactNode, useMemo, useState} from 'react'
+import {Fragment, type ReactNode, useMemo, useState} from 'react'
 import {
   ActivityIndicator,
   ScrollView,
@@ -22,6 +22,7 @@ import {
   type NavigationProp,
 } from '#/lib/routes/types'
 import {fetchCommunityAlignment} from '#/lib/services/raq'
+import {POST_FLAIRS} from '#/lib/tags'
 import {
   buildVsEntityOptions,
   buildVsScreenViewModel,
@@ -36,9 +37,13 @@ import {
   type VsDivergenceRow,
   type VsEntityOption,
   type VsEntitySummary,
+  type VsIssue,
+  type VsIssueComparison,
+  type VsPartyVoteComparison,
   type VsPolicyAxisComparison,
   type VsRaqAxisComparison,
   type VsScreenViewModel,
+  type VsStance,
   type VsStatusFilter,
   type VsTimeFilter,
 } from '#/lib/vs-screen'
@@ -47,6 +52,7 @@ import {useAgent, useSession} from '#/state/session'
 import {Text} from '#/view/com/util/text/Text'
 import {SplitViewProvider} from '#/screens/Messages/components/splitView/context'
 import {atoms as a, useLayoutBreakpoints, useTheme} from '#/alf'
+import {FlairSelectionList} from '#/components/FlairSelectionList'
 import {SearchInput} from '#/components/forms/SearchInput'
 import {ArrowLeft_Stroke2_Corner0_Rounded as ArrowLeftIcon} from '#/components/icons/Arrow'
 import * as Layout from '#/components/Layout'
@@ -60,6 +66,24 @@ const DESKTOP_LEFT_RAIL_WIDTH = 86
 
 type CommunityAlignmentResponse = {
   axes?: ParaRaqAxisResult[]
+}
+
+// Communities without RAQ answers come back with an empty/invalid payload
+// (e.g. `compass: {}`), which fails response validation. That is "no data",
+// not an error worth a toast, so degrade to an empty alignment.
+async function fetchCommunityAlignmentSafe(
+  agent: ReturnType<typeof useAgent>,
+  community: string,
+): Promise<CommunityAlignmentResponse> {
+  try {
+    return await fetchCommunityAlignment(agent, community)
+  } catch (err) {
+    console.warn(
+      `[VSScreen] RAQ alignment unavailable for ${community}; showing no data.`,
+      err,
+    )
+    return {axes: []}
+  }
 }
 
 export function VSScreen() {
@@ -104,12 +128,12 @@ function VSScreenContent({
     ? width - sidebarWidth - (hasSession ? DESKTOP_LEFT_RAIL_WIDTH : 0)
     : width
   const isWide = mainContentWidth >= 980
-  const isTablet = mainContentWidth >= 760
   const panelColumns = isWide ? 2 : 1
   const [selectedTopic, setSelectedTopic] = useState(initialTopic)
   const [selectedAxis, setSelectedAxis] = useState<VsAxisFilter>('all')
   const [selectedStatus, setSelectedStatus] = useState<VsStatusFilter>('all')
   const [selectedTime, setSelectedTime] = useState<VsTimeFilter>('all')
+  const [pickerSlot, setPickerSlot] = useState<0 | 1 | null>(null)
 
   const {data: cabildeos = [], isLoading: cabildeosLoading} = useQuery<
     CabildeoReadView[]
@@ -134,13 +158,13 @@ function VSScreenContent({
     staleTime: STALE.MINUTES.FIVE,
     queryKey: ['vs-screen', 'raq-alignment', entities[0]],
     placeholderData: previous => previous,
-    queryFn: async () => fetchCommunityAlignment(agent, entities[0]),
+    queryFn: async () => fetchCommunityAlignmentSafe(agent, entities[0]),
   })
   const secondAlignment = useQuery<CommunityAlignmentResponse>({
     staleTime: STALE.MINUTES.FIVE,
     queryKey: ['vs-screen', 'raq-alignment', entities[1]],
     placeholderData: previous => previous,
-    queryFn: async () => fetchCommunityAlignment(agent, entities[1]),
+    queryFn: async () => fetchCommunityAlignmentSafe(agent, entities[1]),
   })
 
   const viewModel = useMemo(
@@ -171,31 +195,21 @@ function VSScreenContent({
     navigation.setParams({entities: next})
   }
 
+  // A specific policy/matter lives inside one field, so drop any field filter
+  // that could contradict it.
+  const selectTopic = (topic: string) => {
+    setSelectedTopic(topic)
+    if (topic !== 'all') setSelectedAxis('all')
+  }
+
   const selectEntity = (slot: 0 | 1, entity: string) => {
     updateEntities(setVsEntityInPair({entities, slot, entity}))
+    setPickerSlot(null)
   }
 
   const isLoading = cabildeosLoading
   const raqLoading = firstAlignment.isLoading || secondAlignment.isLoading
   const raqError = firstAlignment.isError || secondAlignment.isError
-
-  const controls = (
-    <VSControlPanel
-      navigation={navigation}
-      viewModel={viewModel}
-      compact={!isTablet}
-      selectedAxis={selectedAxis}
-      selectedStatus={selectedStatus}
-      selectedTime={selectedTime}
-      selectedTopic={viewModel.selectedTopic}
-      onSelectAxis={value => setSelectedAxis(value as VsAxisFilter)}
-      onSelectStatus={value => setSelectedStatus(value as VsStatusFilter)}
-      onSelectTime={value => setSelectedTime(value as VsTimeFilter)}
-      onSelectTopic={setSelectedTopic}
-      onSelectEntity={selectEntity}
-      onSwapEntities={() => updateEntities(swapVsEntities(entities))}
-    />
-  )
 
   const body = isLoading ? (
     <StateBlock
@@ -218,31 +232,54 @@ function VSScreenContent({
       <Layout.Screen testID="vsScreen" hideBorders noInsetTop>
         <VSWorkspaceLayout
           sidebar={
-            <VSControlPanel
-              navigation={navigation}
-              viewModel={viewModel}
-              compact
-              workspace
-              showEntityHeader={false}
-              selectedAxis={selectedAxis}
-              selectedStatus={selectedStatus}
-              selectedTime={selectedTime}
-              selectedTopic={viewModel.selectedTopic}
-              onSelectAxis={value => setSelectedAxis(value as VsAxisFilter)}
-              onSelectStatus={value =>
-                setSelectedStatus(value as VsStatusFilter)
-              }
-              onSelectTime={value => setSelectedTime(value as VsTimeFilter)}
-              onSelectTopic={setSelectedTopic}
-              onSelectEntity={selectEntity}
-              onSwapEntities={() => updateEntities(swapVsEntities(entities))}
-            />
+            <ScrollView
+              style={a.flex_1}
+              contentContainerStyle={styles.sidebarContent}
+              keyboardShouldPersistTaps="handled">
+              <View style={styles.sidebarAppBar}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Volver"
+                  accessibilityHint="Regresa a la pantalla anterior"
+                  onPress={() => navigation.goBack()}
+                  style={styles.iconButton}>
+                  <ArrowLeftIcon size="md" style={t.atoms.text} />
+                </TouchableOpacity>
+                <View style={styles.sidebarTitleBlock}>
+                  <Text style={[styles.title, t.atoms.text]}>Comparativas</Text>
+                  <Text
+                    style={[
+                      styles.appBarSubtitle,
+                      t.atoms.text_contrast_medium,
+                    ]}
+                    numberOfLines={1}>
+                    Politicas, votos comunitarios y RAQ
+                  </Text>
+                </View>
+              </View>
+              <VSControls
+                viewModel={viewModel}
+                selectedAxis={selectedAxis}
+                selectedStatus={selectedStatus}
+                selectedTime={selectedTime}
+                onSelectAxis={value => setSelectedAxis(value as VsAxisFilter)}
+                onSelectStatus={value =>
+                  setSelectedStatus(value as VsStatusFilter)
+                }
+                onSelectTime={value => setSelectedTime(value as VsTimeFilter)}
+                onSelectTopic={selectTopic}
+                onSelectEntity={selectEntity}
+                onSwapEntities={() => updateEntities(swapVsEntities(entities))}
+                pickerSlot={pickerSlot}
+                onPickerSlotChange={setPickerSlot}
+                filtersDefaultOpen
+              />
+            </ScrollView>
           }
           sidebarWidth={sidebarWidth}>
           <ScrollView
             style={[styles.workspaceScroll, t.atoms.bg_contrast_25]}
             contentContainerStyle={styles.workspaceScrollContent}>
-            <VSPartyInfoPanel viewModel={viewModel} compact={!isWide} />
             {body}
           </ScrollView>
         </VSWorkspaceLayout>
@@ -261,6 +298,8 @@ function VSScreenContent({
         <View style={styles.appBar}>
           <TouchableOpacity
             accessibilityRole="button"
+            accessibilityLabel="Volver"
+            accessibilityHint="Regresa a la pantalla anterior"
             onPress={() => navigation.goBack()}
             style={styles.iconButton}>
             <ArrowLeftIcon size="md" style={t.atoms.text} />
@@ -270,16 +309,371 @@ function VSScreenContent({
           </View>
           <View style={styles.appBarSpacer} />
         </View>
-
-        <Layout.Center style={styles.headerCenter}>{controls}</Layout.Center>
       </View>
 
       <ScrollView
         style={[styles.scrollView, t.atoms.bg_contrast_25]}
-        contentContainerStyle={styles.scrollContent}>
-        <Layout.Center style={styles.bodyCenter}>{body}</Layout.Center>
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="handled">
+        <Layout.Center style={styles.bodyCenter}>
+          <View style={styles.mobileStack}>
+            <VSControls
+              viewModel={viewModel}
+              selectedAxis={selectedAxis}
+              selectedStatus={selectedStatus}
+              selectedTime={selectedTime}
+              onSelectAxis={value => setSelectedAxis(value as VsAxisFilter)}
+              onSelectStatus={value =>
+                setSelectedStatus(value as VsStatusFilter)
+              }
+              onSelectTime={value => setSelectedTime(value as VsTimeFilter)}
+              onSelectTopic={selectTopic}
+              onSelectEntity={selectEntity}
+              onSwapEntities={() => updateEntities(swapVsEntities(entities))}
+              pickerSlot={pickerSlot}
+              onPickerSlotChange={setPickerSlot}
+            />
+            {body}
+          </View>
+        </Layout.Center>
       </ScrollView>
     </Layout.Screen>
+  )
+}
+
+type VSControlsProps = {
+  viewModel: VsScreenViewModel
+  selectedAxis: string
+  selectedStatus: string
+  selectedTime: string
+  onSelectAxis: (value: string) => void
+  onSelectStatus: (value: string) => void
+  onSelectTime: (value: string) => void
+  onSelectTopic: (value: string) => void
+  onSelectEntity: (slot: 0 | 1, entity: string) => void
+  onSwapEntities: () => void
+  pickerSlot: 0 | 1 | null
+  onPickerSlotChange: (slot: 0 | 1 | null) => void
+  filtersDefaultOpen?: boolean
+}
+
+/** Matchup, inline picker and filters; shared by the phone body and desktop sidebar. */
+function VSControls({
+  viewModel,
+  selectedAxis,
+  selectedStatus,
+  selectedTime,
+  onSelectAxis,
+  onSelectStatus,
+  onSelectTime,
+  onSelectTopic,
+  onSelectEntity,
+  onSwapEntities,
+  pickerSlot,
+  onPickerSlotChange,
+  filtersDefaultOpen,
+}: VSControlsProps) {
+  return (
+    <>
+      <MatchupCard
+        entities={viewModel.entities}
+        totalRelevant={viewModel.totalRelevant}
+        activeSlot={pickerSlot}
+        onSelectSlot={slot =>
+          onPickerSlotChange(pickerSlot === slot ? null : slot)
+        }
+        onSwap={onSwapEntities}
+      />
+      {pickerSlot !== null ? (
+        <EntitySearchList
+          slot={pickerSlot}
+          entities={viewModel.entities}
+          onSelectEntity={onSelectEntity}
+          onClose={() => onPickerSlotChange(null)}
+        />
+      ) : null}
+      <FilterPanel
+        viewModel={viewModel}
+        selectedAxis={selectedAxis}
+        selectedStatus={selectedStatus}
+        selectedTime={selectedTime}
+        selectedTopic={viewModel.selectedTopic}
+        onSelectAxis={onSelectAxis}
+        onSelectStatus={onSelectStatus}
+        onSelectTime={onSelectTime}
+        onSelectTopic={onSelectTopic}
+        defaultOpen={filtersDefaultOpen}
+      />
+    </>
+  )
+}
+
+const MATCHUP_AVATAR = 52
+
+/** The A-vs-B header. Tapping a side opens the picker for that slot. */
+function MatchupCard({
+  entities,
+  totalRelevant,
+  activeSlot,
+  onSelectSlot,
+  onSwap,
+}: {
+  entities: [VsEntitySummary, VsEntitySummary]
+  totalRelevant: number
+  activeSlot: 0 | 1 | null
+  onSelectSlot: (slot: 0 | 1) => void
+  onSwap: () => void
+}) {
+  const t = useTheme()
+  return (
+    <View
+      style={[
+        styles.matchupCard,
+        t.atoms.bg,
+        {borderColor: t.palette.contrast_100},
+      ]}>
+      <View style={styles.matchupRow}>
+        {([0, 1] as const).map(slot => {
+          const entity = entities[slot]
+          const active = activeSlot === slot
+          return (
+            <Fragment key={slot}>
+              {slot === 1 ? (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityLabel="Intercambiar A y B"
+                  accessibilityHint="Intercambia las dos entidades comparadas"
+                  onPress={onSwap}
+                  style={[
+                    styles.vsBadge,
+                    {
+                      backgroundColor: t.palette.contrast_25,
+                      borderColor: t.palette.contrast_100,
+                    },
+                  ]}>
+                  <Text style={[styles.vsText, t.atoms.text]}>VS</Text>
+                  <Text style={[styles.vsMeta, t.atoms.text_contrast_medium]}>
+                    ⇄
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
+              <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={`Cambiar ${slot === 0 ? 'A' : 'B'}: ${entity.plainName}`}
+                accessibilityHint="Abre el selector para elegir otra entidad"
+                accessibilityState={{expanded: active}}
+                onPress={() => onSelectSlot(slot)}
+                style={[
+                  styles.matchupSide,
+                  {
+                    backgroundColor: active
+                      ? t.palette.contrast_25
+                      : 'transparent',
+                    borderColor: active ? entity.color : 'transparent',
+                  },
+                ]}>
+                <View
+                  style={[
+                    styles.matchupAvatar,
+                    {backgroundColor: entity.color},
+                  ]}>
+                  <Text style={styles.matchupAvatarText}>
+                    {entity.initials}
+                  </Text>
+                </View>
+                <Text
+                  style={[styles.matchupName, t.atoms.text]}
+                  numberOfLines={1}>
+                  {entity.plainName}
+                </Text>
+                <Text
+                  style={[styles.matchupSubtitle, t.atoms.text_contrast_medium]}
+                  numberOfLines={1}>
+                  {entity.subtitle}
+                </Text>
+                <Text style={[styles.matchupChange, {color: entity.color}]}>
+                  {active ? 'Cerrar ▴' : 'Cambiar ▾'}
+                </Text>
+              </TouchableOpacity>
+            </Fragment>
+          )
+        })}
+      </View>
+      <Text style={[styles.matchupFoot, t.atoms.text_contrast_medium]}>
+        {totalRelevant} {totalRelevant === 1 ? 'debate' : 'debates'} en esta
+        comparativa
+      </Text>
+    </View>
+  )
+}
+
+/** Inline picker for one slot; replaces the old always-open option list. */
+function EntitySearchList({
+  slot,
+  entities,
+  onSelectEntity,
+  onClose,
+}: {
+  slot: 0 | 1
+  entities: [VsEntitySummary, VsEntitySummary]
+  onSelectEntity: (slot: 0 | 1, entity: string) => void
+  onClose: () => void
+}) {
+  const t = useTheme()
+  const options = useMemo(() => buildVsEntityOptions(), [])
+  const [query, setQuery] = useState('')
+  const normalizedQuery = normalizePickerText(query)
+  const matches = useMemo(
+    () =>
+      normalizedQuery
+        ? options.filter(option =>
+            normalizePickerText(option.searchText).includes(normalizedQuery),
+          )
+        : options,
+    [normalizedQuery, options],
+  )
+  const otherId = entities[slot === 0 ? 1 : 0].id
+  const currentId = entities[slot].id
+
+  return (
+    <View
+      style={[
+        styles.pickerCard,
+        t.atoms.bg,
+        {borderColor: t.palette.contrast_100},
+      ]}>
+      <View style={styles.pickerHeader}>
+        <Text style={[styles.pickerTitle, t.atoms.text]}>
+          Elegir {slot === 0 ? 'A' : 'B'}
+        </Text>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel="Cerrar selector"
+          accessibilityHint="Cierra el selector sin cambiar la entidad"
+          onPress={onClose}>
+          <Text style={[styles.pickerClose, t.atoms.text_contrast_medium]}>
+            Cerrar
+          </Text>
+        </TouchableOpacity>
+      </View>
+      <SearchInput
+        value={query}
+        label="Buscar entidad"
+        placeholder="Buscar comunidad o partido"
+        onChangeText={setQuery}
+        onClearText={() => setQuery('')}
+      />
+      <ScrollView
+        style={styles.pickerScroll}
+        nestedScrollEnabled
+        keyboardShouldPersistTaps="handled">
+        <View style={styles.entityOptionList}>
+          {matches.length === 0 ? (
+            <InlineState label="Sin resultados." />
+          ) : (
+            matches.map(option => (
+              <EntityOptionRow
+                key={option.id}
+                option={option}
+                selected={option.id === currentId}
+                disabled={option.id === otherId}
+                onPress={() => onSelectEntity(slot, option.id)}
+              />
+            ))
+          )}
+        </View>
+      </ScrollView>
+    </View>
+  )
+}
+
+/** Collapsed by default so the comparison, not the controls, is the page. */
+function FilterPanel({
+  viewModel,
+  selectedAxis,
+  selectedStatus,
+  selectedTime,
+  selectedTopic,
+  onSelectAxis,
+  onSelectStatus,
+  onSelectTime,
+  onSelectTopic,
+  defaultOpen = false,
+}: {
+  viewModel: VsScreenViewModel
+  selectedAxis: string
+  selectedStatus: string
+  selectedTime: string
+  selectedTopic: string
+  onSelectAxis: (value: string) => void
+  onSelectStatus: (value: string) => void
+  onSelectTime: (value: string) => void
+  onSelectTopic: (value: string) => void
+  defaultOpen?: boolean
+}) {
+  const t = useTheme()
+  const [open, setOpen] = useState(defaultOpen)
+  const activeCount = [
+    selectedAxis,
+    selectedStatus,
+    selectedTime,
+    selectedTopic,
+  ].filter(value => value !== 'all').length
+
+  return (
+    <View
+      style={[
+        styles.filterCard,
+        t.atoms.bg,
+        {borderColor: t.palette.contrast_100},
+      ]}>
+      <TouchableOpacity
+        accessibilityRole="button"
+        accessibilityState={{expanded: open}}
+        onPress={() => setOpen(value => !value)}
+        style={styles.filterToggle}>
+        <Text style={[styles.filterToggleText, t.atoms.text]}>Filtros</Text>
+        {activeCount > 0 ? (
+          <View
+            style={[
+              styles.filterBadge,
+              {backgroundColor: t.palette.primary_500},
+            ]}>
+            <Text style={styles.filterBadgeText}>{activeCount}</Text>
+          </View>
+        ) : null}
+        <View style={a.flex_1} />
+        <Text style={[styles.filterToggleText, t.atoms.text_contrast_medium]}>
+          {open ? '▴' : '▾'}
+        </Text>
+      </TouchableOpacity>
+      {open ? (
+        <View style={styles.filterBody}>
+          <FilterRow
+            label="Campo"
+            options={viewModel.policyAxes}
+            value={selectedAxis}
+            onChange={onSelectAxis}
+          />
+          <FilterRow
+            label="Estado"
+            options={VS_STATUS_FILTERS}
+            value={selectedStatus}
+            onChange={onSelectStatus}
+          />
+          <FilterRow
+            label="Tiempo"
+            options={VS_TIME_FILTERS}
+            value={selectedTime}
+            onChange={onSelectTime}
+          />
+          <IssuePicker
+            selectedIssue={viewModel.selectedIssue}
+            onSelect={onSelectTopic}
+          />
+        </View>
+      ) : null}
+    </View>
   )
 }
 
@@ -335,266 +729,6 @@ function VSWorkspaceLayout({
   )
 }
 
-function VSControlPanel({
-  navigation,
-  viewModel,
-  compact,
-  workspace = false,
-  showEntityHeader = true,
-  selectedAxis,
-  selectedStatus,
-  selectedTime,
-  selectedTopic,
-  onSelectAxis,
-  onSelectStatus,
-  onSelectTime,
-  onSelectTopic,
-  onSelectEntity,
-  onSwapEntities,
-}: {
-  navigation: NavigationProp
-  viewModel: VsScreenViewModel
-  compact: boolean
-  workspace?: boolean
-  showEntityHeader?: boolean
-  selectedAxis: string
-  selectedStatus: string
-  selectedTime: string
-  selectedTopic: string
-  onSelectAxis: (value: string) => void
-  onSelectStatus: (value: string) => void
-  onSelectTime: (value: string) => void
-  onSelectTopic: (value: string) => void
-  onSelectEntity: (slot: 0 | 1, entity: string) => void
-  onSwapEntities: () => void
-}) {
-  const t = useTheme()
-  return (
-    <View
-      style={[
-        styles.toolbar,
-        workspace && styles.workspaceToolbar,
-        !workspace && !compact && styles.toolbarWide,
-        {borderColor: t.palette.contrast_100},
-      ]}>
-      {workspace && (
-        <View style={styles.sidebarAppBar}>
-          <TouchableOpacity
-            accessibilityRole="button"
-            onPress={() => navigation.goBack()}
-            style={styles.iconButton}>
-            <ArrowLeftIcon size="md" style={t.atoms.text} />
-          </TouchableOpacity>
-          <View style={styles.sidebarTitleBlock}>
-            <Text style={[styles.title, t.atoms.text]}>Comparativas</Text>
-            <Text
-              style={[styles.appBarSubtitle, t.atoms.text_contrast_medium]}
-              numberOfLines={1}>
-              Politicas, votos comunitarios y RAQ
-            </Text>
-          </View>
-        </View>
-      )}
-      <EntityPicker
-        entities={viewModel.entities}
-        compact={compact}
-        workspace={workspace}
-        onSelectEntity={onSelectEntity}
-        onSwapEntities={onSwapEntities}
-      />
-      {showEntityHeader && (
-        <EntityCompareHeader
-          entities={viewModel.entities}
-          compact={compact}
-          workspace={workspace}
-          totalRelevant={viewModel.totalRelevant}
-        />
-      )}
-      <View
-        style={[
-          styles.filterCluster,
-          workspace && styles.filterClusterSidebar,
-        ]}>
-        <FilterRow
-          label="Eje"
-          options={viewModel.policyAxes}
-          value={selectedAxis}
-          onChange={onSelectAxis}
-        />
-        <FilterRow
-          label="Estado"
-          options={VS_STATUS_FILTERS}
-          value={selectedStatus}
-          onChange={onSelectStatus}
-        />
-        <FilterRow
-          label="Tiempo"
-          options={VS_TIME_FILTERS}
-          value={selectedTime}
-          onChange={onSelectTime}
-        />
-        <FilterRow
-          label="Tema"
-          options={viewModel.topics}
-          value={selectedTopic}
-          onChange={onSelectTopic}
-        />
-      </View>
-    </View>
-  )
-}
-
-function EntityPicker({
-  entities,
-  compact,
-  workspace,
-  onSelectEntity,
-  onSwapEntities,
-}: {
-  entities: [VsEntitySummary, VsEntitySummary]
-  compact: boolean
-  workspace: boolean
-  onSelectEntity: (slot: 0 | 1, entity: string) => void
-  onSwapEntities: () => void
-}) {
-  const t = useTheme()
-  const options = useMemo(() => buildVsEntityOptions(), [])
-  const [activeSlot, setActiveSlot] = useState<0 | 1>(0)
-  const [query, setQuery] = useState('')
-  const selectedIds = [entities[0].id, entities[1].id] as const
-  const normalizedQuery = normalizePickerText(query)
-  const matches = useMemo(() => {
-    const filtered = normalizedQuery
-      ? options.filter(option =>
-          normalizePickerText(option.searchText).includes(normalizedQuery),
-        )
-      : options
-    return filtered.slice(0, workspace ? 7 : 8)
-  }, [normalizedQuery, options, workspace])
-
-  return (
-    <View
-      style={[
-        styles.entityPicker,
-        {
-          backgroundColor: t.palette.contrast_25,
-          borderColor: t.palette.contrast_100,
-        },
-      ]}>
-      <View style={styles.entityPickerHeader}>
-        <View style={styles.entityPickerTitleBlock}>
-          <Text style={[styles.entityPickerTitle, t.atoms.text]}>Comparar</Text>
-          <Text
-            style={[styles.entityPickerSubtitle, t.atoms.text_contrast_medium]}>
-            Elige dos comunidades o partidos
-          </Text>
-        </View>
-        <TouchableOpacity
-          accessibilityRole="button"
-          onPress={onSwapEntities}
-          style={[
-            styles.swapButton,
-            {
-              backgroundColor: t.atoms.bg.backgroundColor,
-              borderColor: t.palette.contrast_100,
-            },
-          ]}>
-          <Text style={[styles.swapButtonText, t.atoms.text]}>Cambiar</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View
-        style={[
-          styles.entitySlotRow,
-          compact || workspace ? styles.entitySlotRowCompact : null,
-        ]}>
-        {[0, 1].map(slot => (
-          <EntitySlotButton
-            key={slot}
-            active={activeSlot === slot}
-            entity={entities[slot]}
-            label={slot === 0 ? 'A' : 'B'}
-            onPress={() => setActiveSlot(slot as 0 | 1)}
-          />
-        ))}
-      </View>
-
-      <SearchInput
-        value={query}
-        label="Buscar entidad"
-        placeholder="Buscar comunidad o partido"
-        onChangeText={setQuery}
-        onClearText={() => setQuery('')}
-      />
-
-      <View style={styles.entityOptionList}>
-        {matches.map(option => {
-          const isSelected = selectedIds[activeSlot] === option.id
-          const isOtherSelected =
-            selectedIds[activeSlot === 0 ? 1 : 0] === option.id
-          return (
-            <EntityOptionRow
-              key={option.id}
-              option={option}
-              selected={isSelected}
-              disabled={isOtherSelected}
-              onPress={() => {
-                if (!isOtherSelected) {
-                  onSelectEntity(activeSlot, option.id)
-                  setQuery('')
-                }
-              }}
-            />
-          )
-        })}
-      </View>
-    </View>
-  )
-}
-
-function EntitySlotButton({
-  active,
-  entity,
-  label,
-  onPress,
-}: {
-  active: boolean
-  entity: VsEntitySummary
-  label: string
-  onPress: () => void
-}) {
-  const t = useTheme()
-  return (
-    <TouchableOpacity
-      accessibilityRole="button"
-      accessibilityState={{selected: active}}
-      onPress={onPress}
-      style={[
-        styles.entitySlot,
-        {
-          backgroundColor: active
-            ? t.atoms.bg.backgroundColor
-            : t.palette.contrast_25,
-          borderColor: active ? entity.color : t.palette.contrast_100,
-        },
-      ]}>
-      <View style={[styles.entitySlotAvatar, {backgroundColor: entity.color}]}>
-        <Text style={styles.entitySlotAvatarText}>{label}</Text>
-      </View>
-      <View style={styles.entitySlotTextBlock}>
-        <Text style={[styles.entitySlotName, t.atoms.text]} numberOfLines={1}>
-          {entity.plainName}
-        </Text>
-        <Text
-          style={[styles.entitySlotSubtitle, t.atoms.text_contrast_medium]}
-          numberOfLines={1}>
-          {entity.subtitle}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  )
-}
-
 function EntityOptionRow({
   option,
   selected,
@@ -638,174 +772,125 @@ function EntityOptionRow({
   )
 }
 
-function VSPartyInfoPanel({
-  viewModel,
-  compact,
+/**
+ * Dropdown of every policy and matter, grouped under the six fields
+ * (Servicios públicos, Hacienda, Economía, Asuntos sociales, Asuntos
+ * exteriores, Interior). Reuses the composer's `FlairSelectionList`.
+ */
+function IssuePicker({
+  selectedIssue,
+  onSelect,
 }: {
-  viewModel: VsScreenViewModel
-  compact: boolean
+  selectedIssue: VsIssue | null
+  onSelect: (topic: string) => void
 }) {
   const t = useTheme()
-  return (
-    <View
-      style={[
-        styles.partyInfoPanel,
-        t.atoms.bg,
-        {borderColor: t.palette.contrast_100},
-      ]}>
-      <EntityCompareHeader
-        entities={viewModel.entities}
-        compact={compact}
-        totalRelevant={viewModel.totalRelevant}
-      />
-    </View>
+  const [open, setOpen] = useState(false)
+  const [mode, setMode] = useState<'policy' | 'matter'>(
+    selectedIssue?.kind ?? 'policy',
   )
-}
+  const selectedFlairs = useMemo(() => {
+    if (!selectedIssue || selectedIssue.kind !== mode) return []
+    return Object.values(POST_FLAIRS).filter(
+      flair => flair.id === selectedIssue.id,
+    )
+  }, [mode, selectedIssue])
 
-function Dashboard({
-  viewModel,
-  panelColumns,
-  isWide,
-  raqLoading,
-  raqError,
-}: {
-  viewModel: VsScreenViewModel
-  panelColumns: number
-  isWide: boolean
-  raqLoading: boolean
-  raqError: boolean
-}) {
   return (
-    <View style={styles.dashboard}>
-      <StatsStrip viewModel={viewModel} />
-      {viewModel.totalRelevant === 0 ? (
-        <StateBlock
-          title="Aun no hay comparaciones para este filtro"
-          description={`Todavia no encontramos suficiente actividad entre ${viewModel.entities[0].name} y ${viewModel.entities[1].name}.`}
-        />
-      ) : null}
-      <View style={styles.panelGrid}>
-        <Panel title="Resumen por comunidad" columns={panelColumns}>
-          <View style={[styles.entityPanelGrid, isWide && a.flex_row]}>
-            <EntityPanel entity={viewModel.entities[0]} />
-            <EntityPanel entity={viewModel.entities[1]} />
+    <View style={styles.filterRow}>
+      <Text style={[styles.filterLabel, t.atoms.text_contrast_medium]}>
+        Politica o asunto
+      </Text>
+      <View style={styles.issueRow}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityState={{expanded: open}}
+          onPress={() => setOpen(value => !value)}
+          style={[
+            styles.issueButton,
+            {
+              backgroundColor: t.palette.contrast_25,
+              borderColor: selectedIssue
+                ? t.palette.primary_500
+                : t.palette.contrast_100,
+            },
+          ]}>
+          <Text
+            style={[styles.issueButtonText, t.atoms.text]}
+            numberOfLines={1}>
+            {selectedIssue
+              ? `${selectedIssue.kind === 'policy' ? '||' : '|'} ${selectedIssue.label}`
+              : 'Todas las politicas y asuntos'}
+          </Text>
+          <Text style={[styles.issueButtonText, t.atoms.text_contrast_medium]}>
+            {open ? '▴' : '▾'}
+          </Text>
+        </TouchableOpacity>
+        {selectedIssue ? (
+          <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel="Quitar politica o asunto"
+            accessibilityHint="Muestra todas las politicas y asuntos"
+            onPress={() => onSelect('all')}
+            style={[styles.issueClear, {borderColor: t.palette.contrast_100}]}>
+            <Text style={[styles.issueButtonText, t.atoms.text]}>✕</Text>
+          </TouchableOpacity>
+        ) : null}
+      </View>
+      {open ? (
+        <View style={[styles.issueList, {borderColor: t.palette.contrast_100}]}>
+          <View style={styles.chipRow}>
+            {(['policy', 'matter'] as const).map(option => {
+              const isActive = mode === option
+              return (
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  accessibilityState={{selected: isActive}}
+                  key={option}
+                  onPress={() => setMode(option)}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: isActive
+                        ? t.palette.primary_500
+                        : t.palette.contrast_25,
+                      borderColor: isActive
+                        ? t.palette.primary_500
+                        : t.palette.contrast_100,
+                    },
+                  ]}>
+                  <Text
+                    style={[
+                      styles.chipText,
+                      isActive ? {color: t.palette.white} : t.atoms.text,
+                    ]}>
+                    {option === 'policy' ? '|| Politicas' : '| Asuntos'}
+                  </Text>
+                </TouchableOpacity>
+              )
+            })}
           </View>
-        </Panel>
-        <Panel title="6 ejes de politica" columns={panelColumns}>
-          <PolicyAxisBars
-            rows={viewModel.policyAxisComparisons}
-            entities={viewModel.entities}
-          />
-        </Panel>
-        <Panel title="12 ejes RAQ" columns={panelColumns}>
-          {raqLoading ? (
-            <InlineState label="Cargando alineacion RAQ..." />
-          ) : raqError ? (
-            <InlineState label="La alineacion RAQ no esta disponible." />
-          ) : (
-            <RaqAxisMatrix
-              rows={viewModel.raqAxisComparisons}
-              entities={viewModel.entities}
+          <ScrollView
+            style={styles.issueScroll}
+            nestedScrollEnabled
+            keyboardShouldPersistTaps="handled">
+            <FlairSelectionList
+              key={mode}
+              mode={mode}
+              selectedFlairs={selectedFlairs}
+              setSelectedFlairs={flairs => {
+                const flair = flairs[flairs.length - 1]
+                if (flair) {
+                  onSelect(flair.id)
+                  setOpen(false)
+                } else {
+                  onSelect('all')
+                }
+              }}
             />
-          )}
-        </Panel>
-        <Panel title="Donde divergen" columns={panelColumns}>
-          <DivergenceList
-            rows={viewModel.divergenceRows}
-            entities={viewModel.entities}
-          />
-        </Panel>
-      </View>
-
-      <PolicyTable rows={viewModel.tableRows} />
-
-      <View style={[styles.panelGrid, styles.bottomPanelGrid]}>
-        <Panel title="Recientes" columns={panelColumns}>
-          <DebateList
-            cards={viewModel.recent}
-            emptyTitle="Sin debates recientes en este filtro."
-          />
-        </Panel>
-        <Panel title="Populares" columns={panelColumns}>
-          <DebateList
-            cards={viewModel.popular}
-            emptyTitle="Sin actividad suficiente para destacar popularidad."
-          />
-        </Panel>
-      </View>
-    </View>
-  )
-}
-
-function EntityCompareHeader({
-  entities,
-  compact,
-  workspace = false,
-  totalRelevant,
-}: {
-  entities: [VsEntitySummary, VsEntitySummary]
-  compact: boolean
-  workspace?: boolean
-  totalRelevant: number
-}) {
-  const t = useTheme()
-  return (
-    <View
-      style={[
-        styles.compareHeader,
-        compact && styles.compareHeaderCompact,
-        workspace && styles.compareHeaderSidebar,
-      ]}>
-      <EntityIdentity entity={entities[0]} align="left" />
-      <View
-        style={[
-          styles.vsBadge,
-          {
-            backgroundColor: t.palette.contrast_25,
-            borderColor: t.palette.contrast_100,
-          },
-        ]}>
-        <Text style={[styles.vsText, t.atoms.text]}>VS</Text>
-        <Text style={[styles.vsMeta, t.atoms.text_contrast_medium]}>
-          {totalRelevant} debates
-        </Text>
-      </View>
-      <EntityIdentity entity={entities[1]} align="right" />
-    </View>
-  )
-}
-
-function EntityIdentity({
-  entity,
-  align,
-}: {
-  entity: VsEntitySummary
-  align: 'left' | 'right'
-}) {
-  const t = useTheme()
-  return (
-    <View style={[styles.entityIdentity, align === 'right' && styles.alignEnd]}>
-      <View style={[styles.avatar, {backgroundColor: entity.color}]}>
-        <Text style={styles.avatarText}>{entity.initials}</Text>
-      </View>
-      <Text
-        style={[
-          styles.entityName,
-          t.atoms.text,
-          align === 'right' && styles.textRight,
-        ]}
-        numberOfLines={1}>
-        {entity.name}
-      </Text>
-      <Text
-        style={[
-          styles.entitySubtitle,
-          t.atoms.text_contrast_medium,
-          align === 'right' && styles.textRight,
-        ]}
-        numberOfLines={1}>
-        {entity.subtitle}
-      </Text>
+          </ScrollView>
+        </View>
+      ) : null}
     </View>
   )
 }
@@ -865,44 +950,6 @@ function FilterRow({
   )
 }
 
-function StatsStrip({viewModel}: {viewModel: VsScreenViewModel}) {
-  return (
-    <View style={styles.statsStrip}>
-      <StatPill label="Debates" value={String(viewModel.totalRelevant)} />
-      <StatPill label="Votos" value={String(viewModel.totalVotes)} />
-      <StatPill label="Posiciones" value={String(viewModel.totalPositions)} />
-      <StatPill
-        label="Compartidos"
-        value={String(
-          Math.min(
-            viewModel.entities[0].sharedCount,
-            viewModel.entities[1].sharedCount,
-          ),
-        )}
-      />
-    </View>
-  )
-}
-
-function StatPill({label, value}: {label: string; value: string}) {
-  const t = useTheme()
-  return (
-    <View
-      style={[
-        styles.statPill,
-        {
-          backgroundColor: t.palette.contrast_25,
-          borderColor: t.palette.contrast_100,
-        },
-      ]}>
-      <Text style={[styles.statValue, t.atoms.text]}>{value}</Text>
-      <Text style={[styles.statLabel, t.atoms.text_contrast_medium]}>
-        {label}
-      </Text>
-    </View>
-  )
-}
-
 function Panel({
   title,
   children,
@@ -929,34 +976,6 @@ function Panel({
   )
 }
 
-function EntityPanel({entity}: {entity: VsEntitySummary}) {
-  return (
-    <View style={styles.entityPanel}>
-      <View style={styles.entityPanelHeader}>
-        <EntityIdentity entity={entity} align="left" />
-      </View>
-      <TextMetricGrid
-        items={[
-          ['Debates', entity.debateCount],
-          ['Activos', entity.activeCount],
-          ['Resueltos', entity.resolvedCount],
-          ['Votos', entity.voteTotal],
-          ['Directos', entity.directVoteTotal],
-          ['Delegados', entity.delegatedVoteTotal],
-          ['Posiciones', entity.positionTotal],
-          ['Consenso', `${Math.round(entity.consensusRate * 100)}%`],
-        ]}
-      />
-      <Meter
-        label="Participacion relativa"
-        value={entity.participationShare}
-        valueLabel={`${Math.round(entity.participationShare * 100)}%`}
-        color={entity.color}
-      />
-    </View>
-  )
-}
-
 function TextMetricGrid({items}: {items: Array<[string, string | number]>}) {
   const t = useTheme()
   return (
@@ -975,6 +994,126 @@ function TextMetricGrid({items}: {items: Array<[string, string | number]>}) {
   )
 }
 
+function EntityLegend({
+  entities,
+}: {
+  entities: [VsEntitySummary, VsEntitySummary]
+}) {
+  const t = useTheme()
+  return (
+    <View style={styles.legend}>
+      {entities.map((entity, index) => (
+        <View key={entity.id} style={styles.legendItem}>
+          <View style={[styles.legendDot, {backgroundColor: entity.color}]} />
+          <Text
+            style={[styles.legendText, t.atoms.text_contrast_medium]}
+            numberOfLines={1}>
+            {index === 0 ? 'A' : 'B'} · {entity.plainName}
+          </Text>
+        </View>
+      ))}
+    </View>
+  )
+}
+
+/** One bar split proportionally between two values. */
+function SplitBar({
+  first,
+  second,
+  firstColor,
+  secondColor,
+}: {
+  first: number
+  second: number
+  firstColor: string
+  secondColor: string
+}) {
+  const t = useTheme()
+  const total = first + second
+  if (total <= 0) {
+    return (
+      <View
+        style={[styles.splitBar, {backgroundColor: t.palette.contrast_50}]}
+      />
+    )
+  }
+  return (
+    <View style={[styles.splitBar, {backgroundColor: t.palette.contrast_50}]}>
+      <View style={{flex: first, backgroundColor: firstColor}} />
+      <View style={styles.splitGap} />
+      <View style={{flex: second, backgroundColor: secondColor}} />
+    </View>
+  )
+}
+
+function HeadToHead({viewModel}: {viewModel: VsScreenViewModel}) {
+  const t = useTheme()
+  const [first, second] = viewModel.entities
+  const rows: Array<{label: string; a: number; b: number; pct?: boolean}> = [
+    {label: 'Debates', a: first.debateCount, b: second.debateCount},
+    {label: 'Votos', a: first.voteTotal, b: second.voteTotal},
+    {
+      label: 'Votos directos',
+      a: first.directVoteTotal,
+      b: second.directVoteTotal,
+    },
+    {
+      label: 'Votos delegados',
+      a: first.delegatedVoteTotal,
+      b: second.delegatedVoteTotal,
+    },
+    {label: 'Posiciones', a: first.positionTotal, b: second.positionTotal},
+    {
+      label: 'Consenso',
+      a: Math.round(first.consensusRate * 100),
+      b: Math.round(second.consensusRate * 100),
+      pct: true,
+    },
+  ]
+  return (
+    <View style={styles.h2hList}>
+      {rows.map(row => (
+        <View key={row.label} style={styles.h2hRow}>
+          <View style={styles.h2hValues}>
+            <Text
+              style={[
+                styles.h2hValue,
+                t.atoms.text,
+                row.a >= row.b && row.a > 0 ? {color: first.color} : null,
+              ]}>
+              {row.a}
+              {row.pct ? '%' : ''}
+            </Text>
+            <Text style={[styles.h2hLabel, t.atoms.text_contrast_medium]}>
+              {row.label}
+            </Text>
+            <Text
+              style={[
+                styles.h2hValue,
+                t.atoms.text,
+                row.b > row.a ? {color: second.color} : null,
+              ]}>
+              {row.b}
+              {row.pct ? '%' : ''}
+            </Text>
+          </View>
+          <SplitBar
+            first={row.a}
+            second={row.b}
+            firstColor={first.color}
+            secondColor={second.color}
+          />
+        </View>
+      ))}
+      <Text style={[styles.h2hNote, t.atoms.text_contrast_medium]}>
+        Los debates conjuntos ({Math.min(first.sharedCount, second.sharedCount)}
+        ) tienen una sola votacion y cuentan para ambos lados.
+      </Text>
+    </View>
+  )
+}
+
+/** Mirrored bars growing outward from a shared center line. */
 function PolicyAxisBars({
   rows,
   entities,
@@ -982,24 +1121,93 @@ function PolicyAxisBars({
   rows: VsPolicyAxisComparison[]
   entities: [VsEntitySummary, VsEntitySummary]
 }) {
+  const t = useTheme()
   return (
     <View style={styles.axisList}>
-      {rows.map(row => (
-        <ComparisonBarRow
-          key={row.key}
-          label={row.label}
-          firstColor={entities[0].color}
-          secondColor={entities[1].color}
-          firstValue={row.entityValues[0]}
-          secondValue={row.entityValues[1]}
-          maxValue={row.maxValue}
-          meta={`${row.sharedDebateCount} compartidos`}
-        />
-      ))}
+      <EntityLegend entities={entities} />
+      {rows.map(row => {
+        const [a, b] = row.entityValues
+        const hasData = a > 0 || b > 0
+        return (
+          <View key={row.key} style={styles.comparisonRow}>
+            <View style={styles.comparisonHeader}>
+              <Text
+                style={[styles.comparisonLabel, t.atoms.text]}
+                numberOfLines={1}>
+                {row.label}
+              </Text>
+              <Text
+                style={[styles.comparisonMeta, t.atoms.text_contrast_medium]}>
+                {hasData
+                  ? `${row.sharedDebateCount} compartidos`
+                  : 'Sin actividad'}
+              </Text>
+            </View>
+            <View style={styles.butterfly}>
+              <Text
+                style={[styles.butterflyValue, t.atoms.text_contrast_medium]}>
+                {a}
+              </Text>
+              <View
+                style={[
+                  styles.butterflyHalf,
+                  styles.butterflyHalfLeft,
+                  {backgroundColor: t.palette.contrast_50},
+                ]}>
+                <View
+                  style={[
+                    styles.barFill,
+                    {
+                      backgroundColor: entities[0].color,
+                      width: `${(a / row.maxValue) * 100}%`,
+                    },
+                  ]}
+                />
+              </View>
+              <View
+                style={[
+                  styles.butterflyCenter,
+                  {backgroundColor: t.palette.contrast_200},
+                ]}
+              />
+              <View
+                style={[
+                  styles.butterflyHalf,
+                  {backgroundColor: t.palette.contrast_50},
+                ]}>
+                <View
+                  style={[
+                    styles.barFill,
+                    {
+                      backgroundColor: entities[1].color,
+                      width: `${(b / row.maxValue) * 100}%`,
+                    },
+                  ]}
+                />
+              </View>
+              <Text
+                style={[
+                  styles.butterflyValue,
+                  styles.textRight,
+                  t.atoms.text_contrast_medium,
+                ]}>
+                {b}
+              </Text>
+            </View>
+          </View>
+        )
+      })}
     </View>
   )
 }
 
+const RAQ_DOT = 18
+
+/**
+ * RAQ scores are positions on a spectrum, not magnitudes, so each axis is a
+ * track between its two poles with one dot per entity. The gap between the
+ * dots is the disagreement.
+ */
 function RaqAxisMatrix({
   rows,
   entities,
@@ -1007,81 +1215,416 @@ function RaqAxisMatrix({
   rows: VsRaqAxisComparison[]
   entities: [VsEntitySummary, VsEntitySummary]
 }) {
+  const t = useTheme()
+  const hasAnyScore = rows.some(
+    row => row.entityScores[0] !== null || row.entityScores[1] !== null,
+  )
+  if (!hasAnyScore) {
+    return (
+      <InlineState label="Todavia no hay suficientes respuestas RAQ para comparar estas entidades." />
+    )
+  }
   return (
     <View style={styles.axisList}>
-      {rows.map(row => (
-        <ComparisonBarRow
-          key={row.axisId}
-          label={row.title}
-          firstColor={entities[0].color}
-          secondColor={entities[1].color}
-          firstValue={row.entityScores[0]}
-          secondValue={row.entityScores[1]}
-          maxValue={100}
-          meta={`${row.labelLow} / ${row.labelHigh}`}
-        />
+      <EntityLegend entities={entities} />
+      {rows.map(row => {
+        const [a, b] = row.entityScores
+        const scored = [a, b].filter((v): v is number => v !== null)
+        const lo = scored.length ? Math.min(...scored) : 0
+        const hi = scored.length ? Math.max(...scored) : 0
+        return (
+          <View key={row.axisId} style={styles.comparisonRow}>
+            <View style={styles.comparisonHeader}>
+              <Text
+                style={[styles.comparisonLabel, t.atoms.text]}
+                numberOfLines={1}>
+                {row.title}
+              </Text>
+              <Text
+                style={[styles.comparisonMeta, t.atoms.text_contrast_medium]}>
+                {row.delta === null ? 'Sin datos' : `Δ ${row.delta}`}
+              </Text>
+            </View>
+            <View style={styles.spectrum}>
+              <View
+                style={[
+                  styles.spectrumLine,
+                  {backgroundColor: t.palette.contrast_100},
+                ]}
+              />
+              {scored.length === 2 && hi > lo ? (
+                <View
+                  style={[
+                    styles.spectrumLine,
+                    {
+                      backgroundColor: t.palette.contrast_300,
+                      left: `${lo}%`,
+                      width: `${hi - lo}%`,
+                    },
+                  ]}
+                />
+              ) : null}
+              {[a, b].map((score, index) =>
+                score === null ? null : (
+                  <View
+                    key={index}
+                    style={[
+                      styles.spectrumDot,
+                      {
+                        backgroundColor: entities[index].color,
+                        borderColor: t.atoms.bg.backgroundColor,
+                        left: `${score}%`,
+                        zIndex: index === 0 ? 2 : 1,
+                      },
+                    ]}
+                  />
+                ),
+              )}
+            </View>
+            <View style={styles.spectrumPoles}>
+              <Text
+                style={[styles.spectrumPole, t.atoms.text_contrast_medium]}
+                numberOfLines={1}>
+                {row.labelLow}
+              </Text>
+              <Text
+                style={[
+                  styles.spectrumPole,
+                  styles.textRight,
+                  t.atoms.text_contrast_medium,
+                ]}
+                numberOfLines={1}>
+                {row.labelHigh}
+              </Text>
+            </View>
+          </View>
+        )
+      })}
+    </View>
+  )
+}
+
+/** Stacked a favor / en contra / enmiendas bar; empty track without data. */
+function StanceBar({stance}: {stance: VsStance}) {
+  const t = useTheme()
+  const total = stance.for + stance.against + stance.amendment
+  return (
+    <View style={[styles.splitBar, {backgroundColor: t.palette.contrast_50}]}>
+      {total > 0 ? (
+        <>
+          <View
+            style={{flex: stance.for, backgroundColor: t.palette.positive_500}}
+          />
+          <View
+            style={{
+              flex: stance.against,
+              backgroundColor: t.palette.negative_500,
+            }}
+          />
+          <View
+            style={{
+              flex: stance.amendment,
+              backgroundColor: t.palette.contrast_300,
+            }}
+          />
+        </>
+      ) : null}
+    </View>
+  )
+}
+
+function stanceLabel(stance: VsStance) {
+  const total = stance.for + stance.against + stance.amendment
+  if (total === 0) return 'Sin posturas'
+  return `${stance.for} a favor · ${stance.against} en contra${
+    stance.amendment > 0 ? ` · ${stance.amendment} enm.` : ''
+  }`
+}
+
+function IssueComparisonList({
+  rows,
+  entities,
+}: {
+  rows: VsIssueComparison[]
+  entities: [VsEntitySummary, VsEntitySummary]
+}) {
+  const t = useTheme()
+  if (rows.length === 0) {
+    return (
+      <InlineState label="Ningun debate de esta comparativa tiene una politica o asunto etiquetado." />
+    )
+  }
+  return (
+    <View style={styles.axisList}>
+      <EntityLegend entities={entities} />
+      <StanceKey />
+      {rows.map(row => {
+        const hasOwnStance = row.entityStance.some(
+          stance => stance.for + stance.against + stance.amendment > 0,
+        )
+        const hasJointStance =
+          row.jointStance.for +
+            row.jointStance.against +
+            row.jointStance.amendment >
+          0
+        const [shareA, shareB] = row.entityForShare
+        const gap =
+          shareA !== null && shareB !== null
+            ? Math.round(Math.abs(shareA - shareB) * 100)
+            : null
+        return (
+          <View key={row.id} style={styles.comparisonRow}>
+            <View style={styles.comparisonHeader}>
+              <Text
+                style={[styles.comparisonLabel, t.atoms.text]}
+                numberOfLines={2}>
+                {row.kind === 'policy' ? '|| ' : '| '}
+                {row.label}
+              </Text>
+              <Text
+                style={[styles.comparisonMeta, t.atoms.text_contrast_medium]}>
+                {row.fieldLabel}
+              </Text>
+            </View>
+
+            {row.totalVotes > 0 ? (
+              <>
+                <View style={styles.h2hValues}>
+                  <Text style={[styles.issueVotes, {color: entities[0].color}]}>
+                    {row.entityVotes[0]} votos
+                  </Text>
+                  <Text style={[styles.issueVotes, {color: entities[1].color}]}>
+                    {row.entityVotes[1]} votos
+                  </Text>
+                </View>
+                <SplitBar
+                  first={row.entityVotes[0]}
+                  second={row.entityVotes[1]}
+                  firstColor={entities[0].color}
+                  secondColor={entities[1].color}
+                />
+              </>
+            ) : null}
+
+            {hasOwnStance ? (
+              <View style={styles.stanceBlock}>
+                {([0, 1] as const).map(index => (
+                  <View key={index} style={styles.stanceRow}>
+                    <View style={styles.stanceHeader}>
+                      <View
+                        style={[
+                          styles.legendDot,
+                          {backgroundColor: entities[index].color},
+                        ]}
+                      />
+                      <Text
+                        style={[
+                          styles.stanceText,
+                          t.atoms.text_contrast_medium,
+                        ]}
+                        numberOfLines={1}>
+                        {stanceLabel(row.entityStance[index])}
+                      </Text>
+                    </View>
+                    <StanceBar stance={row.entityStance[index]} />
+                  </View>
+                ))}
+                {gap !== null ? (
+                  <Text style={[styles.stanceGap, t.atoms.text]}>
+                    Diferencia: {gap} pts en % a favor
+                  </Text>
+                ) : null}
+              </View>
+            ) : null}
+
+            {hasJointStance ? (
+              <View style={styles.stanceRow}>
+                <Text
+                  style={[styles.stanceText, t.atoms.text_contrast_medium]}
+                  numberOfLines={2}>
+                  Debate conjunto ({row.jointDebateCount}, una sola votacion) ·{' '}
+                  {stanceLabel(row.jointStance)}
+                </Text>
+                <StanceBar stance={row.jointStance} />
+              </View>
+            ) : null}
+
+            {row.totalVotes === 0 && !hasOwnStance && !hasJointStance ? (
+              <Text style={[styles.stanceText, t.atoms.text_contrast_medium]}>
+                Sin votos ni posturas todavia.
+              </Text>
+            ) : null}
+          </View>
+        )
+      })}
+    </View>
+  )
+}
+
+function StanceKey() {
+  const t = useTheme()
+  return (
+    <View style={styles.legend}>
+      {[
+        ['A favor', t.palette.positive_500],
+        ['En contra', t.palette.negative_500],
+        ['Enmiendas', t.palette.contrast_300],
+      ].map(([label, color]) => (
+        <View key={label} style={styles.legendItem}>
+          <View style={[styles.legendDot, {backgroundColor: color}]} />
+          <Text style={[styles.legendText, t.atoms.text_contrast_medium]}>
+            {label}
+          </Text>
+        </View>
       ))}
     </View>
   )
 }
 
-function ComparisonBarRow({
-  label,
-  firstColor,
-  secondColor,
-  firstValue,
-  secondValue,
-  maxValue,
-  meta,
+function PartyVoteList({
+  rows,
+  entities,
 }: {
-  label: string
-  firstColor: string
-  secondColor: string
-  firstValue: number | null
-  secondValue: number | null
-  maxValue: number
-  meta: string
+  rows: VsPartyVoteComparison[]
+  entities: [VsEntitySummary, VsEntitySummary]
 }) {
   const t = useTheme()
-  const firstWidth = firstValue === null ? 0 : (firstValue / maxValue) * 100
-  const secondWidth = secondValue === null ? 0 : (secondValue / maxValue) * 100
+  if (rows.length === 0) {
+    return (
+      <InlineState label="El desglose por partido aun no esta disponible para estos dos lados." />
+    )
+  }
+  const pct = (value: number | null) =>
+    value === null ? '-' : `${Math.round(value * 100)}%`
   return (
-    <View style={styles.comparisonRow}>
-      <View style={styles.comparisonHeader}>
-        <Text style={[styles.comparisonLabel, t.atoms.text]} numberOfLines={1}>
-          {label}
-        </Text>
-        <Text style={[styles.comparisonMeta, t.atoms.text_contrast_medium]}>
-          {meta}
-        </Text>
-      </View>
-      <View style={styles.dualBars}>
-        <View
-          style={[styles.barTrack, {backgroundColor: t.palette.contrast_50}]}>
-          <View
-            style={[
-              styles.barFill,
-              {backgroundColor: firstColor, width: `${firstWidth}%`},
-            ]}
-          />
+    <View style={styles.axisList}>
+      <EntityLegend entities={entities} />
+      {rows.map(row => (
+        <View key={row.uri} style={styles.comparisonRow}>
+          <View style={styles.comparisonHeader}>
+            <Text
+              style={[styles.comparisonLabel, t.atoms.text]}
+              numberOfLines={2}>
+              {row.title}
+            </Text>
+            <Text style={[styles.comparisonMeta, t.atoms.text_contrast_medium]}>
+              {row.totals[0]} / {row.totals[1]} votos
+            </Text>
+          </View>
+          {row.options.map(option => (
+            <View key={option.label} style={styles.stanceRow}>
+              <Text style={[styles.stanceText, t.atoms.text]} numberOfLines={2}>
+                {option.label}
+              </Text>
+              {([0, 1] as const).map(index => (
+                <View key={index} style={styles.partyBarRow}>
+                  <View
+                    style={[
+                      styles.barTrack2,
+                      {backgroundColor: t.palette.contrast_50},
+                    ]}>
+                    <View
+                      style={[
+                        styles.barFill,
+                        {
+                          backgroundColor: entities[index].color,
+                          width: `${(option.shares[index] ?? 0) * 100}%`,
+                        },
+                      ]}
+                    />
+                  </View>
+                  <Text style={[styles.partyPct, t.atoms.text_contrast_medium]}>
+                    {pct(option.shares[index])}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          ))}
         </View>
-        <View
-          style={[styles.barTrack, {backgroundColor: t.palette.contrast_50}]}>
-          <View
-            style={[
-              styles.barFill,
-              {backgroundColor: secondColor, width: `${secondWidth}%`},
-            ]}
+      ))}
+    </View>
+  )
+}
+
+function Dashboard({
+  viewModel,
+  panelColumns,
+  isWide,
+  raqLoading,
+  raqError,
+}: {
+  viewModel: VsScreenViewModel
+  panelColumns: number
+  isWide: boolean
+  raqLoading: boolean
+  raqError: boolean
+}) {
+  return (
+    <View style={styles.dashboard}>
+      {viewModel.totalRelevant === 0 ? (
+        <InlineState
+          label={`Todavia no hay debates entre ${viewModel.entities[0].plainName} y ${viewModel.entities[1].plainName} para este filtro.`}
+        />
+      ) : null}
+      <View style={styles.panelGrid}>
+        <Panel title="Cara a cara" columns={panelColumns}>
+          <EntityLegend entities={viewModel.entities} />
+          <View style={styles.panelSpacer} />
+          <HeadToHead viewModel={viewModel} />
+        </Panel>
+        <Panel title="Donde mas se separan" columns={panelColumns}>
+          <DivergenceList
+            rows={viewModel.divergenceRows}
+            entities={viewModel.entities}
           />
-        </View>
+        </Panel>
+        <Panel title="Votos y posiciones por campo" columns={panelColumns}>
+          <PolicyAxisBars
+            rows={viewModel.policyAxisComparisons}
+            entities={viewModel.entities}
+          />
+        </Panel>
+        <Panel title="Posturas por politica y asunto" columns={panelColumns}>
+          <IssueComparisonList
+            rows={viewModel.issueComparisons}
+            entities={viewModel.entities}
+          />
+        </Panel>
+        <Panel title="Votacion por partido" columns={panelColumns}>
+          <PartyVoteList
+            rows={viewModel.partyVoteComparisons}
+            entities={viewModel.entities}
+          />
+        </Panel>
+        <Panel title="Posicion en los 12 ejes RAQ" columns={panelColumns}>
+          {raqLoading ? (
+            <InlineState label="Cargando alineacion RAQ..." />
+          ) : raqError ? (
+            <InlineState label="La alineacion RAQ no esta disponible." />
+          ) : (
+            <RaqAxisMatrix
+              rows={viewModel.raqAxisComparisons}
+              entities={viewModel.entities}
+            />
+          )}
+        </Panel>
       </View>
-      <View style={styles.valuePair}>
-        <Text style={[styles.valueText, t.atoms.text_contrast_medium]}>
-          {firstValue === null ? 'Sin datos' : firstValue}
-        </Text>
-        <Text style={[styles.valueText, t.atoms.text_contrast_medium]}>
-          {secondValue === null ? 'Sin datos' : secondValue}
-        </Text>
+
+      {isWide ? <PolicyTable rows={viewModel.tableRows} /> : null}
+
+      <View style={[styles.panelGrid, styles.bottomPanelGrid]}>
+        <Panel title="Recientes" columns={panelColumns}>
+          <DebateList
+            cards={viewModel.recent}
+            emptyTitle="Sin debates recientes en este filtro."
+          />
+        </Panel>
+        <Panel title="Populares" columns={panelColumns}>
+          <DebateList
+            cards={viewModel.popular}
+            emptyTitle="Sin actividad suficiente para destacar popularidad."
+          />
+        </Panel>
       </View>
     </View>
   )
@@ -1103,10 +1646,9 @@ function DivergenceList({
       {rows.map(row => {
         const first = row.entityValues[0]
         const second = row.entityValues[1]
-        const leader =
-          (first ?? 0) >= (second ?? 0)
-            ? entities[0].plainName
-            : entities[1].plainName
+        const leaderEntity =
+          (first ?? 0) >= (second ?? 0) ? entities[0] : entities[1]
+        const leader = leaderEntity.plainName
         return (
           <View
             key={`${row.kind}-${row.key}`}
@@ -1114,6 +1656,12 @@ function DivergenceList({
               styles.divergenceRow,
               {borderColor: t.palette.contrast_100},
             ]}>
+            <View
+              style={[
+                styles.divergenceAccent,
+                {backgroundColor: leaderEntity.color},
+              ]}
+            />
             <View style={styles.divergenceMain}>
               <Text style={[styles.divergenceTitle, t.atoms.text]}>
                 {row.label}
@@ -1400,28 +1948,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginTop: 2,
   },
-  headerCenter: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
-  },
-  toolbar: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 12,
-    width: '100%',
-  },
-  workspaceToolbar: {
-    borderWidth: 0,
-    borderRadius: 0,
-    flex: 1,
-    gap: 18,
-    paddingHorizontal: 14,
-    paddingTop: 14,
-  },
-  toolbarWide: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 18,
+  sidebarContent: {
+    gap: 12,
+    padding: 14,
+    paddingBottom: 56,
   },
   sidebarAppBar: {
     flexDirection: 'row',
@@ -1433,51 +1963,8 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  compareHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    flex: 1,
-    minWidth: 0,
-  },
-  compareHeaderCompact: {
-    marginBottom: 12,
-  },
-  compareHeaderSidebar: {
-    flex: 0,
-    marginTop: 16,
-  },
-  entityIdentity: {
-    flex: 1,
-    minWidth: 0,
-  },
-  alignEnd: {
-    alignItems: 'flex-end',
-  },
   textRight: {
     textAlign: 'right',
-  },
-  avatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 8,
-  },
-  avatarText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '900',
-  },
-  entityName: {
-    fontSize: 17,
-    fontWeight: '800',
-    marginBottom: 2,
-  },
-  entitySubtitle: {
-    fontSize: 12,
-    lineHeight: 16,
   },
   vsBadge: {
     borderWidth: 1,
@@ -1492,89 +1979,6 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
   vsMeta: {
-    fontSize: 11,
-    marginTop: 2,
-  },
-  filterCluster: {
-    flex: 1.35,
-    gap: 8,
-    minWidth: 0,
-  },
-  filterClusterSidebar: {
-    flex: 0,
-  },
-  entityPicker: {
-    borderWidth: 1,
-    borderRadius: 8,
-    gap: 10,
-    padding: 12,
-  },
-  entityPickerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  entityPickerTitleBlock: {
-    flex: 1,
-    minWidth: 0,
-  },
-  entityPickerTitle: {
-    fontSize: 16,
-    fontWeight: '900',
-  },
-  entityPickerSubtitle: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  swapButton: {
-    borderWidth: 1,
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 7,
-  },
-  swapButtonText: {
-    fontSize: 12,
-    fontWeight: '900',
-  },
-  entitySlotRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  entitySlotRowCompact: {
-    flexDirection: 'column',
-  },
-  entitySlot: {
-    borderWidth: 1,
-    borderRadius: 8,
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
-    minWidth: 0,
-    padding: 10,
-  },
-  entitySlotAvatar: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  entitySlotAvatarText: {
-    color: '#FFFFFF',
-    fontSize: 12,
-    fontWeight: '900',
-  },
-  entitySlotTextBlock: {
-    flex: 1,
-    minWidth: 0,
-  },
-  entitySlotName: {
-    fontSize: 13,
-    fontWeight: '900',
-  },
-  entitySlotSubtitle: {
     fontSize: 11,
     marginTop: 2,
   },
@@ -1611,11 +2015,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
   },
-  partyInfoPanel: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 14,
-  },
   filterRow: {
     gap: 6,
   },
@@ -1640,6 +2039,315 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
   },
+  mobileStack: {
+    width: '100%',
+    gap: 12,
+  },
+  matchupCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    gap: 10,
+  },
+  matchupRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  matchupSide: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 12,
+  },
+  matchupAvatar: {
+    width: MATCHUP_AVATAR,
+    height: MATCHUP_AVATAR,
+    borderRadius: MATCHUP_AVATAR / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 8,
+  },
+  matchupAvatarText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '900',
+  },
+  matchupName: {
+    fontSize: 16,
+    fontWeight: '900',
+    textAlign: 'center',
+    maxWidth: '100%',
+  },
+  matchupSubtitle: {
+    fontSize: 11,
+    marginTop: 2,
+    textAlign: 'center',
+    maxWidth: '100%',
+  },
+  matchupChange: {
+    fontSize: 11,
+    fontWeight: '800',
+    marginTop: 8,
+  },
+  matchupFoot: {
+    fontSize: 12,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  pickerCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 12,
+    gap: 10,
+  },
+  pickerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  pickerTitle: {
+    fontSize: 15,
+    fontWeight: '900',
+  },
+  pickerClose: {
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  pickerScroll: {
+    maxHeight: 320,
+  },
+  filterCard: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+  },
+  filterToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    minHeight: 44,
+  },
+  filterToggleText: {
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  filterBadge: {
+    minWidth: 20,
+    height: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 6,
+  },
+  filterBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  filterBody: {
+    gap: 10,
+    paddingBottom: 12,
+  },
+  panelSpacer: {
+    height: 12,
+  },
+  legend: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 14,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexShrink: 1,
+  },
+  legendDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  legendText: {
+    fontSize: 12,
+    fontWeight: '800',
+    flexShrink: 1,
+  },
+  splitBar: {
+    flexDirection: 'row',
+    height: 8,
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  splitGap: {
+    width: 2,
+  },
+  h2hList: {
+    gap: 12,
+  },
+  h2hRow: {
+    gap: 6,
+  },
+  h2hValues: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  h2hValue: {
+    fontSize: 18,
+    fontWeight: '900',
+    minWidth: 56,
+  },
+  h2hLabel: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  butterfly: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  butterflyValue: {
+    width: 34,
+    fontSize: 11,
+    fontWeight: '800',
+  },
+  butterflyHalf: {
+    flex: 1,
+    height: 10,
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  butterflyHalfLeft: {
+    alignItems: 'flex-end',
+  },
+  butterflyCenter: {
+    width: 2,
+    height: 18,
+    borderRadius: 1,
+  },
+  spectrum: {
+    height: 24,
+    justifyContent: 'center',
+    marginHorizontal: RAQ_DOT / 2,
+  },
+  spectrumLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    height: 4,
+    borderRadius: 2,
+  },
+  spectrumDot: {
+    position: 'absolute',
+    width: RAQ_DOT,
+    height: RAQ_DOT,
+    borderRadius: RAQ_DOT / 2,
+    borderWidth: 2,
+    marginLeft: -RAQ_DOT / 2,
+  },
+  spectrumPoles: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  spectrumPole: {
+    flex: 1,
+    fontSize: 10,
+    fontWeight: '700',
+  },
+  divergenceAccent: {
+    width: 4,
+    alignSelf: 'stretch',
+    borderRadius: 2,
+  },
+  issueRow: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  issueButton: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  issueButtonText: {
+    fontSize: 13,
+    fontWeight: '800',
+    flexShrink: 1,
+  },
+  issueClear: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+  },
+  issueList: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 10,
+    gap: 10,
+  },
+  issueScroll: {
+    maxHeight: 380,
+  },
+  stanceBlock: {
+    gap: 6,
+  },
+  stanceRow: {
+    gap: 4,
+  },
+  stanceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  stanceText: {
+    fontSize: 11,
+    fontWeight: '700',
+    flexShrink: 1,
+  },
+  stanceGap: {
+    fontSize: 12,
+    fontWeight: '900',
+  },
+  partyBarRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  barTrack2: {
+    flex: 1,
+    height: 8,
+    borderRadius: 999,
+    overflow: 'hidden',
+  },
+  partyPct: {
+    width: 36,
+    fontSize: 11,
+    fontWeight: '800',
+    textAlign: 'right',
+  },
+  h2hNote: {
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  issueVotes: {
+    fontSize: 12,
+    fontWeight: '900',
+  },
   scrollView: {
     flex: 1,
   },
@@ -1661,27 +2369,6 @@ const styles = StyleSheet.create({
     width: '100%',
     gap: 14,
   },
-  statsStrip: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  statPill: {
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    minWidth: 120,
-  },
-  statValue: {
-    fontSize: 19,
-    fontWeight: '900',
-  },
-  statLabel: {
-    fontSize: 12,
-    fontWeight: '700',
-    marginTop: 2,
-  },
   panelGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -1695,23 +2382,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     padding: 14,
-    minHeight: 220,
   },
   panelTitle: {
     fontSize: 18,
     fontWeight: '900',
     marginBottom: 12,
-  },
-  entityPanelGrid: {
-    gap: 12,
-  },
-  entityPanel: {
-    flex: 1,
-    minWidth: 0,
-    gap: 10,
-  },
-  entityPanelHeader: {
-    marginBottom: 2,
   },
   metricGrid: {
     flexDirection: 'row',
@@ -1751,25 +2426,9 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '700',
   },
-  dualBars: {
-    gap: 4,
-  },
-  barTrack: {
-    height: 8,
-    borderRadius: 999,
-    overflow: 'hidden',
-  },
   barFill: {
     height: '100%',
     borderRadius: 999,
-  },
-  valuePair: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  valueText: {
-    fontSize: 11,
-    fontWeight: '700',
   },
   divergenceList: {
     gap: 8,
