@@ -224,10 +224,8 @@ msgstr "{0, plural, one {# saved item} other {# saved items}}"
 msgid "{0, plural, one {# second} other {# seconds}}"
 msgstr ""
 
-#. placeholder {0}: numUnreadMessages.numUnread ?? 0
 #. placeholder {0}: numUnreadNotifications ?? 0
-#: src/view/shell/bottom-bar/BottomBar.tsx:245
-#: src/view/shell/bottom-bar/BottomBar.tsx:277
+#: src/view/shell/bottom-bar/BottomBar.tsx:246
 #: src/view/shell/Drawer.tsx:671
 msgid "{0, plural, one {# unread item} other {# unread items}}"
 msgstr ""
@@ -375,7 +373,7 @@ msgid "{0} collections · {1} items · {2} connections"
 msgstr "{0} collections · {1} items · {2} connections"
 
 #. placeholder {0}: activeItem.comments
-#: src/screens/Dashboard/MemesScreen/cardPrimitives.tsx:271
+#: src/screens/Dashboard/MemesScreen/cardPrimitives.tsx:266
 msgid "{0} comments"
 msgstr "{0} comments"
 
@@ -455,7 +453,7 @@ msgstr "{0} left"
 msgid "{0} left the group"
 msgstr "{0} left the group"
 
-#. placeholder {0}: import {ScrollView, View} from 'react-native' import {plural} from '@lingui/core/macro' import {Trans} from '@lingui/react/macro' import {Text} from '#/view/com/util/text/Text' import {atoms as a, useTheme} from '#/alf' import { PERSONAL_RELATION_COLORS, PERSONAL_RELATION_LABELS, } from '#/features/civicTree/colors' import {type PersonalTreeGraph} from '#/features/personalCivicTree/graph' /* * Two legends in one strip, because the graph encodes two things at once: * the ring around a node is its collection, the lines between nodes are the * relations the user drew. Only relation kinds actually present are shown - * a legend for seven kinds when the user has used one is noise. */ export function PersonalTreeLegend({graph}: {graph: PersonalTreeGraph}) { const t = useTheme() const usedKinds = Array.from(new Set(graph.edges.map(e => e.kind))) return ( <View style={[a.gap_xs]}> {usedKinds.length > 0 ? ( <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[a.gap_md, a.px_md, {paddingBottom: 4}]}> {usedKinds.map(kind => ( <View key={kind} style={[a.flex_row, a.align_center, a.gap_xs]}> <View style={{ width: 14, height: 2, backgroundColor: PERSONAL_RELATION_COLORS[kind] ?? t.palette.contrast_400, }} /> <Text style={[a.text_xs, t.atoms.text_contrast_medium]}> {PERSONAL_RELATION_LABELS[kind] ?? kind} </Text> </View> ))} </ScrollView> ) : null} </View> ) } /** * Shown when items exist but none are connected - the state every user is in * before they draw their first relation. An empty canvas would read as a bug. */ export function PersonalTreeUnconnectedNotice({ count, total, }: { count: number total: number }) { const t = useTheme() if (count === 0) return null const isEverything = count === total return ( <View style={[ a.mx_md, a.mb_xs, a.px_md, a.py_sm, a.rounded_md, a.flex_row, a.align_center, a.gap_sm, { backgroundColor: t.palette.primary_25, borderWidth: 1, borderColor: t.palette.primary_100, }, ]}> <View style={[ a.rounded_full, {width: 6, height: 6, backgroundColor: t.palette.primary_500}, ]} /> <Text style={[a.text_xs, a.flex_1, {color: t.palette.contrast_700}]}> {isEverything ? ( <Trans> Nothing is connected yet. Open an item and use Connect to say how it relates to another - that is what draws the tree. </Trans> ) : ( <Trans> {plural(count, {one: '# item is', other: '# items are'})} not connected to anything yet. </Trans> )} </Text> </View> ) }
+#. placeholder {0}: import {ScrollView, View} from 'react-native' import {plural} from '@lingui/core/macro' import {Trans} from '@lingui/react/macro' import {Text} from '#/view/com/util/text/Text' import {atoms as a, useTheme} from '#/alf' import { PERSONAL_RELATION_COLORS, PERSONAL_RELATION_LABELS, } from '#/features/civicTree/colors' import {type PersonalTreeGraph} from '#/features/personalCivicTree/graph' /* * Two legends in one strip, because the graph encodes two things at once: * the ring around a node is its collection, the lines between nodes are the * relations the user drew. Only relation kinds actually present are shown - * a legend for seven kinds when the user has used one is noise. */ export function PersonalTreeLegend({graph}: {graph: PersonalTreeGraph}) { const t = useTheme() const usedKinds = Array.from(new Set(graph.edges.map(e => e.kind))) return ( <View style={[a.gap_xs]}> {usedKinds.length > 0 ? ( <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={[a.gap_md, a.px_md, {paddingBottom: 4}]}> {usedKinds.map(kind => ( <View key={kind} style={[a.flex_row, a.align_center, a.gap_xs]}> <View style={{ width: 14, height: 2, backgroundColor: PERSONAL_RELATION_COLORS[kind] ?? t.palette.contrast_400, }} /> <Text style={[a.text_xs, t.atoms.text_contrast_medium]}> {PERSONAL_RELATION_LABELS[kind] ?? kind} </Text> </View> ))} </ScrollView> ) : null} </View> ) } /** * Shown when items exist but none are connected - the state every user is in * before they draw their first relation. An empty canvas would read as a bug. */ export function PersonalTreeUnconnectedNotice({ count, total, }: { count: number total: number }) { const t = useTheme() if (count === 0) return null const isEverything = count === total return ( <View style={[ a.mx_md, a.mb_xs, a.px_md, a.py_sm, a.rounded_md, a.flex_row, a.align_center, a.gap_sm, { backgroundColor: t.palette.primary_25, borderWidth: 1, borderColor: t.palette.primary_100, }, ]}> <View style={[ a.rounded_full, {width: 6, height: 6, backgroundColor: t.palette.primary_500}, ]} /> <Text style={[a.text_xs, a.flex_1, {color: t.palette.contrast_700}]}> {isEverything ? ( <Trans> Nothing is connected yet. Open an item and use Connect to say how it relates to another - that is what draws the tree. </Trans> ) : ( <Trans> {plural(count, {one: '# item is', other: '# items are'})} not connected to anything yet. </Trans> )} </Text> </View> ) } 
 #: src/features/personalCivicTree/components/PersonalTreeLegend.tsx:99
 msgid "{0} not connected to anything yet."
 msgstr "{0} not connected to anything yet."
@@ -934,7 +932,7 @@ msgstr "{name}'s favorite feeds and people - join me!"
 msgid "{name}'s starter pack"
 msgstr "{name}'s starter pack"
 
-#: src/view/shell/bottom-bar/BottomBarWeb.tsx:345
+#: src/view/shell/bottom-bar/BottomBarWeb.tsx:319
 msgid "{notificationCount, plural, one {# unread item} other {# unread items}}"
 msgstr ""
 
@@ -1206,7 +1204,7 @@ msgstr "48 hours"
 msgid "7 days"
 msgstr ""
 
-#: src/screens/Agora/AgoraScreen.tsx:845
+#: src/screens/Agora/AgoraScreen.tsx:849
 msgid "A cabildeo is a conversation held over a set period. It records who took part, what each side argued, and where it landed. It is one kind of community activity; votes and delegation are optional extras."
 msgstr "A cabildeo is a conversation held over a set period. It records who took part, what each side argued, and where it landed. It is one kind of community activity; votes and delegation are optional extras."
 
@@ -1312,7 +1310,7 @@ msgid "A vote shows support; it does not make a question official."
 msgstr "A vote shows support; it does not make a question official."
 
 #: src/Navigation.tsx:660
-#: src/screens/Communities/CommunityProfileScreen/index.tsx:601
+#: src/screens/Communities/CommunityProfileScreen/index.tsx:600
 #: src/screens/Settings/AboutSettings.tsx:78
 #: src/screens/Settings/Settings.tsx:267
 #: src/screens/Settings/Settings.tsx:270
@@ -1514,11 +1512,11 @@ msgstr "across all statuses"
 msgid "Action lane"
 msgstr "Action lane"
 
-#: src/screens/Agora/AgoraScreen.tsx:821
+#: src/screens/Agora/AgoraScreen.tsx:825
 msgid "active"
 msgstr "active"
 
-#: src/screens/Agora/AgoraScreen.tsx:691
+#: src/screens/Agora/AgoraScreen.tsx:695
 #: src/screens/Agora/ProposalDetailScreen.tsx:507
 msgid "Active"
 msgstr "Active"
@@ -1609,8 +1607,8 @@ msgstr ""
 msgid "Add {displayName} to starter pack"
 msgstr ""
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:123
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:125
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:133
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:135
 #: src/screens/Dashboard/DocumentsScreen.tsx:430
 msgid "Add a book"
 msgstr "Add a book"
@@ -1727,7 +1725,7 @@ msgid "Add image"
 msgstr ""
 
 #: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:293
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:158
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:167
 #: src/features/personalCivicTree/components/CivicTreeMap.tsx:528
 #: src/screens/Data/CivicTreeScreen.tsx:391
 #: src/screens/Data/CivicTreeScreen.tsx:398
@@ -1736,7 +1734,7 @@ msgstr ""
 msgid "Add item"
 msgstr "Add item"
 
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:156
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:165
 msgid "Add item to civic tree"
 msgstr "Add item to civic tree"
 
@@ -1905,8 +1903,8 @@ msgid "Added to starter pack"
 msgstr ""
 
 #: src/components/SaveToCollectionDialog.tsx:97
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:93
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:136
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:99
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:144
 msgid "Added to your personal civic tree"
 msgstr "Added to your personal civic tree"
 
@@ -1927,15 +1925,15 @@ msgstr ""
 msgid "Adds a private note to this saved item"
 msgstr "Adds a private note to this saved item"
 
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:255
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:309
 msgid "Adds an optional source link to this item"
 msgstr "Adds an optional source link to this item"
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:224
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:263
 msgid "Adds public context about why this book matters"
 msgstr "Adds public context about why this book matters"
 
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:290
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:344
 msgid "Adds the item to the selected collection"
 msgstr "Adds the item to the selected collection"
 
@@ -2040,7 +2038,7 @@ msgstr "Agent Profile"
 msgid "Agora"
 msgstr "Agora"
 
-#: src/screens/Agora/AgoraScreen.tsx:1136
+#: src/screens/Agora/AgoraScreen.tsx:1140
 msgid "Ágora"
 msgstr "Ágora"
 
@@ -2116,7 +2114,7 @@ msgstr "All collections"
 msgid "All communities"
 msgstr "All communities"
 
-#: src/screens/Agora/AgoraScreen.tsx:885
+#: src/screens/Agora/AgoraScreen.tsx:889
 msgid "All entities"
 msgstr "All entities"
 
@@ -2124,7 +2122,7 @@ msgstr "All entities"
 msgid "All friends followed!"
 msgstr ""
 
-#: src/components/PostControls/index.tsx:143
+#: src/components/PostControls/index.tsx:98
 msgid "All highlights removed"
 msgstr "All highlights removed"
 
@@ -2157,7 +2155,7 @@ msgstr "All of these words"
 msgid "All posts"
 msgstr "All posts"
 
-#: src/screens/Agora/AgoraScreen.tsx:690
+#: src/screens/Agora/AgoraScreen.tsx:694
 msgid "All stages"
 msgstr "All stages"
 
@@ -2567,7 +2565,7 @@ msgstr "Anyone who has it will no longer be able to join or request to join. You
 msgid "Aplicar"
 msgstr "Aplicar"
 
-#: src/features/communityCivicTree/components/ContributeToCommunityTreeDialog.tsx:161
+#: src/features/communityCivicTree/components/ContributeToCommunityTreeDialog.tsx:167
 msgid "Aportar al Árbol Cívico Comunitario"
 msgstr "Aportar al Árbol Cívico Comunitario"
 
@@ -2816,8 +2814,8 @@ msgstr ""
 msgid "Areas"
 msgstr "Areas"
 
-#: src/screens/Agora/AgoraScreen.tsx:403
-#: src/screens/Agora/AgoraScreen.tsx:506
+#: src/screens/Agora/AgoraScreen.tsx:407
+#: src/screens/Agora/AgoraScreen.tsx:510
 msgid "arguments"
 msgstr "arguments"
 
@@ -2928,12 +2926,12 @@ msgctxt "Name of app icon variant"
 msgid "Aurora"
 msgstr ""
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:173
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:178
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:183
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:188
 msgid "Author"
 msgstr "Author"
 
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:226
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:257
 msgid "Author (optional)"
 msgstr "Author (optional)"
 
@@ -3338,7 +3336,7 @@ msgstr "Book a ledger entry"
 msgid "Book an entry"
 msgstr "Book an entry"
 
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:222
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:253
 msgid "Book author"
 msgstr "Book author"
 
@@ -3347,7 +3345,7 @@ msgstr "Book author"
 msgid "Book entry"
 msgstr "Book entry"
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:99
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:108
 msgid "Book sent for community review"
 msgstr "Book sent for community review"
 
@@ -3356,8 +3354,8 @@ msgstr "Book sent for community review"
 msgid "Book shared in {0}"
 msgstr "Book shared in {0}"
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:162
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:164
+#: src/features/civicTree/components/BookTitleField.tsx:56
+#: src/features/civicTree/components/BookTitleField.tsx:58
 msgid "Book title"
 msgstr "Book title"
 
@@ -3375,7 +3373,7 @@ msgstr ""
 msgid "Books added to your communities appear here. Use Add book to share the first one."
 msgstr "Books added to your communities appear here. Use Add book to share the first one."
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:128
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:138
 msgid "Books are shared with a community and reviewed by its members before they appear in the library."
 msgstr "Books are shared with a community and reviewed by its members before they appear in the library."
 
@@ -3383,7 +3381,7 @@ msgstr "Books are shared with a community and reviewed by its members before the
 msgid "Books could not be loaded. Check your connection and try again."
 msgstr "Books could not be loaded. Check your connection and try again."
 
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:168
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:177
 msgid "Books here show what you read and how it shapes your politics. They stay in your personal tree and do not appear in Documents unless you choose to contribute one to a community."
 msgstr "Books here show what you read and how it shapes your politics. They stay in your personal tree and do not appear in Documents unless you choose to contribute one to a community."
 
@@ -3408,7 +3406,7 @@ msgid "Bridging Insight"
 msgstr "Bridging Insight"
 
 #. placeholder {0}: pack.status
-#: src/screens/Dashboard/DocumentsScreen.tsx:712
+#: src/screens/Dashboard/DocumentsScreen.tsx:717
 msgid "Briefing pack, status {0}"
 msgstr "Briefing pack, status {0}"
 
@@ -3524,7 +3522,7 @@ msgid "Button to go back to the home timeline"
 msgstr ""
 
 #. placeholder {0}: book.author
-#: src/screens/Dashboard/DocumentsScreen.tsx:658
+#: src/screens/Dashboard/DocumentsScreen.tsx:659
 msgid "by {0}"
 msgstr "by {0}"
 
@@ -3696,8 +3694,8 @@ msgstr "campaña electoral"
 #: src/features/liveEvents/components/LiveEventFeedOptionsMenu.tsx:157
 #: src/features/liveNow/components/GoLiveDialog.tsx:248
 #: src/features/liveNow/components/GoLiveDialog.tsx:254
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:279
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:283
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:333
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:337
 #: src/features/personalCivicTree/components/EditTreeItemDialog.tsx:167
 #: src/features/personalCivicTree/components/EditTreeItemDialog.tsx:171
 #: src/features/personalCivicTree/components/NewCollectionDialog.tsx:117
@@ -3778,8 +3776,7 @@ msgstr "Cancelled"
 msgid "Cancels signing in so you can check your username"
 msgstr "Cancels signing in so you can check your username"
 
-#: src/components/PostControls/index.tsx:99
-#: src/components/PostControls/index.tsx:151
+#: src/components/PostControls/index.tsx:106
 #: src/state/shell/composer/index.tsx:103
 msgid "Cannot interact with a blocked user"
 msgstr ""
@@ -3797,7 +3794,7 @@ msgstr ""
 msgid "Card type"
 msgstr "Card type"
 
-#: src/features/communityCivicTree/components/ContributeToCommunityTreeDialog.tsx:184
+#: src/features/communityCivicTree/components/ContributeToCommunityTreeDialog.tsx:190
 msgid "Cargando comunidades..."
 msgstr "Cargando comunidades..."
 
@@ -3865,11 +3862,6 @@ msgstr "Ceder es un acto público"
 #: src/screens/Communities/DelegateVoteScreen.tsx:199
 msgid "Ceder mi voto"
 msgstr "Ceder mi voto"
-
-#. placeholder {0}: state.name
-#: src/screens/Map/MapScreen.shared.tsx:961
-msgid "Centered on {0}"
-msgstr "Centered on {0}"
 
 #: src/components/chat/ReportedMessageCard.tsx:70
 #: src/components/dialogs/SortitionConfigDialog.tsx:89
@@ -3998,11 +3990,11 @@ msgstr ""
 #: src/Navigation.tsx:704
 #: src/Navigation.tsx:1371
 #: src/screens/Communities/useMatrixClientStrings.ts:27
+#: src/view/com/home/HomeHeaderChatButton.tsx:51
 #: src/view/screens/Notifications.tsx:238
 #: src/view/screens/Notifications.tsx:262
 #: src/view/screens/Notifications.tsx:302
 #: src/view/screens/Notifications.tsx:323
-#: src/view/shell/bottom-bar/BottomBar.tsx:242
 #: src/view/shell/desktop/LeftNav.tsx:804
 #: src/view/shell/Drawer.tsx:638
 msgid "Chat"
@@ -4168,7 +4160,7 @@ msgstr ""
 msgid "Choose a discourse lens"
 msgstr "Choose a discourse lens"
 
-#: src/screens/Agora/AgoraScreen.tsx:1006
+#: src/screens/Agora/AgoraScreen.tsx:1010
 msgid "Choose a party"
 msgstr "Choose a party"
 
@@ -4273,7 +4265,7 @@ msgstr "Civic activities"
 msgid "Civic activity"
 msgstr "Civic activity"
 
-#: src/screens/Map/MapScreen.shared.tsx:1819
+#: src/screens/Map/MapScreen.shared.tsx:1678
 msgid "Civic Activity"
 msgstr "Civic Activity"
 
@@ -4289,7 +4281,7 @@ msgstr "Civic Elements"
 msgid "Civic field"
 msgstr "Civic field"
 
-#: src/screens/Agora/AgoraScreen.tsx:655
+#: src/screens/Agora/AgoraScreen.tsx:659
 msgid "Civic initiatives near you"
 msgstr "Civic initiatives near you"
 
@@ -4379,7 +4371,7 @@ msgstr "Clear search"
 msgid "Clear search query"
 msgstr ""
 
-#: src/screens/Map/MapScreen.shared.tsx:1594
+#: src/screens/Map/MapScreen.shared.tsx:1453
 msgid "Clears the selected place and returns to the full Mexico map."
 msgstr "Clears the selected place and returns to the full Mexico map."
 
@@ -4600,7 +4592,7 @@ msgstr ""
 msgid "Closes without creating a collection"
 msgstr "Closes without creating a collection"
 
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:280
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:334
 #: src/features/personalCivicTree/components/EditTreeItemDialog.tsx:168
 msgid "Closes without saving"
 msgstr "Closes without saving"
@@ -4734,9 +4726,9 @@ msgstr "Communities Active In"
 msgid "communities loaded"
 msgstr "communities loaded"
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:136
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:146
 #: src/Navigation.tsx:1366
-#: src/screens/Communities/CommunityProfileScreen/index.tsx:459
+#: src/screens/Communities/CommunityProfileScreen/index.tsx:458
 msgid "Community"
 msgstr "Community"
 
@@ -4745,7 +4737,7 @@ msgstr "Community"
 msgid "Community activities"
 msgstr "Community activities"
 
-#: src/screens/Agora/AgoraScreen.tsx:538
+#: src/screens/Agora/AgoraScreen.tsx:542
 msgid "Community Activities"
 msgstr "Community Activities"
 
@@ -4837,7 +4829,7 @@ msgstr "Community-approved contributions will appear here as connectable nodes."
 msgid "Comparación experimental de conteos"
 msgstr "Comparación experimental de conteos"
 
-#: src/screens/Agora/AgoraScreen.tsx:1010
+#: src/screens/Agora/AgoraScreen.tsx:1014
 msgid "Compare what your political family is carrying publicly with what needs internal work."
 msgstr "Compare what your political family is carrying publicly with what needs internal work."
 
@@ -4904,7 +4896,7 @@ msgstr ""
 msgid "Computed from the ledger below and the committed business model."
 msgstr "Computed from the ledger below and the committed business model."
 
-#: src/features/communityCivicTree/components/ContributeToCommunityTreeDialog.tsx:180
+#: src/features/communityCivicTree/components/ContributeToCommunityTreeDialog.tsx:186
 msgid "Comunidad"
 msgstr "Comunidad"
 
@@ -5408,7 +5400,7 @@ msgstr "Correlated voters (same community, similar history) are discounted. Effe
 msgid "Corruption"
 msgstr "Corruption"
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:108
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:118
 msgid "Could not add the book"
 msgstr "Could not add the book"
 
@@ -5527,7 +5519,7 @@ msgstr "Could not remove member."
 msgid "Could not save changes: {0}"
 msgstr ""
 
-#: src/screens/Dashboard/MemesScreen/cardPrimitives.tsx:344
+#: src/components/PostControls/ReactionVoteButton.tsx:62
 msgid "Could not save your vote"
 msgstr "Could not save your vote"
 
@@ -5552,7 +5544,7 @@ msgstr ""
 msgid "Could not upload contacts. You need to re-verify your phone number to proceed"
 msgstr ""
 
-#: src/screens/Agora/AgoraScreen.tsx:1181
+#: src/screens/Agora/AgoraScreen.tsx:1187
 msgid "Couldn't load Ágora data. Tap to retry."
 msgstr "Couldn't load Ágora data. Tap to retry."
 
@@ -5629,10 +5621,10 @@ msgstr ""
 #: src/screens/Messages/JoinRequest.tsx:318
 #: src/view/com/auth/SplashScreen.tsx:107
 #: src/view/com/auth/SplashScreen.web.tsx:118
-#: src/view/shell/bottom-bar/BottomBar.tsx:349
-#: src/view/shell/bottom-bar/BottomBar.tsx:353
-#: src/view/shell/bottom-bar/BottomBarWeb.tsx:251
-#: src/view/shell/bottom-bar/BottomBarWeb.tsx:256
+#: src/view/shell/bottom-bar/BottomBar.tsx:318
+#: src/view/shell/bottom-bar/BottomBar.tsx:322
+#: src/view/shell/bottom-bar/BottomBarWeb.tsx:225
+#: src/view/shell/bottom-bar/BottomBarWeb.tsx:230
 #: src/view/shell/NavSignupCard.tsx:48
 #: src/view/shell/NavSignupCard.tsx:53
 msgid "Create account"
@@ -5707,7 +5699,7 @@ msgid "Create list from starter pack"
 msgstr ""
 
 #: src/Navigation.tsx:938
-#: src/screens/Agora/AgoraScreen.tsx:1191
+#: src/screens/Agora/AgoraScreen.tsx:1197
 msgid "Create Lobbying"
 msgstr "Create Lobbying"
 
@@ -5883,6 +5875,7 @@ msgid "Dark theme"
 msgstr ""
 
 #: src/Navigation.tsx:1300
+#: src/view/shell/bottom-bar/BottomBar.tsx:220
 msgid "Data"
 msgstr "Data"
 
@@ -5981,8 +5974,8 @@ msgstr "Delegate Vote"
 msgid "Delegate voted: {votedOption}"
 msgstr "Delegate voted: {votedOption}"
 
-#: src/screens/Agora/AgoraScreen.tsx:446
-#: src/screens/Agora/AgoraScreen.tsx:830
+#: src/screens/Agora/AgoraScreen.tsx:450
+#: src/screens/Agora/AgoraScreen.tsx:834
 msgid "delegated"
 msgstr "delegated"
 
@@ -6153,11 +6146,11 @@ msgstr "Deliberación masiva sin sorteo"
 msgid "Deliberate"
 msgstr "Deliberate"
 
-#: src/screens/Agora/AgoraScreen.tsx:827
+#: src/screens/Agora/AgoraScreen.tsx:831
 msgid "deliberating"
 msgstr "deliberating"
 
-#: src/screens/Agora/AgoraScreen.tsx:693
+#: src/screens/Agora/AgoraScreen.tsx:697
 #: src/screens/Data/SeeVotesScreen.tsx:230
 msgid "Deliberating"
 msgstr "Deliberating"
@@ -6223,7 +6216,7 @@ msgstr "Describe the entry."
 msgid "Describe what this collection is for"
 msgstr "Describe what this collection is for"
 
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:238
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:292
 msgid "Describes the evidence, link, note, or reference"
 msgstr "Describes the evidence, link, note, or reference"
 
@@ -6245,7 +6238,7 @@ msgid "Description (1000 characters max)"
 msgstr "Description (1000 characters max)"
 
 #: src/components/SaveToCollectionDialog.tsx:233
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:242
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:296
 #: src/features/personalCivicTree/components/CollectionActionsDialog.tsx:115
 #: src/features/personalCivicTree/components/EditTreeItemDialog.tsx:147
 #: src/features/personalCivicTree/components/NewCollectionDialog.tsx:104
@@ -6530,11 +6523,11 @@ msgstr ""
 msgid "District key"
 msgstr "District key"
 
-#: src/screens/Map/DistrictProfileScreen.tsx:168
+#: src/screens/Map/DistrictProfileScreen.tsx:167
 msgid "District Not Found"
 msgstr "District Not Found"
 
-#: src/screens/Map/DistrictProfileScreen.tsx:175
+#: src/screens/Map/DistrictProfileScreen.tsx:174
 msgid "District not found."
 msgstr "District not found."
 
@@ -6542,7 +6535,7 @@ msgstr "District not found."
 msgid "District Profile"
 msgstr "District Profile"
 
-#: src/screens/Map/DistrictProfileScreen.tsx:728
+#: src/screens/Map/DistrictProfileScreen.tsx:731
 msgid "District-scoped RAQs are not yet available. They will appear here once the backend supports tagging open questions to federal electoral districts."
 msgstr "District-scoped RAQs are not yet available. They will appear here once the backend supports tagging open questions to federal electoral districts."
 
@@ -7251,7 +7244,11 @@ msgstr "Ensure you have selected a language for each subtitle file."
 msgid "Enter 6-digit code that was sent to your phone number"
 msgstr ""
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:210
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:221
+msgid "Enter a four-digit year, or leave it blank."
+msgstr "Enter a four-digit year, or leave it blank."
+
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:249
 msgid "Enter a link starting with http:// or https://"
 msgstr "Enter a link starting with http:// or https://"
 
@@ -7259,7 +7256,7 @@ msgstr "Enter a link starting with http:// or https://"
 msgid "Enter a password"
 msgstr ""
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:196
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:235
 msgid "Enter a web link where the book can be found"
 msgstr "Enter a web link where the book can be found"
 
@@ -7306,7 +7303,7 @@ msgstr ""
 msgid "Enter the account to connect to the identity wallet"
 msgstr "Enter the account to connect to the identity wallet"
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:179
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:189
 msgid "Enter the author of the book"
 msgstr "Enter the author of the book"
 
@@ -7330,10 +7327,6 @@ msgstr "Enter the name for your new matter"
 msgid "Enter the name for your new policy"
 msgstr "Enter the name for your new policy"
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:163
-msgid "Enter the title of the book"
-msgstr "Enter the title of the book"
-
 #: src/screens/Login/LoginForm.tsx:680
 msgid "Enter the two-factor authentication code provided by your identity provider."
 msgstr "Enter the two-factor authentication code provided by your identity provider."
@@ -7341,6 +7334,10 @@ msgstr "Enter the two-factor authentication code provided by your identity provi
 #: src/screens/Login/LoginForm.tsx:493
 msgid "Enter the username or email address you used when you created your account"
 msgstr ""
+
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:208
+msgid "Enter the year the book was first published"
+msgstr "Enter the year the book was first published"
 
 #: src/components/dialogs/BirthDateSettings.tsx:169
 msgid "Enter your birth date"
@@ -7397,7 +7394,7 @@ msgstr "Enviando…"
 msgid "Enviar"
 msgstr "Enviar"
 
-#: src/features/communityCivicTree/components/ContributeToCommunityTreeDialog.tsx:285
+#: src/features/communityCivicTree/components/ContributeToCommunityTreeDialog.tsx:291
 msgid "Enviar a revisión"
 msgstr "Enviar a revisión"
 
@@ -7615,7 +7612,7 @@ msgstr ""
 msgid "Expand list of users"
 msgstr ""
 
-#: src/screens/Dashboard/MemesScreen/cardPrimitives.tsx:236
+#: src/screens/Dashboard/MemesScreen/cardPrimitives.tsx:231
 msgid "Expand lower card"
 msgstr "Expand lower card"
 
@@ -7631,7 +7628,7 @@ msgstr "Expand or collapse this category"
 msgid "Expand post text"
 msgstr ""
 
-#: src/screens/Dashboard/MemesScreen/cardPrimitives.tsx:235
+#: src/screens/Dashboard/MemesScreen/cardPrimitives.tsx:230
 msgid "Expand upper card"
 msgstr "Expand upper card"
 
@@ -7743,7 +7740,7 @@ msgstr "Explore gatherings, civic action, fundraisers, sales, and the public rec
 msgid "Explore more communities"
 msgstr "Explore more communities"
 
-#: src/screens/Agora/AgoraScreen.tsx:542
+#: src/screens/Agora/AgoraScreen.tsx:546
 msgid "Explore social events and public financial activity"
 msgstr "Explore social events and public financial activity"
 
@@ -7837,8 +7834,8 @@ msgstr "Failed to add"
 msgid "Failed to add emoji reaction"
 msgstr ""
 
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:96
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:139
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:102
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:147
 msgid "Failed to add item"
 msgstr "Failed to add item"
 
@@ -8022,13 +8019,13 @@ msgid "Failed to lock group chat"
 msgstr "Failed to lock group chat"
 
 #: src/screens/Messages/ChatList.tsx:792
-#: src/view/shell/bottom-bar/BottomBar.tsx:445
+#: src/view/com/home/HomeHeaderChatButton.tsx:127
 msgid "Failed to mark all chats as read"
 msgstr "Failed to mark all chats as read"
 
 #: src/screens/Messages/ChatList.tsx:801
 #: src/screens/Messages/Inbox.tsx:294
-#: src/view/shell/bottom-bar/BottomBar.tsx:454
+#: src/view/com/home/HomeHeaderChatButton.tsx:136
 msgid "Failed to mark all requests as read"
 msgstr ""
 
@@ -8240,7 +8237,7 @@ msgstr ""
 msgid "Falta configuración de autenticación"
 msgstr "Falta configuración de autenticación"
 
-#: src/screens/Agora/AgoraScreen.tsx:921
+#: src/screens/Agora/AgoraScreen.tsx:925
 msgid "Fast-moving public cabildeos with votes, arguments, and delegation pressure."
 msgstr "Fast-moving public cabildeos with votes, arguments, and delegation pressure."
 
@@ -8248,7 +8245,7 @@ msgstr "Fast-moving public cabildeos with votes, arguments, and delegation press
 msgid "Featured States"
 msgstr "Featured States"
 
-#: src/screens/Map/MapScreen.shared.tsx:1751
+#: src/screens/Map/MapScreen.shared.tsx:1610
 msgid "Federal districts"
 msgstr "Federal districts"
 
@@ -8344,6 +8341,10 @@ msgstr "Fijar como mi posición"
 msgid "File saved successfully!"
 msgstr ""
 
+#: src/features/civicTree/components/BookTitleField.tsx:107
+msgid "Fills in the title, author and year"
+msgstr "Fills in the title, author and year"
+
 #. placeholder {0}: f.label
 #. placeholder {0}: item.label
 #: src/screens/Data/SeeVotesScreen.tsx:309
@@ -8415,7 +8416,7 @@ msgstr "Filter by political compass"
 msgid "Filter from feeds"
 msgstr ""
 
-#: src/screens/Map/MapScreen.shared.tsx:1604
+#: src/screens/Map/MapScreen.shared.tsx:1463
 msgid "Filter map discourse"
 msgstr "Filter map discourse"
 
@@ -8549,10 +8550,6 @@ msgstr "Find people who matter"
 #: src/screens/Settings/FindContactsSettings.tsx:128
 msgid "Find people you know"
 msgstr "Find people you know"
-
-#: src/screens/Map/MapScreen.shared.tsx:1571
-msgid "Find places near me"
-msgstr "Find places near me"
 
 #: src/screens/Search/Shell.tsx:747
 msgid "Find posts, users, and feeds on Bluesky"
@@ -9702,7 +9699,7 @@ msgstr "Hides the invite friends promo banner"
 msgid "Hides this branch's children"
 msgstr "Hides this branch's children"
 
-#: src/screens/Agora/AgoraScreen.tsx:904
+#: src/screens/Agora/AgoraScreen.tsx:908
 msgid "Highest momentum"
 msgstr "Highest momentum"
 
@@ -9804,7 +9801,7 @@ msgid "Hold up! We’re gradually giving access to video, and you’re still wai
 msgstr ""
 
 #: src/Navigation.tsx:1351
-#: src/view/shell/bottom-bar/BottomBar.tsx:196
+#: src/view/shell/bottom-bar/BottomBar.tsx:179
 #: src/view/shell/desktop/LeftNav.tsx:773
 #: src/view/shell/Drawer.tsx:611
 msgid "Home"
@@ -9824,8 +9821,8 @@ msgstr ""
 msgid "Housing"
 msgstr "Housing"
 
-#: src/screens/Agora/AgoraScreen.tsx:1141
-#: src/screens/Agora/AgoraScreen.tsx:1203
+#: src/screens/Agora/AgoraScreen.tsx:1145
+#: src/screens/Agora/AgoraScreen.tsx:1209
 msgid "How it works"
 msgstr "How it works"
 
@@ -10137,7 +10134,7 @@ msgstr "impuestos estatales"
 msgid "in {activeTab}"
 msgstr "in {activeTab}"
 
-#: src/screens/Agora/AgoraScreen.tsx:958
+#: src/screens/Agora/AgoraScreen.tsx:962
 msgid "In {regionalFocus}"
 msgstr "In {regionalFocus}"
 
@@ -10160,7 +10157,7 @@ msgstr "In person"
 msgid "In progress"
 msgstr "In progress"
 
-#: src/screens/Agora/AgoraScreen.tsx:958
+#: src/screens/Agora/AgoraScreen.tsx:962
 msgid "In your region"
 msgstr "In your region"
 
@@ -10530,8 +10527,8 @@ msgstr "Is your location not accurate? <0>Tap here to update your location with 
 msgid "Isolated"
 msgstr "Isolated"
 
-#: src/screens/Map/DistrictProfileScreen.tsx:433
-#: src/screens/Map/DistrictProfileScreen.tsx:435
+#: src/screens/Map/DistrictProfileScreen.tsx:434
+#: src/screens/Map/DistrictProfileScreen.tsx:436
 msgid "Issues"
 msgstr "Issues"
 
@@ -10564,7 +10561,7 @@ msgstr "item"
 msgid "Item"
 msgstr "Item"
 
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:236
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:290
 #: src/features/personalCivicTree/components/EditTreeItemDialog.tsx:143
 msgid "Item description"
 msgstr "Item description"
@@ -10581,7 +10578,7 @@ msgstr "Item removed"
 msgid "Item sold"
 msgstr "Item sold"
 
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:207
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:235
 #: src/features/personalCivicTree/components/EditTreeItemDialog.tsx:121
 msgid "Item title"
 msgstr "Item title"
@@ -10590,7 +10587,7 @@ msgstr "Item title"
 msgid "Item updated"
 msgstr "Item updated"
 
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:253
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:307
 #: src/features/personalCivicTree/components/EditTreeItemDialog.tsx:154
 msgid "Item URL"
 msgstr "Item URL"
@@ -10614,7 +10611,7 @@ msgstr ""
 msgid "Join"
 msgstr "Join"
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:144
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:154
 msgid "Join a community to add books to its library."
 msgstr "Join a community to add books to its library."
 
@@ -10797,7 +10794,7 @@ msgstr ""
 msgid "Law"
 msgstr "Law"
 
-#: src/screens/Agora/AgoraScreen.tsx:381
+#: src/screens/Agora/AgoraScreen.tsx:385
 msgid "Leading option"
 msgstr "Leading option"
 
@@ -11021,12 +11018,6 @@ msgstr ""
 msgid "Like"
 msgstr ""
 
-#. Accessibility label for the like button when the post has not been liked, verb form followed by number of likes and noun form
-#. placeholder {0}: post.likeCount || 0
-#: src/components/PostControls/index.tsx:270
-msgid "Like ({0, plural, one {# like} other {# likes}})"
-msgstr ""
-
 #: src/components/ProgressGuide/List.tsx:94
 msgid "Like 10 posts"
 msgstr ""
@@ -11108,7 +11099,7 @@ msgstr ""
 msgid "Linear"
 msgstr ""
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:189
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:228
 msgid "Link"
 msgstr "Link"
 
@@ -11121,7 +11112,7 @@ msgstr "Link copied to clipboard"
 msgid "Link to join"
 msgstr "Link to join"
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:194
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:233
 msgid "Link to the book"
 msgstr "Link to the book"
 
@@ -11370,7 +11361,7 @@ msgctxt "placeholder"
 msgid "Loading chat…"
 msgstr "Loading chat…"
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:140
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:150
 #: src/screens/Search/components/AdvancedSearchDialog/FilterBlock.tsx:364
 #: src/screens/Search/dialogs/CommunityPickerDialog.tsx:94
 msgid "Loading communities..."
@@ -11418,8 +11409,8 @@ msgstr "Loads more memes"
 
 #: src/Navigation.tsx:923
 #: src/Navigation.tsx:928
-#: src/screens/Agora/AgoraScreen.tsx:809
-#: src/screens/Agora/AgoraScreen.tsx:842
+#: src/screens/Agora/AgoraScreen.tsx:813
+#: src/screens/Agora/AgoraScreen.tsx:846
 #: src/screens/Communities/CabildeoDetailScreen.tsx:542
 #: src/screens/Communities/CabildeoDetailScreen.tsx:564
 #: src/screens/Communities/CabildeoDetailScreen.tsx:608
@@ -11429,7 +11420,7 @@ msgstr "Loads more memes"
 msgid "Lobbying"
 msgstr "Lobbying"
 
-#: src/screens/Dashboard/DocumentsScreen.tsx:747
+#: src/screens/Dashboard/DocumentsScreen.tsx:752
 msgid "Lobbying pack"
 msgstr "Lobbying pack"
 
@@ -11524,7 +11515,7 @@ msgstr "Love GIFs"
 msgid "Main voice · persistent anonymous identity"
 msgstr "Main voice · persistent anonymous identity"
 
-#: src/screens/Map/MapScreen.shared.tsx:1753
+#: src/screens/Map/MapScreen.shared.tsx:1612
 msgid "Major cities"
 msgstr "Major cities"
 
@@ -11624,8 +11615,8 @@ msgstr ""
 
 #: src/screens/Messages/ChatList.tsx:811
 #: src/screens/Messages/ChatList.tsx:815
-#: src/view/shell/bottom-bar/BottomBar.tsx:463
-#: src/view/shell/bottom-bar/BottomBar.tsx:467
+#: src/view/com/home/HomeHeaderChatButton.tsx:145
+#: src/view/com/home/HomeHeaderChatButton.tsx:149
 msgid "Mark all chats as read"
 msgstr "Mark all chats as read"
 
@@ -11635,8 +11626,8 @@ msgstr "Mark all reports as read"
 
 #: src/screens/Messages/ChatList.tsx:819
 #: src/screens/Messages/ChatList.tsx:823
-#: src/view/shell/bottom-bar/BottomBar.tsx:471
-#: src/view/shell/bottom-bar/BottomBar.tsx:475
+#: src/view/com/home/HomeHeaderChatButton.tsx:153
+#: src/view/com/home/HomeHeaderChatButton.tsx:157
 msgid "Mark all requests as read"
 msgstr "Mark all requests as read"
 
@@ -11667,12 +11658,12 @@ msgid "Marked all as read"
 msgstr ""
 
 #: src/screens/Messages/ChatList.tsx:789
-#: src/view/shell/bottom-bar/BottomBar.tsx:442
+#: src/view/com/home/HomeHeaderChatButton.tsx:124
 msgid "Marked all chats as read"
 msgstr "Marked all chats as read"
 
 #: src/screens/Messages/ChatList.tsx:798
-#: src/view/shell/bottom-bar/BottomBar.tsx:451
+#: src/view/com/home/HomeHeaderChatButton.tsx:133
 msgid "Marked all requests as read"
 msgstr "Marked all requests as read"
 
@@ -11797,7 +11788,7 @@ msgid "Mentions of these people"
 msgstr "Mentions of these people"
 
 #: src/components/Menu/index.tsx:119
-#: src/screens/Communities/CommunityProfileScreen/index.tsx:602
+#: src/screens/Communities/CommunityProfileScreen/index.tsx:601
 msgid "Menu"
 msgstr ""
 
@@ -11886,8 +11877,8 @@ msgstr "Messages from this person are hidden while you are blocking them."
 msgid "Method"
 msgstr "Method"
 
-#: src/screens/Map/MapScreen.shared.tsx:1746
-#: src/screens/Map/MapScreen.shared.tsx:1820
+#: src/screens/Map/MapScreen.shared.tsx:1605
+#: src/screens/Map/MapScreen.shared.tsx:1679
 msgid "Mexico Map"
 msgstr "Mexico Map"
 
@@ -12299,11 +12290,11 @@ msgstr "Name the zone, state, district, or represented area this entry applies t
 msgid "Names are hidden for this cabildeo."
 msgstr "Names are hidden for this cabildeo."
 
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:223
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:254
 msgid "Names the author of this book"
 msgstr "Names the author of this book"
 
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:208
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:237
 msgid "Names the item saved in this collection"
 msgstr "Names the item saved in this collection"
 
@@ -12341,10 +12332,6 @@ msgstr "Navigates to the voting history screen"
 #: src/view/shell/Drawer.tsx:104
 msgid "Navigates to your profile"
 msgstr ""
-
-#: src/screens/Map/MapScreen.shared.tsx:934
-msgid "Near me is currently available for Mexico only."
-msgstr "Near me is currently available for Mexico only."
 
 #: src/components/moderation/ReportDialog/index.tsx:414
 #: src/components/moderation/ReportDialog/index.tsx:430
@@ -12648,11 +12635,11 @@ msgstr "No beta features at the moment."
 msgid "No books found"
 msgstr "No books found"
 
-#: src/screens/Map/DistrictProfileScreen.tsx:382
+#: src/screens/Map/DistrictProfileScreen.tsx:384
 msgid "No cabildeo activity in this district yet. Open lobbying appears on the map when users tag it to this distrito."
 msgstr "No cabildeo activity in this district yet. Open lobbying appears on the map when users tag it to this distrito."
 
-#: src/screens/Agora/AgoraScreen.tsx:1054
+#: src/screens/Agora/AgoraScreen.tsx:1058
 msgid "No cabildeos for this party and visibility yet."
 msgstr "No cabildeos for this party and visibility yet."
 
@@ -12668,7 +12655,7 @@ msgstr "No cabildeos found."
 msgid "No cards match these filters."
 msgstr "No cards match these filters."
 
-#: src/screens/Map/MapComponents.tsx:908
+#: src/screens/Map/MapComponents.tsx:950
 msgid "No city data available for this state."
 msgstr "No city data available for this state."
 
@@ -12718,7 +12705,7 @@ msgstr "No custom feeds"
 msgid "No decide nada"
 msgstr "No decide nada"
 
-#: src/screens/Map/MapComponents.tsx:1376
+#: src/screens/Map/MapComponents.tsx:1418
 msgid "No district data available for this state."
 msgstr "No district data available for this state."
 
@@ -12770,7 +12757,7 @@ msgstr "No hay nodos disponibles para conectar."
 msgid "No hay reportes en los últimos 30 días."
 msgstr "No hay reportes en los últimos 30 días."
 
-#: src/components/PostControls/index.tsx:145
+#: src/components/PostControls/index.tsx:100
 msgid "No highlights to remove"
 msgstr "No highlights to remove"
 
@@ -12959,7 +12946,7 @@ msgstr "No proposed RAQs yet"
 msgid "No public highlights yet"
 msgstr "No public highlights yet"
 
-#: src/screens/Agora/AgoraScreen.tsx:938
+#: src/screens/Agora/AgoraScreen.tsx:942
 msgid "No public momentum in these filters yet."
 msgstr "No public momentum in these filters yet."
 
@@ -12996,7 +12983,7 @@ msgstr ""
 msgid "No recent GIFs yet. Pick one to see it here."
 msgstr "No recent GIFs yet. Pick one to see it here."
 
-#: src/screens/Agora/AgoraScreen.tsx:975
+#: src/screens/Agora/AgoraScreen.tsx:979
 msgid "No regional cabildeos match these filters yet."
 msgstr "No regional cabildeos match these filters yet."
 
@@ -13339,7 +13326,7 @@ msgstr ""
 #: src/screens/Settings/Settings.tsx:201
 #: src/screens/Settings/Settings.tsx:204
 #: src/view/screens/Notifications.tsx:141
-#: src/view/shell/bottom-bar/BottomBar.tsx:273
+#: src/view/shell/bottom-bar/BottomBar.tsx:242
 #: src/view/shell/desktop/LeftNav.tsx:793
 #: src/view/shell/Drawer.tsx:666
 msgid "Notifications"
@@ -13599,7 +13586,7 @@ msgstr "Oops, this profile doesn't exist. Try scanning another one."
 msgid "Oops!"
 msgstr ""
 
-#: src/screens/Agora/AgoraScreen.tsx:692
+#: src/screens/Agora/AgoraScreen.tsx:696
 #: src/screens/Agora/components/PhaseBadge.tsx:24
 msgid "Open"
 msgstr "Open"
@@ -13647,10 +13634,6 @@ msgstr "Open collection {0}"
 #: src/screens/Messages/components/ChatListItem.tsx:822
 msgid "Open community chat options"
 msgstr "Open community chat options"
-
-#: src/view/com/home/HomeHeaderLayout.web.tsx:157
-msgid "Open compass"
-msgstr "Open compass"
 
 #: src/screens/Messages/components/ChatListItem.tsx:536
 #: src/screens/Messages/components/ChatListItem.tsx:540
@@ -13728,7 +13711,7 @@ msgstr "Open ledger · goal {0}"
 msgid "Open link to {niceUrl}"
 msgstr ""
 
-#: src/screens/Agora/AgoraScreen.tsx:963
+#: src/screens/Agora/AgoraScreen.tsx:967
 #: src/screens/Communities/CommunitiesScreen.tsx:562
 msgid "Open Lobbying"
 msgstr "Open Lobbying"
@@ -13763,7 +13746,7 @@ msgstr ""
 msgid "Open PARA wallet"
 msgstr "Open PARA wallet"
 
-#: src/screens/Agora/AgoraScreen.tsx:452
+#: src/screens/Agora/AgoraScreen.tsx:456
 msgid "open participation"
 msgstr "open participation"
 
@@ -13813,7 +13796,7 @@ msgstr "Open settings"
 msgid "Open share menu"
 msgstr ""
 
-#: src/screens/Map/MapScreen.shared.tsx:1800
+#: src/screens/Map/MapScreen.shared.tsx:1659
 msgid "Open sidebar"
 msgstr "Open sidebar"
 
@@ -13927,7 +13910,7 @@ msgstr "Opens dialog to select a policy"
 msgid "Opens emoji picker"
 msgstr "Opens emoji picker"
 
-#: src/screens/Map/MapScreen.shared.tsx:1606
+#: src/screens/Map/MapScreen.shared.tsx:1465
 msgid "Opens filters for the map heat layer."
 msgstr "Opens filters for the map heat layer."
 
@@ -14007,7 +13990,7 @@ msgstr "Opens the activity and its public ledger"
 msgid "Opens the activity details"
 msgstr "Opens the activity details"
 
-#: src/screens/Dashboard/MemesScreen/cardPrimitives.tsx:272
+#: src/screens/Dashboard/MemesScreen/cardPrimitives.tsx:267
 msgid "Opens the comments for this meme"
 msgstr "Opens the comments for this meme"
 
@@ -14049,7 +14032,7 @@ msgstr "Opens the meme search"
 msgid "Opens the post composer"
 msgstr ""
 
-#: src/screens/Agora/AgoraScreen.tsx:1193
+#: src/screens/Agora/AgoraScreen.tsx:1199
 msgid "Opens the screen to create a new policy proposal"
 msgstr "Opens the screen to create a new policy proposal"
 
@@ -14059,7 +14042,7 @@ msgstr "Opens this card"
 
 #: src/screens/Dashboard/MemesScreen.tsx:802
 #: src/screens/Dashboard/MemesScreen.tsx:846
-#: src/screens/Dashboard/MemesScreen/cardPrimitives.tsx:238
+#: src/screens/Dashboard/MemesScreen/cardPrimitives.tsx:233
 msgid "Opens this card in a larger view"
 msgstr "Opens this card in a larger view"
 
@@ -14144,7 +14127,8 @@ msgstr "Opted out of this starter pack"
 msgid "Option breakdown"
 msgstr "Option breakdown"
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:180
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:190
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:210
 msgid "Optional"
 msgstr "Optional"
 
@@ -14152,7 +14136,7 @@ msgstr "Optional"
 msgid "Optional note explaining the connection"
 msgstr "Optional note explaining the connection"
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:226
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:265
 msgid "Optional public context"
 msgstr "Optional public context"
 
@@ -14279,7 +14263,7 @@ msgstr "Override delegate vote"
 msgid "Overview"
 msgstr "Overview"
 
-#: src/screens/Map/DistrictProfileScreen.tsx:417
+#: src/screens/Map/DistrictProfileScreen.tsx:418
 msgid "Overview view"
 msgstr "Overview view"
 
@@ -14338,7 +14322,7 @@ msgstr "Panel de moderación"
 msgid "PARA cannot confirm the authenticity of the claimed date."
 msgstr "PARA cannot confirm the authenticity of the claimed date."
 
-#: src/screens/Map/DistrictProfileScreen.tsx:342
+#: src/screens/Map/DistrictProfileScreen.tsx:341
 msgid "PARA CIVIC ACTIVITY"
 msgstr "PARA CIVIC ACTIVITY"
 
@@ -14431,8 +14415,8 @@ msgstr "Parties"
 
 #: src/lib/community-activities.ts:142
 #: src/screens/Data/components/MyBaseDashboard.tsx:285
-#: src/screens/Map/DistrictProfileScreen.tsx:421
-#: src/screens/Map/DistrictProfileScreen.tsx:423
+#: src/screens/Map/DistrictProfileScreen.tsx:422
+#: src/screens/Map/DistrictProfileScreen.tsx:424
 #: src/screens/Search/components/AdvancedSearchDialog/ParaPostMetaSection.tsx:104
 msgid "Party"
 msgstr "Party"
@@ -14745,7 +14729,7 @@ msgstr ""
 msgid "Pinned to your feeds"
 msgstr ""
 
-#: src/screens/Map/DistrictProfileScreen.tsx:462
+#: src/screens/Map/DistrictProfileScreen.tsx:463
 msgid "Placeholder preview — will be computed from PARA civic engagement data when district-level party affiliation aggregates are available."
 msgstr "Placeholder preview — will be computed from PARA civic engagement data when district-level party affiliation aggregates are available."
 
@@ -15210,7 +15194,7 @@ msgstr ""
 #: src/components/activity-notifications/SubscribeProfileDialog.tsx:266
 #: src/features/personalCivicTree/map.ts:33
 #: src/Navigation.tsx:543
-#: src/screens/Communities/CommunityProfileScreen/index.tsx:600
+#: src/screens/Communities/CommunityProfileScreen/index.tsx:599
 #: src/screens/Data/components/MyBaseDashboard.tsx:181
 #: src/screens/Data/SeePostsScreen.tsx:38
 #: src/screens/ProfileList/index.tsx:166
@@ -15340,7 +15324,7 @@ msgstr ""
 msgid "Privacy violation of a minor"
 msgstr ""
 
-#: src/screens/Agora/AgoraScreen.tsx:245
+#: src/screens/Agora/AgoraScreen.tsx:249
 #: src/view/com/post-thread/PostHighlights.tsx:93
 msgid "Private"
 msgstr "Private"
@@ -15377,7 +15361,7 @@ msgstr ""
 msgid "profile"
 msgstr ""
 
-#: src/view/shell/bottom-bar/BottomBar.tsx:316
+#: src/view/shell/bottom-bar/BottomBar.tsx:285
 #: src/view/shell/desktop/LeftNav.tsx:856
 #: src/view/shell/Drawer.tsx:103
 #: src/view/shell/Drawer.tsx:789
@@ -15485,7 +15469,7 @@ msgstr "Propuesta"
 msgid "Psst! You can edit who can interact with this post."
 msgstr ""
 
-#: src/screens/Agora/AgoraScreen.tsx:223
+#: src/screens/Agora/AgoraScreen.tsx:227
 #: src/view/com/composer/Composer.tsx:329
 #: src/view/com/post-thread/PostHighlights.tsx:93
 msgid "Public"
@@ -15550,7 +15534,7 @@ msgstr "Public ledger"
 msgid "Public logistics only. Never publish a personal phone without consent."
 msgstr "Public logistics only. Never publish a personal phone without consent."
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:222
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:261
 msgid "Public note"
 msgstr "Public note"
 
@@ -15746,7 +15730,7 @@ msgstr "Quién te cedió su voto. Tu papeleta nunca nombra a tus cedentes."
 msgid "Quita el mensaje citado de la respuesta"
 msgstr "Quita el mensaje citado de la respuesta"
 
-#: src/screens/Agora/AgoraScreen.tsx:420
+#: src/screens/Agora/AgoraScreen.tsx:424
 #: src/screens/Agora/ProposalDetailScreen.tsx:826
 msgid "Quorum"
 msgstr "Quorum"
@@ -16014,11 +15998,11 @@ msgstr "Referendum"
 msgid "Refine posts by type, flair, party, or public figure status."
 msgstr "Refine posts by type, flair, party, or public figure status."
 
-#: src/screens/Agora/AgoraScreen.tsx:961
+#: src/screens/Agora/AgoraScreen.tsx:965
 msgid "Region-scoped proposals where place, residency, and local evidence matter."
 msgstr "Region-scoped proposals where place, residency, and local evidence matter."
 
-#: src/screens/Agora/AgoraScreen.tsx:651
+#: src/screens/Agora/AgoraScreen.tsx:655
 msgid "Regional Map"
 msgstr "Regional Map"
 
@@ -16471,7 +16455,7 @@ msgstr ""
 
 #. Accessibility label for the reply button, verb form followed by number of replies and noun form
 #. placeholder {0}: post.replyCount || 0
-#: src/components/PostControls/index.tsx:225
+#: src/components/PostControls/index.tsx:195
 msgid "Reply ({0, plural, one {# reply} other {# replies}})"
 msgstr ""
 
@@ -16676,10 +16660,6 @@ msgstr "Requests"
 msgid "Requests to join"
 msgstr "Requests to join"
 
-#: src/screens/Map/MapScreen.shared.tsx:1573
-msgid "Requests your device location and centers the map on your state."
-msgstr "Requests your device location and centers the map on your state."
-
 #: src/screens/Settings/AccessibilitySettings.tsx:59
 #: src/screens/Settings/AccessibilitySettings.tsx:64
 msgid "Require alt text before posting"
@@ -16753,7 +16733,7 @@ msgstr ""
 msgid "Reset code"
 msgstr ""
 
-#: src/screens/Map/MapScreen.shared.tsx:1592
+#: src/screens/Map/MapScreen.shared.tsx:1451
 msgid "Reset map view"
 msgstr "Reset map view"
 
@@ -16766,15 +16746,15 @@ msgstr ""
 msgid "Reset password"
 msgstr ""
 
-#: src/screens/Agora/AgoraScreen.tsx:450
+#: src/screens/Agora/AgoraScreen.tsx:454
 msgid "residents only"
 msgstr "residents only"
 
-#: src/screens/Agora/AgoraScreen.tsx:859
+#: src/screens/Agora/AgoraScreen.tsx:863
 msgid "Resolution state"
 msgstr "Resolution state"
 
-#: src/screens/Agora/AgoraScreen.tsx:695
+#: src/screens/Agora/AgoraScreen.tsx:699
 #: src/screens/Data/SeeVotesScreen.tsx:229
 msgid "Resolved"
 msgstr "Resolved"
@@ -17042,8 +17022,8 @@ msgstr "salud mental"
 #: src/components/StarterPack/QrCodeDialog.tsx:206
 #: src/features/liveNow/components/EditLiveDialog.tsx:200
 #: src/features/liveNow/components/EditLiveDialog.tsx:207
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:289
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:301
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:343
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:363
 #: src/features/personalCivicTree/components/CollectionActionsDialog.tsx:124
 #: src/features/personalCivicTree/components/CollectionActionsDialog.tsx:134
 #: src/features/personalCivicTree/components/EditTreeItemDialog.tsx:176
@@ -17102,7 +17082,7 @@ msgstr ""
 msgid "Save draft?"
 msgstr ""
 
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:161
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:170
 msgid "Save evidence, links, notes, books, and references into this collection."
 msgstr "Save evidence, links, notes, books, and references into this collection."
 
@@ -17276,7 +17256,7 @@ msgstr "Sé quien abra el debate sobre esta propuesta."
 #: src/screens/Search/Shell.tsx:541
 #: src/screens/Search/Shell.tsx:594
 #: src/screens/Search/Shell.tsx:735
-#: src/view/shell/bottom-bar/BottomBar.tsx:216
+#: src/view/shell/bottom-bar/BottomBar.tsx:199
 msgid "Search"
 msgstr ""
 
@@ -17438,7 +17418,7 @@ msgstr "Search query"
 msgid "Search states or municipalities..."
 msgstr "Search states or municipalities..."
 
-#: src/screens/Map/MapComponents.tsx:964
+#: src/screens/Map/MapComponents.tsx:1006
 msgid "Search states, districts or cities"
 msgstr "Search states, districts or cities"
 
@@ -17450,7 +17430,7 @@ msgstr "Search topics"
 msgid "Search topics and matters..."
 msgstr "Search topics and matters..."
 
-#: src/screens/Map/MapScreen.shared.tsx:1755
+#: src/screens/Map/MapScreen.shared.tsx:1614
 msgid "Search, filter and explore civic geography"
 msgstr "Search, filter and explore civic geography"
 
@@ -17498,7 +17478,7 @@ msgstr ""
 msgid "See #{tag} posts by user"
 msgstr ""
 
-#: src/screens/Agora/AgoraScreen.tsx:923
+#: src/screens/Agora/AgoraScreen.tsx:927
 #: src/screens/RAQ/RAQMenu.tsx:105
 #: src/screens/RAQ/RAQMenu.tsx:130
 #: src/screens/RAQ/RAQMenu.tsx:167
@@ -17868,7 +17848,7 @@ msgstr ""
 msgid "Señales"
 msgstr "Señales"
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:236
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:275
 msgid "Send book for review"
 msgstr "Send book for review"
 
@@ -17895,7 +17875,7 @@ msgstr "Send error report"
 msgid "Send feedback"
 msgstr ""
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:247
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:286
 msgid "Send for review"
 msgstr "Send for review"
 
@@ -18434,10 +18414,10 @@ msgstr "Shows this item and its connections"
 #: src/view/com/auth/SplashScreen.tsx:125
 #: src/view/com/auth/SplashScreen.web.tsx:124
 #: src/view/com/auth/SplashScreen.web.tsx:132
-#: src/view/shell/bottom-bar/BottomBar.tsx:358
-#: src/view/shell/bottom-bar/BottomBar.tsx:362
-#: src/view/shell/bottom-bar/BottomBarWeb.tsx:261
-#: src/view/shell/bottom-bar/BottomBarWeb.tsx:266
+#: src/view/shell/bottom-bar/BottomBar.tsx:327
+#: src/view/shell/bottom-bar/BottomBar.tsx:331
+#: src/view/shell/bottom-bar/BottomBarWeb.tsx:235
+#: src/view/shell/bottom-bar/BottomBarWeb.tsx:240
 #: src/view/shell/NavSignupCard.tsx:58
 #: src/view/shell/NavSignupCard.tsx:63
 msgid "Sign in"
@@ -18841,7 +18821,7 @@ msgstr "Sorteo programado con Drand"
 msgid "Source: <0>{sourceName}</0>"
 msgstr ""
 
-#: src/screens/Agora/AgoraScreen.tsx:618
+#: src/screens/Agora/AgoraScreen.tsx:622
 msgid "Spaces you participate in"
 msgstr "Spaces you participate in"
 
@@ -18972,11 +18952,11 @@ msgstr ""
 msgid "Starts"
 msgstr "Starts"
 
-#: src/screens/Agora/AgoraScreen.tsx:878
+#: src/screens/Agora/AgoraScreen.tsx:882
 msgid "State entity"
 msgstr "State entity"
 
-#: src/screens/Map/MapScreen.shared.tsx:1754
+#: src/screens/Map/MapScreen.shared.tsx:1613
 msgid "State overview"
 msgstr "State overview"
 
@@ -19087,7 +19067,7 @@ msgctxt "english-only-resource"
 msgid "Submit your report through the Report non-consensual intimate imagery (NCII) form"
 msgstr "Submit your report through the Report non-consensual intimate imagery (NCII) form"
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:237
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:276
 msgid "Submits the book for community review"
 msgstr "Submits the book for community review"
 
@@ -19647,7 +19627,7 @@ msgstr "The moderation service is temporarily unavailable. Please try again late
 msgid "The most interesting proposals are the ones that bring together communities that don't usually agree. The Agora detects these \"emergent coalitions\" and surfaces them as signs of new publics forming."
 msgstr "The most interesting proposals are the ones that bring together communities that don't usually agree. The Agora detects these \"emergent coalitions\" and surfaces them as signs of new publics forming."
 
-#: src/screens/Map/MapScreen.shared.tsx:504
+#: src/screens/Map/MapScreen.shared.tsx:459
 msgid "The native map binary is not available in this build."
 msgstr "The native map binary is not available in this build."
 
@@ -19703,6 +19683,10 @@ msgstr ""
 #: src/screens/Communities/CommunityProfileScreen/CommunityMenu.tsx:127
 msgid "The wiki is empty."
 msgstr "The wiki is empty."
+
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:269
+msgid "The year this book was first published"
+msgstr "The year this book was first published"
 
 #: src/screens/Settings/AppearanceSettings.tsx:139
 msgid "Theme"
@@ -19955,7 +19939,7 @@ msgstr ""
 msgid "This cabildeo is no longer available or was deleted."
 msgstr "This cabildeo is no longer available or was deleted."
 
-#: src/screens/Agora/AgoraScreen.tsx:906
+#: src/screens/Agora/AgoraScreen.tsx:910
 msgid "This cabildeo is pulling the most attention in the selected filters. Read the strongest option, then decide whether to argue, delegate, or vote."
 msgstr "This cabildeo is pulling the most attention in the selected filters. Read the strongest option, then decide whether to argue, delegate, or vote."
 
@@ -20421,7 +20405,7 @@ msgstr ""
 msgid "times"
 msgstr "times"
 
-#: src/features/communityCivicTree/components/ContributeToCommunityTreeDialog.tsx:201
+#: src/features/communityCivicTree/components/ContributeToCommunityTreeDialog.tsx:207
 msgid "Tipo de fuente"
 msgstr "Tipo de fuente"
 
@@ -20435,8 +20419,8 @@ msgid "Tipo de publicación"
 msgstr "Tipo de publicación"
 
 #: src/components/SendErrorReportDialog.tsx:68
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:157
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:211
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:167
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:241
 #: src/features/personalCivicTree/components/EditTreeItemDialog.tsx:126
 #: src/screens/Communities/CommunityWikiPageScreen.tsx:272
 #: src/screens/Communities/CommunityWikiPageScreen.tsx:276
@@ -20662,7 +20646,7 @@ msgstr "Trending GIFs"
 msgid "Trending Matters"
 msgstr "Trending Matters"
 
-#: src/screens/Agora/AgoraScreen.tsx:919
+#: src/screens/Agora/AgoraScreen.tsx:923
 msgid "Trending now"
 msgstr "Trending now"
 
@@ -20781,8 +20765,8 @@ msgstr "Tu voto suma {signed} al conteo: +3 pesa el triple que +1."
 msgid "Turn attention into action"
 msgstr "Turn attention into action"
 
-#: src/screens/Map/DistrictProfileScreen.tsx:428
-#: src/screens/Map/DistrictProfileScreen.tsx:430
+#: src/screens/Map/DistrictProfileScreen.tsx:429
+#: src/screens/Map/DistrictProfileScreen.tsx:431
 msgid "Turnout"
 msgstr "Turnout"
 
@@ -20802,6 +20786,10 @@ msgstr ""
 msgid "Type"
 msgstr "Type"
 
+#: src/features/civicTree/components/BookTitleField.tsx:57
+msgid "Type to search for a book or enter your own"
+msgstr "Type to search for a book or enter your own"
+
 #: src/screens/Messages/components/MessageInput.tsx:202
 msgid "Type your message here"
 msgstr "Type your message here"
@@ -20813,10 +20801,6 @@ msgstr ""
 #: src/screens/Data/components/SortitionAssemblyView.tsx:78
 msgid "Umbral"
 msgstr "Umbral"
-
-#: src/screens/Map/MapScreen.shared.tsx:918
-msgid "Unable to access location. Enable location services in system settings to use Near me."
-msgstr "Unable to access location. Enable location services in system settings to use Near me."
 
 #: src/components/dialogs/DeviceLocationRequestDialog.tsx:86
 msgid "Unable to access location. You'll need to visit your system settings to enable location services for PARA."
@@ -20870,10 +20854,6 @@ msgstr "Unable to load your account"
 #: src/lib/strings/errors.ts:75
 msgid "Unable to resolve handle"
 msgstr ""
-
-#: src/screens/Map/MapScreen.shared.tsx:963
-msgid "Unable to resolve your location right now."
-msgstr "Unable to resolve your location right now."
 
 #: src/screens/Settings/Settings.tsx:536
 msgid "Unapply Pull Request"
@@ -20979,7 +20959,7 @@ msgstr "Undo opt-out from starter pack"
 msgid "Undo opt-out?"
 msgstr "Undo opt-out?"
 
-#: src/features/communityCivicTree/components/ContributeToCommunityTreeDialog.tsx:188
+#: src/features/communityCivicTree/components/ContributeToCommunityTreeDialog.tsx:194
 msgid "Únete a una comunidad para aportar a su árbol cívico."
 msgstr "Únete a una comunidad para aportar a su árbol cívico."
 
@@ -21042,12 +21022,6 @@ msgstr ""
 #: src/screens/CustomFeed/components/CustomFeedHeader.tsx:566
 #: src/screens/Profile/components/ProfileFeedHeader.tsx:564
 msgid "Unlike"
-msgstr ""
-
-#. Accessibility label for the like button when the post has been liked, verb followed by number of likes and noun
-#. placeholder {0}: post.likeCount || 0
-#: src/components/PostControls/index.tsx:262
-msgid "Unlike ({0, plural, one {# like} other {# likes}})"
 msgstr ""
 
 #: src/screens/Messages/components/ChatLocked.tsx:91
@@ -21346,7 +21320,7 @@ msgstr "Upvote ({score, plural, one {# upvote} other {# upvotes}})"
 msgid "Upvotes received over time minus downvotes, across all your communities. You control whether others see your score."
 msgstr "Upvotes received over time minus downvotes, across all your communities. You control whether others see your score."
 
-#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:259
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:313
 #: src/features/personalCivicTree/components/EditTreeItemDialog.tsx:158
 msgid "URL (optional)"
 msgstr "URL (optional)"
@@ -21724,7 +21698,7 @@ msgctxt "Action to view the post the user just created"
 msgid "View"
 msgstr ""
 
-#: src/screens/Map/MapComponents.tsx:1438
+#: src/screens/Map/MapComponents.tsx:1480
 msgid "VIEW"
 msgstr "VIEW"
 
@@ -21940,11 +21914,6 @@ msgstr ""
 msgid "View your default post interaction settings"
 msgstr ""
 
-#: src/view/com/home/HomeHeaderLayout.web.tsx:143
-#: src/view/com/home/HomeHeaderLayoutMobile.tsx:181
-msgid "View your feeds and explore more"
-msgstr ""
-
 #: src/screens/Moderation/index.tsx:286
 msgid "View your moderation inbox"
 msgstr "View your moderation inbox"
@@ -22051,8 +22020,8 @@ msgstr "Vote registered"
 msgid "voted {0}{1}"
 msgstr "voted {0}{1}"
 
-#: src/screens/Agora/AgoraScreen.tsx:397
-#: src/screens/Agora/AgoraScreen.tsx:503
+#: src/screens/Agora/AgoraScreen.tsx:401
+#: src/screens/Agora/AgoraScreen.tsx:507
 #: src/screens/Agora/ProposalDetailScreen.tsx:827
 msgid "votes"
 msgstr "votes"
@@ -22077,11 +22046,11 @@ msgstr "Votes History"
 msgid "Votes this month"
 msgstr "Votes this month"
 
-#: src/screens/Agora/AgoraScreen.tsx:824
+#: src/screens/Agora/AgoraScreen.tsx:828
 msgid "voting"
 msgstr "voting"
 
-#: src/screens/Agora/AgoraScreen.tsx:694
+#: src/screens/Agora/AgoraScreen.tsx:698
 #: src/screens/Data/SeeVotesScreen.tsx:228
 msgid "Voting"
 msgstr "Voting"
@@ -22154,14 +22123,6 @@ msgstr "We could not connect to the service that provides this custom feed. It m
 #: src/view/com/feeds/MissingFeed.tsx:147
 msgid "We could not find this list. It was probably deleted."
 msgstr ""
-
-#: src/screens/Map/MapScreen.shared.tsx:954
-msgid "We could not match your location to a mapped state."
-msgstr "We could not match your location to a mapped state."
-
-#: src/screens/Map/MapScreen.shared.tsx:942
-msgid "We could not resolve your state from this location."
-msgstr "We could not resolve your state from this location."
 
 #: src/screens/Communities/MyCommunitiesScreen.tsx:208
 msgid "We couldn't fetch your communities. Pull down to retry."
@@ -22530,7 +22491,7 @@ msgstr ""
 msgid "Why are you appealing?"
 msgstr ""
 
-#: src/features/communityCivicTree/components/AddBookDialog.tsx:217
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:256
 msgid "Why it matters"
 msgstr "Why it matters"
 
@@ -22585,7 +22546,7 @@ msgstr "Wiki"
 msgid "Wiki page"
 msgstr "Wiki page"
 
-#: src/screens/Agora/AgoraScreen.tsx:411
+#: src/screens/Agora/AgoraScreen.tsx:415
 msgid "window"
 msgstr "window"
 
@@ -22676,6 +22637,16 @@ msgstr ""
 #: src/components/civic/PublicRecordNotice.tsx:74
 msgid "Y no se puede despublicar. Léelo antes de emitirlo."
 msgstr "Y no se puede despublicar. Léelo antes de emitirlo."
+
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:199
+#: src/features/communityCivicTree/components/AddBookDialog.tsx:206
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:268
+msgid "Year published"
+msgstr "Year published"
+
+#: src/features/personalCivicTree/components/AddTreeItemDialog.tsx:274
+msgid "Year published (optional)"
+msgstr "Year published (optional)"
 
 #: src/components/moderation/ReportDialog/index.tsx:994
 #: src/components/moderation/ReportDialog/index.tsx:1003
@@ -22777,7 +22748,7 @@ msgid "You are not following anyone yet"
 msgstr ""
 
 #. placeholder {0}: district.stateName
-#: src/screens/Map/DistrictProfileScreen.tsx:261
+#: src/screens/Map/DistrictProfileScreen.tsx:256
 msgid "You are not in {0}. Some votes may be restricted to residents."
 msgstr "You are not in {0}. Some votes may be restricted to residents."
 
@@ -23389,15 +23360,15 @@ msgstr "Your civic tree could not be loaded."
 msgid "Your collections have no items yet"
 msgstr "Your collections have no items yet"
 
-#: src/screens/Agora/AgoraScreen.tsx:614
+#: src/screens/Agora/AgoraScreen.tsx:618
 msgid "Your Communities"
 msgstr "Your Communities"
 
-#: src/screens/Agora/AgoraScreen.tsx:575
+#: src/screens/Agora/AgoraScreen.tsx:579
 msgid "Your Community Civic Tree"
 msgstr "Your Community Civic Tree"
 
-#: src/screens/Agora/AgoraScreen.tsx:579
+#: src/screens/Agora/AgoraScreen.tsx:583
 msgid "Your community's proposals, evidence, votes, and arguments"
 msgstr "Your community's proposals, evidence, votes, and arguments"
 
@@ -23533,7 +23504,7 @@ msgstr ""
 msgid "Your name, avatar, the name of the group chat, and the number of members will be visible to everyone."
 msgstr "Your name, avatar, the name of the group chat, and the number of members will be visible to everyone."
 
-#: src/screens/Agora/AgoraScreen.tsx:1003
+#: src/screens/Agora/AgoraScreen.tsx:1007
 msgid "Your party desk"
 msgstr "Your party desk"
 
