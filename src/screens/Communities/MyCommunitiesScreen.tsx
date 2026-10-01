@@ -9,6 +9,10 @@ import {
 import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
+import {
+  COMPASS_COLORS,
+  COMPASS_POSITION_NAMES,
+} from '#/lib/compass/compassColors'
 import {PARTY_FEED_PROFILES} from '#/lib/party-feeds'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
@@ -21,6 +25,7 @@ import {MagnifyingGlass_Stroke2_Corner0_Rounded as SearchIcon} from '#/component
 import * as Layout from '#/components/Layout'
 import {Loader} from '#/components/Loader'
 import {Text} from '#/components/Typography'
+import {classifyCommunityBoard, groupBoardsByState} from './communityGrouping'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -45,12 +50,13 @@ function getRoleLabel(board: CommunityBoardView): string {
 // Screen
 // ─────────────────────────────────────────────────────────────────────────────
 
+const TABS = ['All', 'Parties', 'Ninths', 'States', 'Other'] as const
+type Tab = (typeof TABS)[number]
+
 export function MyCommunitiesScreen() {
   const t = useTheme()
   const navigation = useNavigation<NavigationProp>()
-  const [activeTab, setActiveTab] = useState<'All' | 'Parties' | 'Geographic'>(
-    'All',
-  )
+  const [activeTab, setActiveTab] = useState<Tab>('All')
   const [searchQuery, setSearchQuery] = useState('')
 
   const {
@@ -76,26 +82,60 @@ export function MyCommunitiesScreen() {
     )
   }, [joinedBoards, searchQuery])
 
+  const classified = useMemo(
+    () =>
+      filteredBoards.map(board => ({board, ...classifyCommunityBoard(board)})),
+    [filteredBoards],
+  )
+
   const partyBoards = useMemo(
-    () => filteredBoards.filter(b => b.quadrant === 'political'),
+    () => classified.filter(c => c.group === 'party').map(c => c.board),
+    [classified],
+  )
+
+  const ninthBoards = useMemo(
+    () => classified.filter(c => c.group === 'ninth').map(c => c.board),
+    [classified],
+  )
+
+  const stateGroups = useMemo(
+    () => groupBoardsByState(filteredBoards),
     [filteredBoards],
   )
 
-  const geographicBoards = useMemo(
-    () => filteredBoards.filter(b => b.quadrant !== 'political'),
-    [filteredBoards],
+  const stateBoardCount = useMemo(
+    () => stateGroups.reduce((sum, g) => sum + g.boards.length, 0),
+    [stateGroups],
   )
 
-  const displayBoards = useMemo(() => {
-    switch (activeTab) {
-      case 'Parties':
-        return partyBoards
-      case 'Geographic':
-        return geographicBoards
-      default:
-        return filteredBoards
-    }
-  }, [activeTab, partyBoards, geographicBoards, filteredBoards])
+  const otherBoards = useMemo(
+    () => classified.filter(c => c.group === 'other').map(c => c.board),
+    [classified],
+  )
+
+  const tabCounts: Record<Tab, number> = {
+    All: filteredBoards.length,
+    Parties: partyBoards.length,
+    Ninths: ninthBoards.length,
+    States: stateBoardCount,
+    Other: otherBoards.length,
+  }
+
+  const showParties =
+    (activeTab === 'All' || activeTab === 'Parties') && partyBoards.length > 0
+  const showNinths =
+    (activeTab === 'All' || activeTab === 'Ninths') && ninthBoards.length > 0
+  const showStates =
+    (activeTab === 'All' || activeTab === 'States') && stateGroups.length > 0
+  const showOther =
+    (activeTab === 'All' || activeTab === 'Other') && otherBoards.length > 0
+  const hasBoards = showParties || showNinths || showStates || showOther
+
+  const openBoard = (board: CommunityBoardView) =>
+    navigation.navigate('CommunityProfile', {
+      communityId: board.communityId,
+      communityName: board.name,
+    })
 
   return (
     <Layout.Screen testID="myCommunitiesScreen">
@@ -105,9 +145,6 @@ export function MyCommunitiesScreen() {
           <Layout.Header.TitleText>
             <Trans>My Communities</Trans>
           </Layout.Header.TitleText>
-          <Layout.Header.SubtitleText>
-            <Trans>Organized by Parties and Geographic Regions</Trans>
-          </Layout.Header.SubtitleText>
         </Layout.Header.Content>
       </Layout.Header.Outer>
 
@@ -150,13 +187,8 @@ export function MyCommunitiesScreen() {
         <View style={[styles.tabBar, t.atoms.bg]}>
           <Layout.Center>
             <View style={styles.tabRow}>
-              {(['All', 'Parties', 'Geographic'] as const).map(tab => {
-                const count =
-                  tab === 'All'
-                    ? filteredBoards.length
-                    : tab === 'Parties'
-                      ? partyBoards.length
-                      : geographicBoards.length
+              {TABS.map(tab => {
+                const count = tabCounts[tab]
                 return (
                   <TouchableOpacity
                     accessibilityRole="button"
@@ -219,37 +251,52 @@ export function MyCommunitiesScreen() {
                 <ButtonText>Retry</ButtonText>
               </Button>
             </View>
-          ) : displayBoards.length > 0 ? (
+          ) : hasBoards ? (
             <View style={styles.sectionContent}>
-              {activeTab !== 'Geographic' && partyBoards.length > 0 && (
+              {showParties && (
                 <Section title="Parties" prefix="p/">
                   {partyBoards.map(board => (
                     <CommunityCard
                       key={board.uri}
                       board={board}
-                      onPress={() =>
-                        navigation.navigate('CommunityProfile', {
-                          communityId: board.communityId,
-                          communityName: board.name,
-                        })
-                      }
+                      onPress={() => openBoard(board)}
                     />
                   ))}
                 </Section>
               )}
 
-              {activeTab !== 'Parties' && geographicBoards.length > 0 && (
-                <Section title="Geographic Regions" prefix="g/">
-                  {geographicBoards.map(board => (
+              {showNinths && (
+                <Section title="Ninths" prefix="n/">
+                  {ninthBoards.map(board => (
                     <CommunityCard
                       key={board.uri}
                       board={board}
-                      onPress={() =>
-                        navigation.navigate('CommunityProfile', {
-                          communityId: board.communityId,
-                          communityName: board.name,
-                        })
-                      }
+                      onPress={() => openBoard(board)}
+                    />
+                  ))}
+                </Section>
+              )}
+
+              {showStates &&
+                stateGroups.map(group => (
+                  <Section key={group.state} title={group.state} prefix="g/">
+                    {group.boards.map(board => (
+                      <CommunityCard
+                        key={board.uri}
+                        board={board}
+                        onPress={() => openBoard(board)}
+                      />
+                    ))}
+                  </Section>
+                ))}
+
+              {showOther && (
+                <Section title="Other communities" prefix="c/">
+                  {otherBoards.map(board => (
+                    <CommunityCard
+                      key={board.uri}
+                      board={board}
+                      onPress={() => openBoard(board)}
                     />
                   ))}
                 </Section>
@@ -367,7 +414,11 @@ function CommunityCard({
   onPress: () => void
 }) {
   const t = useTheme()
-  const color = getPartyColor(board.name) || t.palette.primary_500
+  const classification = classifyCommunityBoard(board)
+  const color =
+    classification.group === 'ninth'
+      ? COMPASS_COLORS[classification.ninth]
+      : getPartyColor(board.name) || t.palette.primary_500
   const role = getRoleLabel(board)
 
   return (
@@ -394,9 +445,13 @@ function CommunityCard({
             </View>
           </View>
           <Text style={[styles.cardUri, t.atoms.text_contrast_medium]}>
-            {board.quadrant === 'political'
+            {classification.group === 'party'
               ? `p/${board.slug}`
-              : `g/${board.slug}`}
+              : classification.group === 'ninth'
+                ? COMPASS_POSITION_NAMES[classification.ninth]
+                : classification.group === 'state'
+                  ? `g/${board.slug}`
+                  : `c/${board.slug}`}
           </Text>
 
           <View style={styles.cardStats}>

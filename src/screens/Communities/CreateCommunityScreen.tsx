@@ -16,6 +16,7 @@ import {
   COMPASS_POSITION_NAMES,
   type CompassPositionId,
 } from '#/lib/compass/compassColors'
+import {MEXICAN_STATES} from '#/lib/constants/mexico'
 import {useHorizontalGovernanceEnabled} from '#/lib/hooks/useHorizontalGovernance'
 import {type NavigationProp} from '#/lib/routes/types'
 import {normalizeCommunitySearchName} from '#/lib/strings/community-names'
@@ -46,6 +47,7 @@ export function CreateCommunityScreen() {
 
   const [name, setName] = useState('')
   const [quadrant, setQuadrant] = useState('')
+  const [region, setRegion] = useState('')
   const [description, setDescription] = useState('')
   const [founderStarterPackName, setFounderStarterPackName] = useState('')
   const [governanceMode, setGovernanceMode] = useState<
@@ -142,6 +144,7 @@ export function CreateCommunityScreen() {
       const result = await createMutation.mutateAsync({
         name: name.trim(),
         quadrant: quadrant.trim(),
+        region: region || undefined,
         description: description.trim() || undefined,
         founderStarterPackName: founderStarterPackName.trim() || undefined,
         governanceMode: isHorizontalGovernanceEnabled
@@ -354,6 +357,7 @@ export function CreateCommunityScreen() {
                   value={quadrant}
                   onChange={setQuadrant}
                 />
+                <StatePicker theme={t} value={region} onChange={setRegion} />
                 <Field
                   theme={t}
                   label="Description (optional)"
@@ -761,6 +765,83 @@ function NonantPicker({
               ))}
             </Menu.Group>
           ))}
+        </Menu.Outer>
+      </Menu.Root>
+    </View>
+  )
+}
+
+/**
+ * Optional state selector. A community tied to one Mexican state lists under
+ * that state in My Communities; leave it unset for any other community.
+ */
+function StatePicker({
+  theme,
+  value,
+  onChange,
+}: {
+  theme: ReturnType<typeof useTheme>
+  value: string
+  onChange: (next: string) => void
+}) {
+  const states = MEXICAN_STATES.filter(state => state !== 'All')
+
+  return (
+    <View style={styles.field}>
+      <Text style={[styles.fieldLabel, theme.atoms.text]}>
+        State (optional)
+      </Text>
+      <Text style={[styles.fieldDescription, theme.atoms.text_contrast_medium]}>
+        The Mexican state this community belongs to, if it belongs to one.
+      </Text>
+
+      <Menu.Root>
+        <Menu.Trigger label="Select a state">
+          {({props: menuProps, state}) => (
+            <TouchableOpacity
+              {...menuProps}
+              activeOpacity={0.7}
+              style={[
+                styles.input,
+                styles.nonantTrigger,
+                {
+                  borderColor: state.focused
+                    ? theme.palette.primary_500
+                    : theme.palette.contrast_100,
+                  backgroundColor: theme.atoms.bg.backgroundColor,
+                },
+              ]}>
+              <Text
+                numberOfLines={1}
+                style={[
+                  styles.nonantValue,
+                  value
+                    ? theme.atoms.text
+                    : {color: theme.palette.contrast_400},
+                ]}>
+                {value || 'No state'}
+              </Text>
+              <ChevronDownIcon size="sm" fill={theme.palette.contrast_500} />
+            </TouchableOpacity>
+          )}
+        </Menu.Trigger>
+
+        <Menu.Outer>
+          <Menu.Group>
+            <Menu.Item label="No state" onPress={() => onChange('')}>
+              <Menu.ItemText>No state</Menu.ItemText>
+              <Menu.ItemRadio selected={value === ''} />
+            </Menu.Item>
+            {states.map(state => (
+              <Menu.Item
+                key={state}
+                label={state}
+                onPress={() => onChange(state)}>
+                <Menu.ItemText>{state}</Menu.ItemText>
+                <Menu.ItemRadio selected={value === state} />
+              </Menu.Item>
+            ))}
+          </Menu.Group>
         </Menu.Outer>
       </Menu.Root>
     </View>
