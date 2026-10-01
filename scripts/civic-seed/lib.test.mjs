@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import events from 'node:events'
+import fs from 'node:fs'
 import http from 'node:http'
 import path from 'node:path'
 import test from 'node:test'
@@ -24,7 +25,6 @@ const MANIFEST_PATH = path.resolve(__dirname, 'manifest.v1.json')
 const TID_COLLECTIONS = new Set([
   'app.bsky.feed.like',
   'app.bsky.feed.post',
-  'app.bsky.feed.repost',
   'app.bsky.graph.follow',
   'app.bsky.graph.verification',
   'com.para.civic.cabildeo',
@@ -145,7 +145,7 @@ test('apply is idempotent and reset removes only managed records', async () => {
   )
   assert.ok(operations.some(op => op.collection === 'app.bsky.feed.post'))
   assert.ok(operations.some(op => op.collection === 'app.bsky.feed.like'))
-  assert.ok(operations.some(op => op.collection === 'app.bsky.feed.repost'))
+  assert.ok(!operations.some(op => op.collection === 'app.bsky.feed.repost'))
   assert.ok(operations.some(op => op.group === 'demo-reply-post'))
   assert.ok(operations.some(op => op.recordBuilder))
   assert.ok(operations.some(op => op.refKey))
@@ -162,7 +162,7 @@ test('apply is idempotent and reset removes only managed records', async () => {
   assert.equal(first.failed, 0)
   const records = writer.dumpValues()
   assert.ok(records.some(record => record.$type === 'app.bsky.feed.like'))
-  assert.ok(records.some(record => record.$type === 'app.bsky.feed.repost'))
+  assert.ok(!records.some(record => record.$type === 'app.bsky.feed.repost'))
   assert.ok(
     records.some(
       record => record.$type === 'app.bsky.feed.post' && record.reply,
@@ -216,7 +216,7 @@ test('buildSeedOperations assigns valid TIDs to tid-keyed collections', async ()
   }
 })
 
-test('demo_social_graph resolves reply, like, and repost refs in memory', async () => {
+test('demo_social_graph resolves reply and like refs in memory', async () => {
   const manifest = {
     seedId: 'demo-social-graph-test',
     version: '1.0.0',
@@ -252,7 +252,6 @@ test('demo_social_graph resolves reply, like, and repost refs in memory', async 
         postsPerActor: 2,
         replyCount: 3,
         likesPerPost: 1,
-        repostEvery: 2,
       },
     ],
   }
@@ -266,7 +265,7 @@ test('demo_social_graph resolves reply, like, and repost refs in memory', async 
   assert.ok(operations.some(op => op.group === 'demo-post'))
   assert.ok(operations.some(op => op.group === 'demo-reply-post'))
   assert.ok(operations.some(op => op.collection === 'app.bsky.feed.like'))
-  assert.ok(operations.some(op => op.collection === 'app.bsky.feed.repost'))
+  assert.ok(!operations.some(op => op.collection === 'app.bsky.feed.repost'))
 
   const writer = new InMemorySeedWriter()
   const applied = await applySeedOperations(operations, writer, {dryRun: false})
@@ -283,6 +282,20 @@ test('demo_social_graph resolves reply, like, and repost refs in memory', async 
   )
   assert.ok(storedRecords.some(record => record.$type === 'app.bsky.feed.like'))
   assert.ok(
-    storedRecords.some(record => record.$type === 'app.bsky.feed.repost'),
+    !storedRecords.some(record => record.$type === 'app.bsky.feed.repost'),
+  )
+})
+
+test('PARA has no reposts: the seed never writes one and rejects manifests that ask', () => {
+  const manifest = JSON.parse(fs.readFileSync(MANIFEST_PATH, 'utf8'))
+  assert.equal(JSON.stringify(manifest).includes('repost'), false)
+
+  assert.throws(
+    () =>
+      buildSeedOperations({
+        manifest: {...manifest, reposts: [{actor: 'x', subjectRef: 'y'}]},
+        actorsByAlias: {},
+      }),
+    /no reposts/,
   )
 })

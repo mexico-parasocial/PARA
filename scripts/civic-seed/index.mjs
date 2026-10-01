@@ -17,6 +17,7 @@ import {
   syncAppViewFromIntrospection,
   toResetOperations,
 } from './lib.mjs'
+import {seedDemoContent} from './demo-content.mjs'
 
 async function main() {
   const config = resolveCliConfig(process.argv.slice(2))
@@ -123,6 +124,18 @@ async function main() {
       console.log(
         `AppView sync done. before_cursor=${sync.before?.runnerCursor ?? 'null'} after_cursor=${sync.after?.runnerCursor ?? 'null'} last_seq=${sync.after?.lastSeq ?? sync.before?.lastSeq ?? 'null'}`,
       )
+    }
+    // Memes with comments and reactions, a personal civic tree and two
+    // community trees, written as the dev-env demo accounts. It does not
+    // depend on the manifest writes above, so it runs even when some of those
+    // are refused.
+    if (config.demoContent) {
+      await seedDemoContent({
+        service,
+        introspectUrl: config.introspectUrl,
+        dryRun: config.dryRun,
+        verbose: config.verbose,
+      })
     }
   } else {
     const resetOps = toResetOperations(operations)
