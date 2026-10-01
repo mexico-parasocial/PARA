@@ -95,7 +95,9 @@ export default function RAQResultsScreen({route}: Props) {
   }, [clearPublishTimers])
 
   const handlePublish = useCallback(() => {
-    if (!currentAccount) return
+    if (!currentAccount || !route.params.answers || isPublishing) return
+    const answers = route.params.answers
+    publishMutation.reset()
     cancelRef.current = false
     setShowCountdown(true)
     setCountdown(5)
@@ -120,10 +122,7 @@ export default function RAQResultsScreen({route}: Props) {
       if (cancelRef.current) return
 
       const assessmentRecord = {
-        answers: results.map((r: AxisResult) => ({
-          questionId: r.id,
-          value: r.rawScore,
-        })),
+        answers,
         results: results.map((r: AxisResult) => ({
           axisId: r.id,
           axisTitle: r.title,
@@ -141,12 +140,12 @@ export default function RAQResultsScreen({route}: Props) {
         ideology: {
           name: primary.name,
           description: primary.description,
-          matchPercent: 100, // calculated as best match
+          matchPercent: primary.matchPercent,
         },
         secondaryIdeology: {
           name: secondary.name,
           description: secondary.description,
-          matchPercent: 90, // approximate
+          matchPercent: secondary.matchPercent,
         },
         partyMatches: partyMatches.slice(0, 3).map(m => ({
           partyId: m.party.id,
@@ -166,17 +165,17 @@ export default function RAQResultsScreen({route}: Props) {
           setIsPublishing(false)
           setCountdown(5)
         },
-        onError: (err: Error) => {
+        onError: () => {
           setShowCountdown(false)
           setIsPublishing(false)
           setCountdown(5)
-          // eslint-disable-next-line no-console
-          console.error('Failed to publish RAQ assessment:', err)
         },
       })
     }, 6600)
   }, [
     currentAccount,
+    route.params.answers,
+    isPublishing,
     results,
     x,
     y,
@@ -547,13 +546,36 @@ export default function RAQResultsScreen({route}: Props) {
           <Button
             label={_(msg`Publish to Profile`)}
             onPress={handlePublish}
-            disabled={isPublishing}
+            disabled={isPublishing || !currentAccount || !route.params.answers}
             size="large"
             variant="solid">
             <ButtonText>
               <Trans>Publish to Profile</Trans>
             </ButtonText>
           </Button>
+          {publishMutation.isError && (
+            <Text style={{color: t.palette.negative_400}}>
+              <Trans>Something went wrong! Please try again.</Trans>
+            </Text>
+          )}
+          {publishMutation.isSuccess && (
+            <Text style={t.atoms.text_contrast_medium}>
+              <Trans>Alignment published</Trans>
+            </Text>
+          )}
+          {!currentAccount && (
+            <Text style={t.atoms.text_contrast_medium}>
+              <Trans>Sign in to publish your alignment</Trans>
+            </Text>
+          )}
+          {!route.params.answers && (
+            <Text style={t.atoms.text_contrast_medium}>
+              <Trans>
+                Calculate your assessment again to publish a current answer
+                snapshot.
+              </Trans>
+            </Text>
+          )}
           <Text style={[styles.publishHint, t.atoms.text_contrast_medium]}>
             {isPublishing
               ? _(msg`Publishing...`)

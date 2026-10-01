@@ -118,7 +118,9 @@ export const OpenQuestionAnchor = memo(function OpenQuestionAnchor({
           <Text
             style={[a.text_md, a.leading_snug, t.atoms.text_contrast_medium]}
             numberOfLines={1}>
-            @{question.author.handle}
+            {question.author.handle.startsWith('did:')
+              ? question.author.handle
+              : `@${question.author.handle}`}
           </Text>
         </View>
       </View>
@@ -183,17 +185,6 @@ export const OpenQuestionAnchor = memo(function OpenQuestionAnchor({
             </Text>{' '}
             <Trans>replies</Trans>
           </Text>
-        </View>
-
-        {/* Controls — mirrors ThreadItemAnchor PostControls area */}
-        <View style={[a.pt_sm, a.pb_2xs, {marginLeft: -5}]}>
-          <RedditVoteButton
-            score={question.replyCount * 2}
-            currentVote="none"
-            hasBeenToggled={false}
-            onUpvote={() => {}}
-            onDownvote={() => {}}
-          />
         </View>
       </View>
     </View>
@@ -281,7 +272,9 @@ export const OpenQuestionReply = memo(function OpenQuestionReply({
                   a.leading_snug,
                   t.atoms.text_contrast_medium,
                 ]}>
-                @{reply.author.handle}
+                {reply.author.handle.startsWith('did:')
+                  ? reply.author.handle
+                  : `@${reply.author.handle}`}
               </Text>
               {reply.timestamp ? (
                 <>
@@ -313,6 +306,7 @@ export const OpenQuestionReply = memo(function OpenQuestionReply({
             {/* Controls — mirrors PostControls row */}
             <View style={[a.flex_row, a.align_center, a.gap_md, a.pb_sm]}>
               <RedditVoteButton
+                disabled={!onVote}
                 score={reply.votes}
                 currentVote={toVoteState(reply.viewerVote)}
                 hasBeenToggled={false}
@@ -321,7 +315,7 @@ export const OpenQuestionReply = memo(function OpenQuestionReply({
                   onVote?.(reply, reply.viewerVote === -1 ? 0 : -1)
                 }
               />
-              <ReplyButton onPress={() => onReply?.(reply)} />
+              {onReply && <ReplyButton onPress={() => onReply(reply)} />}
             </View>
           </View>
         </View>
@@ -418,7 +412,9 @@ const OpenQuestionNestedReply = memo(function OpenQuestionNestedReply({
                   a.leading_snug,
                   t.atoms.text_contrast_medium,
                 ]}>
-                @{reply.author.handle}
+                {reply.author.handle.startsWith('did:')
+                  ? reply.author.handle
+                  : `@${reply.author.handle}`}
               </Text>
             </View>
 
@@ -447,6 +443,7 @@ const OpenQuestionNestedReply = memo(function OpenQuestionNestedReply({
 
                 <View style={[a.flex_row, a.align_center, a.gap_md, a.pb_sm]}>
                   <RedditVoteButton
+                    disabled={!onVote}
                     score={reply.votes}
                     currentVote={toVoteState(reply.viewerVote)}
                     hasBeenToggled={false}
@@ -457,7 +454,7 @@ const OpenQuestionNestedReply = memo(function OpenQuestionNestedReply({
                       onVote?.(reply, reply.viewerVote === -1 ? 0 : -1)
                     }
                   />
-                  <ReplyButton onPress={() => onReply?.(reply)} />
+                  {onReply && <ReplyButton onPress={() => onReply(reply)} />}
                 </View>
               </View>
             </View>

@@ -6,11 +6,13 @@ import {
   submitProposalVote,
   submitProposedQuestion,
 } from '#/lib/services/raq'
+import {INFLUENCE_QUERY_KEY} from '#/state/queries/influence'
 import {
   RAQ_AXIS_VOTES_QUERY_KEY,
   RAQ_PROPOSED_QUESTIONS_QUERY_KEY,
 } from '#/state/queries/raq'
 import {OPEN_QUESTIONS_QUERY_KEY} from '#/state/queries/useOpenQuestions'
+import {PROPOSED_QUESTIONS_QUERY_KEY} from '#/state/queries/useProposedQuestions'
 import {useAgent} from '#/state/session'
 
 // ------------------------------------------------------------------
@@ -52,10 +54,11 @@ export function useSubmitProposedQuestionMutation() {
       await submitProposedQuestion(agent, text, targetAxis, targetCommunity)
     },
     onSettled: () => {
+      void queryClient.invalidateQueries({
+        queryKey: PROPOSED_QUESTIONS_QUERY_KEY,
+      })
       queryClient.invalidateQueries({
-        queryKey: RAQ_PROPOSED_QUESTIONS_QUERY_KEY(
-          agent.appviewClient.assertDid,
-        ),
+        queryKey: RAQ_PROPOSED_QUESTIONS_QUERY_KEY(agent.session?.did ?? ''),
       })
     },
   })
@@ -95,13 +98,17 @@ export function useVoteOnProposedQuestionMutation() {
       direction,
     }: {
       uri: string
-      direction: 'up' | 'down'
+      direction: 'up' | 'down' | 'none'
     }) => {
-      const value = direction === 'up' ? 1 : -1
+      const value = direction === 'up' ? 1 : direction === 'down' ? -1 : 0
       await submitProposalVote(agent, uri, value)
     },
     onSettled: () => {
+      void queryClient.invalidateQueries({queryKey: INFLUENCE_QUERY_KEY})
       queryClient.invalidateQueries({queryKey: ['raq_proposed_questions']})
+      void queryClient.invalidateQueries({
+        queryKey: ['raq', 'proposed-questions'],
+      })
     },
   })
 }

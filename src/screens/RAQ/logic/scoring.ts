@@ -152,15 +152,20 @@ export function getNinth(x: number, y: number): string {
 }
 
 export function calculateIdeology(userVector: number[]): {
-  primary: IdeologyArchetype
-  secondary: IdeologyArchetype
+  primary: IdeologyArchetype & {matchPercent: number}
+  secondary: IdeologyArchetype & {matchPercent: number}
 } {
   const sorted = IDEOLOGIES.map(ideo => {
     let distance = 0
     for (let i = 0; i < 12; i++) {
       distance += Math.pow(userVector[i] - ideo.vector[i], 2)
     }
-    return {...ideo, distance: Math.sqrt(distance)}
+    const rmsDistance = Math.sqrt(distance / ideo.vector.length)
+    return {
+      ...ideo,
+      distance: Math.sqrt(distance),
+      matchPercent: Math.round(Math.max(0, 100 - rmsDistance)),
+    }
   }).sort((a, b) => a.distance - b.distance)
 
   return {primary: sorted[0], secondary: sorted[1]}

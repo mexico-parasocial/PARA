@@ -1,5 +1,5 @@
 import {memo, useCallback, useState} from 'react'
-import {Alert, SectionList, StyleSheet, View} from 'react-native'
+import {SectionList, StyleSheet, View} from 'react-native'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -18,7 +18,9 @@ import {calculateRAQResults} from '#/screens/RAQ/logic/scoring'
 import {useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import * as Layout from '#/components/Layout'
-import {VotingButtonHorizontal} from '#/components/VotingButtonHorizontal'
+import * as Prompt from '#/components/Prompt'
+import {AnswerScale} from './components/AnswerScale'
+import {assessmentAnswers} from './raq-utils'
 
 // ------------------------------------------------------------------
 // 1. PERFORMANCE OPTIMIZATION
@@ -29,12 +31,12 @@ const QuestionRow = memo(
   ({
     item,
     onVote,
-    initialVote,
+    value,
     index,
   }: {
     item: QuestionType
     onVote: (id: string, val: number) => void
-    initialVote: number
+    value?: number
     index: number
   }) => {
     const t = useTheme()
@@ -50,10 +52,7 @@ const QuestionRow = memo(
           {item.text}
         </Text>
         <View style={styles.voteWrapper}>
-          <VotingButtonHorizontal
-            initialVote={initialVote}
-            onVoteChange={val => onVote(item.id, val)}
-          />
+          <AnswerScale value={value} onChange={val => onVote(item.id, val)} />
         </View>
       </View>
     )
@@ -65,6 +64,7 @@ export default function RAQScreen() {
   const t = useTheme()
   const {_} = useLingui()
   const navigation = useNavigation<NavigationProp>()
+  const incomplete = Prompt.usePromptControl()
   // State to hold answers: { '1_1': 2, '1_2': -1, ... }
   const [answers, setAnswers] = useState<Record<string, number>>(
     persisted.get('raqAnswers') || {},
@@ -94,31 +94,27 @@ export default function RAQScreen() {
     0,
   )
 
+  const answeredCount = assessmentAnswers(answers).length
   const calculateResults = () => {
-    const answeredCount = Object.keys(answers).length
-
-    if (answeredCount < totalQuestions) {
-      Alert.alert(
-        _(msg`Incomplete`),
-        _(
-          msg`You have answered ${answeredCount}/${totalQuestions} questions. Skipped questions will be treated as Neutral (0).`,
-        ),
-        [
-          {text: _(msg`Cancel`), style: 'cancel'},
-          {text: _(msg`Calculate Anyway`), onPress: () => performCalculation()},
-        ],
-      )
-    } else {
-      performCalculation()
-    }
+    if (answeredCount < totalQuestions) incomplete.open()
+    else performCalculation()
   }
 
   const performCalculation = () => {
-    const results = calculateRAQResults(answers, RAQ_DATA)
-    console.log('FINAL RESULTS:', JSON.stringify(results, null, 2))
+    const results = calculateRAQResults(
+      Object.fromEntries(
+        assessmentAnswers(answers).map(answer => [
+          answer.questionId,
+          answer.value,
+        ]),
+      ),
+      RAQ_DATA,
+    )
     void persisted.write('raqResults', results)
-    // @ts-ignore
-    navigation.navigate('RAQResults', {results})
+    navigation.navigate('RAQResults', {
+      results,
+      answers: assessmentAnswers(answers),
+    })
   }
 
   // ------------------------------------------------------------------
@@ -182,7 +178,7 @@ export default function RAQScreen() {
         <QuestionRow
           item={item}
           onVote={handleVote}
-          initialVote={answers[item.id] || 0}
+          value={answers[item.id]}
           index={absoluteIndex}
         />
       )
@@ -206,7 +202,10 @@ export default function RAQScreen() {
       <Layout.Center style={[styles.container, t.atoms.bg]}>
         <View style={[styles.header, t.atoms.bg, t.atoms.border_contrast_low]}>
           <Text style={[styles.headerSubtitle, t.atoms.text_contrast_medium]}>
-            <Trans>Drag left to disagree (-3), right to agree (+3).</Trans>
+            <Trans>
+              Choose an answer from disagree (-3) to agree (+3). Select 0 for
+              neutral.
+            </Trans>
           </Text>
         </View>
 
@@ -243,13 +242,13 @@ export default function RAQScreen() {
                   styles.progressFill,
                   {
                     backgroundColor: t.palette.primary_500,
-                    width: `${(Object.keys(answers).length / totalQuestions) * 100}%`,
+                    width: `${(answeredCount / totalQuestions) * 100}%`,
                   },
                 ]}
               />
             </View>
             <Text style={[styles.progressText, t.atoms.text_contrast_medium]}>
-              {Object.keys(answers).length}/{totalQuestions}
+              {answeredCount}/{totalQuestions}
             </Text>
           </View>
 
@@ -266,6 +265,15 @@ export default function RAQScreen() {
           </Button>
         </View>
       </Layout.Center>
+      <Prompt.Basic
+        control={incomplete}
+        title={_(msg`Incomplete`)}
+        description={_(
+          msg`You have answered ${answeredCount}/${totalQuestions} questions. Skipped questions will be treated as Neutral (0).`,
+        )}
+        confirmButtonCta={_(msg`Calculate Anyway`)}
+        onConfirm={performCalculation}
+      />
     </Layout.Screen>
   )
 }

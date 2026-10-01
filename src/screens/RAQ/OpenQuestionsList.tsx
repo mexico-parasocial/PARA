@@ -6,49 +6,40 @@ import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
-import {OPEN_QUESTIONS as STARTER_OPEN_QUESTIONS} from '#/lib/mock-data'
 import {type NavigationProp} from '#/lib/routes/types'
 import {useOpenQuestions} from '#/state/queries/useOpenQuestions'
 import {Text} from '#/view/com/util/text/Text'
 import {TimeElapsed} from '#/view/com/util/TimeElapsed'
 import {UserAvatar} from '#/view/com/util/UserAvatar'
-import {
-  mapOpenQuestionPosts,
-  mapStarterOpenQuestions,
-} from '#/screens/RAQ/open-questions-utils'
+import {mapOpenQuestionPosts} from '#/screens/RAQ/open-questions-utils'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
+import * as Dialog from '#/components/Dialog'
 import * as Layout from '#/components/Layout'
 import {ListMaybePlaceholder} from '#/components/Lists'
-import {RedditVoteButton} from '#/components/PostControls/VoteButton'
+import {AddOpenQuestionDialog} from './components/AddOpenQuestionDialog'
 
 export default function OpenQuestionsListScreen() {
   const t = useTheme()
   const {_} = useLingui()
   const navigation = useNavigation<NavigationProp>()
   const insets = useSafeAreaInsets()
+  const ask = Dialog.useDialogControl()
 
   const {
     data: openQuestions = [],
     isFetched,
     isLoading,
     isError,
+    isRefetching,
     refetch,
   } = useOpenQuestions()
 
-  const questions = useMemo(() => {
-    const liveQuestions = mapOpenQuestionPosts(openQuestions)
-    if (liveQuestions.length || !isFetched || isError) {
-      return liveQuestions
-    }
-    return mapStarterOpenQuestions(STARTER_OPEN_QUESTIONS)
-  }, [isError, isFetched, openQuestions])
-
+  const questions = useMemo(
+    () => mapOpenQuestionPosts(openQuestions),
+    [openQuestions],
+  )
   const navigateToQuestion = (item: (typeof questions)[0]) => {
-    if (item.isStarterPrompt) {
-      navigation.navigate('CreatePost')
-      return
-    }
     navigation.navigate('OpenQuestionThread', {id: item.id})
   }
 
@@ -70,22 +61,9 @@ export default function OpenQuestionsListScreen() {
         {item.text.trim()}
       </Text>
       <View style={styles.footer}>
-        <View style={{flexDirection: 'row', alignItems: 'center', gap: 12}}>
-          <RedditVoteButton
-            score={item.replyCount * 2}
-            currentVote="none"
-            hasBeenToggled={false}
-            onUpvote={() => console.log('Upvote')}
-            onDownvote={() => console.log('Downvote')}
-          />
-          <Text style={[t.atoms.text_contrast_medium, a.text_sm]}>
-            {item.isStarterPrompt ? (
-              <Trans>Starter prompt</Trans>
-            ) : (
-              <Trans>{item.replyCount} replies</Trans>
-            )}
-          </Text>
-        </View>
+        <Text style={[t.atoms.text_contrast_medium, a.text_sm]}>
+          <Trans>{item.replyCount} replies</Trans>
+        </Text>
         <Button
           label={_(msg`Reply`)}
           size="tiny"
@@ -114,7 +92,7 @@ export default function OpenQuestionsListScreen() {
           size="small"
           variant="solid"
           color="primary"
-          onPress={() => navigation.navigate('CreatePost')}>
+          onPress={() => ask.open()}>
           <ButtonText>
             <Trans>Add</Trans>
           </ButtonText>
@@ -135,9 +113,12 @@ export default function OpenQuestionsListScreen() {
           />
         ) : (
           <FlatList
+            style={a.flex_1}
             data={questions}
             renderItem={renderItem}
             keyExtractor={item => item.id}
+            refreshing={isRefetching}
+            onRefresh={() => void refetch()}
             contentContainerStyle={[
               styles.container,
               {paddingBottom: insets.bottom + 100},
@@ -145,6 +126,7 @@ export default function OpenQuestionsListScreen() {
           />
         )}
       </Layout.Center>
+      <AddOpenQuestionDialog control={ask} />
     </Layout.Screen>
   )
 }

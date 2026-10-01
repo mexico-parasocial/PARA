@@ -3,6 +3,7 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {PARA_OPEN_QUESTION_VOTE_COLLECTION} from '#/lib/api/para-lexicons'
 import {getOpenQuestionSearchQuery} from '#/lib/tags'
+import {INFLUENCE_QUERY_KEY} from '#/state/queries/influence'
 import {useAgent} from '#/state/session'
 import {app, com} from '#/lexicons'
 
@@ -47,25 +48,19 @@ export function useOpenQuestions() {
   const agent = useAgent()
 
   return useQuery({
-    queryKey: OPEN_QUESTIONS_QUERY_KEY,
-    queryFn: async () => {
+    queryKey: [...OPEN_QUESTIONS_QUERY_KEY, agent.session?.did ?? ''],
+    queryFn: async ({signal}) => {
       const searchQuery = getOpenQuestionSearchQuery()
+      // The compatibility endpoint lets AppView select v1/v2 according to
+      // its own feature gate. Calling v2 directly fails on older deployments
+      // and local servers where SearchV2Enable is off.
+      const result = await agent.appviewClient.call(
+        app.bsky.feed.searchPosts,
+        {q: searchQuery, limit: 50, sort: 'latest'},
+        {signal},
+      )
 
-      try {
-        const result = await agent.appviewClient.call(
-          app.bsky.feed.searchPostsV2,
-          {
-            query: searchQuery,
-            limit: 50,
-            sort: 'recent',
-          },
-        )
-
-        return result.posts || []
-      } catch (error) {
-        console.warn('Failed to search for Open Questions:', error)
-        throw error
-      }
+      return result.posts
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: true,
@@ -76,7 +71,11 @@ export function useOpenQuestionThread(uri: string) {
   const agent = useAgent()
 
   return useQuery({
-    queryKey: [...OPEN_QUESTION_THREAD_QUERY_KEY, uri],
+    queryKey: [
+      ...OPEN_QUESTION_THREAD_QUERY_KEY,
+      uri,
+      agent.session?.did ?? '',
+    ],
     queryFn: async () => {
       const result = await agent.appviewClient.call(
         com.para.civic.getOpenQuestionThread,
@@ -115,6 +114,7 @@ export function useOpenQuestionVoteMutation(questionUri: string) {
       })
     },
     onSuccess: () => {
+      void queryClient.invalidateQueries({queryKey: INFLUENCE_QUERY_KEY})
       void queryClient.invalidateQueries({
         queryKey: [...OPEN_QUESTION_THREAD_QUERY_KEY, questionUri],
       })
