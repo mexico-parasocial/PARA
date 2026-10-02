@@ -41,7 +41,7 @@ export function useMessageReportReasonLabels(): Record<
  *
  * Only the room, the event and a reason from a fixed list are sent. The text of
  * the message never leaves the room: moderators read it there from their own
- * client (D2, PARA/docs/MATRIX-D2-ENCRYPTED-REPORTS-DECISION-2026-09-23.md).
+ * client (D2, PARA/docs/MATRIX-COMMUNITY-CHAT-IMPLEMENTATION.md).
  * The reason is a fixed choice rather than free text for the same reason.
  */
 export function ReportMessageDialog({
