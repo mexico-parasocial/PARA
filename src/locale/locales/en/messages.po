@@ -1204,7 +1204,7 @@ msgstr "48 hours"
 msgid "7 days"
 msgstr ""
 
-#: src/screens/Agora/AgoraScreen.tsx:849
+#: src/screens/Agora/AgoraScreen.tsx:848
 msgid "A cabildeo is a conversation held over a set period. It records who took part, what each side argued, and where it landed. It is one kind of community activity; votes and delegation are optional extras."
 msgstr "A cabildeo is a conversation held over a set period. It records who took part, what each side argued, and where it landed. It is one kind of community activity; votes and delegation are optional extras."
 
@@ -1512,11 +1512,11 @@ msgstr "across all statuses"
 msgid "Action lane"
 msgstr "Action lane"
 
-#: src/screens/Agora/AgoraScreen.tsx:825
+#: src/screens/Agora/AgoraScreen.tsx:824
 msgid "active"
 msgstr "active"
 
-#: src/screens/Agora/AgoraScreen.tsx:695
+#: src/screens/Agora/AgoraScreen.tsx:694
 #: src/screens/Agora/ProposalDetailScreen.tsx:507
 msgid "Active"
 msgstr "Active"
@@ -2038,7 +2038,7 @@ msgstr "Agent Profile"
 msgid "Agora"
 msgstr "Agora"
 
-#: src/screens/Agora/AgoraScreen.tsx:1140
+#: src/screens/Agora/AgoraScreen.tsx:1139
 msgid "Ágora"
 msgstr "Ágora"
 
@@ -2114,7 +2114,7 @@ msgstr "All collections"
 msgid "All communities"
 msgstr "All communities"
 
-#: src/screens/Agora/AgoraScreen.tsx:889
+#: src/screens/Agora/AgoraScreen.tsx:888
 msgid "All entities"
 msgstr "All entities"
 
@@ -2155,7 +2155,7 @@ msgstr "All of these words"
 msgid "All posts"
 msgstr "All posts"
 
-#: src/screens/Agora/AgoraScreen.tsx:694
+#: src/screens/Agora/AgoraScreen.tsx:693
 msgid "All stages"
 msgstr "All stages"
 
@@ -2814,8 +2814,8 @@ msgstr ""
 msgid "Areas"
 msgstr "Areas"
 
-#: src/screens/Agora/AgoraScreen.tsx:407
-#: src/screens/Agora/AgoraScreen.tsx:510
+#: src/screens/Agora/AgoraScreen.tsx:406
+#: src/screens/Agora/AgoraScreen.tsx:509
 msgid "arguments"
 msgstr "arguments"
 
@@ -3863,6 +3863,11 @@ msgstr "Ceder es un acto público"
 msgid "Ceder mi voto"
 msgstr "Ceder mi voto"
 
+#. placeholder {0}: state.name
+#: src/screens/Map/MapScreen.shared.tsx:961
+msgid "Centered on {0}"
+msgstr "Centered on {0}"
+
 #: src/components/chat/ReportedMessageCard.tsx:70
 #: src/components/dialogs/SortitionConfigDialog.tsx:89
 #: src/screens/Communities/CommunityChatScreen.tsx:546
@@ -4160,7 +4165,7 @@ msgstr ""
 msgid "Choose a discourse lens"
 msgstr "Choose a discourse lens"
 
-#: src/screens/Agora/AgoraScreen.tsx:1010
+#: src/screens/Agora/AgoraScreen.tsx:1009
 msgid "Choose a party"
 msgstr "Choose a party"
 
@@ -4265,7 +4270,7 @@ msgstr "Civic activities"
 msgid "Civic activity"
 msgstr "Civic activity"
 
-#: src/screens/Map/MapScreen.shared.tsx:1678
+#: src/screens/Map/MapScreen.shared.tsx:1819
 msgid "Civic Activity"
 msgstr "Civic Activity"
 
@@ -4281,7 +4286,7 @@ msgstr "Civic Elements"
 msgid "Civic field"
 msgstr "Civic field"
 
-#: src/screens/Agora/AgoraScreen.tsx:659
+#: src/screens/Agora/AgoraScreen.tsx:658
 msgid "Civic initiatives near you"
 msgstr "Civic initiatives near you"
 
@@ -4371,7 +4376,7 @@ msgstr "Clear search"
 msgid "Clear search query"
 msgstr ""
 
-#: src/screens/Map/MapScreen.shared.tsx:1453
+#: src/screens/Map/MapScreen.shared.tsx:1594
 msgid "Clears the selected place and returns to the full Mexico map."
 msgstr "Clears the selected place and returns to the full Mexico map."
 
@@ -4737,7 +4742,7 @@ msgstr "Community"
 msgid "Community activities"
 msgstr "Community activities"
 
-#: src/screens/Agora/AgoraScreen.tsx:542
+#: src/screens/Agora/AgoraScreen.tsx:541
 msgid "Community Activities"
 msgstr "Community Activities"
 
@@ -4829,7 +4834,7 @@ msgstr "Community-approved contributions will appear here as connectable nodes."
 msgid "Comparación experimental de conteos"
 msgstr "Comparación experimental de conteos"
 
-#: src/screens/Agora/AgoraScreen.tsx:1014
+#: src/screens/Agora/AgoraScreen.tsx:1013
 msgid "Compare what your political family is carrying publicly with what needs internal work."
 msgstr "Compare what your political family is carrying publicly with what needs internal work."
 
@@ -5544,7 +5549,7 @@ msgstr ""
 msgid "Could not upload contacts. You need to re-verify your phone number to proceed"
 msgstr ""
 
-#: src/screens/Agora/AgoraScreen.tsx:1187
+#: src/screens/Agora/AgoraScreen.tsx:1186
 msgid "Couldn't load Ágora data. Tap to retry."
 msgstr "Couldn't load Ágora data. Tap to retry."
 
@@ -5699,7 +5704,7 @@ msgid "Create list from starter pack"
 msgstr ""
 
 #: src/Navigation.tsx:938
-#: src/screens/Agora/AgoraScreen.tsx:1197
+#: src/screens/Agora/AgoraScreen.tsx:1196
 msgid "Create Lobbying"
 msgstr "Create Lobbying"
 
@@ -5974,8 +5979,8 @@ msgstr "Delegate Vote"
 msgid "Delegate voted: {votedOption}"
 msgstr "Delegate voted: {votedOption}"
 
-#: src/screens/Agora/AgoraScreen.tsx:450
-#: src/screens/Agora/AgoraScreen.tsx:834
+#: src/screens/Agora/AgoraScreen.tsx:449
+#: src/screens/Agora/AgoraScreen.tsx:833
 msgid "delegated"
 msgstr "delegated"
 
@@ -6146,11 +6151,11 @@ msgstr "Deliberación masiva sin sorteo"
 msgid "Deliberate"
 msgstr "Deliberate"
 
-#: src/screens/Agora/AgoraScreen.tsx:831
+#: src/screens/Agora/AgoraScreen.tsx:830
 msgid "deliberating"
 msgstr "deliberating"
 
-#: src/screens/Agora/AgoraScreen.tsx:697
+#: src/screens/Agora/AgoraScreen.tsx:696
 #: src/screens/Data/SeeVotesScreen.tsx:230
 msgid "Deliberating"
 msgstr "Deliberating"
@@ -6523,11 +6528,11 @@ msgstr ""
 msgid "District key"
 msgstr "District key"
 
-#: src/screens/Map/DistrictProfileScreen.tsx:167
+#: src/screens/Map/DistrictProfileScreen.tsx:168
 msgid "District Not Found"
 msgstr "District Not Found"
 
-#: src/screens/Map/DistrictProfileScreen.tsx:174
+#: src/screens/Map/DistrictProfileScreen.tsx:175
 msgid "District not found."
 msgstr "District not found."
 
@@ -6535,7 +6540,7 @@ msgstr "District not found."
 msgid "District Profile"
 msgstr "District Profile"
 
-#: src/screens/Map/DistrictProfileScreen.tsx:731
+#: src/screens/Map/DistrictProfileScreen.tsx:728
 msgid "District-scoped RAQs are not yet available. They will appear here once the backend supports tagging open questions to federal electoral districts."
 msgstr "District-scoped RAQs are not yet available. They will appear here once the backend supports tagging open questions to federal electoral districts."
 
@@ -7740,7 +7745,7 @@ msgstr "Explore gatherings, civic action, fundraisers, sales, and the public rec
 msgid "Explore more communities"
 msgstr "Explore more communities"
 
-#: src/screens/Agora/AgoraScreen.tsx:546
+#: src/screens/Agora/AgoraScreen.tsx:545
 msgid "Explore social events and public financial activity"
 msgstr "Explore social events and public financial activity"
 
@@ -8237,7 +8242,7 @@ msgstr ""
 msgid "Falta configuración de autenticación"
 msgstr "Falta configuración de autenticación"
 
-#: src/screens/Agora/AgoraScreen.tsx:925
+#: src/screens/Agora/AgoraScreen.tsx:924
 msgid "Fast-moving public cabildeos with votes, arguments, and delegation pressure."
 msgstr "Fast-moving public cabildeos with votes, arguments, and delegation pressure."
 
@@ -8245,7 +8250,7 @@ msgstr "Fast-moving public cabildeos with votes, arguments, and delegation press
 msgid "Featured States"
 msgstr "Featured States"
 
-#: src/screens/Map/MapScreen.shared.tsx:1610
+#: src/screens/Map/MapScreen.shared.tsx:1751
 msgid "Federal districts"
 msgstr "Federal districts"
 
@@ -8416,7 +8421,7 @@ msgstr "Filter by political compass"
 msgid "Filter from feeds"
 msgstr ""
 
-#: src/screens/Map/MapScreen.shared.tsx:1463
+#: src/screens/Map/MapScreen.shared.tsx:1604
 msgid "Filter map discourse"
 msgstr "Filter map discourse"
 
@@ -8550,6 +8555,10 @@ msgstr "Find people who matter"
 #: src/screens/Settings/FindContactsSettings.tsx:128
 msgid "Find people you know"
 msgstr "Find people you know"
+
+#: src/screens/Map/MapScreen.shared.tsx:1571
+msgid "Find places near me"
+msgstr "Find places near me"
 
 #: src/screens/Search/Shell.tsx:747
 msgid "Find posts, users, and feeds on Bluesky"
@@ -9699,7 +9708,7 @@ msgstr "Hides the invite friends promo banner"
 msgid "Hides this branch's children"
 msgstr "Hides this branch's children"
 
-#: src/screens/Agora/AgoraScreen.tsx:908
+#: src/screens/Agora/AgoraScreen.tsx:907
 msgid "Highest momentum"
 msgstr "Highest momentum"
 
@@ -9821,8 +9830,8 @@ msgstr ""
 msgid "Housing"
 msgstr "Housing"
 
-#: src/screens/Agora/AgoraScreen.tsx:1145
-#: src/screens/Agora/AgoraScreen.tsx:1209
+#: src/screens/Agora/AgoraScreen.tsx:1144
+#: src/screens/Agora/AgoraScreen.tsx:1208
 msgid "How it works"
 msgstr "How it works"
 
@@ -10134,7 +10143,7 @@ msgstr "impuestos estatales"
 msgid "in {activeTab}"
 msgstr "in {activeTab}"
 
-#: src/screens/Agora/AgoraScreen.tsx:962
+#: src/screens/Agora/AgoraScreen.tsx:961
 msgid "In {regionalFocus}"
 msgstr "In {regionalFocus}"
 
@@ -10157,7 +10166,7 @@ msgstr "In person"
 msgid "In progress"
 msgstr "In progress"
 
-#: src/screens/Agora/AgoraScreen.tsx:962
+#: src/screens/Agora/AgoraScreen.tsx:961
 msgid "In your region"
 msgstr "In your region"
 
@@ -10527,8 +10536,8 @@ msgstr "Is your location not accurate? <0>Tap here to update your location with 
 msgid "Isolated"
 msgstr "Isolated"
 
-#: src/screens/Map/DistrictProfileScreen.tsx:434
-#: src/screens/Map/DistrictProfileScreen.tsx:436
+#: src/screens/Map/DistrictProfileScreen.tsx:433
+#: src/screens/Map/DistrictProfileScreen.tsx:435
 msgid "Issues"
 msgstr "Issues"
 
@@ -10794,7 +10803,7 @@ msgstr ""
 msgid "Law"
 msgstr "Law"
 
-#: src/screens/Agora/AgoraScreen.tsx:385
+#: src/screens/Agora/AgoraScreen.tsx:384
 msgid "Leading option"
 msgstr "Leading option"
 
@@ -11409,8 +11418,8 @@ msgstr "Loads more memes"
 
 #: src/Navigation.tsx:923
 #: src/Navigation.tsx:928
-#: src/screens/Agora/AgoraScreen.tsx:813
-#: src/screens/Agora/AgoraScreen.tsx:846
+#: src/screens/Agora/AgoraScreen.tsx:812
+#: src/screens/Agora/AgoraScreen.tsx:845
 #: src/screens/Communities/CabildeoDetailScreen.tsx:542
 #: src/screens/Communities/CabildeoDetailScreen.tsx:564
 #: src/screens/Communities/CabildeoDetailScreen.tsx:608
@@ -11515,7 +11524,7 @@ msgstr "Love GIFs"
 msgid "Main voice · persistent anonymous identity"
 msgstr "Main voice · persistent anonymous identity"
 
-#: src/screens/Map/MapScreen.shared.tsx:1612
+#: src/screens/Map/MapScreen.shared.tsx:1753
 msgid "Major cities"
 msgstr "Major cities"
 
@@ -11877,8 +11886,8 @@ msgstr "Messages from this person are hidden while you are blocking them."
 msgid "Method"
 msgstr "Method"
 
-#: src/screens/Map/MapScreen.shared.tsx:1605
-#: src/screens/Map/MapScreen.shared.tsx:1679
+#: src/screens/Map/MapScreen.shared.tsx:1746
+#: src/screens/Map/MapScreen.shared.tsx:1820
 msgid "Mexico Map"
 msgstr "Mexico Map"
 
@@ -12333,6 +12342,10 @@ msgstr "Navigates to the voting history screen"
 msgid "Navigates to your profile"
 msgstr ""
 
+#: src/screens/Map/MapScreen.shared.tsx:934
+msgid "Near me is currently available for Mexico only."
+msgstr "Near me is currently available for Mexico only."
+
 #: src/components/moderation/ReportDialog/index.tsx:414
 #: src/components/moderation/ReportDialog/index.tsx:430
 msgid "Need to report a copyright violation, legal request, or regulatory compliance issue?"
@@ -12635,11 +12648,11 @@ msgstr "No beta features at the moment."
 msgid "No books found"
 msgstr "No books found"
 
-#: src/screens/Map/DistrictProfileScreen.tsx:384
+#: src/screens/Map/DistrictProfileScreen.tsx:382
 msgid "No cabildeo activity in this district yet. Open lobbying appears on the map when users tag it to this distrito."
 msgstr "No cabildeo activity in this district yet. Open lobbying appears on the map when users tag it to this distrito."
 
-#: src/screens/Agora/AgoraScreen.tsx:1058
+#: src/screens/Agora/AgoraScreen.tsx:1057
 msgid "No cabildeos for this party and visibility yet."
 msgstr "No cabildeos for this party and visibility yet."
 
@@ -12946,7 +12959,7 @@ msgstr "No proposed RAQs yet"
 msgid "No public highlights yet"
 msgstr "No public highlights yet"
 
-#: src/screens/Agora/AgoraScreen.tsx:942
+#: src/screens/Agora/AgoraScreen.tsx:941
 msgid "No public momentum in these filters yet."
 msgstr "No public momentum in these filters yet."
 
@@ -12983,7 +12996,7 @@ msgstr ""
 msgid "No recent GIFs yet. Pick one to see it here."
 msgstr "No recent GIFs yet. Pick one to see it here."
 
-#: src/screens/Agora/AgoraScreen.tsx:979
+#: src/screens/Agora/AgoraScreen.tsx:978
 msgid "No regional cabildeos match these filters yet."
 msgstr "No regional cabildeos match these filters yet."
 
@@ -13586,7 +13599,7 @@ msgstr "Oops, this profile doesn't exist. Try scanning another one."
 msgid "Oops!"
 msgstr ""
 
-#: src/screens/Agora/AgoraScreen.tsx:696
+#: src/screens/Agora/AgoraScreen.tsx:695
 #: src/screens/Agora/components/PhaseBadge.tsx:24
 msgid "Open"
 msgstr "Open"
@@ -13711,7 +13724,7 @@ msgstr "Open ledger · goal {0}"
 msgid "Open link to {niceUrl}"
 msgstr ""
 
-#: src/screens/Agora/AgoraScreen.tsx:967
+#: src/screens/Agora/AgoraScreen.tsx:966
 #: src/screens/Communities/CommunitiesScreen.tsx:562
 msgid "Open Lobbying"
 msgstr "Open Lobbying"
@@ -13746,7 +13759,7 @@ msgstr ""
 msgid "Open PARA wallet"
 msgstr "Open PARA wallet"
 
-#: src/screens/Agora/AgoraScreen.tsx:456
+#: src/screens/Agora/AgoraScreen.tsx:455
 msgid "open participation"
 msgstr "open participation"
 
@@ -13796,7 +13809,7 @@ msgstr "Open settings"
 msgid "Open share menu"
 msgstr ""
 
-#: src/screens/Map/MapScreen.shared.tsx:1659
+#: src/screens/Map/MapScreen.shared.tsx:1800
 msgid "Open sidebar"
 msgstr "Open sidebar"
 
@@ -13910,7 +13923,7 @@ msgstr "Opens dialog to select a policy"
 msgid "Opens emoji picker"
 msgstr "Opens emoji picker"
 
-#: src/screens/Map/MapScreen.shared.tsx:1465
+#: src/screens/Map/MapScreen.shared.tsx:1606
 msgid "Opens filters for the map heat layer."
 msgstr "Opens filters for the map heat layer."
 
@@ -14032,7 +14045,7 @@ msgstr "Opens the meme search"
 msgid "Opens the post composer"
 msgstr ""
 
-#: src/screens/Agora/AgoraScreen.tsx:1199
+#: src/screens/Agora/AgoraScreen.tsx:1198
 msgid "Opens the screen to create a new policy proposal"
 msgstr "Opens the screen to create a new policy proposal"
 
@@ -14263,7 +14276,7 @@ msgstr "Override delegate vote"
 msgid "Overview"
 msgstr "Overview"
 
-#: src/screens/Map/DistrictProfileScreen.tsx:418
+#: src/screens/Map/DistrictProfileScreen.tsx:417
 msgid "Overview view"
 msgstr "Overview view"
 
@@ -14322,7 +14335,7 @@ msgstr "Panel de moderación"
 msgid "PARA cannot confirm the authenticity of the claimed date."
 msgstr "PARA cannot confirm the authenticity of the claimed date."
 
-#: src/screens/Map/DistrictProfileScreen.tsx:341
+#: src/screens/Map/DistrictProfileScreen.tsx:342
 msgid "PARA CIVIC ACTIVITY"
 msgstr "PARA CIVIC ACTIVITY"
 
@@ -14415,8 +14428,8 @@ msgstr "Parties"
 
 #: src/lib/community-activities.ts:142
 #: src/screens/Data/components/MyBaseDashboard.tsx:285
-#: src/screens/Map/DistrictProfileScreen.tsx:422
-#: src/screens/Map/DistrictProfileScreen.tsx:424
+#: src/screens/Map/DistrictProfileScreen.tsx:421
+#: src/screens/Map/DistrictProfileScreen.tsx:423
 #: src/screens/Search/components/AdvancedSearchDialog/ParaPostMetaSection.tsx:104
 msgid "Party"
 msgstr "Party"
@@ -14729,7 +14742,7 @@ msgstr ""
 msgid "Pinned to your feeds"
 msgstr ""
 
-#: src/screens/Map/DistrictProfileScreen.tsx:463
+#: src/screens/Map/DistrictProfileScreen.tsx:462
 msgid "Placeholder preview — will be computed from PARA civic engagement data when district-level party affiliation aggregates are available."
 msgstr "Placeholder preview — will be computed from PARA civic engagement data when district-level party affiliation aggregates are available."
 
@@ -15324,7 +15337,7 @@ msgstr ""
 msgid "Privacy violation of a minor"
 msgstr ""
 
-#: src/screens/Agora/AgoraScreen.tsx:249
+#: src/screens/Agora/AgoraScreen.tsx:248
 #: src/view/com/post-thread/PostHighlights.tsx:93
 msgid "Private"
 msgstr "Private"
@@ -15469,7 +15482,7 @@ msgstr "Propuesta"
 msgid "Psst! You can edit who can interact with this post."
 msgstr ""
 
-#: src/screens/Agora/AgoraScreen.tsx:227
+#: src/screens/Agora/AgoraScreen.tsx:226
 #: src/view/com/composer/Composer.tsx:329
 #: src/view/com/post-thread/PostHighlights.tsx:93
 msgid "Public"
@@ -15730,7 +15743,7 @@ msgstr "Quién te cedió su voto. Tu papeleta nunca nombra a tus cedentes."
 msgid "Quita el mensaje citado de la respuesta"
 msgstr "Quita el mensaje citado de la respuesta"
 
-#: src/screens/Agora/AgoraScreen.tsx:424
+#: src/screens/Agora/AgoraScreen.tsx:423
 #: src/screens/Agora/ProposalDetailScreen.tsx:826
 msgid "Quorum"
 msgstr "Quorum"
@@ -15998,11 +16011,11 @@ msgstr "Referendum"
 msgid "Refine posts by type, flair, party, or public figure status."
 msgstr "Refine posts by type, flair, party, or public figure status."
 
-#: src/screens/Agora/AgoraScreen.tsx:965
+#: src/screens/Agora/AgoraScreen.tsx:964
 msgid "Region-scoped proposals where place, residency, and local evidence matter."
 msgstr "Region-scoped proposals where place, residency, and local evidence matter."
 
-#: src/screens/Agora/AgoraScreen.tsx:655
+#: src/screens/Agora/AgoraScreen.tsx:654
 msgid "Regional Map"
 msgstr "Regional Map"
 
@@ -16660,6 +16673,10 @@ msgstr "Requests"
 msgid "Requests to join"
 msgstr "Requests to join"
 
+#: src/screens/Map/MapScreen.shared.tsx:1573
+msgid "Requests your device location and centers the map on your state."
+msgstr "Requests your device location and centers the map on your state."
+
 #: src/screens/Settings/AccessibilitySettings.tsx:59
 #: src/screens/Settings/AccessibilitySettings.tsx:64
 msgid "Require alt text before posting"
@@ -16733,7 +16750,7 @@ msgstr ""
 msgid "Reset code"
 msgstr ""
 
-#: src/screens/Map/MapScreen.shared.tsx:1451
+#: src/screens/Map/MapScreen.shared.tsx:1592
 msgid "Reset map view"
 msgstr "Reset map view"
 
@@ -16746,15 +16763,15 @@ msgstr ""
 msgid "Reset password"
 msgstr ""
 
-#: src/screens/Agora/AgoraScreen.tsx:454
+#: src/screens/Agora/AgoraScreen.tsx:453
 msgid "residents only"
 msgstr "residents only"
 
-#: src/screens/Agora/AgoraScreen.tsx:863
+#: src/screens/Agora/AgoraScreen.tsx:862
 msgid "Resolution state"
 msgstr "Resolution state"
 
-#: src/screens/Agora/AgoraScreen.tsx:699
+#: src/screens/Agora/AgoraScreen.tsx:698
 #: src/screens/Data/SeeVotesScreen.tsx:229
 msgid "Resolved"
 msgstr "Resolved"
@@ -17430,7 +17447,7 @@ msgstr "Search topics"
 msgid "Search topics and matters..."
 msgstr "Search topics and matters..."
 
-#: src/screens/Map/MapScreen.shared.tsx:1614
+#: src/screens/Map/MapScreen.shared.tsx:1755
 msgid "Search, filter and explore civic geography"
 msgstr "Search, filter and explore civic geography"
 
@@ -17478,7 +17495,7 @@ msgstr ""
 msgid "See #{tag} posts by user"
 msgstr ""
 
-#: src/screens/Agora/AgoraScreen.tsx:927
+#: src/screens/Agora/AgoraScreen.tsx:926
 #: src/screens/RAQ/RAQMenu.tsx:105
 #: src/screens/RAQ/RAQMenu.tsx:130
 #: src/screens/RAQ/RAQMenu.tsx:167
@@ -18821,7 +18838,7 @@ msgstr "Sorteo programado con Drand"
 msgid "Source: <0>{sourceName}</0>"
 msgstr ""
 
-#: src/screens/Agora/AgoraScreen.tsx:622
+#: src/screens/Agora/AgoraScreen.tsx:621
 msgid "Spaces you participate in"
 msgstr "Spaces you participate in"
 
@@ -18952,11 +18969,11 @@ msgstr ""
 msgid "Starts"
 msgstr "Starts"
 
-#: src/screens/Agora/AgoraScreen.tsx:882
+#: src/screens/Agora/AgoraScreen.tsx:881
 msgid "State entity"
 msgstr "State entity"
 
-#: src/screens/Map/MapScreen.shared.tsx:1613
+#: src/screens/Map/MapScreen.shared.tsx:1754
 msgid "State overview"
 msgstr "State overview"
 
@@ -19627,7 +19644,7 @@ msgstr "The moderation service is temporarily unavailable. Please try again late
 msgid "The most interesting proposals are the ones that bring together communities that don't usually agree. The Agora detects these \"emergent coalitions\" and surfaces them as signs of new publics forming."
 msgstr "The most interesting proposals are the ones that bring together communities that don't usually agree. The Agora detects these \"emergent coalitions\" and surfaces them as signs of new publics forming."
 
-#: src/screens/Map/MapScreen.shared.tsx:459
+#: src/screens/Map/MapScreen.shared.tsx:504
 msgid "The native map binary is not available in this build."
 msgstr "The native map binary is not available in this build."
 
@@ -19939,7 +19956,7 @@ msgstr ""
 msgid "This cabildeo is no longer available or was deleted."
 msgstr "This cabildeo is no longer available or was deleted."
 
-#: src/screens/Agora/AgoraScreen.tsx:910
+#: src/screens/Agora/AgoraScreen.tsx:909
 msgid "This cabildeo is pulling the most attention in the selected filters. Read the strongest option, then decide whether to argue, delegate, or vote."
 msgstr "This cabildeo is pulling the most attention in the selected filters. Read the strongest option, then decide whether to argue, delegate, or vote."
 
@@ -20646,7 +20663,7 @@ msgstr "Trending GIFs"
 msgid "Trending Matters"
 msgstr "Trending Matters"
 
-#: src/screens/Agora/AgoraScreen.tsx:923
+#: src/screens/Agora/AgoraScreen.tsx:922
 msgid "Trending now"
 msgstr "Trending now"
 
@@ -20765,8 +20782,8 @@ msgstr "Tu voto suma {signed} al conteo: +3 pesa el triple que +1."
 msgid "Turn attention into action"
 msgstr "Turn attention into action"
 
-#: src/screens/Map/DistrictProfileScreen.tsx:429
-#: src/screens/Map/DistrictProfileScreen.tsx:431
+#: src/screens/Map/DistrictProfileScreen.tsx:428
+#: src/screens/Map/DistrictProfileScreen.tsx:430
 msgid "Turnout"
 msgstr "Turnout"
 
@@ -20801,6 +20818,10 @@ msgstr ""
 #: src/screens/Data/components/SortitionAssemblyView.tsx:78
 msgid "Umbral"
 msgstr "Umbral"
+
+#: src/screens/Map/MapScreen.shared.tsx:918
+msgid "Unable to access location. Enable location services in system settings to use Near me."
+msgstr "Unable to access location. Enable location services in system settings to use Near me."
 
 #: src/components/dialogs/DeviceLocationRequestDialog.tsx:86
 msgid "Unable to access location. You'll need to visit your system settings to enable location services for PARA."
@@ -20854,6 +20875,10 @@ msgstr "Unable to load your account"
 #: src/lib/strings/errors.ts:75
 msgid "Unable to resolve handle"
 msgstr ""
+
+#: src/screens/Map/MapScreen.shared.tsx:963
+msgid "Unable to resolve your location right now."
+msgstr "Unable to resolve your location right now."
 
 #: src/screens/Settings/Settings.tsx:536
 msgid "Unapply Pull Request"
@@ -22020,8 +22045,8 @@ msgstr "Vote registered"
 msgid "voted {0}{1}"
 msgstr "voted {0}{1}"
 
-#: src/screens/Agora/AgoraScreen.tsx:401
-#: src/screens/Agora/AgoraScreen.tsx:507
+#: src/screens/Agora/AgoraScreen.tsx:400
+#: src/screens/Agora/AgoraScreen.tsx:506
 #: src/screens/Agora/ProposalDetailScreen.tsx:827
 msgid "votes"
 msgstr "votes"
@@ -22046,11 +22071,11 @@ msgstr "Votes History"
 msgid "Votes this month"
 msgstr "Votes this month"
 
-#: src/screens/Agora/AgoraScreen.tsx:828
+#: src/screens/Agora/AgoraScreen.tsx:827
 msgid "voting"
 msgstr "voting"
 
-#: src/screens/Agora/AgoraScreen.tsx:698
+#: src/screens/Agora/AgoraScreen.tsx:697
 #: src/screens/Data/SeeVotesScreen.tsx:228
 msgid "Voting"
 msgstr "Voting"
@@ -22123,6 +22148,14 @@ msgstr "We could not connect to the service that provides this custom feed. It m
 #: src/view/com/feeds/MissingFeed.tsx:147
 msgid "We could not find this list. It was probably deleted."
 msgstr ""
+
+#: src/screens/Map/MapScreen.shared.tsx:954
+msgid "We could not match your location to a mapped state."
+msgstr "We could not match your location to a mapped state."
+
+#: src/screens/Map/MapScreen.shared.tsx:942
+msgid "We could not resolve your state from this location."
+msgstr "We could not resolve your state from this location."
 
 #: src/screens/Communities/MyCommunitiesScreen.tsx:208
 msgid "We couldn't fetch your communities. Pull down to retry."
@@ -22546,7 +22579,7 @@ msgstr "Wiki"
 msgid "Wiki page"
 msgstr "Wiki page"
 
-#: src/screens/Agora/AgoraScreen.tsx:415
+#: src/screens/Agora/AgoraScreen.tsx:414
 msgid "window"
 msgstr "window"
 
@@ -22748,7 +22781,7 @@ msgid "You are not following anyone yet"
 msgstr ""
 
 #. placeholder {0}: district.stateName
-#: src/screens/Map/DistrictProfileScreen.tsx:256
+#: src/screens/Map/DistrictProfileScreen.tsx:261
 msgid "You are not in {0}. Some votes may be restricted to residents."
 msgstr "You are not in {0}. Some votes may be restricted to residents."
 
@@ -23360,15 +23393,15 @@ msgstr "Your civic tree could not be loaded."
 msgid "Your collections have no items yet"
 msgstr "Your collections have no items yet"
 
-#: src/screens/Agora/AgoraScreen.tsx:618
+#: src/screens/Agora/AgoraScreen.tsx:617
 msgid "Your Communities"
 msgstr "Your Communities"
 
-#: src/screens/Agora/AgoraScreen.tsx:579
+#: src/screens/Agora/AgoraScreen.tsx:578
 msgid "Your Community Civic Tree"
 msgstr "Your Community Civic Tree"
 
-#: src/screens/Agora/AgoraScreen.tsx:583
+#: src/screens/Agora/AgoraScreen.tsx:582
 msgid "Your community's proposals, evidence, votes, and arguments"
 msgstr "Your community's proposals, evidence, votes, and arguments"
 
@@ -23504,7 +23537,7 @@ msgstr ""
 msgid "Your name, avatar, the name of the group chat, and the number of members will be visible to everyone."
 msgstr "Your name, avatar, the name of the group chat, and the number of members will be visible to everyone."
 
-#: src/screens/Agora/AgoraScreen.tsx:1007
+#: src/screens/Agora/AgoraScreen.tsx:1006
 msgid "Your party desk"
 msgstr "Your party desk"
 
