@@ -64,8 +64,8 @@ import {
   CivicTreeFilterMenu,
   CivicTreeFilterRow,
 } from '#/features/communityCivicTree/components/CivicTreeFilterMenu'
+import {CommunityCivicTreeCards} from '#/features/communityCivicTree/components/CommunityCivicTreeCards'
 import {CommunityCivicTreeCollections} from '#/features/communityCivicTree/components/CommunityCivicTreeCollections'
-import {CommunityCivicTreeGraph} from '#/features/communityCivicTree/components/CommunityCivicTreeGraph'
 import {CommunityCivicTreeMap} from '#/features/communityCivicTree/components/CommunityCivicTreeMap'
 import {CommunityCivicTreeOutline} from '#/features/communityCivicTree/components/CommunityCivicTreeOutline'
 import {CommunityHelpWanted} from '#/features/communityCivicTree/components/CommunityHelpWanted'
@@ -98,12 +98,13 @@ export function CommunityCivicTreeScreen() {
   }>()
   const t = useTheme()
   const {gtMobile} = useBreakpoints()
-  const {width: windowWidth} = useWindowDimensions()
+  const {width: windowWidth, height: windowHeight} = useWindowDimensions()
   const {centerColumnOffset} = useLayoutBreakpoints()
   const [viewMode, setViewMode] = useState<'list' | 'graph' | 'map'>('map')
-  const [showOutline, setShowOutline] = useState(false)
+  const [treeLayout, setTreeLayout] = useState<'cards' | 'outline'>('cards')
   const [showGovernance, setShowGovernance] = useState(false)
-  const expanded = IS_WEB && gtMobile && viewMode === 'map'
+  const expanded =
+    IS_WEB && gtMobile && (viewMode === 'map' || viewMode === 'graph')
   useExpandCivicTreeWorkspace(expanded)
   const workspaceLeft =
     windowWidth / 2 -
@@ -223,7 +224,6 @@ export function CommunityCivicTreeScreen() {
     isLoading: graphLoading,
     isError: isGraphError,
     refetch: refetchGraph,
-    isFetching: isGraphFetching,
   } = useCommunityCivicTreeGraphQuery(communityUri)
 
   const {data: suggestions = []} =
@@ -308,6 +308,7 @@ export function CommunityCivicTreeScreen() {
       card_type: card.card_type,
       author_did: card.author_did,
       source_url: card.source_url,
+      metadata: card.metadata,
       influence: card.influence ?? 0,
     }
   }, [selectedNodeId, graphData])
@@ -319,6 +320,13 @@ export function CommunityCivicTreeScreen() {
     myDid,
   )
   const myVote = myVoteData?.vote?.influence ?? 0
+
+  const resetVote = castVote.reset
+  const resetRelationship = createRelationship.reset
+  useEffect(() => {
+    resetVote()
+    resetRelationship()
+  }, [selectedNodeId, resetVote, resetRelationship])
 
   useEffect(() => {
     if (!pendingHighlightCardId || !graphData) return
@@ -390,7 +398,17 @@ export function CommunityCivicTreeScreen() {
   }, [communityUri, graphData, selectedCommunity?.name])
 
   return (
-    <Layout.Screen hideBorders={expanded}>
+    <Layout.Screen
+      hideBorders={expanded}
+      style={
+        IS_WEB && viewMode === 'graph'
+          ? {
+              height: windowHeight,
+              minHeight: 0,
+              paddingBottom: gtMobile ? 0 : 60,
+            }
+          : undefined
+      }>
       <Layout.Center
         style={[
           styles.centerColumn,
@@ -488,7 +506,7 @@ export function CommunityCivicTreeScreen() {
           </View>
           {communityUri && (
             <View style={styles.topControls}>
-              {viewMode === 'graph' || showGovernance ? (
+              {showGovernance ? (
                 <SortitionStatusCard
                   status={sortitionStatus}
                   onConfigure={() => sortitionControl.open()}
@@ -496,45 +514,40 @@ export function CommunityCivicTreeScreen() {
                 />
               ) : null}
               <View style={styles.communityActions}>
-                {viewMode !== 'graph' ? (
-                  <Button
-                    label={l`Governance`}
-                    size="small"
-                    variant="ghost"
-                    color="secondary"
-                    accessibilityState={{expanded: showGovernance}}
-                    onPress={() => setShowGovernance(previous => !previous)}>
-                    <ButtonText>
-                      <Trans>Governance</Trans>
-                    </ButtonText>
-                  </Button>
-                ) : null}
+                <Button
+                  label={l`Governance`}
+                  size="small"
+                  variant="ghost"
+                  color="secondary"
+                  accessibilityState={{expanded: showGovernance}}
+                  onPress={() => setShowGovernance(previous => !previous)}>
+                  <ButtonText>
+                    <Trans>Governance</Trans>
+                  </ButtonText>
+                </Button>
                 {viewMode === 'graph' ? (
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    accessibilityLabel={
-                      !showOutline
-                        ? 'Switch to outline view'
-                        : 'Switch to graph view'
-                    }
-                    accessibilityHint="Toggles between the connection graph and the argument outline"
-                    onPress={() => setShowOutline(previous => !previous)}
-                    style={[
-                      styles.pulseBtn,
-                      {backgroundColor: t.palette.primary_500 + '15'},
-                    ]}>
-                    <Text
-                      style={[
-                        styles.topActionText,
-                        {color: t.palette.primary_500},
-                      ]}>
-                      {!showOutline ? (
-                        <Trans>Outline</Trans>
-                      ) : (
-                        <Trans>Graph</Trans>
-                      )}
-                    </Text>
-                  </TouchableOpacity>
+                  <View style={[a.flex_row, a.gap_xs]}>
+                    {(['cards', 'outline'] as const).map(layout => (
+                      <Button
+                        key={layout}
+                        label={
+                          layout === 'cards' ? l`Cards` : l`Argument outline`
+                        }
+                        size="tiny"
+                        variant={treeLayout === layout ? 'solid' : 'ghost'}
+                        color={treeLayout === layout ? 'primary' : 'secondary'}
+                        accessibilityState={{selected: treeLayout === layout}}
+                        onPress={() => setTreeLayout(layout)}>
+                        <ButtonText>
+                          {layout === 'cards' ? (
+                            <Trans>Cards</Trans>
+                          ) : (
+                            <Trans>Argument outline</Trans>
+                          )}
+                        </ButtonText>
+                      </Button>
+                    ))}
+                  </View>
                 ) : null}
                 <TouchableOpacity
                   accessibilityRole="button"
@@ -829,7 +842,10 @@ export function CommunityCivicTreeScreen() {
            * Topics first: what the community is working on together, ranked by
            * how many members have joined each one rather than by activity.
            */}
-          {viewMode === 'graph' && graphData && graphData.nodes.length > 0 ? (
+          {viewMode === 'graph' &&
+          treeLayout !== 'cards' &&
+          graphData &&
+          graphData.nodes.length > 0 ? (
             <>
               <CommunityTopicRail
                 data={graphData}
@@ -854,34 +870,36 @@ export function CommunityCivicTreeScreen() {
                     label="Search contributions"
                   />
                 </View>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel="Toggle Ideological Overlay"
-                  accessibilityHint="Colors the map based on the political compass"
-                  accessibilityState={{selected: showIdeologicalOverlay}}
-                  onPress={() => setShowIdeologicalOverlay(prev => !prev)}
-                  style={[
-                    styles.overlayToggle,
-                    {
-                      backgroundColor: showIdeologicalOverlay
-                        ? t.palette.primary_500 + '20'
-                        : t.palette.contrast_100,
-                      borderColor: showIdeologicalOverlay
-                        ? t.palette.primary_500
-                        : 'transparent',
-                    },
-                  ]}>
-                  <Text
-                    style={{
-                      color: showIdeologicalOverlay
-                        ? t.palette.primary_500
-                        : t.palette.contrast_700,
-                      fontSize: 13,
-                      fontWeight: '600',
-                    }}>
-                    <Trans>Compass Overlay</Trans>
-                  </Text>
-                </TouchableOpacity>
+                {viewMode === 'map' ? (
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel="Toggle Ideological Overlay"
+                    accessibilityHint="Colors the map based on the political compass"
+                    accessibilityState={{selected: showIdeologicalOverlay}}
+                    onPress={() => setShowIdeologicalOverlay(prev => !prev)}
+                    style={[
+                      styles.overlayToggle,
+                      {
+                        backgroundColor: showIdeologicalOverlay
+                          ? t.palette.primary_500 + '20'
+                          : t.palette.contrast_100,
+                        borderColor: showIdeologicalOverlay
+                          ? t.palette.primary_500
+                          : 'transparent',
+                      },
+                    ]}>
+                    <Text
+                      style={{
+                        color: showIdeologicalOverlay
+                          ? t.palette.primary_500
+                          : t.palette.contrast_700,
+                        fontSize: 13,
+                        fontWeight: '600',
+                      }}>
+                      <Trans>Compass Overlay</Trans>
+                    </Text>
+                  </TouchableOpacity>
+                ) : null}
               </View>
 
               <CivicTreeFilterRow
@@ -1024,7 +1042,16 @@ export function CommunityCivicTreeScreen() {
               context={graphDataForRender ?? undefined}
               onNodePress={setSelectedNodeId}
             />
-          ) : filteredWorkspace && showOutline ? (
+          ) : filteredWorkspace &&
+            viewMode === 'graph' &&
+            treeLayout === 'cards' ? (
+            <CommunityCivicTreeCards
+              key={communityUri}
+              data={filteredWorkspace}
+              context={graphDataForRender ?? filteredWorkspace}
+              onOpenDetails={setSelectedNodeId}
+            />
+          ) : filteredWorkspace && treeLayout === 'outline' ? (
             <CommunityCivicTreeOutline
               data={filteredWorkspace}
               searchQuery=""
@@ -1032,21 +1059,6 @@ export function CommunityCivicTreeScreen() {
               activeStances={new Set()}
               onNodePress={setSelectedNodeId}
               selectedNodeId={selectedNodeId}
-            />
-          ) : filteredWorkspace ? (
-            <CommunityCivicTreeGraph
-              data={filteredWorkspace}
-              searchQuery=""
-              activeCardTypes={new Set()}
-              activeRelTypes={new Set()}
-              activeStances={new Set()}
-              showIdeologicalOverlay={showIdeologicalOverlay}
-              onNodePress={setSelectedNodeId}
-              selectedNodeId={selectedNodeId}
-              onRefresh={() => {
-                void refetchGraph()
-              }}
-              isRefreshing={isGraphFetching}
             />
           ) : null}
         </View>
@@ -1060,6 +1072,10 @@ export function CommunityCivicTreeScreen() {
         onClose={() => setSelectedNodeId(undefined)}
         voterDid={myDid}
         userVote={myVote}
+        onSelectNode={setSelectedNodeId}
+        isVoting={castVote.isPending}
+        voteError={castVote.error?.message}
+        relationshipError={createRelationship.error?.message}
         onVote={(cardId, influence) => {
           if (myDid) {
             castVote.mutate({cardId, voterDid: myDid, influence, communityUri})

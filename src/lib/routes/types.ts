@@ -156,6 +156,7 @@ export type CommonNavigatorParams = {
   }
   Communities: undefined
   MyCommunities: undefined
+  CommunityChats: undefined
   CreateCommunity: undefined
   PoliciesDashboard: {
     filter?: 'Communities' | 'Parties' | 'Both'
@@ -220,7 +221,13 @@ export type CommonNavigatorParams = {
   CabildeoDetail: {cabildeoUri: string}
   Agora: undefined
   Cabildeos: undefined
-  CommunityDirectory: undefined
+  CommunityDirectory:
+    | {
+        category?: 'all' | 'social' | 'economic'
+        time?: 'upcoming' | 'past' | 'all'
+        communityUri?: string
+      }
+    | undefined
   ProposalDetail: {proposalUri: string}
   DelegateVote: {cabildeoUri: string}
   CreateCabildeo: undefined

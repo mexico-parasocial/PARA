@@ -13,6 +13,15 @@ export interface MatrixClientConfig {
   deviceId: string
   roomId: string
   communityName: string
+  /**
+   * OAuth refresh material for MAS-issued sessions. The homeserver's access
+   * tokens are short-lived, so without these the conversation stops working a
+   * few minutes after it opens. Absent on deployments where the bridge mints a
+   * long-lived Synapse token instead.
+   */
+  refreshToken?: string
+  tokenEndpoint?: string
+  oauthClientId?: string
   strings?: Record<string, string>
   parentOrigin?: string
   /**
@@ -760,6 +769,28 @@ export function buildClientHtml(sdkBundle?: string): string {
         else if (window.parent !== window && CONFIG.parentOrigin) window.parent.postMessage(message, CONFIG.parentOrigin);
       }
 
+      // Live state for the app's room rail and member panel: per-room unread
+      // counts and presence of the joined members. IDs and counts only; no
+      // message content crosses to the app.
+      let liveTimer = null;
+      function publishLiveState() {
+        if (liveTimer) return;
+        liveTimer = setTimeout(function() {
+          liveTimer = null;
+          if (!client) return;
+          const rooms = client.getRooms().map(function(r) {
+            return {roomId: r.roomId, unread: r.getUnreadNotificationCount('total') || 0};
+          });
+          const presence = {};
+          if (room) {
+            room.getJoinedMembers().forEach(function(m) {
+              if (m.user && m.user.presence) presence[m.userId] = m.user.presence;
+            });
+          }
+          postToApp({type: 'matrix-live-state', activeRoomId: CONFIG.roomId, rooms: rooms, presence: presence});
+        }, 250);
+      }
+
       function showReactionPicker(eventId, isSelf) {
         const picker = document.getElementById('reaction-picker');
         picker.dataset.eventId = eventId;
@@ -838,16 +869,52 @@ export function buildClientHtml(sdkBundle?: string): string {
         }
 
         try {
+          // The SDK calls this when the homeserver rejects the access token,
+          // and uses whatever it returns for subsequent requests. MAS is a
+          // public client, so the refresh carries the client id and no secret.
+          var tokenRefreshFunction = CONFIG.refreshToken && CONFIG.tokenEndpoint
+            ? function(refreshToken) {
+                return fetch(CONFIG.tokenEndpoint, {
+                  method: 'POST',
+                  headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                  body: new URLSearchParams({
+                    grant_type: 'refresh_token',
+                    refresh_token: refreshToken,
+                    client_id: CONFIG.oauthClientId,
+                  }).toString(),
+                }).then(function(res) {
+                  if (!res.ok) throw new Error('refresh failed: ' + res.status);
+                  return res.json();
+                }).then(function(body) {
+                  // Tell the host so the next page load starts from the live
+                  // token instead of replaying a dead one.
+                  postToApp({
+                    type: 'matrix-token-refreshed',
+                    accessToken: body.access_token,
+                    refreshToken: body.refresh_token || refreshToken,
+                    expiresInMs: body.expires_in ? body.expires_in * 1000 : undefined,
+                  });
+                  return {
+                    accessToken: body.access_token,
+                    refreshToken: body.refresh_token || refreshToken,
+                  };
+                });
+              }
+            : undefined;
+
           client = window.matrixcs.createClient({
             baseUrl: CONFIG.homeServer,
             accessToken: CONFIG.accessToken,
             userId: CONFIG.userId,
             deviceId: CONFIG.deviceId,
+            refreshToken: CONFIG.refreshToken,
+            tokenRefreshFunction: tokenRefreshFunction,
           });
 
           client.on('sync', function(state) {
             if (state === 'PREPARED') {
               setStatus('connected');
+              publishLiveState();
               room = client.getRoom(CONFIG.roomId);
               if (room) {
                 loadHistory();
@@ -879,10 +946,15 @@ export function buildClientHtml(sdkBundle?: string): string {
 
           client.on('Room.timeline', function(event, _room, toStartOfTimeline) {
             if (toStartOfTimeline) return;
+            publishLiveState();
             if (_room && _room.roomId === CONFIG.roomId) {
               renderEvent(event);
             }
           });
+
+          client.on('Room.receipt', publishLiveState);
+          client.on('Room.unreadNotifications', publishLiveState);
+          client.on('User.presence', publishLiveState);
 
           client.on('RoomMember.typing', function(event, member) {
             const typing = member.typing;

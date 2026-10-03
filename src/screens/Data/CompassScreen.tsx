@@ -625,10 +625,10 @@ export function CompassScreen({navigation, route}: Props) {
     ideologyPromptControl.open()
   }
 
-  const handleSaveAffiliation = async () => {
-    if (!pendingNinthId) return
+  const handleSaveAffiliation = async (ninthId = pendingNinthId) => {
+    if (!ninthId) return
     const ninthName = Object.entries(NINTH_NAME_TO_COMPASS_ID).find(
-      ([, id]) => id === pendingNinthId,
+      ([, id]) => id === ninthId,
     )?.[0]
     if (!ninthName) return
     const ninthOption = POLITICAL_AFFILIATION_OPTIONS.ninth.find(
@@ -666,14 +666,14 @@ export function CompassScreen({navigation, route}: Props) {
           </Header.TitleText>
         </Header.Content>
         {isAffiliateMode ? (
-          <Header.Slot>
+          <Header.Slot fitContent>
             <Button
               label={translate(msg`Save position`)}
               disabled={!pendingNinthId}
-              onPress={handleSaveAffiliation}
+              onPress={() => void handleSaveAffiliation()}
               color="primary"
               size="small"
-              shape="rectangular">
+              shape="default">
               <ButtonText>
                 <Trans>Save</Trans>
               </ButtonText>
@@ -1429,29 +1429,31 @@ export function CompassScreen({navigation, route}: Props) {
                     `Position ${selectedQuadrant.row}-${selectedQuadrant.col}`}
                 </Text>
               </View>
-              <TouchableOpacity
-                accessibilityRole="button"
-                onPress={() => setSelectedQuadrant(null)}
-                style={[
-                  a.p_xs,
-                  a.rounded_full,
-                  t.atoms.bg_contrast_25,
-                  {
-                    width: 28,
-                    height: 28,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  },
-                ]}>
-                <Text
+              <View style={[a.flex_row, a.align_center, a.gap_sm]}>
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={() => setSelectedQuadrant(null)}
                   style={[
-                    a.text_sm,
-                    t.atoms.text_contrast_medium,
-                    {lineHeight: 14},
+                    a.p_xs,
+                    a.rounded_full,
+                    t.atoms.bg_contrast_25,
+                    {
+                      width: 28,
+                      height: 28,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    },
                   ]}>
-                  ✕
-                </Text>
-              </TouchableOpacity>
+                  <Text
+                    style={[
+                      a.text_sm,
+                      t.atoms.text_contrast_medium,
+                      {lineHeight: 14},
+                    ]}>
+                    ✕
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
 
             {isAffiliateMode ? (
@@ -1515,30 +1517,6 @@ export function CompassScreen({navigation, route}: Props) {
                       ),
                     )}
                 </View>
-                <Button
-                  label={translate(msg`Set as my position`)}
-                  onPress={() => {
-                    setPendingNinthId(selectedQuadrant.id)
-                  }}
-                  variant={
-                    pendingNinthId === selectedQuadrant.id ? 'solid' : 'outline'
-                  }
-                  color={
-                    pendingNinthId === selectedQuadrant.id
-                      ? 'primary'
-                      : 'secondary'
-                  }
-                  size="large"
-                  shape="round"
-                  style={[a.mt_md]}>
-                  <ButtonText style={[a.font_bold]}>
-                    {pendingNinthId === selectedQuadrant.id ? (
-                      <Trans>✓ Posición confirmada</Trans>
-                    ) : (
-                      <Trans>Fijar como mi posición</Trans>
-                    )}
-                  </ButtonText>
-                </Button>
               </>
             ) : (
               <>

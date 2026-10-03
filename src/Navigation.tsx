@@ -102,6 +102,7 @@ import {CreatePositionScreen} from '#/screens/Communities/CreatePositionScreen'
 import {DelegateVoteScreen} from '#/screens/Communities/DelegateVoteScreen'
 import {ModeratorDashboardScreen} from '#/screens/Communities/ModeratorDashboardScreen'
 import {MyCommunitiesScreen} from '#/screens/Communities/MyCommunitiesScreen'
+import {CommunityChatsScreen} from '#/screens/Messages/CommunityChatsScreen'
 import {DiscourseAnalysisScreen} from '#/screens/Dashboard/DiscourseAnalysis'
 import {DocumentsScreen} from '#/screens/Dashboard/DocumentsScreen'
 import {MatterDetailsScreen} from '#/screens/Dashboard/MatterDetails'
@@ -1271,6 +1272,11 @@ function MessagesTabNavigator() {
         getComponent={() => CommunityChatScreen}
         options={{title: 'Chat'}}
       />
+      <MessagesTab.Screen
+        name="CommunityChats"
+        getComponent={() => CommunityChatsScreen}
+        options={{title: 'Community chats'}}
+      />
       {commonScreens(MessagesTab as typeof Flat)}
     </MessagesTab.Navigator>
   )
@@ -1375,6 +1381,11 @@ const FlatNavigator = ({
         name="CommunityChat"
         getComponent={() => CommunityChatScreen}
         options={{title: title(msg`Chat`)}}
+      />
+      <Flat.Screen
+        name="CommunityChats"
+        getComponent={() => CommunityChatsScreen}
+        options={{title: title(msg`Community chats`), requireAuth: true}}
       />
       <Flat.Screen
         name="CommunityMembers"

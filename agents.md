@@ -218,8 +218,14 @@ Raise the full local demo with the current workspace split:
     As the dev-env accounts it seeds eight image memes with threaded comments
     and up/down reactions, alice.test's personal civic tree, and the
     "Medio Ambiente y Clima" / "Movilidad Sostenible Norte" community trees
-    (cards go through submit → three approvals → relationships). Content lives
-    in `demo-content.json`; re-runs skip what exists.
+    (cards go through submit → three approvals → relationships). The shared fixtures and engine live in
+    `../WatZappa/packages/dev-env/assets/demo-content/`; the full backend demo
+    seed invokes the same engine automatically. Policy/matter posts and public
+    highlights use stable record keys; personal collections and community cards
+    include their real sources, books with author/year, and connections. Re-runs
+    skip existing tree entries. The persistent launcher also runs the civic-tree seed before reporting ready,
+    provisioning missing fixture accounts and demo communities with `SEED_PASSWORD`
+    (default `para-test-pw`) and reusing existing accounts, memberships and tree entries.
   - The seeded cabildeos carry specific flairs (e.g. `||#EmpresaPublicaDeAgua`) so the six fields in `FLAIR_GROUPS` are exercised. Live thematic-board cabildeos from other seeders use board URIs in `community` and never match VS entities like `p/Jalisco`.
 
 ### Terminal 6: PARA BSKYWEB FRONTEND
@@ -818,9 +824,21 @@ pnpm test src/screens/Search/__tests__/searchParams.test.ts
 
 - A board has no kind field. `quadrant` marks parties (`national` /
   `political`) and ninths (a compass id); `norte` / `sur` / `centro` are topic
-  communities, not geography. My Communities classifies with
-  `screens/Communities/communityGrouping.ts` into Parties / Ninths / States /
-  Other. Never infer a state from a name or description.
+  communities, not geography. `screens/Communities/communityGrouping.ts`
+  classifies boards into party / ninth / state / other. My Communities shows
+  only the saved party and ninth affiliations plus active geographic
+  memberships grouped by state. Never infer a state from a name or description.
+- Party and ninth choices in My Affiliations are independent. Updating or
+  removing one must preserve the other; do not save a party's suggested ninth
+  automatically or infer selection provenance from the presence of a party.
+  My Communities reads these same saved affiliations, not a party's compass
+  distribution.
+- A saved party/ninth must remain visible in My Communities even if no matching
+  board exists. Show its real affiliation with a community-unavailable message
+  and an affiliation-management action; never invent a board URI or member
+  count. The local demo currently has party boards but no ninth boards.
+  `CompassMini` highlights only an explicit ninth/precision-grid selection;
+  a party alone must not imply a selected ninth or default to the center.
 - A community's Mexican state is the board record's optional `region`
   (lexicon `com.para.community.board`, set at `createBoard`, indexed into
   `para_community_board.region`, returned on `listBoards` / `getBoard`). It is
@@ -833,18 +851,60 @@ pnpm test src/screens/Search/__tests__/searchParams.test.ts
   (`lib/constants/mexico.ts`) before filtering; the stored value is the
   `MEXICAN_STATES` spelling ("Ciudad de México"). The older `state` param
   filters governance lifecycle, not geography. WatZappa's dev-env seed
-  (`dev-env/src/seed/para-demo.ts`) creates four state communities (Jalisco,
-  Nuevo León, Oaxaca, Ciudad de México); the server lexicon directories
+  (`dev-env/src/seed/para-demo.ts`) creates only five unofficial communities
+  (three topic ones plus Vivienda Digna CDMX and Agua y Presas de Jalisco); the server lexicon directories
   `bsky/src/lexicon` and `pds/src/lexicon` are tracked and need `region` too.
 - `normalizeBoard` in `state/queries/community-boards.ts` copies fields by
   hand: a new view field is dropped until it is added there.
-- Ágora no longer hosts the lobbying dashboard. It links to the `Cabildeos`
-  screen (`/agora/cabildeos`, `screens/Cabildeos/CabildeosScreen.tsx`), which
-  holds the filters, trending shelf, regional shelf, party desk and the create
-  button.
+- Cabildeos lives under Community activities → Social, with no standalone
+  Ágora card. The dashboard's canonical path is
+  `/community-directory/social/cabildeos`; `/agora/cabildeos` remains an alias
+  for existing links. Its filters, trending shelf, regional shelf, party desk
+  and creation flow remain in `screens/Cabildeos/CabildeosScreen.tsx`.
+- CommunityDirectory's optional `category` route parameter preserves the
+  Social / Financial selection when navigating or sharing links. The Social
+  and All views link to the global Cabildeos dashboard. The activity explorer
+  starts with filters and has no "THE COMMONS" banner or summary counters.
+- Community Activities also preserves `communityUri` and `time` in its route.
+  Use exact board URIs, a searchable community picker, and Upcoming / Past /
+  Any time filters. Search covers the published title, description, location
+  and community name. Terminal statuses remain past; undated records appear
+  under Any time. Keep published data and request failures distinct.
+- Uniform activity rows show actual dates, status and financial-plan values.
+  The registration shortcut is available only for a selected community's
+  entitled organizers (`useCommunityOrganizers`); All activities asks which
+  category to register before entering the existing creation screen.
 
 ## 2026-10-01: Compact civic Tree workspace
 
 - Both Tree and Interactive Map expand via the focus-scoped workspace hook on desktop. Tree uses compact cards grouped by authored personal collections or community topic connections; community Tree also retains Argument outline. Interactive Map is the spatial graph view; do not add a redundant Network layout to Tree.
 - `features/civicTree/components/CivicTreeCards` shows actual relationships, respecting personal relation direction, in a selection inspector. Group headers express membership, never invented graph edges. Search and filters preserve community grouping from the complete graph. Selecting a connection follows its real endpoint; detail actions retain the existing edit, connect and community workflows.
 - Tree card lanes scroll independently inside the viewport; the inspector moves below the lanes on narrow screens. Full personal card details open in a dialog. Keep the compact collection shelf from growing vertically.
+
+## 2026-10-01: Web community card details
+
+- `NodeDetailSheet.web.tsx` opens a centered desktop dialog with content and real connections beside a voting/details sidebar. The native renderer retains its sheet layout. Following a connection selects its actual endpoint; Escape restores focus to the originating card.
+- Only policies use the horizontal -3…+3 position control. Other community cards reuse the post up/down arrows. `features/civicTree/cardVoting.ts` recognizes explicit policy types and JSON metadata `postType`/`kind: 'policy'`, including seeded article cards. Policy-themed topics and flairs do not make a card a policy.
+- Vote and relationship mutations display pending/error feedback. Do not display an unsaved vote as persisted; the current AppView card voting routes are still planned endpoints.
+
+## 2026-10-01: Community chat rooms have fixed purposes
+
+- There are no custom chat groups. A community's rooms come from the bridge by
+  `chamberMode`: unicameral gives only Sala principal; bicameral also gives
+  Cámara A, Cámara B and Consejo observador. Names and purposes live in
+  `lib/chat/roomPurposes.ts`.
+- `chamberMode` is a board-record field, not a `createBoard` parameter. The dev
+  seed sets it on the six official parties (Morena, PAN, PRI, PVEM, PT, MC) via
+  the same record update that activates them; every other seeded board stays
+  unicameral. Official parties, PRD and Independientes are always seeded; only
+  five unofficial communities are, and cabildeos of dropped ones are re-homed
+  (`rehome` in `para-demo.ts`).
+- The Messages header button opens `CommunityChats` (`/community-chats`,
+  `screens/Messages/CommunityChatsScreen.tsx`): joined communities grouped as
+  Partidos / Novenos / Estados / Otras, each with its rooms by purpose and a
+  "how to create a chat group" card. Chamber rooms are tappable only once the
+  bridge reports them. The Messages list itself stays flat; a tabbed/grouped
+  redesign and opening chats in the split-view pane were tried and rejected.
+- The web community chat screen has a room rail and a members panel
+  (`CommunityChatPanels.tsx`) fed by bridge REST and by `matrix-live-state`
+  messages from the iframe (unread counts and presence only).

@@ -89,6 +89,10 @@ export type ChatListItemProps =
         slug: string
         unread: number
         kind: 'main' | 'chamber-a' | 'chamber-b' | 'observers'
+        /** Community name; the bridge slug is only a fallback. */
+        name?: string
+        memberCount?: number
+        region?: string
       }
       selected?: boolean
     }
@@ -740,7 +744,11 @@ function MatrixChatListItem({
   room,
   selected = false,
 }: {
-  room: MatrixRoomSummary
+  room: MatrixRoomSummary & {
+    name?: string
+    memberCount?: number
+    region?: string
+  }
   selected?: boolean
 }) {
   const t = useTheme()
@@ -751,8 +759,16 @@ function MatrixChatListItem({
   const {mutate: markRead} = useMarkMatrixReadMutation()
   const playHaptic = useHaptics()
 
-  const title = room.slug
-  const lastMessage = l`${roomKindLabel[room.kind]} · Chat cívico privado`
+  const title = room.name ?? room.slug
+  // Say something about the community, not a placeholder that repeats on
+  // every row; fall back to the room name when nothing else is known.
+  const lastMessage =
+    [
+      room.memberCount !== undefined ? l`${room.memberCount} miembros` : '',
+      room.region ?? '',
+    ]
+      .filter(Boolean)
+      .join(' · ') || roomKindLabel[room.kind]
   const hasUnread = room.unread > 0
   const avatarSize = isWithinLeftPanel ? 48 : 52
 
@@ -760,7 +776,7 @@ function MatrixChatListItem({
     navigation.navigate('CommunityChat', {
       communityUri: room.communityUri,
       communityName: room.slug,
-      roomId: room.roomId,
+      roomId: room.roomId || undefined,
     })
   }, [navigation, room])
 
@@ -770,7 +786,7 @@ function MatrixChatListItem({
   }, [playHaptic, menuControl])
 
   const onMarkRead = useCallback(() => {
-    markRead({roomId: room.roomId})
+    if (room.roomId) markRead({roomId: room.roomId})
   }, [markRead, room.roomId])
 
   const onViewCommunity = useCallback(() => {
@@ -797,11 +813,14 @@ function MatrixChatListItem({
               {
                 width: avatarSize,
                 height: avatarSize,
-                borderRadius: avatarSize / 2,
+                borderRadius: 14,
                 backgroundColor: t.palette.primary_500 + '20',
               },
             ]}>
-            <Text style={[a.text_xl]}>🏛️</Text>
+            <Text
+              style={[a.text_xl, a.font_bold, {color: t.palette.primary_600}]}>
+              {title.trim().charAt(0).toUpperCase()}
+            </Text>
           </View>
         </View>
 
@@ -868,24 +887,36 @@ function MatrixChatListItem({
                     <View
                       style={[
                         a.rounded_full,
+                        a.align_center,
+                        a.justify_center,
                         {
                           backgroundColor: t.palette.primary_500,
-                          height: 8,
-                          width: 8,
-                          marginLeft: 6,
+                          minWidth: 18,
+                          height: 18,
+                          paddingHorizontal: 5,
+                          marginLeft: 8,
                         },
                         web({whiteSpace: 'preserve nowrap'}),
-                      ]}
-                    />
+                      ]}>
+                      <Text
+                        style={[
+                          a.text_xs,
+                          a.font_bold,
+                          {color: t.palette.white},
+                        ]}>
+                        {room.unread > 99 ? '99+' : room.unread}
+                      </Text>
+                    </View>
                   )}
                 </View>
 
                 <View style={[a.flex_row, a.align_center]}>
                   <Text
                     emoji
-                    numberOfLines={2}
+                    numberOfLines={1}
                     style={[
-                      hasUnread ? a.font_medium : t.atoms.text_contrast_high,
+                      a.text_sm,
+                      hasUnread ? a.font_medium : t.atoms.text_contrast_medium,
                     ]}>
                     {lastMessage}
                   </Text>

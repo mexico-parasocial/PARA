@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native'
 import {msg} from '@lingui/core/macro'
@@ -18,7 +19,9 @@ import {Trans} from '@lingui/react/macro'
 import {useNavigation, useRoute} from '@react-navigation/native'
 
 import {getDefaultChatIdentityMode} from '#/lib/chat/identity'
+import {storeRefreshedMatrixWebSession} from '#/features/encryptedChat/webOidc'
 import {useChatBootstrap} from '#/lib/matrix/useChatBootstrap'
+import {useMatrixWebSession} from '#/lib/matrix/useMatrixWebSession'
 import {useReportedMessage} from '#/lib/matrix/useReportedMessage'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
@@ -26,10 +29,11 @@ import {
   useChatMemberListQuery,
   useCommunitySpaceQuery,
   useMarkMatrixReadMutation,
-  useMatrixTokenQuery,
+  useMatrixRoomsQuery,
 } from '#/state/queries/matrix'
 import {useAgent} from '#/state/session'
-import {atoms as a, useTheme} from '#/alf'
+import {useExpandCivicTreeWorkspace} from '#/state/shell/civic-tree-workspace'
+import {atoms as a, useBreakpoints, useLayoutBreakpoints, useTheme} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import {ReportedMessageCard} from '#/components/chat/ReportedMessageCard'
 import {
@@ -48,6 +52,7 @@ import * as Layout from '#/components/Layout'
 import {SorteoBadge} from '#/components/SorteoBadge'
 import {Text} from '#/components/Typography'
 import {ChatCivicContext} from './ChatCivicContext'
+import {ChatMembersPanel, ChatRoomsRail} from './CommunityChatPanels'
 import {buildConfiguredClientHtml} from './matrix-client'
 import {useChatOnboarding} from './useChatOnboarding'
 import {useMatrixClientStrings} from './useMatrixClientStrings'
@@ -89,18 +94,61 @@ export function CommunityChatScreen() {
 
   const {data: spaceData, isLoading: spaceLoading} =
     useCommunitySpaceQuery(communityUri)
-  const {
-    data: tokenData,
-    isLoading: tokenLoading,
-    error: tokenError,
-  } = useMatrixTokenQuery({
+  /*
+   * The browser owns its Matrix session here. `/api/matrix-token` cannot serve
+   * this deployment — MAS owns logins, so the bridge has nothing to mint and
+   * answers 503 MATRIX_CLIENT_LOGIN_REQUIRED — so the session comes from the
+   * homeserver's own authorization-code flow instead. See
+   * `features/encryptedChat/webOidc.ts`.
+   */
+  const matrixSession = useMatrixWebSession({
     enabled: !!myDid && chatBootstrap.ready,
-    deviceId: chatBootstrap.deviceId,
   })
+  const tokenData = matrixSession.session
+  const tokenLoading = matrixSession.status === 'loading'
+  const tokenError =
+    matrixSession.status === 'error' && matrixSession.error
+      ? new Error(matrixSession.error)
+      : undefined
+  const authorizationRequired = matrixSession.status === 'authorizationRequired'
   const {data: memberList} = useChatMemberListQuery(communityUri, 100, 0)
   const {data: myBadges} = useChatBadgesQuery(myDid, communityUri)
   const {mutate: markRead} = useMarkMatrixReadMutation()
   const activeRoomId = routeRoomId ?? spaceData?.spaceId
+  const {data: roomsData} = useMatrixRoomsQuery({enabled: !!myDid})
+  const communityRooms = useMemo(
+    () => roomsData?.rooms.filter(r => r.communityUri === communityUri) ?? [],
+    [roomsData, communityUri],
+  )
+  const {width: windowWidth} = useWindowDimensions()
+  const {gtMobile, gtTablet} = useBreakpoints()
+  const {centerColumnOffset} = useLayoutBreakpoints()
+  // On wide screens the chat takes over the right column like the civic tree.
+  const wide = gtMobile && !!myDid
+  // The members panel starts closed on mid-width windows to leave room for chat.
+  const [membersOpen, setMembersOpen] = useState(gtTablet)
+  const [live, setLive] = useState<{
+    unread: Record<string, number>
+    presence: Record<string, string>
+  }>({unread: {}, presence: {}})
+  useExpandCivicTreeWorkspace(wide)
+  const workspaceLeft =
+    windowWidth / 2 -
+    300 +
+    (centerColumnOffset ? Layout.CENTER_COLUMN_OFFSET : 0)
+  const selectRoom = useCallback(
+    (room: {roomId: string}) => navigation.setParams({roomId: room.roomId}),
+    [navigation],
+  )
+  const openMember = useCallback(
+    (did: string) => navigation.navigate('Profile', {name: did}),
+    [navigation],
+  )
+  const openMembers = useCallback(
+    () =>
+      navigation.navigate('CommunityMembers', {communityUri, communityName}),
+    [navigation, communityUri, communityName],
+  )
   // A reported message opened from the moderator queue (D2): read with this
   // session, shown above the conversation until dismissed.
   const [focusDismissed, setFocusDismissed] = useState(false)
@@ -121,8 +169,27 @@ export function CommunityChatScreen() {
           type?: string
           roomId?: string
           eventId?: string
+          activeRoomId?: string
+          rooms?: {roomId: string; unread: number}[]
+          presence?: Record<string, string>
+          accessToken?: string
+          refreshToken?: string
+          expiresInMs?: number
         }
         if (
+          message.type === 'matrix-live-state' &&
+          message.activeRoomId === activeRoomId &&
+          Array.isArray(message.rooms)
+        ) {
+          setLive({
+            unread: Object.fromEntries(
+              message.rooms
+                .filter(r => typeof r.roomId === 'string')
+                .map(r => [r.roomId, Number(r.unread) || 0]),
+            ),
+            presence: message.presence ?? {},
+          })
+        } else if (
           message.type === 'matrix-report-message' &&
           typeof message.roomId === 'string' &&
           message.roomId === activeRoomId &&
@@ -134,6 +201,17 @@ export function CommunityChatScreen() {
           message.roomId === activeRoomId
         ) {
           void rejoin()
+        } else if (
+          message.type === 'matrix-token-refreshed' &&
+          typeof message.accessToken === 'string'
+        ) {
+          // MAS rotates the refresh token on use. Store what the client got, or
+          // the next page load replays a token the homeserver has retired.
+          void storeRefreshedMatrixWebSession({
+            accessToken: message.accessToken,
+            refreshToken: message.refreshToken,
+            expiresInMs: message.expiresInMs,
+          })
         }
       } catch {
         // Ignore unrelated iframe messages.
@@ -218,6 +296,11 @@ export function CommunityChatScreen() {
       communityName,
       strings: matrixStrings,
       parentOrigin: window.location.origin,
+      // MAS access tokens are short-lived. Hand the client what it needs to
+      // renew its own, or the conversation dies a few minutes in.
+      refreshToken: tokenData.refreshToken,
+      tokenEndpoint: tokenData.tokenEndpoint,
+      oauthClientId: tokenData.clientId,
     })
   }, [tokenData, activeRoomId, sdkBundle, communityName, matrixStrings])
 
@@ -260,6 +343,50 @@ export function CommunityChatScreen() {
     ),
     [t],
   )
+
+  /*
+   * No session yet. This is the normal first-run state on web, not a failure:
+   * the homeserver decides who may chat, and it asks in its own pages. Nothing
+   * useful can be rendered until the user has been there, so offer the trip
+   * rather than a spinner that never resolves.
+   */
+  if (authorizationRequired && !chatBootstrap.error) {
+    return (
+      <Layout.Screen>
+        <Layout.Header.Outer noBottomBorder>
+          <Layout.Header.BackButton />
+          <Layout.Header.Content>
+            <Layout.Header.TitleText>{communityName}</Layout.Header.TitleText>
+          </Layout.Header.Content>
+          <Layout.Header.Slot />
+        </Layout.Header.Outer>
+        <View style={[styles.loading, {backgroundColor: t.palette.contrast_0}]}>
+          <Layout.Content>
+            <Layout.Header.TitleText>
+              <Trans>Autoriza el chat</Trans>
+            </Layout.Header.TitleText>
+            <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_sm]}>
+              <Trans>
+                El servidor de chat pide tu autorización en su propia página.
+                Volverás aquí al terminar.
+              </Trans>
+            </Text>
+            <Button
+              label={_(msg`Autorizar el chat`)}
+              onPress={matrixSession.authorize}
+              size="large"
+              variant="solid"
+              color="primary"
+              style={a.mt_md}>
+              <ButtonText>
+                <Trans>Autorizar</Trans>
+              </ButtonText>
+            </Button>
+          </Layout.Content>
+        </View>
+      </Layout.Screen>
+    )
+  }
 
   if (
     isLoading ||
@@ -306,144 +433,175 @@ export function CommunityChatScreen() {
   }
 
   return (
-    <Layout.Screen>
-      <Layout.Header.Outer noBottomBorder>
-        <Layout.Header.BackButton />
-        <Layout.Header.Content>
-          <Layout.Header.TitleText>{communityName}</Layout.Header.TitleText>
-        </Layout.Header.Content>
-        <Layout.Header.Slot>
-          <View style={[styles.headerSlot]}>
-            {isModerator && riskCount > 0 && (
+    <Layout.Screen hideBorders={wide}>
+      <Layout.Center
+        style={[
+          styles.center,
+          wide && {
+            maxWidth: windowWidth - workspaceLeft - 24,
+            width: windowWidth - workspaceLeft - 24,
+            marginLeft: workspaceLeft,
+            marginRight: 24,
+            transform: [],
+          },
+        ]}>
+        <Layout.Header.Outer noBottomBorder>
+          <Layout.Header.BackButton />
+          <Layout.Header.Content>
+            <Layout.Header.TitleText>{communityName}</Layout.Header.TitleText>
+          </Layout.Header.Content>
+          <Layout.Header.Slot>
+            <View style={[styles.headerSlot]}>
+              {isModerator && riskCount > 0 && (
+                <Button
+                  label={_(msg`Miembros con insignias de riesgo: ${riskCount}`)}
+                  accessibilityHint={_(
+                    msg`Abre la lista de miembros de la comunidad`,
+                  )}
+                  size="small"
+                  shape="default"
+                  variant="ghost"
+                  onPress={() =>
+                    navigation.navigate('CommunityMembers', {
+                      communityUri,
+                      communityName,
+                    })
+                  }>
+                  <ButtonIcon icon={WarningIcon} />
+                  <ButtonText>{riskCount}</ButtonText>
+                </Button>
+              )}
+              <SorteoBadge communityUri={communityUri} />
               <Button
-                label={_(msg`Miembros con insignias de riesgo: ${riskCount}`)}
+                label={_(msg`Miembros`)}
                 accessibilityHint={_(
                   msg`Abre la lista de miembros de la comunidad`,
                 )}
                 size="small"
-                shape="default"
-                variant="ghost"
-                onPress={() =>
-                  navigation.navigate('CommunityMembers', {
-                    communityUri,
-                    communityName,
-                  })
-                }>
-                <ButtonIcon icon={WarningIcon} />
-                <ButtonText>{riskCount}</ButtonText>
-              </Button>
-            )}
-            <SorteoBadge communityUri={communityUri} />
-            <Button
-              label={_(msg`Miembros`)}
-              accessibilityHint={_(
-                msg`Abre la lista de miembros de la comunidad`,
-              )}
-              size="small"
-              shape="round"
-              variant="ghost"
-              onPress={() =>
-                navigation.navigate('CommunityMembers', {
-                  communityUri,
-                  communityName,
-                })
-              }>
-              <ButtonIcon icon={MembersIcon} />
-            </Button>
-            {isModerator && (
-              <Button
-                label={_(msg`Panel de moderación`)}
-                accessibilityHint={_(
-                  msg`Abre las herramientas de moderación de la comunidad`,
-                )}
-                size="small"
                 shape="round"
                 variant="ghost"
-                onPress={() =>
-                  navigation.navigate('ModeratorDashboard', {
-                    communityUri,
-                    communityName,
-                  })
+                onPress={
+                  wide ? () => setMembersOpen(open => !open) : openMembers
                 }>
-                <ButtonIcon icon={ShieldIcon} />
+                <ButtonIcon icon={MembersIcon} />
               </Button>
-            )}
-          </View>
-        </Layout.Header.Slot>
-      </Layout.Header.Outer>
-      <ChatCivicContext
-        identityMode={identityMode}
-        encryptionPolicy={'unencrypted'}
-        badges={civicBadges}
-      />
-      {onboarding.visible && (
-        <OnboardingBanner
-          onDismiss={onboarding.dismiss}
-          roomLabel={
-            routeRoomId && routeRoomId !== spaceData?.spaceId
-              ? _(msg`cámara de debate`)
-              : _(msg`sala principal`)
-          }
+              {isModerator && (
+                <Button
+                  label={_(msg`Panel de moderación`)}
+                  accessibilityHint={_(
+                    msg`Abre las herramientas de moderación de la comunidad`,
+                  )}
+                  size="small"
+                  shape="round"
+                  variant="ghost"
+                  onPress={() =>
+                    navigation.navigate('ModeratorDashboard', {
+                      communityUri,
+                      communityName,
+                    })
+                  }>
+                  <ButtonIcon icon={ShieldIcon} />
+                </Button>
+              )}
+            </View>
+          </Layout.Header.Slot>
+        </Layout.Header.Outer>
+        <ChatCivicContext
+          identityMode={identityMode}
+          encryptionPolicy={'unencrypted'}
+          badges={civicBadges}
         />
-      )}
-      <View
-        style={[
-          styles.actionBar,
-          {
-            backgroundColor: t.palette.contrast_0,
-            borderBottomColor: t.palette.contrast_100,
-          },
-        ]}>
-        <ChatActionButton
-          label={_(msg`Resumir`)}
-          hint={_(msg`Abre el agente para resumir el debate`)}
-          icon={SummarizeIcon}
-          onPress={openAgentAssistant}
+        {onboarding.visible && (
+          <OnboardingBanner
+            onDismiss={onboarding.dismiss}
+            roomLabel={
+              routeRoomId && routeRoomId !== spaceData?.spaceId
+                ? _(msg`cámara de debate`)
+                : _(msg`sala principal`)
+            }
+          />
+        )}
+        <View
+          style={[
+            styles.actionBar,
+            {
+              backgroundColor: t.palette.contrast_0,
+              borderBottomColor: t.palette.contrast_100,
+            },
+          ]}>
+          <ChatActionButton
+            label={_(msg`Resumir`)}
+            hint={_(msg`Abre el agente para resumir el debate`)}
+            icon={SummarizeIcon}
+            onPress={openAgentAssistant}
+          />
+          <ChatActionButton
+            label={_(msg`Propuesta`)}
+            hint={_(msg`Crea un cabildeo desde esta conversación`)}
+            icon={ProposalIcon}
+            onPress={openCreateCabildeo}
+          />
+          <ChatActionButton
+            label={_(msg`Evidencia`)}
+            hint={_(msg`Abre el agente para extraer evidencia`)}
+            icon={EvidenceIcon}
+            onPress={openAgentAssistant}
+          />
+          <ChatActionButton
+            label={_(msg`Miembros`)}
+            hint={_(msg`Muestra miembros y badges cívicos`)}
+            icon={MembersIcon}
+            onPress={() =>
+              navigation.navigate('CommunityMembers', {
+                communityUri,
+                communityName,
+              })
+            }
+          />
+        </View>
+        {showFocus && (
+          <ReportedMessageCard
+            view={reported.view}
+            encrypted={false}
+            onClose={() => setFocusDismissed(true)}
+            onRetry={reported.retry}
+          />
+        )}
+        <View style={styles.body}>
+          {wide && (
+            <ChatRoomsRail
+              rooms={communityRooms}
+              activeRoomId={activeRoomId}
+              mainRoomId={spaceData?.spaceId}
+              liveUnread={live.unread}
+              onSelect={selectRoom}
+            />
+          )}
+          <iframe
+            key={activeRoomId}
+            ref={iframeRef}
+            title={_(msg`Chat de ${communityName}`)}
+            srcDoc={srcDoc}
+            style={styles.iframe}
+            sandbox="allow-scripts allow-same-origin allow-forms"
+          />
+          {wide && membersOpen && (
+            <ChatMembersPanel
+              members={memberList?.members ?? []}
+              total={memberList?.total ?? 0}
+              isModerator={isModerator}
+              presence={live.presence}
+              onOpenMember={openMember}
+              onOpenAll={openMembers}
+            />
+          )}
+        </View>
+        <ReportMessageDialog
+          control={reportControl}
+          communityUri={communityUri}
+          message={reportedMessage}
         />
-        <ChatActionButton
-          label={_(msg`Propuesta`)}
-          hint={_(msg`Crea un cabildeo desde esta conversación`)}
-          icon={ProposalIcon}
-          onPress={openCreateCabildeo}
-        />
-        <ChatActionButton
-          label={_(msg`Evidencia`)}
-          hint={_(msg`Abre el agente para extraer evidencia`)}
-          icon={EvidenceIcon}
-          onPress={openAgentAssistant}
-        />
-        <ChatActionButton
-          label={_(msg`Miembros`)}
-          hint={_(msg`Muestra miembros y badges cívicos`)}
-          icon={MembersIcon}
-          onPress={() =>
-            navigation.navigate('CommunityMembers', {
-              communityUri,
-              communityName,
-            })
-          }
-        />
-      </View>
-      {showFocus && (
-        <ReportedMessageCard
-          view={reported.view}
-          encrypted={false}
-          onClose={() => setFocusDismissed(true)}
-          onRetry={reported.retry}
-        />
-      )}
-      <iframe
-        ref={iframeRef}
-        title={_(msg`Chat de ${communityName}`)}
-        srcDoc={srcDoc}
-        style={styles.iframe}
-        sandbox="allow-scripts allow-same-origin allow-forms"
-      />
-      <ReportMessageDialog
-        control={reportControl}
-        communityUri={communityUri}
-        message={reportedMessage}
-      />
+      </Layout.Center>
     </Layout.Screen>
   )
 }
@@ -520,6 +678,8 @@ function OnboardingBanner({
 }
 
 const styles = StyleSheet.create({
+  center: {flex: 1},
+  body: {flex: 1, flexDirection: 'row'},
   iframe: {
     flex: 1,
     borderWidth: 0,

@@ -91,7 +91,7 @@ export const router = new Router({
   CabildeoList: '/communities/cabildeos',
   CabildeoDetail: '/communities/cabildeos/:cabildeoUri',
   Agora: '/agora',
-  Cabildeos: '/agora/cabildeos',
+  Cabildeos: ['/community-directory/social/cabildeos', '/agora/cabildeos'],
   CommunityDirectory: '/community-directory',
   ProposalDetail: '/agora/proposals/:proposalUri',
   DelegateVote: '/communities/cabildeos/:cabildeoUri/delegate-vote',
@@ -153,5 +153,6 @@ export const router = new Router({
     '/mapa-civico/branches/:collectionId',
   ],
   MyCommunities: '/my-communities',
+  CommunityChats: '/community-chats',
   MyRAQ: '/raq/my',
 })

@@ -145,7 +145,6 @@ export function CommunitiesScreen() {
     [],
   )
   const canCreateCommunity = liveBoardsData?.canCreateCommunity ?? true
-  const liveBoards = liveBoardsData?.boards ?? []
   const participationMatches = participationMatchesData?.boards ?? []
   const stateMatches = stateMatchesData?.boards ?? []
   const recentCommunities = useRecentCommunities()
@@ -273,36 +272,46 @@ export function CommunitiesScreen() {
                 {recentCommunities.length > 0 && (
                   <TouchableOpacity
                     accessibilityRole="button"
+                    accessibilityLabel="Clear recent communities"
                     onPress={() => clearRecentCommunities()}
-                    style={[
-                      styles.clearButton,
-                      {backgroundColor: t.palette.primary_500},
-                    ]}>
-                    <Text style={[styles.clearButtonText, {color: '#fff'}]}>
+                    hitSlop={8}>
+                    <Text
+                      style={[
+                        styles.clearLink,
+                        {color: t.palette.primary_500},
+                      ]}>
                       <Trans>Clear</Trans>
                     </Text>
                   </TouchableOpacity>
                 )}
               </View>
 
-              <View style={[styles.resumeGrid, IS_WEB && styles.resumeGridWeb]}>
-                {recentLiveBoards.length > 0 ? (
-                  recentLiveBoards.map(board => (
-                    <LiveCommunityCard
+              {recentLiveBoards.length > 0 ? (
+                <View
+                  style={[
+                    styles.recentList,
+                    {
+                      backgroundColor: t.palette.contrast_25,
+                      borderColor: t.palette.contrast_100,
+                    },
+                  ]}>
+                  {recentLiveBoards.map((board, index) => (
+                    <RecentCommunityRow
                       key={board.uri}
                       board={board}
                       theme={t}
+                      isLast={index === recentLiveBoards.length - 1}
                       onPress={() => navigateToLiveCommunityProfile(board)}
                     />
-                  ))
-                ) : (
-                  <EmptyLiveDirectoryCard
-                    theme={t}
-                    title="No recent communities yet"
-                    body="Communities you open will appear here."
-                  />
-                )}
-              </View>
+                  ))}
+                </View>
+              ) : (
+                <EmptyLiveDirectoryCard
+                  theme={t}
+                  title="No recent communities yet"
+                  body="Communities you open will appear here."
+                />
+              )}
             </View>
 
             <View style={styles.section}>
@@ -538,41 +547,6 @@ export function CommunitiesScreen() {
                 </RefinementPanel>
               </View>
             </View>
-
-            <TouchableOpacity
-              accessibilityRole="button"
-              activeOpacity={0.86}
-              onPress={() => navigation.navigate('CabildeoList')}
-              style={[
-                styles.cabildeoCard,
-                {
-                  backgroundColor: t.palette.primary_500 + '0E',
-                  borderColor: t.palette.primary_500 + '24',
-                },
-              ]}>
-              <View style={styles.cabildeoMeta}>
-                <Text
-                  style={[
-                    styles.cabildeoEyebrow,
-                    {color: t.palette.primary_500},
-                  ]}>
-                  <Trans>Action lane</Trans>
-                </Text>
-                <Text style={[styles.cabildeoTitle, t.atoms.text]}>
-                  <Trans>Lobbying</Trans>
-                </Text>
-              </View>
-
-              <View
-                style={[
-                  styles.cabildeoPill,
-                  {backgroundColor: t.palette.primary_500},
-                ]}>
-                <Text style={styles.cabildeoPillText}>
-                  <Trans>Open Lobbying</Trans>
-                </Text>
-              </View>
-            </TouchableOpacity>
           </View>
         </ScrollView>
       </Layout.Center>
@@ -813,6 +787,82 @@ function LiveCommunityCard({
           {board.governanceSummary?.moderatorCount ?? 0} moderators
         </Text>
       )}
+    </TouchableOpacity>
+  )
+}
+
+function RecentCommunityRow({
+  board,
+  theme,
+  isLast,
+  onPress,
+}: {
+  board: RecentCommunityView
+  theme: ThemeShape
+  isLast: boolean
+  onPress: () => void
+}) {
+  const color = getCommunityColor(board.quadrant)
+  const gradient = getCommunityGradient(board.quadrant)
+  const label =
+    !isPartyCommunity(board) && board.quadrant
+      ? board.quadrant.replace(/-/g, ' ')
+      : null
+  const initial = board.name.charAt(0).toUpperCase()
+
+  return (
+    <TouchableOpacity
+      accessibilityRole="button"
+      accessibilityLabel={board.name}
+      activeOpacity={0.7}
+      onPress={onPress}
+      style={[
+        styles.recentRow,
+        !isLast && {
+          borderBottomWidth: StyleSheet.hairlineWidth,
+          borderBottomColor: theme.palette.contrast_100,
+        },
+      ]}>
+      {gradient ? (
+        <LinearGradient
+          colors={gradient.colors}
+          start={gradient.start}
+          end={gradient.end}
+          style={[styles.recentAvatar, {overflow: 'hidden'}]}>
+          <Text style={[styles.liveBoardAvatarText, {color: '#fff'}]}>
+            {initial}
+          </Text>
+        </LinearGradient>
+      ) : (
+        <View
+          style={[
+            styles.recentAvatar,
+            {backgroundColor: color ?? theme.palette.primary_100},
+          ]}>
+          <Text
+            style={[
+              styles.liveBoardAvatarText,
+              {color: color ? '#1a1a1a' : theme.palette.primary_600},
+            ]}>
+            {initial}
+          </Text>
+        </View>
+      )}
+      <View style={styles.recentMeta}>
+        <Text numberOfLines={1} style={[styles.recentName, theme.atoms.text]}>
+          {board.name}
+        </Text>
+        {label ? (
+          <Text
+            numberOfLines={1}
+            style={[styles.recentLabel, theme.atoms.text_contrast_medium]}>
+            {label}
+          </Text>
+        ) : null}
+      </View>
+      <Text style={[styles.recentChevron, theme.atoms.text_contrast_medium]}>
+        ›
+      </Text>
     </TouchableOpacity>
   )
 }
@@ -1276,15 +1326,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 12,
   },
-  clearButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 999,
-  },
-  clearButtonText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
   sectionEyebrow: {
     fontSize: 12,
     fontWeight: '800',
@@ -1310,12 +1351,45 @@ const styles = StyleSheet.create({
     maxWidth: 720,
     marginBottom: 18,
   },
-  resumeGrid: {
-    gap: 12,
+  clearLink: {
+    fontSize: 14,
+    fontWeight: '700',
   },
-  resumeGridWeb: {
+  recentList: {
+    borderWidth: 1,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  recentRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  recentAvatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  recentMeta: {
+    flex: 1,
+    gap: 2,
+  },
+  recentName: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  recentLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  recentChevron: {
+    fontSize: 24,
+    lineHeight: 26,
   },
   creatorEntryCard: {
     borderRadius: 24,
@@ -1588,46 +1662,6 @@ const styles = StyleSheet.create({
   },
   politicalMembers: {
     fontSize: 12,
-  },
-  cabildeoCard: {
-    borderWidth: 1,
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 32,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 16,
-  },
-  cabildeoMeta: {
-    flex: 1,
-  },
-  cabildeoEyebrow: {
-    fontSize: 11,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 6,
-  },
-  cabildeoTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    marginBottom: 6,
-  },
-  cabildeoBody: {
-    fontSize: 14,
-    lineHeight: 21,
-    maxWidth: 620,
-  },
-  cabildeoPill: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 999,
-  },
-  cabildeoPillText: {
-    color: '#FFFFFF',
-    fontSize: 13,
-    fontWeight: '800',
   },
   refineLayout: {
     gap: 24,

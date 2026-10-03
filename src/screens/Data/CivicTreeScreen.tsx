@@ -26,7 +26,6 @@ import {Text} from '#/view/com/util/text/Text'
 import {atoms as a, useBreakpoints, useLayoutBreakpoints, useTheme} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
-import {GraphCanvas} from '#/components/graph/GraphCanvas'
 import {Bookmark as BookmarkIcon} from '#/components/icons/Bookmark'
 import {BulletList_Stroke2_Corner0_Rounded as ListIcon} from '#/components/icons/BulletList'
 import {DotGrid3x1_Stroke2_Corner0_Rounded as EllipsisIcon} from '#/components/icons/DotGrid'
@@ -44,10 +43,8 @@ import {CollectionActionsDialog} from '#/features/personalCivicTree/components/C
 import {CollectionShelf} from '#/features/personalCivicTree/components/CollectionShelf'
 import {EditTreeItemDialog} from '#/features/personalCivicTree/components/EditTreeItemDialog'
 import {NewCollectionDialog} from '#/features/personalCivicTree/components/NewCollectionDialog'
-import {
-  PersonalTreeLegend,
-  PersonalTreeUnconnectedNotice,
-} from '#/features/personalCivicTree/components/PersonalTreeLegend'
+import {PersonalCivicTreeCards} from '#/features/personalCivicTree/components/PersonalCivicTreeCards'
+import {PersonalTreeUnconnectedNotice} from '#/features/personalCivicTree/components/PersonalTreeLegend'
 import {PersonalTreeNodeSheet} from '#/features/personalCivicTree/components/PersonalTreeNodeSheet'
 import {buildPersonalTreeGraph} from '#/features/personalCivicTree/graph'
 import {matchesCivicTreeSearch} from '#/features/personalCivicTree/map'
@@ -129,14 +126,19 @@ function CivicTreeInner({
   const newCollectionControl = Dialog.useDialogControl()
   const collectionActionsControl = Dialog.useDialogControl()
   const editItemControl = Dialog.useDialogControl()
+  const cardDetailsControl = Dialog.useDialogControl()
   const removeItemPrompt = Prompt.usePromptControl()
   const removeItemMutation = useRemoveFromCollectionMutation()
 
   const [viewMode, setViewMode] = useState<ViewMode>('map')
-  const {width: windowWidth} = useWindowDimensions()
+  const {width: windowWidth, height: windowHeight} = useWindowDimensions()
   const {gtMobile} = useBreakpoints()
   const {centerColumnOffset} = useLayoutBreakpoints()
-  const expanded = IS_WEB && gtMobile && viewMode === 'map' && !!myDid
+  const expanded =
+    IS_WEB &&
+    gtMobile &&
+    (viewMode === 'map' || viewMode === 'graph') &&
+    !!myDid
   useExpandCivicTreeWorkspace(expanded)
   const workspaceLeft =
     windowWidth / 2 -
@@ -301,7 +303,17 @@ function CivicTreeInner({
   }
 
   return (
-    <Layout.Screen hideBorders={expanded}>
+    <Layout.Screen
+      hideBorders={expanded}
+      style={
+        IS_WEB && viewMode === 'graph'
+          ? {
+              height: windowHeight,
+              minHeight: 0,
+              paddingBottom: gtMobile ? 0 : 60,
+            }
+          : undefined
+      }>
       <Layout.Center
         style={[
           styles.contentCenter,
@@ -473,14 +485,12 @@ function CivicTreeInner({
           <View style={styles.graphPane}>
             {graph.groups.length > 0 ? (
               <CollectionShelf
+                compact
                 groups={graph.groups}
                 activeGroups={activeGroups}
                 onToggleGroup={toggleGroup}
                 onOpenCollection={onPressCollectionActions}
               />
-            ) : null}
-            {graph.nodes.length > 0 ? (
-              <PersonalTreeLegend graph={graph} />
             ) : null}
             {graph.nodes.length === 0 ? (
               <EmptyTreeCanvas hasCollections={collections.length > 0} />
@@ -490,34 +500,14 @@ function CivicTreeInner({
                   count={graph.unconnectedCount}
                   total={graph.totalItems}
                 />
-                {selectedNodeId ? (
-                  <PersonalTreeNodeSheet
-                    graph={graph}
-                    nodeId={selectedNodeId}
-                    onClose={() => setSelectedNodeId(undefined)}
-                    onOpenCollection={collectionId =>
-                      navigation.navigate('CollectionDetail', {collectionId})
-                    }
-                    onEdit={onEditItem}
-                    onRemove={onRequestRemoveItem}
-                  />
-                ) : null}
-                <GraphCanvas
-                  nodes={filteredGraph.nodes}
-                  edges={filteredGraph.edges}
-                  activeGroups={
-                    activeGroups.size > 0 ? activeGroups : undefined
-                  }
-                  onNodePress={nodeId => {
+                <PersonalCivicTreeCards
+                  graph={{...graph, ...filteredGraph}}
+                  activeGroups={activeGroups}
+                  onOpenDetails={nodeId => {
                     setAddCollectionId(undefined)
                     setSelectedNodeId(nodeId)
+                    cardDetailsControl.open()
                   }}
-                  selectedNodeId={selectedNodeId}
-                  emptyTitle={_(msg`Nothing matches that search`)}
-                  emptySubtitle={_(
-                    msg`Try another term, or clear the collection filters above.`,
-                  )}
-                  simulationConfig={{groupGravity: 220, springLength: 110}}
                 />
               </>
             )}
@@ -622,6 +612,31 @@ function CivicTreeInner({
           />
         )}
       </Layout.Center>
+      <Dialog.Outer
+        control={cardDetailsControl}
+        onClose={() => setSelectedNodeId(undefined)}>
+        <Dialog.Handle />
+        <Dialog.Inner label={_(msg`Card details`)}>
+          {selectedNodeId ? (
+            <PersonalTreeNodeSheet
+              graph={graph}
+              nodeId={selectedNodeId}
+              onClose={() => cardDetailsControl.close()}
+              onOpenCollection={collectionId =>
+                cardDetailsControl.close(() =>
+                  navigation.navigate('CollectionDetail', {collectionId}),
+                )
+              }
+              onEdit={nodeId =>
+                cardDetailsControl.close(() => onEditItem(nodeId))
+              }
+              onRemove={nodeId =>
+                cardDetailsControl.close(() => onRequestRemoveItem(nodeId))
+              }
+            />
+          ) : null}
+        </Dialog.Inner>
+      </Dialog.Outer>
       <AddTreeItemDialog
         control={addItemControl}
         collection={selectedCollection}

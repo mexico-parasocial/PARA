@@ -1464,82 +1464,67 @@ export function MapLayersPanel({
     <View
       style={[
         a.absolute,
-        {top: gtMobile ? 78 : 74, left: gtMobile ? 20 : 66},
-        a.p_sm,
+        gtMobile ? {top: 78, left: 20} : {top: 20, left: 16},
+        a.p_xs,
         a.rounded_xl,
         t.atoms.bg_contrast_25,
         web({backdropFilter: 'blur(10px)'}),
         a.border,
         t.atoms.border_contrast_low,
         a.shadow_lg,
-        {width: gtMobile ? 220 : 200, zIndex: 20},
+        {zIndex: 20},
       ]}>
-      <View style={[a.flex_row, a.align_center, a.gap_xs, a.mb_sm, a.px_xs]}>
-        <LayersIcon fill={t.palette.primary_500} width={17} height={17} />
-        <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
-          <Trans>VIEW</Trans>
-        </Text>
-      </View>
+      <View style={[a.flex_row, a.align_center, a.gap_xs]}>
+        <View
+          accessibilityRole="tablist"
+          style={[
+            a.flex_row,
+            a.p_2xs,
+            a.rounded_lg,
+            t.atoms.bg_contrast_50,
+            {gap: 2},
+          ]}>
+          {layers.map(layer => {
+            const selected = activeLayer === layer.id
 
-      <View style={[a.gap_sm]}>
-        {layers.map(layer => {
-          const selected = activeLayer === layer.id
-
-          return (
-            <TouchableOpacity
-              key={layer.id}
-              accessibilityRole="tab"
-              accessibilityState={{selected}}
-              onPress={() => onSelectLayer(layer.id)}
-              style={[
-                a.flex_row,
-                a.align_center,
-                a.gap_sm,
-                a.px_sm,
-                a.py_sm,
-                a.rounded_lg,
-                a.border,
-                selected
-                  ? {
-                      borderColor: t.palette.primary_500,
-                      backgroundColor: t.palette.primary_500 + '16',
-                    }
-                  : {borderColor: 'transparent'},
-              ]}>
-              <View style={[a.flex_1, {minWidth: 0}]}>
-                <Text
-                  style={[
-                    a.text_sm,
-                    selected
-                      ? [a.font_bold, t.atoms.text]
-                      : t.atoms.text_contrast_high,
-                  ]}>
-                  {layer.label}
-                </Text>
-                <Text
-                  style={[a.text_xs, t.atoms.text_contrast_medium]}
-                  numberOfLines={1}>
-                  {layer.description}
-                </Text>
-              </View>
-              {typeof layer.count === 'number' && (
-                <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-                  {layer.count}
-                </Text>
-              )}
-              <View
+            return (
+              <TouchableOpacity
+                key={layer.id}
+                accessibilityRole="tab"
+                accessibilityLabel={`${layer.label}, ${layer.description}`}
+                accessibilityState={{selected}}
+                onPress={() => onSelectLayer(layer.id)}
                 style={[
                   a.align_center,
                   a.justify_center,
-                  {width: 18, height: 18},
+                  a.rounded_md,
+                  {paddingVertical: 5, paddingHorizontal: gtMobile ? 12 : 9},
+                  selected && {backgroundColor: t.palette.primary_500},
+                  web({cursor: 'pointer'}),
                 ]}>
-                {selected && (
-                  <Check fill={t.palette.primary_500} width={14} height={14} />
+                <Text
+                  style={[
+                    a.text_sm,
+                    a.font_bold,
+                    selected ? {color: '#ffffff'} : t.atoms.text_contrast_high,
+                  ]}>
+                  {layer.label}
+                </Text>
+                {typeof layer.count === 'number' && (
+                  <Text
+                    style={[
+                      a.text_2xs,
+                      selected
+                        ? {color: '#ffffffcc'}
+                        : t.atoms.text_contrast_medium,
+                    ]}>
+                    {layer.count}
+                  </Text>
                 )}
-              </View>
-            </TouchableOpacity>
-          )
-        })}
+              </TouchableOpacity>
+            )
+          })}
+        </View>
 
         <CivicHeatToggle
           on={civicHeatOn}

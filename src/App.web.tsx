@@ -6,6 +6,10 @@ import {SafeAreaProvider} from 'react-native-safe-area-context'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 
+import {
+  completeMatrixWebAuthorization,
+  MATRIX_OIDC_CALLBACK_PATH,
+} from '#/features/encryptedChat/webOidc'
 import {QueryProvider} from '#/lib/react-query'
 import {ThemeProvider} from '#/lib/ThemeContext'
 import {Provider as TranslationProvider} from '#/lib/translation'
@@ -191,9 +195,30 @@ function App() {
   const [isReady, setReady] = useState(false)
 
   useEffect(() => {
-    Promise.all([initPersistedState(), setupDeviceId]).then(() =>
-      setReady(true),
-    )
+    Promise.all([
+      initPersistedState(),
+      setupDeviceId,
+      // The homeserver's OAuth redirect lands on MATRIX_OIDC_CALLBACK_PATH with
+      // an authorization code in the query string. Exchange it here, before the
+      // app renders: the router has no such route, and a code must not sit in a
+      // URL the app has started navigating from. On any other path this is a
+      // no-op. A failure must not block boot — chat then just asks again.
+      completeMatrixWebAuthorization()
+        .then(returnTo => {
+          if (!returnTo) return
+          // A full navigation rather than a history replace: the SPA booted on
+          // the callback path, so there is no screen to re-render into.
+          window.location.replace(returnTo)
+        })
+        .catch(err => {
+          logger.error('matrix: authorization callback failed', {
+            safeMessage: err,
+          })
+          if (window.location.pathname === MATRIX_OIDC_CALLBACK_PATH) {
+            window.location.replace('/')
+          }
+        }),
+    ]).then(() => setReady(true))
   }, [])
 
   if (!isReady) {

@@ -70,7 +70,7 @@
     "seed:civic:apply": "node ./scripts/civic-seed/index.mjs apply",
     "seed:civic:reset": "node ./scripts/civic-seed/index.mjs reset",
     "seed:demo-content": "node ./scripts/civic-seed/demo-content.mjs",
-    "seed:civic:test": "node --test ./scripts/civic-seed/lib.test.mjs",
+    "seed:civic:test": "node --test ./scripts/civic-seed/lib.test.mjs ./scripts/civic-seed/demo-content.test.mjs",
     "seed:civic:dm-smoke": "node ./scripts/civic-seed/dm-smoke.mjs",
     "lint": "oxlint --quiet src modules",
     "lint:fix": "oxlint --fix src modules",

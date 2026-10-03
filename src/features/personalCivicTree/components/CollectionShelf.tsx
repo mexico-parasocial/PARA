@@ -14,12 +14,14 @@ import {type PersonalTreeGraph} from '#/features/personalCivicTree/graph'
  * Cards are deliberately plain - name and count, no colour key.
  */
 export function CollectionShelf({
+  compact = false,
   groups,
   activeGroups,
   onToggleGroup,
   onOpenCollection,
   onNewCollection,
 }: {
+  compact?: boolean
   groups: PersonalTreeGraph['groups']
   activeGroups: Set<string>
   onToggleGroup: (groupId: string) => void
@@ -32,8 +34,14 @@ export function CollectionShelf({
   return (
     <ScrollView
       horizontal
+      style={compact ? {flexGrow: 0, flexShrink: 0} : undefined}
       showsHorizontalScrollIndicator={false}
-      contentContainerStyle={[a.gap_sm, a.px_md, a.py_xs]}>
+      contentContainerStyle={[
+        a.gap_sm,
+        a.px_md,
+        a.py_xs,
+        compact && a.align_start,
+      ]}>
       {groups.map(group => {
         const focused = activeGroups.has(group.id)
         return (
@@ -48,7 +56,7 @@ export function CollectionShelf({
             style={[
               a.rounded_md,
               a.px_md,
-              a.py_sm,
+              compact ? a.py_xs : a.py_sm,
               {
                 minWidth: 112,
                 maxWidth: 180,
@@ -62,7 +70,11 @@ export function CollectionShelf({
               },
             ]}>
             <Text
-              style={[a.text_sm, a.font_bold, t.atoms.text]}
+              style={[
+                compact ? a.text_xs : a.text_sm,
+                a.font_bold,
+                t.atoms.text,
+              ]}
               numberOfLines={1}>
               {group.name}
             </Text>

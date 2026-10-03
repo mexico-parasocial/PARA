@@ -301,6 +301,11 @@ func serve(cctx *cli.Context) error {
 	e.GET("/hashtag/:tag", server.WebGeneric)
 	e.GET("/topic/:topic", server.WebGeneric)
 	e.GET("/search", server.WebGenericNoindex)
+	// Where the Matrix homeserver's OAuth flow redirects the browser back to.
+	// The SPA completes the authorization code exchange on this path and then
+	// navigates on; without the route the redirect would 404 before any of
+	// the app code runs. Noindex: it only ever carries one-time codes.
+	e.GET("/matrix-auth", server.WebGenericNoindex)
 	e.GET("/feeds", server.WebGenericNoindex)
 	e.GET("/notifications", server.WebGenericNoindex)
 	e.GET("/notifications/settings", server.WebGenericNoindex)

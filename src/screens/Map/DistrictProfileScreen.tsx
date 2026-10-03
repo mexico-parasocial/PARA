@@ -1,5 +1,5 @@
 import {type ReactNode, useMemo, useState} from 'react'
-import {ScrollView, TouchableOpacity, View} from 'react-native'
+import {ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -17,7 +17,7 @@ import {
   type NativeStackScreenProps,
 } from '#/lib/routes/types'
 import {useCabildeosQuery} from '#/state/queries/cabildeo'
-import {atoms as a, useBreakpoints, useTheme} from '#/alf'
+import {atoms as a, useTheme} from '#/alf'
 import * as SegmentedControl from '#/components/forms/SegmentedControl'
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'
@@ -78,7 +78,6 @@ function generatePartyBreakdown(district: ElectoralDistrict) {
 export function DistrictProfileScreen({navigation, route}: Props) {
   const t = useTheme()
   const {_} = useLingui()
-  const {gtMobile} = useBreakpoints()
   const districtId = Number(route.params?.districtId)
   const district = useMemo(() => getDistrictById(districtId), [districtId])
   const initialTab = route.params?.initialTab ?? 'overview'
@@ -196,141 +195,90 @@ export function DistrictProfileScreen({navigation, route}: Props) {
         <Layout.Header.Slot />
       </Layout.Header.Outer>
 
-      <ScrollView
-        contentContainerStyle={[
-          a.pb_5xl,
-          gtMobile && {maxWidth: 640, alignSelf: 'center', width: '100%'},
-        ]}>
-        <View
-          style={[
-            a.mx_lg,
-            a.mt_lg,
-            a.p_xl,
-            a.rounded_xl,
-            {backgroundColor: district.accent + '12'},
-            a.border,
-            {borderColor: district.accent + '30'},
-          ]}>
-          <View style={[a.flex_row, a.justify_between, a.align_start]}>
-            <View style={[a.flex_1]}>
-              <Text
+      <Layout.Center style={styles.center}>
+        <ScrollView
+          style={styles.container}
+          contentContainerStyle={styles.contentContainer}>
+          <View
+            style={[
+              a.p_xl,
+              a.rounded_xl,
+              {backgroundColor: district.accent + '12'},
+              a.border,
+              {borderColor: district.accent + '30'},
+            ]}>
+            <View style={[a.flex_row, a.justify_between, a.align_start]}>
+              <View style={[a.flex_1]}>
+                <Text
+                  style={[
+                    a.text_xs,
+                    a.font_bold,
+                    {letterSpacing: 1.5, color: district.accent},
+                    a.mb_xs,
+                  ]}>
+                  DISTRITO ELECTORAL FEDERAL
+                </Text>
+                <Text style={[a.text_3xl, a.font_bold, t.atoms.text, a.mb_2xs]}>
+                  {district.displayName}
+                </Text>
+                <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
+                  Clave estable: {district.districtKey}
+                </Text>
+              </View>
+              <View
                 style={[
-                  a.text_xs,
-                  a.font_bold,
-                  {letterSpacing: 1.5, color: district.accent},
-                  a.mb_xs,
+                  a.px_md,
+                  a.py_sm,
+                  a.rounded_lg,
+                  {backgroundColor: partyColors.bg},
                 ]}>
-                DISTRITO ELECTORAL FEDERAL
-              </Text>
-              <Text style={[a.text_3xl, a.font_bold, t.atoms.text, a.mb_2xs]}>
-                {district.displayName}
-              </Text>
-              <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-                Clave estable: {district.districtKey}
-              </Text>
+                <Text style={[a.text_sm, a.font_bold, {color: partyColors.fg}]}>
+                  {district.dominantParty}
+                </Text>
+              </View>
             </View>
+          </View>
+
+          {!isInDistrict && (
             <View
               style={[
-                a.px_md,
-                a.py_sm,
+                a.mt_md,
+                a.p_md,
                 a.rounded_lg,
-                {backgroundColor: partyColors.bg},
+                {
+                  backgroundColor: t.palette.primary_500 + '12',
+                  borderColor: t.palette.primary_500 + '30',
+                  borderWidth: 1,
+                },
               ]}>
-              <Text style={[a.text_sm, a.font_bold, {color: partyColors.fg}]}>
-                {district.dominantParty}
+              <Text style={[a.text_sm, {color: t.palette.primary_500}]}>
+                📍{' '}
+                <Trans>
+                  You are not in {district.stateName}. Some votes may be
+                  restricted to residents.
+                </Trans>
               </Text>
             </View>
-          </View>
-        </View>
+          )}
 
-        {!isInDistrict && (
+          <View style={[a.flex_row, a.gap_sm, a.mt_md]}>
+            <StatCard
+              label="PADRÓN ELECTORAL"
+              value={district.registeredVoters.toLocaleString()}
+            />
+            <StatCard label="PARTICIPACIÓN" value={`${district.turnout}%`} />
+            <StatCard label="LOBBYING" value={`${districtCabildeos.length}`} />
+          </View>
+
           <View
             style={[
-              a.mx_lg,
-              a.mt_md,
-              a.p_md,
-              a.rounded_lg,
-              {
-                backgroundColor: t.palette.primary_500 + '12',
-                borderColor: t.palette.primary_500 + '30',
-                borderWidth: 1,
-              },
+              a.mt_lg,
+              a.p_lg,
+              a.rounded_xl,
+              t.atoms.bg_contrast_25,
+              a.border,
+              t.atoms.border_contrast_low,
             ]}>
-            <Text style={[a.text_sm, {color: t.palette.primary_500}]}>
-              📍{' '}
-              <Trans>
-                You are not in {district.stateName}. Some votes may be
-                restricted to residents.
-              </Trans>
-            </Text>
-          </View>
-        )}
-
-        <View style={[a.flex_row, a.gap_sm, a.mx_lg, a.mt_md]}>
-          <StatCard
-            label="PADRÓN ELECTORAL"
-            value={district.registeredVoters.toLocaleString()}
-          />
-          <StatCard label="PARTICIPACIÓN" value={`${district.turnout}%`} />
-          <StatCard label="LOBBYING" value={`${districtCabildeos.length}`} />
-        </View>
-
-        <View
-          style={[
-            a.mx_lg,
-            a.mt_lg,
-            a.p_lg,
-            a.rounded_xl,
-            t.atoms.bg_contrast_25,
-            a.border,
-            t.atoms.border_contrast_low,
-          ]}>
-          <Text
-            style={[
-              a.text_xs,
-              a.font_bold,
-              {letterSpacing: 1.5},
-              t.atoms.text_contrast_medium,
-              a.mb_sm,
-            ]}>
-            DIPUTADO FEDERAL
-          </Text>
-          <Text style={[a.text_xl, a.font_bold, t.atoms.text, a.mb_xs]}>
-            {district.currentDeputy}
-          </Text>
-          <View style={[a.flex_row, a.align_center, a.gap_sm, a.flex_wrap]}>
-            <View
-              style={[
-                a.px_sm,
-                a.py_xs,
-                a.rounded_full,
-                {backgroundColor: getPartyColors(district.deputyParty).bg},
-              ]}>
-              <Text
-                style={[
-                  a.text_xs,
-                  a.font_bold,
-                  {color: getPartyColors(district.deputyParty).fg},
-                ]}>
-                {district.deputyParty}
-              </Text>
-            </View>
-            <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-              Legislatura LXVI · 2024–2027
-            </Text>
-            <ActionChip
-              label="Open Lobbying"
-              onPress={() => navigation.navigate('CabildeoList')}
-            />
-            <ActionChip
-              label="Open RAQ"
-              onPress={() => navigation.navigate('OpenQuestionsList')}
-            />
-          </View>
-
-          {/* PARA civic activity — computed from real cabildeo data in this district. */}
-          <View
-            style={[a.mt_md, a.pt_md, a.border_t, t.atoms.border_contrast_low]}>
             <Text
               style={[
                 a.text_xs,
@@ -339,184 +287,47 @@ export function DistrictProfileScreen({navigation, route}: Props) {
                 t.atoms.text_contrast_medium,
                 a.mb_sm,
               ]}>
-              <Trans>PARA CIVIC ACTIVITY</Trans>
+              DIPUTADO FEDERAL
             </Text>
-            {districtCabildeos.length > 0 ? (
-              <View style={[a.gap_xs]}>
-                <View style={[a.flex_row, a.align_center, a.justify_between]}>
-                  <Text style={[a.text_sm, t.atoms.text]}>
-                    Total votes cast
-                  </Text>
-                  <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
-                    {districtCabildeos
-                      .reduce((sum, c) => sum + (c.voteTotals?.total || 0), 0)
-                      .toLocaleString()}
-                  </Text>
-                </View>
-                <View style={[a.flex_row, a.align_center, a.justify_between]}>
-                  <Text style={[a.text_sm, t.atoms.text]}>Positions taken</Text>
-                  <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
-                    {districtCabildeos
-                      .reduce(
-                        (sum, c) => sum + (c.positionCounts?.total || 0),
-                        0,
-                      )
-                      .toLocaleString()}
-                  </Text>
-                </View>
-                <View style={[a.flex_row, a.align_center, a.justify_between]}>
-                  <Text style={[a.text_sm, t.atoms.text]}>
-                    Active cabildeos
-                  </Text>
-                  <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
-                    {
-                      districtCabildeos.filter(
-                        c => c.phase === 'voting' || c.phase === 'deliberating',
-                      ).length
-                    }
-                  </Text>
-                </View>
-              </View>
-            ) : (
-              <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-                <Trans>
-                  No cabildeo activity in this district yet. Open lobbying
-                  appears on the map when users tag it to this distrito.
-                </Trans>
-              </Text>
-            )}
-          </View>
-        </View>
-
-        <View
-          style={[
-            a.flex_row,
-            a.mx_lg,
-            a.mt_xl,
-            a.rounded_lg,
-            t.atoms.bg_contrast_25,
-            a.p_xs,
-          ]}>
-          <TabButton
-            label="Panorama"
-            active={activeTab === 'overview'}
-            onPress={() => setActiveTab('overview')}
-          />
-          <TabButton
-            label="Actividad Cívica"
-            active={activeTab === 'activity'}
-            onPress={() => setActiveTab('activity')}
-          />
-        </View>
-
-        {activeTab === 'overview' ? (
-          <View style={[a.mx_lg, a.mt_lg]}>
-            {/* Heatmap toggle */}
-            <View style={[a.mb_lg]}>
-              <SegmentedControl.Root
-                label={_(msg`Overview view`)}
-                type="radio"
-                value={overviewView}
-                onChange={v => setOverviewView(v)}>
-                <SegmentedControl.Item value="party" label={_(msg`Party`)}>
-                  <SegmentedControl.ItemText>
-                    <Trans>Party</Trans>
-                  </SegmentedControl.ItemText>
-                </SegmentedControl.Item>
-                <SegmentedControl.Item
-                  value="participation"
-                  label={_(msg`Turnout`)}>
-                  <SegmentedControl.ItemText>
-                    <Trans>Turnout</Trans>
-                  </SegmentedControl.ItemText>
-                </SegmentedControl.Item>
-                <SegmentedControl.Item value="issues" label={_(msg`Issues`)}>
-                  <SegmentedControl.ItemText>
-                    <Trans>Issues</Trans>
-                  </SegmentedControl.ItemText>
-                </SegmentedControl.Item>
-              </SegmentedControl.Root>
-            </View>
-
-            {overviewView === 'party' && (
+            <Text style={[a.text_xl, a.font_bold, t.atoms.text, a.mb_xs]}>
+              {district.currentDeputy}
+            </Text>
+            <View style={[a.flex_row, a.align_center, a.gap_sm, a.flex_wrap]}>
               <View
                 style={[
-                  a.p_lg,
-                  a.rounded_xl,
-                  t.atoms.bg_contrast_25,
-                  a.border,
-                  t.atoms.border_contrast_low,
+                  a.px_sm,
+                  a.py_xs,
+                  a.rounded_full,
+                  {backgroundColor: getPartyColors(district.deputyParty).bg},
                 ]}>
                 <Text
                   style={[
                     a.text_xs,
                     a.font_bold,
-                    {letterSpacing: 1.5},
-                    t.atoms.text_contrast_medium,
-                    a.mb_md,
+                    {color: getPartyColors(district.deputyParty).fg},
                   ]}>
-                  DISTRIBUCIÓN PARTIDISTA
+                  {district.deputyParty}
                 </Text>
-                <Text
-                  style={[a.text_2xs, t.atoms.text_contrast_medium, a.mb_md]}>
-                  <Trans>
-                    Placeholder preview — will be computed from PARA civic
-                    engagement data when district-level party affiliation
-                    aggregates are available.
-                  </Trans>
-                </Text>
-                {partyBreakdown.map(item => {
-                  const itemColors = getPartyColors(item.party)
-                  return (
-                    <View key={item.party} style={[a.mb_sm]}>
-                      <View
-                        style={[
-                          a.flex_row,
-                          a.justify_between,
-                          a.align_center,
-                          a.mb_2xs,
-                        ]}>
-                        <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
-                          {item.party}
-                        </Text>
-                        <Text
-                          style={[
-                            a.text_sm,
-                            a.font_bold,
-                            {color: itemColors.fg},
-                          ]}>
-                          {item.pct}%
-                        </Text>
-                      </View>
-                      <View
-                        style={[
-                          a.rounded_full,
-                          {height: 8, backgroundColor: itemColors.bg},
-                        ]}>
-                        <View
-                          style={[
-                            a.rounded_full,
-                            {
-                              height: 8,
-                              width: `${item.pct}%`,
-                              backgroundColor: itemColors.fg,
-                            },
-                          ]}
-                        />
-                      </View>
-                    </View>
-                  )
-                })}
               </View>
-            )}
+              <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
+                Legislatura LXVI · 2024–2027
+              </Text>
+              <ActionChip
+                label="Open Lobbying"
+                onPress={() => navigation.navigate('CabildeoList')}
+              />
+              <ActionChip
+                label="Open RAQ"
+                onPress={() => navigation.navigate('OpenQuestionsList')}
+              />
+            </View>
 
+            {/* PARA civic activity — computed from real cabildeo data in this district. */}
             <View
               style={[
-                a.mt_lg,
-                a.p_lg,
-                a.rounded_xl,
-                t.atoms.bg_contrast_25,
-                a.border,
+                a.mt_md,
+                a.pt_md,
+                a.border_t,
                 t.atoms.border_contrast_low,
               ]}>
               <Text
@@ -525,83 +336,181 @@ export function DistrictProfileScreen({navigation, route}: Props) {
                   a.font_bold,
                   {letterSpacing: 1.5},
                   t.atoms.text_contrast_medium,
-                  a.mb_md,
+                  a.mb_sm,
                 ]}>
-                CONTEXTO CÍVICO
+                <Trans>PARA CIVIC ACTIVITY</Trans>
               </Text>
-              <Text style={[a.text_sm, t.atoms.text_contrast_high]}>
-                {districtCabildeos.length} cabildeo
-                {districtCabildeos.length === 1 ? '' : 's'} etiquetado
-                {districtCabildeos.length === 1 ? '' : 's'} en este distrito.
-              </Text>
-              {stateDemographics && (
-                <View
-                  style={[
-                    a.flex_row,
-                    a.gap_md,
-                    a.mt_md,
-                    a.pt_md,
-                    a.border_t,
-                    t.atoms.border_contrast_low,
-                  ]}>
-                  <View style={[a.flex_1]}>
-                    <Text
-                      style={[
-                        a.text_2xs,
-                        a.font_bold,
-                        {letterSpacing: 0.5},
-                        t.atoms.text_contrast_medium,
-                        a.mb_2xs,
-                      ]}>
-                      APROBACIÓN ESTATAL
+              {districtCabildeos.length > 0 ? (
+                <View style={[a.gap_xs]}>
+                  <View style={[a.flex_row, a.align_center, a.justify_between]}>
+                    <Text style={[a.text_sm, t.atoms.text]}>
+                      Total votes cast
                     </Text>
-                    <Text style={[a.text_lg, a.font_bold, t.atoms.text]}>
-                      {stateDemographics.approval}
+                    <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
+                      {districtCabildeos
+                        .reduce((sum, c) => sum + (c.voteTotals?.total || 0), 0)
+                        .toLocaleString()}
                     </Text>
                   </View>
-                  <View style={[a.flex_1]}>
-                    <Text
-                      style={[
-                        a.text_2xs,
-                        a.font_bold,
-                        {letterSpacing: 0.5},
-                        t.atoms.text_contrast_medium,
-                        a.mb_2xs,
-                      ]}>
-                      ACTIVOS
+                  <View style={[a.flex_row, a.align_center, a.justify_between]}>
+                    <Text style={[a.text_sm, t.atoms.text]}>
+                      Positions taken
                     </Text>
-                    <Text style={[a.text_lg, a.font_bold, t.atoms.text]}>
-                      {stateDemographics.active}
+                    <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
+                      {districtCabildeos
+                        .reduce(
+                          (sum, c) => sum + (c.positionCounts?.total || 0),
+                          0,
+                        )
+                        .toLocaleString()}
                     </Text>
                   </View>
-                  <View style={[a.flex_1]}>
-                    <Text
-                      style={[
-                        a.text_2xs,
-                        a.font_bold,
-                        {letterSpacing: 0.5},
-                        t.atoms.text_contrast_medium,
-                        a.mb_2xs,
-                      ]}>
-                      PARTIDO LÍDER
+                  <View style={[a.flex_row, a.align_center, a.justify_between]}>
+                    <Text style={[a.text_sm, t.atoms.text]}>
+                      Active cabildeos
                     </Text>
-                    <Text
-                      style={[
-                        a.text_lg,
-                        a.font_bold,
-                        {
-                          color: getPartyColors(stateDemographics.dominantParty)
-                            .fg,
-                        },
-                      ]}>
-                      {stateDemographics.dominantParty}
+                    <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
+                      {
+                        districtCabildeos.filter(
+                          c =>
+                            c.phase === 'voting' || c.phase === 'deliberating',
+                        ).length
+                      }
                     </Text>
                   </View>
                 </View>
+              ) : (
+                <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
+                  <Trans>
+                    No cabildeo activity in this district yet. Open lobbying
+                    appears on the map when users tag it to this distrito.
+                  </Trans>
+                </Text>
               )}
             </View>
+          </View>
 
-            {siblingDistricts.length > 0 && (
+          <View
+            style={[
+              a.flex_row,
+              a.mt_xl,
+              a.rounded_lg,
+              t.atoms.bg_contrast_25,
+              a.p_xs,
+            ]}>
+            <TabButton
+              label="Panorama"
+              active={activeTab === 'overview'}
+              onPress={() => setActiveTab('overview')}
+            />
+            <TabButton
+              label="Actividad Cívica"
+              active={activeTab === 'activity'}
+              onPress={() => setActiveTab('activity')}
+            />
+          </View>
+
+          {activeTab === 'overview' ? (
+            <View style={[a.mt_lg]}>
+              {/* Heatmap toggle */}
+              <View style={[a.mb_lg]}>
+                <SegmentedControl.Root
+                  label={_(msg`Overview view`)}
+                  type="radio"
+                  value={overviewView}
+                  onChange={v => setOverviewView(v)}>
+                  <SegmentedControl.Item value="party" label={_(msg`Party`)}>
+                    <SegmentedControl.ItemText>
+                      <Trans>Party</Trans>
+                    </SegmentedControl.ItemText>
+                  </SegmentedControl.Item>
+                  <SegmentedControl.Item
+                    value="participation"
+                    label={_(msg`Turnout`)}>
+                    <SegmentedControl.ItemText>
+                      <Trans>Turnout</Trans>
+                    </SegmentedControl.ItemText>
+                  </SegmentedControl.Item>
+                  <SegmentedControl.Item value="issues" label={_(msg`Issues`)}>
+                    <SegmentedControl.ItemText>
+                      <Trans>Issues</Trans>
+                    </SegmentedControl.ItemText>
+                  </SegmentedControl.Item>
+                </SegmentedControl.Root>
+              </View>
+
+              {overviewView === 'party' && (
+                <View
+                  style={[
+                    a.p_lg,
+                    a.rounded_xl,
+                    t.atoms.bg_contrast_25,
+                    a.border,
+                    t.atoms.border_contrast_low,
+                  ]}>
+                  <Text
+                    style={[
+                      a.text_xs,
+                      a.font_bold,
+                      {letterSpacing: 1.5},
+                      t.atoms.text_contrast_medium,
+                      a.mb_md,
+                    ]}>
+                    DISTRIBUCIÓN PARTIDISTA
+                  </Text>
+                  <Text
+                    style={[a.text_2xs, t.atoms.text_contrast_medium, a.mb_md]}>
+                    <Trans>
+                      Placeholder preview — will be computed from PARA civic
+                      engagement data when district-level party affiliation
+                      aggregates are available.
+                    </Trans>
+                  </Text>
+                  {partyBreakdown.map(item => {
+                    const itemColors = getPartyColors(item.party)
+                    return (
+                      <View key={item.party} style={[a.mb_sm]}>
+                        <View
+                          style={[
+                            a.flex_row,
+                            a.justify_between,
+                            a.align_center,
+                            a.mb_2xs,
+                          ]}>
+                          <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
+                            {item.party}
+                          </Text>
+                          <Text
+                            style={[
+                              a.text_sm,
+                              a.font_bold,
+                              {color: itemColors.fg},
+                            ]}>
+                            {item.pct}%
+                          </Text>
+                        </View>
+                        <View
+                          style={[
+                            a.rounded_full,
+                            {height: 8, backgroundColor: itemColors.bg},
+                          ]}>
+                          <View
+                            style={[
+                              a.rounded_full,
+                              {
+                                height: 8,
+                                width: `${item.pct}%`,
+                                backgroundColor: itemColors.fg,
+                              },
+                            ]}
+                          />
+                        </View>
+                      </View>
+                    )
+                  })}
+                </View>
+              )}
+
               <View
                 style={[
                   a.mt_lg,
@@ -619,128 +528,223 @@ export function DistrictProfileScreen({navigation, route}: Props) {
                     t.atoms.text_contrast_medium,
                     a.mb_md,
                   ]}>
-                  OTROS DISTRITOS EN {district.stateName.toUpperCase()}
+                  CONTEXTO CÍVICO
                 </Text>
-                {siblingDistricts.slice(0, 6).map(sibling => {
-                  const siblingColors = getPartyColors(sibling.dominantParty)
-                  return (
-                    <TouchableOpacity
-                      key={sibling.id}
-                      accessibilityRole="button"
-                      onPress={() =>
-                        navigation.push('DistrictProfile', {
-                          districtId: sibling.id,
-                        })
-                      }
-                      style={[
-                        a.flex_row,
-                        a.justify_between,
-                        a.align_center,
-                        a.py_sm,
-                        a.border_b,
-                        t.atoms.border_contrast_low,
-                      ]}>
-                      <View>
-                        <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
-                          Distrito {sibling.districtNumber}
-                        </Text>
-                        <Text
-                          style={[
-                            a.text_xs,
-                            t.atoms.text_contrast_medium,
-                            a.mt_2xs,
-                          ]}>
-                          {sibling.currentDeputy}
-                        </Text>
-                      </View>
-                      <View style={[a.flex_row, a.align_center, a.gap_sm]}>
-                        <View
-                          style={[
-                            a.px_sm,
-                            a.py_xs,
-                            a.rounded_full,
-                            {backgroundColor: siblingColors.bg},
-                          ]}>
+                <Text style={[a.text_sm, t.atoms.text_contrast_high]}>
+                  {districtCabildeos.length} cabildeo
+                  {districtCabildeos.length === 1 ? '' : 's'} etiquetado
+                  {districtCabildeos.length === 1 ? '' : 's'} en este distrito.
+                </Text>
+                {stateDemographics && (
+                  <View
+                    style={[
+                      a.flex_row,
+                      a.gap_md,
+                      a.mt_md,
+                      a.pt_md,
+                      a.border_t,
+                      t.atoms.border_contrast_low,
+                    ]}>
+                    <View style={[a.flex_1]}>
+                      <Text
+                        style={[
+                          a.text_2xs,
+                          a.font_bold,
+                          {letterSpacing: 0.5},
+                          t.atoms.text_contrast_medium,
+                          a.mb_2xs,
+                        ]}>
+                        APROBACIÓN ESTATAL
+                      </Text>
+                      <Text style={[a.text_lg, a.font_bold, t.atoms.text]}>
+                        {stateDemographics.approval}
+                      </Text>
+                    </View>
+                    <View style={[a.flex_1]}>
+                      <Text
+                        style={[
+                          a.text_2xs,
+                          a.font_bold,
+                          {letterSpacing: 0.5},
+                          t.atoms.text_contrast_medium,
+                          a.mb_2xs,
+                        ]}>
+                        ACTIVOS
+                      </Text>
+                      <Text style={[a.text_lg, a.font_bold, t.atoms.text]}>
+                        {stateDemographics.active}
+                      </Text>
+                    </View>
+                    <View style={[a.flex_1]}>
+                      <Text
+                        style={[
+                          a.text_2xs,
+                          a.font_bold,
+                          {letterSpacing: 0.5},
+                          t.atoms.text_contrast_medium,
+                          a.mb_2xs,
+                        ]}>
+                        PARTIDO LÍDER
+                      </Text>
+                      <Text
+                        style={[
+                          a.text_lg,
+                          a.font_bold,
+                          {
+                            color: getPartyColors(
+                              stateDemographics.dominantParty,
+                            ).fg,
+                          },
+                        ]}>
+                        {stateDemographics.dominantParty}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+
+              {siblingDistricts.length > 0 && (
+                <View
+                  style={[
+                    a.mt_lg,
+                    a.p_lg,
+                    a.rounded_xl,
+                    t.atoms.bg_contrast_25,
+                    a.border,
+                    t.atoms.border_contrast_low,
+                  ]}>
+                  <Text
+                    style={[
+                      a.text_xs,
+                      a.font_bold,
+                      {letterSpacing: 1.5},
+                      t.atoms.text_contrast_medium,
+                      a.mb_md,
+                    ]}>
+                    OTROS DISTRITOS EN {district.stateName.toUpperCase()}
+                  </Text>
+                  {siblingDistricts.slice(0, 6).map(sibling => {
+                    const siblingColors = getPartyColors(sibling.dominantParty)
+                    return (
+                      <TouchableOpacity
+                        key={sibling.id}
+                        accessibilityRole="button"
+                        onPress={() =>
+                          navigation.push('DistrictProfile', {
+                            districtId: sibling.id,
+                          })
+                        }
+                        style={[
+                          a.flex_row,
+                          a.justify_between,
+                          a.align_center,
+                          a.py_sm,
+                          a.border_b,
+                          t.atoms.border_contrast_low,
+                        ]}>
+                        <View>
+                          <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
+                            Distrito {sibling.districtNumber}
+                          </Text>
                           <Text
                             style={[
                               a.text_xs,
-                              a.font_bold,
-                              {color: siblingColors.fg},
+                              t.atoms.text_contrast_medium,
+                              a.mt_2xs,
                             ]}>
-                            {sibling.dominantParty}
+                            {sibling.currentDeputy}
                           </Text>
                         </View>
-                        <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-                          {sibling.turnout}%
-                        </Text>
-                      </View>
-                    </TouchableOpacity>
-                  )
-                })}
-              </View>
-            )}
-          </View>
-        ) : (
-          <View style={[a.mx_lg, a.mt_lg, a.gap_lg]}>
-            <ActivitySection
-              title="Linked Lobbying"
-              emptyLabel="No hay cabildeos etiquetados directamente a este distrito."
-              primaryItems={districtCabildeos}
-              fallbackItems={stateCabildeos}
-              fallbackLabel={`Contexto estatal de ${district.stateName}`}
-              actionLabel="Ver Cabildeos"
-              onAction={() => navigation.navigate('CabildeoList')}
-              renderItem={item => (
-                <CabildeoPreviewCard
-                  item={item}
-                  onPress={() =>
-                    navigation.navigate('PolicyDetails', {
-                      cabildeoUri:
-                        'at://' +
-                        item.author +
-                        '/com.para.civic.cabildeo/' +
-                        item.createdAt,
-                    })
-                  }
-                />
+                        <View style={[a.flex_row, a.align_center, a.gap_sm]}>
+                          <View
+                            style={[
+                              a.px_sm,
+                              a.py_xs,
+                              a.rounded_full,
+                              {backgroundColor: siblingColors.bg},
+                            ]}>
+                            <Text
+                              style={[
+                                a.text_xs,
+                                a.font_bold,
+                                {color: siblingColors.fg},
+                              ]}>
+                              {sibling.dominantParty}
+                            </Text>
+                          </View>
+                          <Text
+                            style={[a.text_xs, t.atoms.text_contrast_medium]}>
+                            {sibling.turnout}%
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    )
+                  })}
+                </View>
               )}
-            />
+            </View>
+          ) : (
+            <View style={[a.mt_lg, a.gap_lg]}>
+              <ActivitySection
+                title="Linked Lobbying"
+                emptyLabel="No hay cabildeos etiquetados directamente a este distrito."
+                primaryItems={districtCabildeos}
+                fallbackItems={stateCabildeos}
+                fallbackLabel={`Contexto estatal de ${district.stateName}`}
+                actionLabel="Ver Cabildeos"
+                onAction={() => navigation.navigate('CabildeoList')}
+                renderItem={item => (
+                  <CabildeoPreviewCard
+                    item={item}
+                    onPress={() =>
+                      navigation.navigate('PolicyDetails', {
+                        cabildeoUri:
+                          'at://' +
+                          item.author +
+                          '/com.para.civic.cabildeo/' +
+                          item.createdAt,
+                      })
+                    }
+                  />
+                )}
+              />
 
-            <View
-              style={[
-                a.p_lg,
-                a.rounded_xl,
-                t.atoms.bg_contrast_25,
-                a.border,
-                t.atoms.border_contrast_low,
-              ]}>
-              <Text
+              <View
                 style={[
-                  a.text_xs,
-                  a.font_bold,
-                  {letterSpacing: 1.5},
-                  t.atoms.text_contrast_medium,
-                  a.mb_sm,
+                  a.p_lg,
+                  a.rounded_xl,
+                  t.atoms.bg_contrast_25,
+                  a.border,
+                  t.atoms.border_contrast_low,
                 ]}>
-                PREGUNTAS ABIERTAS
-              </Text>
-              <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-                <Trans>
-                  District-scoped RAQs are not yet available. They will appear
-                  here once the backend supports tagging open questions to
-                  federal electoral districts.
-                </Trans>
-              </Text>
-              <View style={[a.mt_md]}>
-                <ActionChip
-                  label="Ver RAQ"
-                  onPress={() => navigation.navigate('OpenQuestionsList')}
-                />
+                <Text
+                  style={[
+                    a.text_xs,
+                    a.font_bold,
+                    {letterSpacing: 1.5},
+                    t.atoms.text_contrast_medium,
+                    a.mb_sm,
+                  ]}>
+                  PREGUNTAS ABIERTAS
+                </Text>
+                <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
+                  <Trans>
+                    District-scoped RAQs are not yet available. They will appear
+                    here once the backend supports tagging open questions to
+                    federal electoral districts.
+                  </Trans>
+                </Text>
+                <View style={[a.mt_md]}>
+                  <ActionChip
+                    label="Ver RAQ"
+                    onPress={() => navigation.navigate('OpenQuestionsList')}
+                  />
+                </View>
               </View>
             </View>
-          </View>
-        )}
-      </ScrollView>
+          )}
+        </ScrollView>
+      </Layout.Center>
     </Layout.Screen>
   )
 }
@@ -932,3 +936,11 @@ function CabildeoPreviewCard({
   }
   return content
 }
+
+// Standard web center-column layout (see AGENTS.md): the padding keeps cards
+// off the column's divider lines.
+const styles = StyleSheet.create({
+  center: {flex: 1},
+  container: {flex: 1},
+  contentContainer: {padding: 16, paddingBottom: 100},
+})

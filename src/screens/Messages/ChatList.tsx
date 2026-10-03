@@ -22,6 +22,7 @@ import {listenSoftReset} from '#/state/events'
 import {MESSAGE_SCREEN_POLL_INTERVAL} from '#/state/messages/convo/const'
 import {useMessagesEventBus} from '#/state/messages/events'
 import {useMatrixRoomsQuery, useUnreadCountQuery} from '#/state/queries/matrix'
+import {useCommunityBoardsQuery} from '#/state/queries/community-boards'
 import {useChatActorStatusQuery} from '#/state/queries/messages/get-status'
 import {useUnreadCountsQuery} from '#/state/queries/messages/get-unread-counts'
 import {useListConvosQuery} from '#/state/queries/messages/list-conversations'
@@ -49,6 +50,7 @@ import {
   MessagePlus_Stroke2_Corner0_Rounded as MessagePlusIcon,
   MessagePlus_Stroke2_Corner0_Rounded as NewChatIcon,
 } from '#/components/icons/Message'
+import {Group3_Stroke2_Corner0_Rounded as CommunitiesIcon} from '#/components/icons/Group'
 import {SettingsGear2_Stroke2_Corner0_Rounded as SettingsIcon} from '#/components/icons/SettingsGear2'
 import * as Layout from '#/components/Layout'
 import {Link} from '#/components/Link'
@@ -62,6 +64,7 @@ import {chat} from '#/lexicons'
 import {AgentSelection} from './components/AgentSelection'
 import {ChatDisabled} from './components/ChatDisabled'
 import {ChatListItem} from './components/ChatListItem'
+import {CommunityStrip, type CommunityTile} from './components/CommunityStrip'
 import {InboxRequests} from './components/InboxRequests'
 import {useIsWithinSplitView} from './components/splitView/context'
 
@@ -87,6 +90,13 @@ type ListItem =
       slug: string
       unread: number
       kind: 'main' | 'chamber-a' | 'chamber-b' | 'observers'
+      name?: string
+      memberCount?: number
+      region?: string
+    }
+  | {
+      type: 'COMMUNITY_STRIP'
+      communities: CommunityTile[]
     }
   | {
       type: 'MATRIX_UNAVAILABLE'
@@ -102,6 +112,8 @@ function renderItem({item}: {item: ListItem}) {
       return <ChatListItem convo={item.conversation} selected={item.selected} />
     case 'MATRIX_ROOM':
       return <ChatListItem type="matrix-room" room={item} />
+    case 'COMMUNITY_STRIP':
+      return <CommunityStrip communities={item.communities} />
     case 'MATRIX_UNAVAILABLE':
       return <MatrixUnavailableNotice />
   }
@@ -116,7 +128,9 @@ function keyExtractor(item: ListItem) {
     case 'CONVERSATION':
       return item.conversation.id
     case 'MATRIX_ROOM':
-      return `MATRIX_ROOM:${item.roomId}`
+      return `MATRIX_ROOM:${item.roomId || item.communityUri}`
+    case 'COMMUNITY_STRIP':
+      return 'COMMUNITY_STRIP'
     case 'MATRIX_UNAVAILABLE':
       return 'MATRIX_UNAVAILABLE'
   }
@@ -357,6 +371,11 @@ export function ChatList({
     refetch: refetchMatrixRooms,
   } = useMatrixRoomsQuery({enabled: !!currentAccount?.did})
 
+  // A community's Matrix room only exists for the bridge once the member has
+  // opened its chat, so list every joined community, not just bridged rooms.
+  const {data: boardsData, isLoading: isLoadingBoards} =
+    useCommunityBoardsQuery({limit: 100}, !!currentAccount?.did)
+
   const {data: matrixUnreadData} = useUnreadCountQuery({
     enabled: !!currentAccount?.did,
   })
@@ -368,21 +387,73 @@ export function ChatList({
   const listItems = useMemo(() => {
     const items: ListItem[] = []
 
-    if (matrixUnavailable) {
-      items.push({type: 'SECTION', label: l`Comunidades`})
-      items.push({type: 'MATRIX_UNAVAILABLE'})
-    } else if (matrixRoomsData?.rooms.length) {
-      items.push({type: 'SECTION', label: l`Comunidades`})
-      items.push(
-        ...matrixRoomsData.rooms.map(room => ({
+    const bridgedRooms = matrixUnavailable ? [] : (matrixRoomsData?.rooms ?? [])
+    const boards = new Map(
+      (boardsData?.boards ?? [])
+        .filter(board => board.viewerMembershipState !== 'none')
+        .map(board => [board.uri, board]),
+    )
+
+    // One row per community. Its individual rooms (chambers, observers) live
+    // on the community chats screen, so the list shows the main room and the
+    // community's total unread.
+    const byCommunity = new Map<string, typeof bridgedRooms>()
+    for (const room of bridgedRooms) {
+      byCommunity.set(room.communityUri, [
+        ...(byCommunity.get(room.communityUri) ?? []),
+        room,
+      ])
+    }
+    const communityRows = [
+      ...[...byCommunity.entries()].map(([uri, rooms]) => {
+        const main = rooms.find(room => room.kind === 'main') ?? rooms[0]
+        const board = boards.get(uri)
+        return {
           type: 'MATRIX_ROOM' as const,
-          roomId: room.roomId,
-          communityUri: room.communityUri,
-          slug: room.slug,
-          unread: room.unread,
-          kind: room.kind,
+          roomId: main.roomId,
+          communityUri: uri,
+          slug: main.slug,
+          unread: rooms.reduce((sum, room) => sum + room.unread, 0),
+          kind: main.kind,
+          name: board?.name,
+          memberCount: board?.memberCount,
+          region: board?.region || undefined,
+        }
+      }),
+      // No room yet: opening the chat joins the community's space.
+      ...[...boards.values()]
+        .filter(board => !byCommunity.has(board.uri))
+        .map(board => ({
+          type: 'MATRIX_ROOM' as const,
+          roomId: '',
+          communityUri: board.uri,
+          slug: board.name,
+          unread: 0,
+          kind: 'main' as const,
+          name: board.name,
+          memberCount: board.memberCount,
+          region: board.region || undefined,
         })),
-      )
+    ].sort(
+      (x, y) =>
+        y.unread - x.unread ||
+        (x.name ?? x.slug).localeCompare(y.name ?? y.slug),
+    )
+
+    if (matrixUnavailable || communityRows.length) {
+      items.push({type: 'SECTION', label: l`Comunidades`})
+      if (matrixUnavailable) items.push({type: 'MATRIX_UNAVAILABLE'})
+      if (communityRows.length) {
+        items.push({
+          type: 'COMMUNITY_STRIP',
+          communities: communityRows.map(row => ({
+            communityUri: row.communityUri,
+            roomId: row.roomId,
+            name: row.name ?? row.slug,
+            unread: row.unread,
+          })),
+        })
+      }
     }
 
     items.push({type: 'AGENT_SELECTION'})
@@ -403,10 +474,10 @@ export function ChatList({
     }
 
     return items
-  }, [data, l, matrixRoomsData, matrixUnavailable, selectedChat])
+  }, [data, l, matrixRoomsData, matrixUnavailable, selectedChat, boardsData])
 
   const hasListContent = listItems.some(
-    item => item.type === 'CONVERSATION' || item.type === 'MATRIX_ROOM',
+    item => item.type === 'CONVERSATION' || item.type === 'COMMUNITY_STRIP',
   )
 
   const onRefresh = useCallback(async () => {
@@ -467,7 +538,7 @@ export function ChatList({
   if (!hasListContent) {
     return (
       <Layout.Center style={web({minHeight: '100%'})}>
-        {isLoading || isLoadingMatrixRooms ? (
+        {isLoading || isLoadingMatrixRooms || isLoadingBoards ? (
           <ChatListLoadingPlaceholder />
         ) : (
           <ChatListEmptyState
@@ -639,8 +710,8 @@ function MatrixUnavailableNotice() {
       <CircleInfoIcon size="sm" style={[t.atoms.text_contrast_medium]} />
       <Text style={[a.flex_1, a.text_sm, t.atoms.text_contrast_medium]}>
         <Trans>
-          No se pudo conectar con el chat de comunidades. Puede haber mensajes
-          sin leer que no se muestran aquí.
+          Chat de comunidades no disponible por ahora. Puede haber mensajes sin
+          leer.
         </Trans>
       </Text>
     </View>
@@ -682,6 +753,7 @@ export function Header({
   const {gtMobile} = useBreakpoints()
   const requireEmailVerification = useRequireEmailVerification()
   const {isWithinSplitView} = useIsWithinSplitView()
+  const navigation = useNavigation<NavigationProp>()
 
   // In split view, the left column (and this header) stays mounted while the
   // right column shows the selected route. Pushing would stack duplicate routes
@@ -718,6 +790,14 @@ export function Header({
               variant="solid"
               action={action}
             />
+            <Button
+              label={l`Chats de comunidades`}
+              size="small"
+              color="secondary"
+              shape="round"
+              onPress={() => navigation.navigate('CommunityChats')}>
+              <ButtonIcon icon={CommunitiesIcon} />
+            </Button>
             <ChatSettingsMenu action={action}>
               {({props}) => (
                 <Button
@@ -753,6 +833,15 @@ export function Header({
           </Layout.Header.Content>
           <InboxRequests count={requestCount} variant="ghost" />
           <Layout.Header.Slot>
+            <Button
+              label={l`Chats de comunidades`}
+              size="small"
+              variant="ghost"
+              color="secondary"
+              shape="round"
+              onPress={() => navigation.navigate('CommunityChats')}>
+              <ButtonIcon icon={CommunitiesIcon} size="lg" />
+            </Button>
             <ChatSettingsMenu action={action}>
               {({props}) => (
                 <Button

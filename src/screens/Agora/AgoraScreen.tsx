@@ -13,7 +13,6 @@ import * as Dialog from '#/components/Dialog'
 import {CheckThick_Stroke2_Corner0_Rounded as CheckIcon} from '#/components/icons/Check'
 import {CircleQuestion_Stroke2_Corner2_Rounded as QuestionIcon} from '#/components/icons/CircleQuestion'
 import {CommunityIcon_Stroke as Community} from '#/components/icons/Community'
-import {Megaphone_Stroke2_Corner0_Rounded as MegaphoneIcon} from '#/components/icons/Megaphone'
 import {Tree_Stroke2_Corner0_Rounded as TreeIcon} from '#/components/icons/Tree'
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'
@@ -45,7 +44,9 @@ function CommunityActivitiesCard({onPress}: {onPress: () => void}) {
           </Text>
           <Text
             style={[styles.featureCardSubtitle, t.atoms.text_contrast_medium]}>
-            <Trans>Explore social events and public financial activity</Trans>
+            <Trans>
+              Explore social events, cabildeos and public financial activity
+            </Trans>
           </Text>
         </View>
         <Text style={[styles.featureCardArrow, t.atoms.text_contrast_medium]}>
@@ -132,43 +133,6 @@ function YourCommunitiesCard({onPress}: {onPress: () => void}) {
   )
 }
 
-/** Cabildeos entry */
-function CabildeosCard({onPress}: {onPress: () => void}) {
-  const t = useTheme()
-  return (
-    <PressableScale
-      onPress={onPress}
-      targetScale={0.98}
-      style={[
-        styles.featureCard,
-        t.atoms.bg,
-        {borderColor: t.atoms.border_contrast_low.borderColor},
-      ]}>
-      <View style={styles.featureCardHeader}>
-        <View
-          style={[
-            styles.featureIconWrap,
-            {backgroundColor: t.palette.primary_100},
-          ]}>
-          <MegaphoneIcon size="md" style={{color: t.palette.primary_600}} />
-        </View>
-        <View style={a.flex_1}>
-          <Text style={[styles.featureCardTitle, t.atoms.text]}>
-            <Trans>Cabildeos</Trans>
-          </Text>
-          <Text
-            style={[styles.featureCardSubtitle, t.atoms.text_contrast_medium]}>
-            <Trans>Conversations open now, by stage, state and party</Trans>
-          </Text>
-        </View>
-        <Text style={[styles.featureCardArrow, t.atoms.text_contrast_medium]}>
-          →
-        </Text>
-      </View>
-    </PressableScale>
-  )
-}
-
 // ═══════════════════════════════════════════════════════════════════════════════
 // ═══ Main Screen ═══════════════════════════════════════════════════════════════
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -188,10 +152,6 @@ export function AgoraScreen() {
 
   const handlePressYourCommunityCivicTree = useCallback(() => {
     navigation.navigate('CommunityCivicTree')
-  }, [navigation])
-
-  const handlePressCabildeos = useCallback(() => {
-    navigation.navigate('Cabildeos')
   }, [navigation])
 
   return (
@@ -230,7 +190,6 @@ export function AgoraScreen() {
               <YourCommunityCivicTreeCard
                 onPress={handlePressYourCommunityCivicTree}
               />
-              <CabildeosCard onPress={handlePressCabildeos} />
             </View>
           </View>
         </ScrollView>

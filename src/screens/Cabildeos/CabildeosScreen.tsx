@@ -35,6 +35,7 @@ import {PressableScale} from '#/lib/custom-animations/PressableScale'
 import {type NavigationProp} from '#/lib/routes/types'
 import {useCabildeosQuery} from '#/state/queries/cabildeo'
 import {atoms as a, useTheme} from '#/alf'
+import {Button, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
 import {CircleInfo_Stroke2_Corner0_Rounded as InfoIcon} from '#/components/icons/CircleInfo'
 import {Megaphone_Stroke2_Corner0_Rounded as MegaphoneIcon} from '#/components/icons/Megaphone'
@@ -977,6 +978,20 @@ export function CabildeosScreen() {
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }>
+          <View style={[a.px_lg, a.pt_lg, a.align_start]}>
+            <Button
+              label={i18n._(msg`Back to social activities`)}
+              onPress={() =>
+                navigation.navigate('CommunityDirectory', {category: 'social'})
+              }
+              size="small"
+              variant="ghost"
+              color="secondary">
+              <ButtonText>
+                <Trans>Community activities / Social</Trans>
+              </ButtonText>
+            </Button>
+          </View>
           <LobbyingSection
             onPressItem={handlePressLobbyingItem}
             onPressSeeAll={handlePressLobbyingList}

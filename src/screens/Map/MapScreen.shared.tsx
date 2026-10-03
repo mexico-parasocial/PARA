@@ -61,13 +61,10 @@ import {
 import {Button, ButtonIcon} from '#/components/Button'
 import {Filter_Stroke2_Corner0_Rounded as FilterIcon} from '#/components/icons/Filter'
 import {Menu_Stroke2_Corner0_Rounded as MenuIcon} from '#/components/icons/Menu'
-import {PinLocation_Stroke2_Corner0_Rounded as PinLocationIcon} from '#/components/icons/PinLocation'
 import {Header, Screen} from '#/components/Layout'
 import {BUTTON_VISUAL_ALIGNMENT_OFFSET} from '#/components/Layout/const'
 import {Loader} from '#/components/Loader'
-import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
-import {useCoarseLocation, useDeviceGeolocationApi} from '#/geolocation'
 import {
   BigCitiesDataOverlay,
   DistrictsDataOverlay,
@@ -360,48 +357,6 @@ function getRouteSelectionKey(
   ].join('|')
 }
 
-const MEXICO_REGION_CODE_TO_STATE: Record<string, string> = {
-  AGU: 'Aguascalientes',
-  BCN: 'Baja California',
-  BCS: 'Baja California Sur',
-  CAM: 'Campeche',
-  CHP: 'Chiapas',
-  CHH: 'Chihuahua',
-  CMX: 'Ciudad de México',
-  COA: 'Coahuila',
-  COL: 'Colima',
-  DUR: 'Durango',
-  GUA: 'Guanajuato',
-  GRO: 'Guerrero',
-  HID: 'Hidalgo',
-  JAL: 'Jalisco',
-  MEX: 'Estado de México',
-  MIC: 'Michoacán',
-  MOR: 'Morelos',
-  NAY: 'Nayarit',
-  NLE: 'Nuevo León',
-  OAX: 'Oaxaca',
-  PUE: 'Puebla',
-  QUE: 'Querétaro',
-  ROO: 'Quintana Roo',
-  SLP: 'San Luis Potosí',
-  SIN: 'Sinaloa',
-  SON: 'Sonora',
-  TAB: 'Tabasco',
-  TAM: 'Tamaulipas',
-  TLA: 'Tlaxcala',
-  VER: 'Veracruz',
-  YUC: 'Yucatán',
-  ZAC: 'Zacatecas',
-}
-
-function normalizeLocatedMexicoState(regionCode: string) {
-  const code = regionCode.trim().toUpperCase().replace(/^MX-/, '')
-  return normalizeMexicoStateName(
-    MEXICO_REGION_CODE_TO_STATE[code] || regionCode,
-  )
-}
-
 function getLayerFillColor({
   activeLayer,
   civicHeatOn,
@@ -530,8 +485,6 @@ export function MapScreenImpl({
   const insets = useSafeAreaInsets()
   const mapRef = useRef<MapViewRef | null>(null)
   const lastAppliedRouteSelection = useRef('')
-  const {refetch: refetchCoarseLocation} = useCoarseLocation()
-  const {setDeviceGeolocation} = useDeviceGeolocationApi()
   const {data: cabildeos} = useCabildeosQuery()
   const lastTapRef = useRef<number>(0)
 
@@ -567,7 +520,6 @@ export function MapScreenImpl({
   const [recentSearchResults, setRecentSearchResults] = useState<
     SearchResult[]
   >(() => getMapSearchHistory())
-  const [isLocating, setIsLocating] = useState(false)
   const [mexicoGeoJSON, setMexicoGeoJSON] =
     useState<unknown>(MexicoGeoJSONNative)
 
@@ -902,78 +854,6 @@ export function MapScreenImpl({
     },
     [activeLayer, focusCity, focusState, rememberSearchResult],
   )
-
-  const handleLocateMe = useCallback(async () => {
-    if (isLocating) return
-
-    setIsLocating(true)
-
-    try {
-      const {data, error} = await refetchCoarseLocation()
-      const location = data
-
-      if (error || !location) {
-        Toast.show(
-          translate(
-            msg`Unable to access location. Enable location services in system settings to use Near me.`,
-          ),
-          {type: 'error'},
-        )
-        return
-      }
-
-      if (location.countryCode) {
-        setDeviceGeolocation({
-          countryCode: location.countryCode,
-          regionCode: location.regionCode,
-        })
-      }
-
-      if (location.countryCode && location.countryCode.toUpperCase() !== 'MX') {
-        Toast.show(
-          translate(msg`Near me is currently available for Mexico only.`),
-          {type: 'error'},
-        )
-        return
-      }
-
-      if (!location.regionCode) {
-        Toast.show(
-          translate(msg`We could not resolve your state from this location.`),
-          {type: 'error'},
-        )
-        return
-      }
-
-      const state = stateFeaturesByName.get(
-        normalizeLocatedMexicoState(location.regionCode),
-      )
-
-      if (!state) {
-        Toast.show(
-          translate(msg`We could not match your location to a mapped state.`),
-          {type: 'error'},
-        )
-        return
-      }
-
-      focusState(state.name, {openLayer: 'states'})
-      Toast.show(translate(msg`Centered on ${state.name}`))
-    } catch {
-      Toast.show(translate(msg`Unable to resolve your location right now.`), {
-        type: 'error',
-      })
-    } finally {
-      setIsLocating(false)
-    }
-  }, [
-    focusState,
-    isLocating,
-    refetchCoarseLocation,
-    setDeviceGeolocation,
-    stateFeaturesByName,
-    translate,
-  ])
 
   const handleSelectDistrict = useCallback(
     (districtId: number) => {
@@ -1566,27 +1446,6 @@ export function MapScreenImpl({
         )}
 
       <View style={[a.absolute, {right: 20, top: 20}, a.gap_sm, {zIndex: 20}]}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={translate(msg`Find places near me`)}
-          accessibilityHint={translate(
-            msg`Requests your device location and centers the map on your state.`,
-          )}
-          disabled={isLocating}
-          onPress={() => {
-            void handleLocateMe()
-          }}
-          style={[
-            styles.floatingButton(t),
-            isLocating ? {opacity: 0.72} : null,
-          ]}>
-          {isLocating ? (
-            <Loader size="sm" />
-          ) : (
-            <PinLocationIcon width={20} height={20} fill={t.atoms.text.color} />
-          )}
-        </TouchableOpacity>
-
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel={translate(msg`Reset map view`)}

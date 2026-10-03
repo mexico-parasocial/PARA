@@ -648,27 +648,6 @@ function MyBaseNavItem({minimal}: {minimal: boolean}) {
   )
 }
 
-function MessagesNavItem({minimal}: {minimal: boolean}) {
-  const {t: l} = useLingui()
-  const numUnreadMessages = useUnreadMessageCount()
-  const aa = useAgeAssurance()
-
-  return (
-    <NavItem
-      href="/messages"
-      minimal={minimal}
-      count={aa.flags.chatDisabled ? undefined : numUnreadMessages.numUnread}
-      hasNew={aa.flags.chatDisabled ? false : numUnreadMessages.hasNew}
-      navItem="chat"
-      icons={{
-        inactive: MessageIcon,
-        active: MessageFilledIcon,
-      }}
-      label={l`Messages`}
-    />
-  )
-}
-
 function CommunitiesNavItem({minimal}: {minimal: boolean}) {
   const {t: l} = useLingui()
 
@@ -816,7 +795,6 @@ export function DesktopLeftNav({routeName}: {routeName: string}) {
           />
           <BaseNavItem minimal={leftNavMinimal} />
           <MyBaseNavItem minimal={leftNavMinimal} />
-          <MessagesNavItem minimal={leftNavMinimal} />
           <CommunitiesNavItem minimal={leftNavMinimal} />
           <AgoraNavItem minimal={leftNavMinimal} />
           <NavItem
