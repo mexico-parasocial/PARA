@@ -335,7 +335,7 @@ async function fetchCommunityMembers({
   return normalizeCommunityMembersResponse(res)
 }
 
-async function fetchCommunityBoard({
+export async function fetchCommunityBoard({
   agent,
   communityId,
   uri,

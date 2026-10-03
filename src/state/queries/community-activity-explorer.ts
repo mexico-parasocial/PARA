@@ -1,19 +1,15 @@
 import {useInfiniteQuery, useQueryClient} from '@tanstack/react-query'
 
+import {logger} from '#/logger'
 import {
-  communityActivitiesQueryKey,
   type CommunityActivityView,
-  fetchCommunityActivities,
-  getCommunityOrganizerDids,
+  fetchCommunityActivitiesPage,
 } from '#/state/queries/community-activities'
 import {
+  communityBoardQueryKey,
   type CommunityBoardView,
-  fetchCommunityBoards,
+  fetchCommunityBoard,
 } from '#/state/queries/community-boards'
-import {
-  communityGovernanceQueryKey,
-  fetchGovernanceFromXrpc,
-} from '#/state/queries/community-governance'
 import {useAgent} from '#/state/session'
 
 type ExplorerEntry = {
@@ -26,10 +22,14 @@ type ExplorerPage = {
   cursor?: string
 }
 
-const PAGE_SIZE = 8
+const PAGE_SIZE = 25
 const STALE_MS = 30_000
 
-/** Loads a bounded page of public communities and their organizer-owned records. */
+/**
+ * Pages through every community's activities, as served by the AppView (only
+ * those published by each community's organizers), with the board each one
+ * belongs to.
+ */
 export function useCommunityActivityExplorerQuery() {
   const agent = useAgent()
   const queryClient = useQueryClient()
@@ -39,49 +39,40 @@ export function useCommunityActivityExplorerQuery() {
     initialPageParam: undefined as string | undefined,
     staleTime: STALE_MS,
     queryFn: async ({pageParam}) => {
-      const page = await fetchCommunityBoards({
+      const page = await fetchCommunityActivitiesPage({
         agent,
-        opts: {
-          limit: PAGE_SIZE,
-          sort: 'activity',
-          cursor: pageParam as string | undefined,
-        },
+        cursor: pageParam as string | undefined,
+        limit: PAGE_SIZE,
       })
-      const perBoard = await Promise.all(
-        page.boards.map(async board => {
-          const governance = await queryClient.fetchQuery({
-            queryKey: communityGovernanceQueryKey(
-              board.name,
-              board.communityId,
-            ),
-            queryFn: () =>
-              fetchGovernanceFromXrpc({
-                agent,
-                communityName: board.name,
-                communityId: board.communityId,
-              }),
+      const communityUris = [
+        ...new Set(page.activities.map(a => a.record.communityUri)),
+      ]
+      const boards = await Promise.allSettled(
+        communityUris.map(uri =>
+          queryClient.fetchQuery({
+            queryKey: communityBoardQueryKey({uri}),
+            queryFn: () => fetchCommunityBoard({agent, uri}),
             staleTime: STALE_MS,
-          })
-          const organizerDids = getCommunityOrganizerDids({
-            governance: governance ?? undefined,
-            creatorDid: board.creatorDid,
-          })
-          const activities = await queryClient.fetchQuery({
-            queryKey: communityActivitiesQueryKey(board.uri, organizerDids),
-            queryFn: () =>
-              fetchCommunityActivities({
-                agent,
-                communityUri: board.uri,
-                organizerDids,
-              }),
-            staleTime: STALE_MS,
-          })
-          return activities.map(activity => ({board, activity}))
-        }),
+          }),
+        ),
       )
+      const boardByUri = new Map<string, CommunityBoardView>()
+      boards.forEach((result, index) => {
+        if (result.status === 'fulfilled' && result.value.board) {
+          boardByUri.set(communityUris[index], result.value.board)
+        } else if (result.status === 'rejected') {
+          logger.warn('community-activity-explorer: board unavailable', {
+            communityUri: communityUris[index],
+            safeMessage: String(result.reason),
+          })
+        }
+      })
       return {
-        boards: page.boards,
-        entries: perBoard.flat(),
+        boards: [...boardByUri.values()],
+        entries: page.activities.flatMap(activity => {
+          const board = boardByUri.get(activity.record.communityUri)
+          return board ? [{board, activity}] : []
+        }),
         cursor: page.cursor,
       }
     },
@@ -91,12 +82,9 @@ export function useCommunityActivityExplorerQuery() {
   return {
     ...query,
     refresh: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({
-          queryKey: ['community-activities', 'list'],
-        }),
-        queryClient.invalidateQueries({queryKey: ['community-governance']}),
-      ])
+      await queryClient.invalidateQueries({
+        queryKey: ['community-activities', 'list'],
+      })
       return query.refetch()
     },
   }
