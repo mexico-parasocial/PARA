@@ -35,14 +35,16 @@ type Disclosure = {
 function PublicRecordNotice({
   control,
   onConfirm,
+  onClose,
   disclosure,
 }: {
   control: Dialog.DialogControlProps
   onConfirm: () => void
+  onClose?: () => void
   disclosure: Disclosure
 }) {
   return (
-    <Dialog.Outer control={control}>
+    <Dialog.Outer control={control} onClose={onClose}>
       <Dialog.Handle />
       <Dialog.ScrollableInner
         label={disclosure.title}
@@ -60,15 +62,54 @@ function PublicRecordNotice({
 export function PublicBallotNotice({
   control,
   onConfirm,
+  onClose,
+  kind = 'cabildeo',
 }: {
   control: Dialog.DialogControlProps
   onConfirm: () => void
+  /** Called on every close, confirmed or not. */
+  onClose?: () => void
+  /** A cabildeo ballot names an option; a policy ballot, a -3..+3 signal. */
+  kind?: 'cabildeo' | 'policy'
 }) {
   const {_} = useLingui()
+  if (kind === 'policy') {
+    return (
+      <PublicRecordNotice
+        control={control}
+        onConfirm={onConfirm}
+        onClose={onClose}
+        disclosure={{
+          title: _(msg`Tu voto será público`),
+          subtitle: _(msg`Y no se puede despublicar. Léelo antes de emitirlo.`),
+          rows: [
+            {
+              label: _(msg`Quién`),
+              value: _(msg`la identidad con la que votas`),
+            },
+            {label: _(msg`Qué`), value: _(msg`tu señal, de −3 a +3`)},
+            {label: _(msg`Cuándo`), value: _(msg`la fecha y hora`)},
+            {
+              label: _(msg`Quién lo ve`),
+              value: _(msg`cualquiera, en tu perfil, para siempre`),
+            },
+          ],
+          notPublished: _(
+            msg`Tu identidad legal. Y quién te cedió su voto: tu papeleta nunca nombra a tus cedentes.`,
+          ),
+          acknowledgement: _(
+            msg`Entiendo que este voto queda publicado bajo esta identidad.`,
+          ),
+          confirmLabel: _(msg`Emitir voto público`),
+        }}
+      />
+    )
+  }
   return (
     <PublicRecordNotice
       control={control}
       onConfirm={onConfirm}
+      onClose={onClose}
       disclosure={{
         title: _(msg`Tu voto será público`),
         subtitle: _(msg`Y no se puede despublicar. Léelo antes de emitirlo.`),

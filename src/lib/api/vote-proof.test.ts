@@ -53,3 +53,31 @@ it('does not request a proof without a session', async () => {
   ).rejects.toThrow('Not logged in')
   expect(issue).not.toHaveBeenCalled()
 })
+
+it('accepts only a policy authorization for a policy ballot', async () => {
+  const policyInput = {
+    subjectUri: 'at://did:plc:author/app.bsky.feed.post/policy',
+    subjectType: 'policy' as const,
+    signal: 3,
+  }
+  const policyProof = {
+    subjectUri: policyInput.subjectUri,
+    subjectType: 'policy' as const,
+    voteNullifier: 'a'.repeat(64),
+    eligibilityProofRef: 'm8:policy:v1:' + 'c'.repeat(43),
+    issuedAt: '2026-09-29T00:00:00Z',
+  }
+  issue.mockResolvedValue(policyProof)
+  await expect(issueParaVoteProof(agent, policyInput)).resolves.toEqual(
+    policyProof,
+  )
+  expect(issue).toHaveBeenCalledWith(policyInput)
+
+  issue.mockResolvedValue({
+    ...policyProof,
+    eligibilityProofRef: 'm8:cabildeo:v1:' + 'b'.repeat(43),
+  })
+  await expect(issueParaVoteProof(agent, policyInput)).rejects.toThrow(
+    /autorización/,
+  )
+})
