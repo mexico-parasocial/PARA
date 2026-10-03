@@ -23,6 +23,8 @@ export type CommunityBoardView = {
   name: string
   description?: string
   quadrant: string
+  /** Mexican state the community belongs to; empty when it has none. */
+  region?: string
   delegatesChatId: string
   subdelegatesChatId: string
   memberCount: number
@@ -60,6 +62,7 @@ export type CommunityBoardResponse = {
 type CreateCommunityInput = {
   name: string
   quadrant: string
+  region?: string
   description?: string
   founderStarterPackName?: string
   governanceMode?: 'hierarchical' | 'horizontal'
@@ -107,6 +110,8 @@ export type CommunityBoardsQueryOptions = {
   query?: string
   state?: string
   quadrant?: string
+  /** Mexican state, as stored in a community's `region`. */
+  region?: string
   participationKind?: 'matter' | 'policy'
   flairId?: string
   sort?: 'recent' | 'activity' | 'size'
@@ -129,6 +134,7 @@ export const communityBoardsQueryKey = (opts: CommunityBoardsQueryOptions) => [
   opts.query ?? '',
   opts.state ?? '',
   opts.quadrant ?? '',
+  opts.region ?? '',
   opts.participationKind ?? '',
   opts.flairId ?? '',
   opts.sort ?? '',
@@ -307,6 +313,7 @@ export async function fetchCommunityBoards({
     query: opts.query,
     state: opts.state,
     quadrant: opts.quadrant,
+    region: opts.region,
     participationKind: opts.participationKind,
     flairId: opts.flairId,
     sort: opts.sort,
@@ -448,6 +455,7 @@ function normalizeBoard(json: unknown): CommunityBoardView {
     name: readString(data.name) ?? '',
     description: readString(data.description),
     quadrant: readString(data.quadrant) ?? '',
+    region: readString(data.region),
     delegatesChatId: readString(data.delegatesChatId) ?? '',
     subdelegatesChatId: readString(data.subdelegatesChatId) ?? '',
     memberCount:

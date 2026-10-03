@@ -91,6 +91,7 @@ export const router = new Router({
   CabildeoList: '/communities/cabildeos',
   CabildeoDetail: '/communities/cabildeos/:cabildeoUri',
   Agora: '/agora',
+  Cabildeos: '/agora/cabildeos',
   CommunityDirectory: '/community-directory',
   ProposalDetail: '/agora/proposals/:proposalUri',
   DelegateVote: '/communities/cabildeos/:cabildeoUri/delegate-vote',

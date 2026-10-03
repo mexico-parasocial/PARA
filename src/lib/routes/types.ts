@@ -219,6 +219,7 @@ export type CommonNavigatorParams = {
   CabildeoList: {communityId?: string; communityName?: string} | undefined
   CabildeoDetail: {cabildeoUri: string}
   Agora: undefined
+  Cabildeos: undefined
   CommunityDirectory: undefined
   ProposalDetail: {proposalUri: string}
   DelegateVote: {cabildeoUri: string}
@@ -296,6 +297,7 @@ export type DataTabNavigatorParams = CommonNavigatorParams & {
 
 export type FlatNavigatorParams = CommonNavigatorParams & {
   Agora: undefined
+  Cabildeos: undefined
   ProposalDetail: {proposalUri: string}
   Home: undefined
   Search: SearchParams

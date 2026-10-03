@@ -62,6 +62,19 @@ export function normalizeMexicoStateName(stateName: string): string {
   return normalized
 }
 
+/**
+ * The canonical `MEXICAN_STATES` entry for a state name, or undefined. Accepts
+ * accents, case and the usual short forms ("CDMX"), so a UI label can be turned
+ * into the exact value a community's `region` is stored with.
+ */
+export function findMexicanState(stateName: string): string | undefined {
+  const target = normalizeMexicoStateName(stateName)
+  if (!target) return undefined
+  return MEXICAN_STATES.find(
+    state => state !== 'All' && normalizeMexicoStateName(state) === target,
+  )
+}
+
 export const MEXICO_REGION_CONFIG: RegionConfig = {
   countryName: 'Mexico',
   countryCode: 'MX',

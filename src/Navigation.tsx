@@ -82,6 +82,7 @@ import {createNativeStackNavigatorWithAuth} from '#/view/shell/createNativeStack
 import {AgoraScreen} from '#/screens/Agora/AgoraScreen'
 import {ProposalDetailScreen} from '#/screens/Agora/ProposalDetailScreen'
 import {BookmarksScreen} from '#/screens/Bookmarks'
+import {CabildeosScreen} from '#/screens/Cabildeos/CabildeosScreen'
 import {CabildeoDetailScreen} from '#/screens/Communities/CabildeoDetailScreen'
 import {CabildeoListScreen} from '#/screens/Communities/CabildeoListScreen'
 import {CommunitiesScreen} from '#/screens/Communities/CommunitiesScreen'
@@ -961,6 +962,11 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
         name="Agora"
         getComponent={() => AgoraScreen}
         options={{title: title(msg`Agora`), requireAuth: true}}
+      />
+      <Stack.Screen
+        name="Cabildeos"
+        getComponent={() => CabildeosScreen}
+        options={{title: title(msg`Cabildeos`), requireAuth: true}}
       />
       <Stack.Screen
         name="ProposalDetail"

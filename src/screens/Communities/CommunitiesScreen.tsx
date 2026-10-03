@@ -28,6 +28,7 @@ import {
   COMPASS_CROSS_GRADIENTS,
   type CompassPositionId,
 } from '#/lib/compass/compassColors'
+import {findMexicanState} from '#/lib/constants/mexico'
 import {useDebouncedValue} from '#/lib/hooks/useDebouncedValue'
 import {PARTY_FEED_PROFILES} from '#/lib/party-feeds'
 import {type ComposerFlair} from '#/lib/post-flairs'
@@ -43,6 +44,7 @@ import {
   useCommunityBoardsQuery,
 } from '#/state/queries/community-boards'
 import {Text} from '#/view/com/util/text/Text'
+import {isPartyBoard} from '#/screens/Communities/communityGrouping'
 import {useTheme} from '#/alf'
 import {FlairSelectionList} from '#/components/FlairSelectionList'
 import {IconCircle} from '#/components/IconCircle'
@@ -103,6 +105,9 @@ export function CommunitiesScreen() {
       limit: 12,
       query: debouncedSearchQuery || undefined,
     })
+  // Parties come from their own wider query: the search-driven list above is
+  // capped at 12 boards, so parties routinely fell outside it.
+  const {data: partyBoardsData} = useCommunityBoardsQuery({limit: 100})
   const {
     data: participationMatchesData,
     isLoading: isParticipationMatchesLoading,
@@ -119,7 +124,7 @@ export function CommunitiesScreen() {
     isError: isStateMatchesError,
   } = useCommunityBoardsQuery({
     limit: 6,
-    quadrant: selectedStateItem || undefined,
+    region: selectedStateItem ? findMexicanState(selectedStateItem) : undefined,
     sort: 'activity',
   })
 
@@ -147,8 +152,13 @@ export function CommunitiesScreen() {
   const recentLiveBoards = recentCommunities.slice(0, 3)
 
   const politicalBoards = useMemo(() => {
-    return liveBoards.filter(board => board.quadrant === 'political')
-  }, [liveBoards])
+    const needle = debouncedSearchQuery.trim().toLowerCase()
+    return (partyBoardsData?.boards ?? []).filter(
+      board =>
+        isPartyBoard(board) &&
+        (!needle || board.name.toLowerCase().includes(needle)),
+    )
+  }, [partyBoardsData, debouncedSearchQuery])
 
   const chunkedPoliticalBoards = useMemo(() => {
     const chunks = []

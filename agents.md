@@ -828,3 +828,38 @@ pnpm test src/screens/Search/__tests__/searchParams.test.ts
   (`collapseCommunityTreeTwins`); the civic tree screen still lists every board.
 - The personal civic tree has no "duplicates" relation, and collections have no
   "Duplicate" button.
+
+## 2026-10-01: Community kinds, state `region`, and Cabildeos screen
+
+- A board has no kind field. `quadrant` marks parties (`national` /
+  `political`) and ninths (a compass id); `norte` / `sur` / `centro` are topic
+  communities, not geography. My Communities classifies with
+  `screens/Communities/communityGrouping.ts` into Parties / Ninths / States /
+  Other. Never infer a state from a name or description.
+- A community's Mexican state is the board record's optional `region`
+  (lexicon `com.para.community.board`, set at `createBoard`, indexed into
+  `para_community_board.region`, returned on `listBoards` / `getBoard`). It is
+  not the governance `metadata.state`, which is a lifecycle value
+  (`active` / `draft`) and feeds the board's `status`. Cabildeos already use
+  `region` for the state, so the names match. Boards created before this have
+  no region and list under Other until one is set.
+- `listBoards` filters by `region` (exact match). The directory's state picker
+  uses labels like "CDMX", so convert them with `findMexicanState`
+  (`lib/constants/mexico.ts`) before filtering; the stored value is the
+  `MEXICAN_STATES` spelling ("Ciudad de México"). The older `state` param
+  filters governance lifecycle, not geography. WatZappa's dev-env seed
+  (`dev-env/src/seed/para-demo.ts`) creates four state communities (Jalisco,
+  Nuevo León, Oaxaca, Ciudad de México); the server lexicon directories
+  `bsky/src/lexicon` and `pds/src/lexicon` are tracked and need `region` too.
+- `normalizeBoard` in `state/queries/community-boards.ts` copies fields by
+  hand: a new view field is dropped until it is added there.
+- Ágora no longer hosts the lobbying dashboard. It links to the `Cabildeos`
+  screen (`/agora/cabildeos`, `screens/Cabildeos/CabildeosScreen.tsx`), which
+  holds the filters, trending shelf, regional shelf, party desk and the create
+  button.
+
+## 2026-10-01: Compact civic Tree workspace
+
+- Both Tree and Interactive Map expand via the focus-scoped workspace hook on desktop. Tree uses compact cards grouped by authored personal collections or community topic connections; community Tree also retains Argument outline. Interactive Map is the spatial graph view; do not add a redundant Network layout to Tree.
+- `features/civicTree/components/CivicTreeCards` shows actual relationships, respecting personal relation direction, in a selection inspector. Group headers express membership, never invented graph edges. Search and filters preserve community grouping from the complete graph. Selecting a connection follows its real endpoint; detail actions retain the existing edit, connect and community workflows.
+- Tree card lanes scroll independently inside the viewport; the inspector moves below the lanes on narrow screens. Full personal card details open in a dialog. Keep the compact collection shelf from growing vertically.
