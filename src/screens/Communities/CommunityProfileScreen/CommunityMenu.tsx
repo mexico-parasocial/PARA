@@ -45,15 +45,9 @@ export function CommunityMenu({
   const t = useTheme()
   const {_} = useLingui()
   const navigation = useNavigation<NavigationProp>()
-  const {organizerDids, canOrganize} = useCommunityOrganizers({
-    communityUri,
-    governance,
-  })
-  const wikiQuery = useCommunityWikiPagesQuery({communityUri, organizerDids})
-  const activitiesQuery = useCommunityActivitiesQuery({
-    communityUri,
-    organizerDids,
-  })
+  const {canOrganize} = useCommunityOrganizers({communityUri, governance})
+  const wikiQuery = useCommunityWikiPagesQuery({communityUri})
+  const activitiesQuery = useCommunityActivitiesQuery({communityUri})
 
   const {megathreads, pages} = useMemo(() => {
     const all = wikiQuery.data ?? []

@@ -1,5 +1,10 @@
 import {useMemo} from 'react'
-import {type AtIdentifierString, AtUri, type NsidString} from '@atproto/syntax'
+import {
+  type AtIdentifierString,
+  AtUri,
+  type AtUriString,
+  type NsidString,
+} from '@atproto/syntax'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {
@@ -17,7 +22,6 @@ import {
   computeTermsDigest,
 } from '#/lib/community-activities'
 import {type CommunityGovernanceView} from '#/lib/community-governance'
-import {logger} from '#/logger'
 import {STALE} from '#/state/queries'
 import {useCommunityGovernanceQuery} from '#/state/queries/community-governance'
 import {useAgent, useSession} from '#/state/session'
@@ -25,16 +29,17 @@ import {com} from '#/lexicons'
 
 /*
  * Activities, their ledgers and wiki pages are records in their authors' own
- * repos, read straight from those repos. The AppView does not index them yet,
- * so a community's menu is assembled from the repos of the people entitled to
- * publish there: the published moderators and officials, the board creator,
- * and the viewer (who always sees their own drafts). Every figure on an
- * activity page therefore comes from a record signed by the organizer, which
- * is the property the transparency ledger depends on.
+ * repos. The AppView indexes them and serves only those written by the
+ * community's current organizers: the board's creator, or an owner or
+ * moderator by verified authority events (WatZappa
+ * data-plane/server/routes/community-activities.ts). Reading through it, not
+ * straight from repos, is what keeps a record anyone can write under any
+ * community out of its menu and its books.
  */
 
 const RQKEY_ROOT = 'community-activities'
-const MAX_PAGES_PER_REPO = 5
+/** Upper bound on pages read for one community's full list. */
+const MAX_PAGES = 10
 
 type RepoRecord<T> = {uri: string; cid: string; authorDid: string; record: T}
 
@@ -51,20 +56,24 @@ export type CommunityWikiPageView = RepoRecord<CommunityWikiPageRecord>
 
 type Agent = ReturnType<typeof useAgent>
 
+/**
+ * Who the AppView treats as the community's organizers: the board's creator
+ * and the current owners and moderators by verified authority events
+ * (`roleHolders`). The governance record's moderators and officials are not
+ * used, because any account can publish one under any community's name.
+ */
 export function getCommunityOrganizerDids({
   governance,
   creatorDid,
-  viewerDid,
 }: {
   governance?: CommunityGovernanceView
   creatorDid?: string
-  viewerDid?: string
 }) {
   const dids = [
     creatorDid,
-    viewerDid,
-    ...(governance?.moderators ?? []).map(person => person.did),
-    ...(governance?.officials ?? []).map(person => person.did),
+    ...(governance?.roleHolders ?? [])
+      .filter(holder => holder.role === 'owner' || holder.role === 'moderator')
+      .map(holder => holder.did),
   ].filter((did): did is string => Boolean(did?.startsWith('did:')))
   return Array.from(new Set(dids)).sort()
 }
@@ -79,9 +88,8 @@ function repoOfUri(uri: string | undefined) {
 }
 
 /**
- * Who may publish activities and wiki pages for a community: the board's
- * creator (the board record lives in their repo) and its published moderators
- * and officials.
+ * Whether the viewer may publish activities and wiki pages for a community,
+ * by the same rule the AppView applies when serving them.
  */
 export function useCommunityOrganizers({
   communityUri,
@@ -106,64 +114,12 @@ export function useCommunityOrganizers({
   const creatorDid = repoOfUri(communityUri)
 
   return useMemo(() => {
-    const publishers = getCommunityOrganizerDids({governance, creatorDid})
+    const organizerDids = getCommunityOrganizerDids({governance, creatorDid})
     return {
-      organizerDids: getCommunityOrganizerDids({
-        governance,
-        creatorDid,
-        viewerDid,
-      }),
-      canOrganize: Boolean(viewerDid && publishers.includes(viewerDid)),
+      organizerDids,
+      canOrganize: Boolean(viewerDid && organizerDids.includes(viewerDid)),
     }
   }, [governance, creatorDid, viewerDid])
-}
-
-async function listRepoRecords<T>(
-  agent: Agent,
-  repo: string,
-  collection: string,
-  keep: (value: T) => boolean,
-): Promise<RepoRecord<T>[]> {
-  const out: RepoRecord<T>[] = []
-  let cursor: string | undefined
-  for (let page = 0; page < MAX_PAGES_PER_REPO; page++) {
-    const res = await agent.pdsClient.call(com.atproto.repo.listRecords, {
-      repo: repo as AtIdentifierString,
-      collection: collection as NsidString,
-      limit: 100,
-      cursor,
-    })
-    for (const item of res.records) {
-      const value = item.value as unknown as T
-      if (keep(value)) {
-        out.push({uri: item.uri, cid: item.cid, authorDid: repo, record: value})
-      }
-    }
-    cursor = res.cursor
-    if (!cursor || res.records.length === 0) break
-  }
-  return out
-}
-
-/** A repo that cannot be read hides its records instead of the whole menu. */
-async function listFromRepos<T>(
-  agent: Agent,
-  repos: string[],
-  collection: string,
-  keep: (value: T) => boolean,
-) {
-  const results = await Promise.allSettled(
-    repos.map(repo => listRepoRecords<T>(agent, repo, collection, keep)),
-  )
-  return results.flatMap((result, index) => {
-    if (result.status === 'fulfilled') return result.value
-    logger.warn('community-activities: could not read repo', {
-      repo: repos[index],
-      collection,
-      safeMessage: String(result.reason),
-    })
-    return []
-  })
 }
 
 // ─── Activities ─────────────────────────────────────────────────────────────
@@ -184,66 +140,98 @@ export function getActivityCategoryFromUri(
   return undefined
 }
 
-function toActivityView(
-  category: ActivityCategory,
-  item: RepoRecord<unknown>,
-): CommunityActivityView {
-  return category === 'social'
-    ? {...item, category, record: item.record as SocialActivityRecord}
-    : {...item, category, record: item.record as EconomicActivityRecord}
+type ServedRecord = {
+  uri: string
+  cid: string
+  author: string
+  record: unknown
+}
+type ServedActivity = ServedRecord & {category: string}
+
+function toActivityView(item: ServedActivity): CommunityActivityView | null {
+  const base = {uri: item.uri, cid: item.cid, authorDid: item.author}
+  if (item.category === 'social') {
+    return {...base, category: 'social', record: item.record as SocialActivityRecord}
+  }
+  if (item.category === 'economic') {
+    return {
+      ...base,
+      category: 'economic',
+      record: item.record as EconomicActivityRecord,
+    }
+  }
+  return null
 }
 
-export function communityActivitiesQueryKey(
-  communityUri: string | undefined,
-  organizerDids: string[],
-) {
-  return [RQKEY_ROOT, 'list', communityUri, organizerDids.join(',')] as const
+export function communityActivitiesQueryKey(communityUri: string | undefined) {
+  return [RQKEY_ROOT, 'list', communityUri] as const
 }
 
 export function useCommunityActivitiesQuery({
   communityUri,
-  organizerDids,
 }: {
   communityUri: string | undefined
-  organizerDids: string[]
 }) {
   const agent = useAgent()
   return useQuery<CommunityActivityView[]>({
-    queryKey: communityActivitiesQueryKey(communityUri, organizerDids),
-    queryFn: () =>
-      fetchCommunityActivities({agent, communityUri, organizerDids}),
-    enabled: Boolean(communityUri) && organizerDids.length > 0,
+    queryKey: communityActivitiesQueryKey(communityUri),
+    queryFn: () => fetchCommunityActivities({agent, communityUri}),
+    enabled: Boolean(communityUri),
     staleTime: STALE.SECONDS.THIRTY,
   })
 }
 
+/** One page of activities, across every community unless one is given. */
+export async function fetchCommunityActivitiesPage({
+  agent,
+  communityUri,
+  cursor,
+  limit = 100,
+}: {
+  agent: Agent
+  communityUri?: string
+  cursor?: string
+  limit?: number
+}): Promise<{activities: CommunityActivityView[]; cursor?: string}> {
+  const res = (await agent.appviewClient.call(
+    com.para.community.listActivities,
+    {
+      community: communityUri as AtUriString | undefined,
+      cursor,
+      limit,
+    },
+  )) as {activities?: ServedActivity[]; cursor?: string}
+  return {
+    activities: (res.activities ?? []).flatMap(item => {
+      const view = toActivityView(item)
+      return view ? [view] : []
+    }),
+    cursor: res.cursor,
+  }
+}
+
+/** All of a community's activities, soonest first. */
 export async function fetchCommunityActivities({
   agent,
   communityUri,
-  organizerDids,
 }: {
   agent: Agent
   communityUri: string | undefined
-  organizerDids: string[]
 }): Promise<CommunityActivityView[]> {
-  if (!communityUri || organizerDids.length === 0) return []
-  const keep = (value: {communityUri?: string} | undefined) =>
-    value?.communityUri === communityUri
-  const [social, economic] = await Promise.all(
-    (['social', 'economic'] as const).map(async category =>
-      (
-        await listFromRepos<{communityUri?: string}>(
-          agent,
-          organizerDids,
-          ACTIVITY_COLLECTIONS[category],
-          keep,
-        )
-      ).map(item => toActivityView(category, item)),
-    ),
-  )
-  return [...social, ...economic].sort((a, b) =>
-    a.record.startsAt.localeCompare(b.record.startsAt),
-  )
+  if (!communityUri) return []
+  const out: CommunityActivityView[] = []
+  let cursor: string | undefined
+  for (let page = 0; page < MAX_PAGES; page++) {
+    const res = await fetchCommunityActivitiesPage({
+      agent,
+      communityUri,
+      cursor,
+    })
+    out.push(...res.activities)
+    cursor = res.cursor
+    if (!cursor) break
+  }
+  return out.sort((a, b) => a.record.startsAt.localeCompare(b.record.startsAt))
 }
 
 export type CommunityActivityDetail = {
@@ -262,28 +250,21 @@ export function useCommunityActivityQuery(activityUri: string | undefined) {
     queryKey: communityActivityQueryKey(activityUri),
     queryFn: async () => {
       if (!activityUri) throw new Error('No activity URI')
-      const category = getActivityCategoryFromUri(activityUri)
-      if (!category) throw new Error('Not a community activity')
-      const uri = new AtUri(activityUri)
-      const res = await agent.pdsClient.call(com.atproto.repo.getRecord, {
-        repo: uri.host,
-        collection: uri.collection as NsidString,
-        rkey: uri.rkey,
-      })
-      const activity = toActivityView(category, {
-        uri: res.uri,
-        cid: res.cid ?? '',
-        authorDid: uri.host,
-        record: res.value,
-      })
-      if (activity.category === 'social') return {activity, ledger: []}
-      // Only the organizer's own repo is read: an entry anyone else writes
-      // about this activity is not part of its books.
-      const ledger = await listRepoRecords<CommunityActivityLedgerEntryRecord>(
-        agent,
-        uri.host,
-        PARA_COMMUNITY_ACTIVITY_LEDGER_COLLECTION,
-        value => value?.activityUri === activityUri,
+      const res = (await agent.appviewClient.call(
+        com.para.community.getActivity,
+        {uri: activityUri as AtUriString},
+      )) as {activity?: ServedActivity; ledger?: ServedRecord[]}
+      const activity = res.activity ? toActivityView(res.activity) : null
+      if (!activity) throw new Error('Not a community activity')
+      // The AppView only returns entries an organizer of the activity's own
+      // community recorded against it.
+      const ledger: CommunityLedgerEntryView[] = (res.ledger ?? []).map(
+        entry => ({
+          uri: entry.uri,
+          cid: entry.cid,
+          authorDid: entry.author,
+          record: entry.record as CommunityActivityLedgerEntryRecord,
+        }),
       )
       ledger.sort((a, b) =>
         b.record.occurredAt.localeCompare(a.record.occurredAt),
@@ -451,53 +432,36 @@ export function useAddLedgerEntryMutation() {
 
 // ─── Wiki ───────────────────────────────────────────────────────────────────
 
-export function communityWikiPagesQueryKey(
-  communityUri: string | undefined,
-  organizerDids: string[],
-) {
-  return [RQKEY_ROOT, 'wiki', communityUri, organizerDids.join(',')] as const
+export function communityWikiPagesQueryKey(communityUri: string | undefined) {
+  return [RQKEY_ROOT, 'wiki', communityUri] as const
 }
 
 /**
- * When two organizers publish the same slug, the most recently updated page
- * wins, so an edit by any organizer supersedes the previous version.
+ * The AppView returns one page per slug: when several organizers publish the
+ * same slug, the most recently updated wins, so an edit by any organizer
+ * supersedes the previous version. Pinned pages come first.
  */
-export function dedupeWikiPagesBySlug(pages: CommunityWikiPageView[]) {
-  const bySlug = new Map<string, CommunityWikiPageView>()
-  for (const page of pages) {
-    const current = bySlug.get(page.record.slug)
-    if (!current || page.record.updatedAt > current.record.updatedAt) {
-      bySlug.set(page.record.slug, page)
-    }
-  }
-  return Array.from(bySlug.values()).sort(
-    (a, b) =>
-      Number(Boolean(b.record.pinned)) - Number(Boolean(a.record.pinned)) ||
-      (a.record.sortOrder ?? 0) - (b.record.sortOrder ?? 0) ||
-      a.record.title.localeCompare(b.record.title),
-  )
-}
-
 export function useCommunityWikiPagesQuery({
   communityUri,
-  organizerDids,
 }: {
   communityUri: string | undefined
-  organizerDids: string[]
 }) {
   const agent = useAgent()
   return useQuery<CommunityWikiPageView[]>({
-    queryKey: communityWikiPagesQueryKey(communityUri, organizerDids),
-    queryFn: async () =>
-      dedupeWikiPagesBySlug(
-        await listFromRepos<CommunityWikiPageRecord>(
-          agent,
-          organizerDids,
-          PARA_COMMUNITY_WIKI_PAGE_COLLECTION,
-          value => value?.communityUri === communityUri,
-        ),
-      ),
-    enabled: Boolean(communityUri) && organizerDids.length > 0,
+    queryKey: communityWikiPagesQueryKey(communityUri),
+    queryFn: async () => {
+      const res = (await agent.appviewClient.call(
+        com.para.community.listWikiPages,
+        {community: communityUri as AtUriString},
+      )) as {pages?: ServedRecord[]}
+      return (res.pages ?? []).map(page => ({
+        uri: page.uri,
+        cid: page.cid,
+        authorDid: page.author,
+        record: page.record as CommunityWikiPageRecord,
+      }))
+    },
+    enabled: Boolean(communityUri),
     staleTime: STALE.SECONDS.THIRTY,
   })
 }
