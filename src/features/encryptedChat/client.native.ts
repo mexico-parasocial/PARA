@@ -3,9 +3,11 @@ import * as Crypto from 'expo-crypto'
 import * as FileSystem from 'expo-file-system/legacy'
 import * as SecureStore from 'expo-secure-store'
 import {
+  BackupState,
   ClientBuilder,
   type ClientLike,
   CollectStrategy,
+  DateDividerMode,
   EncryptionState,
   EventOrTransactionId,
   ImageInfo,
@@ -22,13 +24,18 @@ import {
   SqliteStoreBuilder,
   type SyncServiceLike,
   type TaskHandleLike,
+  TimelineFilter,
+  TimelineFocus,
   type TimelineItemLike,
   type TimelineLike,
+  TimelineReadReceiptTracking,
   UploadSource,
+  VerificationState,
 } from '@unomed/react-native-matrix-sdk'
 
 import {mapTimelineItems} from '#/features/encryptedChat/mapTimeline'
 import {buildOidcConfiguration} from '#/features/encryptedChat/oidc'
+import {createChatRecovery} from '#/features/encryptedChat/recovery'
 import {
   assertSessionScope,
   chatScopeKey,
@@ -199,10 +206,68 @@ export async function connectEncryptedChat(
       recoveryEnabled:
         matrix.encryption().recoveryState() === RecoveryState.Enabled,
     }
+    const pendingKeyName = `${secretName}.pending-recovery`
+    const recovery = createChatRecovery({
+      async status() {
+        requireOpen()
+        const encryption = matrix.encryption()
+        await encryption.waitForE2eeInitializationTasks()
+        requireOpen()
+        const backupExists = await encryption.backupExistsOnServer()
+        requireOpen()
+        const recoveryState = encryption.recoveryState()
+        const verification = encryption.verificationState()
+        sessionInfo.recoveryEnabled = recoveryState === RecoveryState.Enabled
+        return {
+          recovery:
+            recoveryState === RecoveryState.Enabled
+              ? 'enabled'
+              : recoveryState === RecoveryState.Disabled
+                ? 'disabled'
+                : recoveryState === RecoveryState.Incomplete
+                  ? 'incomplete'
+                  : 'unknown',
+          verification:
+            verification === VerificationState.Verified
+              ? 'verified'
+              : verification === VerificationState.Unverified
+                ? 'unverified'
+                : 'unknown',
+          backupExists,
+          backupEnabled: encryption.backupState() === BackupState.Enabled,
+        }
+      },
+      async enable() {
+        requireOpen()
+        const key = await matrix
+          .encryption()
+          .enableRecovery(false, undefined, {onUpdate() {}})
+        sessionInfo.recoveryEnabled =
+          matrix.encryption().recoveryState() === RecoveryState.Enabled
+        return key
+      },
+      async recover(key) {
+        requireOpen()
+        await matrix.encryption().recover(key)
+        sessionInfo.recoveryEnabled =
+          matrix.encryption().recoveryState() === RecoveryState.Enabled
+        timeline?.retryDecryption([])
+      },
+      async sync() {
+        requireOpen()
+        await matrix.encryption().waitForBackupUploadSteadyState(undefined)
+      },
+      loadPending: () => SecureStore.getItemAsync(pendingKeyName),
+      savePending: key =>
+        SecureStore.setItemAsync(pendingKeyName, key, keychainOptions),
+      clearPending: () => SecureStore.deleteItemAsync(pendingKeyName),
+    })
     const close = async () => {
       if (closed) return
       closed = true
       roomGeneration++
+      // Let a newly created key reach the keychain before releasing the SDK.
+      await recovery.whenIdle()
       subscription?.cancel()
       typingSubscription?.cancel()
       dispose(subscription)
@@ -339,8 +404,10 @@ export async function connectEncryptedChat(
       async getMessage(eventId) {
         const current = requireEncryptedTimeline()
         const room = openRoomId ? matrix.getRoom(openRoomId) : undefined
-        const lookup = async () => {
-          const item = await current.getEventTimelineItemByEventId(eventId)
+        const generation = roomGeneration
+        const lookup = async (source: TimelineLike) => {
+          const item = await source.getEventTimelineItemByEventId(eventId)
+          if (closed || generation !== roomGeneration) return undefined
           // Reuse the timeline mapping so a single event is classified exactly
           // like the list: message, redacted, or unable to decrypt.
           const wrapped = {
@@ -352,15 +419,29 @@ export async function connectEncryptedChat(
           return mapTimelineItems([wrapped], saved.session!.userId)[0]
         }
         try {
-          return await lookup()
+          return await lookup(current)
         } catch {
-          // Not in the loaded window; fetch it into the event cache and retry.
+          // The live timeline may not contain an older reported event.
         }
+        let focused: TimelineLike | undefined
         try {
-          await room?.loadOrFetchEvent(eventId)
-          return await lookup()
+          if (!room || closed || generation !== roomGeneration) return undefined
+          focused = await room.timelineWithConfiguration({
+            focus: new TimelineFocus.Event({
+              eventId,
+              numContextEvents: 0,
+              hideThreadedEvents: false,
+            }),
+            filter: new TimelineFilter.All(),
+            dateDividerMode: DateDividerMode.Daily,
+            trackReadReceipts: TimelineReadReceiptTracking.Disabled,
+            reportUtds: false,
+          })
+          return await lookup(focused)
         } catch {
           return undefined
+        } finally {
+          dispose(focused)
         }
       },
       async openMedia(eventId) {
@@ -454,30 +535,25 @@ export async function connectEncryptedChat(
           )
           .join()
       },
-      async enableRecovery() {
+      getSecurityStatus: recovery.getSecurityStatus,
+      getPendingRecoveryKey() {
         requireOpen()
-        const encryption = matrix.encryption()
-        if (
-          encryption.recoveryState() !== RecoveryState.Disabled ||
-          (await encryption.backupExistsOnServer())
-        ) {
-          throw new Error('RECOVER_EXISTING_KEYS_FIRST')
-        }
-        const key = await encryption.enableRecovery(true, undefined, {
-          onUpdate() {},
-        })
-        sessionInfo.recoveryEnabled = true
-        return key
+        return recovery.getPendingRecoveryKey()
       },
-      async recover(key) {
+      enableRecovery() {
         requireOpen()
-        await matrix.encryption().recover(key)
-        sessionInfo.recoveryEnabled =
-          matrix.encryption().recoveryState() === RecoveryState.Enabled
+        return recovery.enableRecovery()
       },
+      acknowledgeRecoveryKey() {
+        requireOpen()
+        return recovery.acknowledgeRecoveryKey()
+      },
+      recover: recovery.recover,
+      syncKeyBackup: recovery.syncKeyBackup,
       close,
       async logout() {
         requireOpen()
+        await recovery.whenIdle()
         await matrix.logout()
         await close()
         await SecureStore.deleteItemAsync(secretName)

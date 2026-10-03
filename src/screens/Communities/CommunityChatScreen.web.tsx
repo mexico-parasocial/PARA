@@ -103,8 +103,9 @@ export function CommunityChatScreen() {
   const activeRoomId = routeRoomId ?? spaceData?.spaceId
   // A reported message opened from the moderator queue (D2): read with this
   // session, shown above the conversation until dismissed.
-  const [focusDismissed, setFocusDismissed] = useState(false)
-  const showFocus = !!focusEventId && !focusDismissed
+  const [dismissedFocus, setDismissedFocus] = useState<string>()
+  const focusKey = JSON.stringify([myDid, activeRoomId, focusEventId])
+  const showFocus = !!focusEventId && dismissedFocus !== focusKey
   const reported = useReportedMessage({
     roomId: activeRoomId,
     eventId: showFocus ? focusEventId : undefined,
@@ -428,7 +429,7 @@ export function CommunityChatScreen() {
         <ReportedMessageCard
           view={reported.view}
           encrypted={false}
-          onClose={() => setFocusDismissed(true)}
+          onClose={() => setDismissedFocus(focusKey)}
           onRetry={reported.retry}
         />
       )}
