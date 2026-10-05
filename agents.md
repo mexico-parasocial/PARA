@@ -345,15 +345,17 @@ So upstream's *floor* is 22.12 but it **develops on 24**; WatZappa narrowed
 that to the 22 major. The runtime floor claim still matches upstream — the
 `.nvmrc` and the `22.x` pin do not.
 
-**What the 22 pin currently costs:** the ozone jest suites cannot load at all.
-`packages/bsky` depends on `natural@8.1.1` (PARA's own addition for
-`discourse-nlp.ts`, along with `keyword-extractor` and `stopword` — none of the
-three exist upstream). `natural` is ESM-only, ozone's tests pull `@atproto/bsky`
-in through dev-env, and jest 30 cannot `require()` an ESM module before Node
-24.9. Jest's own error says so. The fix is to load `natural` lazily inside
-`analyzeDiscourse` instead of at module top level, so importing the indexing
-path does not drag an ESM module into the test runtime — not to move WatZappa
-to 24.
+**What the 22 pin cost, and how it was paid:** the ozone jest suites could not
+load at all. `packages/bsky` depends on `natural@8.1.1` (PARA's own addition for
+`discourse-nlp.ts`, with `keyword-extractor` and `stopword` — none of the three
+exist upstream), whose `SentimentAnalyzer` does `require('afinn-165')`, and
+`afinn-165` is ESM-only. Plain Node handles that from 22.12 on; jest 30 cannot
+before Node 24.9. Ozone's fixtures pull `@atproto/bsky` in through dev-env, so
+every ozone suite paid for an import none of them used.
+
+Fixed in WatZappa by loading `natural` on first use through `createRequire`
+rather than at module top level — not by moving the repo to 24. Keep it lazy;
+a plain top-level import there breaks the ozone suites again.
 
 ---
 

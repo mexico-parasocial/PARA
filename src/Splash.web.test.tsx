@@ -61,7 +61,9 @@ beforeEach(() => {
     return frameId
   })
   jest.spyOn(window, 'cancelAnimationFrame').mockImplementation(id => {
-    frames.delete(id)
+    // React Native's global typing makes the handle nullable; there is no frame
+    // to forget for a nullish one.
+    if (id != null) frames.delete(id)
   })
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,
