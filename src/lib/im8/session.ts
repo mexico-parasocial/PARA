@@ -1,16 +1,7 @@
-import {
-  clearM8Session,
-  getCurrentSession,
-  postSessionStart,
-  restoreM8Session,
-} from './api'
-import {type M8SessionStartResponse, type ProofBrokerSession} from './types'
+import {getCurrentSession, restoreM8Session, revokeM8Session} from './api'
+import {type ProofBrokerSession} from './types'
 
-export async function startM8Session(
-  identifier: string,
-): Promise<M8SessionStartResponse> {
-  return postSessionStart(identifier)
-}
+export {connectM8SessionFor} from './grant'
 
 export async function fetchM8Session(): Promise<ProofBrokerSession> {
   return getCurrentSession()
@@ -21,5 +12,5 @@ export async function restoreM8SessionOrNull(): Promise<ProofBrokerSession | nul
 }
 
 export async function logoutM8() {
-  await clearM8Session()
+  await revokeM8Session()
 }

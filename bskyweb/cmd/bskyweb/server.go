@@ -306,6 +306,7 @@ func serve(cctx *cli.Context) error {
 	// navigates on; without the route the redirect would 404 before any of
 	// the app code runs. Noindex: it only ever carries one-time codes.
 	e.GET("/matrix-auth", server.WebGenericNoindex)
+	e.GET("/m8-auth", server.WebGenericNoindex)
 	e.GET("/feeds", server.WebGenericNoindex)
 	e.GET("/notifications", server.WebGenericNoindex)
 	e.GET("/notifications/settings", server.WebGenericNoindex)

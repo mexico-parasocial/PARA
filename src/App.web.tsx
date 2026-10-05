@@ -6,6 +6,7 @@ import {SafeAreaProvider} from 'react-native-safe-area-context'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 
+import {completeM8WebGrant} from '#/lib/im8/webGrant'
 import {QueryProvider} from '#/lib/react-query'
 import {ThemeProvider} from '#/lib/ThemeContext'
 import {Provider as TranslationProvider} from '#/lib/translation'
@@ -196,7 +197,19 @@ function App() {
 
   useEffect(() => {
     void Promise.all([
-      initPersistedState(),
+      initPersistedState().then(async () => {
+        try {
+          const returnTo = await completeM8WebGrant(
+            () => readLastActiveAccount()?.did,
+          )
+          // The router mounts after this callback; retain its in-memory grant.
+          if (returnTo) window.history.replaceState(null, '', returnTo)
+        } catch {
+          logger.error('m8: authorization callback initialization failed')
+          if (window.location.pathname === '/m8-auth')
+            window.location.replace('/')
+        }
+      }),
       setupDeviceId,
       // The homeserver's OAuth redirect lands on MATRIX_OIDC_CALLBACK_PATH with
       // an authorization code in the query string. Exchange it here, before the

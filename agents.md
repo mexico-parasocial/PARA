@@ -19,6 +19,14 @@ PARA is a React Native mobile application built on the **AT Protocol (atproto)**
 
 ## 🛠️ Local Development & Environment Quirks
 
+### M8 login handoff (2026-10-05)
+
+PARA's explicit DID-bound native/web login candidate is implemented; read
+`docs/M8_LOGIN.md` and the canonical queue before re-auditing auth. The broker
+must deploy its paired migration/configuration first. Web bearer tokens stay
+in memory and reconnect after reload; native release storage requires
+SecureStore. Local tests are not real-provider or staging acceptance.
+
 ### React Query Notes
 
 - QV statistics must distinguish `BallotPrivacyUnavailable` / `FeatureNotEnabled`
@@ -127,7 +135,7 @@ PARA is a React Native mobile application built on the **AT Protocol (atproto)**
 
 If you are a new agent taking over this workspace:
 
-0. **Read the quarter plan:** the current planning horizon lives in the backend repo at `../WatZappa/docs/QUARTER_PLAN_2026Q4.md` (pilot community launch, Sep–Nov 2026). PARA's committed items per sprint are listed there; anything not listed is explicitly deferred.
+0. **Read the current execution queue and evidence first:** `../WatZappa/docs/QUARTER_PLAN_2026Q4.md` is the canonical pilot plan (re-baselined 2026-10-05). The old September sprint calendar is superseded. Start with the next open item and inspect only relevant changes; do not repeat the whole code audit or rebuild completed OD-6/MAS/QVL/data paths. Distinguish implemented, tested, merged and deployed. On closure, remove the action from active roadmaps and retain commit/test/deployment evidence in the plan or a linked record. Private voting has separate governance gates.
    - **Map feature roadmap:** the in-repo map plan doc (`docs/MAP_QUARTER_PLAN_2027Q1.md`) was removed on 2026-09-21; map work (Dec 2026 – Feb 2027) remains deliberately outside the Q4 pilot plan until a new planning doc lands.
 1. **Check the Lexicons:** Before modifying API calls, inspect `src/lib/api/para-lexicons.ts` to understand the data schema.
 2. **Respect the Atoms:** Always use the `alf` design system. Do not write ad-hoc CSS/Styles unless absolutely necessary for custom animations.
