@@ -12,12 +12,13 @@ export * as utils from '#/components/forms/DateField/utils'
 export const LabelText = TextField.LabelText
 
 const InputBase = forwardRef<HTMLInputElement, TextInputProps>(
-  ({style, ...props}, ref) => {
+  ({style, editable, ...props}, ref) => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     return unstable_createElement('input', {
       ...props,
       ref,
       type: 'date',
+      disabled: editable === false,
       style: [
         StyleSheet.flatten(style),
         {
@@ -38,6 +39,8 @@ export function DateField({
   inputRef,
   onChangeDate,
   onConfirm,
+  onBlur,
+  disabled,
   label,
   isInvalid,
   testID,
@@ -62,11 +65,13 @@ export function DateField({
     <TextField.Root isInvalid={isInvalid}>
       <TextField.Icon icon={CalendarDays} />
       <Input
+        editable={!disabled}
         value={value === '' ? '' : toSimpleDateString(value)}
         inputRef={inputRef as Ref<React.ComponentRef<typeof TextInput>>}
         label={label}
         // @ts-expect-error not typed as <input type="date"> even though it is one
         onChange={handleOnChange}
+        onBlur={onBlur}
         testID={testID}
         accessibilityHint={accessibilityHint}
         max={maximumDate ? toSimpleDateString(maximumDate) : undefined}

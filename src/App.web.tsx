@@ -6,10 +6,6 @@ import {SafeAreaProvider} from 'react-native-safe-area-context'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 
-import {
-  completeMatrixWebAuthorization,
-  MATRIX_OIDC_CALLBACK_PATH,
-} from '#/features/encryptedChat/webOidc'
 import {QueryProvider} from '#/lib/react-query'
 import {ThemeProvider} from '#/lib/ThemeContext'
 import {Provider as TranslationProvider} from '#/lib/translation'
@@ -69,6 +65,10 @@ import {
   features,
   setupDeviceId,
 } from '#/analytics'
+import {
+  completeMatrixWebAuthorization,
+  MATRIX_OIDC_CALLBACK_PATH,
+} from '#/features/encryptedChat/webOidc'
 import {
   // prefetchLiveEvents,
   Provider as LiveEventsProvider,
@@ -195,7 +195,7 @@ function App() {
   const [isReady, setReady] = useState(false)
 
   useEffect(() => {
-    Promise.all([
+    void Promise.all([
       initPersistedState(),
       setupDeviceId,
       // The homeserver's OAuth redirect lands on MATRIX_OIDC_CALLBACK_PATH with

@@ -37,12 +37,12 @@ function demote(key: string, err: unknown): void {
   )
 }
 
-function useSecureStore(): boolean {
+function canUseSecureStore(): boolean {
   return SecureStore !== null && secureStoreUsable
 }
 
 export async function setItemAsync(key: string, value: string): Promise<void> {
-  if (useSecureStore()) {
+  if (canUseSecureStore()) {
     try {
       return await SecureStore!.setItemAsync(key, value)
     } catch (err) {
@@ -53,7 +53,7 @@ export async function setItemAsync(key: string, value: string): Promise<void> {
 }
 
 export async function getItemAsync(key: string): Promise<string | null> {
-  if (useSecureStore()) {
+  if (canUseSecureStore()) {
     try {
       return await SecureStore!.getItemAsync(key)
     } catch (err) {
@@ -64,7 +64,7 @@ export async function getItemAsync(key: string): Promise<string | null> {
 }
 
 export async function deleteItemAsync(key: string): Promise<void> {
-  if (useSecureStore()) {
+  if (canUseSecureStore()) {
     try {
       return await SecureStore!.deleteItemAsync(key)
     } catch (err) {

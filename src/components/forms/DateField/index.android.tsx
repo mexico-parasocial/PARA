@@ -17,6 +17,8 @@ export function DateField({
   inputRef,
   onChangeDate,
   onConfirm,
+  onBlur,
+  disabled,
   placeholder,
   label,
   isInvalid,
@@ -57,6 +59,7 @@ export function DateField({
     inputRef,
     () => ({
       focus: () => {
+        if (disabled) return
         Keyboard.dismiss()
         setOpen(true)
       },
@@ -64,7 +67,7 @@ export function DateField({
         setOpen(false)
       },
     }),
-    [],
+    [disabled],
   )
 
   const onPress = useCallback(() => {
@@ -78,6 +81,8 @@ export function DateField({
   return (
     <>
       <DateFieldButton
+        disabled={disabled}
+        onBlur={onBlur}
         label={label}
         value={value}
         placeholder={placeholder}

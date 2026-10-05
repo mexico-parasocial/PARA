@@ -6,20 +6,20 @@ import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
 import {type CivicTreeCollection} from '#/state/queries/collections'
-import {atoms as a, useTheme} from '#/alf'
+import {atoms as a, useBreakpoints, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
 import {Text} from '#/components/Typography'
-import {type PersonalTreeGraph} from '../graph'
+import {MapViewport} from '#/features/civicTree/components/MapViewport'
 import {
-  buildCivicMapLayout,
   MAP_GROUPINGS,
   type MapCamera,
   type MapGrouping,
   zoomMapCamera,
-} from '../map'
+} from '#/features/civicTree/map'
+import {type PersonalTreeGraph} from '../graph'
+import {buildCivicMapLayout} from '../map'
 import {ConnectTreeItemsDialog} from './ConnectTreeItemsDialog'
-import {MapViewport} from './MapViewport'
 import {PersonalTreeNodeSheet} from './PersonalTreeNodeSheet'
 
 export function CivicTreeMap({
@@ -42,6 +42,7 @@ export function CivicTreeMap({
   onSelectCollection: (id: string | undefined) => void
 }) {
   const t = useTheme()
+  const {gtMobile} = useBreakpoints()
   const {_, i18n} = useLingui()
   const [grouping, setGrouping] = useState<MapGrouping>('collection')
   const [size, setSize] = useState({width: 600, height: 500})
@@ -546,7 +547,8 @@ export function CivicTreeMap({
             a.border,
             t.atoms.bg,
             t.atoms.border_contrast_low,
-            {bottom: 16, right: 16},
+            // Phones keep the bottom-right corner for the screen's FABs.
+            gtMobile ? {bottom: 16, right: 16} : {bottom: 16, left: 16},
           ]}>
           <Button
             label={_(msg`Zoom out`)}

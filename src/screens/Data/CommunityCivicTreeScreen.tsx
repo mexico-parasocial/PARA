@@ -9,11 +9,9 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native'
-import * as Clipboard from 'expo-clipboard'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {useRoute} from '@react-navigation/native'
 
-import {buildCommunityCivicTreeVaultManifest} from '#/lib/civic-export/obsidian'
 import {COMPASS_POSITION_NAMES} from '#/lib/compass/compassColors'
 import {useAnonymousMode} from '#/lib/im8/hooks/useAnonymousMode'
 import {usePartyLobbyingBriefingPacksQuery} from '#/state/queries/briefing-packs'
@@ -32,7 +30,6 @@ import {
   useCastCommunityCivicTreeVoteMutation,
   useCommunityCivicTreeCardVoteQuery,
   useCommunityCivicTreeGraphQuery,
-  useCommunityCivicTreePulseQuery,
   useCommunityCivicTreeSuggestionsQuery,
   useCommunityCivicTreeSummaryQuery,
   useCommunityTreeContributionsQuery,
@@ -43,23 +40,27 @@ import {
 import {useSession} from '#/state/session'
 import {useExpandCivicTreeWorkspace} from '#/state/shell/civic-tree-workspace'
 import {atoms as a, useBreakpoints, useLayoutBreakpoints, useTheme} from '#/alf'
-import {Button, ButtonIcon, ButtonText} from '#/components/Button'
+import {Button, ButtonText} from '#/components/Button'
 import {useDialogControl} from '#/components/Dialog'
 import {SortitionConfigDialog} from '#/components/dialogs/SortitionConfigDialog'
 import {SearchInput} from '#/components/forms/SearchInput'
-import {BulletList_Stroke2_Corner0_Rounded as ListIcon} from '#/components/icons/BulletList'
-import {Earth_Stroke2_Corner0_Rounded as EarthIcon} from '#/components/icons/Globe'
-import {Leaf_Stroke2_Corner0_Rounded as LeafIcon} from '#/components/icons/Leaf'
+import {Library_Stroke2_Corner0_Rounded as BookIcon} from '#/components/icons/Library'
 import * as Layout from '#/components/Layout'
-import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {IS_WEB} from '#/env'
+import {CivicTreeFab} from '#/features/civicTree/components/CivicTreeFab'
+import {CivicTreeHeader} from '#/features/civicTree/components/CivicTreeHeader'
+import {
+  type CivicTreeViewMode,
+  CivicTreeViewSwitch,
+} from '#/features/civicTree/components/CivicTreeViewSwitch'
 import {type GraphData} from '#/features/civicTree/types'
 import {
   collapseCommunityTreeTwins,
   findCommunityTreeTwinGroup,
   resolveCommunityTreeUri,
 } from '#/features/communityCivicTree/communitySelection'
+import {AddBookDialog} from '#/features/communityCivicTree/components/AddBookDialog'
 import {
   CivicTreeFilterMenu,
   CivicTreeFilterRow,
@@ -72,7 +73,6 @@ import {CommunityHelpWanted} from '#/features/communityCivicTree/components/Comm
 import {CommunityTopicRail} from '#/features/communityCivicTree/components/CommunityTopicRail'
 import {CommunityTreeSelector} from '#/features/communityCivicTree/components/CommunityTreeSelector'
 import {filterCommunityWorkspace} from '#/features/communityCivicTree/workspace'
-import {CommunityPulseSheet} from './components/CommunityPulseSheet'
 import {ContributionReviewDetail} from './components/ContributionReviewDetail'
 import {NodeDetailSheet} from './components/NodeDetailSheet'
 import {
@@ -100,7 +100,7 @@ export function CommunityCivicTreeScreen() {
   const {gtMobile} = useBreakpoints()
   const {width: windowWidth, height: windowHeight} = useWindowDimensions()
   const {centerColumnOffset} = useLayoutBreakpoints()
-  const [viewMode, setViewMode] = useState<'list' | 'graph' | 'map'>('map')
+  const [viewMode, setViewMode] = useState<CivicTreeViewMode>('map')
   const [treeLayout, setTreeLayout] = useState<'cards' | 'outline'>('cards')
   const [showGovernance, setShowGovernance] = useState(false)
   const expanded =
@@ -139,13 +139,13 @@ export function CommunityCivicTreeScreen() {
     selection.entryKey === entryKey ? selection.name : initialName
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [showSummary, setShowSummary] = useState(false)
-  const [showPulse, setShowPulse] = useState(false)
   const [showContributionNotice, setShowContributionNotice] = useState(
     entryPoint === 'contribution_submitted',
   )
   const [sortitionStatus, setSortitionStatus] =
     useState<SortitionStatus>('none')
   const sortitionControl = useDialogControl()
+  const addBookControl = useDialogControl()
   const [showReviewPanel, setShowReviewPanel] = useState(
     entryPoint === 'contribution_submitted',
   )
@@ -207,7 +207,6 @@ export function CommunityCivicTreeScreen() {
       setShowContributionNotice(false)
       setShowReviewPanel(false)
       setShowSummary(false)
-      setShowPulse(false)
       setShowSuggestions(false)
       setShowGovernance(false)
       setSortitionStatus('none')
@@ -236,7 +235,6 @@ export function CommunityCivicTreeScreen() {
     myDid,
   )
   const {data: summary} = useCommunityCivicTreeSummaryQuery(communityUri)
-  const {data: pulse} = useCommunityCivicTreePulseQuery(communityUri, myDid)
   const {data: briefingPacks = []} = usePartyLobbyingBriefingPacksQuery({
     communityUri,
     status: 'published',
@@ -264,7 +262,6 @@ export function CommunityCivicTreeScreen() {
     setShowReviewPanel(entryPoint === 'contribution_submitted')
     setShowContributionDetail(false)
     setShowSummary(false)
-    setShowPulse(false)
     setShowSuggestions(false)
     setSortitionStatus('none')
     setSearchQuery('')
@@ -382,21 +379,6 @@ export function CommunityCivicTreeScreen() {
     [communityUri, myDid, voteContribution],
   )
 
-  const onExportCommunityObsidianVault = useCallback(() => {
-    if (!communityUri || !graphData) return
-    const manifest = buildCommunityCivicTreeVaultManifest({
-      communityName: selectedCommunity?.name ?? 'Community',
-      communityUri,
-      nodes: graphData.nodes,
-      edges: graphData.edges,
-    })
-    Clipboard.setStringAsync(JSON.stringify(manifest, null, 2))
-      .then(() => Toast.show('Obsidian vault manifest copied'))
-      .catch((err: Error) => {
-        Toast.show(err.message || 'Failed to copy export', {type: 'error'})
-      })
-  }, [communityUri, graphData, selectedCommunity?.name])
-
   return (
     <Layout.Screen
       hideBorders={expanded}
@@ -420,26 +402,10 @@ export function CommunityCivicTreeScreen() {
             transform: [],
           },
         ]}>
-        <View
-          style={[
-            a.flex_row,
-            a.align_center,
-            a.gap_sm,
-            a.px_md,
-            a.py_xs,
-            a.border_b,
-            t.atoms.bg,
-            t.atoms.border_contrast_low,
-            {minHeight: 52},
-          ]}>
-          <Layout.Header.BackButton fallback="MyBase" />
-          <Layout.Header.Content>
-            <Layout.Header.TitleText>
-              <Trans>Community Civic Tree</Trans>
-            </Layout.Header.TitleText>
-          </Layout.Header.Content>
-          <Layout.Header.Slot />
-        </View>
+        <CivicTreeHeader
+          titleText={<Trans>Community Civic Tree</Trans>}
+          backFallback="MyBase"
+        />
         <View style={styles.columnContent}>
           <View
             style={[
@@ -471,38 +437,7 @@ export function CommunityCivicTreeScreen() {
             />
           </View>
           <View style={[a.p_md, a.border_b, t.atoms.border_contrast_low]}>
-            <View
-              style={[
-                a.flex_row,
-                a.flex_wrap,
-                a.gap_xs,
-                a.p_xs,
-                a.rounded_md,
-                t.atoms.bg_contrast_25,
-                a.self_start,
-              ]}>
-              {(
-                [
-                  {id: 'list', label: l`Collections`, icon: ListIcon},
-                  {id: 'graph', label: l`Tree`, icon: LeafIcon},
-                  {id: 'map', label: l`Interactive Map`, icon: EarthIcon},
-                ] as const
-              ).map(mode => (
-                <Button
-                  key={mode.id}
-                  label={mode.label}
-                  variant={viewMode === mode.id ? 'solid' : 'ghost'}
-                  color={viewMode === mode.id ? 'primary' : 'secondary'}
-                  size="small"
-                  accessibilityState={{selected: viewMode === mode.id}}
-                  onPress={() => setViewMode(mode.id)}>
-                  <ButtonIcon icon={mode.icon} />
-                  <ButtonText style={!gtMobile && a.text_xs}>
-                    {mode.label}
-                  </ButtonText>
-                </Button>
-              ))}
-            </View>
+            <CivicTreeViewSwitch value={viewMode} onChange={setViewMode} />
           </View>
           {communityUri && (
             <View style={styles.topControls}>
@@ -551,23 +486,6 @@ export function CommunityCivicTreeScreen() {
                 ) : null}
                 <TouchableOpacity
                   accessibilityRole="button"
-                  accessibilityLabel="Community pulse"
-                  accessibilityHint="Opens community discourse analysis"
-                  onPress={() => setShowPulse(true)}
-                  style={[
-                    styles.pulseBtn,
-                    {backgroundColor: t.palette.primary_500 + '15'},
-                  ]}>
-                  <Text
-                    style={[
-                      styles.topActionText,
-                      {color: t.palette.primary_500},
-                    ]}>
-                    <Trans>Pulse</Trans>
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  accessibilityRole="button"
                   accessibilityLabel="Summarize community civic tree"
                   accessibilityHint="Opens AI-generated community civic tree summary"
                   onPress={() => setShowSummary(true)}
@@ -581,27 +499,6 @@ export function CommunityCivicTreeScreen() {
                       {color: t.palette.primary_500},
                     ]}>
                     <Trans>Summary</Trans>
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  accessibilityLabel="Export community civic tree to Obsidian"
-                  accessibilityHint="Copies an Obsidian-ready vault manifest for this community tree"
-                  onPress={onExportCommunityObsidianVault}
-                  disabled={!graphData || graphData.nodes.length === 0}
-                  style={[
-                    styles.summarizeBtn,
-                    {backgroundColor: t.palette.primary_500 + '15'},
-                    (!graphData || graphData.nodes.length === 0) && {
-                      opacity: 0.5,
-                    },
-                  ]}>
-                  <Text
-                    style={[
-                      styles.topActionText,
-                      {color: t.palette.primary_500},
-                    ]}>
-                    <Trans>Obsidian</Trans>
                   </Text>
                 </TouchableOpacity>
                 {suggestions.length > 0 && (
@@ -1099,17 +996,6 @@ export function CommunityCivicTreeScreen() {
         isCreatingRelationship={createRelationship.isPending}
       />
 
-      <CommunityPulseSheet
-        pulse={pulse ?? null}
-        communityName={selectedCommunity?.name ?? ''}
-        visible={showPulse}
-        onClose={() => setShowPulse(false)}
-        onClaimPress={claimId => {
-          setShowPulse(false)
-          setSelectedNodeId(claimId)
-        }}
-      />
-
       <SummaryModal
         summary={summary ?? null}
         visible={showSummary}
@@ -1281,6 +1167,25 @@ export function CommunityCivicTreeScreen() {
           </View>
         </View>
       </Modal>
+      {myDid ? (
+        <>
+          <AddBookDialog
+            control={addBookControl}
+            defaultCommunityUris={communityUri ? [communityUri] : undefined}
+          />
+          <CivicTreeFab
+            actions={[
+              {
+                key: 'book',
+                label: l`Add book`,
+                hint: l`Suggests a book for a community; its members review it first`,
+                icon: BookIcon,
+                onPress: () => addBookControl.open(),
+              },
+            ]}
+          />
+        </>
+      ) : null}
       {communityUri && (
         <SortitionConfigDialog
           control={sortitionControl}
@@ -1555,11 +1460,6 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 11,
     fontWeight: '700',
-  },
-  pulseBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 12,
   },
   summarizeBtn: {
     paddingHorizontal: 10,

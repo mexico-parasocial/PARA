@@ -1,6 +1,7 @@
 import {type CivicTreeItem} from '#/state/queries/collection-items'
+import {civicFieldForItem, zoomMapCamera} from '#/features/civicTree/map'
 import {buildPersonalTreeGraph} from '../graph'
-import {buildCivicMapLayout, civicFieldForItem, zoomMapCamera} from '../map'
+import {buildCivicMapLayout} from '../map'
 
 const item = (
   id: string,

@@ -9979,7 +9979,7 @@ msgstr "Recargar conversaciones"
 #: src/screens/Settings/Settings.tsx:695
 #: src/view/com/posts/PostFeedErrorMessage.tsx:219
 msgid "Remove"
-msgstr "Eliminar"
+msgstr "Quitar"
 
 #: src/components/dms/ChatProfileTabs.tsx:155
 msgid "Remove {displayName} from group chat"
@@ -15448,3 +15448,802 @@ msgstr "Tu nombre de usuario y contraseña se compartirán con <0>{host}</0>. Si
 #: src/components/verification/VerificationsDialog.tsx:67
 msgid "Your verifications"
 msgstr "Tus verificaciones"
+
+#: src/features/communityActivities/components/forms/FormBits.tsx:204
+msgid "{dateLabel}: time"
+msgstr "{dateLabel}: hora"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:94
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:105
+msgid "Accessibility notes"
+msgstr "Notas de accesibilidad"
+
+#: src/lib/community-activities.ts:73
+msgid "Activity"
+msgstr "Actividad"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:56
+#: src/features/communityActivities/components/ActivityReview.tsx:195
+#: src/features/communityActivities/components/CreationSteps.tsx:21
+msgid "Activity details"
+msgstr "Detalles de la actividad"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:174
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:281
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:298
+msgid "Activity kind"
+msgstr "Tipo de actividad"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:178
+msgid "Activity published"
+msgstr "Actividad publicada"
+
+#: src/features/communityActivities/creation.ts:618
+msgid "Add a title."
+msgstr "Agrega un título."
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:144
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:157
+msgid "Add destination"
+msgstr "Agregar destino"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:124
+msgid "Add item"
+msgstr "Agregar artículo"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:222
+msgid "Add prize"
+msgstr "Agregar premio"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:117
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:211
+msgid "Agenda (one item per line)"
+msgstr "Orden del día (un punto por línea)"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:224
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:70
+msgid "All income"
+msgstr "Todos los ingresos"
+
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:87
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:184
+#: src/lib/community-activities.ts:61
+msgid "Assembly"
+msgstr "Asamblea"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:191
+msgid "Assembly format"
+msgstr "Formato de la asamblea"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:56
+#: src/features/communityActivities/components/ActivityReview.tsx:171
+#: src/features/communityActivities/components/CreationSteps.tsx:20
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:344
+msgid "Basics"
+msgstr "Información básica"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:163
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:287
+msgid "Beneficiary (optional)"
+msgstr "Beneficiario (opcional)"
+
+#: src/lib/community-activities.ts:102
+msgid "Bill"
+msgstr "Proyecto de ley"
+
+#: src/lib/community-activities.ts:124
+msgid "Both"
+msgstr "Ambos"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:190
+msgid "Bring people together for a peaceful march. Plan the meeting point, route, and public logistics."
+msgstr "Convoca a una marcha pacífica. Planea el punto de encuentro, la ruta y la logística pública."
+
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:116
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:228
+#: src/lib/community-activities.ts:62
+msgid "Cabildeo"
+msgstr "Cabildeo"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:235
+msgid "Cabildeo format"
+msgstr "Formato del cabildeo"
+
+#: src/lib/community-activities.ts:134
+msgid "Cancelled"
+msgstr "Cancelada"
+
+#: src/lib/community-activities.ts:143
+msgid "Cause / third party"
+msgstr "Causa / tercero"
+
+#: src/features/communityActivities/creation.ts:326
+msgid "Choose a valid date and time."
+msgstr "Elige una fecha y hora válidas."
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:274
+msgid "Choose an activity type"
+msgstr "Elige un tipo de actividad"
+
+#: src/features/communityActivities/creation.ts:616
+msgid "Choose an activity type."
+msgstr "Elige un tipo de actividad."
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:276
+msgid "Choose the type that best matches what your community will organize."
+msgstr "Elige el tipo que mejor describa lo que organizará tu comunidad."
+
+#: src/components/forms/TimeField/index.tsx:49
+msgid "Choose time"
+msgstr "Elegir hora"
+
+#: src/lib/community-activities.ts:104
+msgid "Citizen initiative"
+msgstr "Iniciativa ciudadana"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:193
+msgid "Collect signatures supporting a bill, law, initiative, referendum, or petition."
+msgstr "Reúne firmas para apoyar un proyecto de ley, una ley, una iniciativa, un referéndum o una petición."
+
+#: src/features/communityActivities/components/ActivityReview.tsx:109
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:164
+msgid "Collection points (one per line)"
+msgstr "Puntos de recolección (uno por línea)"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:172
+msgid "Community"
+msgstr "Comunidad"
+
+#: src/lib/community-activities.ts:141
+msgid "Community fund"
+msgstr "Fondo comunitario"
+
+#: src/lib/community-activities.ts:133
+msgid "Completed"
+msgstr "Completada"
+
+#: src/features/communityActivities/creation.ts:665
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:101
+msgid "Confirm that you commit to this business model."
+msgstr "Confirma tu compromiso con este modelo económico."
+
+#: src/features/communityActivities/components/ActivityReview.tsx:208
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:393
+msgid "Currency"
+msgstr "Moneda"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:108
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:158
+msgid "Deadline (optional)"
+msgstr "Fecha límite (opcional)"
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:44
+msgid "Decide where the money goes and whether percentages apply to all income or income after expenses. You will confirm these terms on review."
+msgstr "Decide a dónde va el dinero y si los porcentajes se aplican a todos los ingresos o a los ingresos después de gastos. Confirmarás estas condiciones en la revisión."
+
+#: src/lib/community-activities.ts:95
+msgid "Denied"
+msgstr "Denegado"
+
+#: src/features/communityActivities/creation.ts:478
+msgid "Describe the prize."
+msgstr "Describe el premio."
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:142
+msgid "Describe the tickets, prizes, draw schedule, and how a winner will be chosen."
+msgstr "Describe los boletos, los premios, la fecha del sorteo y cómo se elegirá a la persona ganadora."
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:117
+msgid "Describe what people will support, the signature target, and where and how they can sign."
+msgstr "Describe qué se apoyará, la meta de firmas y dónde y cómo se puede firmar."
+
+#: src/features/communityActivities/components/ActivityReview.tsx:86
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:47
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:60
+msgid "Destination"
+msgstr "Destino"
+
+#: src/features/communityActivities/creation.ts:569
+msgid "Destinations must add up to exactly 100%."
+msgstr "Los destinos deben sumar exactamente el 100%."
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:213
+msgid "Device local time"
+msgstr "Hora local del dispositivo"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:502
+msgid "Discard activity?"
+msgstr "¿Descartar la actividad?"
+
+#: src/lib/community-activities.ts:154
+msgid "Donation delivered"
+msgstr "Donación entregada"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:155
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:235
+msgid "Draw date"
+msgstr "Fecha del sorteo"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:245
+msgid "e.g. Live-streamed draw from a sealed urn, witnessed by two members"
+msgstr "Ej.: sorteo transmitido en vivo con una urna sellada y dos integrantes como testigos"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:305
+msgid "e.g. the organization's account, or the collection box at the assembly"
+msgstr "Ej.: la cuenta de la organización o la caja de recolección en la asamblea"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:172
+msgid "e.g. voter ID from this district"
+msgstr "Ej.: credencial para votar de este distrito"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:56
+msgid "Edit {0}"
+msgstr "Editar {0}"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:178
+#: src/features/communityActivities/components/ActivityReview.tsx:183
+msgid "Edit activity type"
+msgstr "Editar tipo de actividad"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:188
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:373
+msgid "Ends (optional)"
+msgstr "Termina (opcional)"
+
+#: src/features/communityActivities/creation.ts:313
+msgid "Enter a complete http or https link."
+msgstr "Ingresa un enlace completo que empiece con http o https."
+
+#: src/features/communityActivities/creation.ts:560
+msgid "Enter a percentage above zero and no more than 100%."
+msgstr "Ingresa un porcentaje mayor que cero y de hasta el 100%."
+
+#: src/features/communityActivities/creation.ts:292
+msgid "Enter a whole number above zero."
+msgstr "Ingresa un número entero mayor que cero."
+
+#: src/features/communityActivities/creation.ts:293
+msgid "Enter a whole number of zero or more."
+msgstr "Ingresa un número entero igual o mayor que cero."
+
+#: src/features/communityActivities/creation.ts:302
+msgid "Enter an amount of zero or more with up to 2 decimals."
+msgstr "Ingresa un monto igual o mayor que cero con hasta 2 decimales."
+
+#: src/features/communityActivities/creation.ts:554
+msgid "Every destination needs a name."
+msgstr "Cada destino necesita un nombre."
+
+#: src/features/communityActivities/creation.ts:455
+msgid "Every item needs a name."
+msgstr "Cada artículo necesita un nombre."
+
+#: src/features/communityActivities/components/ActivityReview.tsx:92
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:61
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:92
+msgid "Expected attendance"
+msgstr "Asistencia estimada"
+
+#: src/lib/community-activities.ts:153
+msgid "Expense"
+msgstr "Gasto"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:216
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:57
+msgid "Expense budget cap (optional)"
+msgstr "Límite de gastos (opcional)"
+
+#: src/features/communityActivities/creation.ts:489
+msgid "Explain how the winner is drawn."
+msgstr "Explica cómo se elige a la persona ganadora."
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:268
+msgid "Explain the purpose, who benefits, and how people can contribute."
+msgstr "Explica el propósito, quién se beneficia y cómo se puede contribuir."
+
+#: src/features/communityActivities/components/ActivityReview.tsx:115
+#: src/features/communityActivities/components/ActivityReview.tsx:123
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:89
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:118
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:189
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:233
+msgid "Format"
+msgstr "Formato"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:134
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:266
+#: src/lib/community-activities.ts:68
+msgid "Fundraiser"
+msgstr "Recaudación de fondos"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:212
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:272
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:49
+msgid "Fundraising goal (optional)"
+msgstr "Meta de recaudación (opcional)"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:196
+msgid "Gather the community around an agenda, in person, online, or both."
+msgstr "Reúne a la comunidad con un orden del día, de forma presencial, en línea o ambas."
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:346
+msgid "Give the activity a name, schedule, and place so people know what to expect."
+msgstr "Dale a la actividad un nombre, un horario y un lugar para que las personas sepan qué esperar."
+
+#: src/lib/community-activities.ts:94
+msgid "Granted"
+msgstr "Otorgado"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:156
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:243
+msgid "How the winner is drawn"
+msgstr "Cómo se elige a la persona ganadora"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:165
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:303
+msgid "How to give (one per line)"
+msgstr "Cómo contribuir (una opción por línea)"
+
+#: src/lib/community-activities.ts:115
+msgid "Hybrid"
+msgstr "Híbrido"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:449
+msgid "I commit to these prices and this split. I will book every income, expense and donation in the public ledger."
+msgstr "Me comprometo con estos precios y esta distribución. Registraré todos los ingresos, gastos y donaciones en el registro público."
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:443
+msgid "I commit to this business model"
+msgstr "Me comprometo con este modelo económico"
+
+#: src/lib/community-activities.ts:113
+#: src/lib/community-activities.ts:122
+msgid "In person"
+msgstr "Presencial"
+
+#: src/lib/community-activities.ts:132
+msgid "In progress"
+msgstr "En curso"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:342
+#: src/lib/community-activities.ts:152
+msgid "Income"
+msgstr "Ingreso"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:100
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:122
+msgid "Instrument type"
+msgstr "Tipo de instrumento"
+
+
+msgid "Item"
+msgstr "Artículo"
+
+#: src/features/communityActivities/creation.ts:458
+msgid "Item names must be unique."
+msgstr "Los nombres de los artículos deben ser únicos."
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:156
+msgid "Last day to collect signatures. The activity end describes the event schedule."
+msgstr "Último día para recolectar firmas. El fin de la actividad describe el horario del evento."
+
+#: src/lib/community-activities.ts:103
+msgid "Law"
+msgstr "Ley"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:256
+msgid "Leave these fields empty when scheduling. Use them only if you already have a record of the conversation."
+msgstr "Deja estos campos vacíos al programar. Úsalos solo si ya tienes un registro de la conversación."
+
+#: src/features/communityActivities/components/ActivityReview.tsx:116
+#: src/features/communityActivities/components/ActivityReview.tsx:124
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:203
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:247
+msgid "Link to join"
+msgstr "Enlace para participar"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:128
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:282
+msgid "Link to the recording (optional)"
+msgstr "Enlace a la grabación (opcional)"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:106
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:140
+msgid "Link to the text (optional)"
+msgstr "Enlace al texto (opcional)"
+
+#: src/features/communityActivities/creation.ts:547
+msgid "List between 1 and 10 destinations."
+msgstr "Agrega entre 1 y 10 destinos."
+
+#: src/features/communityActivities/creation.ts:471
+msgid "List between 1 and 20 prizes."
+msgstr "Agrega entre 1 y 20 premios."
+
+#: src/features/communityActivities/creation.ts:447
+msgid "List between 1 and 50 items."
+msgstr "Agrega entre 1 y 50 artículos."
+
+#: src/features/communityActivities/components/ActivityReview.tsx:189
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:385
+msgid "Location"
+msgstr "Lugar"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:254
+msgid "Meeting documentation (optional)"
+msgstr "Registro de la conversación (opcional)"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:84
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:46
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:45
+msgid "Meeting point"
+msgstr "Punto de encuentro"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:56
+#: src/features/communityActivities/components/ActivityReview.tsx:203
+#: src/features/communityActivities/components/CreationSteps.tsx:22
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:42
+msgid "Money plan"
+msgstr "Plan económico"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:105
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:133
+msgid "Name of the bill, law or initiative"
+msgstr "Nombre del proyecto de ley, la ley o la iniciativa"
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:98
+msgid "Name of the recipient"
+msgstr "Nombre del destinatario"
+
+#: src/features/communityActivities/creation.ts:381
+msgid "Name the bill, law or initiative."
+msgstr "Indica el nombre del proyecto de ley, la ley o la iniciativa."
+
+#: src/lib/community-activities.ts:92
+msgid "Not required"
+msgstr "No se requiere"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:205
+msgid "Offer tickets for a prize draw. State the prizes, draw method, and money destinations."
+msgstr "Ofrece boletos para un sorteo. Indica los premios, el método del sorteo y los destinos del dinero."
+
+#: src/lib/community-activities.ts:114
+#: src/lib/community-activities.ts:123
+msgid "Online"
+msgstr "En línea"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:245
+msgid "Only this community's creator, moderators and officials can register activities."
+msgstr "Solo quien creó esta comunidad, sus moderadores y sus representantes pueden registrar actividades."
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:199
+msgid "Organize a conversation and optionally document its participants, arguments, and outcome."
+msgstr "Organiza una conversación y, de forma opcional, registra sus participantes, argumentos y resultado."
+
+#: src/lib/community-activities.ts:144
+msgid "Organizers"
+msgstr "Organizadores"
+
+#: src/lib/community-activities.ts:142
+msgid "Party"
+msgstr "Partido"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:39
+#: src/lib/community-activities.ts:53
+msgid "Peaceful march"
+msgstr "Marcha pacífica"
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:105
+msgid "Percentage"
+msgstr "Porcentaje"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:220
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:63
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:65
+msgid "Percentages apply to"
+msgstr "Los porcentajes se aplican a"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:91
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:85
+msgid "Permit or folio number (optional)"
+msgstr "Número de permiso o folio (opcional)"
+
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:50
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:67
+msgid "Permit or notice"
+msgstr "Permiso o aviso"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:88
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:70
+msgid "Permit status"
+msgstr "Estado del permiso"
+
+#: src/lib/community-activities.ts:106
+msgid "Petition"
+msgstr "Petición"
+
+#: src/lib/community-activities.ts:131
+msgid "Planned"
+msgstr "Programada"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:38
+msgid "Price ({currency})"
+msgstr "Precio ({currency})"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:46
+msgid "Prices are part of the commitment. Leave stock empty if it is open-ended."
+msgstr "Los precios forman parte del compromiso. Deja las existencias vacías si no hay un límite definido."
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:100
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:179
+msgid "Prize"
+msgstr "Premio"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:149
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:99
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:179
+msgid "Prize {0}"
+msgstr "Premio {0}"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:223
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:69
+msgid "Profit (income − expenses)"
+msgstr "Ganancia (ingresos − gastos)"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:41
+msgid "Public logistics only. Never publish a personal phone without consent."
+msgstr "Solo logística pública. Nunca publiques un teléfono personal sin consentimiento."
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:477
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:482
+msgid "Publish activity"
+msgstr "Publicar actividad"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:461
+msgid "Publishing activity…"
+msgstr "Publicando actividad…"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:118
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:218
+msgid "Quorum required (optional)"
+msgstr "Cuórum requerido (opcional)"
+
+#: src/lib/community-activities.ts:67
+msgid "Raffle"
+msgstr "Rifa"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:157
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:257
+msgid "Raffle permit number (optional)"
+msgstr "Número de permiso de la rifa (opcional)"
+
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:84
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:140
+msgid "Raffle terms"
+msgstr "Condiciones de la rifa"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:208
+msgid "Raise contributions for a stated purpose and explain how the money will be used."
+msgstr "Reúne contribuciones para un propósito definido y explica cómo se usará el dinero."
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:88
+msgid "Recipient"
+msgstr "Destinatario"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:83
+msgid "Reference for a notice or authorization, if applicable to your activity."
+msgstr "Referencia de un aviso o autorización, si corresponde a tu actividad."
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:255
+msgid "Reference for an authorization, if applicable to your raffle."
+msgstr "Referencia de una autorización, si corresponde a tu rifa."
+
+#: src/lib/community-activities.ts:105
+msgid "Referendum"
+msgstr "Referéndum"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:227
+msgid "Register civic activity"
+msgstr "Registrar actividad cívica"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:228
+msgid "Register economic activity"
+msgstr "Registrar actividad económica"
+
+#: src/lib/community-activities.ts:145
+msgid "Reinvestment"
+msgstr "Reinversión"
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:113
+msgid "Remove destination"
+msgstr "Quitar destino"
+
+#: src/features/communityActivities/components/CreationSteps.tsx:23
+msgid "Review"
+msgstr "Revisión"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:85
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:48
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:52
+msgid "Route"
+msgstr "Ruta"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:93
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:99
+msgid "Safety or logistics contact"
+msgstr "Contacto de seguridad o logística"
+
+#: src/lib/community-activities.ts:66
+msgid "Sale"
+msgstr "Venta"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:134
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:53
+msgid "Sales channel"
+msgstr "Canal de venta"
+
+#: src/features/communityActivities/creation.ts:509
+msgid "Say what the money is for."
+msgstr "Indica para qué es el dinero."
+
+#: src/features/communityActivities/creation.ts:350
+msgid "Say where people meet."
+msgstr "Indica dónde se reunirán las personas."
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:202
+msgid "Sell items at agreed prices, with a public plan for where the money goes."
+msgstr "Vende artículos a precios acordados, con un plan público de los destinos del dinero."
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:230
+msgid "Set the conversation format and how to join. Meeting documentation is optional when scheduling."
+msgstr "Define el formato de la conversación y cómo participar. El registro de la conversación es opcional al programar."
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:186
+msgid "Set the meeting format, how to join, the agenda, and any quorum needed."
+msgstr "Define el formato de la reunión, cómo participar, el orden del día y el cuórum necesario."
+
+#: src/features/communityActivities/components/detail/SocialDetailsCard.tsx:170
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:115
+#: src/lib/community-activities.ts:58
+msgid "Signature drive"
+msgstr "Recolección de firmas"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:107
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:147
+msgid "Signatures needed"
+msgstr "Firmas necesarias"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:187
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:365
+msgid "Starts"
+msgstr "Comienza"
+
+#: src/features/communityActivities/components/CreationSteps.tsx:34
+msgid "Step {index} of {total}: {name}"
+msgstr "Paso {index} de {total}: {name}"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:101
+msgid "Stock"
+msgstr "Existencias"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:139
+msgid "Stock: {0}"
+msgstr "Existencias: {0}"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:164
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:138
+msgid "Suggested donation"
+msgstr "Donación sugerida"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:293
+msgid "Suggested donation ({currency}, optional)"
+msgstr "Donación sugerida ({currency}, opcional)"
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:120
+msgid "Supporting a"
+msgstr "En apoyo de"
+
+#: src/features/communityActivities/creation.ts:624
+msgid "The end must be after the start."
+msgstr "El fin debe ser posterior al inicio."
+
+#: src/features/communityActivities/components/ActivityReview.tsx:205
+msgid "These prices and money destinations become the committed terms of your activity. Review them before publishing."
+msgstr "Estos precios y destinos del dinero serán las condiciones comprometidas de tu actividad. Revísalos antes de publicar."
+
+#: src/features/communityActivities/creation.ts:284
+msgid "This text is too long. Shorten it."
+msgstr "Este texto es demasiado largo. Acórtalo."
+
+#: src/features/communityActivities/components/ActivityReview.tsx:145
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:86
+msgid "Ticket price"
+msgstr "Precio del boleto"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:148
+msgid "Ticket price ({currency})"
+msgstr "Precio del boleto ({currency})"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:146
+#: src/features/communityActivities/components/detail/EconomicCards.tsx:91
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:158
+msgid "Tickets for sale"
+msgstr "Boletos a la venta"
+
+#: src/features/communityActivities/components/forms/FormBits.tsx:202
+msgid "Time"
+msgstr "Hora"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:191
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:381
+msgid "Times use your device timezone: {timezone}."
+msgstr "Los horarios usan la zona horaria de tu dispositivo: {timezone}."
+
+#: src/features/communityActivities/components/ActivityReview.tsx:234
+msgid "Total"
+msgstr "Total"
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:140
+msgid "Total {0}"
+msgstr "Total {0}"
+
+#: src/features/communityActivities/components/CreationSteps.tsx:19
+msgid "Type"
+msgstr "Tipo"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:400
+msgid "Use a 3-letter code such as MXN. All prices and ledger amounts use this currency."
+msgstr "Usa un código de 3 letras, como MXN. Todos los precios y montos del registro usan esta moneda."
+
+#: src/features/communityActivities/creation.ts:541
+msgid "Use a 3-letter currency code, e.g. MXN."
+msgstr "Usa un código de moneda de 3 letras, como MXN."
+
+#: src/features/communityActivities/creation.ts:319
+msgid "Use no more than {maxItems} entries."
+msgstr "Usa como máximo {maxItems} entradas."
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:189
+msgid "Value (optional)"
+msgstr "Valor (opcional)"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:44
+msgid "What is for sale"
+msgstr "Qué se vende"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:110
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:171
+msgid "What signers need"
+msgstr "Requisitos para firmar"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:162
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:279
+msgid "What the money is for"
+msgstr "Para qué es el dinero"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:126
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:267
+msgid "What was argued (one point per line)"
+msgstr "Qué se argumentó (un punto por línea)"
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:50
+msgid "Where it is sold"
+msgstr "Dónde se vende"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:127
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:274
+msgid "Where it landed (optional)"
+msgstr "Resultado de la conversación (opcional)"
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:75
+msgid "Where the money goes"
+msgstr "A dónde va el dinero"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:125
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:260
+msgid "Who took part (one per line)"
+msgstr "Quién participó (una persona por línea)"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:504
+msgid "Your changes will be lost. This activity has not been published."
+msgstr "Se perderán tus cambios. Esta actividad aún no se ha publicado."

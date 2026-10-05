@@ -29,6 +29,8 @@ export function DateField({
   inputRef,
   onChangeDate,
   onConfirm,
+  onBlur,
+  disabled,
   placeholder,
   testID,
   label,
@@ -68,6 +70,7 @@ export function DateField({
     inputRef,
     () => ({
       focus: () => {
+        if (disabled) return
         Keyboard.dismiss()
         setDraft(value === '' ? fallbackDate : toSimpleDateString(value))
         control.open()
@@ -76,12 +79,14 @@ export function DateField({
         control.close()
       },
     }),
-    [control, value, fallbackDate],
+    [control, value, fallbackDate, disabled],
   )
 
   return (
     <>
       <DateFieldButton
+        disabled={disabled}
+        onBlur={onBlur}
         label={label}
         value={value}
         placeholder={placeholder}

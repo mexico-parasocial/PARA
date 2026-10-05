@@ -1,5 +1,10 @@
 import {useCallback, useEffect, useState} from 'react'
 
+import {logger} from '#/logger'
+import {
+  useMatrixAttestMutation,
+  useMatrixIdentityQuery,
+} from '#/state/queries/matrix'
 import {
   beginMatrixWebAuthorization,
   clearMatrixWebSession,
@@ -8,11 +13,6 @@ import {
   type MatrixWebSession,
   refreshMatrixWebSession,
 } from '#/features/encryptedChat/webOidc'
-import {logger} from '#/logger'
-import {
-  useMatrixAttestMutation,
-  useMatrixIdentityQuery,
-} from '#/state/queries/matrix'
 
 export type MatrixWebSessionStatus =
   | 'loading'

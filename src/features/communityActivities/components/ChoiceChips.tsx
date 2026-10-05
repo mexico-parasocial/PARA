@@ -1,7 +1,9 @@
+import {useContext} from 'react'
 import {View} from 'react-native'
 
 import {atoms as a} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
+import {FormContext} from './forms/FormBits'
 
 export function ChoiceChips<T extends string>({
   options,
@@ -10,11 +12,12 @@ export function ChoiceChips<T extends string>({
   label,
 }: {
   options: Array<{value: T; label: string}>
-  value: T
+  value?: T
   onChange: (value: T) => void
   /** Accessibility label for the group, e.g. "Activity type". */
   label: string
 }) {
+  const {disabled} = useContext(FormContext)
   return (
     <View
       accessibilityRole="radiogroup"
@@ -25,8 +28,11 @@ export function ChoiceChips<T extends string>({
         const selected = option.value === value
         return (
           <Button
+            disabled={disabled}
             key={option.value}
             label={option.label}
+            role="radio"
+            aria-checked={selected}
             accessibilityRole="radio"
             accessibilityState={{checked: selected}}
             size="small"

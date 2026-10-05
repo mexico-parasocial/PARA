@@ -4,8 +4,8 @@ import {plural} from '@lingui/core/macro'
 import {Trans, useLingui} from '@lingui/react/macro'
 
 import {atoms as a, useTheme} from '#/alf'
-import {Button, ButtonText} from '#/components/Button'
 import {Text} from '#/components/Typography'
+import {CivicTreeCardInspector} from './CivicTreeCardInspector'
 
 export type TreeCard = {
   id: string
@@ -77,125 +77,24 @@ export function CivicTreeCards({
   )
   const wide = width >= 900
 
+  const connections = focused
+    ? connected.map(link => ({
+        link,
+        outgoing: link.source === focused.id,
+        other: byId.get(
+          link.source === focused.id ? link.target : link.source,
+        )!,
+      }))
+    : []
   const inspector = (
-    <ScrollView
-      style={[wide ? {width: 260} : {maxHeight: 230}, t.atoms.bg]}
-      contentContainerStyle={[a.p_md, a.gap_sm, {paddingBottom: 24}]}>
-      {focused ? (
-        <>
-          <View style={[a.flex_row, a.align_center, a.justify_between]}>
-            <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-              <Trans>Selected card</Trans>
-            </Text>
-            <Button
-              label={l`Clear selection`}
-              size="tiny"
-              variant="ghost"
-              color="secondary"
-              onPress={() => setFocusId(undefined)}>
-              <ButtonText>×</ButtonText>
-            </Button>
-          </View>
-          <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
-            {focused.title}
-          </Text>
-          <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-            {focused.type}
-          </Text>
-          {focused.summary ? (
-            <Text
-              numberOfLines={3}
-              style={[a.text_xs, a.leading_snug, t.atoms.text_contrast_medium]}>
-              {focused.summary}
-            </Text>
-          ) : null}
-          <Button
-            label={l`Open details`}
-            size="small"
-            variant="outline"
-            color="secondary"
-            onPress={() => onOpenDetails(focused.id)}>
-            <ButtonText>
-              <Trans>Open details</Trans>
-            </ButtonText>
-          </Button>
-          <View
-            style={[
-              a.border_t,
-              t.atoms.border_contrast_low,
-              a.pt_md,
-              a.gap_sm,
-            ]}>
-            <Text style={[a.text_xs, a.font_bold, t.atoms.text]}>
-              {plural(connected.length, {
-                one: '# connection',
-                other: '# connections',
-              })}
-            </Text>
-            {connected.length === 0 ? (
-              <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-                <Trans>No visible connections for this card.</Trans>
-              </Text>
-            ) : (
-              connected.map(link => {
-                const other = byId.get(
-                  link.source === focused.id ? link.target : link.source,
-                )!
-                return (
-                  <TouchableOpacity
-                    key={link.id}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${byId.get(link.source)!.title} ${link.label} ${byId.get(link.target)!.title}`}
-                    accessibilityHint={l`Selects the connected card`}
-                    onPress={() => setFocusId(other.id)}
-                    style={[
-                      a.p_sm,
-                      a.rounded_sm,
-                      t.atoms.bg_contrast_25,
-                      a.gap_2xs,
-                    ]}>
-                    <View style={[a.flex_row, a.align_center, a.gap_xs]}>
-                      <View
-                        style={[
-                          a.rounded_full,
-                          {width: 5, height: 5, backgroundColor: link.color},
-                        ]}
-                      />
-                      <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-                        {link.directed === false
-                          ? '↔'
-                          : link.source === focused.id
-                            ? '→'
-                            : '←'}{' '}
-                        {link.label}
-                      </Text>
-                    </View>
-                    <Text
-                      numberOfLines={2}
-                      style={[a.text_xs, a.font_bold, t.atoms.text]}>
-                      {other.title}
-                    </Text>
-                  </TouchableOpacity>
-                )
-              })
-            )}
-          </View>
-        </>
-      ) : (
-        <View style={[a.gap_sm]}>
-          <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
-            <Trans>Follow a connection</Trans>
-          </Text>
-          <Text
-            style={[a.text_xs, a.leading_snug, t.atoms.text_contrast_medium]}>
-            <Trans>
-              Select a card to see what connects to it. Select a connected card
-              to follow the thread.
-            </Trans>
-          </Text>
-        </View>
-      )}
-    </ScrollView>
+    <CivicTreeCardInspector
+      card={focused}
+      connections={connections}
+      wide={wide}
+      onClear={() => setFocusId(undefined)}
+      onOpenDetails={onOpenDetails}
+      onSelect={setFocusId}
+    />
   )
 
   if (!byId.size) {
@@ -247,7 +146,7 @@ export function CivicTreeCards({
             return (
               <View
                 key={group.id}
-                style={[{width: wide ? 208 : 192, minHeight: 0}, a.gap_sm]}>
+                style={[{width: wide ? 216 : 200, minHeight: 0}, a.gap_sm]}>
                 <TouchableOpacity
                   accessibilityRole="button"
                   accessibilityLabel={group.title}
@@ -305,61 +204,79 @@ export function CivicTreeCards({
                             setFocusId(selected ? undefined : card.id)
                           }
                           style={[
-                            a.p_sm,
-                            a.rounded_sm,
-                            a.border,
-                            a.gap_xs,
-                            selected ? t.atoms.bg_contrast_50 : t.atoms.bg,
+                            a.rounded_md,
+                            a.overflow_hidden,
+                            selected ? t.atoms.bg_contrast_25 : t.atoms.bg,
                             {
-                              minHeight: 66,
+                              minHeight: 72,
+                              borderWidth: selected ? 2 : 1,
                               borderColor: selected
                                 ? t.palette.primary_500
                                 : related
                                   ? card.color
                                   : t.palette.contrast_100,
                               opacity:
-                                focused && !selected && !related ? 0.5 : 1,
+                                focused && !selected && !related ? 0.45 : 1,
                             },
                           ]}>
-                          <Text
-                            numberOfLines={2}
+                          <View
                             style={[
-                              a.text_xs,
-                              a.font_bold,
-                              a.leading_snug,
-                              t.atoms.text,
+                              a.absolute,
+                              {
+                                left: 0,
+                                top: 0,
+                                bottom: 0,
+                                width: 5,
+                                backgroundColor: card.color,
+                              },
+                            ]}
+                          />
+                          <View
+                            style={[
+                              a.gap_xs,
+                              a.py_sm,
+                              {paddingLeft: 14, paddingRight: 10},
                             ]}>
-                            {card.title}
-                          </Text>
-                          <View style={[a.flex_row, a.align_center, a.gap_xs]}>
-                            <View
-                              style={[
-                                a.rounded_full,
-                                {
-                                  width: 5,
-                                  height: 5,
-                                  backgroundColor: card.color,
-                                },
-                              ]}
-                            />
                             <Text
-                              numberOfLines={1}
+                              numberOfLines={3}
                               style={[
-                                a.flex_1,
-                                a.text_xs,
-                                t.atoms.text_contrast_medium,
+                                a.text_sm,
+                                a.font_bold,
+                                a.leading_snug,
+                                t.atoms.text,
                               ]}>
-                              {card.type}
+                              {card.title}
                             </Text>
-                            {degree > 0 ? (
+                            <View
+                              style={[a.flex_row, a.align_center, a.gap_xs]}>
                               <Text
+                                numberOfLines={1}
                                 style={[
+                                  a.flex_1,
                                   a.text_xs,
                                   t.atoms.text_contrast_medium,
                                 ]}>
-                                ↗ {degree}
+                                {card.type}
                               </Text>
-                            ) : null}
+                              {degree > 0 ? (
+                                <View
+                                  style={[
+                                    a.rounded_full,
+                                    a.px_sm,
+                                    {paddingVertical: 1},
+                                    t.atoms.bg_contrast_25,
+                                  ]}>
+                                  <Text
+                                    style={[
+                                      a.text_xs,
+                                      a.font_bold,
+                                      t.atoms.text_contrast_medium,
+                                    ]}>
+                                    ↗ {degree}
+                                  </Text>
+                                </View>
+                              ) : null}
+                            </View>
                           </View>
                         </TouchableOpacity>
                       )
