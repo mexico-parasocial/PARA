@@ -237,9 +237,10 @@ it('local logout remains effective when remote revocation fails', async () => {
 
 it('rolls back a credential bundle when storage fails during commit', async () => {
   ;(global.fetch as jest.Mock).mockResolvedValueOnce(json(exchange))
-  const write = jest
-    .spyOn(AsyncStorage, 'setItem')
-    .mockRejectedValueOnce(new Error('storage unavailable'))
+  const write = AsyncStorage.setItem as jest.MockedFunction<
+    typeof AsyncStorage.setItem
+  >
+  write.mockRejectedValueOnce(new Error('storage unavailable'))
   try {
     await expect(
       finishM8Grant(callback, pending(), () => ALICE),
@@ -251,6 +252,55 @@ it('rolls back a credential bundle when storage fails during commit', async () =
       sessionId: null,
     })
   } finally {
-    write.mockRestore()
+    write.mockClear()
+  }
+})
+
+it('reads a consistent bundle while a replacement is queued', async () => {
+  await storeM8Credentials(ALICE, 'session-1', tokens, m8CredentialRevision())
+  const paused = deferred<void>()
+  const access = deferred<string | null>()
+  const read = AsyncStorage.getItem as jest.MockedFunction<
+    typeof AsyncStorage.getItem
+  >
+  read.mockImplementationOnce(() => {
+    paused.resolve()
+    return access.promise
+  })
+  const write = AsyncStorage.setItem as jest.MockedFunction<
+    typeof AsyncStorage.setItem
+  >
+  write.mockClear()
+  const snapshot = readM8Credentials()
+  await paused.promise
+  const replacement = storeM8Credentials(
+    ALICE,
+    'session-2',
+    {...tokens, accessToken: 'new-access', refreshToken: 'new-refresh'},
+    m8CredentialRevision(),
+  )
+  try {
+    await new Promise<void>(resolve => setImmediate(resolve))
+    expect(write).not.toHaveBeenCalled()
+    access.resolve(tokens.accessToken)
+    await expect(snapshot).resolves.toMatchObject({
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      sessionId: 'session-1',
+      did: ALICE,
+    })
+    await replacement
+    expect(await readM8Credentials()).toMatchObject({
+      accessToken: 'new-access',
+      refreshToken: 'new-refresh',
+      sessionId: 'session-2',
+      did: ALICE,
+    })
+  } finally {
+    access.resolve(tokens.accessToken)
+    await snapshot
+    await replacement
+    read.mockClear()
+    write.mockClear()
   }
 })

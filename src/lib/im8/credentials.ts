@@ -44,15 +44,16 @@ export function setM8ActiveAccount(did: string | undefined): Promise<void> {
   })
 }
 export async function readM8Credentials() {
-  await writes.catch(() => {})
-  const version = revision
-  const [accessToken, refreshToken, did, sessionId] = await Promise.all([
-    Storage.getItemAsync('m8_access_token'),
-    Storage.getItemAsync('m8_refresh_token'),
-    Storage.getItemAsync(M8_SESSION_DID_KEY),
-    Storage.getItemAsync('m8_session_id'),
-  ])
-  return {accessToken, refreshToken, did, sessionId, version}
+  return serialize(async () => {
+    const version = revision
+    const [accessToken, refreshToken, did, sessionId] = await Promise.all([
+      Storage.getItemAsync('m8_access_token'),
+      Storage.getItemAsync('m8_refresh_token'),
+      Storage.getItemAsync(M8_SESSION_DID_KEY),
+      Storage.getItemAsync('m8_session_id'),
+    ])
+    return {accessToken, refreshToken, did, sessionId, version}
+  })
 }
 export async function getBoundM8AccessToken(): Promise<string | null> {
   const credentials = await readM8Credentials()
