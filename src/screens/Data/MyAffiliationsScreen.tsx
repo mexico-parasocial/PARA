@@ -11,9 +11,11 @@ import {
   PARTY_COMPASS_PROFILE_BY_ID,
 } from '#/lib/compass/party-distributions'
 import {
+  COMPASS_ID_TO_NINTH_NAME,
   NINTH_NAME_TO_COMPASS_ID,
   POLITICAL_AFFILIATION_OPTIONS,
   type PoliticalAffiliation,
+  upsertPoliticalAffiliation,
 } from '#/lib/political-affiliations'
 import {type NavigationProp} from '#/lib/routes/types'
 import {useCabildeosQuery} from '#/state/queries/cabildeo'
@@ -217,7 +219,6 @@ export function MyAffiliationsScreen() {
   const {affiliations, setAffiliations, isLoading} = usePoliticalAffiliation()
   const [pendingAffiliations, setPendingAffiliations] =
     useState<PoliticalAffiliation[]>(affiliations)
-  const [isNinthManual, setIsNinthManual] = useState(false)
   const hasChanges = useMemo(
     () => JSON.stringify(pendingAffiliations) !== JSON.stringify(affiliations),
     [pendingAffiliations, affiliations],
@@ -227,11 +228,6 @@ export function MyAffiliationsScreen() {
   useFocusEffect(
     useCallback(() => {
       setPendingAffiliations(affiliations)
-      // Determine if stored ninth was manually set: it exists AND there's no party
-      // (if party exists, ninth was likely auto-derived)
-      const hasParty = affiliations.some(a => a.type === 'party')
-      const hasNinth = affiliations.some(a => a.type === 'ninth')
-      setIsNinthManual(hasNinth && !hasParty)
     }, [affiliations]),
   )
 
@@ -241,40 +237,24 @@ export function MyAffiliationsScreen() {
       if (exists) {
         return prev.filter(p => p.id !== party.id)
       }
-      // Keep non-party/non-ninth affiliations, replace party and sync ninth
-      const filtered = prev.filter(
-        p => p.type !== 'party' && p.type !== 'ninth',
-      )
-      const next = [...filtered, party]
-      setIsNinthManual(false)
-
-      // Always sync ninth to the selected party's predominant position
-      const ninthId = getPartyNinthId(party.id)
-      if (ninthId) {
-        const ninthName = Object.entries(NINTH_NAME_TO_COMPASS_ID).find(
-          ([, id]) => id === ninthId,
-        )?.[0]
-        if (ninthName) {
-          const ninthAff = POLITICAL_AFFILIATION_OPTIONS.ninth.find(
-            n => n.name === ninthName,
-          )
-          if (ninthAff) {
-            next.push(ninthAff)
-          }
-        }
-      }
-
-      return next
+      return upsertPoliticalAffiliation(prev, party)
     })
   }, [])
 
   const handleSetNinth = useCallback((ninth: PoliticalAffiliation) => {
-    setIsNinthManual(true)
-    setPendingAffiliations(prev => {
-      const filtered = prev.filter(p => p.type !== 'ninth')
-      return [...filtered, ninth]
-    })
+    setPendingAffiliations(prev => upsertPoliticalAffiliation(prev, ninth))
   }, [])
+
+  const handleSelectCompassNinth = useCallback(
+    (compassId: string) => {
+      const ninthName = COMPASS_ID_TO_NINTH_NAME[compassId]
+      const ninth = POLITICAL_AFFILIATION_OPTIONS.ninth.find(
+        n => n.name === ninthName,
+      )
+      if (ninth) handleSetNinth(ninth)
+    },
+    [handleSetNinth],
+  )
 
   const handleRemoveNinth = useCallback(() => {
     setPendingAffiliations(prev => prev.filter(p => p.type !== 'ninth'))
@@ -312,11 +292,7 @@ export function MyAffiliationsScreen() {
     })
   }, [pendingAffiliations, navigation])
 
-  const currentParty = pendingAffiliations.find(p => p.type === 'party')
   const currentNinth = pendingAffiliations.find(p => p.type === 'ninth')
-  const partyProfile = currentParty
-    ? PARTY_COMPASS_PROFILE_BY_ID[currentParty.id]
-    : null
 
   return (
     <Screen>
@@ -327,23 +303,7 @@ export function MyAffiliationsScreen() {
             <Trans>My Affiliations</Trans>
           </Header.TitleText>
         </Header.Content>
-        {hasChanges ? (
-          <Header.Slot>
-            <Button
-              label={_(msg`Save changes`)}
-              onPress={handleSave}
-              disabled={isLoading}
-              color="primary"
-              size="small"
-              shape="rectangular">
-              <ButtonText>
-                <Trans>Save</Trans>
-              </ButtonText>
-            </Button>
-          </Header.Slot>
-        ) : (
-          <Header.Slot />
-        )}
+        <Header.Slot />
       </Header.Outer>
 
       <Layout.Center style={styles.center}>
@@ -358,13 +318,29 @@ export function MyAffiliationsScreen() {
               t.atoms.bg_contrast_25,
               {borderWidth: 1, borderColor: t.palette.contrast_100},
             ]}>
-            <Text style={[a.text_md, a.font_bold, t.atoms.text, a.mb_md]}>
-              <Trans>Your position on the compass</Trans>
-            </Text>
+            <View
+              style={[a.flex_row, a.justify_between, a.align_center, a.mb_md]}>
+              <Text style={[a.text_md, a.font_bold, t.atoms.text]}>
+                <Trans>Your position on the compass</Trans>
+              </Text>
+              {hasChanges && (
+                <Button
+                  label={_(msg`Save changes`)}
+                  onPress={handleSave}
+                  disabled={isLoading}
+                  color="primary"
+                  size="small"
+                  shape="default">
+                  <ButtonText>
+                    <Trans>Save</Trans>
+                  </ButtonText>
+                </Button>
+              )}
+            </View>
             <View style={[a.align_center, a.mb_md]}>
               <CompassMini
                 affiliations={pendingAffiliations}
-                onPress={handleExploreCompass}
+                onSelectNinth={handleSelectCompassNinth}
                 size={140}
                 compact
               />
@@ -373,12 +349,12 @@ export function MyAffiliationsScreen() {
               variant="solid"
               color="primary"
               size="small"
-              label={_(msg`Find my position in compass`)}
+              label={_(msg`Explore party differences`)}
               onPress={handleExploreCompass}
               style={[a.w_full, a.gap_sm]}>
               <CompassIcon size="sm" fill={t.palette.white} />
               <ButtonText>
-                <Trans>Find my position in compass</Trans>
+                <Trans>Explore party differences</Trans>
               </ButtonText>
             </Button>
           </View>
@@ -405,58 +381,15 @@ export function MyAffiliationsScreen() {
                   {currentNinth.name}
                 </Text>
                 <View style={{flex: 1}} />
-                {isNinthManual ? (
-                  <View
-                    style={[
-                      a.px_sm,
-                      a.py_xs,
-                      a.rounded_md,
-                      {backgroundColor: t.palette.primary_500 + '15'},
-                    ]}>
-                    <Text
-                      style={[
-                        a.text_xs,
-                        a.font_bold,
-                        {color: t.palette.primary_500},
-                      ]}>
-                      <Trans>Manual</Trans>
-                    </Text>
-                  </View>
-                ) : currentParty ? (
-                  <View
-                    style={[
-                      a.px_sm,
-                      a.py_xs,
-                      a.rounded_md,
-                      {backgroundColor: partyProfile?.color + '15'},
-                    ]}>
-                    <Text
-                      style={[
-                        a.text_xs,
-                        a.font_bold,
-                        {color: partyProfile?.color},
-                      ]}>
-                      <Trans>Suggested by</Trans> {currentParty.name}
-                    </Text>
-                  </View>
-                ) : null}
                 <TouchableOpacity
                   accessibilityRole="button"
+                  accessibilityLabel={_(msg`Remove 9th affiliation`)}
+                  accessibilityHint={_(msg`Clears your selected 9th`)}
                   onPress={handleRemoveNinth}
                   style={[a.p_xs, a.rounded_full, t.atoms.bg_contrast_100]}>
                   <XIcon size="xs" style={t.atoms.text_contrast_medium} />
                 </TouchableOpacity>
               </View>
-              {partyProfile && (
-                <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-                  <Trans>Most aligned with</Trans>{' '}
-                  <Text style={[a.font_bold, {color: partyProfile.color}]}>
-                    {partyProfile.name}
-                  </Text>{' '}
-                  — {partyProfile.totalMembers.toLocaleString()} members, avg
-                  influence {partyProfile.avgInfluence}
-                </Text>
-              )}
             </View>
           )}
 
@@ -482,6 +415,10 @@ export function MyAffiliationsScreen() {
                   <TouchableOpacity
                     key={party.id}
                     accessibilityRole="button"
+                    accessibilityLabel={party.name}
+                    accessibilityHint={_(
+                      msg`Select or clear this party affiliation`,
+                    )}
                     accessibilityState={{selected: isSelected}}
                     onPress={() => handleToggleParty(party)}
                     style={[
@@ -560,6 +497,10 @@ export function MyAffiliationsScreen() {
                         <TouchableOpacity
                           key={ninth.id}
                           accessibilityRole="button"
+                          accessibilityLabel={ninth.name}
+                          accessibilityHint={_(
+                            msg`Select this 9th affiliation`,
+                          )}
                           accessibilityState={{selected: isSelected}}
                           onPress={() => handleSetNinth(ninth)}
                           style={[

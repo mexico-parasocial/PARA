@@ -13,6 +13,8 @@ import {type Client} from '@atproto/lex'
 import {type SessionData} from '@atproto/lex-password-session'
 
 import {isLikelyLocalServiceUrl} from '#/lib/constants'
+import {revokeM8Session} from '#/lib/im8/api'
+import {setM8ActiveAccount} from '#/lib/im8/credentials'
 import {logger} from '#/logger'
 import * as persisted from '#/state/persisted'
 import * as userActionHistory from '#/state/userActionHistory'
@@ -96,6 +98,9 @@ class SessionStore {
     )
     addSessionDebugLog({type: 'reducer:init', state: redactState(initialState)})
     this.state = initialState
+    void setM8ActiveAccount(session.currentAccount?.did).catch(() =>
+      logger.warn('m8: initial account credential cleanup failed'),
+    )
   }
 
   getState = (): State => {
@@ -110,8 +115,15 @@ class SessionStore {
   }
 
   dispatch = (action: Action) => {
+    const previousDid = this.state.currentBundleState.did
     const nextState = reducer(this.state, action)
     this.state = nextState
+    // Invalidate wallet grants before notifying React of an account change.
+    if (previousDid !== nextState.currentBundleState.did) {
+      void setM8ActiveAccount(nextState.currentBundleState.did).catch(() =>
+        logger.warn('m8: account credential cleanup failed'),
+      )
+    }
     // Persist synchronously without waiting for the React render cycle.
     if (nextState.needsPersist) {
       nextState.needsPersist = false
@@ -351,6 +363,9 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
   >(
     logContext => {
       addSessionDebugLog({type: 'method:start', method: 'logout'})
+      void revokeM8Session().catch(() =>
+        logger.warn('m8: remote logout revocation failed'),
+      )
       cancelPendingTask()
       const prevState = store.getState()
       store.dispatch({
@@ -385,6 +400,9 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
   >(
     logContext => {
       addSessionDebugLog({type: 'method:start', method: 'logout'})
+      void revokeM8Session().catch(() =>
+        logger.warn('m8: remote logout revocation failed'),
+      )
       cancelPendingTask()
       const prevState = store.getState()
       store.dispatch({

@@ -12,6 +12,7 @@ import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
+import {useBottomBarOffset} from '#/lib/hooks/useBottomBarOffset'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
   getCivicTreeItemKey,
@@ -26,17 +27,23 @@ import {Text} from '#/view/com/util/text/Text'
 import {atoms as a, useBreakpoints, useLayoutBreakpoints, useTheme} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
-import {GraphCanvas} from '#/components/graph/GraphCanvas'
 import {Bookmark as BookmarkIcon} from '#/components/icons/Bookmark'
-import {BulletList_Stroke2_Corner0_Rounded as ListIcon} from '#/components/icons/BulletList'
 import {DotGrid3x1_Stroke2_Corner0_Rounded as EllipsisIcon} from '#/components/icons/DotGrid'
-import {Earth_Stroke2_Corner0_Rounded as EarthIcon} from '#/components/icons/Globe'
-import {Leaf_Stroke2_Corner0_Rounded as LeafIcon} from '#/components/icons/Leaf'
+import {ListPlus_Stroke2_Corner0_Rounded as NewCollectionIcon} from '#/components/icons/ListPlus'
 import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/Plus'
 import * as Layout from '#/components/Layout'
 import * as Prompt from '#/components/Prompt'
 import * as Toast from '#/components/Toast'
-import {IS_WEB} from '#/env'
+import {IS_NATIVE, IS_WEB} from '#/env'
+import {
+  CivicTreeFab,
+  type CivicTreeFabAction,
+} from '#/features/civicTree/components/CivicTreeFab'
+import {CivicTreeHeader} from '#/features/civicTree/components/CivicTreeHeader'
+import {
+  type CivicTreeViewMode,
+  CivicTreeViewSwitch,
+} from '#/features/civicTree/components/CivicTreeViewSwitch'
 import {CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
 import {AddTreeItemDialog} from '#/features/personalCivicTree/components/AddTreeItemDialog'
 import {CivicTreeMap} from '#/features/personalCivicTree/components/CivicTreeMap'
@@ -44,17 +51,13 @@ import {CollectionActionsDialog} from '#/features/personalCivicTree/components/C
 import {CollectionShelf} from '#/features/personalCivicTree/components/CollectionShelf'
 import {EditTreeItemDialog} from '#/features/personalCivicTree/components/EditTreeItemDialog'
 import {NewCollectionDialog} from '#/features/personalCivicTree/components/NewCollectionDialog'
-import {
-  PersonalTreeLegend,
-  PersonalTreeUnconnectedNotice,
-} from '#/features/personalCivicTree/components/PersonalTreeLegend'
+import {PersonalCivicTreeCards} from '#/features/personalCivicTree/components/PersonalCivicTreeCards'
+import {PersonalTreeUnconnectedNotice} from '#/features/personalCivicTree/components/PersonalTreeLegend'
 import {PersonalTreeNodeSheet} from '#/features/personalCivicTree/components/PersonalTreeNodeSheet'
 import {buildPersonalTreeGraph} from '#/features/personalCivicTree/graph'
 import {matchesCivicTreeSearch} from '#/features/personalCivicTree/map'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
-
-type ViewMode = 'list' | 'graph' | 'map'
 
 // ─── Component ─────────────────────────────────────────────────────────────
 
@@ -129,14 +132,20 @@ function CivicTreeInner({
   const newCollectionControl = Dialog.useDialogControl()
   const collectionActionsControl = Dialog.useDialogControl()
   const editItemControl = Dialog.useDialogControl()
+  const cardDetailsControl = Dialog.useDialogControl()
   const removeItemPrompt = Prompt.usePromptControl()
   const removeItemMutation = useRemoveFromCollectionMutation()
 
-  const [viewMode, setViewMode] = useState<ViewMode>('map')
-  const {width: windowWidth} = useWindowDimensions()
+  const [viewMode, setViewMode] = useState<CivicTreeViewMode>('map')
+  const {width: windowWidth, height: windowHeight} = useWindowDimensions()
   const {gtMobile} = useBreakpoints()
+  const bottomBarOffset = useBottomBarOffset()
   const {centerColumnOffset} = useLayoutBreakpoints()
-  const expanded = IS_WEB && gtMobile && viewMode === 'map' && !!myDid
+  const expanded =
+    IS_WEB &&
+    gtMobile &&
+    (viewMode === 'map' || viewMode === 'graph') &&
+    !!myDid
   useExpandCivicTreeWorkspace(expanded)
   const workspaceLeft =
     windowWidth / 2 -
@@ -204,6 +213,30 @@ function CivicTreeInner({
     }
     addItemControl.open()
   }, [addItemControl, newCollectionControl, collections.length])
+
+  // Items need a collection to live in, so the first one comes before items.
+  const fabActions = useMemo<CivicTreeFabAction[]>(() => {
+    const newCollection: CivicTreeFabAction = {
+      key: 'collection',
+      label: _(msg`New collection`),
+      menuLabel: _(msg`Collection`),
+      hint: _(msg`Opens the form to create a collection`),
+      icon: NewCollectionIcon,
+      onPress: () => newCollectionControl.open(),
+    }
+    if (collections.length === 0) return [newCollection]
+    return [
+      {
+        key: 'item',
+        label: _(msg`Add item`),
+        menuLabel: _(msg`Item`),
+        hint: _(msg`Opens the form to save an item to a collection`),
+        icon: BookmarkIcon,
+        onPress: onPressAddItem,
+      },
+      newCollection,
+    ]
+  }, [_, collections.length, newCollectionControl, onPressAddItem])
 
   const actionsCollection = collections.find(c => c.id === actionsCollectionId)
   const itemActionNode = graph.nodes.find(n => n.id === itemActionNodeId)
@@ -301,10 +334,22 @@ function CivicTreeInner({
   }
 
   return (
-    <Layout.Screen hideBorders={expanded}>
+    <Layout.Screen
+      hideBorders={expanded}
+      style={
+        IS_WEB && viewMode === 'graph'
+          ? {
+              height: windowHeight,
+              minHeight: 0,
+              paddingBottom: gtMobile ? 0 : 60,
+            }
+          : undefined
+      }>
       <Layout.Center
         style={[
           styles.contentCenter,
+          // Native screens run under the bottom bar; web mobile handles it above.
+          IS_NATIVE && {paddingBottom: bottomBarOffset},
           expanded && {
             maxWidth: windowWidth - workspaceLeft - 24,
             width: windowWidth - workspaceLeft - 24,
@@ -313,39 +358,30 @@ function CivicTreeInner({
             transform: [],
           },
         ]}>
-        <View
-          style={[
-            a.flex_row,
-            a.align_center,
-            a.gap_sm,
-            a.p_md,
-            a.border_b,
-            t.atoms.border_contrast_low,
-          ]}>
-          <Layout.Header.BackButton />
-          <View style={[a.flex_1, a.gap_xs]}>
-            <Text style={[a.text_lg, a.font_bold, t.atoms.text]}>
-              {CIVIC_TREE_LABELS.personal}
-            </Text>
-            <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-              <Trans>
-                {collections.length} collections · {graph.totalItems} items ·{' '}
-                {graph.totalRelations} connections
-              </Trans>
-            </Text>
-          </View>
-          <Button
-            label={_(msg`New collection`)}
-            variant="solid"
-            color="primary"
-            size="small"
-            onPress={() => newCollectionControl.open()}>
-            <ButtonIcon icon={PlusIcon} />
-            <ButtonText>
-              <Trans>New collection</Trans>
-            </ButtonText>
-          </Button>
-        </View>
+        <CivicTreeHeader
+          titleText={CIVIC_TREE_LABELS.personal}
+          subtitleText={
+            <Trans>
+              {collections.length} collections · {graph.totalItems} items ·{' '}
+              {graph.totalRelations} connections
+            </Trans>
+          }
+          right={
+            gtMobile ? (
+              <Button
+                label={_(msg`New collection`)}
+                variant="solid"
+                color="primary"
+                size="small"
+                onPress={() => newCollectionControl.open()}>
+                <ButtonIcon icon={PlusIcon} />
+                <ButtonText>
+                  <Trans>New collection</Trans>
+                </ButtonText>
+              </Button>
+            ) : undefined
+          }
+        />
         <View
           style={[a.p_md, a.gap_sm, a.border_b, t.atoms.border_contrast_low]}>
           <View
@@ -356,37 +392,8 @@ function CivicTreeInner({
               a.justify_between,
               a.gap_sm,
             ]}>
-            <View
-              style={[
-                a.flex_row,
-                a.gap_xs,
-                a.p_xs,
-                a.rounded_md,
-                t.atoms.bg_contrast_25,
-              ]}>
-              {(
-                [
-                  {id: 'list', label: _(msg`Collections`), icon: ListIcon},
-                  {id: 'graph', label: _(msg`Tree`), icon: LeafIcon},
-                  {id: 'map', label: _(msg`Interactive Map`), icon: EarthIcon},
-                ] as const
-              ).map(mode => (
-                <Button
-                  key={mode.id}
-                  label={mode.label}
-                  variant={viewMode === mode.id ? 'solid' : 'ghost'}
-                  color={viewMode === mode.id ? 'primary' : 'secondary'}
-                  size="small"
-                  accessibilityState={{selected: viewMode === mode.id}}
-                  onPress={() => setViewMode(mode.id)}>
-                  <ButtonIcon icon={mode.icon} />
-                  <ButtonText style={!gtMobile && a.text_xs}>
-                    {mode.label}
-                  </ButtonText>
-                </Button>
-              ))}
-            </View>
-            {collections.length > 0 ? (
+            <CivicTreeViewSwitch value={viewMode} onChange={setViewMode} />
+            {gtMobile && collections.length > 0 ? (
               <Button
                 label={_(msg`Add item`)}
                 variant="outline"
@@ -473,14 +480,12 @@ function CivicTreeInner({
           <View style={styles.graphPane}>
             {graph.groups.length > 0 ? (
               <CollectionShelf
+                compact
                 groups={graph.groups}
                 activeGroups={activeGroups}
                 onToggleGroup={toggleGroup}
                 onOpenCollection={onPressCollectionActions}
               />
-            ) : null}
-            {graph.nodes.length > 0 ? (
-              <PersonalTreeLegend graph={graph} />
             ) : null}
             {graph.nodes.length === 0 ? (
               <EmptyTreeCanvas hasCollections={collections.length > 0} />
@@ -490,34 +495,14 @@ function CivicTreeInner({
                   count={graph.unconnectedCount}
                   total={graph.totalItems}
                 />
-                {selectedNodeId ? (
-                  <PersonalTreeNodeSheet
-                    graph={graph}
-                    nodeId={selectedNodeId}
-                    onClose={() => setSelectedNodeId(undefined)}
-                    onOpenCollection={collectionId =>
-                      navigation.navigate('CollectionDetail', {collectionId})
-                    }
-                    onEdit={onEditItem}
-                    onRemove={onRequestRemoveItem}
-                  />
-                ) : null}
-                <GraphCanvas
-                  nodes={filteredGraph.nodes}
-                  edges={filteredGraph.edges}
-                  activeGroups={
-                    activeGroups.size > 0 ? activeGroups : undefined
-                  }
-                  onNodePress={nodeId => {
+                <PersonalCivicTreeCards
+                  graph={{...graph, ...filteredGraph}}
+                  activeGroups={activeGroups}
+                  onOpenDetails={nodeId => {
                     setAddCollectionId(undefined)
                     setSelectedNodeId(nodeId)
+                    cardDetailsControl.open()
                   }}
-                  selectedNodeId={selectedNodeId}
-                  emptyTitle={_(msg`Nothing matches that search`)}
-                  emptySubtitle={_(
-                    msg`Try another term, or clear the collection filters above.`,
-                  )}
-                  simulationConfig={{groupGravity: 220, springLength: 110}}
                 />
               </>
             )}
@@ -622,11 +607,37 @@ function CivicTreeInner({
           />
         )}
       </Layout.Center>
+      <Dialog.Outer
+        control={cardDetailsControl}
+        onClose={() => setSelectedNodeId(undefined)}>
+        <Dialog.Handle />
+        <Dialog.Inner label={_(msg`Card details`)}>
+          {selectedNodeId ? (
+            <PersonalTreeNodeSheet
+              graph={graph}
+              nodeId={selectedNodeId}
+              onClose={() => cardDetailsControl.close()}
+              onOpenCollection={collectionId =>
+                cardDetailsControl.close(() =>
+                  navigation.navigate('CollectionDetail', {collectionId}),
+                )
+              }
+              onEdit={nodeId =>
+                cardDetailsControl.close(() => onEditItem(nodeId))
+              }
+              onRemove={nodeId =>
+                cardDetailsControl.close(() => onRequestRemoveItem(nodeId))
+              }
+            />
+          ) : null}
+        </Dialog.Inner>
+      </Dialog.Outer>
       <AddTreeItemDialog
         control={addItemControl}
         collection={selectedCollection}
       />
       <NewCollectionDialog control={newCollectionControl} />
+      <CivicTreeFab actions={fabActions} />
       <CollectionActionsDialog
         control={collectionActionsControl}
         collection={actionsCollection}
@@ -684,13 +695,13 @@ function EmptyTreeCanvas({hasCollections}: {hasCollections: boolean}) {
         ]}>
         {hasCollections ? (
           <Trans>
-            Use Add item above to save a topic, policy, evidence, link or note.
+            Use Add item to save a topic, policy, evidence, link or note.
             Connect items to give your tree its shape.
           </Trans>
         ) : (
           <Trans>
-            Create your first collection above to give your topics, evidence and
-            ideas a home.
+            Create your first collection to give your topics, evidence and ideas
+            a home.
           </Trans>
         )}
       </Text>

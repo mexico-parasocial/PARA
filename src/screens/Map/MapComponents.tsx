@@ -32,14 +32,14 @@ import {type SearchResult} from '#/lib/constants/mapHelpers'
 import {normalizeMexicoStateName} from '#/lib/constants/mexico'
 import {MEXICO_CITY_DATA} from '#/lib/constants/mexicoCityData'
 import {MOCK_DISTRICT_RAQS, STATE_DEMOGRAPHICS} from '#/lib/constants/mockData'
+import {useBottomBarOffset} from '#/lib/hooks/useBottomBarOffset'
 import {type NavigationProp} from '#/lib/routes/types'
 import {IS_WEB} from '#/platform/detection'
 import {useCabildeosQuery} from '#/state/queries/cabildeo'
+import {useShellLayout} from '#/state/shell/shell-layout'
 import {atoms as a, useBreakpoints, useTheme, web} from '#/alf'
-import {Check_Stroke2_Corner0_Rounded as Check} from '#/components/icons/Check'
 import {CircleX_Stroke2_Corner0_Rounded as CircleX} from '#/components/icons/CircleX'
 import {MagnifyingGlass_Stroke2_Corner0_Rounded as MagnifyingGlass} from '#/components/icons/MagnifyingGlass'
-import {SquareBehindSquare4_Stroke2_Corner0_Rounded as LayersIcon} from '#/components/icons/SquareBehindSquare4'
 import {Text} from '#/components/Typography'
 import {CivicHeatToggle} from './CivicHeatToggle'
 import {SheetDragDetector, useSheetDragGesture} from './sheetDragGesture'
@@ -59,10 +59,12 @@ type BigCitiesDataOverlayProps = {
   selectedState: {name: string} | null
   showCities: boolean
   selectedCityName: string | null
+  onSelectCity: (cityName: string) => void
   onClose: () => void
 }
 
 type MapSearchControlsProps = {
+  inline?: boolean
   searchExpanded: boolean
   setSearchExpanded: (expanded: boolean) => void
   searchQuery: string
@@ -82,6 +84,7 @@ type DistrictsDataOverlayProps = {
 }
 
 type MapLayersPanelProps = {
+  inline?: boolean
   activeLayer: MapLayer
   onSelectLayer: (layer: MapLayer) => void
   civicHeatOn: boolean
@@ -138,6 +141,16 @@ function getPanelFrame(gtMobile: boolean, insets: {bottom: number}) {
   }
 
   return {left: 12, right: 12, bottom: 12 + insets.bottom, maxHeight: 430}
+}
+
+function useBottomSheetClearance(gtMobile: boolean) {
+  const bottomBarOffset = useBottomBarOffset()
+  const {footerHeight} = useShellLayout()
+  return useAnimatedStyle(() =>
+    gtMobile
+      ? {}
+      : {bottom: 12 + Math.max(footerHeight.get(), bottomBarOffset)},
+  )
 }
 
 function useEscapeToClose(onClose: () => void, enabled: boolean) {
@@ -284,6 +297,7 @@ function OverlayFrame({
   const {gtMobile} = useBreakpoints()
   const t = useTheme()
   const insets = useSafeAreaInsets()
+  const bottomSheetClearance = useBottomSheetClearance(gtMobile)
   useEscapeToClose(onClose, true)
 
   return (
@@ -292,6 +306,7 @@ function OverlayFrame({
       style={[
         a.absolute,
         getPanelFrame(gtMobile, insets),
+        bottomSheetClearance,
         a.rounded_xl,
         t.atoms.bg,
         a.border,
@@ -311,7 +326,7 @@ function OverlayFrame({
           />
         </View>
       )}
-      <View style={[a.p_lg, a.pb_md]}>
+      <View style={[a.p_lg, a.pb_md, a.flex_shrink, {minHeight: 0}]}>
         <SheetHeader title={title} subtitle={subtitle} onClose={onClose} />
         {children}
       </View>
@@ -655,6 +670,7 @@ export function SelectedStateOverlay({
   onShowDistricts,
 }: SelectedStateOverlayProps) {
   const {gtMobile} = useBreakpoints()
+  const bottomSheetClearance = useBottomSheetClearance(gtMobile)
   const t = useTheme()
   const navRef = useNavigation<NavigationProp>()
   const {data: allCabildeos = []} = useCabildeosQuery()
@@ -730,6 +746,7 @@ export function SelectedStateOverlay({
         t.atoms.border_contrast_low,
         a.shadow_lg,
         sheetAnimatedStyle,
+        bottomSheetClearance,
         {zIndex: 18},
       ]}>
       {!gtMobile && !IS_WEB && (
@@ -844,6 +861,7 @@ export function BigCitiesDataOverlay({
   selectedState,
   showCities,
   selectedCityName,
+  onSelectCity,
   onClose,
 }: BigCitiesDataOverlayProps) {
   const t = useTheme()
@@ -860,103 +878,118 @@ export function BigCitiesDataOverlay({
       title={selectedState.name}
       subtitle="Major Cities"
       onClose={onClose}>
-      {selectedCity ? (
-        <CityContextCard city={selectedCity} stateName={selectedState.name} />
-      ) : (
-        <>
-          <View
-            style={[
-              a.mb_md,
-              a.p_md,
-              a.rounded_lg,
-              t.atoms.bg_contrast_25,
-              a.border,
-              t.atoms.border_contrast_low,
-            ]}>
-            <Text
-              style={[a.text_xs, a.font_bold, t.atoms.text_contrast_medium]}>
-              URBAN SNAPSHOT
-            </Text>
-            <Text style={[a.text_lg, a.font_bold, t.atoms.text, a.mt_xs]}>
-              {cityData.length} mapped major cit
-              {cityData.length === 1 ? 'y' : 'ies'}
-            </Text>
-          </View>
+      <ScrollView
+        style={a.flex_shrink}
+        contentContainerStyle={a.pb_lg}
+        keyboardShouldPersistTaps="handled">
+        {selectedCity ? (
+          <CityContextCard city={selectedCity} stateName={selectedState.name} />
+        ) : (
+          <>
+            <View
+              style={[
+                a.mb_md,
+                a.p_md,
+                a.rounded_lg,
+                t.atoms.bg_contrast_25,
+                a.border,
+                t.atoms.border_contrast_low,
+              ]}>
+              <Text
+                style={[a.text_xs, a.font_bold, t.atoms.text_contrast_medium]}>
+                URBAN SNAPSHOT
+              </Text>
+              <Text style={[a.text_lg, a.font_bold, t.atoms.text, a.mt_xs]}>
+                {cityData.length} mapped major cit
+                {cityData.length === 1 ? 'y' : 'ies'}
+              </Text>
+            </View>
 
-          <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mb_md]}>
-            City-level political context for the current state. The map stays
-            state-based for now while civic data drills into urban centers here.
-          </Text>
-        </>
-      )}
+            <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mb_md]}>
+              Select a city to see its location and political context.
+            </Text>
+          </>
+        )}
 
-      <ScrollView contentContainerStyle={[a.gap_md, a.pb_lg]}>
-        {cityData.length > 0 ? (
-          cityData.map(
-            (
-              city: {
-                name: string
-                dominantParty: string
-                population: string
-                governing_mayor: string
-              },
-              index: number,
-            ) => (
-              <View
-                key={`${city.name}-${index}`}
-                style={[
-                  a.p_md,
-                  t.atoms.bg_contrast_25,
-                  a.rounded_lg,
-                  a.border,
-                  t.atoms.border_contrast_low,
-                ]}>
-                <View
+        <View style={a.gap_md}>
+          {cityData.length > 0 ? (
+            cityData.map(
+              (
+                city: {
+                  name: string
+                  dominantParty: string
+                  population: string
+                  governing_mayor: string
+                },
+                index: number,
+              ) => (
+                <TouchableOpacity
+                  key={`${city.name}-${index}`}
+                  accessibilityRole="button"
+                  accessibilityLabel={`View ${city.name}`}
+                  accessibilityHint="Shows this city's location and political context."
+                  accessibilityState={{
+                    selected: selectedCityName === city.name,
+                  }}
+                  onPress={() => onSelectCity(city.name)}
                   style={[
-                    a.flex_row,
-                    a.justify_between,
-                    a.align_baseline,
-                    a.mb_xs,
+                    a.p_md,
+                    t.atoms.bg_contrast_25,
+                    a.rounded_lg,
+                    a.border,
+                    t.atoms.border_contrast_low,
+                    selectedCityName === city.name && {
+                      borderColor: t.palette.primary_500,
+                    },
                   ]}>
-                  <Text style={[a.text_lg, a.font_bold, t.atoms.text]}>
-                    {city.name}
-                  </Text>
                   <View
                     style={[
-                      a.px_sm,
-                      a.py_xs,
-                      a.rounded_full,
-                      t.atoms.bg_contrast_100,
+                      a.flex_row,
+                      a.justify_between,
+                      a.align_baseline,
+                      a.mb_xs,
                     ]}>
-                    <Text style={[a.text_xs, a.font_bold, t.atoms.text]}>
-                      {city.dominantParty}
+                    <Text style={[a.text_lg, a.font_bold, t.atoms.text]}>
+                      {city.name}
                     </Text>
+                    <View
+                      style={[
+                        a.px_sm,
+                        a.py_xs,
+                        a.rounded_full,
+                        t.atoms.bg_contrast_100,
+                      ]}>
+                      <Text style={[a.text_xs, a.font_bold, t.atoms.text]}>
+                        {city.dominantParty}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-                <Text style={[a.text_sm, t.atoms.text_contrast_high]}>
-                  Population:{' '}
-                  <Text style={[a.font_bold]}>{city.population}</Text>
-                </Text>
-                <Text
-                  style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_xs]}>
-                  Mayor: {city.governing_mayor}
-                </Text>
-              </View>
-            ),
-          )
-        ) : (
-          <View style={[a.p_xl, a.align_center]}>
-            <Text style={[t.atoms.text_contrast_medium]}>
-              <Trans>No city data available for this state.</Trans>
-            </Text>
-          </View>
-        )}
+                  <Text style={[a.text_sm, t.atoms.text_contrast_high]}>
+                    Population:{' '}
+                    <Text style={[a.font_bold]}>{city.population}</Text>
+                  </Text>
+                  <Text
+                    style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_xs]}>
+                    Mayor: {city.governing_mayor}
+                  </Text>
+                </TouchableOpacity>
+              ),
+            )
+          ) : (
+            <View style={[a.p_xl, a.align_center]}>
+              <Text style={[t.atoms.text_contrast_medium]}>
+                <Trans>No city data available for this state.</Trans>
+              </Text>
+            </View>
+          )}
+        </View>
       </ScrollView>
     </OverlayFrame>
   )
 }
 
 export function MapSearchControls({
+  inline = false,
   searchExpanded,
   setSearchExpanded,
   searchQuery,
@@ -983,8 +1016,16 @@ export function MapSearchControls({
   return (
     <View
       style={[
-        mapStyles.searchContainer,
-        {left: gtMobile ? 20 : 66, top: 20, width: gtMobile ? 320 : 220},
+        inline ? a.relative : mapStyles.searchContainer,
+        inline
+          ? !searchExpanded && {width: 44}
+          : gtMobile
+            ? {left: 20, top: 20, width: searchExpanded ? 320 : 44}
+            : {
+                left: 16,
+                top: 20,
+                ...(searchExpanded ? {right: 76} : {width: 44}),
+              },
         a.z_30,
       ]}>
       {searchExpanded ? (
@@ -1010,6 +1051,10 @@ export function MapSearchControls({
           />
           <TouchableOpacity
             accessibilityRole="button"
+            accessibilityLabel={_(msg`Close map search`)}
+            accessibilityHint={_(
+              msg`Closes the search results and clears the search.`,
+            )}
             onPress={() => {
               setSearchExpanded(false)
               setSearchQuery('')
@@ -1026,6 +1071,10 @@ export function MapSearchControls({
         <Animated.View entering={FadeInDown.duration(200)}>
           <TouchableOpacity
             accessibilityRole="button"
+            accessibilityLabel={_(msg`Search map`)}
+            accessibilityHint={_(
+              msg`Find a state, district or city on the map.`,
+            )}
             onPress={() => setSearchExpanded(true)}
             style={[
               mapStyles.searchIcon,
@@ -1052,7 +1101,7 @@ export function MapSearchControls({
             a.shadow_lg,
             {maxHeight: 300},
           ]}>
-          <ScrollView>
+          <ScrollView keyboardShouldPersistTaps="handled">
             {hasRecentResults && (
               <View>
                 <SectionHeader label="Recent" />
@@ -1425,6 +1474,7 @@ export function DistrictsDataOverlay({
 }
 
 export function MapLayersPanel({
+  inline = false,
   activeLayer,
   onSelectLayer,
   civicHeatOn,
@@ -1463,83 +1513,72 @@ export function MapLayersPanel({
   return (
     <View
       style={[
-        a.absolute,
-        {top: gtMobile ? 78 : 74, left: gtMobile ? 20 : 66},
-        a.p_sm,
+        inline ? a.relative : a.absolute,
+        !inline &&
+          (gtMobile ? {top: 78, left: 20} : {top: 78, left: 16, right: 76}),
+        a.p_xs,
         a.rounded_xl,
         t.atoms.bg_contrast_25,
         web({backdropFilter: 'blur(10px)'}),
         a.border,
         t.atoms.border_contrast_low,
         a.shadow_lg,
-        {width: gtMobile ? 220 : 200, zIndex: 20},
+        {zIndex: 20},
       ]}>
-      <View style={[a.flex_row, a.align_center, a.gap_xs, a.mb_sm, a.px_xs]}>
-        <LayersIcon fill={t.palette.primary_500} width={17} height={17} />
-        <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
-          <Trans>VIEW</Trans>
-        </Text>
-      </View>
+      <View style={[a.flex_row, a.flex_wrap, a.align_center, a.gap_xs]}>
+        <View
+          accessibilityRole="tablist"
+          style={[
+            a.flex_row,
+            !gtMobile && a.flex_1,
+            a.p_2xs,
+            a.rounded_lg,
+            t.atoms.bg_contrast_50,
+            {gap: 2},
+          ]}>
+          {layers.map(layer => {
+            const selected = activeLayer === layer.id
 
-      <View style={[a.gap_sm]}>
-        {layers.map(layer => {
-          const selected = activeLayer === layer.id
-
-          return (
-            <TouchableOpacity
-              key={layer.id}
-              accessibilityRole="tab"
-              accessibilityState={{selected}}
-              onPress={() => onSelectLayer(layer.id)}
-              style={[
-                a.flex_row,
-                a.align_center,
-                a.gap_sm,
-                a.px_sm,
-                a.py_sm,
-                a.rounded_lg,
-                a.border,
-                selected
-                  ? {
-                      borderColor: t.palette.primary_500,
-                      backgroundColor: t.palette.primary_500 + '16',
-                    }
-                  : {borderColor: 'transparent'},
-              ]}>
-              <View style={[a.flex_1, {minWidth: 0}]}>
-                <Text
-                  style={[
-                    a.text_sm,
-                    selected
-                      ? [a.font_bold, t.atoms.text]
-                      : t.atoms.text_contrast_high,
-                  ]}>
-                  {layer.label}
-                </Text>
-                <Text
-                  style={[a.text_xs, t.atoms.text_contrast_medium]}
-                  numberOfLines={1}>
-                  {layer.description}
-                </Text>
-              </View>
-              {typeof layer.count === 'number' && (
-                <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-                  {layer.count}
-                </Text>
-              )}
-              <View
+            return (
+              <TouchableOpacity
+                key={layer.id}
+                accessibilityRole="tab"
+                accessibilityLabel={`${layer.label}, ${layer.description}`}
+                accessibilityHint={`Switches the map to ${layer.label.toLowerCase()}.`}
+                accessibilityState={{selected}}
+                onPress={() => onSelectLayer(layer.id)}
                 style={[
                   a.align_center,
                   a.justify_center,
-                  {width: 18, height: 18},
+                  a.rounded_md,
+                  !gtMobile && a.flex_1,
+                  {paddingVertical: 5, paddingHorizontal: gtMobile ? 12 : 4},
+                  selected && {backgroundColor: t.palette.primary_500},
+                  web({cursor: 'pointer'}),
                 ]}>
-                {selected && (
-                  <Check fill={t.palette.primary_500} width={14} height={14} />
+                <Text
+                  style={[
+                    gtMobile ? a.text_sm : a.text_xs,
+                    a.font_bold,
+                    selected ? {color: '#ffffff'} : t.atoms.text_contrast_high,
+                  ]}>
+                  {layer.label}
+                </Text>
+                {typeof layer.count === 'number' && (
+                  <Text
+                    style={[
+                      a.text_2xs,
+                      selected
+                        ? {color: '#ffffffcc'}
+                        : t.atoms.text_contrast_medium,
+                    ]}>
+                    {layer.count}
+                  </Text>
                 )}
-              </View>
-            </TouchableOpacity>
-          )
-        })}
+              </TouchableOpacity>
+            )
+          })}
+        </View>
 
         <CivicHeatToggle
           on={civicHeatOn}

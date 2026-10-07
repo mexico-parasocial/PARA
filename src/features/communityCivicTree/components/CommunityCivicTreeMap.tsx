@@ -8,18 +8,18 @@ import {
   COMPASS_COLORS,
   type CompassPositionId,
 } from '#/lib/compass/compassColors'
-import {atoms as a, useTheme} from '#/alf'
+import {atoms as a, useBreakpoints, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import {Text} from '#/components/Typography'
 import {STANCE_COLORS} from '#/features/civicTree/colors'
-import {type GraphData} from '#/features/civicTree/types'
-import {MapViewport} from '#/features/personalCivicTree/components/MapViewport'
+import {MapViewport} from '#/features/civicTree/components/MapViewport'
 import {
   MAP_GROUPINGS,
   type MapCamera,
   type MapGrouping,
   zoomMapCamera,
-} from '#/features/personalCivicTree/map'
+} from '#/features/civicTree/map'
+import {type GraphData} from '#/features/civicTree/types'
 import {buildCommunityMapLayout, communityEdgeColor} from '../workspace'
 
 export function CommunityCivicTreeMap({
@@ -36,6 +36,7 @@ export function CommunityCivicTreeMap({
   showIdeologicalOverlay?: boolean
 }) {
   const t = useTheme()
+  const {gtMobile} = useBreakpoints()
   const {t: l, i18n} = useLingui()
   const [grouping, setGrouping] = useState<MapGrouping>('collection')
   const [size, setSize] = useState({width: 600, height: 500})
@@ -339,7 +340,8 @@ export function CommunityCivicTreeMap({
             a.border,
             t.atoms.bg,
             t.atoms.border_contrast_low,
-            {bottom: 16, right: 16},
+            // Phones keep the bottom-right corner for the screen's FAB.
+            gtMobile ? {bottom: 16, right: 16} : {bottom: 16, left: 16},
           ]}>
           <Button
             label={l`Zoom out`}

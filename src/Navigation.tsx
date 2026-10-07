@@ -1,6 +1,7 @@
 import {type ComponentType, type JSX, useCallback, useRef} from 'react'
 import * as Linking from 'expo-linking'
 import * as Notifications from 'expo-notifications'
+import {Referrer} from '@bsky.app/expo-bluesky-swiss-army'
 import {i18n, type MessageDescriptor} from '@lingui/core'
 import {msg} from '@lingui/core/macro'
 import {
@@ -135,6 +136,7 @@ import VerifyDashboardScreen from '#/screens/m8/VerifyDashboardScreen'
 import WalletScreen from '#/screens/m8/WalletScreen'
 import {AgentChatScreen} from '#/screens/Messages/AgentChat'
 import {MessagesScreen} from '#/screens/Messages/ChatList'
+import {CommunityChatsScreen} from '#/screens/Messages/CommunityChatsScreen'
 import {MessagesConversationScreen} from '#/screens/Messages/Conversation'
 import {MessagesConversationSettingsScreen} from '#/screens/Messages/ConversationSettings'
 import {MessagesInboxScreen} from '#/screens/Messages/Inbox'
@@ -212,7 +214,6 @@ import {useAnalytics} from '#/analytics'
 import {setNavigationMetadata} from '#/analytics/metadata'
 import {IS_LIQUID_GLASS, IS_NATIVE, IS_WEB} from '#/env'
 import {router} from '#/routes'
-import {Referrer} from '../modules/expo-bluesky-swiss-army'
 import {renderMessagesSplitViewLayout} from './screens/Messages/components/splitView/MessagesSplitViewLayout'
 const navigationRef = createNavigationContainerRef<AllNavigatorParams>()
 
@@ -1271,6 +1272,11 @@ function MessagesTabNavigator() {
         getComponent={() => CommunityChatScreen}
         options={{title: 'Chat'}}
       />
+      <MessagesTab.Screen
+        name="CommunityChats"
+        getComponent={() => CommunityChatsScreen}
+        options={{title: 'Community chats'}}
+      />
       {commonScreens(MessagesTab as typeof Flat)}
     </MessagesTab.Navigator>
   )
@@ -1375,6 +1381,11 @@ const FlatNavigator = ({
         name="CommunityChat"
         getComponent={() => CommunityChatScreen}
         options={{title: title(msg`Chat`)}}
+      />
+      <Flat.Screen
+        name="CommunityChats"
+        getComponent={() => CommunityChatsScreen}
+        options={{title: title(msg`Community chats`), requireAuth: true}}
       />
       <Flat.Screen
         name="CommunityMembers"

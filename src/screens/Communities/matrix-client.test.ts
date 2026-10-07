@@ -78,4 +78,14 @@ describe('Matrix client configuration', () => {
       "document.getElementById('report-message').hidden = !!isSelf",
     )
   })
+
+  it('publishes unread counts and presence only, never message text', () => {
+    const html = buildConfiguredClientHtml(undefined, config)
+    expect(html).toContain("type: 'matrix-live-state'")
+    expect(html).toContain("client.on('User.presence', publishLiveState)")
+    const fn = html.slice(html.indexOf('function publishLiveState'))
+    expect(fn.slice(0, fn.indexOf('function showReactionPicker'))).not.toMatch(
+      /getContent|\.body/,
+    )
+  })
 })

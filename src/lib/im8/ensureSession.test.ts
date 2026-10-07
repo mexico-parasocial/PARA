@@ -12,6 +12,7 @@ function json(body: unknown, status = 200) {
 
 const startedBody = {
   attempt: {sessionId: 'session-1'},
+  session: {sessionId: 'session-1', did: ALICE},
   tokens: {accessToken: 'access-new', refreshToken: 'refresh-new'},
 }
 

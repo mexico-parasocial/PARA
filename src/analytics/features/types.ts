@@ -17,6 +17,7 @@ export enum Features {
   CustomLogoJapanEnable = 'custom_logo:japan:enable',
   SearchStarterPacksV2Enable = 'search_starter_packs_v2:enable',
   FollowSortEnable = 'follow_sort:enable',
+  FollowingV2Enable = 'following_v2:enable',
   LargeVideoUploads = 'large_video_uploads:enable',
   NotificationsExpandedProfileCardEnable = 'notifications:expanded_profile_card:enable',
   ContentVisibilitySettingsEnable = 'content_visibility_settings:enable',

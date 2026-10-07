@@ -16,6 +16,9 @@ import {useTheme} from '#/alf'
 interface VotingButtonHorizontalProps {
   initialVote?: number
   onVoteChange?: (vote: number) => void
+  /** Web rendering also uses these to reflect asynchronous vote saves. */
+  disabled?: boolean
+  saveFailed?: boolean
 }
 
 type WebEventBoundary = {

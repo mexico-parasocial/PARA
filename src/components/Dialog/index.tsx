@@ -21,11 +21,17 @@ import {
 } from 'react-native'
 import {useReanimatedKeyboardAnimation} from 'react-native-keyboard-controller'
 import Animated, {
-  runOnJS,
   type ScrollEvent,
   useAnimatedStyle,
 } from 'react-native-reanimated'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
+import {scheduleOnRN} from 'react-native-worklets'
+import {BottomSheet, BottomSheetSnapPoint} from '@bsky.app/bottom-sheet'
+import {
+  type BottomSheetSnapPointChangeEvent,
+  type BottomSheetStateChangeEvent,
+} from '@bsky.app/bottom-sheet/src/BottomSheet.types'
+import {type BottomSheetNativeComponent} from '@bsky.app/bottom-sheet/src/BottomSheetNativeComponent'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 
@@ -45,12 +51,6 @@ import {
 import {createInput} from '#/components/forms/TextField'
 import {useOnKeyboard} from '#/components/hooks/useOnKeyboard'
 import {IS_ANDROID, IS_IOS, IS_LIQUID_GLASS} from '#/env'
-import {BottomSheet, BottomSheetSnapPoint} from '../../../modules/bottom-sheet'
-import {
-  type BottomSheetSnapPointChangeEvent,
-  type BottomSheetStateChangeEvent,
-} from '../../../modules/bottom-sheet/src/BottomSheet.types'
-import {type BottomSheetNativeComponent} from '../../../modules/bottom-sheet/src/BottomSheetNativeComponent'
 
 export {useDialogContext, useDialogControl} from '#/components/Dialog/context'
 export * from '#/components/Dialog/shared'
@@ -87,8 +87,8 @@ export function Outer({
     for (const cb of closeCallbacks.current) {
       try {
         cb()
-      } catch (e: unknown) {
-        logger.error(e instanceof Error ? e : 'Error running close callback')
+      } catch (e: any) {
+        logger.error(e || 'Error running close callback')
       }
     }
 
@@ -186,7 +186,9 @@ export function Outer({
       onStateChange={onStateChange}
       disableDrag={disableDrag}>
       <Context.Provider value={context}>
-        <View testID={testID} style={[a.relative]}>
+        <View
+          testID={testID}
+          style={[a.relative, isHeightConstrained && a.flex_1]}>
           {children}
         </View>
       </Context.Provider>
@@ -283,7 +285,7 @@ export function ScrollableInner({
 
 export const InnerFlatList = forwardRef<
   ListMethods,
-  ListProps & {
+  ListProps<any> & {
     webInnerStyle?: StyleProp<ViewStyle>
     webInnerContentContainerStyle?: StyleProp<ViewStyle>
     footer?: React.ReactNode
@@ -294,6 +296,7 @@ export const InnerFlatList = forwardRef<
 ) {
   const insets = useSafeAreaInsets()
   const {nativeSnapPoint, disableDrag, setDisableDrag} = useDialogContext()
+
   const isAtMaxSnapPoint = nativeSnapPoint === BottomSheetSnapPoint.Full
 
   const onScroll = (e: ScrollEvent) => {
@@ -303,9 +306,9 @@ export const InnerFlatList = forwardRef<
     }
     const {contentOffset} = e
     if (contentOffset.y > 0 && !disableDrag) {
-      runOnJS(setDisableDrag)(true)
+      scheduleOnRN(setDisableDrag, true)
     } else if (contentOffset.y <= 1 && disableDrag) {
-      runOnJS(setDisableDrag)(false)
+      scheduleOnRN(setDisableDrag, false)
     }
   }
 
@@ -429,10 +432,10 @@ export function Handle({
   )
 }
 
-export function Backdrop() {
+export function Close() {
   return null
 }
 
-export function Close() {
+export function Backdrop() {
   return null
 }

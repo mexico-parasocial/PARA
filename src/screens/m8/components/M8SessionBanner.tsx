@@ -1,14 +1,17 @@
-import {useCallback, useEffect, useState} from 'react'
-import {ActivityIndicator, Linking, TextInput, View} from 'react-native'
+import {useCallback, useEffect, useRef, useState} from 'react'
+import {ActivityIndicator, View} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
-import {completeM8OAuth, getMe, logoutM8, startM8Session} from '#/lib/im8'
+import {getM8AccessToken, getMe, logoutM8} from '#/lib/im8'
+import {M8_GRANT_ERROR_KEY, setM8ActiveAccount} from '#/lib/im8/credentials'
+import * as Storage from '#/lib/im8/credentialStorage'
+import {connectM8SessionFor} from '#/lib/im8/grant'
+import {useSession} from '#/state/session'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import {Text} from '#/components/Typography'
-import {IS_NATIVE} from '#/env'
 
 type ConnectionState =
   | {status: 'loading'}
@@ -19,76 +22,112 @@ function shortenDid(did: string) {
   return did.length > 26 ? `${did.slice(0, 18)}…${did.slice(-6)}` : did
 }
 
-/**
- * Session banner for the Identity Hub. Shows whether the app holds an m8
- * broker session, offers the connect flow (dev token bootstrap, or OAuth in
- * an auth session that returns an exchange code), and disconnect.
- */
+/** Explicit OAuth connection for the currently signed-in PARA account. */
 export function M8SessionBanner() {
   const t = useTheme()
   const {_} = useLingui()
+  const {currentAccount} = useSession()
+  const did = currentAccount?.did
+  const activeDid = useRef(did)
+  activeDid.current = did
   const [state, setState] = useState<ConnectionState>({status: 'loading'})
-  const [identifier, setIdentifier] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [oauthPending, setOauthPending] = useState(false)
 
-  const refresh = useCallback(async () => {
-    try {
-      const {session} = await getMe()
-      setState({
-        status: 'connected',
-        did: session.did,
-        handle: session.handle,
-      })
-      setOauthPending(false)
-    } catch {
-      setState({status: 'disconnected'})
-    }
-  }, [])
+  const describeError = useCallback(
+    (code: string) => {
+      if (code === 'M8_LOGIN_CANCELLED')
+        return _(msg`Sign-in was cancelled. You can try again.`)
+      if (code === 'M8_LOGIN_EXPIRED' || code.startsWith('OAUTH_EXCHANGE_'))
+        return _(
+          msg`This sign-in has expired or was already used. Please connect again.`,
+        )
+      if (code === 'M8_ACCOUNT_CHANGED' || code === 'M8_ACCOUNT_MISMATCH')
+        return _(
+          msg`Sign in with your current PARA account to connect your identity wallet.`,
+        )
+      if (
+        code === 'M8_HANDOFF_NOT_CONFIGURED' ||
+        code === 'OAUTH_RETURN_TO_INVALID' ||
+        code === 'OAUTH_HANDOFF_UNAVAILABLE'
+      )
+        return _(
+          msg`Identity sign-in is not available for this app yet. Please try again later.`,
+        )
+      return _(msg`Could not connect your identity wallet. Please try again.`)
+    },
+    [_],
+  )
 
   useEffect(() => {
-    void refresh()
-  }, [refresh])
+    let cancelled = false
+    setState({status: 'loading'})
+    setError(null)
+    const restore = async () => {
+      await setM8ActiveAccount(did)
+      const code = await Storage.getItemAsync(M8_GRANT_ERROR_KEY)
+      await Storage.deleteItemAsync(M8_GRANT_ERROR_KEY)
+      if (code && !cancelled) setError(describeError(code))
+      const token = did && (await getM8AccessToken())
+      const result = token ? await getMe().catch(() => null) : null
+      if (!cancelled) {
+        setState(
+          result?.session.did === did && result
+            ? {
+                status: 'connected',
+                did: result.session.did,
+                handle: result.session.handle,
+              }
+            : {status: 'disconnected'},
+        )
+      }
+    }
+    void restore().catch(() => {
+      if (!cancelled) setState({status: 'disconnected'})
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [did, describeError])
 
   const connect = useCallback(async () => {
-    const input = identifier.trim()
-    if (!input || busy) return
+    if (!did || busy) return
     setBusy(true)
     setError(null)
     try {
-      const res = await startM8Session(input)
-      if (res.tokens) {
-        await refresh()
-      } else {
-        const url = res.oauthUrl ?? res.attempt.authUrl
-        if (IS_NATIVE && url) {
-          // The auth session returns the exchange code to this call, and it
-          // is swapped for tokens over the app's own channel.
-          if (await completeM8OAuth(url)) await refresh()
-        } else {
-          // Web: the broker's callback answers in the browser, so the person
-          // finishes there and checks the status here.
-          setOauthPending(true)
-          if (url) await Linking.openURL(url)
-        }
+      const result = await connectM8SessionFor(did, () => activeDid.current)
+      if (activeDid.current === did && result.tokens && result.session) {
+        setState({
+          status: 'connected',
+          did: result.session.did,
+          handle: result.session.handle,
+        })
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Connection failed')
+      if (activeDid.current === did)
+        setError(describeError(e instanceof Error ? e.message : ''))
     } finally {
       setBusy(false)
     }
-  }, [identifier, busy, refresh])
+  }, [did, busy, describeError])
 
   const disconnect = useCallback(async () => {
     setBusy(true)
+    setError(null)
     try {
       await logoutM8()
-      setState({status: 'disconnected'})
+    } catch {
+      if (activeDid.current === did)
+        setError(
+          _(
+            msg`Disconnected on this device. Server sign-out could not be confirmed.`,
+          ),
+        )
     } finally {
+      if (activeDid.current === did) setState({status: 'disconnected'})
       setBusy(false)
     }
-  }, [])
+  }, [did, _])
 
   if (state.status === 'loading') {
     return (
@@ -98,114 +137,54 @@ export function M8SessionBanner() {
     )
   }
 
-  if (state.status === 'connected') {
-    return (
-      <View
-        style={[
-          a.flex_row,
-          a.align_center,
-          a.justify_between,
-          a.px_lg,
-          a.py_md,
-          a.gap_md,
-          {backgroundColor: t.palette.primary_25},
-        ]}>
-        <View style={[a.flex_1]}>
-          <Text style={[a.font_bold, a.text_md]} numberOfLines={1}>
-            {state.handle ? `@${state.handle}` : _(msg`Connected wallet`)}
-          </Text>
-          <Text
-            style={[a.text_sm, t.atoms.text_contrast_medium]}
-            numberOfLines={1}>
-            {shortenDid(state.did)}
-          </Text>
-        </View>
-        <Button
-          variant="outline"
-          color="secondary"
-          size="small"
-          label={_(msg`Disconnect`)}
-          disabled={busy}
-          onPress={disconnect}>
-          <ButtonText>
-            <Trans>Disconnect</Trans>
-          </ButtonText>
-        </Button>
-      </View>
-    )
-  }
-
+  const connected = state.status === 'connected' && state.did === did
   return (
     <View style={[a.p_lg, a.gap_sm, {backgroundColor: t.palette.primary_25}]}>
       <Text style={[a.font_bold, a.text_md]}>
-        <Trans>Connect your identity wallet</Trans>
+        {connected
+          ? _(msg`Connected identity wallet`)
+          : _(msg`Connect your identity wallet`)}
       </Text>
       <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
         <Trans>
-          Link your handle or DID to enable verified voting, anonymous
-          identities, and karma.
+          Connect the account you are using in PARA to your identity wallet.
         </Trans>
       </Text>
-      <View style={[a.flex_row, a.gap_sm, a.align_center]}>
-        <TextInput
-          value={identifier}
-          onChangeText={setIdentifier}
-          placeholder={_(msg`handle.bsky.social or did:plc:…`)}
-          placeholderTextColor={t.atoms.text_contrast_low.color}
-          autoCapitalize="none"
-          autoCorrect={false}
-          accessibilityLabel={_(msg`Handle or DID`)}
-          accessibilityHint={_(
-            msg`Enter the account to connect to the identity wallet`,
-          )}
-          style={[
-            a.flex_1,
-            a.px_md,
-            a.py_sm,
-            a.rounded_sm,
-            t.atoms.text,
-            {
-              backgroundColor: t.atoms.bg.backgroundColor,
-              borderWidth: 1,
-              borderColor: t.atoms.border_contrast_low.borderColor,
-            },
-          ]}
-        />
+      <View style={[a.flex_row, a.gap_md, a.align_center]}>
+        <View style={[a.flex_1]}>
+          <Text style={[a.font_bold, a.text_md]} numberOfLines={1}>
+            {currentAccount?.handle
+              ? `@${currentAccount.handle}`
+              : _(msg`Sign in to PARA first`)}
+          </Text>
+          {did ? (
+            <Text
+              style={[a.text_sm, t.atoms.text_contrast_medium]}
+              numberOfLines={1}>
+              {shortenDid(did)}
+            </Text>
+          ) : null}
+        </View>
         <Button
-          variant="solid"
-          color="primary"
+          variant={connected ? 'outline' : 'solid'}
+          color={connected ? 'secondary' : 'primary'}
           size="small"
-          label={_(msg`Connect`)}
-          disabled={busy || !identifier.trim()}
-          onPress={connect}>
+          label={connected ? _(msg`Disconnect`) : _(msg`Connect`)}
+          disabled={busy || !did}
+          onPress={connected ? disconnect : connect}>
           {busy ? (
-            <ActivityIndicator size="small" color="white" />
+            <ActivityIndicator size="small" />
           ) : (
             <ButtonText>
-              <Trans>Connect</Trans>
+              {connected ? _(msg`Disconnect`) : _(msg`Connect`)}
             </ButtonText>
           )}
         </Button>
       </View>
-      {oauthPending ? (
-        <View style={[a.gap_xs]}>
-          <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-            <Trans>
-              Finish signing in in your browser, then tap "Check status".
-            </Trans>
-          </Text>
-          <Button
-            variant="outline"
-            color="secondary"
-            size="small"
-            label={_(msg`Check status`)}
-            disabled={busy}
-            onPress={refresh}>
-            <ButtonText>
-              <Trans>Check status</Trans>
-            </ButtonText>
-          </Button>
-        </View>
+      {busy && !connected ? (
+        <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
+          <Trans>Complete sign-in in your browser to continue.</Trans>
+        </Text>
       ) : null}
       {error ? (
         <Text style={[a.text_sm, {color: t.palette.negative_500}]}>

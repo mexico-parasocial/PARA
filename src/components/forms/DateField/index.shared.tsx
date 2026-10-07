@@ -16,6 +16,8 @@ export function DateFieldButton({
   value,
   placeholder,
   onPress,
+  onBlur,
+  disabled,
   isInvalid,
   accessibilityHint,
 }: {
@@ -23,11 +25,15 @@ export function DateFieldButton({
   value: string | Date
   placeholder?: string
   onPress: () => void
+  onBlur?: () => void
+  disabled?: boolean
   isInvalid?: boolean
   accessibilityHint?: string
 }) {
   const {i18n} = useLingui()
   const t = useTheme()
+  const displayValue =
+    value === '' ? placeholder : i18n.date(value, {timeZone: 'UTC'})
 
   const {
     state: pressed,
@@ -39,7 +45,11 @@ export function DateFieldButton({
     onIn: onHoverIn,
     onOut: onHoverOut,
   } = useInteractionState()
-  const {state: focused, onIn: onFocus, onOut: onBlur} = useInteractionState()
+  const {
+    state: focused,
+    onIn: onFocus,
+    onOut: onFocusOut,
+  } = useInteractionState()
 
   const {chromeHover, chromeFocus, chromeError, chromeErrorHover} =
     TextField.useSharedInputStyles()
@@ -52,6 +62,10 @@ export function DateFieldButton({
         onMouseOut: onHoverOut,
       })}>
       <Pressable
+        role="button"
+        disabled={disabled}
+        accessibilityState={{disabled}}
+        accessibilityValue={{text: displayValue}}
         aria-label={label}
         accessibilityLabel={label}
         accessibilityHint={accessibilityHint}
@@ -59,7 +73,10 @@ export function DateFieldButton({
         onPressIn={onPressIn}
         onPressOut={onPressOut}
         onFocus={onFocus}
-        onBlur={onBlur}
+        onBlur={() => {
+          onFocusOut()
+          onBlur?.()
+        }}
         style={[
           {
             paddingLeft: 14,
@@ -91,7 +108,7 @@ export function DateFieldButton({
             value === '' ? t.atoms.text_contrast_low : t.atoms.text,
             {lineHeight: a.text_md.fontSize * 1.1875},
           ]}>
-          {value === '' ? placeholder : i18n.date(value, {timeZone: 'UTC'})}
+          {displayValue}
         </Text>
       </Pressable>
     </View>

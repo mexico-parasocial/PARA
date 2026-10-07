@@ -66,6 +66,8 @@ module.exports = async function (env, argv) {
   }
   config = withAlias(config, {
     'react-native$': 'react-native-web',
+    // Match Metro's web resolver: native maps cannot initialize in a browser.
+    'react-native-maps$': '@teovilla/react-native-web-maps',
     /*
      * Codegen specs import this via a deep `react-native/*` path, which skips
      * the exact-match alias above and pulls RN core into the web bundle. RN

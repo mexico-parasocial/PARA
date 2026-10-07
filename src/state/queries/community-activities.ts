@@ -151,7 +151,11 @@ type ServedActivity = ServedRecord & {category: string}
 function toActivityView(item: ServedActivity): CommunityActivityView | null {
   const base = {uri: item.uri, cid: item.cid, authorDid: item.author}
   if (item.category === 'social') {
-    return {...base, category: 'social', record: item.record as SocialActivityRecord}
+    return {
+      ...base,
+      category: 'social',
+      record: item.record as SocialActivityRecord,
+    }
   }
   if (item.category === 'economic') {
     return {
@@ -296,7 +300,7 @@ export function useCreateCommunityActivityMutation() {
       const now = new Date().toISOString()
       const collection = ACTIVITY_COLLECTIONS[category]
       const res = await agent.pdsClient.call(com.atproto.repo.createRecord, {
-        repo: currentAccount.did as AtIdentifierString,
+        repo: currentAccount.did,
         collection: collection as NsidString,
         record: {
           $type: collection,
@@ -413,7 +417,7 @@ export function useAddLedgerEntryMutation() {
         createdAt: new Date().toISOString(),
       }
       const res = await agent.pdsClient.call(com.atproto.repo.createRecord, {
-        repo: currentAccount.did as AtIdentifierString,
+        repo: currentAccount.did,
         collection: PARA_COMMUNITY_ACTIVITY_LEDGER_COLLECTION,
         record: {
           $type: PARA_COMMUNITY_ACTIVITY_LEDGER_COLLECTION,
@@ -499,7 +503,7 @@ export function useSaveWikiPageMutation() {
       if (ownExisting) {
         const uri = new AtUri(ownExisting.uri)
         const res = await agent.pdsClient.call(com.atproto.repo.putRecord, {
-          repo: currentAccount.did as AtIdentifierString,
+          repo: currentAccount.did,
           collection: PARA_COMMUNITY_WIKI_PAGE_COLLECTION,
           rkey: uri.rkey,
           swapRecord: ownExisting.cid || undefined,
@@ -508,7 +512,7 @@ export function useSaveWikiPageMutation() {
         return {uri: res.uri}
       }
       const res = await agent.pdsClient.call(com.atproto.repo.createRecord, {
-        repo: currentAccount.did as AtIdentifierString,
+        repo: currentAccount.did,
         collection: PARA_COMMUNITY_WIKI_PAGE_COLLECTION,
         record,
       })

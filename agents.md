@@ -19,6 +19,14 @@ PARA is a React Native mobile application built on the **AT Protocol (atproto)**
 
 ## 🛠️ Local Development & Environment Quirks
 
+### M8 login handoff (2026-10-05)
+
+PARA's explicit DID-bound native/web login candidate is implemented; read
+`docs/M8_LOGIN.md` and the canonical queue before re-auditing auth. The broker
+must deploy its paired migration/configuration first. Web bearer tokens stay
+in memory and reconnect after reload; native release storage requires
+SecureStore. Local tests are not real-provider or staging acceptance.
+
 ### React Query Notes
 
 - QV statistics must distinguish `BallotPrivacyUnavailable` / `FeatureNotEnabled`
@@ -26,8 +34,8 @@ PARA is a React Native mobile application built on the **AT Protocol (atproto)**
   Public delegation registration is not proof of effective electoral weight;
   never infer voting power from candidate delegation counts in the UI.
 
-- **Persistence:** In Para, persisted React Query entries are still keyed off `PERSISTED_QUERY_ROOT` in [src/state/queries/index.ts](/Users/mlv/Desktop/TH1/PARA/src/state/queries/index.ts). If a query should survive app restarts, its query key needs that root at index `0`, and it should usually pair with `PERSISTED_QUERY_GCTIME`.
-- **Refresh behavior:** For paginated feeds and similar infinite queries, prefer `truncateAndInvalidate` from [src/state/queries/util.ts](/Users/mlv/Desktop/TH1/PARA/src/state/queries/util.ts) over a bare `refetch()` when the goal is “reload from the top.” That trims cached pages back to the first page before invalidation so pull-to-refresh actually fetches fresh leading data.
+- **Persistence:** In Para, persisted React Query entries are still keyed off `PERSISTED_QUERY_ROOT` in [src/state/queries/index.ts](/Users/mlv/Desktop/Home/macserver/PARA/src/state/queries/index.ts). If a query should survive app restarts, its query key needs that root at index `0`, and it should usually pair with `PERSISTED_QUERY_GCTIME`.
+- **Refresh behavior:** For paginated feeds and similar infinite queries, prefer `truncateAndInvalidate` from [src/state/queries/util.ts](/Users/mlv/Desktop/Home/macserver/PARA/src/state/queries/util.ts) over a bare `refetch()` when the goal is “reload from the top.” That trims cached pages back to the first page before invalidation so pull-to-refresh actually fetches fresh leading data.
 - **Invalidation safety:** When a query key includes params, pass the full key shape during invalidation or truncation. Refresh bugs in feed surfaces often come from invalidating only the root feed descriptor while the live query also depends on `feedParams`.
 
 ### iOS Provisioning & App Clips
@@ -127,7 +135,7 @@ PARA is a React Native mobile application built on the **AT Protocol (atproto)**
 
 If you are a new agent taking over this workspace:
 
-0. **Read the quarter plan:** the current planning horizon lives in the backend repo at `../WatZappa/docs/QUARTER_PLAN_2026Q4.md` (pilot community launch, Sep–Nov 2026). PARA's committed items per sprint are listed there; anything not listed is explicitly deferred.
+0. **Read the current execution queue and evidence first:** `../WatZappa/docs/QUARTER_PLAN_2026Q4.md` is the canonical pilot plan (re-baselined 2026-10-05). The old September sprint calendar is superseded. Start with the next open item and inspect only relevant changes; do not repeat the whole code audit or rebuild completed OD-6/MAS/QVL/data paths. Distinguish implemented, tested, merged and deployed. On closure, remove the action from active roadmaps and retain commit/test/deployment evidence in the plan or a linked record. Private voting has separate governance gates.
    - **Map feature roadmap:** the in-repo map plan doc (`docs/MAP_QUARTER_PLAN_2027Q1.md`) was removed on 2026-09-21; map work (Dec 2026 – Feb 2027) remains deliberately outside the Q4 pilot plan until a new planning doc lands.
 1. **Check the Lexicons:** Before modifying API calls, inspect `src/lib/api/para-lexicons.ts` to understand the data schema.
 2. **Respect the Atoms:** Always use the `alf` design system. Do not write ad-hoc CSS/Styles unless absolutely necessary for custom animations.
@@ -162,7 +170,7 @@ Raise the full local demo with the current workspace split:
 - **Profile color**: Blue Ocean
 - **Commands**:
   ```bash
-  cd /Users/mlv/Desktop/TH1/PARA
+  cd /Users/mlv/Desktop/Home/macserver/PARA
   pnpm install
   pnpm web
   ```
@@ -188,7 +196,7 @@ Raise the full local demo with the current workspace split:
 - **Profile color**: Blue Ocean
 - **Commands**:
   ```bash
-  cd /Users/mlv/Desktop/TH1/WatZappa
+  cd /Users/mlv/Desktop/Home/macserver/WatZappa
   make nvm-setup
   make deps
   make build
@@ -206,7 +214,7 @@ Raise the full local demo with the current workspace split:
 
 - **Commands**:
   ```bash
-  cd /Users/mlv/Desktop/TH1/PARA
+  cd /Users/mlv/Desktop/Home/macserver/PARA
   pnpm seed:civic:apply --introspect-url http://127.0.0.1:2581
   ```
 - **Important**:
@@ -218,8 +226,14 @@ Raise the full local demo with the current workspace split:
     As the dev-env accounts it seeds eight image memes with threaded comments
     and up/down reactions, alice.test's personal civic tree, and the
     "Medio Ambiente y Clima" / "Movilidad Sostenible Norte" community trees
-    (cards go through submit → three approvals → relationships). Content lives
-    in `demo-content.json`; re-runs skip what exists.
+    (cards go through submit → three approvals → relationships). The shared fixtures and engine live in
+    `../WatZappa/packages/dev-env/assets/demo-content/`; the full backend demo
+    seed invokes the same engine automatically. Policy/matter posts and public
+    highlights use stable record keys; personal collections and community cards
+    include their real sources, books with author/year, and connections. Re-runs
+    skip existing tree entries. The persistent launcher also runs the civic-tree seed before reporting ready,
+    provisioning missing fixture accounts and demo communities with `SEED_PASSWORD`
+    (default `para-test-pw`) and reusing existing accounts, memberships and tree entries.
   - The seeded cabildeos carry specific flairs (e.g. `||#EmpresaPublicaDeAgua`) so the six fields in `FLAIR_GROUPS` are exercised. Live thematic-board cabildeos from other seeders use board URIs in `community` and never match VS entities like `p/Jalisco`.
 
 ### Terminal 6: PARA BSKYWEB FRONTEND
@@ -227,7 +241,7 @@ Raise the full local demo with the current workspace split:
 - **Profile color**: Blue Ocean
 - **Commands**:
   ```bash
-  cd /Users/mlv/Desktop/TH1/PARA/bskyweb
+  cd /Users/mlv/Desktop/Home/macserver/PARA/bskyweb
   go run ./cmd/bskyweb serve --appview-host https://appview.paramx.social.ngrok.pro --http-address :8100
   ```
 - **Important**:
@@ -285,12 +299,20 @@ of Node.js requires NODE_MODULE_VERSION 127.
 
 ### Current pinning
 
-- `PARA/.nvmrc` → `24.18.0`
-- `WatZappa/.nvmrc` → `24.18.0`
-- Root `.nvmrc` → `24`
-- `engines.node` → `>=22` (WatZappa) / `>=24.18.0` (PARA)
-- All subprojects should be installed with Node 24.18.0 so native
-  modules like `better-sqlite3` compile against the same ABI.
+**The two repos are on different Node majors on purpose. Do not "align" them.**
+
+| | `.nvmrc` | `engines.node` | `devEngines.runtime` | pnpm |
+| --- | --- | --- | --- | --- |
+| PARA | `24.18.0` | `>=24.18.0` | `^24.18.0`, `onFail: download` | `11.21.0` |
+| WatZappa | `22` | `>=22` | `22.x`, **`onFail: error`** | `11.11.0` |
+
+WatZappa's `22.x` with `onFail: error` means `pnpm` **refuses to run** there on
+any other major — it is not a floor, it is a pin. PARA's `onFail: download`
+fetches 24.18.0 instead of failing.
+
+So "install with one version everywhere" is wrong for this workspace: each
+subproject must be installed under the Node its own `.nvmrc` names, or
+`better-sqlite3` is built for the wrong ABI.
 
 ### Safeguards in place (WatZappa/package.json)
 
@@ -304,26 +326,44 @@ of Node.js requires NODE_MODULE_VERSION 127.
 
 - **Always `cd` into the subproject before `pnpm install`.**
   The `load-nvmrc` hook in `~/.zshrc` will auto-switch to the version
-  declared in that directory's `.nvmrc` (24.18.0 for PARA and WatZappa).
+  declared in that directory's `.nvmrc` — 24.18.0 in PARA, 22 in WatZappa.
   Don't run install from a parent directory — you'll build against the
   wrong Node.
 - If you ever see the `NODE_MODULE_VERSION` mismatch again, the fix is:
   ```bash
-  cd /Users/mlv/Desktop/TH1/WatZappa
+  cd /Users/mlv/Desktop/Home/macserver/WatZappa
   nvm use
   pnpm rebuild better-sqlite3
   ```
   Don't `pnpm install --force` unless the rebuild fails — it's slower
   and you risk re-introducing other inconsistencies.
 
-### Why not just upgrade to Node 24
+### Why WatZappa stays on 22 (checked against upstream, 2026-10-05)
 
-The user's default is Node 24, which would eliminate the auto-switch
-friction. But WatZappa's `dev-infra/with-redis-and-db.sh` and several
-Docker images assume Node 22, and bsky upstream's dev-env still pins 22.
-Keeping the project on 22 matches upstream; switching the user's
-default Node 24 → 22 via `nvm alias default 22` would be the cleanest
-long-term move if WatZappa maintenance becomes frequent.
+Upstream `bluesky-social/atproto` at `61c915a4b`:
+
+| | upstream/main | WatZappa |
+| --- | --- | --- |
+| `.nvmrc` | `24` | `22` |
+| `engines.node` | `>=22` | `>=22` |
+| `devEngines.runtime` | `>=22.12.0` (a floor) | `22.x` (pins the major) |
+| packageManager | `pnpm@11.11.0` | `pnpm@11.11.0` |
+
+So upstream's *floor* is 22.12 but it **develops on 24**; WatZappa narrowed
+that to the 22 major. The runtime floor claim still matches upstream — the
+`.nvmrc` and the `22.x` pin do not.
+
+**What the 22 pin cost, and how it was paid:** the ozone jest suites could not
+load at all. `packages/bsky` depends on `natural@8.1.1` (PARA's own addition for
+`discourse-nlp.ts`, with `keyword-extractor` and `stopword` — none of the three
+exist upstream), whose `SentimentAnalyzer` does `require('afinn-165')`, and
+`afinn-165` is ESM-only. Plain Node handles that from 22.12 on; jest 30 cannot
+before Node 24.9. Ozone's fixtures pull `@atproto/bsky` in through dev-env, so
+every ozone suite paid for an import none of them used.
+
+Fixed in WatZappa by loading `natural` on first use through `createRequire`
+rather than at module top level — not by moving the repo to 24. Keep it lazy;
+a plain top-level import there breaks the ozone suites again.
 
 ---
 
@@ -426,10 +466,11 @@ decision is made.
 
 ## 2026-07-13: pnpm 11.11.0 alignment and web dev build fix
 
-- **pnpm version:** Both `WatZappa/` and `PARA/` now declare
-  `packageManager: "pnpm@11.11.0"`, matching the upstream atproto workspace.
-  Run `corepack enable pnpm` so the corepack shim is used instead of any
-  Homebrew/global pnpm binary.
+- **pnpm version:** both repos declared `packageManager: "pnpm@11.11.0"` at the
+  time, matching the upstream atproto workspace. **Superseded:** PARA moved to
+  `pnpm@11.21.0` with the SDK 57 work (see the 2026-09-30 entry); WatZappa is
+  still on 11.11.0, as upstream is. Run `corepack enable pnpm` so the corepack
+  shim is used instead of any Homebrew/global pnpm binary.
 - **PARA web dev build (`pnpm web`):** Webpack now stubs out
   `react-native/Libraries/Core/setUpReactDevTools.js` via a
   `NormalModuleReplacementPlugin`, because the real module imports a private
@@ -752,7 +793,7 @@ pnpm test src/screens/Search/__tests__/searchParams.test.ts
 - Modules Core `57.0.20` already includes the native Worklets `runSync`
   changes, and React Native `0.86.3` includes the font-weight correction.
   Their rebased patches omit those upstream fixes and retain the other hunks.
-- Keep Reanimated `4.6.0` paired with Worklets `0.12.1`: Reanimated's
+- Keep Reanimated `4.6.0` paired with Worklets `0.12.2`: Reanimated's
   compatibility manifest requires Worklets `0.12.x`. Both packages are
   overridden in the workspace and excluded from Expo dependency validation,
   whose default Worklets `0.10.x` recommendation targets Reanimated `4.5.x`.
@@ -833,9 +874,21 @@ pnpm test src/screens/Search/__tests__/searchParams.test.ts
 
 - A board has no kind field. `quadrant` marks parties (`national` /
   `political`) and ninths (a compass id); `norte` / `sur` / `centro` are topic
-  communities, not geography. My Communities classifies with
-  `screens/Communities/communityGrouping.ts` into Parties / Ninths / States /
-  Other. Never infer a state from a name or description.
+  communities, not geography. `screens/Communities/communityGrouping.ts`
+  classifies boards into party / ninth / state / other. My Communities shows
+  only the saved party and ninth affiliations plus active geographic
+  memberships grouped by state. Never infer a state from a name or description.
+- Party and ninth choices in My Affiliations are independent. Updating or
+  removing one must preserve the other; do not save a party's suggested ninth
+  automatically or infer selection provenance from the presence of a party.
+  My Communities reads these same saved affiliations, not a party's compass
+  distribution.
+- A saved party/ninth must remain visible in My Communities even if no matching
+  board exists. Show its real affiliation with a community-unavailable message
+  and an affiliation-management action; never invent a board URI or member
+  count. The local demo currently has party boards but no ninth boards.
+  `CompassMini` highlights only an explicit ninth/precision-grid selection;
+  a party alone must not imply a selected ninth or default to the center.
 - A community's Mexican state is the board record's optional `region`
   (lexicon `com.para.community.board`, set at `createBoard`, indexed into
   `para_community_board.region`, returned on `listBoards` / `getBoard`). It is
@@ -848,18 +901,115 @@ pnpm test src/screens/Search/__tests__/searchParams.test.ts
   (`lib/constants/mexico.ts`) before filtering; the stored value is the
   `MEXICAN_STATES` spelling ("Ciudad de México"). The older `state` param
   filters governance lifecycle, not geography. WatZappa's dev-env seed
-  (`dev-env/src/seed/para-demo.ts`) creates four state communities (Jalisco,
-  Nuevo León, Oaxaca, Ciudad de México); the server lexicon directories
+  (`dev-env/src/seed/para-demo.ts`) creates only five unofficial communities
+  (three topic ones plus Vivienda Digna CDMX and Agua y Presas de Jalisco); the server lexicon directories
   `bsky/src/lexicon` and `pds/src/lexicon` are tracked and need `region` too.
 - `normalizeBoard` in `state/queries/community-boards.ts` copies fields by
   hand: a new view field is dropped until it is added there.
-- Ágora no longer hosts the lobbying dashboard. It links to the `Cabildeos`
-  screen (`/agora/cabildeos`, `screens/Cabildeos/CabildeosScreen.tsx`), which
-  holds the filters, trending shelf, regional shelf, party desk and the create
-  button.
+- Cabildeos lives under Community activities → Social, with no standalone
+  Ágora card. The dashboard's canonical path is
+  `/community-directory/social/cabildeos`; `/agora/cabildeos` remains an alias
+  for existing links. Its filters, trending shelf, regional shelf, party desk
+  and creation flow remain in `screens/Cabildeos/CabildeosScreen.tsx`.
+- CommunityDirectory's optional `category` route parameter preserves the
+  Social / Financial selection when navigating or sharing links. The Social
+  and All views link to the global Cabildeos dashboard. The activity explorer
+  starts with filters and has no "THE COMMONS" banner or summary counters.
+- Community Activities also preserves `communityUri` and `time` in its route.
+  Use exact board URIs, a searchable community picker, and Upcoming / Past /
+  Any time filters. Search covers the published title, description, location
+  and community name. Terminal statuses remain past; undated records appear
+  under Any time. Keep published data and request failures distinct.
+- Uniform activity rows show actual dates, status and financial-plan values.
+  The registration shortcut is available only for a selected community's
+  entitled organizers (`useCommunityOrganizers`); All activities asks which
+  category to register before entering the existing creation screen.
 
 ## 2026-10-01: Compact civic Tree workspace
 
 - Both Tree and Interactive Map expand via the focus-scoped workspace hook on desktop. Tree uses compact cards grouped by authored personal collections or community topic connections; community Tree also retains Argument outline. Interactive Map is the spatial graph view; do not add a redundant Network layout to Tree.
 - `features/civicTree/components/CivicTreeCards` shows actual relationships, respecting personal relation direction, in a selection inspector. Group headers express membership, never invented graph edges. Search and filters preserve community grouping from the complete graph. Selecting a connection follows its real endpoint; detail actions retain the existing edit, connect and community workflows.
 - Tree card lanes scroll independently inside the viewport; the inspector moves below the lanes on narrow screens. Full personal card details open in a dialog. Keep the compact collection shelf from growing vertically.
+
+## 2026-10-01: Web community card details
+
+- `NodeDetailSheet.web.tsx` opens a centered desktop dialog with content and real connections beside a voting/details sidebar. The native renderer retains its sheet layout. Following a connection selects its actual endpoint; Escape restores focus to the originating card.
+- Only policies use the horizontal -3…+3 position control. Other community cards reuse the post up/down arrows. `features/civicTree/cardVoting.ts` recognizes explicit policy types and JSON metadata `postType`/`kind: 'policy'`, including seeded article cards. Policy-themed topics and flairs do not make a card a policy.
+- Vote and relationship mutations display pending/error feedback. Do not display an unsaved vote as persisted; the current AppView card voting routes are still planned endpoints.
+
+## 2026-10-01: Community chat rooms have fixed purposes
+
+- There are no custom chat groups. A community's rooms come from the bridge by
+  `chamberMode`: unicameral gives only Sala principal; bicameral also gives
+  Cámara A, Cámara B and Consejo observador. Names and purposes live in
+  `lib/chat/roomPurposes.ts`.
+- `chamberMode` is a board-record field, not a `createBoard` parameter. The dev
+  seed sets it on the six official parties (Morena, PAN, PRI, PVEM, PT, MC) via
+  the same record update that activates them; every other seeded board stays
+  unicameral. Official parties, PRD and Independientes are always seeded; only
+  five unofficial communities are, and cabildeos of dropped ones are re-homed
+  (`rehome` in `para-demo.ts`).
+- The Messages header button opens `CommunityChats` (`/community-chats`,
+  `screens/Messages/CommunityChatsScreen.tsx`): joined communities grouped as
+  Partidos / Novenos / Estados / Otras, each with its rooms by purpose and a
+  "how to create a chat group" card. Chamber rooms are tappable only once the
+  bridge reports them. The Messages list itself stays flat; a tabbed/grouped
+  redesign and opening chats in the split-view pane were tried and rejected.
+- The web community chat screen has a room rail and a members panel
+  (`CommunityChatPanels.tsx`) fed by bridge REST and by `matrix-live-state`
+  messages from the iframe (unread counts and presence only).
+
+## 2026-10-04: Civic tree pieces shared by personal and community
+
+- Shared code lives in `features/civicTree/`; `personalCivicTree/` and
+  `communityCivicTree/` keep only what depends on their own data. Shared:
+  `map.ts` (grouping choices, civic fields, `arrangeCivicMapClusters`, camera
+  zoom), `components/MapViewport` (pan/zoom, native and web),
+  `CivicTreeHeader`, `CivicTreeViewSwitch` (Collections / Tree / Interactive
+  Map) and `CivicTreeFab`. Each tree still builds its own clusters and cards.
+- `CivicTreeFab` is phone-only; wider layouts keep header buttons. One action
+  runs directly; several open a labeled menu above the "+". Personal offers
+  Item and Collection (Collection only while there are none). Community offers
+  Add book (`AddBookDialog`; goes through community review). Both maps put
+  their zoom controls bottom-left on phones to leave the corner free.
+- The community tree no longer has Pulse or Obsidian-export buttons.
+  `CommunityPulseSheet`, `useCommunityCivicTreePulseQuery` and
+  `lib/civic-export/obsidian.ts` are now unused.
+
+## 2026-10-03: Web chat logs in to the homeserver itself (OIDC), not through the bridge
+
+- `POST /api/matrix-token` cannot serve this deployment and is not a bug to
+  fix: MAS owns logins, so Synapse serves no `/login` at all (404
+  `M_UNRECOGNIZED`, `m.login.application_service` included) and the bridge
+  answers `503 MATRIX_CLIENT_LOGIN_REQUIRED`. Do not re-point web chat at it,
+  and never let the bridge hand out an admin or appservice credential instead.
+- Web obtains its own session through the homeserver's authorization-code flow
+  in `features/encryptedChat/webOidc.ts` (discovery from
+  `/_matrix/client/v1/auth_metadata`, dynamic client registration per MSC2966,
+  PKCE). `lib/matrix/useMatrixWebSession.ts` replaces `useMatrixTokenQuery` on
+  web. The bridge is not in this path and never sees the token.
+- The MXID still comes from the bridge's `/api/matrix-identity`, which owns the
+  DID↔MXID mapping. The OP's `sub` is its own subject identifier — not an MXID.
+- The Matrix device id comes from the granted scope
+  (`urn:matrix:org.matrix.msc2967.client:device:…`, MSC2967). The OP chooses it;
+  a client that invents one attaches its crypto identity to a device the
+  homeserver does not know. That real id is what gets attested to the bridge —
+  `useChatBootstrap`'s install id is only a request.
+- The OP redirects to `/matrix-auth`. `App.web.tsx` completes the grant there
+  before the app renders, then navigates on; the router has no such route, and
+  `bskyweb` needs the path registered or the redirect 404s before any app code
+  runs.
+- MAS access tokens are short-lived and its refresh tokens rotate. The host
+  refreshes a restored session before building a client, and the iframe client
+  refreshes itself through `tokenRefreshFunction`, reporting the new pair back
+  as `matrix-token-refreshed` so the next page load does not replay a retired
+  token.
+- The web session lives in `localStorage`, so an XSS on this origin can steal a
+  chat session — the same exposure as any browser Matrix client, and why native
+  keeps its session in the OS keystore. Keep it to the chat session: no identity
+  key, no ballot key.
+- `lib/storage.ts` must never decide SecureStore is available from a successful
+  `require`. On web the require succeeds and only the native binding is missing,
+  so the first read throws `getValueWithKeyAsync is not a function`; web uses
+  `lib/storage.web.ts` (AsyncStorage, i.e. `localStorage` — not secure storage)
+  and native demotes to AsyncStorage on first failure.

@@ -3043,7 +3043,7 @@ msgstr "Ayer"
 #: src/view/com/composer/drafts/DraftsListDialog.tsx:81
 #: src/view/com/composer/drafts/DraftsListDialog.tsx:87
 msgid "Back"
-msgstr ""
+msgstr "Back"
 
 #: src/screens/Messages/Inbox.tsx:226
 msgid "Back to Chats"
@@ -3748,7 +3748,7 @@ msgstr "campaña electoral"
 #: src/view/com/composer/photos/EditImageDialog.web.tsx:53
 #: src/view/shell/desktop/LeftNav.tsx:239
 msgid "Cancel"
-msgstr ""
+msgstr "Cancel"
 
 #: src/screens/Data/CollectionDetailScreen.tsx:247
 msgid "Cancel editing"
@@ -6302,7 +6302,7 @@ msgstr "Describes the evidence, link, note, or topic"
 #: src/screens/Profile/Header/EditProfileDialog.tsx:360
 #: src/screens/Profile/Header/EditProfileDialog.tsx:367
 msgid "Description"
-msgstr ""
+msgstr "Description"
 
 #: src/components/SendErrorReportDialog.tsx:82
 msgid "Description (1000 characters max)"
@@ -6491,7 +6491,7 @@ msgstr "Disagree ({answer})"
 #: src/view/com/composer/drafts/DraftItem.tsx:259
 #: src/view/com/composer/drafts/DraftsButton.tsx:110
 msgid "Discard"
-msgstr ""
+msgstr "Discard"
 
 #: src/components/dialogs/lists/CreateOrEditListDialog.tsx:99
 #: src/screens/Profile/Header/EditProfileDialog.tsx:76
@@ -6730,7 +6730,7 @@ msgstr "Donation delivered"
 #: src/view/com/composer/videos/SubtitleDialog.tsx:189
 #: src/view/com/composer/videos/SubtitleDialog.tsx:200
 msgid "Done"
-msgstr ""
+msgstr "Done"
 
 #: src/components/dms/MessageItem.tsx:558
 msgid "Double tap or long press the message to add a reaction"
@@ -6915,13 +6915,13 @@ msgstr "Economy"
 #: src/screens/StarterPack/Wizard/index.tsx:327
 #: src/screens/StarterPack/Wizard/index.tsx:332
 msgid "Edit"
-msgstr ""
+msgstr "Edit"
 
 #: src/view/com/lists/ListMembers.tsx:215
 #: src/view/com/lists/ListMembers.tsx:220
 msgctxt "action"
 msgid "Edit"
-msgstr ""
+msgstr "Edit"
 
 #: src/view/com/util/UserAvatar.tsx:460
 #: src/view/com/util/UserBanner.tsx:122
@@ -10787,7 +10787,7 @@ msgstr "Karma"
 #: src/view/com/composer/Composer.tsx:1758
 #: src/view/com/composer/drafts/DraftsButton.tsx:108
 msgid "Keep editing"
-msgstr ""
+msgstr "Keep editing"
 
 #: src/components/activity-notifications/SubscribeProfileDialog.tsx:227
 msgid "Keep me posted"
@@ -12717,7 +12717,7 @@ msgstr ""
 #: src/screens/StarterPack/Wizard/index.tsx:389
 #: src/screens/StarterPack/Wizard/index.tsx:396
 msgid "Next"
-msgstr ""
+msgstr "Next"
 
 #: src/components/Lightbox/Lightbox.web.tsx:218
 msgid "Next image"
@@ -16339,7 +16339,7 @@ msgstr ""
 #: src/screens/Settings/Settings.tsx:695
 #: src/view/com/posts/PostFeedErrorMessage.tsx:241
 msgid "Remove"
-msgstr ""
+msgstr "Remove"
 
 #. placeholder {0}: pendingRemove.displayName
 #: src/screens/Settings/FollowedElementsSettings.tsx:201
@@ -23957,3 +23957,222 @@ msgstr "Zoom in"
 #: src/screens/Data/CompassScreen.tsx:1284
 msgid "Zoom out"
 msgstr "Zoom out"
+
+#: src/features/communityActivities/components/forms/FormBits.tsx:204
+msgid "{dateLabel}: time"
+msgstr "{dateLabel}: time"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:56
+#: src/features/communityActivities/components/ActivityReview.tsx:195
+#: src/features/communityActivities/components/CreationSteps.tsx:21
+msgid "Activity details"
+msgstr "Activity details"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:56
+#: src/features/communityActivities/components/ActivityReview.tsx:171
+#: src/features/communityActivities/components/CreationSteps.tsx:20
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:344
+msgid "Basics"
+msgstr "Basics"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:190
+msgid "Bring people together for a peaceful march. Plan the meeting point, route, and public logistics."
+msgstr "Bring people together for a peaceful march. Plan the meeting point, route, and public logistics."
+
+#: src/features/communityActivities/creation.ts:326
+msgid "Choose a valid date and time."
+msgstr "Choose a valid date and time."
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:274
+msgid "Choose an activity type"
+msgstr "Choose an activity type"
+
+#: src/features/communityActivities/creation.ts:616
+msgid "Choose an activity type."
+msgstr "Choose an activity type."
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:276
+msgid "Choose the type that best matches what your community will organize."
+msgstr "Choose the type that best matches what your community will organize."
+
+#: src/components/forms/TimeField/index.tsx:49
+msgid "Choose time"
+msgstr "Choose time"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:193
+msgid "Collect signatures supporting a bill, law, initiative, referendum, or petition."
+msgstr "Collect signatures supporting a bill, law, initiative, referendum, or petition."
+
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:44
+msgid "Decide where the money goes and whether percentages apply to all income or income after expenses. You will confirm these terms on review."
+msgstr "Decide where the money goes and whether percentages apply to all income or income after expenses. You will confirm these terms on review."
+
+#: src/features/communityActivities/creation.ts:478
+msgid "Describe the prize."
+msgstr "Describe the prize."
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:142
+msgid "Describe the tickets, prizes, draw schedule, and how a winner will be chosen."
+msgstr "Describe the tickets, prizes, draw schedule, and how a winner will be chosen."
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:117
+msgid "Describe what people will support, the signature target, and where and how they can sign."
+msgstr "Describe what people will support, the signature target, and where and how they can sign."
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:213
+msgid "Device local time"
+msgstr "Device local time"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:502
+msgid "Discard activity?"
+msgstr "Discard activity?"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:56
+msgid "Edit {0}"
+msgstr "Edit {0}"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:178
+#: src/features/communityActivities/components/ActivityReview.tsx:183
+msgid "Edit activity type"
+msgstr "Edit activity type"
+
+#: src/features/communityActivities/creation.ts:313
+msgid "Enter a complete http or https link."
+msgstr "Enter a complete http or https link."
+
+#: src/features/communityActivities/creation.ts:560
+msgid "Enter a percentage above zero and no more than 100%."
+msgstr "Enter a percentage above zero and no more than 100%."
+
+#: src/features/communityActivities/creation.ts:292
+msgid "Enter a whole number above zero."
+msgstr "Enter a whole number above zero."
+
+#: src/features/communityActivities/creation.ts:293
+msgid "Enter a whole number of zero or more."
+msgstr "Enter a whole number of zero or more."
+
+#: src/features/communityActivities/creation.ts:302
+msgid "Enter an amount of zero or more with up to 2 decimals."
+msgstr "Enter an amount of zero or more with up to 2 decimals."
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:268
+msgid "Explain the purpose, who benefits, and how people can contribute."
+msgstr "Explain the purpose, who benefits, and how people can contribute."
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:196
+msgid "Gather the community around an agenda, in person, online, or both."
+msgstr "Gather the community around an agenda, in person, online, or both."
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:346
+msgid "Give the activity a name, schedule, and place so people know what to expect."
+msgstr "Give the activity a name, schedule, and place so people know what to expect."
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:156
+msgid "Last day to collect signatures. The activity end describes the event schedule."
+msgstr "Last day to collect signatures. The activity end describes the event schedule."
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:256
+msgid "Leave these fields empty when scheduling. Use them only if you already have a record of the conversation."
+msgstr "Leave these fields empty when scheduling. Use them only if you already have a record of the conversation."
+
+#: src/features/communityActivities/creation.ts:547
+msgid "List between 1 and 10 destinations."
+msgstr "List between 1 and 10 destinations."
+
+#: src/features/communityActivities/creation.ts:471
+msgid "List between 1 and 20 prizes."
+msgstr "List between 1 and 20 prizes."
+
+#: src/features/communityActivities/creation.ts:447
+msgid "List between 1 and 50 items."
+msgstr "List between 1 and 50 items."
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:254
+msgid "Meeting documentation (optional)"
+msgstr "Meeting documentation (optional)"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:56
+#: src/features/communityActivities/components/ActivityReview.tsx:203
+#: src/features/communityActivities/components/CreationSteps.tsx:22
+#: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:42
+msgid "Money plan"
+msgstr "Money plan"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:205
+msgid "Offer tickets for a prize draw. State the prizes, draw method, and money destinations."
+msgstr "Offer tickets for a prize draw. State the prizes, draw method, and money destinations."
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:199
+msgid "Organize a conversation and optionally document its participants, arguments, and outcome."
+msgstr "Organize a conversation and optionally document its participants, arguments, and outcome."
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:461
+msgid "Publishing activity…"
+msgstr "Publishing activity…"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:157
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:257
+msgid "Raffle permit number (optional)"
+msgstr "Raffle permit number (optional)"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:208
+msgid "Raise contributions for a stated purpose and explain how the money will be used."
+msgstr "Raise contributions for a stated purpose and explain how the money will be used."
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:83
+msgid "Reference for a notice or authorization, if applicable to your activity."
+msgstr "Reference for a notice or authorization, if applicable to your activity."
+
+#: src/features/communityActivities/components/forms/EconomicDetailsFields.tsx:255
+msgid "Reference for an authorization, if applicable to your raffle."
+msgstr "Reference for an authorization, if applicable to your raffle."
+
+#: src/features/communityActivities/components/CreationSteps.tsx:23
+msgid "Review"
+msgstr "Review"
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:202
+msgid "Sell items at agreed prices, with a public plan for where the money goes."
+msgstr "Sell items at agreed prices, with a public plan for where the money goes."
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:230
+msgid "Set the conversation format and how to join. Meeting documentation is optional when scheduling."
+msgstr "Set the conversation format and how to join. Meeting documentation is optional when scheduling."
+
+#: src/features/communityActivities/components/forms/SocialDetailsFields.tsx:186
+msgid "Set the meeting format, how to join, the agenda, and any quorum needed."
+msgstr "Set the meeting format, how to join, the agenda, and any quorum needed."
+
+#: src/features/communityActivities/components/CreationSteps.tsx:34
+msgid "Step {index} of {total}: {name}"
+msgstr "Step {index} of {total}: {name}"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:139
+msgid "Stock: {0}"
+msgstr "Stock: {0}"
+
+#: src/features/communityActivities/components/ActivityReview.tsx:205
+msgid "These prices and money destinations become the committed terms of your activity. Review them before publishing."
+msgstr "These prices and money destinations become the committed terms of your activity. Review them before publishing."
+
+#: src/features/communityActivities/creation.ts:284
+msgid "This text is too long. Shorten it."
+msgstr "This text is too long. Shorten it."
+
+#: src/features/communityActivities/components/ActivityReview.tsx:191
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:381
+msgid "Times use your device timezone: {timezone}."
+msgstr "Times use your device timezone: {timezone}."
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:400
+msgid "Use a 3-letter code such as MXN. All prices and ledger amounts use this currency."
+msgstr "Use a 3-letter code such as MXN. All prices and ledger amounts use this currency."
+
+#: src/features/communityActivities/creation.ts:319
+msgid "Use no more than {maxItems} entries."
+msgstr "Use no more than {maxItems} entries."
+
+#: src/screens/Communities/CreateCommunityActivityScreen.tsx:504
+msgid "Your changes will be lost. This activity has not been published."
+msgstr "Your changes will be lost. This activity has not been published."

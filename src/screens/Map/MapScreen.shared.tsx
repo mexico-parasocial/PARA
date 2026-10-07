@@ -61,13 +61,10 @@ import {
 import {Button, ButtonIcon} from '#/components/Button'
 import {Filter_Stroke2_Corner0_Rounded as FilterIcon} from '#/components/icons/Filter'
 import {Menu_Stroke2_Corner0_Rounded as MenuIcon} from '#/components/icons/Menu'
-import {PinLocation_Stroke2_Corner0_Rounded as PinLocationIcon} from '#/components/icons/PinLocation'
 import {Header, Screen} from '#/components/Layout'
 import {BUTTON_VISUAL_ALIGNMENT_OFFSET} from '#/components/Layout/const'
 import {Loader} from '#/components/Loader'
-import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
-import {useCoarseLocation, useDeviceGeolocationApi} from '#/geolocation'
 import {
   BigCitiesDataOverlay,
   DistrictsDataOverlay,
@@ -360,48 +357,6 @@ function getRouteSelectionKey(
   ].join('|')
 }
 
-const MEXICO_REGION_CODE_TO_STATE: Record<string, string> = {
-  AGU: 'Aguascalientes',
-  BCN: 'Baja California',
-  BCS: 'Baja California Sur',
-  CAM: 'Campeche',
-  CHP: 'Chiapas',
-  CHH: 'Chihuahua',
-  CMX: 'Ciudad de México',
-  COA: 'Coahuila',
-  COL: 'Colima',
-  DUR: 'Durango',
-  GUA: 'Guanajuato',
-  GRO: 'Guerrero',
-  HID: 'Hidalgo',
-  JAL: 'Jalisco',
-  MEX: 'Estado de México',
-  MIC: 'Michoacán',
-  MOR: 'Morelos',
-  NAY: 'Nayarit',
-  NLE: 'Nuevo León',
-  OAX: 'Oaxaca',
-  PUE: 'Puebla',
-  QUE: 'Querétaro',
-  ROO: 'Quintana Roo',
-  SLP: 'San Luis Potosí',
-  SIN: 'Sinaloa',
-  SON: 'Sonora',
-  TAB: 'Tabasco',
-  TAM: 'Tamaulipas',
-  TLA: 'Tlaxcala',
-  VER: 'Veracruz',
-  YUC: 'Yucatán',
-  ZAC: 'Zacatecas',
-}
-
-function normalizeLocatedMexicoState(regionCode: string) {
-  const code = regionCode.trim().toUpperCase().replace(/^MX-/, '')
-  return normalizeMexicoStateName(
-    MEXICO_REGION_CODE_TO_STATE[code] || regionCode,
-  )
-}
-
 function getLayerFillColor({
   activeLayer,
   civicHeatOn,
@@ -530,8 +485,6 @@ export function MapScreenImpl({
   const insets = useSafeAreaInsets()
   const mapRef = useRef<MapViewRef | null>(null)
   const lastAppliedRouteSelection = useRef('')
-  const {refetch: refetchCoarseLocation} = useCoarseLocation()
-  const {setDeviceGeolocation} = useDeviceGeolocationApi()
   const {data: cabildeos} = useCabildeosQuery()
   const lastTapRef = useRef<number>(0)
 
@@ -567,7 +520,6 @@ export function MapScreenImpl({
   const [recentSearchResults, setRecentSearchResults] = useState<
     SearchResult[]
   >(() => getMapSearchHistory())
-  const [isLocating, setIsLocating] = useState(false)
   const [mexicoGeoJSON, setMexicoGeoJSON] =
     useState<unknown>(MexicoGeoJSONNative)
 
@@ -637,6 +589,13 @@ export function MapScreenImpl({
       stateName: selectedState.name,
     }))
   }, [selectedState])
+
+  // Browsing a state's city list does not add pins. Only the city the viewer
+  // chooses is shown, using the same selection for native and web providers.
+  const visibleCityMarkers = useMemo(() => {
+    if (activeLayer !== 'cities' || !showCities || !selectedCityName) return []
+    return selectedStateCities.filter(city => city.name === selectedCityName)
+  }, [activeLayer, selectedCityName, selectedStateCities, showCities])
 
   const setMapRouteParams = useCallback(
     (params: {
@@ -903,78 +862,6 @@ export function MapScreenImpl({
     [activeLayer, focusCity, focusState, rememberSearchResult],
   )
 
-  const handleLocateMe = useCallback(async () => {
-    if (isLocating) return
-
-    setIsLocating(true)
-
-    try {
-      const {data, error} = await refetchCoarseLocation()
-      const location = data
-
-      if (error || !location) {
-        Toast.show(
-          translate(
-            msg`Unable to access location. Enable location services in system settings to use Near me.`,
-          ),
-          {type: 'error'},
-        )
-        return
-      }
-
-      if (location.countryCode) {
-        setDeviceGeolocation({
-          countryCode: location.countryCode,
-          regionCode: location.regionCode,
-        })
-      }
-
-      if (location.countryCode && location.countryCode.toUpperCase() !== 'MX') {
-        Toast.show(
-          translate(msg`Near me is currently available for Mexico only.`),
-          {type: 'error'},
-        )
-        return
-      }
-
-      if (!location.regionCode) {
-        Toast.show(
-          translate(msg`We could not resolve your state from this location.`),
-          {type: 'error'},
-        )
-        return
-      }
-
-      const state = stateFeaturesByName.get(
-        normalizeLocatedMexicoState(location.regionCode),
-      )
-
-      if (!state) {
-        Toast.show(
-          translate(msg`We could not match your location to a mapped state.`),
-          {type: 'error'},
-        )
-        return
-      }
-
-      focusState(state.name, {openLayer: 'states'})
-      Toast.show(translate(msg`Centered on ${state.name}`))
-    } catch {
-      Toast.show(translate(msg`Unable to resolve your location right now.`), {
-        type: 'error',
-      })
-    } finally {
-      setIsLocating(false)
-    }
-  }, [
-    focusState,
-    isLocating,
-    refetchCoarseLocation,
-    setDeviceGeolocation,
-    stateFeaturesByName,
-    translate,
-  ])
-
   const handleSelectDistrict = useCallback(
     (districtId: number) => {
       setSelectedDistrictId(districtId)
@@ -1155,7 +1042,7 @@ export function MapScreenImpl({
   const rawCityMarkers = useMemo(() => {
     if (!MarkerComponent || !showCities || !selectedState) return []
 
-    return selectedStateCities.map(city => {
+    return visibleCityMarkers.map(city => {
       const partyColor = getPartyColor(city.dominantParty)
       const isSelected = selectedCityName === city.name
 
@@ -1204,7 +1091,7 @@ export function MapScreenImpl({
     focusCity,
     selectedCityName,
     selectedState,
-    selectedStateCities,
+    visibleCityMarkers,
     showCities,
     t,
   ])
@@ -1222,46 +1109,6 @@ export function MapScreenImpl({
 
     return rawCityMarkers
   }, [MarkerClustererComponent, mapRegion, rawCityMarkers])
-
-  /**
-   * State centroid markers act as tap proxies so users can select states
-   * without relying on polygon tap detection (which is unreliable on web
-   * and expensive on native).
-   */
-  const renderedStateCentroidMarkers = useMemo(() => {
-    if (!MarkerComponent || activeLayer !== 'states') return null
-
-    return preparedStateFeatures.map(feature => {
-      const isSelected = selectedState?.name === feature.name
-
-      return (
-        <MarkerComponent
-          key={`centroid:state:${feature.normalizedName}`}
-          coordinate={feature.centroid}
-          anchor={{x: 0.5, y: 0.5}}
-          tappable
-          tracksViewChanges={false}
-          zIndex={isSelected ? 13 : 2}
-          onPress={() => {
-            lastTapRef.current = Date.now()
-            focusState(feature.name, {openLayer: activeLayer})
-          }}>
-          <View
-            style={[
-              styles.stateCentroidMarker,
-              isSelected && styles.stateCentroidMarkerSelected,
-            ]}
-          />
-        </MarkerComponent>
-      )
-    })
-  }, [
-    MarkerComponent,
-    activeLayer,
-    preparedStateFeatures,
-    selectedState?.name,
-    focusState,
-  ])
 
   /**
    * District centroid markers act as tap proxies. Each district gets a
@@ -1408,7 +1255,7 @@ export function MapScreenImpl({
   // Data arrays for MapLibre imperative rendering (web)
   const cityMarkersData = useMemo(() => {
     if (!showCities || !selectedState) return []
-    return selectedStateCities.map(city => ({
+    return visibleCityMarkers.map(city => ({
       name: city.name,
       stateName: city.stateName,
       coordinate: city.coordinate,
@@ -1422,7 +1269,7 @@ export function MapScreenImpl({
   }, [
     showCities,
     selectedState,
-    selectedStateCities,
+    visibleCityMarkers,
     selectedCityName,
     focusCity,
   ])
@@ -1512,7 +1359,6 @@ export function MapScreenImpl({
         }}>
         {renderedPolygons}
         {renderedDistrictPolygons}
-        {renderedStateCentroidMarkers}
         {renderedDistrictCentroidMarkers}
         {renderedCityMarkers}
         {civicMarkers}
@@ -1566,27 +1412,6 @@ export function MapScreenImpl({
         )}
 
       <View style={[a.absolute, {right: 20, top: 20}, a.gap_sm, {zIndex: 20}]}>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={translate(msg`Find places near me`)}
-          accessibilityHint={translate(
-            msg`Requests your device location and centers the map on your state.`,
-          )}
-          disabled={isLocating}
-          onPress={() => {
-            void handleLocateMe()
-          }}
-          style={[
-            styles.floatingButton(t),
-            isLocating ? {opacity: 0.72} : null,
-          ]}>
-          {isLocating ? (
-            <Loader size="sm" />
-          ) : (
-            <PinLocationIcon width={20} height={20} fill={t.atoms.text.color} />
-          )}
-        </TouchableOpacity>
-
         <TouchableOpacity
           accessibilityRole="button"
           accessibilityLabel={translate(msg`Reset map view`)}
@@ -1704,7 +1529,11 @@ export function MapScreenImpl({
         selectedState={selectedState}
         showCities={showCities}
         selectedCityName={selectedCityName}
+        onSelectCity={cityName => {
+          if (selectedState) focusCity(selectedState.name, cityName)
+        }}
         onClose={() => {
+          setActiveLayer('states')
           setShowCities(false)
           setSelectedCityName(null)
           if (selectedState) {
@@ -1868,26 +1697,40 @@ export function MapScreenImpl({
               </View>
             )}
 
-            <MapSearchControls
-              searchExpanded={searchExpanded}
-              setSearchExpanded={setSearchExpanded}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              searchResults={searchResults}
-              recentSearchResults={recentSearchResults}
-              onSelect={handleSearchSelect}
-            />
-
-            {/* The expanded search drops a results list over this corner. */}
-            {!searchExpanded && (
-              <MapLayersPanel
-                activeLayer={activeLayer}
-                onSelectLayer={handleSelectLayer}
-                civicHeatOn={civicHeatOn}
-                onToggleCivicHeat={toggleCivicHeat}
-                civicPointCount={civicPointCount}
+            {/* Keep phone controls in normal flow so their measured heights
+                cannot put search on top of the layer selector. */}
+            <View
+              pointerEvents="box-none"
+              style={
+                !gtMobile && [
+                  a.absolute,
+                  a.gap_md,
+                  {top: 20, left: 16, right: 76, zIndex: 30},
+                ]
+              }>
+              <MapSearchControls
+                inline={!gtMobile}
+                searchExpanded={searchExpanded}
+                setSearchExpanded={setSearchExpanded}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                searchResults={searchResults}
+                recentSearchResults={recentSearchResults}
+                onSelect={handleSearchSelect}
               />
-            )}
+
+              {/* The expanded search drops a results list over this corner. */}
+              {!searchExpanded && (
+                <MapLayersPanel
+                  inline={!gtMobile}
+                  activeLayer={activeLayer}
+                  onSelectLayer={handleSelectLayer}
+                  civicHeatOn={civicHeatOn}
+                  onToggleCivicHeat={toggleCivicHeat}
+                  civicPointCount={civicPointCount}
+                />
+              )}
+            </View>
 
             {floatingControls}
             {mobileOverlays}
@@ -1986,15 +1829,6 @@ const styles = {
     shadowOffset: {width: 0, height: 3},
   },
   cityMarkerLabel: [a.mt_xs, a.px_sm, {paddingVertical: 3, borderRadius: 999}],
-  stateCentroidMarker: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'transparent',
-  },
-  stateCentroidMarkerSelected: {
-    backgroundColor: 'rgba(255, 90, 54, 0.12)',
-  },
   districtCentroidMarker: {
     width: 10,
     height: 10,

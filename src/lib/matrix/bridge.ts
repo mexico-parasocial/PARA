@@ -3,6 +3,7 @@ import {
   getM8AccessToken,
   refreshM8AccessToken,
 } from '#/lib/im8/api'
+import {m8CredentialRevision} from '#/lib/im8/credentials'
 
 export const MATRIX_BRIDGE_API_URL =
   process.env.EXPO_PUBLIC_MATRIX_BRIDGE_URL || 'https://bridge.para.social'
@@ -34,8 +35,9 @@ export async function matrixBridgeFetch(
   path: string,
   options: RequestInit = {},
 ): Promise<Response> {
+  const version = m8CredentialRevision()
   const token = await getM8AccessToken()
-  if (!token) {
+  if (!token || version !== m8CredentialRevision()) {
     // Every bridge endpoint requires an M8 bearer token; asking without one
     // only produces a 401, so fail locally and leave the M8 state alone.
     throw new BridgeAuthError(401, M8_SESSION_REQUIRED)
@@ -53,14 +55,19 @@ export async function matrixBridgeFetch(
     })
 
   const res = await request()
+  if (version !== m8CredentialRevision())
+    throw new BridgeAuthError(401, M8_SESSION_REQUIRED)
   if (res.status === 401) {
     const refreshed = await refreshM8AccessToken()
+    if (version !== m8CredentialRevision())
+      throw new BridgeAuthError(401, M8_SESSION_REQUIRED)
     if (refreshed) {
       const newToken = await getM8AccessToken()
-      if (newToken) {
+      if (newToken && version === m8CredentialRevision()) {
         headers.Authorization = `Bearer ${newToken}`
+        return request()
       }
-      return request()
+      throw new BridgeAuthError(401, M8_SESSION_REQUIRED)
     }
     // The token was rejected and cannot be refreshed: drop it so the next
     // login (or useEnsureM8Session) can mint a fresh one.

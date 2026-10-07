@@ -24,7 +24,12 @@ const card = (over: Partial<CommunityCivicTreeCard> = {}) => ({
   ...over,
 })
 
-const contribution = (over: Partial<CommunityTreeContribution> = {}) => ({
+// Annotated, not inferred: `status` is a union on CommunityTreeContribution, and
+// an unannotated literal widens 'pending' to string, which the consumers then
+// refuse.
+const contribution = (
+  over: Partial<CommunityTreeContribution> = {},
+): CommunityTreeContribution => ({
   id: 'p1',
   community_uri: 'at://did:plc:a/com.para.community.board/x',
   author_did: 'did:plc:a',

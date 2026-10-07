@@ -510,6 +510,8 @@ export type M8Tokens = {
 export type M8SessionStartResponse = {
   attempt: {
     attemptId?: string
+    returnTo?: string | null
+    exchangeChallenge?: string | null
     sessionId?: string
     identifier?: string
     did?: string
@@ -524,4 +526,12 @@ export type M8SessionStartResponse = {
   session: ProofBrokerSession | null
   tokens: M8Tokens | null
   oauthUrl?: string | null
+}
+
+export type M8SessionExchangeResponse = {
+  authenticated: true
+  attemptId: string
+  sessionId: string
+  session: ProofBrokerSession
+  tokens: M8Tokens
 }

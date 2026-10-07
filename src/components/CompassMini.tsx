@@ -1,4 +1,4 @@
-import {StyleSheet, TouchableOpacity, View} from 'react-native'
+import {Pressable, StyleSheet, TouchableOpacity, View} from 'react-native'
 import {LinearGradient} from 'expo-linear-gradient'
 import {Trans} from '@lingui/react/macro'
 
@@ -8,7 +8,6 @@ import {
   COMPASS_GRID_ROWS,
   COMPASS_POSITION_IDS,
 } from '#/lib/compass/compassColors'
-import {getPartyNinthId} from '#/lib/compass/party-distributions'
 import {
   COMPASS_ID_TO_NINTH_NAME,
   NINTH_NAME_TO_COMPASS_ID,
@@ -41,32 +40,23 @@ function getExplicitNinthId(
   return null
 }
 
-function getDisplayedNinthId(affiliations: PoliticalAffiliation[]): string {
-  const explicit = getExplicitNinthId(affiliations)
-  if (explicit) return explicit
-  // Fallback: derive from party's predominant ninth
-  const party = affiliations.find(a => a.type === 'party')
-  if (party) {
-    return getPartyNinthId(party.id) || 'center'
-  }
-  // Default to center when no affiliations are set
-  return 'center'
-}
-
 export function CompassMini({
   affiliations,
   onPress,
+  onSelectNinth,
   size = 78,
   compact = false,
 }: {
   affiliations: PoliticalAffiliation[]
   onPress?: () => void
+  /** When set, each cell is tappable and selects that ninth in place. */
+  onSelectNinth?: (compassId: string) => void
   size?: number
   compact?: boolean
 }) {
   const t = useTheme()
   const explicitNinthId = getExplicitNinthId(affiliations)
-  const displayedNinthId = getDisplayedNinthId(affiliations)
+  const displayedNinthId = explicitNinthId
   const partyAffiliations = affiliations.filter(a => a.type === 'party')
   const hasPosition = explicitNinthId !== null
 
@@ -78,8 +68,19 @@ export function CompassMini({
             const isActive = positionId === displayedNinthId
             const solidColor = COMPASS_COLORS[positionId]
             const gradient = COMPASS_CROSS_GRADIENTS[positionId]
+            const CellWrapper = onSelectNinth ? Pressable : View
+            const cellProps = onSelectNinth
+              ? {
+                  accessibilityRole: 'button' as const,
+                  accessibilityLabel:
+                    COMPASS_ID_TO_NINTH_NAME[positionId] ?? positionId,
+                  accessibilityState: {selected: isActive && hasPosition},
+                  onPress: () => onSelectNinth(positionId),
+                }
+              : {}
             return (
-              <View
+              <CellWrapper
+                {...cellProps}
                 key={colIdx}
                 style={[
                   styles.cell,
@@ -127,7 +128,7 @@ export function CompassMini({
                     />
                   </View>
                 )}
-              </View>
+              </CellWrapper>
             )
           })}
         </View>
@@ -163,6 +164,25 @@ export function CompassMini({
     if (party) return party.name
     return 'Set position'
   })()
+
+  if (compact && onSelectNinth) {
+    return (
+      <View style={[a.align_center, a.gap_xs]}>
+        {grid}
+        {partyDots}
+        <Text
+          style={[
+            a.text_xs,
+            a.font_bold,
+            t.atoms.text_contrast_medium,
+            {fontSize: 9, marginTop: 2},
+          ]}
+          numberOfLines={1}>
+          {positionLabel}
+        </Text>
+      </View>
+    )
+  }
 
   if (compact) {
     return (

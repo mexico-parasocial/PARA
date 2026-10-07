@@ -77,7 +77,9 @@ describe('community organizers', () => {
         {did: 'did:plc:moderator', role: 'moderator'},
         {did: 'did:plc:member', role: 'member'},
       ],
-    } as unknown as Parameters<typeof getCommunityOrganizerDids>[0]['governance']
+    } as unknown as Parameters<
+      typeof getCommunityOrganizerDids
+    >[0]['governance']
 
     expect(
       getCommunityOrganizerDids({governance, creatorDid: 'did:plc:creator'}),

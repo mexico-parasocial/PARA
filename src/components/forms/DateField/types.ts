@@ -15,6 +15,8 @@ export type DateFieldProps = {
    * scroll tick.
    */
   onConfirm?: (date: string) => void
+  onBlur?: () => void
+  disabled?: boolean
   /**
    * Shown on native when value is empty. Web uses the browser's native date
    * placeholder.

@@ -5,14 +5,14 @@ import {
   getCollectionColor,
   RELATIONSHIP_COLORS,
 } from '#/features/civicTree/colors'
-import {type GraphData, type GraphNode} from '#/features/civicTree/types'
 import {
   arrangeCivicMapClusters,
   CIVIC_FIELDS,
   civicFieldForItem,
   type MapCluster,
   type MapGrouping,
-} from '#/features/personalCivicTree/map'
+} from '#/features/civicTree/map'
+import {type GraphData, type GraphNode} from '#/features/civicTree/types'
 import {flairIdOf} from './topics'
 
 export type CommunityCollection = {

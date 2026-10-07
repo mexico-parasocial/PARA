@@ -106,8 +106,25 @@ export function Content({
   )
 }
 
-export function Slot({children}: {children?: React.ReactNode}) {
-  return <View style={[a.z_50, {width: HEADER_SLOT_SIZE}]}>{children}</View>
+export function Slot({
+  children,
+  fitContent,
+}: {
+  children?: React.ReactNode
+  /** Let the slot grow to fit its content (e.g. a text pill button). */
+  fitContent?: boolean
+}) {
+  return (
+    <View
+      style={[
+        a.z_50,
+        fitContent
+          ? {minWidth: HEADER_SLOT_SIZE, alignItems: 'flex-end'}
+          : {width: HEADER_SLOT_SIZE},
+      ]}>
+      {children}
+    </View>
+  )
 }
 
 export function BackButton({

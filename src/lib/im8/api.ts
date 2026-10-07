@@ -1,6 +1,13 @@
 import {Platform} from 'react-native'
 
-import * as Storage from '#/lib/storage'
+import {
+  clearM8Credentials,
+  detachM8Credentials,
+  getBoundM8AccessToken,
+  m8CredentialRevision,
+  readM8Credentials,
+  storeM8Credentials,
+} from './credentials'
 import {
   type AnonymousGermConnection,
   type AnonymousIdentityCard,
@@ -19,7 +26,9 @@ import {
   type M8PajareoJurisdiction,
   type M8PajareoResponse,
   type M8PajareoSubject,
+  type M8SessionExchangeResponse,
   type M8SessionStartResponse,
+  type M8Tokens,
   type ProofBrokerGrant,
   type ProofBrokerProofArtifact,
   type ProofBrokerSession,
@@ -39,33 +48,32 @@ export const M8_BROKER_URL =
 export const M8_NOT_CONFIGURED_MESSAGE =
   'm8 identity broker is not configured in this build (set EXPO_PUBLIC_M8_BROKER_URL).'
 
-const API_BASE = `${M8_BROKER_URL}/v1`
+const API_BASE = `${M8_BROKER_URL.replace(/\/+$/, '')}/v1`
 
-export async function getM8AccessToken(): Promise<string | null> {
-  return Storage.getItemAsync('m8_access_token')
+function assertBrokerConfigured() {
+  if (!M8_BROKER_URL) throw new Error(M8_NOT_CONFIGURED_MESSAGE)
+  const url = new URL(M8_BROKER_URL)
+  if (
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash ||
+    (url.protocol !== 'https:' && !(__DEV__ && url.protocol === 'http:'))
+  )
+    throw new Error('M8_BROKER_URL_INVALID')
 }
 
-async function setTokens(accessToken: string, refreshToken: string) {
-  await Storage.setItemAsync('m8_access_token', accessToken)
-  await Storage.setItemAsync('m8_refresh_token', refreshToken)
-}
-
-async function clearTokens() {
-  await Storage.deleteItemAsync('m8_access_token')
-  await Storage.deleteItemAsync('m8_refresh_token')
-  await Storage.deleteItemAsync('m8_session_id')
-  // Mirrors M8_SESSION_DID_KEY in ensureSession.ts.
-  await Storage.deleteItemAsync('m8_session_did')
-}
+export const getM8AccessToken = getBoundM8AccessToken
+let refreshing: Promise<boolean> | undefined
 
 export async function m8Fetch(
   path: string,
   options: RequestInit = {},
 ): Promise<Response> {
-  if (!M8_BROKER_URL) {
-    throw new Error(M8_NOT_CONFIGURED_MESSAGE)
-  }
+  assertBrokerConfigured()
+  const version = m8CredentialRevision()
   const token = await getM8AccessToken()
+  if (version !== m8CredentialRevision()) throw new Error('M8_ACCOUNT_CHANGED')
   const headers: Record<string, string> = {
     'content-type': 'application/json',
     ...(token ? {authorization: `Bearer ${token}`} : {}),
@@ -73,12 +81,14 @@ export async function m8Fetch(
   }
 
   const res = await fetch(`${API_BASE}${path}`, {...options, headers})
+  if (version !== m8CredentialRevision()) throw new Error('M8_ACCOUNT_CHANGED')
 
-  if (res.status === 401) {
+  if (res.status === 401 && version === m8CredentialRevision()) {
     // Attempt refresh
     const refreshed = await refreshM8AccessToken()
-    if (refreshed) {
+    if (refreshed && version === m8CredentialRevision()) {
       const newToken = await getM8AccessToken()
+      if (!newToken) throw new Error('M8_ACCOUNT_CHANGED')
       headers.authorization = `Bearer ${newToken}`
       return fetch(`${API_BASE}${path}`, {...options, headers})
     }
@@ -87,23 +97,42 @@ export async function m8Fetch(
   return res
 }
 
-export async function refreshM8AccessToken(): Promise<boolean> {
-  const refreshToken = await Storage.getItemAsync('m8_refresh_token')
-  if (!refreshToken) return false
-
-  try {
-    const res = await fetch(`${API_BASE}/sessions/refresh`, {
-      method: 'POST',
-      headers: {'content-type': 'application/json'},
-      body: JSON.stringify({refreshToken}),
-    })
-    if (!res.ok) return false
-    const body = (await res.json()) as {accessToken: string; expiresIn: number}
-    await Storage.setItemAsync('m8_access_token', body.accessToken)
-    return true
-  } catch {
-    return false
-  }
+export function refreshM8AccessToken(): Promise<boolean> {
+  if (refreshing) return refreshing
+  const work = (async () => {
+    const credentials = await readM8Credentials()
+    if (
+      !credentials.refreshToken ||
+      !credentials.did ||
+      !credentials.sessionId ||
+      !M8_BROKER_URL
+    )
+      return false
+    try {
+      assertBrokerConfigured()
+      const res = await fetch(`${API_BASE}/sessions/refresh`, {
+        method: 'POST',
+        headers: {'content-type': 'application/json'},
+        body: JSON.stringify({refreshToken: credentials.refreshToken}),
+      })
+      if (!res.ok) return false
+      const tokens = (await res.json()) as M8Tokens
+      await storeM8Credentials(
+        credentials.did,
+        credentials.sessionId,
+        tokens,
+        credentials.version,
+      )
+      return true
+    } catch {
+      return false
+    }
+  })()
+  refreshing = work
+  void work.finally(() => {
+    if (refreshing === work) refreshing = undefined
+  })
+  return work
 }
 
 /**
@@ -122,70 +151,57 @@ export async function postDevIneEnroll(): Promise<boolean> {
   return true
 }
 
-/**
- * Where m8 sends the browser back after OAuth, carrying a single-use
- * `exchange_code` (never the tokens). It must be on mubEZ's
- * OAUTH_RETURN_TO_ALLOWLIST, and it matches the app scheme in app.config.js.
- */
-export const M8_OAUTH_RETURN_URL = 'para://m8/oauth-callback'
-
 export async function postSessionStart(
   identifier: string,
-  opts: {returnTo?: string} = {},
+  handoff?: {
+    platform: 'mobile' | 'web'
+    returnTo: string
+    exchangeChallenge: string
+  },
 ): Promise<M8SessionStartResponse> {
-  const res = await m8Fetch('/sessions/start', {
+  assertBrokerConfigured()
+  const res = await fetch(`${API_BASE}/sessions/start`, {
+    headers: {'content-type': 'application/json'},
     method: 'POST',
-    body: JSON.stringify(
-      opts.returnTo
-        ? {identifier, platform: 'mobile', returnTo: opts.returnTo}
-        : {identifier},
-    ),
+    body: JSON.stringify({identifier, ...handoff}),
   })
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as {error?: string}
-    throw new Error(err.error ?? `Session start failed (${res.status})`)
+    const err = (await res.json().catch(() => ({}))) as {code?: string}
+    throw new Error(err.code ?? 'M8_SESSION_START_FAILED')
   }
-  const body = (await res.json()) as M8SessionStartResponse
-  // 202 OAuth-gated attempts carry `tokens: null`; only the dev-bootstrap
-  // path returns a token bundle immediately.
-  if (body.tokens) {
-    await setTokens(body.tokens.accessToken, body.tokens.refreshToken)
-    if (body.attempt.sessionId) {
-      await Storage.setItemAsync('m8_session_id', body.attempt.sessionId)
-    }
-  }
-  return body
+  return (await res.json()) as M8SessionStartResponse
 }
 
-/** The single-use code m8 appends to the OAuth return URL, or null. */
-export function exchangeCodeFromReturnUrl(url: string): string | null {
-  const query = url.split('#')[0].split('?')[1]
-  if (!query) return null
-  const code = new URLSearchParams(query).get('exchange_code')
-  return code && code.length >= 16 && code.length <= 256 ? code : null
-}
-
-/** Swaps the OAuth exchange code for a token bundle and stores it. */
-export async function postSessionExchange(code: string): Promise<void> {
-  const res = await m8Fetch('/sessions/exchange', {
+export async function exchangeM8Code(
+  code: string,
+  attemptId: string,
+  verifier: string,
+): Promise<M8SessionExchangeResponse> {
+  assertBrokerConfigured()
+  const res = await fetch(`${API_BASE}/sessions/exchange`, {
     method: 'POST',
-    body: JSON.stringify({code}),
+    headers: {'content-type': 'application/json'},
+    body: JSON.stringify({code, attemptId, verifier}),
   })
   if (!res.ok) {
-    const err = (await res.json().catch(() => ({}))) as {error?: string}
-    throw new Error(err.error ?? `Session exchange failed (${res.status})`)
+    const error = (await res.json().catch(() => ({}))) as {code?: string}
+    throw new Error(error.code ?? 'M8_EXCHANGE_FAILED')
   }
-  const body = (await res.json()) as {
-    sessionId?: string
-    tokens?: {accessToken: string; refreshToken: string}
-  }
-  if (!body.tokens?.accessToken || !body.tokens.refreshToken) {
-    throw new Error('m8 did not return a session token')
-  }
-  await setTokens(body.tokens.accessToken, body.tokens.refreshToken)
-  if (body.sessionId) {
-    await Storage.setItemAsync('m8_session_id', body.sessionId)
-  }
+  return (await res.json()) as M8SessionExchangeResponse
+}
+export async function revokeM8Session(): Promise<void> {
+  const {accessToken, refreshToken} = await detachM8Credentials()
+  if (!accessToken || !refreshToken || !M8_BROKER_URL) return
+  assertBrokerConfigured()
+  const res = await fetch(`${API_BASE}/sessions/logout`, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify({refreshToken}),
+  })
+  if (!res.ok) throw new Error('M8_LOGOUT_REVOCATION_FAILED')
 }
 
 export async function getMe(): Promise<{
@@ -220,7 +236,7 @@ export async function restoreM8Session(): Promise<ProofBrokerSession | null> {
 }
 
 export async function clearM8Session() {
-  await clearTokens()
+  await clearM8Credentials()
 }
 
 export async function postGrantRequest(payload: {
@@ -995,4 +1011,18 @@ export async function putKarmaRevelation(payload: {
     )
   }
   return (await res.json()) as {updated: boolean}
+}
+
+/** Verify legacy, unbound credentials without exposing them to another account. */
+export async function verifyLegacyM8Session(
+  token: string,
+): Promise<ProofBrokerSession | null> {
+  if (!M8_BROKER_URL) return null
+  assertBrokerConfigured()
+  const response = await fetch(`${API_BASE}/sessions/me`, {
+    headers: {authorization: `Bearer ${token}`},
+  })
+  if (!response.ok) return null
+  const body = (await response.json()) as {session: ProofBrokerSession}
+  return body.session
 }

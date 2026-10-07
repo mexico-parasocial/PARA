@@ -48,7 +48,8 @@ type Server struct {
 	chatXrpcc    *xrpc.Client
 	cfg          *Config
 
-	ipccClient http.Client
+	ipccClient   http.Client
+	featureGates *featureGateCache
 
 	// sitemapClient is used for fetching sitemaps from the appview. It has
 	// DisableCompression set to true so that gzipped responses are passed
@@ -154,6 +155,12 @@ func serve(cctx *cli.Context) error {
 				DisableCompression:  true,
 			},
 		},
+	}
+	if cctx.Bool("feature-gate-bootstrap") {
+		server.featureGates = newFeatureGateCache(cctx.String("growthbook-api-host"), cctx.String("growthbook-client-key"))
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		go server.featureGates.run(ctx)
 	}
 
 	// Create the HTTP server.
@@ -301,6 +308,12 @@ func serve(cctx *cli.Context) error {
 	e.GET("/hashtag/:tag", server.WebGeneric)
 	e.GET("/topic/:topic", server.WebGeneric)
 	e.GET("/search", server.WebGenericNoindex)
+	// Where the Matrix homeserver's OAuth flow redirects the browser back to.
+	// The SPA completes the authorization code exchange on this path and then
+	// navigates on; without the route the redirect would 404 before any of
+	// the app code runs. Noindex: it only ever carries one-time codes.
+	e.GET("/matrix-auth", server.WebGenericNoindex)
+	e.GET("/m8-auth", server.WebGenericNoindex)
 	e.GET("/feeds", server.WebGenericNoindex)
 	e.GET("/notifications", server.WebGenericNoindex)
 	e.GET("/notifications/settings", server.WebGenericNoindex)
@@ -481,10 +494,11 @@ func (srv *Server) Shutdown() error {
 // NewTemplateContext returns a new pongo2 context with some default values.
 func (srv *Server) NewTemplateContext() pongo2.Context {
 	return pongo2.Context{
-		"staticCDNHost": srv.cfg.staticCDNHost,
-		"favicon":       fmt.Sprintf("%s/static/favicon.png", srv.cfg.staticCDNHost),
-		"noindex":       false,
-		"nofollow":      false,
+		"staticCDNHost":        srv.cfg.staticCDNHost,
+		"featureGateBootstrap": srv.featureGates.snapshot(),
+		"favicon":              fmt.Sprintf("%s/static/favicon.png", srv.cfg.staticCDNHost),
+		"noindex":              false,
+		"nofollow":             false,
 	}
 }
 
@@ -722,7 +736,7 @@ func (srv *Server) WebPost(c echo.Context) error {
 		}
 	}
 
-	if jsonld, err := buildPostJSONLD(postView, threadView.Replies, jsonldURL, isPartOfURL, hideEmbedLabels, hideReplyLabels); err == nil {
+	if jsonld, err := buildPostJSONLD(postView, threadView, jsonldURL, isPartOfURL, hideEmbedLabels, hideReplyLabels); err == nil {
 		data["postJSONLD"] = jsonld
 	} else {
 		log.Warnf("failed to build post JSON-LD for %s: %v", uri, err)

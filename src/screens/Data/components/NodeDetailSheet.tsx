@@ -14,38 +14,11 @@ import {useTheme} from '#/alf'
 import {Text} from '#/components/Typography'
 import {VotingButtonHorizontal} from '#/components/VotingButtonHorizontal'
 import {CARD_TYPE_COLORS} from '#/features/civicTree/colors'
-import {type GraphEdge, type GraphNode} from '#/features/civicTree/types'
+import {type NodeDetailSheetProps} from './NodeDetailSheet.types'
 import {
   computeSuggestedConnections,
   type SuggestedTarget,
 } from './suggestion-engine'
-
-interface NodeDetail {
-  id: string
-  title: string
-  content: string | null
-  card_type: string
-  author_did: string
-  source_url: string | null
-  influence?: number
-}
-
-interface NodeDetailSheetProps {
-  node: NodeDetail | null
-  availableNodes?: GraphNode[]
-  availableEdges?: GraphEdge[]
-  visible: boolean
-  onClose: () => void
-  voterDid?: string
-  userVote?: number
-  onVote?: (cardId: string, influence: number) => void
-  onCreateRelationship?: (
-    sourceCardId: string,
-    targetCardId: string,
-    relationshipType: string,
-  ) => void
-  isCreatingRelationship?: boolean
-}
 
 // Map reasonType to a display color for the reason badge
 const REASON_TYPE_COLORS: Record<string, string> = {

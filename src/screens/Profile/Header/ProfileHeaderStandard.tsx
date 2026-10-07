@@ -58,7 +58,7 @@ import {useAnalytics} from '#/analytics'
 import {IS_IOS, IS_NATIVE} from '#/env'
 import {InviteFriendsDialog} from '#/features/inviteFriends'
 import {useActorStatus} from '#/features/liveNow'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import type * as bsky from '#/types/bsky'
 import {EditProfileDialog} from './EditProfileDialog'
 import {ProfileHeaderHandle} from './Handle'
@@ -211,6 +211,7 @@ let ProfileHeaderStandard = ({
                     value={descriptionRT}
                     enableTags
                     authorHandle={profile.handle}
+                    shouldProxyLinks={true}
                   />
                 </View>
               ) : undefined}

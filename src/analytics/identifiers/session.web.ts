@@ -13,10 +13,21 @@ let sessionId = (() => {
   const lastEvent = lastEventStr ? Number(lastEventStr) : undefined
   const id = existing && !isSessionIdExpired(lastEvent) ? existing : uuid.v4()
   window.sessionStorage.setItem(SESSION_ID_KEY, id)
+  window.sessionStorage.setItem(LAST_EVENT_KEY, String(Date.now()))
   return id
 })()
 
 export function getInitialSessionId() {
+  return sessionId
+}
+
+/**
+ * Gets the current session ID. Freshness depends on `useSessionId` being
+ * mounted, which handles refreshing this value between foreground/background
+ * transitions. Since that's mounted in `analytics/index.tsx`, this value can
+ * generally be trusted to be up to date.
+ */
+export function getSessionId() {
   return sessionId
 }
 
@@ -33,9 +44,8 @@ export function useSessionId() {
           window.sessionStorage.setItem(SESSION_ID_KEY, sessionId)
           setId(sessionId)
         }
-      } else {
-        window.sessionStorage.setItem(LAST_EVENT_KEY, String(Date.now()))
       }
+      window.sessionStorage.setItem(LAST_EVENT_KEY, String(Date.now()))
     })
     return () => sub.remove()
   }, [])

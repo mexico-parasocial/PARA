@@ -11,6 +11,7 @@ import {useMinimalShellFooterTransform} from '#/lib/hooks/useMinimalShellTransfo
 import {getCurrentRoute, isTab} from '#/lib/routes/helpers'
 import {makeProfileLink} from '#/lib/routes/links'
 import {type CommonNavigatorParams} from '#/lib/routes/types'
+import {useHomeBadge} from '#/state/home-badge'
 import {useUnreadNotifications} from '#/state/queries/notifications/unread'
 import {useProfileQuery} from '#/state/queries/profile'
 import {useSession} from '#/state/session'
@@ -62,7 +63,8 @@ export function BottomBarWeb() {
   const iconWidth = 26
 
   const notificationCountStr = useUnreadNotifications()
-
+  const hasHomeBadge = useHomeBadge()
+  const ax = useAnalytics()
   const showSignIn = useCallback(() => {
     closeAllActiveElements()
     requestSwitchToAccount({requestedAccount: 'none'})
@@ -96,7 +98,14 @@ export function BottomBarWeb() {
         onLayout={event => footerHeight.set(event.nativeEvent.layout.height)}>
         {hasSession ? (
           <>
-            <NavItem routeName="Home" href="/" navItem="home">
+            <NavItem
+              routeName="Home"
+              href="/"
+              navItem="home"
+              hasNew={
+                hasHomeBadge &&
+                ax.features.enabled(ax.features.FollowingV2Enable)
+              }>
               {({isActive}) => {
                 const Icon = isActive ? HomeFilled : Home
                 return (
