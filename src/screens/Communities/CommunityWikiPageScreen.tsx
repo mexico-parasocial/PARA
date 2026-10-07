@@ -39,12 +39,12 @@ export function CommunityWikiPageScreen({route, navigation}: Props) {
   const {_} = useLingui()
   const t = useTheme()
   const {communityUri, communityName, communityId, slug, kind} = route.params
-  const {organizerDids, canOrganize} = useCommunityOrganizers({
+  const {canOrganize} = useCommunityOrganizers({
     communityUri,
     communityName,
     communityId,
   })
-  const pagesQuery = useCommunityWikiPagesQuery({communityUri, organizerDids})
+  const pagesQuery = useCommunityWikiPagesQuery({communityUri})
   const page = useMemo(
     () => pagesQuery.data?.find(p => p.record.slug === slug),
     [pagesQuery.data, slug],

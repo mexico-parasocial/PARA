@@ -205,10 +205,11 @@ export function useQvlIntensitiesQuery(proposal: string) {
 }
 
 export function useQvlDelegationsQuery(
-  opts: {delegator?: string; delegate?: string} = {},
+  opts: {delegator?: string; delegate?: string; enabled?: boolean} = {},
 ) {
   const agent = useAgent()
   return useQuery<QvlDelegation[]>({
+    enabled: opts.enabled ?? true,
     staleTime: STALE.SECONDS.THIRTY,
     queryKey: qvlDelegationsQueryKey(opts.delegator, opts.delegate),
     queryFn: async () => {
@@ -224,9 +225,10 @@ export function useQvlDelegationsQuery(
   })
 }
 
-export function useQvlDeliberationsQuery(proposal: string) {
+export function useQvlDeliberationsQuery(proposal: string, enabled = true) {
   const agent = useAgent()
   return useQuery<QvlDeliberation[]>({
+    enabled,
     staleTime: STALE.SECONDS.THIRTY,
     queryKey: qvlDeliberationsQueryKey(proposal),
     queryFn: async () => {
@@ -241,7 +243,7 @@ export function useQvlDeliberationsQuery(proposal: string) {
   })
 }
 
-export function useQvlTallySimulationQuery(proposal: string) {
+export function useQvlTallySimulationQuery(proposal: string, enabled = true) {
   const agent = useAgent()
   return useQuery<TallySimulation>({
     staleTime: STALE.SECONDS.THIRTY,
@@ -249,7 +251,7 @@ export function useQvlTallySimulationQuery(proposal: string) {
       ...qvlTallySimulationQueryKey(proposal),
       agent.session?.did ?? null,
     ],
-    enabled: Boolean(proposal),
+    enabled: enabled && Boolean(proposal),
     retry: (failureCount, error) =>
       !isQvlUnavailable(error) && failureCount < 2,
     queryFn: async () => {
@@ -269,9 +271,10 @@ export function useQvlTallySimulationQuery(proposal: string) {
   })
 }
 
-export function useQvlAuditTrailQuery(proposal: string) {
+export function useQvlAuditTrailQuery(proposal: string, enabled = true) {
   const agent = useAgent()
   return useQuery<AuditTrail>({
+    enabled,
     staleTime: STALE.SECONDS.THIRTY,
     queryKey: qvlAuditTrailQueryKey(proposal),
     queryFn: async () => {

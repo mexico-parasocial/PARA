@@ -9,6 +9,7 @@ export async function issueParaVoteProof(
   input: {
     subjectUri: string
     selectedOption?: number
+    signal?: number
     subjectType: M8CivicVoteProof['subjectType']
   },
 ) {
@@ -29,7 +30,9 @@ export async function issueParaVoteProof(
     !proof.eligibilityProofRef.trim() ||
     proof.eligibilityProofRef.length > 512 ||
     (input.subjectType === 'cabildeo' &&
-      !/^m8:cabildeo:v1:[A-Za-z0-9_-]{43}$/.test(proof.eligibilityProofRef))
+      !/^m8:cabildeo:v1:[A-Za-z0-9_-]{43}$/.test(proof.eligibilityProofRef)) ||
+    (input.subjectType === 'policy' &&
+      !/^m8:policy:v1:[A-Za-z0-9_-]{43}$/.test(proof.eligibilityProofRef))
   ) {
     throw new Error('El emisor no devolvió una autorización de voto válida')
   }

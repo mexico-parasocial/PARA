@@ -24,6 +24,19 @@ export type CommunityGovernanceView = CommunityGovernanceRecord & {
   uri?: string
   repoDid?: string
   counters?: CommunityGovernanceCounters
+  /**
+   * Roles held by verified authority events, computed by the AppView. Unlike
+   * the governance record's moderators and officials, which any account can
+   * publish for any community, these are what the server trusts.
+   */
+  roleHolders?: CommunityRoleHolder[]
+}
+
+export type CommunityRoleHolder = {
+  did: string
+  role: string
+  effectiveAt?: string
+  expiresAt?: string
 }
 
 export type CommunityGovernanceCounters = {
@@ -276,11 +289,31 @@ export function normalizeCommunityGovernance(
     metadata,
     editHistory,
     counters,
+    roleHolders: normalizeRoleHolders(data.roleHolders),
     uri: stringOr(data.uri),
     repoDid:
       stringOr(data.repoDid) ||
       (stringOr(data.uri)?.split('/')[2] ?? undefined),
   }
+}
+
+function normalizeRoleHolders(raw: unknown): CommunityRoleHolder[] {
+  if (!Array.isArray(raw)) return []
+  return raw.flatMap(item => {
+    if (!item || typeof item !== 'object') return []
+    const holder = item as Record<string, unknown>
+    const did = stringOr(holder.did)
+    const role = stringOr(holder.role)
+    if (!did?.startsWith('did:') || !role) return []
+    return [
+      {
+        did,
+        role,
+        effectiveAt: stringOr(holder.effectiveAt),
+        expiresAt: stringOr(holder.expiresAt),
+      },
+    ]
+  })
 }
 
 export function createCommunityGovernanceRecord(

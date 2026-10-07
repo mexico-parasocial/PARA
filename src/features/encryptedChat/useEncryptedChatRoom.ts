@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useRef, useState} from 'react'
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react'
 
 import {logger} from '#/logger'
 import {useMatrixIdentityQuery} from '#/state/queries/matrix'
@@ -8,6 +8,7 @@ import {chatErrorCode} from '#/features/encryptedChat/errors'
 import {authorizeInBrowser} from '#/features/encryptedChat/oidc'
 import {
   type ChatMessage,
+  type ChatRecovery,
   type ChatSessionInfo,
   type EncryptedChatClient,
 } from '#/features/encryptedChat/types'
@@ -28,6 +29,7 @@ export type ChatRoomState = {
   messages: ChatMessage[]
   typingUserIds: string[]
   session?: ChatSessionInfo
+  recovery: ChatRecovery
   /** A stable code, not a message to render raw. See `chatErrorCode`. */
   error?: string
   send: (body: string, replyToEventId?: string) => Promise<void>
@@ -158,6 +160,22 @@ export function useEncryptedChatRoom(
     return client
   }, [])
 
+  const recovery = useMemo<ChatRecovery>(
+    () => ({
+      getSecurityStatus: () => withClient().getSecurityStatus(),
+      getPendingRecoveryKey: () => withClient().getPendingRecoveryKey(),
+      enableRecovery: () => withClient().enableRecovery(),
+      acknowledgeRecoveryKey: () => withClient().acknowledgeRecoveryKey(),
+      async recover(key) {
+        const client = withClient()
+        await client.recover(key)
+        if (clientRef.current === client) setSession({...client.session})
+      },
+      syncKeyBackup: () => withClient().syncKeyBackup(),
+    }),
+    [withClient],
+  )
+
   const sendImage = useCallback<EncryptedChatClient['sendImage']>(
     image => withClient().sendImage(image),
     [withClient],
@@ -203,6 +221,7 @@ export function useEncryptedChatRoom(
     messages,
     typingUserIds,
     session,
+    recovery,
     error,
     send,
     sendImage,

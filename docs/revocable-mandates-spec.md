@@ -73,7 +73,7 @@ The share is still shown (§6).
 
 | Subject      | Ballot                                   | Weighted | Tally                                                 | Writable today                                  |
 | ------------ | ---------------------------------------- | -------- | ----------------------------------------------------- | ----------------------------------------------- |
-| **Policy**   | a signal from -3 to +3                   | yes      | sum and average of signals, with a 7-bucket breakdown (`getPolicyTally`) | no: `signal` is refused on write (OD-7 §5c)     |
+| **Policy**   | a signal from -3 to +3                   | yes      | sum and average of signals, with a 7-bucket breakdown (`getPolicyTally`) | yes, public under the casting identity (§4.0)   |
 | **Cabildeo** | one option (`selectedOption`), in favour | no       | votes per option                                      | yes, and public and attributable (OD-7 §5d)     |
 
 - **Policies are the only weighted ballots.** +3 adds three times what +1
@@ -82,6 +82,40 @@ The share is still shown (§6).
   and no "against". This is what the code already does.
 - **Other subjects** (`matter`, `governance`) are not covered here. Decide
   their ballot before any of them becomes writable.
+
+### 4.0 Who a vote is visible to (decided 2026-09-29)
+
+**Policy ballots are public and attributable to the identity that casts them,
+like cabildeo ballots (OD-7 §5d), and appear on that identity's profile.** This
+thaws the policy half of OD-7 §5c. It is sound only because that identity is
+not a legal one:
+
+- **Identities are anonymous by default.** iM8 lets the person choose the
+  identity that acts: the default anonymous account, an isolated identity for
+  posts they do not want linked to their profile, or, opt-in, a public profile
+  linked to other social media. A vote shows on whichever identity cast it.
+- **One person, one vote across identities.** The m8 nullifier is anchored to
+  the person root, so voting from a second identity returns the same nullifier,
+  and the AppView keeps one ballot per person and policy.
+- **m8 holds no legal identity** (OD-7 §5g, mubEZ CD-11/CD-12), so the identity
+  cannot be joined to a name through m8.
+- **The voter is told before casting** that the ballot is published under the
+  identity they are using, permanently (`PublicBallotNotice`, policy variant).
+
+How it is enforced: m8 issues an `m8:policy:v1` authorization whose MAC binds
+the signal (mubEZ), the PDS and AppView accept a policy ballot only with it
+(WatZappa `verifyPublicBallotProof`), and PARA writes it with `castPolicyVote`
+after the notice. Changing a vote replaces it; earlier ballots on the same
+policy are removed from the voter's repo.
+
+What stays closed:
+
+- **`delegatedFrom` stays refused.** A lent vote is cast as the lender's own
+  ballot, not as a list of lenders on the delegate's record (§5).
+- **Anonymous proofs** (mubEZ CD-15/CD-16) remain for age checks and for any
+  vote a community marks _voto secreto_, where coercion matters.
+- **When community spaces land,** policy ballots move from the public repo into
+  the community's space, so members see them and the firehose does not.
 
 ### 4.1 Quadratic voting: considered, not adopted
 

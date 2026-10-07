@@ -375,6 +375,21 @@ decision is made.
 
 ---
 
+## 2026-10-03: Community activities are served by the AppView
+
+- Activities, ledger entries and wiki pages are read through
+  `com.para.community.listActivities`, `getActivity` and `listWikiPages`,
+  never straight from repos. The AppView serves only records by the
+  community's current organizers: the board's creator, or an owner or
+  moderator by verified authority events (WatZappa
+  `data-plane/server/routes/community-activities.ts`).
+- `useCommunityOrganizers` applies the same rule with the governance
+  `roleHolders`. Do not use the governance record's `moderators` /
+  `officials` or legacy membership `roles` for permissions: any account can
+  write those for any community.
+- Writes still go to the organizer's own repo. The AppView indexes them from
+  the firehose, so a new record can take a moment to appear.
+
 ## 2026-09-25: PARA has no reposts (keep it that way across upstream syncs)
 
 - **Product decision:** a post is shared by quoting it or by highlighting part
