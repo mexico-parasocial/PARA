@@ -1,13 +1,31 @@
-import {useState} from 'react'
+import {useCallback, useState} from 'react'
 import {Keyboard, View} from 'react-native'
-import DatePicker from 'react-native-date-picker'
+import {DateTimePicker} from '@expo/ui/community/datetime-picker'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
+import {Trans} from '@lingui/react/macro'
 
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
+import * as Dialog from '#/components/Dialog'
+import {TimeFieldButton} from './index.shared'
 import {type TimeFieldProps} from './types'
+import {toSimpleTimeString, toTimeDate} from './utils'
+export * as utils from './utils'
 
+/**
+ * SwiftUI only accepts identifiers from `Locale.availableIdentifiers`, which
+ * use underscores (`pt_BR`) rather than BCP 47 hyphens (`pt-BR`). Unknown
+ * identifiers make the picker fall back to the system locale.
+ */
+function toAppleLocale(locale: string): string {
+  return locale.replace(/-/g, '_')
+}
+
+/**
+ * Time-only input. Accepts a string in the format HH:MM (24h). Returns the
+ * picked time in the same format.
+ */
 export function TimeField({
   disabled,
   value,
@@ -19,59 +37,70 @@ export function TimeField({
 }: TimeFieldProps) {
   const {_, i18n} = useLingui()
   const t = useTheme()
-  const [open, setOpen] = useState(false)
-  const date = new Date()
-  const valid = /^([01]\d|2[0-3]):[0-5]\d$/.test(value)
-  if (valid) {
-    const [hours, minutes] = value.split(':').map(Number)
-    date.setHours(hours, minutes, 0, 0)
-  }
-  const displayValue = valid
-    ? i18n.date(date, {hour: '2-digit', minute: '2-digit'})
-    : _(msg`Choose time`)
+  const control = Dialog.useDialogControl()
+  const [draft, setDraft] = useState(() => toTimeDate(value))
+
+  const onChangeInternal = useCallback(
+    (date: Date | undefined) => {
+      if (date) {
+        setDraft(date)
+        onChangeTime(toSimpleTimeString(date))
+      }
+    },
+    [onChangeTime],
+  )
+
   return (
     <View>
-      <Button
+      <TimeFieldButton
         disabled={disabled}
         label={label}
-        accessibilityValue={{text: displayValue}}
-        accessibilityHint={accessibilityHint}
-        size="small"
-        color="secondary"
-        style={[
-          a.justify_start,
-          a.border,
-          isInvalid
-            ? {borderColor: t.palette.negative_500}
-            : t.atoms.border_contrast_low,
-        ]}
+        value={value}
         onPress={() => {
           Keyboard.dismiss()
-          setOpen(true)
-        }}>
-        <ButtonText>{displayValue}</ButtonText>
-      </Button>
-      {open ? (
-        <DatePicker
-          modal
-          open
-          mode="time"
-          date={date}
-          theme={t.scheme}
-          locale={i18n.locale}
-          title={label}
-          confirmText={_(msg`Done`)}
-          cancelText={_(msg`Cancel`)}
-          onConfirm={selected => {
-            setOpen(false)
-            onChangeTime(
-              `${String(selected.getHours()).padStart(2, '0')}:${String(selected.getMinutes()).padStart(2, '0')}`,
-            )
-            onConfirm?.()
-          }}
-          onCancel={() => setOpen(false)}
-        />
-      ) : null}
+          setDraft(toTimeDate(value))
+          control.open()
+        }}
+        isInvalid={isInvalid}
+        accessibilityHint={accessibilityHint}
+      />
+      <Dialog.Outer control={control} nativeOptions={{preventExpansion: true}}>
+        <Dialog.Handle />
+        <Dialog.ScrollableInner label={label}>
+          <View style={a.gap_lg}>
+            <View style={[a.relative, a.w_full, a.align_center]}>
+              <DateTimePicker
+                style={a.w_full}
+                value={draft}
+                onValueChange={(_event, date) => onChangeInternal(date)}
+                mode="time"
+                display="spinner"
+                themeVariant={t.scheme}
+                locale={toAppleLocale(i18n.locale)}
+              />
+            </View>
+            <Button
+              label={_(msg`Done`)}
+              onPress={() => {
+                /*
+                 * Commit the currently shown time even if the user never
+                 * scrolled (onValueChange only fires on scroll), so onConfirm
+                 * never reports a stale value.
+                 */
+                onChangeTime(toSimpleTimeString(draft))
+                onConfirm?.()
+                control.close()
+              }}
+              size="large"
+              color="primary"
+              variant="solid">
+              <ButtonText>
+                <Trans>Done</Trans>
+              </ButtonText>
+            </Button>
+          </View>
+        </Dialog.ScrollableInner>
+      </Dialog.Outer>
     </View>
   )
 }

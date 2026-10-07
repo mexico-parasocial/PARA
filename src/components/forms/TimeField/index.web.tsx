@@ -8,6 +8,7 @@ import {type TimeFieldProps} from './types'
 
 const InputBase = forwardRef<HTMLInputElement, TextInputProps>(
   ({style, editable, ...props}, ref) =>
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-call
     unstable_createElement('input', {
       ...props,
       ref,

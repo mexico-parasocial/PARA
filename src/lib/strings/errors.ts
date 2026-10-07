@@ -1,5 +1,10 @@
-import {LexError, XrpcResponseError} from '@atproto/lex'
+import {LexError} from '@atproto/lex'
 import {t} from '@lingui/core/macro'
+
+import {isNetworkError} from '#/lib/network-error'
+import {isXrpcError} from '#/lib/xrpc-error'
+
+export {isNetworkError} from '#/lib/network-error'
 
 /**
  * The text to show the user when no special case applies.
@@ -34,11 +39,12 @@ export function cleanError(e: unknown): string {
    */
   // oxlint-disable-next-line typescript/no-base-to-string
   const str = typeof e === 'string' ? e : e.toString()
-  if (isNetworkError(str)) {
+  // the original value, not `str`, so wrapped causes are checked
+  if (isNetworkError(e)) {
     return t`Unable to connect. Please check your internet connection and try again.`
   }
   /*
-   * `the legacy SDK` names these with spaces ("Upstream Failure"); lexicon error
+   * The legacy client named these with spaces ("Upstream Failure"); lexicon error
    * codes are space-free ("UpstreamFailure"). Match both while the app throws
    * both shapes.
    */
@@ -77,34 +83,20 @@ export function cleanError(e: unknown): string {
   return toDisplayString(e, str)
 }
 
-const NETWORK_ERRORS = [
-  'Abort',
-  'Network request failed',
-  'Failed to fetch',
-  'fetch failed',
-  'Load failed',
-  'Upstream service unreachable',
-  'NetworkError when attempting to fetch resource',
-]
-
-export function isNetworkError(e: unknown) {
-  const str = String(e)
-  for (const err of NETWORK_ERRORS) {
-    if (str.includes(err)) {
-      return true
-    }
-  }
-  return false
-}
-
+/**
+ * The PDS answers an app-password-scope rejection with the lexicon code
+ * `InvalidToken` and a message of 'Bad token scope' or 'Bad token method'
+ * (pipethrough), so the typed path matches the code AND the message. The
+ * pre-migration check compared against 'TokenInvalid', which the PDS never
+ * sends - the string fallback was doing all the work.
+ */
 export function isErrorMaybeAppPasswordPermissions(e: unknown) {
-  /*
-   * `InvalidToken` is the code the PDS actually sends for a revoked or
-   * out-of-scope app password session. The pre-SDK check matched
-   * `TokenInvalid`, which no server response ever carries.
-   */
-  if (e instanceof XrpcResponseError && e.error === 'InvalidToken') {
-    return true
+  if (isXrpcError(e)) {
+    return (
+      e.error === 'InvalidToken' &&
+      (e.message.includes('Bad token scope') ||
+        e.message.includes('Bad token method'))
+    )
   }
   const str = String(e)
   return str.includes('Bad token scope') || str.includes('Bad token method')
@@ -129,5 +121,5 @@ export function isRetryableHttpStatus(status: number) {
 }
 
 export function shouldRetryError(e: unknown) {
-  return e instanceof XrpcResponseError && RETRYABLE_ERRORS.includes(e.status)
+  return isXrpcError(e) && e.shouldRetry()
 }

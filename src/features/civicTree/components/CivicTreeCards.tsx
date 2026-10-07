@@ -43,7 +43,7 @@ export function CivicTreeCards({
 }) {
   const t = useTheme()
   const {t: l} = useLingui()
-  const [width, setWidth] = useState(0)
+  const [{width, height}, setSize] = useState({width: 0, height: 0})
   const [focusId, setFocusId] = useState<string>()
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
   const byId = useMemo(
@@ -91,6 +91,7 @@ export function CivicTreeCards({
       card={focused}
       connections={connections}
       wide={wide}
+      maxHeight={height * 0.6}
       onClear={() => setFocusId(undefined)}
       onOpenDetails={onOpenDetails}
       onSelect={setFocusId}
@@ -114,7 +115,7 @@ export function CivicTreeCards({
   return (
     <View
       style={[a.flex_1, {minHeight: 0}]}
-      onLayout={event => setWidth(event.nativeEvent.layout.width)}>
+      onLayout={event => setSize(event.nativeEvent.layout)}>
       <View
         style={[
           a.flex_row,
@@ -296,7 +297,8 @@ export function CivicTreeCards({
           <View
             style={[
               wide ? a.border_l : a.border_t,
-              {minHeight: 0, flexShrink: 0},
+              // On phones the lanes above flex to whatever the panel leaves.
+              wide ? {minHeight: 0, flexShrink: 0} : {flexShrink: 0},
               t.atoms.border_contrast_low,
             ]}>
             {inspector}

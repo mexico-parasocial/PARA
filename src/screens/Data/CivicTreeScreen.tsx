@@ -12,6 +12,7 @@ import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
+import {useBottomBarOffset} from '#/lib/hooks/useBottomBarOffset'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
   getCivicTreeItemKey,
@@ -33,7 +34,7 @@ import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/
 import * as Layout from '#/components/Layout'
 import * as Prompt from '#/components/Prompt'
 import * as Toast from '#/components/Toast'
-import {IS_WEB} from '#/env'
+import {IS_NATIVE, IS_WEB} from '#/env'
 import {
   CivicTreeFab,
   type CivicTreeFabAction,
@@ -138,6 +139,7 @@ function CivicTreeInner({
   const [viewMode, setViewMode] = useState<CivicTreeViewMode>('map')
   const {width: windowWidth, height: windowHeight} = useWindowDimensions()
   const {gtMobile} = useBreakpoints()
+  const bottomBarOffset = useBottomBarOffset()
   const {centerColumnOffset} = useLayoutBreakpoints()
   const expanded =
     IS_WEB &&
@@ -346,6 +348,8 @@ function CivicTreeInner({
       <Layout.Center
         style={[
           styles.contentCenter,
+          // Native screens run under the bottom bar; web mobile handles it above.
+          IS_NATIVE && {paddingBottom: bottomBarOffset},
           expanded && {
             maxWidth: windowWidth - workspaceLeft - 24,
             width: windowWidth - workspaceLeft - 24,

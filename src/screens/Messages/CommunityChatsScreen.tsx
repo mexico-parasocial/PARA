@@ -1,7 +1,7 @@
 import {useMemo} from 'react'
 import {ScrollView, StyleSheet, View} from 'react-native'
 import {useLingui} from '@lingui/react'
-import {Trans} from '@lingui/react/macro'
+import {msg, Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {ROOM_ORDER, ROOM_PURPOSES} from '#/lib/chat/roomPurposes'
@@ -56,7 +56,7 @@ export function CommunityChatsScreen() {
 
   const sections = useMemo(() => {
     const joined = (boards.data?.boards ?? []).filter(
-      board => board.viewerMembershipState !== 'none',
+      board => board.viewerMembershipState === 'active',
     )
     return GROUP_ORDER.map(group => ({
       group,
@@ -67,10 +67,10 @@ export function CommunityChatsScreen() {
   }, [boards.data])
 
   const sectionLabel: Record<Group, string> = {
-    party: _({id: 'Partidos', message: 'Partidos'}),
-    ninth: _({id: 'Novenos', message: 'Novenos'}),
-    state: _({id: 'Estados', message: 'Estados'}),
-    other: _({id: 'Otras comunidades', message: 'Otras comunidades'}),
+    party: _(msg`Partidos`),
+    ninth: _(msg`Novenos`),
+    state: _(msg`Estados`),
+    other: _(msg`Otras comunidades`),
   }
 
   const isLoading = boards.isLoading || rooms.isLoading
@@ -149,18 +149,16 @@ function CommunityCard({
   rooms: Map<MatrixRoomKind, MatrixRoomSummary> | undefined
 }) {
   const t = useTheme()
-  const {_} = useLingui()
+  const {_, i18n} = useLingui()
   const navigation = useNavigation<NavigationProp>()
   const bicameral = board.chamberMode === 'bicameral'
   // A unicameral community has only its main room; a bicameral one also has
   // both chambers and the observer council.
   const kinds = ROOM_ORDER.filter(kind => kind === 'main' || bicameral)
   const subtitle = [
-    `${board.memberCount} ${_({id: 'miembros', message: 'miembros'})}`,
+    `${board.memberCount} ${_(msg`miembros`)}`,
     board.region,
-    bicameral
-      ? _({id: 'Bicameral', message: 'Bicameral'})
-      : _({id: 'Unicameral', message: 'Unicameral'}),
+    bicameral ? _(msg`Bicameral`) : _(msg`Unicameral`),
   ]
     .filter(Boolean)
     .join(' · ')
@@ -206,8 +204,8 @@ function CommunityCard({
         return (
           <Button
             key={kind}
-            label={_(ROOM_PURPOSES[kind].label)}
-            accessibilityHint={_(ROOM_PURPOSES[kind].purpose)}
+            label={i18n._(ROOM_PURPOSES[kind].label)}
+            accessibilityHint={i18n._(ROOM_PURPOSES[kind].purpose)}
             disabled={!available}
             onPress={() => open(room?.roomId || undefined)}
             variant="ghost"
@@ -227,17 +225,14 @@ function CommunityCard({
                     count > 0 ? a.font_bold : a.font_medium,
                     !available && t.atoms.text_contrast_medium,
                   ]}>
-                  {_(ROOM_PURPOSES[kind].label)}
+                  {i18n._(ROOM_PURPOSES[kind].label)}
                 </Text>
                 <Text
                   numberOfLines={2}
                   style={[a.text_xs, t.atoms.text_contrast_medium]}>
                   {available
-                    ? _(ROOM_PURPOSES[kind].purpose)
-                    : _({
-                        id: 'Se activa al abrir la sala principal.',
-                        message: 'Se activa al abrir la sala principal.',
-                      })}
+                    ? i18n._(ROOM_PURPOSES[kind].purpose)
+                    : _(msg`Se activa al abrir la sala principal.`)}
                 </Text>
               </View>
               {count > 0 && (

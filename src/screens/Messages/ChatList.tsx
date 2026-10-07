@@ -21,8 +21,8 @@ import {logger} from '#/logger'
 import {listenSoftReset} from '#/state/events'
 import {MESSAGE_SCREEN_POLL_INTERVAL} from '#/state/messages/convo/const'
 import {useMessagesEventBus} from '#/state/messages/events'
-import {useMatrixRoomsQuery, useUnreadCountQuery} from '#/state/queries/matrix'
 import {useCommunityBoardsQuery} from '#/state/queries/community-boards'
+import {useMatrixRoomsQuery, useUnreadCountQuery} from '#/state/queries/matrix'
 import {useChatActorStatusQuery} from '#/state/queries/messages/get-status'
 import {useUnreadCountsQuery} from '#/state/queries/messages/get-unread-counts'
 import {useListConvosQuery} from '#/state/queries/messages/list-conversations'
@@ -42,6 +42,7 @@ import {ArrowRotateCounterClockwise_Stroke2_Corner0_Rounded as RetryIcon} from '
 import {BubbleSmile_Stroke2_Corner2_Rounded_Large as BubbleSmileIcon} from '#/components/icons/Bubble'
 import {CircleCheck_Stroke2_Corner0_Rounded as CircleCheckIcon} from '#/components/icons/CircleCheck'
 import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfoIcon} from '#/components/icons/CircleInfo'
+import {Group3_Stroke2_Corner0_Rounded as CommunitiesIcon} from '#/components/icons/Group'
 import {
   Inbox_Stroke2_Corner2_Rounded as InboxIcon,
   Inbox_Stroke2_Corner2_Rounded_Large as InboxLargeIcon,
@@ -50,7 +51,6 @@ import {
   MessagePlus_Stroke2_Corner0_Rounded as MessagePlusIcon,
   MessagePlus_Stroke2_Corner0_Rounded as NewChatIcon,
 } from '#/components/icons/Message'
-import {Group3_Stroke2_Corner0_Rounded as CommunitiesIcon} from '#/components/icons/Group'
 import {SettingsGear2_Stroke2_Corner0_Rounded as SettingsIcon} from '#/components/icons/SettingsGear2'
 import * as Layout from '#/components/Layout'
 import {Link} from '#/components/Link'
@@ -390,7 +390,7 @@ export function ChatList({
     const bridgedRooms = matrixUnavailable ? [] : (matrixRoomsData?.rooms ?? [])
     const boards = new Map(
       (boardsData?.boards ?? [])
-        .filter(board => board.viewerMembershipState !== 'none')
+        .filter(board => board.viewerMembershipState === 'active')
         .map(board => [board.uri, board]),
     )
 
@@ -441,7 +441,10 @@ export function ChatList({
     )
 
     if (matrixUnavailable || communityRows.length) {
-      items.push({type: 'SECTION', label: l`Comunidades`})
+      // The strip carries its own collapsible "Comunidades" header.
+      if (matrixUnavailable || !communityRows.length) {
+        items.push({type: 'SECTION', label: l`Comunidades`})
+      }
       if (matrixUnavailable) items.push({type: 'MATRIX_UNAVAILABLE'})
       if (communityRows.length) {
         items.push({

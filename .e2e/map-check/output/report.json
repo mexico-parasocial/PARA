@@ -1,0 +1,157 @@
+{
+  "schemaVersion": "report-1",
+  "run": {
+    "id": "01a10d5a-495e-72fe-8da4-c58d86f02b8c",
+    "specVersion": "0.1",
+    "runner": {
+      "name": "e2e",
+      "version": "0.17.0"
+    },
+    "status": "error",
+    "exitCode": 3,
+    "startedAt": "2026-10-05T18:36:38.334Z",
+    "finishedAt": "2026-10-05T18:38:55.865Z",
+    "project": {
+      "id": "unportable-9f2832e405ef800e51b7cba264bff5c7",
+      "configDigest": "6804a30b1f30262c9d34c742ee77015022a0682e88b8d34be0b0e79857677d81"
+    },
+    "environment": {
+      "ci": false,
+      "trustNoticeShown": false,
+      "os": "darwin 27.0.0",
+      "arch": "arm64",
+      "runtime": "node v24.19.0"
+    },
+    "vcs": {
+      "commit": "1f3e7ed3fd38bc34212fb58213f3668cf401195e",
+      "branch": "feat/personal-civic-tree-revamp",
+      "dirty": true
+    },
+    "targets": [
+      {
+        "id": "ios-map",
+        "index": 0,
+        "platform": "ios",
+        "environment": "test",
+        "engine": {
+          "name": "mobile",
+          "version": "0.9.2",
+          "spiVersion": 1
+        },
+        "capabilities": [
+          "actions",
+          "artifacts",
+          "device",
+          "keyboard",
+          "location",
+          "observation",
+          "pointer"
+        ],
+        "artifactCapabilities": [
+          "screenshot",
+          "video"
+        ],
+        "stateCapability": false
+      }
+    ],
+    "serialGroups": [],
+    "results": [
+      {
+        "id": "5cb3f5d493a3a138bf58be98b2a248351f81d0632d60c2aa650914499c208ccb",
+        "testId": "map.e2e.ts::selected%20city%20has%20exactly%20one%20marker",
+        "kind": "test",
+        "declarationIndex": 0,
+        "titlePath": [
+          "selected city has exactly one marker"
+        ],
+        "file": "map.e2e.ts",
+        "source": {
+          "file": "map.e2e.ts",
+          "line": 3,
+          "column": 1
+        },
+        "targetId": "ios-map",
+        "platform": "ios",
+        "agent": "default",
+        "repeat": 0,
+        "tags": [],
+        "selected": true,
+        "status": "failed",
+        "attempts": [
+          {
+            "id": "01a10d5a-8813-7fdc-9795-1bf5d2d2ce77",
+            "index": 0,
+            "status": "failed",
+            "startedAt": "2026-10-05T18:36:39.316Z",
+            "durationMs": 126493,
+            "artifacts": [],
+            "error": {
+              "category": "infrastructure",
+              "code": "ENGINE_FAILURE",
+              "message": "snapshot failed: Daemon request timed out Hint: Retry with --debug and check daemon diagnostics logs. The timed-out snapshot request was canceled; the daemon was kept alive so the session can still be closed or inspected.",
+              "retryable": false,
+              "phase": "body"
+            },
+            "secondaryErrors": [],
+            "cleanup": "complete",
+            "steps": [
+              {
+                "id": "01a10d5a-8813-7fdc-9795-1bf5d2d2ce77:0",
+                "index": 0,
+                "kind": "assertion",
+                "api": "expect.toBeVisible",
+                "label": "getByText(\"CIUDAD ACTIVA\")",
+                "status": "failed",
+                "startedAt": "2026-10-05T18:36:44.145Z",
+                "durationMs": 111462,
+                "events": [],
+                "artifacts": [],
+                "source": {
+                  "file": "map.e2e.ts",
+                  "line": 4,
+                  "column": 66
+                },
+                "error": {
+                  "category": "infrastructure",
+                  "code": "ENGINE_FAILURE",
+                  "message": "snapshot failed: Daemon request timed out Hint: Retry with --debug and check daemon diagnostics logs. The timed-out snapshot request was canceled; the daemon was kept alive so the session can still be closed or inspected.",
+                  "retryable": false
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "errors": [],
+    "summary": {
+      "discovered": 1,
+      "selected": 1,
+      "executed": 1,
+      "passed": 0,
+      "failed": 1,
+      "interrupted": 0,
+      "flaky": 0,
+      "skipped": 0
+    },
+    "limits": {
+      "maxAgentContextBytes": 16384,
+      "maxLedgerBytes": 8192,
+      "maxObservationBytes": 262144,
+      "maxEventsPerStep": 1000,
+      "maxModelTokensPerCall": 64000
+    },
+    "usage": {
+      "discoveredResults": 1,
+      "maxAgentContextBytes": 0,
+      "maxLedgerBytes": 0,
+      "maxObservationBytes": 0,
+      "artifactBytes": 0,
+      "downloads": 0,
+      "events": 0,
+      "modelTokens": 0,
+      "maxModelCallsInStep": 0,
+      "maxActionStepsInStep": 0
+    }
+  }
+}

@@ -311,7 +311,11 @@ module.exports = function (_config) {
             ios: {
               deploymentTarget: '16.4',
               buildReactNativeFromSource: true,
+              ccacheEnabled: IS_DEV,
               cxxLanguageStandard: 'c++23',
+              // Adopt the UIKit scene lifecycle; fixes the iOS startup crash
+              // when built with Xcode 27 (bsky PR #11765).
+              enableSceneSupport: true,
             },
             android: {
               compileSdkVersion: 36,

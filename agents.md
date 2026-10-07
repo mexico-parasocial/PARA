@@ -778,7 +778,7 @@ pnpm test src/screens/Search/__tests__/searchParams.test.ts
 - Modules Core `57.0.20` already includes the native Worklets `runSync`
   changes, and React Native `0.86.3` includes the font-weight correction.
   Their rebased patches omit those upstream fixes and retain the other hunks.
-- Keep Reanimated `4.6.0` paired with Worklets `0.12.1`: Reanimated's
+- Keep Reanimated `4.6.0` paired with Worklets `0.12.2`: Reanimated's
   compatibility manifest requires Worklets `0.12.x`. Both packages are
   overridden in the workspace and excluded from Expo dependency validation,
   whose default Worklets `0.10.x` recommendation targets Reanimated `4.5.x`.

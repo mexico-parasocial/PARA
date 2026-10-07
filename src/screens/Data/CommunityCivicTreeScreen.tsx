@@ -13,6 +13,7 @@ import {Trans, useLingui} from '@lingui/react/macro'
 import {useRoute} from '@react-navigation/native'
 
 import {COMPASS_POSITION_NAMES} from '#/lib/compass/compassColors'
+import {useBottomBarOffset} from '#/lib/hooks/useBottomBarOffset'
 import {useAnonymousMode} from '#/lib/im8/hooks/useAnonymousMode'
 import {usePartyLobbyingBriefingPacksQuery} from '#/state/queries/briefing-packs'
 import {
@@ -47,7 +48,7 @@ import {SearchInput} from '#/components/forms/SearchInput'
 import {Library_Stroke2_Corner0_Rounded as BookIcon} from '#/components/icons/Library'
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'
-import {IS_WEB} from '#/env'
+import {IS_NATIVE, IS_WEB} from '#/env'
 import {CivicTreeFab} from '#/features/civicTree/components/CivicTreeFab'
 import {CivicTreeHeader} from '#/features/civicTree/components/CivicTreeHeader'
 import {
@@ -98,6 +99,7 @@ export function CommunityCivicTreeScreen() {
   }>()
   const t = useTheme()
   const {gtMobile} = useBreakpoints()
+  const bottomBarOffset = useBottomBarOffset()
   const {width: windowWidth, height: windowHeight} = useWindowDimensions()
   const {centerColumnOffset} = useLayoutBreakpoints()
   const [viewMode, setViewMode] = useState<CivicTreeViewMode>('map')
@@ -394,6 +396,8 @@ export function CommunityCivicTreeScreen() {
       <Layout.Center
         style={[
           styles.centerColumn,
+          // Native screens run under the bottom bar; web mobile handles it above.
+          IS_NATIVE && {paddingBottom: bottomBarOffset},
           expanded && {
             maxWidth: windowWidth,
             width: windowWidth - workspaceLeft - 24,

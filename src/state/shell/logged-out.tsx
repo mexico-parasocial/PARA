@@ -7,7 +7,7 @@ import {
 } from 'react'
 
 import {useSession} from '#/state/session'
-import {useActiveStarterPack} from '#/state/shell/starter-pack'
+import {useActiveStarterPack} from '#/state/shell/landing'
 import {IS_WEB} from '#/env'
 
 type State = {

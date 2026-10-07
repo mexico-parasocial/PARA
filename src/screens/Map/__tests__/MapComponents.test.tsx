@@ -4,7 +4,11 @@
  */
 import {fireEvent, render} from '@testing-library/react-native'
 
-import {MapLayersPanel, SelectedStateOverlay} from '#/screens/Map/MapComponents'
+import {
+  BigCitiesDataOverlay,
+  MapLayersPanel,
+  SelectedStateOverlay,
+} from '#/screens/Map/MapComponents'
 import {CircleX_Stroke2_Corner0_Rounded as CircleX} from '#/components/icons/CircleX'
 
 jest.mock('react-native-reanimated', () => {
@@ -151,6 +155,31 @@ describe('SelectedStateOverlay', () => {
 
     fireEvent.press(getByText(/Browse \d+ cities|Major cities/))
     expect(baseProps.onShowCities).toHaveBeenCalled()
+  })
+})
+
+describe('BigCitiesDataOverlay', () => {
+  it('lets the viewer choose a city and shows the selected context', () => {
+    const onSelectCity = jest.fn()
+    const props = {
+      selectedState: {name: 'Sinaloa'},
+      showCities: true,
+      onSelectCity,
+      onClose: jest.fn(),
+    }
+    const {getByRole, getByText, rerender} = render(
+      <BigCitiesDataOverlay {...props} selectedCityName={null} />,
+    )
+
+    const city = getByRole('button', {name: 'View Mazatlán', selected: false})
+    fireEvent.press(city)
+    expect(onSelectCity).toHaveBeenCalledWith('Mazatlán')
+
+    rerender(<BigCitiesDataOverlay {...props} selectedCityName="Mazatlán" />)
+    expect(
+      getByRole('button', {name: 'View Mazatlán', selected: true}),
+    ).toBeTruthy()
+    expect(getByText('CIUDAD ACTIVA')).toBeTruthy()
   })
 })
 

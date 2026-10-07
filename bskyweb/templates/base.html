@@ -243,6 +243,9 @@
       }
     </script>
 
+  {% if featureGateBootstrap %}
+  <script id="bsky-app-config" type="application/json">{{ featureGateBootstrap|safe }}</script>
+  {% endif %}
     {% include "scripts.html" %}
     <link
       rel="apple-touch-icon"

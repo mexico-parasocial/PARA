@@ -1,17 +1,21 @@
+import '#/logger/sentry/setup' // must be near top
 import './style.css'
 
 import {Fragment, useEffect, useState} from 'react'
 import {KeyboardProvider as KeyboardControllerProvider} from 'react-native-keyboard-controller'
 import {SafeAreaProvider} from 'react-native-safe-area-context'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
+import {BackgroundNotificationPreferencesProvider} from '@bsky.app/expo-background-notification-handler/src/BackgroundNotificationHandlerProvider'
+import {useLingui} from '@lingui/react/macro'
 
+import {Provider as HotkeysProvider} from '#/lib/hotkeys'
 import {completeM8WebGrant} from '#/lib/im8/webGrant'
 import {QueryProvider} from '#/lib/react-query'
 import {ThemeProvider} from '#/lib/ThemeContext'
-import {Provider as TranslationProvider} from '#/lib/translation'
+import {Provider as TranslateOnDeviceProvider} from '#/lib/translation'
 import I18nProvider from '#/locale/i18nProvider'
 import {logger} from '#/logger'
+import {Sentry} from '#/logger/sentry/lib'
+import {identifyDevice} from '#/logger/sentry/user'
 import {Provider as A11yProvider} from '#/state/a11y'
 import {Provider as MutedThreadsProvider} from '#/state/cache/thread-mutes'
 import {Provider as DialogStateProvider} from '#/state/dialogs'
@@ -19,7 +23,6 @@ import {Provider as EmailVerificationProvider} from '#/state/email-verification'
 import {listenSessionDropped} from '#/state/events'
 import {HighlightProvider} from '#/state/highlights/HighlightContext'
 import {Provider as HomeBadgeProvider} from '#/state/home-badge'
-import {Provider as LightboxStateProvider} from '#/state/lightbox'
 import {MessagesProvider} from '#/state/messages'
 import {init as initPersistedState} from '#/state/persisted'
 import {Provider as PrefsStateProvider} from '#/state/preferences'
@@ -37,19 +40,20 @@ import {
 import {readLastActiveAccount} from '#/state/session/util'
 import {Provider as ShellStateProvider} from '#/state/shell'
 import {Provider as ComposerProvider} from '#/state/shell/composer'
+import {Provider as LandingProvider} from '#/state/shell/landing'
 import {Provider as LoggedOutViewProvider} from '#/state/shell/logged-out'
 import {Provider as OnboardingProvider} from '#/state/shell/onboarding'
 import {PoliticalAffiliationProvider} from '#/state/shell/political-affiliation'
 import {Provider as ProgressGuideProvider} from '#/state/shell/progress-guide'
 import {Provider as SelectedFeedProvider} from '#/state/shell/selected-feed'
-import {Provider as StarterPackProvider} from '#/state/shell/starter-pack'
 import {Provider as HiddenRepliesProvider} from '#/state/threadgate-hidden-replies'
 import {Shell} from '#/view/shell/index'
 import {ThemeProvider as Alf} from '#/alf'
 import {useColorModeTheme} from '#/alf/util/useColorModeTheme'
 import {Provider as ContextMenuProvider} from '#/components/ContextMenu'
-import {useStarterPackEntry} from '#/components/hooks/useStarterPackEntry'
+import {useLandingEntry} from '#/components/hooks/useLandingEntry'
 import {Provider as IntentDialogProvider} from '#/components/intents/IntentDialogs'
+import {Provider as LightboxStateProvider} from '#/components/Lightbox/state'
 import {Provider as PolicyUpdateOverlayProvider} from '#/components/PolicyUpdateOverlay'
 import {Provider as PortalProvider} from '#/components/Portal'
 import {Provider as ActiveVideoProvider} from '#/components/Post/Embed/VideoEmbed/ActiveVideoWebContext'
@@ -66,6 +70,7 @@ import {
   features,
   setupDeviceId,
 } from '#/analytics'
+import {getDeviceId} from '#/analytics/identifiers'
 import {
   completeMatrixWebAuthorization,
   MATRIX_OIDC_CALLBACK_PATH,
@@ -76,8 +81,9 @@ import {
 } from '#/features/liveEvents/context'
 import * as Geo from '#/geolocation'
 import {Splash} from '#/Splash'
-import {BackgroundNotificationPreferencesProvider} from '../modules/expo-background-notification-handler/src/BackgroundNotificationHandlerProvider'
 import {HideBottomBarBorderProvider} from './lib/hooks/useHideBottomBarBorder'
+
+void identifyDevice(getDeviceId(), setupDeviceId)
 
 /**
  * Begin geolocation ASAP
@@ -91,8 +97,8 @@ function InnerApp() {
   const {currentAccount} = useSession()
   const {resumeSession, logoutCurrentAccount} = useSessionApi()
   const theme = useColorModeTheme()
-  const {_} = useLingui()
-  const hasCheckedReferrer = useStarterPackEntry()
+  const {t: l} = useLingui()
+  const hasCheckedLanding = useLandingEntry()
 
   // init
   useEffect(() => {
@@ -114,73 +120,75 @@ function InnerApp() {
 
   useEffect(() => {
     return listenSessionDropped(() => {
-      Toast.show(_(msg`Sorry! Your session expired. Please sign in again.`), {
+      Toast.show(l`Sorry! Your session expired. Please sign in again.`, {
         type: 'info',
       })
       logoutCurrentAccount('Settings')
     })
-  }, [_, logoutCurrentAccount])
+  }, [l, logoutCurrentAccount])
 
   // wait for session to resume
   return (
     <Alf theme={theme}>
       <ThemeProvider theme={theme}>
         <ContextMenuProvider>
-          <Splash isReady={isReady && hasCheckedReferrer}>
+          <Splash isReady={isReady && hasCheckedLanding}>
             <VideoVolumeProvider>
               <ActiveVideoProvider>
                 <Fragment
                   // Resets the entire tree below when it changes:
                   key={currentAccount?.did}>
                   <AnalyticsFeaturesContext>
-                    <TranslationProvider>
-                      <QueryProvider currentDid={currentAccount?.did}>
-                        <BetaUserStorageSync />
-                        <PolicyUpdateOverlayProvider>
-                          <LiveEventsProvider>
-                            <AgeAssuranceV2Provider>
-                              <ComposerProvider>
-                                <MessagesProvider>
-                                  {/* LabelDefsProvider MUST come before ModerationOptsProvider */}
-                                  <LabelDefsProvider>
-                                    <ModerationOptsProvider>
-                                      <LoggedOutViewProvider>
-                                        <SelectedFeedProvider>
-                                          <HiddenRepliesProvider>
-                                            <HomeBadgeProvider>
-                                              <UnreadNotifsProvider>
-                                                <BackgroundNotificationPreferencesProvider>
-                                                  <MutedThreadsProvider>
-                                                    <SafeAreaProvider>
-                                                      <ProgressGuideProvider>
-                                                        <ServiceConfigProvider>
-                                                          <EmailVerificationProvider>
-                                                            <HideBottomBarBorderProvider>
-                                                              <IntentDialogProvider>
-                                                                <Shell />
-                                                                <ToastOutlet />
-                                                              </IntentDialogProvider>
-                                                            </HideBottomBarBorderProvider>
-                                                          </EmailVerificationProvider>
-                                                        </ServiceConfigProvider>
-                                                      </ProgressGuideProvider>
-                                                    </SafeAreaProvider>
-                                                  </MutedThreadsProvider>
-                                                </BackgroundNotificationPreferencesProvider>
-                                              </UnreadNotifsProvider>
-                                            </HomeBadgeProvider>
-                                          </HiddenRepliesProvider>
-                                        </SelectedFeedProvider>
-                                      </LoggedOutViewProvider>
-                                    </ModerationOptsProvider>
-                                  </LabelDefsProvider>
-                                </MessagesProvider>
-                              </ComposerProvider>
-                            </AgeAssuranceV2Provider>
-                          </LiveEventsProvider>
-                        </PolicyUpdateOverlayProvider>
-                      </QueryProvider>
-                    </TranslationProvider>
+                    <QueryProvider currentDid={currentAccount?.did}>
+                      <BetaUserStorageSync />
+                      <PolicyUpdateOverlayProvider>
+                        <LiveEventsProvider>
+                          <AgeAssuranceV2Provider>
+                            <ComposerProvider>
+                              <MessagesProvider>
+                                {/* LabelDefsProvider MUST come before ModerationOptsProvider */}
+                                <LabelDefsProvider>
+                                  <ModerationOptsProvider>
+                                    <LoggedOutViewProvider>
+                                      <SelectedFeedProvider>
+                                        <HiddenRepliesProvider>
+                                          <HomeBadgeProvider>
+                                            <UnreadNotifsProvider>
+                                              <BackgroundNotificationPreferencesProvider>
+                                                <MutedThreadsProvider>
+                                                  <SafeAreaProvider>
+                                                    <ProgressGuideProvider>
+                                                      <ServiceConfigProvider>
+                                                        <EmailVerificationProvider>
+                                                          <HideBottomBarBorderProvider>
+                                                            <IntentDialogProvider>
+                                                              <TranslateOnDeviceProvider>
+                                                                <HotkeysProvider>
+                                                                  <Shell />
+                                                                  <ToastOutlet />
+                                                                </HotkeysProvider>
+                                                              </TranslateOnDeviceProvider>
+                                                            </IntentDialogProvider>
+                                                          </HideBottomBarBorderProvider>
+                                                        </EmailVerificationProvider>
+                                                      </ServiceConfigProvider>
+                                                    </ProgressGuideProvider>
+                                                  </SafeAreaProvider>
+                                                </MutedThreadsProvider>
+                                              </BackgroundNotificationPreferencesProvider>
+                                            </UnreadNotifsProvider>
+                                          </HomeBadgeProvider>
+                                        </HiddenRepliesProvider>
+                                      </SelectedFeedProvider>
+                                    </LoggedOutViewProvider>
+                                  </ModerationOptsProvider>
+                                </LabelDefsProvider>
+                              </MessagesProvider>
+                            </ComposerProvider>
+                          </AgeAssuranceV2Provider>
+                        </LiveEventsProvider>
+                      </PolicyUpdateOverlayProvider>
+                    </QueryProvider>
                   </AnalyticsFeaturesContext>
                 </Fragment>
               </ActiveVideoProvider>
@@ -256,11 +264,11 @@ function App() {
                         <LightboxStateProvider>
                           <PortalProvider>
                             <HighlightProvider>
-                              <StarterPackProvider>
+                              <LandingProvider>
                                 <PoliticalAffiliationProvider>
                                   <InnerApp />
                                 </PoliticalAffiliationProvider>
-                              </StarterPackProvider>
+                              </LandingProvider>
                             </HighlightProvider>
                           </PortalProvider>
                         </LightboxStateProvider>
@@ -277,4 +285,4 @@ function App() {
   )
 }
 
-export default App
+export default Sentry.wrap(App)

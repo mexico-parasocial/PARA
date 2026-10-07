@@ -590,6 +590,13 @@ export function MapScreenImpl({
     }))
   }, [selectedState])
 
+  // Browsing a state's city list does not add pins. Only the city the viewer
+  // chooses is shown, using the same selection for native and web providers.
+  const visibleCityMarkers = useMemo(() => {
+    if (activeLayer !== 'cities' || !showCities || !selectedCityName) return []
+    return selectedStateCities.filter(city => city.name === selectedCityName)
+  }, [activeLayer, selectedCityName, selectedStateCities, showCities])
+
   const setMapRouteParams = useCallback(
     (params: {
       state?: string
@@ -1035,7 +1042,7 @@ export function MapScreenImpl({
   const rawCityMarkers = useMemo(() => {
     if (!MarkerComponent || !showCities || !selectedState) return []
 
-    return selectedStateCities.map(city => {
+    return visibleCityMarkers.map(city => {
       const partyColor = getPartyColor(city.dominantParty)
       const isSelected = selectedCityName === city.name
 
@@ -1084,7 +1091,7 @@ export function MapScreenImpl({
     focusCity,
     selectedCityName,
     selectedState,
-    selectedStateCities,
+    visibleCityMarkers,
     showCities,
     t,
   ])
@@ -1102,46 +1109,6 @@ export function MapScreenImpl({
 
     return rawCityMarkers
   }, [MarkerClustererComponent, mapRegion, rawCityMarkers])
-
-  /**
-   * State centroid markers act as tap proxies so users can select states
-   * without relying on polygon tap detection (which is unreliable on web
-   * and expensive on native).
-   */
-  const renderedStateCentroidMarkers = useMemo(() => {
-    if (!MarkerComponent || activeLayer !== 'states') return null
-
-    return preparedStateFeatures.map(feature => {
-      const isSelected = selectedState?.name === feature.name
-
-      return (
-        <MarkerComponent
-          key={`centroid:state:${feature.normalizedName}`}
-          coordinate={feature.centroid}
-          anchor={{x: 0.5, y: 0.5}}
-          tappable
-          tracksViewChanges={false}
-          zIndex={isSelected ? 13 : 2}
-          onPress={() => {
-            lastTapRef.current = Date.now()
-            focusState(feature.name, {openLayer: activeLayer})
-          }}>
-          <View
-            style={[
-              styles.stateCentroidMarker,
-              isSelected && styles.stateCentroidMarkerSelected,
-            ]}
-          />
-        </MarkerComponent>
-      )
-    })
-  }, [
-    MarkerComponent,
-    activeLayer,
-    preparedStateFeatures,
-    selectedState?.name,
-    focusState,
-  ])
 
   /**
    * District centroid markers act as tap proxies. Each district gets a
@@ -1288,7 +1255,7 @@ export function MapScreenImpl({
   // Data arrays for MapLibre imperative rendering (web)
   const cityMarkersData = useMemo(() => {
     if (!showCities || !selectedState) return []
-    return selectedStateCities.map(city => ({
+    return visibleCityMarkers.map(city => ({
       name: city.name,
       stateName: city.stateName,
       coordinate: city.coordinate,
@@ -1302,7 +1269,7 @@ export function MapScreenImpl({
   }, [
     showCities,
     selectedState,
-    selectedStateCities,
+    visibleCityMarkers,
     selectedCityName,
     focusCity,
   ])
@@ -1392,7 +1359,6 @@ export function MapScreenImpl({
         }}>
         {renderedPolygons}
         {renderedDistrictPolygons}
-        {renderedStateCentroidMarkers}
         {renderedDistrictCentroidMarkers}
         {renderedCityMarkers}
         {civicMarkers}
@@ -1563,7 +1529,11 @@ export function MapScreenImpl({
         selectedState={selectedState}
         showCities={showCities}
         selectedCityName={selectedCityName}
+        onSelectCity={cityName => {
+          if (selectedState) focusCity(selectedState.name, cityName)
+        }}
         onClose={() => {
+          setActiveLayer('states')
           setShowCities(false)
           setSelectedCityName(null)
           if (selectedState) {
@@ -1727,26 +1697,40 @@ export function MapScreenImpl({
               </View>
             )}
 
-            <MapSearchControls
-              searchExpanded={searchExpanded}
-              setSearchExpanded={setSearchExpanded}
-              searchQuery={searchQuery}
-              setSearchQuery={setSearchQuery}
-              searchResults={searchResults}
-              recentSearchResults={recentSearchResults}
-              onSelect={handleSearchSelect}
-            />
-
-            {/* The expanded search drops a results list over this corner. */}
-            {!searchExpanded && (
-              <MapLayersPanel
-                activeLayer={activeLayer}
-                onSelectLayer={handleSelectLayer}
-                civicHeatOn={civicHeatOn}
-                onToggleCivicHeat={toggleCivicHeat}
-                civicPointCount={civicPointCount}
+            {/* Keep phone controls in normal flow so their measured heights
+                cannot put search on top of the layer selector. */}
+            <View
+              pointerEvents="box-none"
+              style={
+                !gtMobile && [
+                  a.absolute,
+                  a.gap_md,
+                  {top: 20, left: 16, right: 76, zIndex: 30},
+                ]
+              }>
+              <MapSearchControls
+                inline={!gtMobile}
+                searchExpanded={searchExpanded}
+                setSearchExpanded={setSearchExpanded}
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                searchResults={searchResults}
+                recentSearchResults={recentSearchResults}
+                onSelect={handleSearchSelect}
               />
-            )}
+
+              {/* The expanded search drops a results list over this corner. */}
+              {!searchExpanded && (
+                <MapLayersPanel
+                  inline={!gtMobile}
+                  activeLayer={activeLayer}
+                  onSelectLayer={handleSelectLayer}
+                  civicHeatOn={civicHeatOn}
+                  onToggleCivicHeat={toggleCivicHeat}
+                  civicPointCount={civicPointCount}
+                />
+              )}
+            </View>
 
             {floatingControls}
             {mobileOverlays}
@@ -1845,15 +1829,6 @@ const styles = {
     shadowOffset: {width: 0, height: 3},
   },
   cityMarkerLabel: [a.mt_xs, a.px_sm, {paddingVertical: 3, borderRadius: 999}],
-  stateCentroidMarker: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: 'transparent',
-  },
-  stateCentroidMarkerSelected: {
-    backgroundColor: 'rgba(255, 90, 54, 0.12)',
-  },
   districtCentroidMarker: {
     width: 10,
     height: 10,

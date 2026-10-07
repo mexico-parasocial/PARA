@@ -7,6 +7,8 @@ import {
   createStarterPackLinkFromAndroidReferrer,
   parseStarterPackUri,
 } from '#/lib/strings/starter-pack'
+import {messages} from '#/locale/locales/en/messages'
+import {klipyUrlToBskyGifUrl} from '#/features/gifPicker/utils'
 import {cleanError} from '../../src/lib/strings/errors'
 import {createFullHandle, makeValidHandle} from '../../src/lib/strings/handles'
 import {enforceLen} from '../../src/lib/strings/helpers'
@@ -202,13 +204,8 @@ describe('enforceLen', () => {
 })
 
 describe('cleanError', () => {
-  /*
-   * `cleanError` returns translated copy, so a locale has to be active. With
-   * no catalog loaded, Lingui falls back to the source message.
-   */
-  beforeAll(() => {
-    i18n.loadAndActivate({locale: 'en', messages: {}})
-  })
+  // cleanError uses lingui
+  i18n.loadAndActivate({locale: 'en', messages})
 
   const inputs = [
     'TypeError: Network request failed',
@@ -240,7 +237,7 @@ describe('toNiceDomain', () => {
     'https://bsky.social',
     '#123123123',
   ]
-  const outputs = ['example.com', 'bsky.app', 'PARA Social', '#123123123']
+  const outputs = ['example.com', 'bsky.app', 'Bluesky Social', '#123123123']
 
   it("displays the url's host in a easily readable manner", () => {
     for (let i = 0; i < inputs.length; i++) {
@@ -335,6 +332,7 @@ describe('shortenLinks', () => {
       expect(outputRT.text).toEqual(outputs[i][0])
       expect(outputRT.facets?.length).toEqual(outputs[i][1].length)
       for (let j = 0; j < outputs[i][1].length; j++) {
+        // @ts-expect-error whatever
         expect(outputRT.facets![j].features[0].uri).toEqual(outputs[i][1][j])
       }
     }
@@ -345,9 +343,11 @@ describe('parseEmbedPlayerFromUrl', () => {
   const inputs = [
     'https://youtu.be/videoId',
     'https://youtu.be/videoId?t=1s',
+    'https://youtu.be/videoId?t=1h2m3s',
     'https://www.youtube.com/watch?v=videoId',
     'https://www.youtube.com/watch?v=videoId&feature=share',
     'https://www.youtube.com/watch?v=videoId&t=1s',
+    'https://www.youtube.com/watch?v=videoId&t=1m30s',
     'https://youtube.com/watch?v=videoId',
     'https://youtube.com/watch?v=videoId&feature=share',
     'https://youtube.com/shorts/videoId',
@@ -445,6 +445,20 @@ describe('parseEmbedPlayerFromUrl', () => {
 
     'https://www.flickr.com/groups/898944@N23/',
     'https://www.flickr.com/groups',
+
+    'https://maxblansjaar.bandcamp.com/album/false-comforts',
+    'https://grmnygrmny.bandcamp.com/track/fluid',
+    'https://sufjanstevens.bandcamp.com/',
+    'https://sufjanstevens.bandcamp.com',
+    'https://bandcamp.com/',
+    'https://bandcamp.com',
+
+    'https://static.klipy.com/ii/abc123/73/ac/someFile.gif?hh=200&ww=300',
+    'https://static.klipy.com/ii/abc123/73/ac/someFile.gif?hh=200&ww=300&mp4=videoSlugMp4&webm=videoSlugWebm',
+    'https://static.klipy.com/ii/abc123/73/ac/someFile.gif?hh=200',
+    'https://static.klipy.com/ii/abc123/73/ac/someFile.gif',
+    'https://static.klipy.com/other/path.gif?hh=200&ww=300',
+    'https://static.klipy.com',
   ]
 
   const outputs = [
@@ -461,6 +475,12 @@ describe('parseEmbedPlayerFromUrl', () => {
     {
       type: 'youtube_video',
       source: 'youtube',
+      playerUri:
+        'https://bsky.app/iframe/youtube.html?videoId=videoId&start=3723',
+    },
+    {
+      type: 'youtube_video',
+      source: 'youtube',
       playerUri: 'https://bsky.app/iframe/youtube.html?videoId=videoId&start=0',
     },
     {
@@ -472,6 +492,12 @@ describe('parseEmbedPlayerFromUrl', () => {
       type: 'youtube_video',
       source: 'youtube',
       playerUri: 'https://bsky.app/iframe/youtube.html?videoId=videoId&start=1',
+    },
+    {
+      type: 'youtube_video',
+      source: 'youtube',
+      playerUri:
+        'https://bsky.app/iframe/youtube.html?videoId=videoId&start=90',
     },
     {
       type: 'youtube_video',
@@ -823,6 +849,52 @@ describe('parseEmbedPlayerFromUrl', () => {
 
     undefined,
     undefined,
+
+    {
+      type: 'bandcamp_album',
+      source: 'bandcamp',
+      playerUri:
+        'https://bandcamp.com/EmbeddedPlayer/url=https%3A%2F%2Fmaxblansjaar.bandcamp.com%2Falbum%2Ffalse-comforts/size=large/bgcol=ffffff/linkcol=0687f5/minimal=true/transparent=true/',
+    },
+    {
+      type: 'bandcamp_track',
+      source: 'bandcamp',
+      playerUri:
+        'https://bandcamp.com/EmbeddedPlayer/url=https%3A%2F%2Fgrmnygrmny.bandcamp.com%2Ftrack%2Ffluid/size=large/bgcol=ffffff/linkcol=0687f5/minimal=true/transparent=true/',
+    },
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+
+    {
+      type: 'klipy_gif',
+      source: 'klipy',
+      isGif: true,
+      hideDetails: true,
+      playerUri: 'https://k.gifs.bsky.app/ii/abc123/73/ac/someFile.gif',
+      dimensions: {
+        width: 300,
+        height: 200,
+      },
+    },
+    // With video slug params — on native (test env), keeps gif filename,
+    // strips mp4/webm params. On web, would swap to video filename.
+    {
+      type: 'klipy_gif',
+      source: 'klipy',
+      isGif: true,
+      hideDetails: true,
+      playerUri: 'https://k.gifs.bsky.app/ii/abc123/73/ac/someFile.gif',
+      dimensions: {
+        width: 300,
+        height: 200,
+      },
+    },
+    undefined,
+    undefined,
+    undefined,
+    undefined,
   ]
 
   it('correctly grabs the correct id from uri', () => {
@@ -1010,5 +1082,33 @@ describe('createStarterPackGooglePlayUri', () => {
   it('returns null when rkey is supplied but no name', () => {
     // @ts-expect-error test
     expect(createStarterPackGooglePlayUri(undefined, 'rkey')).toEqual(null)
+  })
+})
+
+describe('klipyUrlToBskyGifUrl', () => {
+  const inputs = [
+    'https://static.klipy.com/ii/abc123/73/ac/someFile.gif',
+    'https://static.klipy.com/ii/abc123/73/ac/someFile.gif?hh=200&ww=300',
+  ]
+
+  it.each(inputs)(
+    'returns url with k.gifs.bsky.app as hostname for input url',
+    input => {
+      const out = klipyUrlToBskyGifUrl(input)
+      expect(out.startsWith('https://k.gifs.bsky.app/')).toEqual(true)
+    },
+  )
+
+  it('preserves the path and query params when rewriting', () => {
+    const out = klipyUrlToBskyGifUrl(
+      'https://static.klipy.com/ii/abc123/73/ac/someFile.gif?hh=200&ww=300',
+    )
+    expect(out).toEqual(
+      'https://k.gifs.bsky.app/ii/abc123/73/ac/someFile.gif?hh=200&ww=300',
+    )
+  })
+
+  it('returns empty string for invalid URLs', () => {
+    expect(klipyUrlToBskyGifUrl('not-a-url')).toEqual('')
   })
 })

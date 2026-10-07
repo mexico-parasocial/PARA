@@ -8,9 +8,9 @@ import {
 import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
 import {useDialogStateContext} from '#/state/dialogs'
 import {emitFocusSearch} from '#/state/events'
-import {useLightbox} from '#/state/lightbox'
 import {useSession} from '#/state/session'
 import {useIsDrawerOpen} from '#/state/shell/drawer-open'
+import {useLightbox} from '#/components/Lightbox/state'
 
 enum Hotkeys {
   OPEN_COMPOSER = 'n',

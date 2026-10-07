@@ -1,5 +1,6 @@
 import {useCallback, useMemo, useState} from 'react'
 import {StyleSheet, View} from 'react-native'
+import {PlatformInfo} from '@bsky.app/expo-bluesky-swiss-army'
 import {plural} from '@lingui/core/macro'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {useNavigation, useNavigationState} from '@react-navigation/native'
@@ -16,6 +17,7 @@ import {
 import {sanitizeDisplayName} from '#/lib/strings/display-names'
 import {isInvalidHandle, sanitizeHandle} from '#/lib/strings/handles'
 import {emitSoftReset} from '#/state/events'
+import {useHomeBadge} from '#/state/home-badge'
 import {useFetchHandle} from '#/state/queries/handle'
 import {useUnreadMessageCount} from '#/state/queries/messages/list-conversations'
 import {useUnreadNotifications} from '#/state/queries/notifications/unread'
@@ -97,9 +99,8 @@ import {Text} from '#/components/Typography'
 import {useAgeAssurance} from '#/ageAssurance'
 import {useAnalytics} from '#/analytics'
 import {type Events} from '#/analytics/metrics/types'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import {router} from '#/routes'
-import {PlatformInfo} from '../../../../modules/expo-bluesky-swiss-army'
 
 const LARGE_ELEMENT_SIZE = 48
 const NAV_ICON_WIDTH = 28
@@ -685,6 +686,7 @@ function AgoraNavItem({minimal}: {minimal: boolean}) {
 export function DesktopLeftNav({routeName}: {routeName: string}) {
   const {hasSession, currentAccount} = useSession()
   const {t: l} = useLingui()
+  const ax = useAnalytics()
   const {gtMobile} = useBreakpoints()
 
   const aa = useAgeAssurance()
@@ -700,6 +702,7 @@ export function DesktopLeftNav({routeName}: {routeName: string}) {
     useLayoutBreakpoints()
   const numUnreadNotifications = useUnreadNotifications()
   const numUnreadMessages = useUnreadMessageCount()
+  const hasHomeBadge = useHomeBadge()
 
   const leftNavMinimal = isSplitViewScreen || leftNavMinimalBreakpoint
 
@@ -753,6 +756,9 @@ export function DesktopLeftNav({routeName}: {routeName: string}) {
             href="/"
             navItem="home"
             minimal={leftNavMinimal}
+            hasNew={
+              hasHomeBadge && ax.features.enabled(ax.features.FollowingV2Enable)
+            }
             icons={{
               inactive: HomeIcon,
               active: HomeFilledIcon,

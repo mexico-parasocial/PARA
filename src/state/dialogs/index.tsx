@@ -10,11 +10,11 @@ import {
   useRef,
   useState,
 } from 'react'
+import {BottomSheetNativeComponent} from '@bsky.app/bottom-sheet'
 
 import {type DialogControlRefProps} from '#/components/Dialog'
 import {Provider as GlobalDialogsProvider} from '#/components/dialogs/Context'
 import {IS_WEB} from '#/env'
-import {BottomSheetNativeComponent} from '../../../modules/bottom-sheet'
 
 interface IDialogContext {
   /**

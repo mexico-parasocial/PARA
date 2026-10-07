@@ -9,6 +9,8 @@ import {
 import {ExternalEmbedRemoveBtn} from '#/view/com/composer/ExternalEmbedRemoveBtn'
 import {atoms as a, useTheme} from '#/alf'
 import {Loader} from '#/components/Loader'
+import {AtCard} from '#/components/Post/Embed/AtCard'
+import {getAtCardProvider} from '#/components/Post/Embed/AtCard/providers'
 import {ExternalEmbed} from '#/components/Post/Embed/ExternalEmbed'
 import {ModeratedFeedEmbed} from '#/components/Post/Embed/FeedEmbed'
 import {JoinRequestEmbed} from '#/components/Post/Embed/JoinRequestEmbed'
@@ -18,7 +20,7 @@ import {isStandardSiteEmbed} from '#/components/Post/Embed/StandardSiteEmbed/uti
 import {Embed as StarterPackEmbed} from '#/components/StarterPack/StarterPackCard'
 import {Text} from '#/components/Typography'
 import {type Gif} from '#/features/gifPicker/types'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 export const ExternalEmbedGif = ({
   onRemove,
@@ -91,10 +93,16 @@ export const ExternalEmbedLink = ({
   const linkComponent = useMemo(() => {
     if (data) {
       if (data.type === 'external') {
-        if (data.view && isStandardSiteEmbed(data.view.external)) {
+        const atProvider = getAtCardProvider(uri)
+        if (
+          (data.view && isStandardSiteEmbed(data.view.external)) ||
+          atProvider
+        ) {
+          const Card = atProvider ? AtCard : StandardSiteEmbed
           return (
-            <StandardSiteEmbed
+            <Card
               preview
+              authorDid={data.authorDid}
               view={
                 {
                   ...data.view?.external,
