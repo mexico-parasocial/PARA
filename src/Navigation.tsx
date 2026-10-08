@@ -129,7 +129,6 @@ import ConsentAuditScreen from '#/screens/m8/ConsentAuditScreen'
 import IdentityHubScreen from '#/screens/m8/IdentityHubScreen'
 import INEVerificationScreen from '#/screens/m8/INEVerificationScreen'
 import TrustedIssuersScreen from '#/screens/m8/TrustedIssuersScreen'
-import VerifyDashboardScreen from '#/screens/m8/VerifyDashboardScreen'
 import WalletScreen from '#/screens/m8/WalletScreen'
 import {AgentChatScreen} from '#/screens/Messages/AgentChat'
 import {MessagesScreen} from '#/screens/Messages/ChatList'
@@ -961,11 +960,6 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
         name="MyWallet"
         getComponent={() => WalletScreen}
         options={{title: title(msg`My Wallet`), requireAuth: true}}
-      />
-      <Stack.Screen
-        name="VerifyDashboard"
-        getComponent={() => VerifyDashboardScreen}
-        options={{title: title(msg`Verify Dashboard`), requireAuth: true}}
       />
       <Stack.Screen
         name="TrustedIssuers"

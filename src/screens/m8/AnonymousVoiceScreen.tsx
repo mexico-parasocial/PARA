@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useState} from 'react'
-import {ActivityIndicator, ScrollView, View} from 'react-native'
+import {ActivityIndicator, Alert, View} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -59,14 +59,16 @@ export default function AnonymousVoiceScreen({route}: Props) {
         setKarma(null)
       }
     } catch (e) {
-      const message = e instanceof Error ? e.message : 'Failed to load voice'
+      const message =
+        e instanceof Error ? e.message : _(msg`Could not load this voice.`)
+      // m8 rejects burner voices with ISOLATED_NOT_FOLLOWABLE.
       if (message.includes('Isolated') || message.includes('followable')) {
         setState({status: 'isolated'})
       } else {
         setState({status: 'error', message})
       }
     }
-  }, [profileId])
+  }, [_, profileId])
 
   useEffect(() => {
     void load()
@@ -80,10 +82,17 @@ export default function AnonymousVoiceScreen({route}: Props) {
         ? await deleteAnonymousFollow(profileId)
         : await postAnonymousFollow(profileId)
       setState({status: 'ready', voice: next})
+    } catch (e) {
+      // e.g. following your own voice, or before your default anonymous
+      // identity is enabled — m8's message says which.
+      Alert.alert(
+        _(msg`Could not update follow`),
+        e instanceof Error ? e.message : _(msg`Please try again.`),
+      )
     } finally {
       setBusy(false)
     }
-  }, [state, busy, profileId])
+  }, [_, state, busy, profileId])
 
   return (
     <Layout.Screen>
@@ -96,120 +105,118 @@ export default function AnonymousVoiceScreen({route}: Props) {
         </Layout.Header.Content>
         <Layout.Header.Slot />
       </Layout.Header.Outer>
-      <Layout.Content>
-        <ScrollView contentContainerStyle={[a.p_lg, a.gap_lg]}>
-          {state.status === 'loading' ? (
-            <ActivityIndicator style={[a.mt_xl]} />
-          ) : state.status === 'isolated' ? (
-            <View style={[a.gap_sm]}>
-              <Text style={[a.text_lg, a.font_bold]}>
-                <Trans>Burner voices have no profile</Trans>
-              </Text>
-              <Text style={[a.text_md, t.atoms.text_contrast_medium]}>
-                <Trans>
-                  This identity exists only for its own conversation. It cannot
-                  be followed and carries no reputation — that is what keeps it
-                  unlinkable.
-                </Trans>
-              </Text>
-            </View>
-          ) : state.status === 'error' ? (
-            <Text style={[a.text_md, {color: t.palette.negative_500}]}>
-              {state.message}
+      <Layout.Content contentContainerStyle={[a.p_lg, a.gap_lg]}>
+        {state.status === 'loading' ? (
+          <ActivityIndicator style={[a.mt_xl]} />
+        ) : state.status === 'isolated' ? (
+          <View style={[a.gap_sm]}>
+            <Text style={[a.text_lg, a.font_bold]}>
+              <Trans>Burner voices have no profile</Trans>
             </Text>
-          ) : (
-            <>
-              <View style={[a.flex_row, a.align_center, a.gap_md]}>
-                <View
-                  style={[
-                    a.align_center,
-                    a.justify_center,
-                    {
-                      width: 64,
-                      height: 64,
-                      borderRadius: 32,
-                      backgroundColor: colorFromSeed(
-                        state.voice.profile.avatarSeed,
-                      ),
-                    },
-                  ]}>
-                  <Text style={[a.text_2xl, {color: 'white'}]}>
-                    {state.voice.profile.displayName.slice(0, 1).toUpperCase()}
-                  </Text>
-                </View>
-                <View style={[a.flex_1]}>
-                  <Text style={[a.text_xl, a.font_bold]} numberOfLines={1}>
-                    {state.voice.profile.displayName}
-                  </Text>
-                  <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-                    <Trans>Main voice · persistent anonymous identity</Trans>
-                  </Text>
-                </View>
+            <Text style={[a.text_md, t.atoms.text_contrast_medium]}>
+              <Trans>
+                This identity exists only for its own conversation. It cannot be
+                followed and carries no reputation — that is what keeps it
+                unlinkable.
+              </Trans>
+            </Text>
+          </View>
+        ) : state.status === 'error' ? (
+          <Text style={[a.text_md, {color: t.palette.negative_500}]}>
+            {state.message}
+          </Text>
+        ) : (
+          <>
+            <View style={[a.flex_row, a.align_center, a.gap_md]}>
+              <View
+                style={[
+                  a.align_center,
+                  a.justify_center,
+                  {
+                    width: 64,
+                    height: 64,
+                    borderRadius: 32,
+                    backgroundColor: colorFromSeed(
+                      state.voice.profile.avatarSeed,
+                    ),
+                  },
+                ]}>
+                <Text style={[a.text_2xl, {color: 'white'}]}>
+                  {state.voice.profile.displayName.slice(0, 1).toUpperCase()}
+                </Text>
               </View>
-
-              <View style={[a.flex_row, a.gap_md]}>
-                <View
-                  style={[
-                    a.flex_1,
-                    a.p_md,
-                    a.rounded_md,
-                    a.align_center,
-                    t.atoms.bg_contrast_25,
-                  ]}>
-                  <Text style={[a.text_xl, a.font_bold]}>
-                    {state.voice.followerCount}
-                  </Text>
-                  <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-                    <Trans>Followers</Trans>
-                  </Text>
-                </View>
-                <View
-                  style={[
-                    a.flex_1,
-                    a.p_md,
-                    a.rounded_md,
-                    a.align_center,
-                    t.atoms.bg_contrast_25,
-                  ]}>
-                  <Text style={[a.text_xl, a.font_bold]}>
-                    {karma === null ? '—' : karma}
-                  </Text>
-                  <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-                    <Trans>Karma</Trans>
-                  </Text>
-                </View>
+              <View style={[a.flex_1]}>
+                <Text style={[a.text_xl, a.font_bold]} numberOfLines={1}>
+                  {state.voice.profile.displayName}
+                </Text>
+                <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
+                  <Trans>Main voice · persistent anonymous identity</Trans>
+                </Text>
               </View>
+            </View>
 
-              <Button
-                variant={state.voice.following ? 'outline' : 'solid'}
-                color={state.voice.following ? 'secondary' : 'primary'}
-                size="large"
-                label={
-                  state.voice.following
-                    ? _(msg`Unfollow this voice`)
-                    : _(msg`Follow this voice`)
-                }
-                disabled={busy}
-                onPress={toggleFollow}>
-                <ButtonText>
-                  {state.voice.following ? (
-                    <Trans>Following</Trans>
-                  ) : (
-                    <Trans>Follow this voice</Trans>
-                  )}
-                </ButtonText>
-              </Button>
+            <View style={[a.flex_row, a.gap_md]}>
+              <View
+                style={[
+                  a.flex_1,
+                  a.p_md,
+                  a.rounded_md,
+                  a.align_center,
+                  t.atoms.bg_contrast_25,
+                ]}>
+                <Text style={[a.text_xl, a.font_bold]}>
+                  {state.voice.followerCount}
+                </Text>
+                <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
+                  <Trans>Followers</Trans>
+                </Text>
+              </View>
+              <View
+                style={[
+                  a.flex_1,
+                  a.p_md,
+                  a.rounded_md,
+                  a.align_center,
+                  t.atoms.bg_contrast_25,
+                ]}>
+                <Text style={[a.text_xl, a.font_bold]}>
+                  {karma === null ? '—' : karma}
+                </Text>
+                <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
+                  <Trans>Karma</Trans>
+                </Text>
+              </View>
+            </View>
 
-              <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-                <Trans>
-                  Follows are kept inside m8 — they are never written to the
-                  public social graph, so this voice stays unlinkable to its
-                  owner's account.
-                </Trans>
-              </Text>
-            </>
-          )}
-        </ScrollView>
+            <Button
+              variant={state.voice.following ? 'outline' : 'solid'}
+              color={state.voice.following ? 'secondary' : 'primary'}
+              size="large"
+              label={
+                state.voice.following
+                  ? _(msg`Unfollow this voice`)
+                  : _(msg`Follow this voice`)
+              }
+              disabled={busy}
+              onPress={toggleFollow}>
+              <ButtonText>
+                {state.voice.following ? (
+                  <Trans>Following</Trans>
+                ) : (
+                  <Trans>Follow this voice</Trans>
+                )}
+              </ButtonText>
+            </Button>
+
+            <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
+              <Trans>
+                Follows are kept inside m8 — they are never written to the
+                public social graph, so this voice stays unlinkable to its
+                owner's account.
+              </Trans>
+            </Text>
+          </>
+        )}
       </Layout.Content>
     </Layout.Screen>
   )

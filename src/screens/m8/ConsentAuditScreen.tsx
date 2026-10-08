@@ -1,21 +1,22 @@
-import {useCallback, useEffect, useState} from 'react'
-import {
-  Alert,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-  View,
-} from 'react-native'
-// @ts-ignore - lingui macro types not available
+import {useCallback, useEffect, useMemo, useState} from 'react'
+import {ActivityIndicator, RefreshControl, View} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
+import {Trans} from '@lingui/react/macro'
 
-import {m8Fetch, postGrantRevoke} from '#/lib/im8'
-import {useTheme} from '#/alf'
+import {m8Fetch} from '#/lib/im8'
+import {atoms as a, useTheme} from '#/alf'
+import {Button, ButtonText} from '#/components/Button'
+import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'
+import {
+  Card,
+  EmptyNoteText,
+  formatDateTime,
+  SectionHeading,
+} from './components/IdentityPrimitives'
 
-// ─── Types ─────────────────────────────────────────────────────────────────
+// Shapes returned by mubEZ `GET /v1/ledger` (app/controllers/ledger_controller.ts).
 
 interface LedgerEntry {
   id: number
@@ -26,37 +27,9 @@ interface LedgerEntry {
   createdAt: string
 }
 
-interface Grant {
+interface LedgerGrant {
   id: string
-  appId: string
   appName: string
-  appKind: string
-  surface: string
-  requestedClaims: Array<{
-    type: string
-    disclosure: string
-    requestedValue?: string
-  }>
-  proofMode: string
-  status: string
-  reason: string
-  requestedAt: string
-  issuedAt: string | null
-  expiresAt: string | null
-  reviewNote: string | null
-}
-
-interface ProofArtifact {
-  id: string
-  grantId: string
-  claimType: string
-  outcome: string
-  statement: string
-  audienceAppId: string
-  audienceAppName: string
-  surface: string
-  status: string
-  issuedAt: string
 }
 
 interface AuditSummary {
@@ -67,43 +40,44 @@ interface AuditSummary {
   activeProofs: number
 }
 
-// ─── Consent Audit Screen ──────────────────────────────────────────────────
+const EMPTY_SUMMARY: AuditSummary = {
+  totalRequests: 0,
+  activeGrants: 0,
+  revokedGrants: 0,
+  totalProofs: 0,
+  activeProofs: 0,
+}
 
+/**
+ * The m8 ledger for this session: every grant request, approval, revocation
+ * and verification m8 recorded, newest first. Read-only; grants are revoked
+ * from the Wallet tab.
+ */
 export default function ConsentAuditScreen() {
-  const t = useTheme()
   const {_} = useLingui()
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [loadError, setLoadError] = useState(false)
   const [ledger, setLedger] = useState<LedgerEntry[]>([])
-  const [grants, setGrants] = useState<Grant[]>([])
-  const [proofs, setProofs] = useState<ProofArtifact[]>([])
-  const [summary, setSummary] = useState<AuditSummary>({
-    totalRequests: 0,
-    activeGrants: 0,
-    revokedGrants: 0,
-    totalProofs: 0,
-    activeProofs: 0,
-  })
+  const [grants, setGrants] = useState<LedgerGrant[]>([])
+  const [summary, setSummary] = useState<AuditSummary>(EMPTY_SUMMARY)
 
   const loadAudit = useCallback(async () => {
     try {
       const res = await m8Fetch('/ledger')
-      if (!res.ok) {
-        console.warn('[m8] Failed to load ledger:', res.status)
-        return
-      }
+      if (!res.ok) throw new Error(`Ledger failed (${res.status})`)
       const data = (await res.json()) as {
         ledger: LedgerEntry[]
-        grants: Grant[]
-        proofs: ProofArtifact[]
+        grants: LedgerGrant[]
         summary: AuditSummary
       }
       setLedger(data.ledger)
       setGrants(data.grants)
-      setProofs(data.proofs)
       setSummary(data.summary)
+      setLoadError(false)
     } catch (err) {
       console.warn('[m8] Failed to load audit data:', err)
+      setLoadError(true)
     }
   }, [])
 
@@ -115,7 +89,7 @@ export default function ConsentAuditScreen() {
 
   useEffect(() => {
     let cancelled = false
-    loadAudit().then(() => {
+    void loadAudit().finally(() => {
       if (!cancelled) setLoading(false)
     })
     return () => {
@@ -123,448 +97,152 @@ export default function ConsentAuditScreen() {
     }
   }, [loadAudit])
 
-  const handleRevoke = useCallback(
-    async (grant: Grant) => {
-      Alert.alert(
-        _(msg`Revoke Grant`),
-        _(msg`Are you sure you want to revoke access for ${grant.appName}?`),
-        [
-          {text: _(msg`Cancel`), style: 'cancel'},
-          {
-            text: _(msg`Revoke`),
-            style: 'destructive',
-            onPress: async () => {
-              try {
-                await postGrantRevoke(
-                  grant.id,
-                  'User revoked from consent audit',
-                )
-                await loadAudit()
-              } catch (err) {
-                Alert.alert(_(msg`Error`), _(msg`Failed to revoke grant`))
-              }
-            },
-          },
-        ],
-      )
-    },
-    [_, loadAudit],
+  const appNameByGrant = useMemo(
+    () => new Map(grants.map(g => [g.id, g.appName])),
+    [grants],
   )
 
   if (loading) {
     return (
-      <View style={[styles.container, t.atoms.bg]}>
-        <Text style={[styles.headerTitle, t.atoms.text]}>Consent Audit</Text>
-        <Text style={[styles.loadingText, t.atoms.text_contrast_medium]}>
-          Loading your disclosure history...
-        </Text>
+      <View style={[a.flex_1, a.align_center, a.justify_center, a.p_xl]}>
+        <ActivityIndicator />
       </View>
     )
   }
 
   return (
-    <View style={[styles.container, t.atoms.bg]}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }>
-        {/* Header */}
-        <Text style={[styles.headerTitle, t.atoms.text]}>Consent Audit</Text>
-        <Text style={[styles.headerSubtitle, t.atoms.text_contrast_medium]}>
-          Every app that accessed your identity data
-        </Text>
-
-        {/* Summary Cards */}
-        <View style={styles.metricsRow}>
-          <SummaryCard
-            value={summary.activeGrants}
-            label={_(msg`Active Grants`)}
-            color={t.palette.primary_500}
-          />
-          <SummaryCard
-            value={summary.revokedGrants}
-            label={_(msg`Revoked`)}
-            color={t.palette.negative_400}
-          />
-          <SummaryCard
-            value={summary.activeProofs}
-            label={_(msg`Active Proofs`)}
-            color={t.palette.positive_400}
-          />
-        </View>
-
-        {/* Active Grants Section */}
-        <Text style={[styles.sectionTitle, t.atoms.text]}>Active Grants</Text>
-        {grants.filter(g => g.status === 'approved').length === 0 ? (
-          <Text style={[styles.emptyText, t.atoms.text_contrast_medium]}>
-            No active grants. Apps will appear here when you approve access.
+    <Layout.Content
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={() => {
+            void onRefresh()
+          }}
+        />
+      }
+      contentContainerStyle={[a.p_lg, a.gap_md]}>
+      {loadError ? (
+        <Card>
+          <Text style={[a.text_sm]}>
+            <Trans>Could not load your activity from m8.</Trans>
           </Text>
-        ) : (
-          grants
-            .filter(g => g.status === 'approved')
-            .map(grant => (
-              <GrantCard
-                key={grant.id}
-                grant={grant}
-                proofs={proofs.filter(p => p.grantId === grant.id)}
-                onRevoke={() => handleRevoke(grant)}
-              />
-            ))
-        )}
+          <Button
+            label={_(msg`Try again`)}
+            size="small"
+            variant="solid"
+            color="secondary"
+            style={[a.self_start]}
+            onPress={() => {
+              void onRefresh()
+            }}>
+            <ButtonText>
+              <Trans>Try again</Trans>
+            </ButtonText>
+          </Button>
+        </Card>
+      ) : null}
 
-        {/* Audit Timeline */}
-        <Text style={[styles.sectionTitle, t.atoms.text]}>Audit Timeline</Text>
-        {ledger.length === 0 ? (
-          <Text style={[styles.emptyText, t.atoms.text_contrast_medium]}>
-            No audit entries yet.
-          </Text>
-        ) : (
-          ledger.map(entry => <LedgerEntryCard key={entry.id} entry={entry} />)
+      <View style={[a.flex_row, a.gap_sm]}>
+        <Metric value={summary.activeGrants} label={_(msg`Active grants`)} />
+        <Metric value={summary.revokedGrants} label={_(msg`Revoked`)} />
+        <Metric value={summary.activeProofs} label={_(msg`Active proofs`)} />
+      </View>
+
+      <SectionHeading
+        title={_(msg`Activity`)}
+        detail={_(
+          msg`Everything m8 recorded about your grants and proofs, newest first.`,
         )}
-      </ScrollView>
-    </View>
+      />
+      {ledger.length === 0 ? (
+        <EmptyNoteText>
+          <Trans>No activity yet.</Trans>
+        </EmptyNoteText>
+      ) : (
+        ledger.map(entry => (
+          <LedgerRow
+            key={entry.id}
+            entry={entry}
+            appName={
+              entry.targetType === 'grant'
+                ? appNameByGrant.get(entry.targetId)
+                : undefined
+            }
+          />
+        ))
+      )}
+      <View style={[a.pb_lg]} />
+    </Layout.Content>
   )
 }
 
-// ─── Subcomponents ─────────────────────────────────────────────────────────
-
-function SummaryCard({
-  value,
-  label,
-  color,
-}: {
-  value: number
-  label: string
-  color: string
-}) {
+function Metric({value, label}: {value: number; label: string}) {
   const t = useTheme()
   return (
-    <View
-      style={[
-        styles.metricCard,
-        t.atoms.bg_contrast_25,
-        {borderColor: t.palette.contrast_100},
-      ]}>
-      <Text style={[styles.metricValue, {color}]}>{value}</Text>
-      <Text style={[styles.metricLabel, t.atoms.text_contrast_medium]}>
+    <Card style={[a.flex_1, a.align_center, a.gap_2xs]}>
+      <Text style={[a.text_xl, a.font_bold, t.atoms.text]}>{value}</Text>
+      <Text
+        style={[a.text_xs, a.text_center, t.atoms.text_contrast_medium]}
+        numberOfLines={2}>
         {label}
       </Text>
-    </View>
+    </Card>
   )
 }
 
-function GrantCard({
-  grant,
-  proofs,
-  onRevoke,
+function LedgerRow({
+  entry,
+  appName,
 }: {
-  grant: Grant
-  proofs: ProofArtifact[]
-  onRevoke: () => void
+  entry: LedgerEntry
+  appName: string | undefined
 }) {
   const t = useTheme()
-  const {_} = useLingui()
+  const {_, i18n} = useLingui()
+  const reason =
+    typeof entry.detail.reason === 'string' ? entry.detail.reason : null
+  const dotColor =
+    entry.action === 'Approved'
+      ? t.palette.positive_500
+      : entry.action === 'Revoked'
+        ? t.palette.negative_500
+        : t.palette.contrast_400
 
   return (
     <View
       style={[
-        styles.card,
-        t.atoms.bg_contrast_25,
-        {borderColor: t.palette.contrast_100},
-      ]}>
-      <View style={styles.cardHeader}>
-        <View>
-          <Text style={[styles.cardTitle, t.atoms.text]}>{grant.appName}</Text>
-          <Text style={[styles.cardSubtitle, t.atoms.text_contrast_medium]}>
-            {grant.appKind} • {grant.surface}
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.badge,
-            {backgroundColor: t.palette.primary_500 + '20'},
-          ]}>
-          <Text style={[styles.badgeText, {color: t.palette.primary_500}]}>
-            Active
-          </Text>
-        </View>
-      </View>
-
-      <Text style={[styles.claimsLabel, t.atoms.text_contrast_medium]}>
-        Requested claims:
-      </Text>
-      <View style={styles.claimsRow}>
-        {grant.requestedClaims.map((claim, i) => (
-          <View
-            key={i}
-            style={[
-              styles.claimChip,
-              {backgroundColor: t.palette.primary_500 + '15'},
-            ]}>
-            <Text
-              style={[styles.claimChipText, {color: t.palette.primary_500}]}>
-              {claim.type}
-            </Text>
-          </View>
-        ))}
-      </View>
-
-      {proofs.length > 0 && (
-        <>
-          <Text style={[styles.claimsLabel, t.atoms.text_contrast_medium]}>
-            Disclosed proofs:
-          </Text>
-          {proofs.map(proof => (
-            <View key={proof.id} style={styles.proofRow}>
-              <Text style={[styles.proofText, t.atoms.text]}>
-                {proof.claimType}: {proof.statement}
-              </Text>
-              <Text style={[styles.proofDate, t.atoms.text_contrast_medium]}>
-                {new Date(proof.issuedAt).toLocaleDateString()}
-              </Text>
-            </View>
-          ))}
-        </>
-      )}
-
-      <View style={styles.cardFooter}>
-        <Text style={[styles.cardDate, t.atoms.text_contrast_medium]}>
-          Granted:{' '}
-          {new Date(grant.issuedAt ?? grant.requestedAt).toLocaleDateString()}
-        </Text>
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel={_(msg`Revoke access for ${grant.appName}`)}
-          accessibilityHint={_(
-            msg`Revokes this app's access to your credential data`,
-          )}
-          onPress={onRevoke}
-          style={[
-            styles.revokeBtn,
-            {backgroundColor: t.palette.negative_400 + '15'},
-          ]}>
-          <Text style={[styles.revokeBtnText, {color: t.palette.negative_400}]}>
-            Revoke
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  )
-}
-
-function LedgerEntryCard({entry}: {entry: LedgerEntry}) {
-  const t = useTheme()
-
-  const actionColors: Record<string, string> = {
-    Requested: t.palette.contrast_400,
-    Approved: t.palette.positive_400,
-    Revoked: t.palette.negative_400,
-  }
-
-  return (
-    <View
-      style={[
-        styles.timelineItem,
-        t.atoms.bg_contrast_25,
-        {borderColor: t.palette.contrast_100},
+        a.flex_row,
+        a.gap_sm,
+        a.py_sm,
+        a.border_b,
+        t.atoms.border_contrast_low,
       ]}>
       <View
         style={[
-          styles.timelineDot,
-          {
-            backgroundColor:
-              actionColors[entry.action] ?? t.palette.contrast_400,
-          },
+          a.rounded_full,
+          a.mt_xs,
+          {width: 8, height: 8, backgroundColor: dotColor},
         ]}
       />
-      <View style={styles.timelineContent}>
-        <Text style={[styles.timelineAction, t.atoms.text]}>
-          {entry.action} {entry.targetType}
+      <View style={[a.flex_1, a.gap_2xs]}>
+        {/* action and target type are recorded by m8 as written; not localized here */}
+        <Text style={[a.text_sm, a.font_semi_bold, t.atoms.text]}>
+          {entry.action} · {entry.targetType}
         </Text>
-        <Text style={[styles.timelineTarget, t.atoms.text_contrast_medium]}>
-          {entry.targetId}
+        <Text
+          style={[a.text_xs, t.atoms.text_contrast_medium]}
+          numberOfLines={1}>
+          {appName ?? entry.targetId}
         </Text>
-        {!!entry.detail.reason && (
-          <Text style={[styles.timelineDetail, t.atoms.text_contrast_medium]}>
-            Reason: {String(entry.detail.reason)}
+        {reason ? (
+          <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
+            {_(msg`Reason: ${reason}`)}
           </Text>
-        )}
-        <Text style={[styles.timelineDate, t.atoms.text_contrast_medium]}>
-          {new Date(entry.createdAt).toLocaleString()}
+        ) : null}
+        <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
+          {formatDateTime(i18n, entry.createdAt)}
         </Text>
       </View>
     </View>
   )
 }
-
-// ─── Styles ────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  headerSubtitle: {
-    fontSize: 14,
-    marginBottom: 20,
-  },
-  loadingText: {
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 40,
-  },
-  metricsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 24,
-  },
-  metricCard: {
-    flex: 1,
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: 'center',
-  },
-  metricValue: {
-    fontSize: 22,
-    fontWeight: '700',
-  },
-  metricLabel: {
-    fontSize: 11,
-    marginTop: 4,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: 8,
-    marginBottom: 12,
-  },
-  emptyText: {
-    fontSize: 13,
-    textAlign: 'center',
-    marginVertical: 20,
-  },
-  card: {
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    marginBottom: 12,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 10,
-  },
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-  },
-  cardSubtitle: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  badge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: '600',
-  },
-  claimsLabel: {
-    fontSize: 12,
-    marginBottom: 6,
-  },
-  claimsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 10,
-  },
-  claimChip: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
-  },
-  claimChipText: {
-    fontSize: 11,
-    fontWeight: '500',
-  },
-  proofRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 4,
-  },
-  proofText: {
-    fontSize: 12,
-    flex: 1,
-  },
-  proofDate: {
-    fontSize: 11,
-  },
-  cardFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(0,0,0,0.05)',
-  },
-  cardDate: {
-    fontSize: 11,
-  },
-  revokeBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-  },
-  revokeBtnText: {
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  timelineItem: {
-    flexDirection: 'row',
-    padding: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    marginBottom: 8,
-  },
-  timelineDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginTop: 6,
-    marginRight: 10,
-  },
-  timelineContent: {
-    flex: 1,
-  },
-  timelineAction: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  timelineTarget: {
-    fontSize: 12,
-    marginTop: 2,
-  },
-  timelineDetail: {
-    fontSize: 11,
-    marginTop: 4,
-  },
-  timelineDate: {
-    fontSize: 11,
-    marginTop: 4,
-  },
-})

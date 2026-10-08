@@ -202,7 +202,6 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
   const isAtIdentityHub =
     currentRoute.name === 'IdentityHub' ||
     currentRoute.name === 'MyWallet' ||
-    currentRoute.name === 'VerifyDashboard' ||
     currentRoute.name === 'TrustedIssuers' ||
     currentRoute.name === 'ConsentAudit'
   const {hasSession, currentAccount} = useSession()

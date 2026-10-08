@@ -314,7 +314,6 @@ export type FlatNavigatorParams = CommonNavigatorParams & {
   CreatePost: undefined
   MyBase: undefined
   MyWallet: undefined
-  VerifyDashboard: undefined
   TrustedIssuers: undefined
   ConsentAudit: undefined
   IdentityHub: undefined
@@ -352,7 +351,6 @@ export type AllNavigatorParams = CommonNavigatorParams & {
   Data: undefined
   MyBase: undefined
   MyWallet: undefined
-  VerifyDashboard: undefined
   TrustedIssuers: undefined
   ConsentAudit: undefined
   IdentityHub: undefined
