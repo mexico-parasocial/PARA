@@ -16,12 +16,17 @@ import {
   type CommonNavigatorParams,
   type NativeStackScreenProps,
 } from '#/lib/routes/types'
-import {useCabildeosQuery} from '#/state/queries/cabildeo'
+import {useMapCabildeosQuery} from '#/state/queries/map-cabildeos'
 import {atoms as a, useTheme} from '#/alf'
 import * as SegmentedControl from '#/components/forms/SegmentedControl'
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'
-import {useGeolocation} from '#/geolocation'
+import {
+  cabildeosForMapPlace,
+  mapCivicCount,
+  SHOW_MAP_PREVIEW_FACTS,
+} from './mapData'
+import {MapCivicDataNotice, MapReferenceNotice} from './MapDataNotice'
 
 type Props = NativeStackScreenProps<CommonNavigatorParams, 'DistrictProfile'>
 type DistrictTab = 'overview' | 'activity'
@@ -86,16 +91,6 @@ export function DistrictProfileScreen({navigation, route}: Props) {
     'party' | 'participation' | 'issues'
   >('party')
 
-  const geolocation = useGeolocation()
-  const userState = geolocation.regionCode
-    ? normalizeMexicoStateName(geolocation.regionCode)
-    : undefined
-  const districtState = district
-    ? normalizeMexicoStateName(district.stateName)
-    : undefined
-  const isInDistrict =
-    !userState || !districtState || userState === districtState
-
   const partyBreakdown = useMemo(
     () => (district ? generatePartyBreakdown(district) : []),
     [district],
@@ -111,7 +106,8 @@ export function DistrictProfileScreen({navigation, route}: Props) {
     [district],
   )
 
-  const {data: allCabildeos = []} = useCabildeosQuery()
+  const civicQuery = useMapCabildeosQuery()
+  const allCabildeos = useMemo(() => civicQuery.data ?? [], [civicQuery.data])
 
   // Real CabildeoRecord uses districtKey (singular string).
   // Legacy mock data may use districtKeys (array) — support both.
@@ -124,12 +120,10 @@ export function DistrictProfileScreen({navigation, route}: Props) {
   const districtCabildeos = useMemo(
     () =>
       district
-        ? allCabildeos.filter(
-            item =>
-              itemDistrictKeys(item).includes(district.districtKey) ||
-              normalizeMexicoStateName(item.region || '') ===
-                normalizeMexicoStateName(district.stateName),
-          )
+        ? cabildeosForMapPlace(allCabildeos, {
+            type: 'district',
+            districtKey: district.districtKey,
+          })
         : [],
     [district, allCabildeos],
   )
@@ -178,7 +172,12 @@ export function DistrictProfileScreen({navigation, route}: Props) {
     )
   }
 
-  const partyColors = getPartyColors(district.dominantParty)
+  const accent = SHOW_MAP_PREVIEW_FACTS
+    ? district.accent
+    : t.palette.primary_500
+  const partyColors = getPartyColors(
+    SHOW_MAP_PREVIEW_FACTS ? district.dominantParty : '',
+  )
 
   return (
     <Layout.Screen>
@@ -203,9 +202,9 @@ export function DistrictProfileScreen({navigation, route}: Props) {
             style={[
               a.p_xl,
               a.rounded_xl,
-              {backgroundColor: district.accent + '12'},
+              {backgroundColor: accent + '12'},
               a.border,
-              {borderColor: district.accent + '30'},
+              {borderColor: accent + '30'},
             ]}>
             <View style={[a.flex_row, a.justify_between, a.align_start]}>
               <View style={[a.flex_1]}>
@@ -213,7 +212,7 @@ export function DistrictProfileScreen({navigation, route}: Props) {
                   style={[
                     a.text_xs,
                     a.font_bold,
-                    {letterSpacing: 1.5, color: district.accent},
+                    {letterSpacing: 1.5, color: accent},
                     a.mb_xs,
                   ]}>
                   DISTRITO ELECTORAL FEDERAL
@@ -233,41 +232,39 @@ export function DistrictProfileScreen({navigation, route}: Props) {
                   {backgroundColor: partyColors.bg},
                 ]}>
                 <Text style={[a.text_sm, a.font_bold, {color: partyColors.fg}]}>
-                  {district.dominantParty}
+                  {SHOW_MAP_PREVIEW_FACTS
+                    ? district.dominantParty
+                    : _(msg`Unverified`)}
                 </Text>
               </View>
             </View>
           </View>
 
-          {!isInDistrict && (
-            <View
-              style={[
-                a.mt_md,
-                a.p_md,
-                a.rounded_lg,
-                {
-                  backgroundColor: t.palette.primary_500 + '12',
-                  borderColor: t.palette.primary_500 + '30',
-                  borderWidth: 1,
-                },
-              ]}>
-              <Text style={[a.text_sm, {color: t.palette.primary_500}]}>
-                📍{' '}
-                <Trans>
-                  You are not in {district.stateName}. Some votes may be
-                  restricted to residents.
-                </Trans>
-              </Text>
-            </View>
-          )}
+          <View style={a.mt_md}>
+            <MapReferenceNotice kind="district" />
+            <MapCivicDataNotice
+              query={civicQuery}
+              count={districtCabildeos.length}
+            />
+          </View>
 
           <View style={[a.flex_row, a.gap_sm, a.mt_md]}>
             <StatCard
               label="PADRÓN ELECTORAL"
-              value={district.registeredVoters.toLocaleString()}
+              value={
+                SHOW_MAP_PREVIEW_FACTS
+                  ? district.registeredVoters.toLocaleString()
+                  : '—'
+              }
             />
-            <StatCard label="PARTICIPACIÓN" value={`${district.turnout}%`} />
-            <StatCard label="LOBBYING" value={`${districtCabildeos.length}`} />
+            <StatCard
+              label="PARTICIPACIÓN"
+              value={SHOW_MAP_PREVIEW_FACTS ? `${district.turnout}%` : '—'}
+            />
+            <StatCard
+              label="LOBBYING"
+              value={mapCivicCount(civicQuery, districtCabildeos.length)}
+            />
           </View>
 
           <View
@@ -290,7 +287,9 @@ export function DistrictProfileScreen({navigation, route}: Props) {
               DIPUTADO FEDERAL
             </Text>
             <Text style={[a.text_xl, a.font_bold, t.atoms.text, a.mb_xs]}>
-              {district.currentDeputy}
+              {SHOW_MAP_PREVIEW_FACTS
+                ? district.currentDeputy
+                : _(msg`Officeholder information unavailable`)}
             </Text>
             <View style={[a.flex_row, a.align_center, a.gap_sm, a.flex_wrap]}>
               <View
@@ -298,19 +297,27 @@ export function DistrictProfileScreen({navigation, route}: Props) {
                   a.px_sm,
                   a.py_xs,
                   a.rounded_full,
-                  {backgroundColor: getPartyColors(district.deputyParty).bg},
+                  {
+                    backgroundColor: getPartyColors(
+                      SHOW_MAP_PREVIEW_FACTS ? district.deputyParty : '',
+                    ).bg,
+                  },
                 ]}>
                 <Text
                   style={[
                     a.text_xs,
                     a.font_bold,
-                    {color: getPartyColors(district.deputyParty).fg},
+                    {
+                      color: getPartyColors(
+                        SHOW_MAP_PREVIEW_FACTS ? district.deputyParty : '',
+                      ).fg,
+                    },
                   ]}>
-                  {district.deputyParty}
+                  {SHOW_MAP_PREVIEW_FACTS ? district.deputyParty : '—'}
                 </Text>
               </View>
               <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-                Legislatura LXVI · 2024–2027
+                {SHOW_MAP_PREVIEW_FACTS && <Trans>Demo term: 2024–2027</Trans>}
               </Text>
               <ActionChip
                 label="Open Lobbying"
@@ -379,14 +386,16 @@ export function DistrictProfileScreen({navigation, route}: Props) {
                     </Text>
                   </View>
                 </View>
-              ) : (
+              ) : civicQuery.data &&
+                !civicQuery.isError &&
+                !civicQuery.provenance?.hasMore ? (
                 <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
                   <Trans>
                     No cabildeo activity in this district yet. Open lobbying
                     appears on the map when users tag it to this distrito.
                   </Trans>
                 </Text>
-              )}
+              ) : null}
             </View>
           </View>
 
@@ -439,7 +448,7 @@ export function DistrictProfileScreen({navigation, route}: Props) {
                 </SegmentedControl.Root>
               </View>
 
-              {overviewView === 'party' && (
+              {SHOW_MAP_PREVIEW_FACTS && overviewView === 'party' && (
                 <View
                   style={[
                     a.p_lg,
@@ -461,9 +470,8 @@ export function DistrictProfileScreen({navigation, route}: Props) {
                   <Text
                     style={[a.text_2xs, t.atoms.text_contrast_medium, a.mb_md]}>
                     <Trans>
-                      Placeholder preview — will be computed from PARA civic
-                      engagement data when district-level party affiliation
-                      aggregates are available.
+                      Demo party distribution — synthetic percentages, not
+                      election results or measured public opinion.
                     </Trans>
                   </Text>
                   {partyBreakdown.map(item => {
@@ -531,11 +539,11 @@ export function DistrictProfileScreen({navigation, route}: Props) {
                   CONTEXTO CÍVICO
                 </Text>
                 <Text style={[a.text_sm, t.atoms.text_contrast_high]}>
-                  {districtCabildeos.length} cabildeo
+                  {mapCivicCount(civicQuery, districtCabildeos.length)} cabildeo
                   {districtCabildeos.length === 1 ? '' : 's'} etiquetado
                   {districtCabildeos.length === 1 ? '' : 's'} en este distrito.
                 </Text>
-                {stateDemographics && (
+                {SHOW_MAP_PREVIEW_FACTS && stateDemographics && (
                   <View
                     style={[
                       a.flex_row,
@@ -624,7 +632,9 @@ export function DistrictProfileScreen({navigation, route}: Props) {
                     OTROS DISTRITOS EN {district.stateName.toUpperCase()}
                   </Text>
                   {siblingDistricts.slice(0, 6).map(sibling => {
-                    const siblingColors = getPartyColors(sibling.dominantParty)
+                    const siblingColors = getPartyColors(
+                      SHOW_MAP_PREVIEW_FACTS ? sibling.dominantParty : '',
+                    )
                     return (
                       <TouchableOpacity
                         key={sibling.id}
@@ -652,7 +662,9 @@ export function DistrictProfileScreen({navigation, route}: Props) {
                               t.atoms.text_contrast_medium,
                               a.mt_2xs,
                             ]}>
-                            {sibling.currentDeputy}
+                            {SHOW_MAP_PREVIEW_FACTS
+                              ? sibling.currentDeputy
+                              : _(msg`Officeholder information unavailable`)}
                           </Text>
                         </View>
                         <View style={[a.flex_row, a.align_center, a.gap_sm]}>
@@ -669,12 +681,16 @@ export function DistrictProfileScreen({navigation, route}: Props) {
                                 a.font_bold,
                                 {color: siblingColors.fg},
                               ]}>
-                              {sibling.dominantParty}
+                              {SHOW_MAP_PREVIEW_FACTS
+                                ? sibling.dominantParty
+                                : '—'}
                             </Text>
                           </View>
                           <Text
                             style={[a.text_xs, t.atoms.text_contrast_medium]}>
-                            {sibling.turnout}%
+                            {SHOW_MAP_PREVIEW_FACTS
+                              ? `${sibling.turnout}%`
+                              : '—'}
                           </Text>
                         </View>
                       </TouchableOpacity>
@@ -687,7 +703,13 @@ export function DistrictProfileScreen({navigation, route}: Props) {
             <View style={[a.mt_lg, a.gap_lg]}>
               <ActivitySection
                 title="Linked Lobbying"
-                emptyLabel="No hay cabildeos etiquetados directamente a este distrito."
+                emptyLabel={
+                  civicQuery.data &&
+                  !civicQuery.isError &&
+                  !civicQuery.provenance?.hasMore
+                    ? _(msg`No discussions explicitly linked to this district.`)
+                    : _(msg`District activity is not fully available.`)
+                }
                 primaryItems={districtCabildeos}
                 fallbackItems={stateCabildeos}
                 fallbackLabel={`Contexto estatal de ${district.stateName}`}
@@ -697,12 +719,8 @@ export function DistrictProfileScreen({navigation, route}: Props) {
                   <CabildeoPreviewCard
                     item={item}
                     onPress={() =>
-                      navigation.navigate('PolicyDetails', {
-                        cabildeoUri:
-                          'at://' +
-                          item.author +
-                          '/com.para.civic.cabildeo/' +
-                          item.createdAt,
+                      navigation.navigate('CabildeoDetail', {
+                        cabildeoUri: item.uri,
                       })
                     }
                   />

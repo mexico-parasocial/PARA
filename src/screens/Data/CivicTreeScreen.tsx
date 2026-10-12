@@ -617,6 +617,7 @@ function CivicTreeInner({
               graph={graph}
               nodeId={selectedNodeId}
               onClose={() => cardDetailsControl.close()}
+              onSelectNode={setSelectedNodeId}
               onOpenCollection={collectionId =>
                 cardDetailsControl.close(() =>
                   navigation.navigate('CollectionDetail', {collectionId}),

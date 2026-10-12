@@ -50,7 +50,7 @@ import {
   clearMapSearchHistory,
   getMapSearchHistory,
 } from '#/state/map'
-import {useCabildeosQuery} from '#/state/queries/cabildeo'
+import {useMapCabildeosQuery} from '#/state/queries/map-cabildeos'
 import {
   atoms as a,
   useBreakpoints,
@@ -73,6 +73,8 @@ import {
   MapSearchControls,
   SelectedStateOverlay,
 } from './MapComponents'
+import {SHOW_MAP_PREVIEW_FACTS} from './mapData'
+import {MapCivicDataNotice, MapReferenceNotice} from './MapDataNotice'
 import {MapDiscourseLensContent} from './MapDiscourseLensContent'
 import {
   MapSidebarLayers,
@@ -485,7 +487,8 @@ export function MapScreenImpl({
   const insets = useSafeAreaInsets()
   const mapRef = useRef<MapViewRef | null>(null)
   const lastAppliedRouteSelection = useRef('')
-  const {data: cabildeos} = useCabildeosQuery()
+  const civicQuery = useMapCabildeosQuery()
+  const cabildeos = civicQuery.data
   const lastTapRef = useRef<number>(0)
 
   const [selectedState, setSelectedState] = useState<{name: string} | null>(
@@ -721,6 +724,7 @@ export function MapScreenImpl({
       )
       const nextLayer = options.openLayer ?? activeLayer
 
+      setActiveLayer(nextLayer)
       setSelectedState({name: feature?.name || stateName})
       setShowCities(nextLayer === 'cities')
       setShowDistricts(nextLayer === 'districts')
@@ -1009,8 +1013,10 @@ export function MapScreenImpl({
           <PolygonComponent
             key={`district:${d.districtKey}`}
             coordinates={d.boundary!}
-            fillColor={`${d.accent}${isSelected ? '60' : '30'}`}
-            strokeColor={d.accent}
+            fillColor={`${SHOW_MAP_PREVIEW_FACTS ? d.accent : t.palette.primary_500}${isSelected ? '60' : '30'}`}
+            strokeColor={
+              SHOW_MAP_PREVIEW_FACTS ? d.accent : t.palette.primary_500
+            }
             strokeWidth={isSelected ? 1.5 : 0.8}
             zIndex={isSelected ? 11 : 2}
             tappable={true}
@@ -1037,13 +1043,17 @@ export function MapScreenImpl({
     mapRegion,
     selectedDistrictId,
     selectedState,
+    showDistricts,
+    t,
   ])
 
   const rawCityMarkers = useMemo(() => {
     if (!MarkerComponent || !showCities || !selectedState) return []
 
     return visibleCityMarkers.map(city => {
-      const partyColor = getPartyColor(city.dominantParty)
+      const partyColor = SHOW_MAP_PREVIEW_FACTS
+        ? getPartyColor(city.dominantParty)
+        : t.palette.primary_500
       const isSelected = selectedCityName === city.name
 
       return (
@@ -1051,7 +1061,11 @@ export function MapScreenImpl({
           key={`${city.stateName}:${city.name}`}
           coordinate={city.coordinate}
           title={city.name}
-          description={`${city.population} · ${city.dominantParty}`}
+          description={
+            SHOW_MAP_PREVIEW_FACTS
+              ? `Preview: ${city.population} · ${city.dominantParty}`
+              : city.stateName
+          }
           anchor={{x: 0.5, y: 0.5}}
           tappable
           tracksViewChanges={false}
@@ -1147,7 +1161,7 @@ export function MapScreenImpl({
               style={[
                 styles.districtCentroidMarker,
                 {
-                  backgroundColor: `${d.accent}${isSelected ? 'CC' : '80'}`,
+                  backgroundColor: `${SHOW_MAP_PREVIEW_FACTS ? d.accent : t.palette.primary_500}${isSelected ? 'CC' : '80'}`,
                 },
                 isSelected && styles.districtCentroidMarkerSelected,
               ]}
@@ -1161,12 +1175,15 @@ export function MapScreenImpl({
     selectedDistrictId,
     selectedState,
     setMapRouteParams,
+    t,
   ])
 
-  const civicPointCount = useMemo(
+  const loadedCivicPointCount = useMemo(
     () => filteredCabildeos.filter(c => !!c.geo).length,
     [filteredCabildeos],
   )
+  const civicPointCount =
+    civicQuery.data === undefined ? undefined : loadedCivicPointCount
   const toggleCivicHeat = useCallback(() => setCivicHeatOn(on => !on), [])
 
   // Raw civic point data for native MapLibre heatmap + clustering (web only)
@@ -1259,7 +1276,9 @@ export function MapScreenImpl({
       name: city.name,
       stateName: city.stateName,
       coordinate: city.coordinate,
-      color: getPartyColor(city.dominantParty),
+      color: SHOW_MAP_PREVIEW_FACTS
+        ? getPartyColor(city.dominantParty)
+        : t.palette.primary_500,
       selected: selectedCityName === city.name,
       onPress: () => {
         setSelectedCityName(city.name)
@@ -1272,6 +1291,7 @@ export function MapScreenImpl({
     visibleCityMarkers,
     selectedCityName,
     focusCity,
+    t,
   ])
 
   const districtPolygonsData = useMemo(() => {
@@ -1283,8 +1303,10 @@ export function MapScreenImpl({
         return {
           districtKey: d.districtKey,
           boundary: d.boundary!,
-          fillColor: `${d.accent}${isSelected ? '60' : '30'}`,
-          strokeColor: d.accent,
+          fillColor: `${SHOW_MAP_PREVIEW_FACTS ? d.accent : t.palette.primary_500}${isSelected ? '60' : '30'}`,
+          strokeColor: SHOW_MAP_PREVIEW_FACTS
+            ? d.accent
+            : t.palette.primary_500,
           strokeWidth: isSelected ? 1.5 : 0.8,
           onPress: () => {
             setSelectedDistrictId(d.id)
@@ -1296,7 +1318,7 @@ export function MapScreenImpl({
           },
         }
       })
-  }, [activeLayer, selectedDistrictId, selectedState, setMapRouteParams])
+  }, [activeLayer, selectedDistrictId, selectedState, setMapRouteParams, t])
 
   const districtCentroidsData = useMemo(() => {
     if (activeLayer !== 'districts' || !selectedState) return []
@@ -1307,7 +1329,7 @@ export function MapScreenImpl({
         return {
           districtKey: d.districtKey,
           coordinate: d.centroid!,
-          color: `${d.accent}${isSelected ? 'CC' : '80'}`,
+          color: `${SHOW_MAP_PREVIEW_FACTS ? d.accent : t.palette.primary_500}${isSelected ? 'CC' : '80'}`,
           onPress: () => {
             setSelectedDistrictId(d.id)
             setMapRouteParams({
@@ -1318,7 +1340,7 @@ export function MapScreenImpl({
           },
         }
       })
-  }, [activeLayer, selectedDistrictId, selectedState, setMapRouteParams])
+  }, [activeLayer, selectedDistrictId, selectedState, setMapRouteParams, t])
 
   const hasSplitPane = !!DesktopLayout
   const isDesktopSplitPane = !!hasSplitPane && rightNavVisible
@@ -1585,6 +1607,16 @@ export function MapScreenImpl({
           </Text>
         </View>
 
+        {!selectedState && (
+          <MapCivicDataNotice
+            query={civicQuery}
+            count={filteredCabildeos.length}
+          />
+        )}
+        {!selectedState && activeLayer === 'districts' && (
+          <MapReferenceNotice kind="district" />
+        )}
+
         <MapSidebarSearch
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
@@ -1701,15 +1733,19 @@ export function MapScreenImpl({
                 cannot put search on top of the layer selector. */}
             <View
               pointerEvents="box-none"
-              style={
-                !gtMobile && [
-                  a.absolute,
-                  a.gap_md,
-                  {top: 20, left: 16, right: 76, zIndex: 30},
-                ]
-              }>
+              style={[
+                a.absolute,
+                a.gap_md,
+                {
+                  top: 20,
+                  left: gtMobile ? 20 : 16,
+                  right: 76,
+                  maxWidth: gtMobile ? 320 : undefined,
+                  zIndex: 30,
+                },
+              ]}>
               <MapSearchControls
-                inline={!gtMobile}
+                inline
                 searchExpanded={searchExpanded}
                 setSearchExpanded={setSearchExpanded}
                 searchQuery={searchQuery}
@@ -1722,13 +1758,31 @@ export function MapScreenImpl({
               {/* The expanded search drops a results list over this corner. */}
               {!searchExpanded && (
                 <MapLayersPanel
-                  inline={!gtMobile}
+                  inline
                   activeLayer={activeLayer}
                   onSelectLayer={handleSelectLayer}
                   civicHeatOn={civicHeatOn}
                   onToggleCivicHeat={toggleCivicHeat}
                   civicPointCount={civicPointCount}
                 />
+              )}
+              {!selectedState && !searchExpanded && (
+                <View
+                  style={[
+                    a.p_md,
+                    a.rounded_lg,
+                    t.atoms.bg,
+                    a.border,
+                    t.atoms.border_contrast_low,
+                  ]}>
+                  {activeLayer === 'districts' && (
+                    <MapReferenceNotice kind="district" />
+                  )}
+                  <MapCivicDataNotice
+                    query={civicQuery}
+                    count={filteredCabildeos.length}
+                  />
+                </View>
               )}
             </View>
 

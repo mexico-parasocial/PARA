@@ -1,4 +1,5 @@
 import {
+  appearancesOf,
   buildPersonalTreeGraph,
   type PersonalTreeCollection,
   relationsForNode,
@@ -192,5 +193,53 @@ describe('relationsForNode', () => {
     ])
 
     expect(relationsForNode(graph, graph.nodes[0].id)).toHaveLength(0)
+  })
+})
+
+describe('appearancesOf', () => {
+  const policy = {
+    kind: 'policy' as const,
+    policyUri: 'at://did:plc:a/com.para.civic.cabildeo/1',
+    addedAt: '2026-01-01T00:00:00.000Z',
+  }
+
+  it('finds the same subject filed in other collections', () => {
+    const graph = buildPersonalTreeGraph([
+      collection({id: 'agua', items: [{...policy, itemId: 'p1'}]}),
+      collection({id: 'presupuesto', items: [{...policy, itemId: 'p2'}]}),
+      collection({id: 'otra', items: [item('unrelated', 'link')]}),
+    ])
+
+    expect(appearancesOf(graph, 'agua::p1')).toEqual([
+      {
+        nodeId: 'presupuesto::p2',
+        collectionId: 'presupuesto',
+        collectionName: 'presupuesto',
+      },
+    ])
+  })
+
+  it('draws no edge between copies', () => {
+    const graph = buildPersonalTreeGraph([
+      collection({id: 'agua', items: [{...policy, itemId: 'p1'}]}),
+      collection({id: 'presupuesto', items: [{...policy, itemId: 'p2'}]}),
+    ])
+
+    expect(graph.edges).toHaveLength(0)
+    expect(graph.unconnectedCount).toBe(2)
+  })
+
+  it('never links notes, which have no subject', () => {
+    const note = {
+      kind: 'note' as const,
+      title: 'Same words',
+      addedAt: '2026-01-01T00:00:00.000Z',
+    }
+    const graph = buildPersonalTreeGraph([
+      collection({id: 'a', items: [{...note, itemId: 'n1'}]}),
+      collection({id: 'b', items: [{...note, itemId: 'n2'}]}),
+    ])
+
+    expect(appearancesOf(graph, 'a::n1')).toEqual([])
   })
 })

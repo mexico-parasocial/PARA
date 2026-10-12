@@ -10,6 +10,7 @@ import {
   PERSONAL_ITEM_KIND_COLORS,
   PERSONAL_RELATION_COLORS,
 } from '#/features/civicTree/colors'
+import {subjectKeyForItem} from '#/features/civicTree/subject'
 
 /*
  * Deliberately depends on collection-items rather than the collections query
@@ -52,6 +53,11 @@ export type PersonalTreeNode = {
     kind: string
     /** Relations touching this node, in either direction. */
     degree: number
+    /**
+     * What the item refers to, shared by every copy of it across the user's
+     * collections. Absent for notes and anything without a reliable identity.
+     */
+    subjectKey?: string
     item: CivicTreeItem
   }
 }
@@ -96,7 +102,8 @@ export function buildPersonalTreeGraph(
   /*
    * Item keys are only unique within a collection, so namespace them. Two
    * collections holding the same policy are two nodes, which is honest: the
-   * user filed it twice and may relate each copy differently.
+   * user filed it twice and may relate each copy differently. The copies are
+   * tied together by subject key instead (see `appearancesOf`).
    */
   const nodeId = (collectionId: string, itemKey: string) =>
     `${collectionId}::${itemKey}`
@@ -149,6 +156,7 @@ export function buildPersonalTreeGraph(
           collectionName: collection.name,
           kind,
           degree,
+          subjectKey: subjectKeyForItem(item),
           item,
         },
       })
@@ -221,4 +229,28 @@ export function relationsForNode(
   }
 
   return out
+}
+
+/**
+ * The other places this node's subject is filed, in collection order.
+ *
+ * This is a backlink, not an edge: it says "you saved the same thing here
+ * too", which the user never authored as a relation. It stays out of
+ * `edges` so the graph keeps drawing only what the user connected.
+ */
+export function appearancesOf(
+  graph: PersonalTreeGraph,
+  nodeId: string,
+): {nodeId: string; collectionId: string; collectionName: string}[] {
+  const node = graph.nodes.find(n => n.id === nodeId)
+  const key = node?.metadata.subjectKey
+  if (!key) return []
+
+  return graph.nodes
+    .filter(n => n.id !== nodeId && n.metadata.subjectKey === key)
+    .map(n => ({
+      nodeId: n.id,
+      collectionId: n.metadata.collectionId,
+      collectionName: n.metadata.collectionName,
+    }))
 }

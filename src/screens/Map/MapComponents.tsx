@@ -35,13 +35,19 @@ import {MOCK_DISTRICT_RAQS, STATE_DEMOGRAPHICS} from '#/lib/constants/mockData'
 import {useBottomBarOffset} from '#/lib/hooks/useBottomBarOffset'
 import {type NavigationProp} from '#/lib/routes/types'
 import {IS_WEB} from '#/platform/detection'
-import {useCabildeosQuery} from '#/state/queries/cabildeo'
+import {useMapCabildeosQuery} from '#/state/queries/map-cabildeos'
 import {useShellLayout} from '#/state/shell/shell-layout'
 import {atoms as a, useBreakpoints, useTheme, web} from '#/alf'
 import {CircleX_Stroke2_Corner0_Rounded as CircleX} from '#/components/icons/CircleX'
 import {MagnifyingGlass_Stroke2_Corner0_Rounded as MagnifyingGlass} from '#/components/icons/MagnifyingGlass'
 import {Text} from '#/components/Typography'
 import {CivicHeatToggle} from './CivicHeatToggle'
+import {
+  cabildeosForMapPlace,
+  mapCivicCount,
+  SHOW_MAP_PREVIEW_FACTS,
+} from './mapData'
+import {MapCivicDataNotice, MapReferenceNotice} from './MapDataNotice'
 import {SheetDragDetector, useSheetDragGesture} from './sheetDragGesture'
 
 export type MapLayer = 'states' | 'districts' | 'cities' | 'civic'
@@ -89,7 +95,7 @@ type MapLayersPanelProps = {
   onSelectLayer: (layer: MapLayer) => void
   civicHeatOn: boolean
   onToggleCivicHeat: () => void
-  civicPointCount: number
+  civicPointCount: number | undefined
 }
 
 type SearchResultType = SearchResult['type']
@@ -219,6 +225,7 @@ function SheetHeader({
   onClose: () => void
 }) {
   const t = useTheme()
+  const {_} = useLingui()
 
   return (
     <View style={[a.flex_row, a.justify_between, a.align_center, a.mb_md]}>
@@ -232,6 +239,9 @@ function SheetHeader({
       </View>
       <TouchableOpacity
         accessibilityRole="button"
+        accessibilityLabel={_(msg`Close place details`)}
+        accessibilityHint={_(msg`Closes place details and returns to the map.`)}
+        hitSlop={8}
         style={[
           a.p_xs,
           a.rounded_full,
@@ -261,6 +271,8 @@ function MiniAction({
       accessibilityRole="button"
       onPress={onPress}
       style={[
+        a.justify_center,
+        {minHeight: 44},
         a.px_sm,
         a.py_xs,
         a.rounded_full,
@@ -369,14 +381,17 @@ function CityContextCard({
 }) {
   const t = useTheme()
   const navRef = useNavigation<NavigationProp>()
-  const {data: allCabildeos = []} = useCabildeosQuery()
-  const partyColor = getPartyColor(city.dominantParty)
+  const civicQuery = useMapCabildeosQuery()
+  const allCabildeos = civicQuery.data ?? []
+  const partyColor = SHOW_MAP_PREVIEW_FACTS
+    ? getPartyColor(city.dominantParty)
+    : t.palette.primary_500
 
-  const cityCabildeos = allCabildeos.filter(
-    c =>
-      normalizeMexicoStateName(c.region || '') ===
-      normalizeMexicoStateName(stateName),
-  )
+  const cityCabildeos = cabildeosForMapPlace(allCabildeos, {
+    type: 'city',
+    stateName,
+    cityName: city.name,
+  })
 
   return (
     <View
@@ -395,7 +410,12 @@ function CityContextCard({
         {city.name}
       </Text>
       <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_2xs]}>
-        {stateName} · Mayor: {city.governing_mayor}
+        {stateName}
+        {SHOW_MAP_PREVIEW_FACTS && ` · Mayor: ${city.governing_mayor}`}
+      </Text>
+      <MapCivicDataNotice query={civicQuery} count={cityCabildeos.length} />
+      <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>
+        <Trans>Discussions explicitly linked to this city.</Trans>
       </Text>
 
       <View style={[a.flex_row, a.gap_sm, a.mt_md]}>
@@ -408,7 +428,7 @@ function CityContextCard({
             a.align_center,
           ]}>
           <Text style={[a.text_xl, a.font_bold, t.atoms.text]}>
-            {city.population}
+            {SHOW_MAP_PREVIEW_FACTS ? city.population : '—'}
           </Text>
           <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>
             Population
@@ -423,7 +443,7 @@ function CityContextCard({
             a.align_center,
           ]}>
           <Text style={[a.text_xl, a.font_bold, t.atoms.text]}>
-            {cityCabildeos.length}
+            {mapCivicCount(civicQuery, cityCabildeos.length)}
           </Text>
           <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>
             Cabildeos
@@ -438,7 +458,7 @@ function CityContextCard({
             a.align_center,
           ]}>
           <Text style={[a.text_xl, a.font_bold, t.atoms.text]}>
-            {city.dominantParty}
+            {SHOW_MAP_PREVIEW_FACTS ? city.dominantParty : '—'}
           </Text>
           <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>
             Dominant
@@ -501,16 +521,12 @@ function CityContextCard({
 function DistrictContextCard({district}: {district: ElectoralDistrict}) {
   const t = useTheme()
   const navRef = useNavigation<NavigationProp>()
-  const {data: allCabildeos = []} = useCabildeosQuery()
-  // Live data may not have districtKeys; fall back to region match
-  const districtCabildeos = allCabildeos.filter(
-    c =>
-      (c as {districtKeys?: string[]}).districtKeys?.includes(
-        district.districtKey,
-      ) ||
-      normalizeMexicoStateName(c.region || '') ===
-        normalizeMexicoStateName(district.stateName),
-  )
+  const civicQuery = useMapCabildeosQuery()
+  const allCabildeos = civicQuery.data ?? []
+  const districtCabildeos = cabildeosForMapPlace(allCabildeos, {
+    type: 'district',
+    districtKey: district.districtKey,
+  })
   const districtQuestions = MOCK_DISTRICT_RAQS.filter(item =>
     item.districtKeys.includes(district.districtKey),
   )
@@ -521,18 +537,40 @@ function DistrictContextCard({district}: {district: ElectoralDistrict}) {
         a.mb_md,
         a.p_md,
         a.rounded_lg,
-        {backgroundColor: district.accent + '14'},
+        {
+          backgroundColor:
+            (SHOW_MAP_PREVIEW_FACTS ? district.accent : t.palette.primary_500) +
+            '14',
+        },
         a.border,
-        {borderColor: district.accent + '32'},
+        {
+          borderColor:
+            (SHOW_MAP_PREVIEW_FACTS ? district.accent : t.palette.primary_500) +
+            '32',
+        },
       ]}>
-      <Text style={[a.text_xs, a.font_bold, {color: district.accent}]}>
+      <Text
+        style={[
+          a.text_xs,
+          a.font_bold,
+          {
+            color: SHOW_MAP_PREVIEW_FACTS
+              ? district.accent
+              : t.palette.primary_500,
+          },
+        ]}>
         DISTRITO ACTIVO
       </Text>
       <Text style={[a.text_lg, a.font_bold, t.atoms.text, a.mt_xs]}>
         Distrito {district.districtNumber}
       </Text>
       <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_2xs]}>
-        {district.stateName} · {district.currentDeputy}
+        {district.stateName}
+        {SHOW_MAP_PREVIEW_FACTS && ` · ${district.currentDeputy}`}
+      </Text>
+      <MapCivicDataNotice query={civicQuery} count={districtCabildeos.length} />
+      <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>
+        <Trans>Discussions explicitly linked to this district.</Trans>
       </Text>
 
       <View style={[a.flex_row, a.gap_sm, a.mt_md]}>
@@ -545,7 +583,7 @@ function DistrictContextCard({district}: {district: ElectoralDistrict}) {
             a.align_center,
           ]}>
           <Text style={[a.text_xl, a.font_bold, t.atoms.text]}>
-            {district.turnout}%
+            {SHOW_MAP_PREVIEW_FACTS ? `${district.turnout}%` : '—'}
           </Text>
           <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>
             Turnout
@@ -560,7 +598,7 @@ function DistrictContextCard({district}: {district: ElectoralDistrict}) {
             a.align_center,
           ]}>
           <Text style={[a.text_xl, a.font_bold, t.atoms.text]}>
-            {districtCabildeos.length}
+            {mapCivicCount(civicQuery, districtCabildeos.length)}
           </Text>
           <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>
             Cabildeos
@@ -575,7 +613,7 @@ function DistrictContextCard({district}: {district: ElectoralDistrict}) {
             a.align_center,
           ]}>
           <Text style={[a.text_xl, a.font_bold, t.atoms.text]}>
-            {districtQuestions.length}
+            {SHOW_MAP_PREVIEW_FACTS ? districtQuestions.length : '—'}
           </Text>
           <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>
             Questions
@@ -626,7 +664,11 @@ function DistrictContextCard({district}: {district: ElectoralDistrict}) {
                 style={[
                   a.text_xs,
                   a.font_bold,
-                  {color: district.accent},
+                  {
+                    color: SHOW_MAP_PREVIEW_FACTS
+                      ? district.accent
+                      : t.palette.primary_500,
+                  },
                   a.text_center,
                   a.mt_xs,
                 ]}>
@@ -672,8 +714,10 @@ export function SelectedStateOverlay({
   const {gtMobile} = useBreakpoints()
   const bottomSheetClearance = useBottomSheetClearance(gtMobile)
   const t = useTheme()
+  const {_} = useLingui()
   const navRef = useNavigation<NavigationProp>()
-  const {data: allCabildeos = []} = useCabildeosQuery()
+  const civicQuery = useMapCabildeosQuery()
+  const allCabildeos = civicQuery.data ?? []
   const isReducedMotion = useReducedMotion()
   const translateY = useSharedValue(0)
   const dismissing = useSharedValue(false)
@@ -738,6 +782,7 @@ export function SelectedStateOverlay({
           : gtMobile
             ? {left: 20, bottom: 28, width: 348}
             : {left: 12, right: 12, bottom: 12 + insets.bottom},
+        {maxHeight: '70%'},
         a.p_lg,
         a.rounded_xl,
         t.atoms.bg_contrast_25,
@@ -772,6 +817,11 @@ export function SelectedStateOverlay({
         </View>
         <TouchableOpacity
           accessibilityRole="button"
+          accessibilityLabel={_(msg`Close place details`)}
+          accessibilityHint={_(
+            msg`Closes place details and returns to the map.`,
+          )}
+          hitSlop={8}
           onPress={closeSheet}
           style={[
             a.p_xs,
@@ -783,72 +833,95 @@ export function SelectedStateOverlay({
         </TouchableOpacity>
       </View>
 
-      <View style={[a.flex_row, a.gap_sm, a.mb_md]}>
-        <View style={[a.flex_1, a.p_sm, t.atoms.bg_contrast_100, a.rounded_md]}>
-          <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>
-            Dominant party
-          </Text>
-          <Text style={[a.text_lg, a.font_bold, t.atoms.text, a.mt_2xs]}>
-            {stats.dominantParty}
-          </Text>
-        </View>
-        <View style={[a.flex_1, a.p_sm, t.atoms.bg_contrast_100, a.rounded_md]}>
-          <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>
-            Leading community
-          </Text>
-          <Text style={[a.text_lg, a.font_bold, t.atoms.text, a.mt_2xs]}>
-            {stats.leadingCommunity}
-          </Text>
-        </View>
-      </View>
+      <ScrollView style={a.flex_shrink} keyboardShouldPersistTaps="handled">
+        <MapReferenceNotice kind="state" />
+        <MapCivicDataNotice query={civicQuery} count={activeCabildeos.length} />
+        {SHOW_MAP_PREVIEW_FACTS && (
+          <>
+            <View style={[a.flex_row, a.gap_sm, a.mb_md]}>
+              <View
+                style={[
+                  a.flex_1,
+                  a.p_sm,
+                  t.atoms.bg_contrast_100,
+                  a.rounded_md,
+                ]}>
+                <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>
+                  Dominant party
+                </Text>
+                <Text style={[a.text_lg, a.font_bold, t.atoms.text, a.mt_2xs]}>
+                  {stats.dominantParty}
+                </Text>
+              </View>
+              <View
+                style={[
+                  a.flex_1,
+                  a.p_sm,
+                  t.atoms.bg_contrast_100,
+                  a.rounded_md,
+                ]}>
+                <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>
+                  Leading community
+                </Text>
+                <Text style={[a.text_lg, a.font_bold, t.atoms.text, a.mt_2xs]}>
+                  {stats.leadingCommunity}
+                </Text>
+              </View>
+            </View>
 
-      <View style={[a.flex_row, a.gap_sm, a.mb_md]}>
-        <View
-          style={[
-            a.flex_1,
-            a.p_sm,
-            a.rounded_md,
-            t.atoms.bg_contrast_25,
-            a.align_center,
-          ]}>
-          <Text style={[a.text_xl, a.font_bold, t.atoms.text]}>
-            {stats.approval}
-          </Text>
-          <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>
-            Approval
-          </Text>
-        </View>
-        <View
-          style={[
-            a.flex_1,
-            a.p_sm,
-            a.rounded_md,
-            t.atoms.bg_contrast_25,
-            a.align_center,
-          ]}>
-          <Text style={[a.text_xl, a.font_bold, t.atoms.text]}>
-            {stats.active}
-          </Text>
-          <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>Active</Text>
-        </View>
-      </View>
-
-      <View style={[a.flex_row, a.flex_wrap, a.gap_sm]}>
-        <MiniAction
-          label={`Explore ${districtCount} districts`}
-          onPress={onShowDistricts}
-        />
-        <MiniAction
-          label={cityCount > 0 ? `Browse ${cityCount} cities` : 'Major cities'}
-          onPress={onShowCities}
-        />
-        {activeCabildeos.length > 0 && (
-          <MiniAction
-            label={`${activeCabildeos.length} active lobbying`}
-            onPress={() => navRef.navigate('CabildeoList')}
-          />
+            <View style={[a.flex_row, a.gap_sm, a.mb_md]}>
+              <View
+                style={[
+                  a.flex_1,
+                  a.p_sm,
+                  a.rounded_md,
+                  t.atoms.bg_contrast_25,
+                  a.align_center,
+                ]}>
+                <Text style={[a.text_xl, a.font_bold, t.atoms.text]}>
+                  {stats.approval}
+                </Text>
+                <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>
+                  Approval
+                </Text>
+              </View>
+              <View
+                style={[
+                  a.flex_1,
+                  a.p_sm,
+                  a.rounded_md,
+                  t.atoms.bg_contrast_25,
+                  a.align_center,
+                ]}>
+                <Text style={[a.text_xl, a.font_bold, t.atoms.text]}>
+                  {stats.active}
+                </Text>
+                <Text style={[a.text_2xs, t.atoms.text_contrast_medium]}>
+                  Active
+                </Text>
+              </View>
+            </View>
+          </>
         )}
-      </View>
+        <View style={[a.flex_row, a.flex_wrap, a.gap_sm]}>
+          <MiniAction
+            label={`Explore ${districtCount} districts`}
+            onPress={onShowDistricts}
+          />
+          <MiniAction
+            label={
+              cityCount > 0 ? `Browse ${cityCount} cities` : 'Major cities'
+            }
+            onPress={onShowCities}
+          />
+          {activeCabildeos.length > 0 && (
+            <MiniAction
+              label={`${mapCivicCount(civicQuery, activeCabildeos.length)} active lobbying`}
+              onPress={() => navRef.navigate('CabildeoList')}
+            />
+          )}
+        </View>
+      </ScrollView>
     </Animated.View>
   )
 
@@ -882,6 +955,7 @@ export function BigCitiesDataOverlay({
         style={a.flex_shrink}
         contentContainerStyle={a.pb_lg}
         keyboardShouldPersistTaps="handled">
+        <MapReferenceNotice kind="city" />
         {selectedCity ? (
           <CityContextCard city={selectedCity} stateName={selectedState.name} />
         ) : (
@@ -960,18 +1034,28 @@ export function BigCitiesDataOverlay({
                         t.atoms.bg_contrast_100,
                       ]}>
                       <Text style={[a.text_xs, a.font_bold, t.atoms.text]}>
-                        {city.dominantParty}
+                        {SHOW_MAP_PREVIEW_FACTS ? city.dominantParty : '—'}
                       </Text>
                     </View>
                   </View>
-                  <Text style={[a.text_sm, t.atoms.text_contrast_high]}>
-                    Population:{' '}
-                    <Text style={[a.font_bold]}>{city.population}</Text>
-                  </Text>
-                  <Text
-                    style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_xs]}>
-                    Mayor: {city.governing_mayor}
-                  </Text>
+                  {SHOW_MAP_PREVIEW_FACTS && (
+                    <>
+                      <Text style={[a.text_sm, t.atoms.text_contrast_high]}>
+                        Population:{' '}
+                        <Text style={[a.font_bold]}>
+                          {SHOW_MAP_PREVIEW_FACTS ? city.population : '—'}
+                        </Text>
+                      </Text>
+                      <Text
+                        style={[
+                          a.text_sm,
+                          t.atoms.text_contrast_medium,
+                          a.mt_xs,
+                        ]}>
+                        Mayor: {city.governing_mayor}
+                      </Text>
+                    </>
+                  )}
                 </TouchableOpacity>
               ),
             )
@@ -1169,7 +1253,8 @@ function SearchResultRow({
   onSelect: (result: SearchResult) => void
 }) {
   const t = useTheme()
-  const {data: allCabildeos = []} = useCabildeosQuery()
+  const civicQuery = useMapCabildeosQuery()
+  const allCabildeos = civicQuery.data ?? []
   const badgeColor =
     result.type === 'state'
       ? t.palette.primary_500
@@ -1177,20 +1262,14 @@ function SearchResultRow({
         ? '#D97706'
         : t.atoms.text_contrast_medium.color
 
-  const cabCount = allCabildeos.filter(c => {
-    if (!c.region) return false
-    const normRegion = normalizeMexicoStateName(c.region)
-    if (result.type === 'state') {
-      return normRegion === normalizeMexicoStateName(result.name)
-    }
-    if (result.type === 'city') {
-      return (
-        normRegion === normalizeMexicoStateName(result.subtitle || '') &&
-        c.city === result.name
-      )
-    }
-    return normRegion === normalizeMexicoStateName(result.subtitle || '')
-  }).length
+  const cabCount = cabildeosForMapPlace(
+    allCabildeos,
+    result.type === 'district'
+      ? {type: 'district', districtKey: result.districtKey || ''}
+      : result.type === 'city'
+        ? {type: 'city', stateName: result.stateName, cityName: result.name}
+        : {type: 'state', stateName: result.stateName},
+  ).length
 
   return (
     <TouchableOpacity
@@ -1223,7 +1302,11 @@ function SearchResultRow({
           )}
           {cabCount > 0 && (
             <Text style={[a.text_xs, {color: badgeColor}]}>
-              · {cabCount} cabil{cabCount === 1 ? 'deo' : 'deos'}
+              · {mapCivicCount(civicQuery, cabCount)} cabil
+              {cabCount === 1 ? 'deo' : 'deos'}
+              {civicQuery.provenance?.source === 'demo' && (
+                <Trans> (demo)</Trans>
+              )}
             </Text>
           )}
         </View>
@@ -1260,7 +1343,8 @@ export function DistrictsDataOverlay({
 }: DistrictsDataOverlayProps) {
   const t = useTheme()
   const navRef = useNavigation<NavigationProp>()
-  const {data: allCabildeos = []} = useCabildeosQuery()
+  const civicQuery = useMapCabildeosQuery()
+  const allCabildeos = civicQuery.data ?? []
   const scrollRef = useRef<React.ComponentRef<typeof ScrollView> | null>(null)
   const districts = useMemo(
     () =>
@@ -1277,16 +1361,8 @@ export function DistrictsDataOverlay({
   useEffect(() => {
     if (!selectedState || !showDistricts || !selectedDistrictId) return
 
-    const index = districts.findIndex(
-      district => district.id === selectedDistrictId,
-    )
-    if (index < 0) return
-
     requestAnimationFrame(() => {
-      scrollRef.current?.scrollTo({
-        y: Math.max(index - 1, 0) * 154,
-        animated: true,
-      })
+      scrollRef.current?.scrollTo({y: 0, animated: true})
     })
   }, [districts, selectedDistrictId, selectedState, showDistricts])
 
@@ -1297,26 +1373,22 @@ export function DistrictsDataOverlay({
       title={selectedState.name}
       subtitle="Federal District Browser"
       onClose={onClose}>
-      <View
-        style={[
-          a.mb_md,
-          a.p_md,
-          a.rounded_lg,
-          t.atoms.bg_contrast_25,
-          a.border,
-          t.atoms.border_contrast_low,
-        ]}>
-        <Text style={[a.text_xs, a.font_bold, t.atoms.text_contrast_medium]}>
-          STATE COVERAGE
-        </Text>
-        <Text style={[a.text_lg, a.font_bold, t.atoms.text, a.mt_xs]}>
-          {districts.length} federal districts
-        </Text>
-      </View>
-
-      {selectedDistrict ? (
-        <DistrictContextCard district={selectedDistrict} />
-      ) : (
+      <ScrollView
+        ref={scrollRef}
+        style={a.flex_shrink}
+        contentContainerStyle={[a.gap_md, a.pb_lg]}>
+        <MapReferenceNotice kind="district" />
+        {!selectedDistrict && (
+          <MapCivicDataNotice
+            query={civicQuery}
+            count={
+              cabildeosForMapPlace(allCabildeos, {
+                type: 'state',
+                stateName: selectedState.name,
+              }).length
+            }
+          />
+        )}
         <View
           style={[
             a.mb_md,
@@ -1326,148 +1398,204 @@ export function DistrictsDataOverlay({
             a.border,
             t.atoms.border_contrast_low,
           ]}>
-          <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-            Search or tap a district row to inspect civic context. The map still
-            highlights the state only until real district boundaries exist.
+          <Text style={[a.text_xs, a.font_bold, t.atoms.text_contrast_medium]}>
+            STATE COVERAGE
+          </Text>
+          <Text style={[a.text_lg, a.font_bold, t.atoms.text, a.mt_xs]}>
+            {districts.length} federal districts
           </Text>
         </View>
-      )}
 
-      <View style={[a.flex_row, a.gap_sm, a.mb_md, a.flex_wrap]}>
-        <MiniAction
-          label="Back to state"
-          active={!selectedDistrict}
-          onPress={onBackToState}
-        />
-        {selectedDistrict && (
-          <MiniAction
-            label="Open civic activity"
-            onPress={() =>
-              navRef.navigate('DistrictProfile', {
-                districtId: selectedDistrict.id,
-                initialTab: 'activity',
-              })
-            }
-          />
-        )}
-      </View>
-
-      <ScrollView ref={scrollRef} contentContainerStyle={[a.gap_md, a.pb_lg]}>
-        {districts.length > 0 ? (
-          districts.map(district => {
-            const isSelected = selectedDistrictId === district.id
-            const districtCabildeos = allCabildeos.filter(
-              c =>
-                (c as {districtKeys?: string[]}).districtKeys?.includes(
-                  district.districtKey,
-                ) ||
-                normalizeMexicoStateName(c.region || '') ===
-                  normalizeMexicoStateName(district.stateName),
-            )
-            const districtQuestions = MOCK_DISTRICT_RAQS.filter(item =>
-              item.districtKeys.includes(district.districtKey),
-            )
-
-            return (
-              <View
-                key={district.id}
-                style={[
-                  a.p_md,
-                  a.rounded_lg,
-                  a.border,
-                  isSelected
-                    ? {
-                        backgroundColor: district.accent + '18',
-                        borderColor: district.accent + '40',
-                      }
-                    : [t.atoms.bg_contrast_25, t.atoms.border_contrast_low],
-                ]}>
-                <TouchableOpacity
-                  accessibilityRole="button"
-                  onPress={() => onSelectDistrict(district.id)}
-                  style={[a.mb_sm]}>
-                  <View
-                    style={[
-                      a.flex_row,
-                      a.justify_between,
-                      a.align_baseline,
-                      a.mb_xs,
-                    ]}>
-                    <Text style={[a.text_lg, a.font_bold, t.atoms.text]}>
-                      Distrito {district.districtNumber}
-                    </Text>
-                    <View
-                      style={[
-                        a.px_sm,
-                        a.py_xs,
-                        a.rounded_full,
-                        {backgroundColor: district.accent + '20'},
-                      ]}>
-                      <Text
-                        style={[
-                          a.text_xs,
-                          a.font_bold,
-                          {color: district.accent},
-                        ]}>
-                        {district.dominantParty}
-                      </Text>
-                    </View>
-                  </View>
-                  <Text style={[a.text_sm, t.atoms.text_contrast_high]}>
-                    Turnout{' '}
-                    <Text style={[a.font_bold]}>{district.turnout}%</Text>
-                    {' · '}
-                    Registered{' '}
-                    <Text style={[a.font_bold]}>
-                      {district.registeredVoters.toLocaleString()}
-                    </Text>
-                  </Text>
-                  <Text
-                    style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_xs]}
-                    numberOfLines={1}>
-                    Deputy: {district.currentDeputy} ({district.deputyParty})
-                  </Text>
-                  <Text
-                    style={[a.text_xs, t.atoms.text_contrast_medium, a.mt_sm]}>
-                    {districtCabildeos.length} cabildeo
-                    {districtCabildeos.length === 1 ? '' : 's'} ·{' '}
-                    {districtQuestions.length} open question
-                    {districtQuestions.length === 1 ? '' : 's'}
-                  </Text>
-                </TouchableOpacity>
-
-                <View style={[a.flex_row, a.gap_sm, a.flex_wrap]}>
-                  <MiniAction
-                    label="Profile"
-                    active={isSelected}
-                    onPress={() =>
-                      navRef.navigate('DistrictProfile', {
-                        districtId: district.id,
-                        initialTab: 'overview',
-                      })
-                    }
-                  />
-                  <MiniAction
-                    label="Activity"
-                    onPress={() =>
-                      navRef.navigate('DistrictProfile', {
-                        districtId: district.id,
-                        initialTab: 'activity',
-                      })
-                    }
-                  />
-                  <MiniAction label="Back to state" onPress={onBackToState} />
-                </View>
-              </View>
-            )
-          })
+        {selectedDistrict ? (
+          <DistrictContextCard district={selectedDistrict} />
         ) : (
-          <View style={[a.p_xl, a.align_center]}>
-            <Text style={[t.atoms.text_contrast_medium]}>
-              <Trans>No district data available for this state.</Trans>
+          <View
+            style={[
+              a.mb_md,
+              a.p_md,
+              a.rounded_lg,
+              t.atoms.bg_contrast_25,
+              a.border,
+              t.atoms.border_contrast_low,
+            ]}>
+            <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
+              Search or tap a district row to inspect civic context. District
+              shapes show illustrative placement, not electoral jurisdiction.
             </Text>
           </View>
         )}
+
+        <View style={[a.flex_row, a.gap_sm, a.mb_md, a.flex_wrap]}>
+          <MiniAction
+            label="Back to state"
+            active={!selectedDistrict}
+            onPress={onBackToState}
+          />
+          {selectedDistrict && (
+            <MiniAction
+              label="Open civic activity"
+              onPress={() =>
+                navRef.navigate('DistrictProfile', {
+                  districtId: selectedDistrict.id,
+                  initialTab: 'activity',
+                })
+              }
+            />
+          )}
+        </View>
+
+        <View style={a.gap_md}>
+          {districts.length > 0 ? (
+            districts.map(district => {
+              const isSelected = selectedDistrictId === district.id
+              const districtCabildeos = cabildeosForMapPlace(allCabildeos, {
+                type: 'district',
+                districtKey: district.districtKey,
+              })
+              const districtQuestions = MOCK_DISTRICT_RAQS.filter(item =>
+                item.districtKeys.includes(district.districtKey),
+              )
+
+              return (
+                <View
+                  key={district.id}
+                  style={[
+                    a.p_md,
+                    a.rounded_lg,
+                    a.border,
+                    isSelected
+                      ? {
+                          backgroundColor:
+                            (SHOW_MAP_PREVIEW_FACTS
+                              ? district.accent
+                              : t.palette.primary_500) + '18',
+                          borderColor:
+                            (SHOW_MAP_PREVIEW_FACTS
+                              ? district.accent
+                              : t.palette.primary_500) + '40',
+                        }
+                      : [t.atoms.bg_contrast_25, t.atoms.border_contrast_low],
+                  ]}>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    onPress={() => onSelectDistrict(district.id)}
+                    style={[a.mb_sm]}>
+                    <View
+                      style={[
+                        a.flex_row,
+                        a.justify_between,
+                        a.align_baseline,
+                        a.mb_xs,
+                      ]}>
+                      <Text style={[a.text_lg, a.font_bold, t.atoms.text]}>
+                        Distrito {district.districtNumber}
+                      </Text>
+                      <View
+                        style={[
+                          a.px_sm,
+                          a.py_xs,
+                          a.rounded_full,
+                          {
+                            backgroundColor:
+                              (SHOW_MAP_PREVIEW_FACTS
+                                ? district.accent
+                                : t.palette.primary_500) + '20',
+                          },
+                        ]}>
+                        <Text
+                          style={[
+                            a.text_xs,
+                            a.font_bold,
+                            {
+                              color: SHOW_MAP_PREVIEW_FACTS
+                                ? district.accent
+                                : t.palette.primary_500,
+                            },
+                          ]}>
+                          {SHOW_MAP_PREVIEW_FACTS
+                            ? district.dominantParty
+                            : '—'}
+                        </Text>
+                      </View>
+                    </View>
+                    {SHOW_MAP_PREVIEW_FACTS && (
+                      <>
+                        <Text style={[a.text_sm, t.atoms.text_contrast_high]}>
+                          Turnout{' '}
+                          <Text style={[a.font_bold]}>
+                            {SHOW_MAP_PREVIEW_FACTS
+                              ? `${district.turnout}%`
+                              : '—'}
+                          </Text>
+                          {' · '}
+                          Registered{' '}
+                          <Text style={[a.font_bold]}>
+                            {district.registeredVoters.toLocaleString()}
+                          </Text>
+                        </Text>
+                        <Text
+                          style={[
+                            a.text_sm,
+                            t.atoms.text_contrast_medium,
+                            a.mt_xs,
+                          ]}
+                          numberOfLines={1}>
+                          Deputy: {district.currentDeputy} (
+                          {district.deputyParty})
+                        </Text>
+                      </>
+                    )}
+                    <Text
+                      style={[
+                        a.text_xs,
+                        t.atoms.text_contrast_medium,
+                        a.mt_sm,
+                      ]}>
+                      {mapCivicCount(civicQuery, districtCabildeos.length)}{' '}
+                      cabildeo
+                      {districtCabildeos.length === 1 ? '' : 's'} ·{' '}
+                      {SHOW_MAP_PREVIEW_FACTS ? districtQuestions.length : '—'}{' '}
+                      open question
+                      {districtQuestions.length === 1 ? '' : 's'}
+                      {SHOW_MAP_PREVIEW_FACTS && (
+                        <Trans> (demo questions)</Trans>
+                      )}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <View style={[a.flex_row, a.gap_sm, a.flex_wrap]}>
+                    <MiniAction
+                      label="Profile"
+                      active={isSelected}
+                      onPress={() =>
+                        navRef.navigate('DistrictProfile', {
+                          districtId: district.id,
+                          initialTab: 'overview',
+                        })
+                      }
+                    />
+                    <MiniAction
+                      label="Activity"
+                      onPress={() =>
+                        navRef.navigate('DistrictProfile', {
+                          districtId: district.id,
+                          initialTab: 'activity',
+                        })
+                      }
+                    />
+                    <MiniAction label="Back to state" onPress={onBackToState} />
+                  </View>
+                </View>
+              )
+            })
+          ) : (
+            <View style={[a.p_xl, a.align_center]}>
+              <Text style={[t.atoms.text_contrast_medium]}>
+                <Trans>No district data available for this state.</Trans>
+              </Text>
+            </View>
+          )}
+        </View>
       </ScrollView>
     </OverlayFrame>
   )
@@ -1546,6 +1674,7 @@ export function MapLayersPanel({
                 accessibilityLabel={`${layer.label}, ${layer.description}`}
                 accessibilityHint={`Switches the map to ${layer.label.toLowerCase()}.`}
                 accessibilityState={{selected}}
+                aria-selected={selected}
                 onPress={() => onSelectLayer(layer.id)}
                 style={[
                   a.align_center,

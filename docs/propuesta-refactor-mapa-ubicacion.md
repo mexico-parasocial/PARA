@@ -1,5 +1,10 @@
 # Propuesta de Refactor: Arquitectura de Mapa y Ubicación v2
 
+> Actualización de planificación (2026-10-07): propuesta histórica. El plan vigente
+> es [Map maturity and civic atlas](./MAP_MATURITY_PLAN.md). Los helpers de ubicación
+> por niveles y `LocationPermissionGate` ya existen; no recrearlos. Las cifras de
+> rendimiento de esta propuesta no son mediciones verificadas del código actual.
+
 > **Status:** Draft  
 > **Autor:** Asistente Técnico  
 > **Fecha:** 2026-05-13  

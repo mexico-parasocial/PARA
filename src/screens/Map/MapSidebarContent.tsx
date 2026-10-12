@@ -277,7 +277,7 @@ export function MapSidebarLayers({
   onSelectLayer: (layer: MapLayer) => void
   civicHeatOn: boolean
   onToggleCivicHeat: () => void
-  civicPointCount: number
+  civicPointCount: number | undefined
 }) {
   const t = useTheme()
 
@@ -340,6 +340,7 @@ export function MapSidebarLayers({
               key={layer.id}
               accessibilityRole="tab"
               accessibilityState={{selected}}
+              aria-selected={selected}
               onPress={() => onSelectLayer(layer.id)}
               style={[
                 a.flex_row,

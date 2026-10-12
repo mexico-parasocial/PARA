@@ -132,3 +132,86 @@ export function zoomMapCamera(
     y: anchor.y - (anchor.y - camera.y) * ratio,
   }
 }
+
+/** The part of the map not covered by a panel, in screen pixels. */
+export type MapVisibleRect = {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+/**
+ * Moves the camera, without changing zoom, so a point lands in the middle of
+ * the visible area - but only if it is not already comfortably inside it.
+ * Selecting something already in view should not make the map jump.
+ */
+export function cameraToShow(
+  camera: MapCamera,
+  point: {x: number; y: number},
+  visible: MapVisibleRect,
+  margin = 56,
+): MapCamera {
+  const sx = camera.x + point.x * camera.scale
+  const sy = camera.y + point.y * camera.scale
+  const inside =
+    sx >= visible.x + margin &&
+    sx <= visible.x + visible.width - margin &&
+    sy >= visible.y + margin &&
+    sy <= visible.y + visible.height - margin
+  if (inside) return camera
+  return {
+    scale: camera.scale,
+    x: visible.x + visible.width / 2 - point.x * camera.scale,
+    y: visible.y + visible.height / 2 - point.y * camera.scale,
+  }
+}
+
+/** A node's radius on screen: readable when zoomed out, bounded when in. */
+export function screenRadius(radius: number, scale: number) {
+  return Math.max(3, Math.min(18, radius * scale))
+}
+
+/** Where a cluster's title sits on screen. Node labels keep clear of it. */
+export function clusterTitleBox(
+  cluster: {x: number; y: number; radius: number; section?: string},
+  camera: MapCamera,
+) {
+  const width = Math.max(
+    72,
+    Math.min(200, (cluster.radius * 2 + 48) * camera.scale),
+  )
+  const left = camera.x + cluster.x * camera.scale - width / 2
+  const top = camera.y + (cluster.y - cluster.radius) * camera.scale - 36
+  return {left, top, width, height: cluster.section ? 48 : 34}
+}
+
+/**
+ * An arrowhead at the target end of a directed edge, in map coordinates,
+ * sized to look the same at every zoom. Returns the head and the point the
+ * line should stop at so it does not poke through.
+ */
+export function arrowFor(
+  from: {x: number; y: number},
+  to: {x: number; y: number},
+  targetRadius: number,
+  scale: number,
+) {
+  const dx = to.x - from.x
+  const dy = to.y - from.y
+  const len = Math.hypot(dx, dy) || 1
+  const ux = dx / len
+  const uy = dy / len
+  const length = 10 / scale
+  const half = 4.5 / scale
+  const tipX = to.x - ux * (targetRadius + 2 / scale)
+  const tipY = to.y - uy * (targetRadius + 2 / scale)
+  const baseX = tipX - ux * length
+  const baseY = tipY - uy * length
+  return {
+    end: {x: baseX, y: baseY},
+    points: `${tipX},${tipY} ${baseX - uy * half},${baseY + ux * half} ${
+      baseX + uy * half
+    },${baseY - ux * half}`,
+  }
+}
