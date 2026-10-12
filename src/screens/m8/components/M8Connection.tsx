@@ -12,25 +12,31 @@ import {useSession} from '#/state/session'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import {Text} from '#/components/Typography'
+import {Card} from './IdentityPrimitives'
 
-type ConnectionState =
+export type M8Connection =
   | {status: 'loading'}
   | {status: 'disconnected'}
   | {status: 'connected'; did: string; handle: string}
 
-function shortenDid(did: string) {
+export function shortenDid(did: string) {
   return did.length > 26 ? `${did.slice(0, 18)}…${did.slice(-6)}` : did
 }
 
-/** Explicit OAuth connection for the currently signed-in PARA account. */
-export function M8SessionBanner() {
-  const t = useTheme()
+/**
+ * Whether the signed-in PARA account holds an m8 broker session, and the
+ * actions to change that. Connecting is DID-bound: it always connects the
+ * account PARA is currently using (OAuth handoff in the system browser).
+ * Disconnecting revokes this device's m8 refresh token; grants and proofs
+ * belong to the account's m8 session and are still there after reconnecting.
+ */
+export function useM8Connection() {
   const {_} = useLingui()
   const {currentAccount} = useSession()
   const did = currentAccount?.did
   const activeDid = useRef(did)
   activeDid.current = did
-  const [state, setState] = useState<ConnectionState>({status: 'loading'})
+  const [state, setState] = useState<M8Connection>({status: 'loading'})
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -129,68 +135,104 @@ export function M8SessionBanner() {
     }
   }, [did, _])
 
-  if (state.status === 'loading') {
-    return (
-      <View style={[a.p_lg, a.align_center]}>
-        <ActivityIndicator />
-      </View>
-    )
-  }
+  // A session for a different account than the one PARA is using is not ours.
+  const connection: M8Connection =
+    state.status === 'connected' && state.did !== did
+      ? {status: 'disconnected'}
+      : state
 
-  const connected = state.status === 'connected' && state.did === did
+  return {
+    connection,
+    account: {did, handle: currentAccount?.handle},
+    busy,
+    error,
+    connect,
+    disconnect,
+  }
+}
+
+export function ConnectingIndicator() {
   return (
-    <View style={[a.p_lg, a.gap_sm, {backgroundColor: t.palette.primary_25}]}>
-      <Text style={[a.font_bold, a.text_md]}>
-        {connected
-          ? _(msg`Connected identity wallet`)
-          : _(msg`Connect your identity wallet`)}
-      </Text>
-      <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-        <Trans>
-          Connect the account you are using in PARA to your identity wallet.
-        </Trans>
-      </Text>
-      <View style={[a.flex_row, a.gap_md, a.align_center]}>
-        <View style={[a.flex_1]}>
-          <Text style={[a.font_bold, a.text_md]} numberOfLines={1}>
-            {currentAccount?.handle
-              ? `@${currentAccount.handle}`
+    <View style={[a.flex_1, a.align_center, a.justify_center, a.p_xl]}>
+      <ActivityIndicator />
+    </View>
+  )
+}
+
+/**
+ * Shown instead of the tabs while the signed-in account has no m8 session.
+ */
+export function M8ConnectCard({
+  account,
+  busy,
+  error,
+  onConnect,
+}: {
+  account: {did: string | undefined; handle: string | undefined}
+  busy: boolean
+  error: string | null
+  onConnect: () => void
+}) {
+  const t = useTheme()
+  const {_} = useLingui()
+
+  return (
+    <View style={[a.p_lg]}>
+      <Card style={[a.gap_md]}>
+        <View style={[a.gap_xs]}>
+          <Text style={[a.text_md, a.font_semi_bold, t.atoms.text]}>
+            <Trans>Connect your identity wallet</Trans>
+          </Text>
+          <Text
+            style={[a.text_sm, a.leading_snug, t.atoms.text_contrast_medium]}>
+            <Trans>
+              Connect the account you are using in PARA to your identity wallet.
+            </Trans>
+          </Text>
+        </View>
+        <View style={[a.gap_2xs]}>
+          <Text
+            style={[a.text_md, a.font_semi_bold, t.atoms.text]}
+            numberOfLines={1}>
+            {account.handle
+              ? `@${account.handle}`
               : _(msg`Sign in to PARA first`)}
           </Text>
-          {did ? (
+          {account.did ? (
             <Text
               style={[a.text_sm, t.atoms.text_contrast_medium]}
               numberOfLines={1}>
-              {shortenDid(did)}
+              {shortenDid(account.did)}
             </Text>
           ) : null}
         </View>
         <Button
-          variant={connected ? 'outline' : 'solid'}
-          color={connected ? 'secondary' : 'primary'}
-          size="small"
-          label={connected ? _(msg`Disconnect`) : _(msg`Connect`)}
-          disabled={busy || !did}
-          onPress={connected ? disconnect : connect}>
+          variant="solid"
+          color="primary"
+          size="large"
+          label={_(msg`Connect`)}
+          disabled={busy || !account.did}
+          onPress={onConnect}>
           {busy ? (
-            <ActivityIndicator size="small" />
+            <ActivityIndicator size="small" color="white" />
           ) : (
             <ButtonText>
-              {connected ? _(msg`Disconnect`) : _(msg`Connect`)}
+              <Trans>Connect</Trans>
             </ButtonText>
           )}
         </Button>
-      </View>
-      {busy && !connected ? (
-        <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-          <Trans>Complete sign-in in your browser to continue.</Trans>
-        </Text>
-      ) : null}
-      {error ? (
-        <Text style={[a.text_sm, {color: t.palette.negative_500}]}>
-          {error}
-        </Text>
-      ) : null}
+        {busy ? (
+          <Text
+            style={[a.text_sm, a.leading_snug, t.atoms.text_contrast_medium]}>
+            <Trans>Complete sign-in in your browser to continue.</Trans>
+          </Text>
+        ) : null}
+        {error ? (
+          <Text style={[a.text_sm, {color: t.palette.negative_500}]}>
+            {error}
+          </Text>
+        ) : null}
+      </Card>
     </View>
   )
 }

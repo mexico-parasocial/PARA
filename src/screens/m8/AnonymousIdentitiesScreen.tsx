@@ -1,13 +1,9 @@
 import {useCallback, useEffect, useMemo, useState} from 'react'
-import {
-  Alert,
-  RefreshControl,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native'
+import {ActivityIndicator, Alert, RefreshControl, View} from 'react-native'
+import {type I18n} from '@lingui/core'
+import {msg, plural} from '@lingui/core/macro'
+import {useLingui} from '@lingui/react'
+import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {getDefaultChatIdentityMode} from '#/lib/chat/identity'
@@ -23,41 +19,56 @@ import {
 import {useAnonymousMode} from '#/lib/im8/hooks/useAnonymousMode'
 import {type AnonymousIdentityCard} from '#/lib/im8/types'
 import {type NavigationProp} from '#/lib/routes/types'
-import {useTheme} from '#/alf'
+import {atoms as a, useTheme} from '#/alf'
+import {Button, ButtonText} from '#/components/Button'
 import {ChatIdentityPill} from '#/components/chat/ChatIdentityPill'
+import * as TextField from '#/components/forms/TextField'
 import {GermContactButton} from '#/components/germ/GermContactButton'
+import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'
+import {
+  Card,
+  EmptyNoteText,
+  Pill,
+  SectionHeading,
+} from './components/IdentityPrimitives'
 
+/**
+ * Anonymous voices held by m8 (mubEZ `/v1/anonymous/identities`). The tier is
+ * assigned by m8: the folded default profile is the followable "main" voice,
+ * every other card is a burner.
+ */
 export default function AnonymousIdentitiesScreen() {
   const t = useTheme()
+  const {_} = useLingui()
   const navigation = useNavigation<NavigationProp>()
   const {profile: anonProfile} = useAnonymousMode()
   const [identities, setIdentities] = useState<AnonymousIdentityCard[]>([])
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [loadError, setLoadError] = useState(false)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [contactUrls, setContactUrls] = useState<Record<string, string>>({})
 
-  // Tier split (server-assigned): the folded default profile is the
-  // followable "main voice"; everything else is an unlinkable burner voice.
   const mainVoice = identities.find(i => i.tier === 'main')
   const burnerVoices = identities.filter(i => i.tier !== 'main')
 
   const load = useCallback(async () => {
-    const data = await getAnonymousIdentities()
-    setIdentities(data.identities)
+    try {
+      const data = await getAnonymousIdentities()
+      setIdentities(data.identities)
+      setLoadError(false)
+    } catch (err) {
+      console.warn('[m8] Failed to load anonymous identities:', err)
+      setLoadError(true)
+    }
   }, [])
 
   useEffect(() => {
     let cancelled = false
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    load()
-      .catch(err =>
-        console.warn('[m8] Failed to load anonymous identities:', err),
-      )
-      .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
+    void load().finally(() => {
+      if (!cancelled) setLoading(false)
+    })
     return () => {
       cancelled = true
     }
@@ -65,111 +76,72 @@ export default function AnonymousIdentitiesScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true)
-    try {
-      await load()
-    } finally {
-      setRefreshing(false)
-    }
+    await load()
+    setRefreshing(false)
   }, [load])
 
-  const createIdentity = useCallback(async () => {
-    try {
-      setBusyId('new')
-      await postAnonymousIdentity({surface: 'civic'})
-      await load()
-    } catch (err) {
-      Alert.alert('Could not create card', getMessage(err))
-    } finally {
-      setBusyId(null)
-    }
-  }, [load])
-
-  const createOnePostVoice = useCallback(async () => {
-    try {
-      setBusyId('new-burn')
-      await postAnonymousIdentity({surface: 'civic', burnAfter: 'post'})
-      await load()
-    } catch (err) {
-      Alert.alert('Could not create one-post voice', getMessage(err))
-    } finally {
-      setBusyId(null)
-    }
-  }, [load])
-
-  const archiveIdentity = useCallback(
-    async (identity: AnonymousIdentityCard) => {
+  /** Runs one m8 mutation with a busy marker, then reloads. */
+  const run = useCallback(
+    async (key: string, failTitle: string, action: () => Promise<unknown>) => {
       try {
-        setBusyId(identity.id)
-        await patchAnonymousIdentity(identity.id, {status: 'archived'})
+        setBusyId(key)
+        await action()
         await load()
       } catch (err) {
-        Alert.alert('Could not archive card', getMessage(err))
+        Alert.alert(failTitle, getMessage(_, err))
       } finally {
         setBusyId(null)
       }
     },
-    [load],
+    [_, load],
+  )
+
+  const createVoice = useCallback(
+    (burnAfter: 'none' | 'post') =>
+      run(
+        burnAfter === 'post' ? 'new-burn' : 'new',
+        _(msg`Could not create voice`),
+        () =>
+          postAnonymousIdentity(
+            burnAfter === 'post'
+              ? {surface: 'civic', burnAfter: 'post'}
+              : {surface: 'civic'},
+          ),
+      ),
+    [_, run],
   )
 
   const linkGerm = useCallback(
-    async (identity: AnonymousIdentityCard) => {
+    (identity: AnonymousIdentityCard) => {
       const contactUrl = contactUrls[identity.id]?.trim()
       if (!contactUrl) {
         Alert.alert(
-          'Germ card link required',
-          'Paste a Germ burner-card or contact URL first.',
+          _(msg`Germ link required`),
+          _(msg`Paste a Germ burner-card or contact link first.`),
         )
         return
       }
-      try {
-        setBusyId(identity.id)
-        await postAnonymousGermLink(identity.id, {
+      void run(identity.id, _(msg`Could not link Germ`), () =>
+        postAnonymousGermLink(identity.id, {
           contactUrl,
           mode: 'germ-card-link',
-        })
-        await load()
-      } catch (err) {
-        Alert.alert('Could not link Germ', getMessage(err))
-      } finally {
-        setBusyId(null)
-      }
+        }),
+      )
     },
-    [contactUrls, load],
-  )
-
-  const unlinkGerm = useCallback(
-    async (identity: AnonymousIdentityCard) => {
-      try {
-        setBusyId(identity.id)
-        await postAnonymousGermUnlink(identity.id)
-        await load()
-      } catch (err) {
-        Alert.alert('Could not unlink Germ', getMessage(err))
-      } finally {
-        setBusyId(null)
-      }
-    },
-    [load],
+    [_, contactUrls, run],
   )
 
   const toggleReplies = useCallback(
-    async (identity: AnonymousIdentityCard, enabled: boolean) => {
-      try {
-        setBusyId(identity.id)
+    (identity: AnonymousIdentityCard, enabled: boolean) =>
+      run(identity.id, _(msg`Could not update private replies`), async () => {
         for (const post of identity.posts) {
           await patchAnonymousPostDmPolicy(
             post.id,
             enabled ? 'requests' : 'off',
           )
         }
-        await load()
-      } catch (err) {
-        Alert.alert('Could not update private replies', getMessage(err))
-      } finally {
-        setBusyId(null)
-      }
-    },
-    [load],
+      }),
+    [_, run],
   )
 
   const activeCount = useMemo(
@@ -179,164 +151,146 @@ export default function AnonymousIdentitiesScreen() {
 
   if (loading) {
     return (
-      <View style={[styles.container, t.atoms.bg]}>
-        <Text style={[styles.headerTitle, t.atoms.text]}>
-          Anonymous identities
-        </Text>
-        <Text style={[styles.muted, t.atoms.text_contrast_medium]}>
-          Loading your cards...
-        </Text>
+      <View style={[a.flex_1, a.align_center, a.justify_center, a.p_xl]}>
+        <ActivityIndicator />
       </View>
     )
   }
 
+  const cardHandlers = (identity: AnonymousIdentityCard) => ({
+    contactUrl: contactUrls[identity.id] ?? '',
+    busy: busyId === identity.id,
+    onContactUrlChange: (value: string) =>
+      setContactUrls(prev => ({...prev, [identity.id]: value})),
+    onLinkGerm: () => linkGerm(identity),
+    onUnlinkGerm: () => {
+      void run(identity.id, _(msg`Could not unlink Germ`), () =>
+        postAnonymousGermUnlink(identity.id),
+      )
+    },
+    onEnableReplies: () => {
+      void toggleReplies(identity, true)
+    },
+    onDisableReplies: () => {
+      void toggleReplies(identity, false)
+    },
+  })
+
   return (
-    <View style={[styles.container, t.atoms.bg]}>
-      <ScrollView
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => {
+    <Layout.Content
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={() => {
+            void onRefresh()
+          }}
+        />
+      }
+      contentContainerStyle={[a.p_lg, a.gap_md]}>
+      <View style={[a.flex_row, a.align_center, a.justify_between, a.gap_sm]}>
+        <Text style={[a.flex_1, a.text_sm, t.atoms.text_contrast_medium]}>
+          {_(
+            plural(activeCount, {
+              one: '# active voice',
+              other: '# active voices',
+            }),
+          )}
+        </Text>
+        <Button
+          label={_(msg`Create a one-post voice`)}
+          size="small"
+          variant="outline"
+          color="secondary"
+          disabled={busyId !== null}
+          onPress={() => {
+            void createVoice('post')
+          }}>
+          <ButtonText>
+            <Trans>One-post voice</Trans>
+          </ButtonText>
+        </Button>
+        <Button
+          label={_(msg`Create a burner voice`)}
+          size="small"
+          variant="solid"
+          color="primary"
+          disabled={busyId !== null}
+          onPress={() => {
+            void createVoice('none')
+          }}>
+          <ButtonText>
+            <Trans>New voice</Trans>
+          </ButtonText>
+        </Button>
+      </View>
+
+      {loadError ? (
+        <Card>
+          <Text style={[a.text_sm]}>
+            <Trans>Could not load your anonymous voices from m8.</Trans>
+          </Text>
+          <Button
+            label={_(msg`Try again`)}
+            size="small"
+            variant="solid"
+            color="secondary"
+            style={[a.self_start]}
+            onPress={() => {
               void onRefresh()
-            }}
+            }}>
+            <ButtonText>
+              <Trans>Try again</Trans>
+            </ButtonText>
+          </Button>
+        </Card>
+      ) : identities.length === 0 ? (
+        <EmptyNoteText>
+          <Trans>No anonymous voices yet.</Trans>
+        </EmptyNoteText>
+      ) : null}
+
+      {mainVoice && anonProfile ? (
+        <>
+          <SectionHeading
+            title={_(msg`Main voice`)}
+            detail={_(msg`Followable. Your default anonymous profile.`)}
           />
-        }
-        contentContainerStyle={styles.content}>
-        <View style={styles.headerRow}>
-          <View>
-            <Text style={[styles.headerTitle, t.atoms.text]}>
-              Anonymous identities
-            </Text>
-            <Text style={[styles.muted, t.atoms.text_contrast_medium]}>
-              {activeCount} active cards
-            </Text>
-          </View>
-          <View style={styles.headerActions}>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Create one-post voice"
-              accessibilityHint="Creates a burner voice that rotates after each post"
-              disabled={busyId !== null}
-              onPress={() => {
-                void createOnePostVoice()
-              }}
-              style={[
-                styles.secondaryButton,
-                {borderColor: t.palette.contrast_200},
-              ]}>
-              <Text style={[styles.secondaryButtonText, t.atoms.text]}>
-                One-post voice
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              accessibilityRole="button"
-              accessibilityLabel="Create anonymous identity card"
-              accessibilityHint="Creates a new anonymous identity card"
-              disabled={busyId !== null}
-              onPress={() => {
-                void createIdentity()
-              }}
-              style={[
-                styles.primaryButton,
-                {backgroundColor: t.palette.primary_500},
-              ]}>
-              <Text style={styles.primaryButtonText}>New card</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+          <IdentityCard
+            identity={mainVoice}
+            tier="main"
+            {...cardHandlers(mainVoice)}
+            onOpenVoice={() =>
+              navigation.navigate('AnonymousVoice', {
+                profileId: anonProfile.id,
+              })
+            }
+          />
+        </>
+      ) : null}
 
-        {identities.length === 0 ? (
-          <View
-            style={[
-              styles.emptyState,
-              t.atoms.bg_contrast_25,
-              {borderColor: t.palette.contrast_100},
-            ]}>
-            <Text style={[styles.cardTitle, t.atoms.text]}>
-              No anonymous cards yet
-            </Text>
-            <Text style={[styles.muted, t.atoms.text_contrast_medium]}>
-              Cards appear here when m8 links anonymous activity to a durable
-              persona.
-            </Text>
-          </View>
-        ) : (
-          <>
-            {mainVoice && anonProfile ? (
-              <View style={styles.section}>
-                <Text
-                  style={[styles.sectionTitle, t.atoms.text_contrast_medium]}>
-                  Main voice · followable
-                </Text>
-                <IdentityCard
-                  identity={mainVoice}
-                  tier="main"
-                  contactUrl={contactUrls[mainVoice.id] ?? ''}
-                  busy={busyId === mainVoice.id}
-                  onOpenVoice={() =>
-                    navigation.navigate('AnonymousVoice', {
-                      profileId: anonProfile.id,
-                    })
-                  }
-                  onContactUrlChange={value =>
-                    setContactUrls(prev => ({...prev, [mainVoice.id]: value}))
-                  }
-                  onArchive={() => {}}
-                  onLinkGerm={() => {
-                    void linkGerm(mainVoice)
-                  }}
-                  onUnlinkGerm={() => {
-                    void unlinkGerm(mainVoice)
-                  }}
-                  onEnableReplies={() => {
-                    void toggleReplies(mainVoice, true)
-                  }}
-                  onDisableReplies={() => {
-                    void toggleReplies(mainVoice, false)
-                  }}
-                />
-              </View>
-            ) : null}
-
-            {burnerVoices.length > 0 ? (
-              <View style={styles.section}>
-                <Text
-                  style={[styles.sectionTitle, t.atoms.text_contrast_medium]}>
-                  Burner voices · unlinkable, never followable
-                </Text>
-                {burnerVoices.map(identity => (
-                  <IdentityCard
-                    key={identity.id}
-                    identity={identity}
-                    tier="burner"
-                    contactUrl={contactUrls[identity.id] ?? ''}
-                    busy={busyId === identity.id}
-                    onContactUrlChange={value =>
-                      setContactUrls(prev => ({...prev, [identity.id]: value}))
-                    }
-                    onArchive={() => {
-                      void archiveIdentity(identity)
-                    }}
-                    onLinkGerm={() => {
-                      void linkGerm(identity)
-                    }}
-                    onUnlinkGerm={() => {
-                      void unlinkGerm(identity)
-                    }}
-                    onEnableReplies={() => {
-                      void toggleReplies(identity, true)
-                    }}
-                    onDisableReplies={() => {
-                      void toggleReplies(identity, false)
-                    }}
-                  />
-                ))}
-              </View>
-            ) : null}
-          </>
-        )}
-      </ScrollView>
-    </View>
+      {burnerVoices.length > 0 ? (
+        <>
+          <SectionHeading
+            title={_(msg`Burner voices`)}
+            detail={_(msg`Unlinkable, never followable.`)}
+          />
+          {burnerVoices.map(identity => (
+            <IdentityCard
+              key={identity.id}
+              identity={identity}
+              tier="burner"
+              {...cardHandlers(identity)}
+              onArchive={() => {
+                void run(identity.id, _(msg`Could not archive voice`), () =>
+                  patchAnonymousIdentity(identity.id, {status: 'archived'}),
+                )
+              }}
+            />
+          ))}
+        </>
+      ) : null}
+      <View style={[a.pb_lg]} />
+    </Layout.Content>
   )
 }
 
@@ -359,13 +313,18 @@ function IdentityCard({
   busy: boolean
   onOpenVoice?: () => void
   onContactUrlChange: (value: string) => void
-  onArchive: () => void
+  // m8 has no archive path for the main voice in PARA; burners only.
+  onArchive?: () => void
   onLinkGerm: () => void
   onUnlinkGerm: () => void
   onEnableReplies: () => void
   onDisableReplies: () => void
 }) {
   const t = useTheme()
+  const {_, i18n} = useLingui()
+  const isActive = identity.status === 'active'
+  const deviceTrusted = identity.deviceTrust.status === 'trusted'
+  const germLinked = identity.germ?.status === 'active'
   const repliesEnabled = identity.posts.some(
     post => post.dmPolicy === 'requests',
   )
@@ -380,238 +339,211 @@ function IdentityCard({
         }
       : {dmEnabled: false},
   )
+  // Mirrors m8: linking Germ requires a trusted device and an active card.
+  const canLinkGerm = isActive && deviceTrusted
   const canEnableReplies =
-    identity.status === 'active' &&
-    identity.germ?.status === 'active' &&
-    identity.deviceTrust.status === 'trusted' &&
-    identity.posts.length > 0
+    isActive && germLinked && deviceTrusted && identity.posts.length > 0
+
+  const meta = [
+    surfaceLabel(i18n, identity.surface),
+    isActive ? _(msg`Active`) : _(msg`Archived`),
+    identity.burnAfter === 'post' ? _(msg`Rotates after each post`) : null,
+  ].filter(Boolean)
 
   return (
-    <View
-      style={[
-        styles.card,
-        t.atoms.bg_contrast_25,
-        {borderColor: t.palette.contrast_100},
-      ]}>
-      <View style={styles.cardHeader}>
+    <Card style={[a.gap_md]}>
+      <View style={[a.flex_row, a.align_center, a.gap_sm]}>
         <View
           style={[
-            styles.avatar,
-            {backgroundColor: colorFromSeed(identity.avatarSeed)},
+            a.rounded_full,
+            a.align_center,
+            a.justify_center,
+            {
+              width: 40,
+              height: 40,
+              backgroundColor: colorFromSeed(identity.avatarSeed),
+            },
           ]}>
-          <Text style={styles.avatarText}>
+          <Text style={[a.text_lg, a.font_bold, {color: 'white'}]}>
             {identity.displayName.slice(0, 1).toUpperCase()}
           </Text>
         </View>
-        <View style={styles.cardTitleWrap}>
-          <Text style={[styles.cardTitle, t.atoms.text]} numberOfLines={1}>
+        <View style={[a.flex_1, a.gap_2xs]}>
+          <Text
+            style={[a.text_md, a.font_semi_bold, t.atoms.text]}
+            numberOfLines={1}>
             {identity.displayName}
           </Text>
           <Text
-            style={[styles.muted, t.atoms.text_contrast_medium]}
+            style={[a.text_xs, t.atoms.text_contrast_medium]}
             numberOfLines={1}>
-            {identity.surface} · {identity.status}
-            {identity.burnAfter === 'post' ? ' · burns after each post' : ''}
+            {meta.join(' · ')}
           </Text>
         </View>
-        <StatusBadge
-          label={tier === 'main' ? 'Main voice' : 'Burner'}
+      </View>
+
+      <View style={[a.flex_row, a.flex_wrap, a.gap_xs]}>
+        <Pill
+          label={tier === 'main' ? _(msg`Main voice`) : _(msg`Burner`)}
           tone={tier === 'main' ? 'positive' : 'neutral'}
         />
-        <StatusBadge
+        <Pill
           label={
-            identity.deviceTrust.status === 'trusted'
-              ? 'Trusted device'
-              : 'Limited'
+            deviceTrusted ? _(msg`Trusted device`) : _(msg`Device not trusted`)
           }
-          tone={
-            identity.deviceTrust.status === 'trusted' ? 'positive' : 'neutral'
-          }
+          tone={deviceTrusted ? 'positive' : 'warning'}
         />
+        {identity.proofBadges.map(badge => (
+          <Pill
+            key={`${identity.id}-${badge.claimType}`}
+            label={badge.label}
+            tone="neutral"
+          />
+        ))}
       </View>
 
       {tier === 'main' && onOpenVoice ? (
-        <TouchableOpacity
-          accessibilityRole="button"
-          accessibilityLabel="Open voice profile"
-          accessibilityHint="Shows followers and karma for your main voice"
-          onPress={onOpenVoice}
-          style={[
-            styles.voiceLink,
-            {
-              borderColor: t.palette.primary_500 + '40',
-              backgroundColor: t.palette.primary_500 + '10',
-            },
-          ]}>
-          <Text style={[styles.voiceLinkText, {color: t.palette.primary_500}]}>
-            Open voice profile · followers & karma →
-          </Text>
-        </TouchableOpacity>
+        <Button
+          label={_(msg`Open voice profile`)}
+          size="small"
+          variant="solid"
+          color="primary_subtle"
+          style={[a.self_start]}
+          onPress={onOpenVoice}>
+          <ButtonText>
+            <Trans>Open voice profile · followers & karma</Trans>
+          </ButtonText>
+        </Button>
       ) : null}
 
       <ChatIdentityPill mode={isolatedIdentityMode} />
 
-      <View style={styles.metaGrid}>
-        <Metric label="Posts" value={String(identity.posts.length)} />
-        <Metric label="Proofs" value={String(identity.proofBadges.length)} />
+      <View style={[a.flex_row, a.gap_sm]}>
+        <Metric label={_(msg`Posts`)} value={String(identity.posts.length)} />
         <Metric
-          label="Germ"
-          value={identity.germ?.status === 'active' ? 'Linked' : 'Off'}
+          label={_(msg`Proofs`)}
+          value={String(identity.proofBadges.length)}
+        />
+        <Metric
+          label={_(msg`Germ`)}
+          value={germLinked ? _(msg`Linked`) : _(msg`Off`)}
         />
       </View>
 
-      {identity.proofBadges.length > 0 && (
-        <View style={styles.chips}>
-          {identity.proofBadges.map(badge => (
-            <View
-              key={`${identity.id}-${badge.claimType}`}
-              style={[
-                styles.chip,
-                {backgroundColor: t.palette.primary_500 + '18'},
-              ]}>
-              <Text style={[styles.chipText, {color: t.palette.primary_500}]}>
-                {badge.label}
-              </Text>
-            </View>
-          ))}
-        </View>
-      )}
-
-      <View style={styles.posts}>
+      <View style={[a.gap_sm]}>
         {identity.posts.length === 0 ? (
-          <Text style={[styles.muted, t.atoms.text_contrast_medium]}>
-            Anonymous posts will appear here after they are linked by PARA.
+          <Text
+            style={[a.text_sm, a.leading_snug, t.atoms.text_contrast_medium]}>
+            <Trans>
+              Posts from this voice appear here once PARA links them.
+            </Trans>
           </Text>
         ) : (
           identity.posts.slice(0, 3).map(post => (
-            <View key={post.id} style={styles.postSummary}>
-              <View style={styles.postRow}>
-                <Text style={[styles.postUri, t.atoms.text]} numberOfLines={1}>
+            <View key={post.id} style={[a.gap_xs]}>
+              <View style={[a.flex_row, a.align_center, a.gap_sm]}>
+                <Text
+                  style={[a.flex_1, a.text_xs, t.atoms.text]}
+                  numberOfLines={1}>
                   {post.postUri}
                 </Text>
-                <StatusBadge
+                <Pill
                   label={
-                    post.dmPolicy === 'requests' ? 'Replies on' : 'Replies off'
+                    post.dmPolicy === 'requests'
+                      ? _(msg`Replies on`)
+                      : _(msg`Replies off`)
                   }
                   tone={post.dmPolicy === 'requests' ? 'positive' : 'neutral'}
                 />
               </View>
-              <View style={styles.postStats}>
-                <PostStat label="Threads" value={post.stats.threadCount} />
-                <PostStat label="Replies" value={post.stats.replyCount} />
-                <PostStat label="Likes" value={post.stats.likeCount} />
-                <PostStat label="Quotes" value={post.stats.quoteCount} />
-              </View>
+              <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
+                {[
+                  _(msg`${formatCount(post.stats.threadCount)} threads`),
+                  _(msg`${formatCount(post.stats.replyCount)} replies`),
+                  _(msg`${formatCount(post.stats.likeCount)} likes`),
+                  _(msg`${formatCount(post.stats.quoteCount)} quotes`),
+                ].join(' · ')}
+              </Text>
             </View>
           ))
         )}
       </View>
 
-      {identity.germ?.status !== 'active' && identity.status === 'active' && (
-        <View style={styles.germLinkBox}>
-          <TextInput
-            accessibilityLabel="Germ anonymous contact URL"
-            accessibilityHint="Enter an opaque Germ contact link for this anonymous identity"
-            autoCapitalize="none"
-            autoCorrect={false}
-            value={contactUrl}
-            onChangeText={onContactUrlChange}
-            placeholder="https://landing.ger.mx/..."
-            placeholderTextColor={t.atoms.text_contrast_low.color}
-            style={[
-              styles.input,
-              t.atoms.text,
-              {borderColor: t.palette.contrast_100},
-            ]}
-          />
-          <Text style={[styles.muted, t.atoms.text_contrast_medium]}>
-            m8 stores this as an opaque Germ contact link and blocks links that
-            expose your real DID.
+      {!germLinked && isActive ? (
+        <View style={[a.gap_xs]}>
+          <TextField.Root>
+            <TextField.Input
+              label={_(msg`Germ contact link`)}
+              value={contactUrl}
+              onChangeText={onContactUrlChange}
+              placeholder="https://landing.ger.mx/..."
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="url"
+            />
+          </TextField.Root>
+          <Text
+            style={[a.text_xs, a.leading_snug, t.atoms.text_contrast_medium]}>
+            {deviceTrusted ? (
+              <Trans>m8 rejects links that include your account DID.</Trans>
+            ) : (
+              <Trans>
+                m8 only links Germ from a trusted device. m8 rejects links that
+                include your account DID.
+              </Trans>
+            )}
           </Text>
         </View>
-      )}
+      ) : null}
 
-      <View style={styles.actions}>
+      <View style={[a.flex_row, a.flex_wrap, a.gap_sm]}>
         {germContact && (
-          <GermContactButton url={germContact.url} label="Open Germ" />
+          <GermContactButton url={germContact.url} label={_(msg`Open Germ`)} />
         )}
-        {identity.germ?.status === 'active' ? (
+        {germLinked ? (
           <ActionButton
-            label="Unlink Germ"
+            label={_(msg`Unlink Germ`)}
             disabled={busy}
             onPress={onUnlinkGerm}
           />
         ) : (
           <ActionButton
-            label="Link Germ"
-            disabled={busy || identity.status !== 'active'}
+            label={_(msg`Link Germ`)}
+            disabled={busy || !canLinkGerm}
             onPress={onLinkGerm}
           />
         )}
         {repliesEnabled ? (
           <ActionButton
-            label="Disable replies"
+            label={_(msg`Turn off replies`)}
             disabled={busy}
             onPress={onDisableReplies}
           />
         ) : (
           <ActionButton
-            label="Enable replies"
+            label={_(msg`Allow private replies`)}
             disabled={busy || !canEnableReplies}
             onPress={onEnableReplies}
           />
         )}
-        <ActionButton
-          label="Archive"
-          disabled={busy || identity.status === 'archived'}
-          onPress={onArchive}
-        />
+        {onArchive ? (
+          <ActionButton
+            label={_(msg`Archive`)}
+            disabled={busy || !isActive}
+            onPress={onArchive}
+          />
+        ) : null}
       </View>
-    </View>
+    </Card>
   )
 }
 
 function Metric({label, value}: {label: string; value: string}) {
   const t = useTheme()
   return (
-    <View style={styles.metric}>
-      <Text style={[styles.metricValue, t.atoms.text]}>{value}</Text>
-      <Text style={[styles.metricLabel, t.atoms.text_contrast_medium]}>
-        {label}
-      </Text>
-    </View>
-  )
-}
-
-function PostStat({label, value}: {label: string; value: number}) {
-  const t = useTheme()
-  return (
-    <View style={[styles.postStat, {borderColor: t.palette.contrast_100}]}>
-      <Text style={[styles.postStatValue, t.atoms.text]}>
-        {formatCount(value)}
-      </Text>
-      <Text style={[styles.postStatLabel, t.atoms.text_contrast_medium]}>
-        {label}
-      </Text>
-    </View>
-  )
-}
-
-function StatusBadge({
-  label,
-  tone,
-}: {
-  label: string
-  tone: 'positive' | 'neutral'
-}) {
-  const t = useTheme()
-  const color =
-    tone === 'positive' ? t.palette.positive_400 : t.palette.contrast_500
-  return (
-    <View style={[styles.badge, {backgroundColor: color + '18'}]}>
-      <Text style={[styles.badgeText, {color}]} numberOfLines={1}>
-        {label}
-      </Text>
+    <View style={[a.flex_1, a.gap_2xs]}>
+      <Text style={[a.text_lg, a.font_bold, t.atoms.text]}>{value}</Text>
+      <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>{label}</Text>
     </View>
   )
 }
@@ -625,24 +557,29 @@ function ActionButton({
   disabled: boolean
   onPress: () => void
 }) {
-  const t = useTheme()
   return (
-    <TouchableOpacity
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityHint={`${label} for this anonymous identity card`}
+    <Button
+      label={label}
+      size="small"
+      variant="outline"
+      color="secondary"
       disabled={disabled}
-      onPress={onPress}
-      style={[
-        styles.actionButton,
-        {
-          borderColor: t.palette.contrast_100,
-          opacity: disabled ? 0.45 : 1,
-        },
-      ]}>
-      <Text style={[styles.actionButtonText, t.atoms.text]}>{label}</Text>
-    </TouchableOpacity>
+      onPress={onPress}>
+      <ButtonText>{label}</ButtonText>
+    </Button>
   )
+}
+
+// Surface names as the iM8 wallet shows them (SURFACE_META).
+function surfaceLabel(i18n: I18n, surface: AnonymousIdentityCard['surface']) {
+  switch (surface) {
+    case 'civic':
+      return 'PARA'
+    case 'public':
+      return i18n._(msg`Public`)
+    default:
+      return surface
+  }
 }
 
 function colorFromSeed(seed: string) {
@@ -653,8 +590,8 @@ function colorFromSeed(seed: string) {
   return colors[index]
 }
 
-function getMessage(err: unknown) {
-  return err instanceof Error ? err.message : 'Please try again.'
+function getMessage(_: I18n['_'], err: unknown) {
+  return err instanceof Error ? err.message : _(msg`Please try again.`)
 }
 
 function formatCount(value: number) {
@@ -662,211 +599,3 @@ function formatCount(value: number) {
   if (value >= 1_000) return `${Math.floor(value / 100) / 10}K`
   return String(value)
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
-    gap: 14,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-  },
-  muted: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  primaryButton: {
-    minHeight: 40,
-    justifyContent: 'center',
-    borderRadius: 8,
-    paddingHorizontal: 14,
-  },
-  primaryButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '700',
-  },
-  emptyState: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 16,
-    gap: 8,
-  },
-  card: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 14,
-    gap: 14,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  avatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  cardTitleWrap: {
-    flex: 1,
-    minWidth: 0,
-  },
-  cardTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-  },
-  metaGrid: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  metric: {
-    flex: 1,
-    gap: 2,
-  },
-  metricValue: {
-    fontSize: 18,
-    fontWeight: '800',
-  },
-  metricLabel: {
-    fontSize: 12,
-  },
-  chips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  chip: {
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-  },
-  chipText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  posts: {
-    gap: 8,
-  },
-  postSummary: {
-    gap: 8,
-  },
-  postRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  postUri: {
-    flex: 1,
-    minWidth: 0,
-    fontSize: 13,
-  },
-  postStats: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  postStat: {
-    minWidth: 72,
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 6,
-  },
-  postStatValue: {
-    fontSize: 13,
-    fontWeight: '800',
-  },
-  postStatLabel: {
-    fontSize: 11,
-  },
-  badge: {
-    maxWidth: 130,
-    borderRadius: 8,
-    paddingHorizontal: 8,
-    paddingVertical: 5,
-  },
-  badgeText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  germLinkBox: {
-    gap: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderRadius: 8,
-    minHeight: 42,
-    paddingHorizontal: 10,
-    fontSize: 14,
-  },
-  actions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  actionButton: {
-    minHeight: 38,
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-  },
-  actionButtonText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  section: {
-    gap: 10,
-    marginTop: 8,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '800',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  headerActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  secondaryButton: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    justifyContent: 'center',
-  },
-  secondaryButtonText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  voiceLink: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginTop: 10,
-  },
-  voiceLinkText: {
-    fontSize: 13,
-    fontWeight: '700',
-  },
-})

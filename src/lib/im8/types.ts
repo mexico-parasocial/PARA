@@ -212,7 +212,7 @@ export type ProofBrokerSurfaceId = 'public' | 'civic' | 'dating'
 export type ProofBrokerDisclosureMode = 'proof-only' | 'signed-claim' | 'raw'
 
 export type ProofBrokerGrantStatus =
-  'pending' | 'approved' | 'revoked' | 'expired'
+  'pending' | 'approved' | 'suspended' | 'revoked' | 'expired'
 
 export type ProofBrokerClaimType =
   | 'is_verified_public_figure'
@@ -271,7 +271,7 @@ export type ProofBrokerProofArtifact = {
   audienceAppName: string
   surface: ProofBrokerSurfaceId
   reference: string
-  status: 'pending' | 'active' | 'revoked' | 'expired'
+  status: 'pending' | 'active' | 'suspended' | 'revoked' | 'expired'
   issuedAt: string
   lastUsedAt: string | null
   expiresAt: string | null
