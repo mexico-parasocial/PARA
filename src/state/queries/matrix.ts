@@ -1,6 +1,10 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
-import {isBridgeAuthError, matrixBridgeFetch} from '#/lib/matrix/bridge'
+import {
+  BridgeResponseError,
+  isBridgeAuthError,
+  matrixBridgeFetch,
+} from '#/lib/matrix/bridge'
 import {
   BRIDGE_AUDIENCES,
   bridgeCallWithProof,
@@ -64,12 +68,12 @@ export interface MatrixRoomSummary {
   kind: MatrixRoomKind
 }
 
-async function getBridgeErrorMessage(
+async function getBridgeError(
   res: Response,
   fallback: string,
-): Promise<string> {
+): Promise<BridgeResponseError> {
   const err = (await res.json().catch(() => ({}))) as {error?: string}
-  return err.error || `${fallback}: ${res.status}`
+  return new BridgeResponseError(res.status, err.error || fallback)
 }
 
 export type SortitionEligibilityFilter = 'all' | 'verified' | 'senior'
@@ -112,21 +116,20 @@ type SortitionRunResponse = {
 }
 
 export function useCommunitySpaceQuery(communityUri: string | undefined) {
+  const {currentAccount} = useSession()
   return useQuery<CommunitySpaceResponse>({
-    queryKey: ['matrix-space', communityUri],
+    queryKey: ['matrix-space', communityUri, currentAccount?.did],
     queryFn: async () => {
       if (!communityUri) throw new Error('No community URI')
       const res = await matrixBridgeFetch(
         `/api/space-for-community?uri=${encodeURIComponent(communityUri)}`,
       )
       if (!res.ok) {
-        throw new Error(
-          await getBridgeErrorMessage(res, 'Failed to fetch space'),
-        )
+        throw await getBridgeError(res, 'Failed to fetch space')
       }
       return res.json()
     },
-    enabled: !!communityUri,
+    enabled: !!communityUri && !!currentAccount,
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
 }
@@ -226,8 +229,9 @@ export function useMatrixTokenQuery({
 export function useUnreadCountQuery({
   enabled = true,
 }: {enabled?: boolean} = {}) {
+  const {currentAccount} = useSession()
   return useQuery<UnreadResponse>({
-    queryKey: ['matrix-unread'],
+    queryKey: ['matrix-unread', currentAccount?.did],
     queryFn: async () => {
       // Background poller: the bridge being down is routine (local dev runs
       // without it), so it must not throw into every badge on the shell. It
@@ -237,20 +241,20 @@ export function useUnreadCountQuery({
       try {
         const res = await matrixBridgeFetch('/api/unread')
         if (!res.ok) {
-          throw new Error(
-            await getBridgeErrorMessage(res, 'Failed to fetch unread'),
-          )
+          throw await getBridgeError(res, 'Failed to fetch unread')
         }
         const data = (await res.json()) as UnreadResponse
         return {...data, unavailable: false}
       } catch (err) {
         logger.warn('matrix: bridge unavailable, defaulting unread to 0', {
-          safeMessage: String(err),
+          safeMessage: isBridgeAuthError(err)
+            ? 'Chat authentication required'
+            : 'Chat service unavailable',
         })
         return {unread: 0, communities: [], unavailable: true}
       }
     },
-    enabled,
+    enabled: enabled && !!currentAccount,
     refetchInterval: 1000 * 60 * 2, // Poll every 2 minutes
   })
 }
@@ -258,18 +262,18 @@ export function useUnreadCountQuery({
 export function useMatrixRoomsQuery({
   enabled = true,
 }: {enabled?: boolean} = {}) {
+  const {currentAccount} = useSession()
   return useQuery<{rooms: MatrixRoomSummary[]}>({
-    queryKey: ['matrix-rooms'],
+    queryKey: ['matrix-rooms', currentAccount?.did],
     queryFn: async () => {
       const res = await matrixBridgeFetch('/api/rooms')
       if (!res.ok) {
-        throw new Error(
-          await getBridgeErrorMessage(res, 'Failed to fetch rooms'),
-        )
+        throw await getBridgeError(res, 'Failed to fetch rooms')
       }
       return res.json()
     },
-    enabled,
+    enabled: enabled && !!currentAccount,
+    retry: (count, error) => !isBridgeAuthError(error) && count < 1,
     staleTime: 1000 * 60,
   })
 }
@@ -289,7 +293,7 @@ export function useMarkMatrixReadMutation() {
         body: JSON.stringify({roomId, eventId}),
       })
       if (!res.ok) {
-        throw new Error(await getBridgeErrorMessage(res, 'Failed to mark read'))
+        throw await getBridgeError(res, 'Failed to mark read')
       }
     },
     onSuccess: () => {
@@ -312,9 +316,7 @@ export function useRegisterMatrixPushTokenMutation() {
         body: JSON.stringify({expoPushToken, platform}),
       })
       if (!res.ok) {
-        throw new Error(
-          await getBridgeErrorMessage(res, 'Failed to register push token'),
-        )
+        throw await getBridgeError(res, 'Failed to register push token')
       }
     },
   })
@@ -326,8 +328,9 @@ export function useCommunityProposalsQuery(
   communityUri: string | undefined,
   state?: string,
 ) {
+  const viewerDid = useSession().currentAccount?.did
   return useQuery({
-    queryKey: ['proposals', communityUri, state],
+    queryKey: ['proposals', communityUri, state, viewerDid],
     queryFn: async () => {
       if (!communityUri) throw new Error('No community URI')
       const params = new URLSearchParams({community: communityUri})
@@ -339,14 +342,15 @@ export function useCommunityProposalsQuery(
       }
       return res.json() as Promise<{proposals: unknown[]}>
     },
-    enabled: !!communityUri,
+    enabled: !!viewerDid && !!communityUri,
     staleTime: 1000 * 30,
   })
 }
 
 export function useCommunityDecisionsQuery(communityUri: string | undefined) {
+  const viewerDid = useSession().currentAccount?.did
   return useQuery({
-    queryKey: ['decisions', communityUri],
+    queryKey: ['decisions', communityUri, viewerDid],
     queryFn: async () => {
       if (!communityUri) throw new Error('No community URI')
       const res = await matrixBridgeFetch(
@@ -358,7 +362,7 @@ export function useCommunityDecisionsQuery(communityUri: string | undefined) {
       }
       return res.json() as Promise<{decisions: unknown[]}>
     },
-    enabled: !!communityUri,
+    enabled: !!viewerDid && !!communityUri,
     staleTime: 1000 * 60,
   })
 }
@@ -367,8 +371,9 @@ export function useSortitionProofQuery(
   did: string | undefined,
   communityUri: string | undefined,
 ) {
+  const viewerDid = useSession().currentAccount?.did
   return useQuery({
-    queryKey: ['sortition-proof', did, communityUri],
+    queryKey: ['sortition-proof', did, communityUri, viewerDid],
     queryFn: async () => {
       if (!did || !communityUri) throw new Error('Missing did or communityUri')
       const res = await matrixBridgeFetch(
@@ -390,7 +395,7 @@ export function useSortitionProofQuery(
         verified: boolean
       }>
     },
-    enabled: !!did && !!communityUri,
+    enabled: !!viewerDid && !!did && !!communityUri,
     staleTime: 1000 * 60 * 60, // proofs never change
   })
 }
@@ -399,8 +404,9 @@ export function useSortitionRunQuery(
   cabildeoUri: string | undefined,
   viewerDid?: string,
 ) {
+  const accountDid = useSession().currentAccount?.did
   return useQuery({
-    queryKey: ['sortition-run', cabildeoUri, viewerDid],
+    queryKey: ['sortition-run', cabildeoUri, viewerDid, accountDid],
     queryFn: async () => {
       if (!cabildeoUri) throw new Error('No Cabildeo URI')
       const params = new URLSearchParams({cabildeo: cabildeoUri})
@@ -416,7 +422,7 @@ export function useSortitionRunQuery(
       }
       return res.json() as Promise<SortitionRunResponse>
     },
-    enabled: !!cabildeoUri,
+    enabled: !!accountDid && !!cabildeoUri,
     // Keep polling for a live draw, but not against an auth wall: without an
     // M8 session every tick is the same 401.
     refetchInterval: query =>
@@ -459,8 +465,9 @@ export function useCreateSortitionRunMutation() {
 export function useCommunityConstitutionQuery(
   communityUri: string | undefined,
 ) {
+  const viewerDid = useSession().currentAccount?.did
   return useQuery({
-    queryKey: ['constitution', communityUri],
+    queryKey: ['constitution', communityUri, viewerDid],
     queryFn: async () => {
       if (!communityUri) throw new Error('No community URI')
       const res = await matrixBridgeFetch(
@@ -479,7 +486,7 @@ export function useCommunityConstitutionQuery(
         createdAt: string
       }>
     },
-    enabled: !!communityUri,
+    enabled: !!viewerDid && !!communityUri,
     staleTime: 1000 * 60 * 5,
   })
 }
@@ -521,8 +528,9 @@ export function useChatBadgesQuery(
   did: string | undefined,
   communityUri: string | undefined,
 ) {
+  const viewerDid = useSession().currentAccount?.did
   return useQuery<ChatBadgesResponse>({
-    queryKey: ['chat-badges', did, communityUri],
+    queryKey: ['chat-badges', did, communityUri, viewerDid],
     queryFn: async () => {
       if (!did || !communityUri) throw new Error('Missing did or communityUri')
       const res = await matrixBridgeFetch(
@@ -536,7 +544,7 @@ export function useChatBadgesQuery(
       }
       return res.json()
     },
-    enabled: !!did && !!communityUri,
+    enabled: !!viewerDid && !!did && !!communityUri,
     staleTime: 1000 * 60 * 2,
   })
 }
@@ -547,6 +555,8 @@ export interface MemberListItem {
   badges: ChatBadge[]
   participation: ParticipationSummary | null
   lastActiveAt?: string
+  /** What restricts this member now. The bridge sends it to moderators only. */
+  sanction?: {type: SanctionKind; until: string | null}
 }
 
 interface ChatMemberListResponse {
@@ -559,8 +569,9 @@ export function useChatMemberListQuery(
   limit = 100,
   offset = 0,
 ) {
+  const viewerDid = useSession().currentAccount?.did
   return useQuery<ChatMemberListResponse>({
-    queryKey: ['chat-member-list', communityUri, limit, offset],
+    queryKey: ['chat-member-list', communityUri, limit, offset, viewerDid],
     queryFn: async () => {
       if (!communityUri) throw new Error('No community URI')
       const params = new URLSearchParams({
@@ -579,7 +590,7 @@ export function useChatMemberListQuery(
       }
       return res.json()
     },
-    enabled: !!communityUri,
+    enabled: !!viewerDid && !!communityUri,
     staleTime: 1000 * 60,
   })
 }
@@ -596,8 +607,9 @@ export function useModerationDashboardQuery(
   communityUri: string | undefined,
   modDid: string | undefined,
 ) {
+  const viewerDid = useSession().currentAccount?.did
   return useQuery<ModerationDashboardResponse>({
-    queryKey: ['moderation-dashboard', communityUri, modDid],
+    queryKey: ['moderation-dashboard', communityUri, modDid, viewerDid],
     queryFn: async () => {
       if (!communityUri || !modDid)
         throw new Error('Missing communityUri or modDid')
@@ -614,7 +626,7 @@ export function useModerationDashboardQuery(
       }
       return res.json()
     },
-    enabled: !!communityUri && !!modDid,
+    enabled: !!viewerDid && !!communityUri && !!modDid,
     staleTime: 1000 * 60,
   })
 }
@@ -640,8 +652,9 @@ export function useModerationReportsQuery(
   communityUri: string | undefined,
   modDid: string | undefined,
 ) {
+  const viewerDid = useSession().currentAccount?.did
   return useQuery<ModerationReportGroup[]>({
-    queryKey: ['moderation-reports', communityUri, modDid],
+    queryKey: ['moderation-reports', communityUri, modDid, viewerDid],
     queryFn: async () => {
       if (!communityUri || !modDid)
         throw new Error('Missing communityUri or modDid')
@@ -656,7 +669,7 @@ export function useModerationReportsQuery(
       const body = (await res.json()) as {reports: ModerationReportGroup[]}
       return body.reports
     },
-    enabled: !!communityUri && !!modDid,
+    enabled: !!viewerDid && !!communityUri && !!modDid,
     staleTime: 1000 * 30,
   })
 }
@@ -746,36 +759,131 @@ export function useReportMessageMutation() {
   })
 }
 
+export type SanctionKind = 'mute' | 'ban'
+
+/**
+ * How far a sanction got in Matrix. The sanction is always recorded; this says
+ * whether the homeserver now holds it:
+ * - `applied`: yes, everywhere.
+ * - `pending`: the member has no chat account yet; it takes effect when they join.
+ * - `partial` / `failed`: the homeserver refused some or all of it. The bridge
+ *   re-applies it the next time the member interacts, but a moderator should know.
+ */
+export interface SanctionEnforcement {
+  status: 'applied' | 'partial' | 'failed' | 'pending'
+  accounts: number
+  applied: number
+  failed: number
+}
+
 interface ApplySanctionInput {
   targetDid: string
   sanctionedByDid: string
   communityUri: string
-  type: 'mute' | 'ban' | 'redact'
+  type: SanctionKind
+  /** Whole minutes; omit for permanent. */
   durationMinutes?: number
+  /** The moderator's own words, kept for the audit trail (500 characters). */
   reason?: string
-  matrixRoomId?: string
+}
+
+export interface ApplySanctionResult {
+  sanction: {type: SanctionKind; until: string | null} | null
+  enforcement: SanctionEnforcement
+}
+
+/** What a moderator's action changes: refresh everything that shows it. */
+function useRefreshModeration() {
+  const queryClient = useQueryClient()
+  return () => {
+    for (const key of [
+      'chat-member-list',
+      'chat-badges',
+      'moderation-dashboard',
+      'moderation-reports',
+    ]) {
+      void queryClient.invalidateQueries({queryKey: [key]})
+    }
+  }
 }
 
 export function useApplySanctionMutation() {
-  return useMutation<void, Error, ApplySanctionInput>({
+  const refresh = useRefreshModeration()
+  return useMutation<ApplySanctionResult, Error, ApplySanctionInput>({
     mutationFn: async input => {
       const res = await matrixBridgeFetch('/api/moderation-sanction', {
         method: 'POST',
         body: JSON.stringify(input),
       })
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `Failed to apply sanction: ${res.status}`)
+        throw await getBridgeError(res, 'Failed to apply sanction')
+      }
+      return res.json()
+    },
+    onSettled: refresh,
+  })
+}
+
+interface LiftSanctionInput {
+  targetDid: string
+  communityUri: string
+  /** Omit to lift both. */
+  type?: SanctionKind
+}
+
+export interface LiftSanctionResult {
+  /** False when nothing was in force; Matrix is still retried. */
+  lifted: boolean
+  enforcement: SanctionEnforcement
+}
+
+export function useLiftSanctionMutation() {
+  const refresh = useRefreshModeration()
+  return useMutation<LiftSanctionResult, Error, LiftSanctionInput>({
+    mutationFn: async input => {
+      const res = await matrixBridgeFetch('/api/moderation-sanction-lift', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      })
+      if (!res.ok) {
+        throw await getBridgeError(res, 'Failed to lift sanction')
+      }
+      return res.json()
+    },
+    onSettled: refresh,
+  })
+}
+
+interface DismissReportsInput {
+  reportedDid: string
+  communityUri: string
+  /** The reported message; omit to close everything reported about the member. */
+  matrixEventId?: string | null
+}
+
+/** Close reports a moderator has reviewed: they leave the queue and stop counting. */
+export function useDismissReportsMutation() {
+  const refresh = useRefreshModeration()
+  return useMutation<void, Error, DismissReportsInput>({
+    mutationFn: async input => {
+      const res = await matrixBridgeFetch('/api/moderation-report-dismiss', {
+        method: 'POST',
+        body: JSON.stringify(input),
+      })
+      if (!res.ok) {
+        throw await getBridgeError(res, 'Failed to dismiss reports')
       }
     },
+    onSettled: refresh,
   })
 }
 
 // ─── User Chat Preferences ───
 
 export function useUserChatPreferencesQuery(did: string | undefined) {
+  const viewerDid = useSession().currentAccount?.did
   return useQuery<{showChatBadges: boolean}>({
-    queryKey: ['user-chat-preferences', did],
+    queryKey: ['user-chat-preferences', did, viewerDid],
     queryFn: async () => {
       if (!did) throw new Error('No DID')
       const res = await matrixBridgeFetch(
@@ -789,7 +897,7 @@ export function useUserChatPreferencesQuery(did: string | undefined) {
       }
       return res.json()
     },
-    enabled: !!did,
+    enabled: !!viewerDid && !!did,
   })
 }
 

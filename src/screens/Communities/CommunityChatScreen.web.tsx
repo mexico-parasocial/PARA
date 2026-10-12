@@ -17,8 +17,10 @@ import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation, useRoute} from '@react-navigation/native'
+import {useQueryClient} from '@tanstack/react-query'
 
 import {getDefaultChatIdentityMode} from '#/lib/chat/identity'
+import {chatFailureMessage} from '#/lib/matrix/failure'
 import {useChatBootstrap} from '#/lib/matrix/useChatBootstrap'
 import {useMatrixWebSession} from '#/lib/matrix/useMatrixWebSession'
 import {useReportedMessage} from '#/lib/matrix/useReportedMessage'
@@ -70,7 +72,7 @@ export function CommunityChatScreen() {
   }>()
   const navigation = useNavigation<NavigationProp>()
   const t = useTheme()
-  const {_} = useLingui()
+  const {_, i18n} = useLingui()
   const matrixStrings = useMatrixClientStrings()
   const agent = useAgent()
   const {
@@ -79,6 +81,7 @@ export function CommunityChatScreen() {
     roomId: routeRoomId,
     focusEventId,
   } = route.params
+  const queryClient = useQueryClient()
   const myDid = agent.session?.did ?? undefined
   const chatBootstrap = useChatBootstrap(communityUri, !!myDid)
   const reportControl = Dialog.useDialogControl()
@@ -91,9 +94,13 @@ export function CommunityChatScreen() {
     [reportControl],
   )
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  const [logoutFailed, setLogoutFailed] = useState(false)
 
-  const {data: spaceData, isLoading: spaceLoading} =
-    useCommunitySpaceQuery(communityUri)
+  const {
+    data: spaceData,
+    isLoading: spaceLoading,
+    error: spaceError,
+  } = useCommunitySpaceQuery(communityUri)
   /*
    * The browser owns its Matrix session here. `/api/matrix-token` cannot serve
    * this deployment — MAS owns logins, so the bridge has nothing to mint and
@@ -204,11 +211,13 @@ export function CommunityChatScreen() {
           void rejoin()
         } else if (
           message.type === 'matrix-token-refreshed' &&
-          typeof message.accessToken === 'string'
+          typeof message.accessToken === 'string' &&
+          !!myDid &&
+          !!tokenData
         ) {
           // MAS rotates the refresh token on use. Store what the client got, or
           // the next page load replays a token the homeserver has retired.
-          void storeRefreshedMatrixWebSession({
+          void storeRefreshedMatrixWebSession(myDid, tokenData.deviceId, {
             accessToken: message.accessToken,
             refreshToken: message.refreshToken,
             expiresInMs: message.expiresInMs,
@@ -220,7 +229,7 @@ export function CommunityChatScreen() {
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
-  }, [activeRoomId, rejoin, openReport])
+  }, [activeRoomId, rejoin, openReport, myDid, tokenData])
 
   useEffect(() => {
     if (myDid && activeRoomId) {
@@ -302,6 +311,9 @@ export function CommunityChatScreen() {
       refreshToken: tokenData.refreshToken,
       tokenEndpoint: tokenData.tokenEndpoint,
       oauthClientId: tokenData.clientId,
+      requireEncryption: true,
+      cryptoStorePrefix: tokenData.cryptoStorePrefix,
+      cryptoStorageKey: tokenData.cryptoStorageKey,
     })
   }, [tokenData, activeRoomId, sdkBundle, communityName, matrixStrings])
 
@@ -339,10 +351,27 @@ export function CommunityChatScreen() {
           <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_sm]}>
             {message}
           </Text>
+          <Button
+            label={_(msg`Reintentar`)}
+            onPress={() => {
+              matrixSession.retry()
+              chatBootstrap.retry()
+              void queryClient.invalidateQueries({
+                queryKey: ['matrix-space', communityUri, myDid],
+              })
+            }}
+            size="large"
+            variant="solid"
+            color="primary"
+            style={a.mt_md}>
+            <ButtonText>
+              <Trans>Reintentar</Trans>
+            </ButtonText>
+          </Button>
         </Layout.Content>
       </View>
     ),
-    [t],
+    [t, _, matrixSession, chatBootstrap, queryClient, communityUri, myDid],
   )
 
   /*
@@ -383,6 +412,15 @@ export function CommunityChatScreen() {
                 <Trans>Autorizar</Trans>
               </ButtonText>
             </Button>
+            {logoutFailed && (
+              <Text style={[a.mt_sm, t.atoms.text_contrast_medium]}>
+                <Trans>
+                  La sesión local se cerró, pero no pudimos confirmar su cierre
+                  en el servidor. Revisa los dispositivos autorizados desde otro
+                  cliente.
+                </Trans>
+              </Text>
+            )}
           </Layout.Content>
         </View>
       </Layout.Screen>
@@ -390,8 +428,16 @@ export function CommunityChatScreen() {
   }
 
   if (
-    isLoading ||
-    (!srcDoc && !bundleError && !chatBootstrap.error && !tokenError)
+    (isLoading &&
+      !spaceError &&
+      !chatBootstrap.error &&
+      !tokenError &&
+      !spaceError) ||
+    (!srcDoc &&
+      !bundleError &&
+      !chatBootstrap.error &&
+      !tokenError &&
+      !spaceError)
   ) {
     return (
       <Layout.Screen>
@@ -412,7 +458,9 @@ export function CommunityChatScreen() {
     !tokenData ||
     !activeRoomId ||
     bundleError ||
-    chatBootstrap.error
+    chatBootstrap.error ||
+    spaceError ||
+    tokenError
   ) {
     return (
       <Layout.Screen>
@@ -424,10 +472,11 @@ export function CommunityChatScreen() {
           <Layout.Header.Slot />
         </Layout.Header.Outer>
         {renderError(
-          chatBootstrap.error ||
-            tokenError?.message ||
-            bundleError?.message ||
-            _(msg`No se pudo abrir el chat. Inténtalo de nuevo.`),
+          i18n._(
+            chatFailureMessage(
+              chatBootstrap.error ?? spaceError ?? tokenError ?? bundleError,
+            ),
+          ),
         )}
       </Layout.Screen>
     )
@@ -453,6 +502,20 @@ export function CommunityChatScreen() {
           </Layout.Header.Content>
           <Layout.Header.Slot>
             <View style={[styles.headerSlot]}>
+              <Button
+                label={_(msg`Cerrar sesión de chat`)}
+                size="small"
+                variant="ghost"
+                onPress={() => {
+                  setLogoutFailed(false)
+                  void matrixSession
+                    .signOut()
+                    .catch(() => setLogoutFailed(true))
+                }}>
+                <ButtonText>
+                  <Trans>Cerrar chat</Trans>
+                </ButtonText>
+              </Button>
               {isModerator && riskCount > 0 && (
                 <Button
                   label={_(msg`Miembros con insignias de riesgo: ${riskCount}`)}

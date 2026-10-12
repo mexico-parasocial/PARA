@@ -5,6 +5,11 @@ import {
   useMatrixAttestMutation,
   useMatrixIdentityQuery,
 } from '#/state/queries/matrix'
+import {useSession} from '#/state/session'
+import {
+  getWebCryptoStore,
+  type WebCryptoStore,
+} from '#/features/encryptedChat/webCryptoStore'
 import {
   beginMatrixWebAuthorization,
   clearMatrixWebSession,
@@ -15,143 +20,131 @@ import {
 } from '#/features/encryptedChat/webOidc'
 
 export type MatrixWebSessionStatus =
-  | 'loading'
-  /** No usable session. The user has to authorize before chat can open. */
-  | 'authorizationRequired'
-  | 'ready'
-  | 'error'
-
+  'loading' | 'authorizationRequired' | 'ready' | 'error'
 export interface MatrixWebSessionState {
   status: MatrixWebSessionStatus
-  /** Shaped like the bridge's old token response, so callers are unchanged. */
-  session?: MatrixWebSession & {userId: string}
-  /** A stable code, not a message to render raw. */
+  session?: MatrixWebSession & WebCryptoStore
   error?: string
-  /** Sends the browser to the homeserver. Does not return. */
   authorize: () => void
+  retry: () => void
   signOut: () => Promise<void>
 }
 
-/**
- * The web client's Matrix session.
- *
- * Replaces `useMatrixTokenQuery` on web. That endpoint cannot serve this
- * deployment: MAS owns logins, so the bridge has no way to mint a session and
- * answers 503. The session here comes from the homeserver's own
- * authorization-code flow and belongs to the browser, not the bridge.
- *
- * The MXID still comes from the bridge (`/api/matrix-identity`), which owns the
- * DID↔MXID mapping. The OP's `sub` is its own subject identifier and must not
- * be mistaken for one.
- */
+/** A session becomes usable only after identity, crypto storage and actual-device attestation. */
 export function useMatrixWebSession({
   enabled = true,
 }: {enabled?: boolean} = {}): MatrixWebSessionState {
+  const did = useSession().currentAccount?.did
   const {
     data: identity,
     isLoading: identityLoading,
     error: identityError,
-  } = useMatrixIdentityQuery({enabled})
-  const [session, setSession] = useState<MatrixWebSession | undefined>()
-  const [resolved, setResolved] = useState(false)
-  const [error, setError] = useState<string | undefined>()
+  } = useMatrixIdentityQuery({enabled: enabled && !!did})
+  const {mutateAsync: attest} = useMatrixAttestMutation()
+  const [attempt, setAttempt] = useState(0)
+  const [result, setResult] = useState<{
+    did?: string
+    status: MatrixWebSessionStatus
+    session?: MatrixWebSession & WebCryptoStore
+    error?: string
+  }>({status: 'loading'})
 
   useEffect(() => {
-    if (!enabled) return
+    if (!enabled || !did || !identity) return
     let cancelled = false
+    setResult({did, status: 'loading'})
     void (async () => {
       try {
-        const stored = await loadMatrixWebSession()
-        if (!stored) {
-          if (!cancelled) setResolved(true)
+        const stored = await loadMatrixWebSession(did)
+        const usable =
+          stored &&
+          (isMatrixWebSessionExpired(stored)
+            ? await refreshMatrixWebSession(stored)
+            : stored)
+        if (cancelled) return
+        if (!usable) {
+          setResult({did, status: 'authorizationRequired'})
           return
         }
-        // MAS access tokens are short-lived, so a session restored from a
-        // previous page load is usually already past its expiry. Refresh before
-        // handing it to a client rather than letting the first request 401.
-        const usable = isMatrixWebSessionExpired(stored)
-          ? await refreshMatrixWebSession(stored)
-          : stored
+        if (
+          usable.userId !== identity.userId ||
+          usable.homeServer.replace(/\/$/, '') !==
+            identity.homeServer.replace(/\/$/, '')
+        ) {
+          await clearMatrixWebSession(did)
+          throw new Error('MATRIX_AUTH_ACCOUNT_MISMATCH')
+        }
+        const cryptoStore = await getWebCryptoStore(
+          did,
+          usable.homeServer,
+          usable.deviceId,
+        )
         if (cancelled) return
-        setSession(usable)
-        setResolved(true)
+        await attest({deviceId: usable.deviceId, friendlyName: 'PARA Web'})
+        if (cancelled) return
+        setResult({did, status: 'ready', session: {...usable, ...cryptoStore}})
       } catch (cause) {
-        logger.warn('matrix: could not restore the web chat session', {
-          safeMessage: String(cause),
-        })
         if (cancelled) return
-        setError('MATRIX_SESSION_UNAVAILABLE')
-        setResolved(true)
+        logger.warn('matrix: web session initialization failed', {
+          safeMessage: 'Chat session unavailable',
+        })
+        setResult({
+          did,
+          status: 'error',
+          error:
+            cause instanceof Error &&
+            cause.message === 'CHAT_SECURE_BROWSER_REQUIRED'
+              ? cause.message
+              : 'MATRIX_SESSION_UNAVAILABLE',
+        })
       }
     })()
     return () => {
       cancelled = true
     }
-  }, [enabled])
-
-  // The device id MAS chose during authorization is the one the homeserver
-  // knows, and the bridge needs it for attribution, moderation and revocation.
-  // `useChatBootstrap` can only offer the local install id, which is a request
-  // and not the real device — this closes that gap. Attested once per device;
-  // fail-soft, because a session that works is still worth having.
-  const attest = useMatrixAttestMutation()
-  const [attested, setAttested] = useState<string | undefined>()
-  useEffect(() => {
-    const deviceId = session?.deviceId
-    if (!deviceId || attested === deviceId || attest.isPending) return
-    setAttested(deviceId)
-    attest.mutate(
-      {deviceId, friendlyName: 'PARA Web'},
-      {
-        onError: cause =>
-          logger.warn(
-            'matrix: device attestation failed; moderation and revocation will not reach this device',
-            {safeMessage: String(cause)},
-          ),
-      },
-    )
-  }, [session?.deviceId, attested, attest])
+  }, [enabled, did, identity, attempt, attest])
 
   const authorize = useCallback(() => {
-    if (!identity?.homeServer) return
+    if (!did || !identity?.homeServer) return
     void beginMatrixWebAuthorization({
+      accountDid: did,
       homeServer: identity.homeServer,
-    }).catch(cause => {
-      logger.warn('matrix: could not start authorization', {
-        safeMessage: String(cause),
-      })
-      setError('MATRIX_AUTH_UNAVAILABLE')
-    })
-  }, [identity?.homeServer])
-
+    }).catch(() =>
+      setResult({did, status: 'error', error: 'MATRIX_AUTH_UNAVAILABLE'}),
+    )
+  }, [did, identity?.homeServer])
+  const retry = useCallback(() => setAttempt(value => value + 1), [])
   const signOut = useCallback(async () => {
-    await clearMatrixWebSession()
-    setSession(undefined)
-  }, [])
+    if (!did) return
+    const current = await loadMatrixWebSession(did)
+    try {
+      if (current) {
+        const response = await fetch(
+          `${current.homeServer.replace(/\/$/, '')}/_matrix/client/v3/logout`,
+          {
+            method: 'POST',
+            headers: {Authorization: `Bearer ${current.accessToken}`},
+            signal: AbortSignal.timeout(15_000),
+          },
+        )
+        if (!response.ok && response.status !== 401)
+          throw new Error('MATRIX_LOGOUT_UNAVAILABLE')
+      }
+    } finally {
+      await clearMatrixWebSession(did)
+      setResult({did, status: 'authorizationRequired'})
+    }
+  }, [did])
 
-  let status: MatrixWebSessionStatus = 'loading'
-  if (error || identityError) {
-    status = 'error'
-  } else if (!enabled || identityLoading || !resolved) {
-    status = 'loading'
-  } else if (!session) {
-    status = 'authorizationRequired'
-  } else {
-    status = 'ready'
-  }
-
-  return {
-    status,
-    // A session is only usable once the bridge has told us which MXID it is
-    // for; the homeserver's token alone does not identify a PARA user.
-    session:
-      session && identity?.userId
-        ? {...session, userId: identity.userId}
-        : undefined,
-    error:
-      error ??
-      (identityError instanceof Error ? identityError.message : undefined),
-    authorize,
-    signOut,
-  }
+  if (!enabled || !did || identityLoading || result.did !== did)
+    return {status: 'loading', authorize, retry, signOut}
+  if (identityError)
+    return {
+      status: 'error',
+      error: 'MATRIX_IDENTITY_UNAVAILABLE',
+      authorize,
+      retry,
+      signOut,
+    }
+  return {...result, authorize, retry, signOut}
 }

@@ -30,6 +30,9 @@ export interface MatrixClientConfig {
    * chat shell has a single trust boundary.
    */
   sdkUrl?: string
+  cryptoStorePrefix?: string
+  cryptoStorageKey?: string
+  requireEncryption?: boolean
 }
 
 const SDK_VERSION = '41.8.0'
@@ -398,10 +401,31 @@ export function buildClientHtml(sdkBundle?: string): string {
       <button id="retry" onclick="initClient()"></button>
     </div>
 
+    <details id="security-panel" hidden>
+      <summary>Seguridad y recuperación</summary>
+      <p id="security-status" role="status"></p>
+      <button id="verify-device" type="button">Verificar con otro dispositivo</button>
+      <button id="accept-verification" type="button" hidden>Aceptar verificación</button>
+      <p id="verification-sas" hidden></p>
+      <button id="verification-match" type="button" hidden>Coinciden</button>
+      <button id="verification-mismatch" type="button" hidden>No coinciden</button>
+      <button id="verification-cancel" type="button" hidden>Cancelar verificación</button>
+      <label for="recovery-input">Clave de recuperación</label>
+      <input id="recovery-input" type="password" autocomplete="off" />
+      <button id="restore-history" type="button">Recuperar historial</button>
+      <button id="setup-backup" type="button">Configurar recuperación</button>
+      <label for="recovery-output" id="recovery-output-label" hidden>Guarda esta clave en un lugar seguro. No la compartas.</label>
+      <textarea id="recovery-output" readonly hidden></textarea>
+      <button id="show-pending-key" type="button" hidden>Mostrar clave pendiente</button>
+      <button id="ack-pending-key" type="button" hidden>Ya guardé mi clave</button>
+    </details>
     <div id="messages"></div>
     <div id="typing-indicator"></div>
 
     <div id="composer">
+      <span id="compose-context" hidden></span>
+      <button id="cancel-context" type="button" hidden>Cancelar</button>
+      <input id="attachment" type="file" aria-label="Adjuntar archivo cifrado" hidden />
       <textarea id="input" rows="1"></textarea>
       <button id="send">➤</button>
     </div>
@@ -413,6 +437,8 @@ export function buildClientHtml(sdkBundle?: string): string {
       <span data-emoji="😮">😮</span>
       <span data-emoji="😢">😢</span>
       <span data-emoji="🎉">🎉</span>
+      <button id="reply-message" type="button">Responder</button>
+      <button id="edit-message" type="button">Editar</button>
       <button id="report-message" class="report-btn" type="button"></button>
       <span data-emoji="🔥">🔥</span>
     </div>
@@ -456,6 +482,83 @@ export function buildClientHtml(sdkBundle?: string): string {
       let room = null;
       let myUserId = CONFIG.userId || '';
       let isReady = false;
+      let composeContext = null;
+      let recoveryKey = null;
+      let pendingRecoveryStore = null;
+      const secretKeys = new Map();
+      let verificationRequest = null;
+      let verificationCallbacks = null;
+      const verificationVerifiers = new WeakSet();
+      function showSas(callbacks) {
+        verificationCallbacks = callbacks;
+        const sas = document.getElementById('verification-sas');
+        sas.textContent = callbacks.sas.emoji
+          ? callbacks.sas.emoji.map(entry => entry[0] + ' ' + entry[1]).join(' · ')
+          : (callbacks.sas.decimal || []).join(' · ');
+        sas.hidden = false;
+        document.getElementById('verification-match').hidden = false;
+        document.getElementById('verification-mismatch').hidden = false;
+        securityStatus.textContent = 'Compara estos símbolos con tu otro dispositivo antes de confirmar.';
+      }
+      function runVerifier(verifier) {
+        if (!verifier || verificationVerifiers.has(verifier)) return;
+        verificationVerifiers.add(verifier);
+        verifier.on('show_sas', showSas);
+        const callbacks = verifier.getShowSasCallbacks();
+        if (callbacks) showSas(callbacks);
+        void verifier.verify().catch(() => {securityStatus.textContent = 'Verificación cancelada o vencida. Puedes volver a intentarlo.';});
+      }
+      function resetVerification() {
+        verificationCallbacks = null;
+        ['accept-verification', 'verification-sas', 'verification-match', 'verification-mismatch', 'verification-cancel'].forEach(id => {
+          document.getElementById(id).hidden = true;
+        });
+        document.getElementById('verify-device').disabled = false;
+      }
+      function trackVerification(request) {
+        if (!request.isSelfVerification || request.otherUserId !== CONFIG.userId) return;
+        if (verificationRequest && verificationRequest.pending && verificationRequest !== request) return;
+        verificationRequest = request;
+        document.getElementById('verify-device').disabled = true;
+        document.getElementById('verification-cancel').hidden = false;
+        securityStatus.textContent = 'Verificación con tu dispositivo ' + (request.otherDeviceId || '') + '. Abre el otro cliente para continuar.';
+        let starting = false;
+        const changed = async function() {
+          if (verificationRequest !== request) return;
+          document.getElementById('accept-verification').hidden = request.initiatedByMe || request.phase !== 2;
+          if (request.phase === 5 || request.phase === 6) {
+            resetVerification();
+            securityStatus.textContent = request.phase === 6 ? 'Dispositivo verificado.' : 'Verificación cancelada o vencida.';
+            return;
+          }
+          if (request.phase === 3 && request.initiatedByMe && !starting) {
+            starting = true;
+            try {runVerifier(await request.startVerification('m.sas.v1'));}
+            catch {resetVerification(); securityStatus.textContent = 'No se pudo iniciar la verificación. Intenta de nuevo.';}
+          } else if (request.phase === 4) runVerifier(request.verifier);
+        };
+        request.on('change', changed); void changed();
+      }
+
+      const securityStatus = document.getElementById('security-status');
+      function requireEncryptedRoom() {
+        if (CONFIG.requireEncryption && (!isReady || !client.getCrypto() || !client.isRoomEncrypted(CONFIG.roomId)))
+          throw new Error('CHAT_ENCRYPTION_REQUIRED');
+      }
+      async function fetchAttachment(mxcUrl, thumbnail, limit, encryptedFile, mime) {
+        const blob = await fetchMedia(mxcUrl, encryptedFile ? false : thumbnail, limit);
+        if (!encryptedFile) return blob;
+        const helpers = window.paraMatrixCrypto;
+        const attachment = new helpers.EncryptedAttachment(new Uint8Array(await blob.arrayBuffer()), JSON.stringify(encryptedFile));
+        try { return new Blob([helpers.Attachment.decrypt(attachment)], {type: mime || 'application/octet-stream'}); }
+        finally { attachment.free(); }
+      }
+      function clearComposeContext() {
+        composeContext = null;
+        document.getElementById('compose-context').hidden = true;
+        document.getElementById('cancel-context').hidden = true;
+      }
+
 
       function show(state) {
         loadingEl.style.display = state === 'loading' ? 'flex' : 'none';
@@ -507,7 +610,7 @@ export function buildClientHtml(sdkBundle?: string): string {
         const url = mediaEndpoint(mxcUrl, thumbnail);
         if (!url) throw new Error('INVALID_MXC');
         const response = await fetch(url, {
-          headers: {Authorization: 'Bearer ' + CONFIG.accessToken},
+          headers: {Authorization: 'Bearer ' + (client ? client.getAccessToken() : CONFIG.accessToken)},
         });
         if (!response.ok) throw new Error('MEDIA_HTTP_' + response.status);
         const length = Number(response.headers.get('content-length'));
@@ -551,12 +654,12 @@ export function buildClientHtml(sdkBundle?: string): string {
         mediaObjectUrls.clear();
       }
 
-      async function openMedia(mxcUrl, filename, eventId, download) {
-        if (window.ReactNativeWebView) {
+      async function openMedia(mxcUrl, filename, eventId, download, encryptedFile, mime) {
+        if (window.ReactNativeWebView && !encryptedFile) {
           window.ReactNativeWebView.postMessage(JSON.stringify({type: 'matrix-open-media', mxcUrl, filename}));
           return;
         }
-        const blob = await fetchMedia(mxcUrl, false, DOWNLOAD_LIMIT_BYTES);
+        const blob = await fetchAttachment(mxcUrl, false, DOWNLOAD_LIMIT_BYTES, encryptedFile, mime);
         const url = URL.createObjectURL(blob);
         retainMediaUrl(eventId, url);
         const link = document.createElement('a');
@@ -576,6 +679,13 @@ export function buildClientHtml(sdkBundle?: string): string {
         }
         if (type === 'm.room.redaction') {
           removeMessage(event.getAssociatedId());
+          return;
+        }
+        if (type === 'm.room.encrypted') {
+          const unavailable = document.createElement('div');
+          unavailable.className = 'message';
+          unavailable.textContent = 'Mensaje cifrado: recupera tus claves para ver el historial.';
+          messagesEl.appendChild(unavailable);
           return;
         }
         if (type !== 'm.room.message') return;
@@ -649,11 +759,13 @@ export function buildClientHtml(sdkBundle?: string): string {
 
       function renderMessageContent(content, eventId) {
         const msgtype = content.msgtype;
+        const mediaUrl = content.file ? content.file.url : content.url;
+        const mime = content.info && content.info.mimetype;
         if (msgtype === 'm.image') {
-          if (mediaEndpoint(content.url, true)) {
+          if (mediaEndpoint(mediaUrl, true)) {
             const container = document.createElement('span');
             container.textContent = STRINGS.imageLoading;
-            fetchMedia(content.url, true, PREVIEW_LIMIT_BYTES).then(blob => {
+            fetchAttachment(mediaUrl, true, PREVIEW_LIMIT_BYTES, content.file, mime).then(blob => {
               if (!container.isConnected) return;
               const url = URL.createObjectURL(blob);
               retainMediaUrl(eventId, url);
@@ -663,22 +775,22 @@ export function buildClientHtml(sdkBundle?: string): string {
               container.replaceChildren(img);
             }).catch(err => {
               if (!container.isConnected) return;
-              container.replaceChildren(mediaButton(content.url, content.body || STRINGS.imageLower, eventId, STRINGS.downloadImage, true));
+              container.replaceChildren(mediaButton(mediaUrl, content.body || STRINGS.imageLower, eventId, STRINGS.downloadImage, true, content.file, mime));
               if (err.message !== 'MEDIA_TOO_LARGE') console.error('Media preview failed:', err);
             });
             return container;
           }
         }
-        if ((msgtype === 'm.video' || msgtype === 'm.audio' || msgtype === 'm.file') && mediaEndpoint(content.url, false)) {
+        if ((msgtype === 'm.video' || msgtype === 'm.audio' || msgtype === 'm.file') && mediaEndpoint(mediaUrl, false)) {
           const prefix = msgtype === 'm.video' ? '🎬 ' : msgtype === 'm.audio' ? '🎵 ' : '📎 ';
-          return mediaButton(content.url, content.body || STRINGS.file, eventId, prefix + STRINGS.download + ' ' + (content.body || STRINGS.file), true);
+          return mediaButton(mediaUrl, content.body || STRINGS.file, eventId, prefix + STRINGS.download + ' ' + (content.body || STRINGS.file), true, content.file, mime);
         }
         const span = document.createElement('span');
         span.textContent = content.body || '';
         return span;
       }
 
-      function mediaButton(mxcUrl, filename, eventId, label, download) {
+      function mediaButton(mxcUrl, filename, eventId, label, download, encryptedFile, mime) {
         const button = document.createElement('button');
         button.className = 'file';
         button.type = 'button';
@@ -687,7 +799,7 @@ export function buildClientHtml(sdkBundle?: string): string {
           event.stopPropagation();
           button.disabled = true;
           try {
-            await openMedia(mxcUrl, filename, eventId, download);
+            await openMedia(mxcUrl, filename, eventId, download, encryptedFile, mime);
           } catch (err) {
             console.error('Media download failed:', err);
             button.textContent = STRINGS.downloadFailed;
@@ -796,6 +908,7 @@ export function buildClientHtml(sdkBundle?: string): string {
         picker.dataset.eventId = eventId;
         // Your own messages cannot be reported.
         document.getElementById('report-message').hidden = !!isSelf;
+        document.getElementById('edit-message').hidden = !isSelf;
         picker.classList.add('visible');
         function hide(e) {
           if (!picker.contains(e.target)) {
@@ -845,7 +958,16 @@ export function buildClientHtml(sdkBundle?: string): string {
         inputEl.rows = 1;
         sendBtn.disabled = true;
         try {
-          await client.sendTextMessage(room.roomId, text);
+          requireEncryptedRoom();
+          let content = {msgtype: 'm.text', body: text};
+          if (composeContext && composeContext.kind === 'reply')
+            content['m.relates_to'] = {'m.in_reply_to': {event_id: composeContext.eventId}};
+          if (composeContext && composeContext.kind === 'edit')
+            content = {msgtype: 'm.text', body: '* ' + text, 'm.new_content': content,
+              'm.relates_to': {rel_type: 'm.replace', event_id: composeContext.eventId}};
+          await client.sendMessage(room.roomId, content);
+          clearComposeContext();
+          client.sendTyping(room.roomId, false).catch(() => {});
         } catch (err) {
           console.error('Failed to send:', err);
           inputEl.value = text;
@@ -856,12 +978,17 @@ export function buildClientHtml(sdkBundle?: string): string {
       }
 
       async function initClient() {
+        if (client) {
+          client.stopClient();
+          client = null;
+        }
+        isReady = false;
         show('loading');
         setStatus('connecting');
         headerTitle.textContent = CONFIG.communityName || STRINGS.chat;
 
         if (!CONFIG.accessToken || !CONFIG.userId || !CONFIG.homeServer || !CONFIG.roomId) {
-          console.error('Missing PARA_CONFIG', CONFIG);
+          console.error('Missing chat configuration');
           document.getElementById('error-text').textContent = STRINGS.missingAuth;
           show('error');
           setStatus('error');
@@ -909,7 +1036,34 @@ export function buildClientHtml(sdkBundle?: string): string {
             deviceId: CONFIG.deviceId,
             refreshToken: CONFIG.refreshToken,
             tokenRefreshFunction: tokenRefreshFunction,
+            cryptoCallbacks: CONFIG.requireEncryption ? {
+              getSecretStorageKey: async function(opts) {
+                const keyId = await client.secretStorage.getDefaultKeyId();
+                const key = secretKeys.get(keyId) || recoveryKey;
+                if (!keyId || !opts.keys[keyId] || !key) throw new Error('RECOVERY_KEY_REQUIRED');
+                if (!await client.secretStorage.checkKey(key, opts.keys[keyId])) throw new Error('RECOVERY_KEY_INVALID');
+                return [keyId, key];
+              },
+              cacheSecretStorageKey: function(id, info, key) {secretKeys.set(id, key);},
+            } : undefined,
           });
+
+          if (CONFIG.requireEncryption) {
+            if (!CONFIG.cryptoStorePrefix || !/^[a-f0-9]{64}$/.test(CONFIG.cryptoStorageKey || ''))
+              throw new Error('CHAT_CRYPTO_STORE_UNAVAILABLE');
+            var storeKey = Uint8Array.from(CONFIG.cryptoStorageKey.match(/../g), function(b) { return parseInt(b, 16); });
+            await client.initRustCrypto({
+              cryptoDatabasePrefix: CONFIG.cryptoStorePrefix,
+              storageKey: storeKey,
+            });
+            pendingRecoveryStore = await window.paraMatrixCrypto.createPendingRecoveryStore(CONFIG.cryptoStorePrefix, storeKey);
+            const pendingKey = await pendingRecoveryStore.get();
+            if (pendingKey) showPendingRecovery(pendingKey, false);
+            client.on('crypto.verificationRequestReceived', trackVerification);
+            client.on('Event.decrypted', function(event) {
+              if (event.getRoomId() === CONFIG.roomId) loadHistory();
+            });
+          }
 
           client.on('sync', function(state) {
             if (state === 'PREPARED') {
@@ -917,6 +1071,12 @@ export function buildClientHtml(sdkBundle?: string): string {
               publishLiveState();
               room = client.getRoom(CONFIG.roomId);
               if (room) {
+                if (CONFIG.requireEncryption && !client.isRoomEncrypted(CONFIG.roomId)) {
+                  document.getElementById('error-text').textContent = STRINGS.encryptedRoomRequired || 'Esta sala no está cifrada de extremo a extremo.';
+                  show('error');
+                  setStatus('error');
+                  return;
+                }
                 loadHistory();
                 show('chat');
                 isReady = true;
@@ -924,6 +1084,7 @@ export function buildClientHtml(sdkBundle?: string): string {
                 // Try to join the room
                 client.joinRoom(CONFIG.roomId).then(function(joinedRoom) {
                   room = joinedRoom;
+                  if (CONFIG.requireEncryption && !client.isRoomEncrypted(CONFIG.roomId)) throw new Error('ENCRYPTED_ROOM_REQUIRED');
                   loadHistory();
                   show('chat');
                   isReady = true;
@@ -970,7 +1131,7 @@ export function buildClientHtml(sdkBundle?: string): string {
           await client.startClient({ initialSyncLimit: 50 });
         } catch (err) {
           console.error('Init error:', err);
-          document.getElementById('error-text').textContent = STRINGS.connectionError + ' ' + (err.message || STRINGS.unknown);
+          document.getElementById('error-text').textContent = STRINGS.connectionError;
           show('error');
           setStatus('error');
         }
@@ -998,6 +1159,136 @@ export function buildClientHtml(sdkBundle?: string): string {
         });
       });
 
+      document.getElementById('cancel-context').addEventListener('click', clearComposeContext);
+      ['reply', 'edit'].forEach(function(kind) {
+        document.getElementById(kind + '-message').addEventListener('click', function() {
+          const event = room && room.findEventById(picker.dataset.eventId);
+          if (!event || (kind === 'edit' && event.getSender() !== myUserId)) return;
+          composeContext = {kind: kind, eventId: event.getId()};
+          const context = document.getElementById('compose-context');
+          context.textContent = kind === 'edit' ? 'Editando mensaje' : 'Respondiendo mensaje';
+          context.hidden = false;
+          document.getElementById('cancel-context').hidden = false;
+          if (kind === 'edit') inputEl.value = event.getContent().body || '';
+          picker.classList.remove('visible'); inputEl.focus();
+        });
+      });
+      document.getElementById('attachment').hidden = !CONFIG.requireEncryption;
+      document.getElementById('attachment').addEventListener('change', async function() {
+        const file = this.files && this.files[0];
+        if (!file || !client || !room) return;
+        this.disabled = true;
+        let encrypted;
+        try {
+          requireEncryptedRoom();
+          if (file.size > DOWNLOAD_LIMIT_BYTES) throw new Error('MEDIA_TOO_LARGE');
+          encrypted = window.paraMatrixCrypto.Attachment.encrypt(new Uint8Array(await file.arrayBuffer()));
+          const info = JSON.parse(encrypted.mediaEncryptionInfo);
+          const upload = await client.uploadContent(new Blob([encrypted.encryptedData], {type: 'application/octet-stream'}),
+            {type: 'application/octet-stream', includeFilename: false});
+          info.url = upload.content_uri;
+          requireEncryptedRoom();
+          const mime = file.type || 'application/octet-stream';
+          const kind = mime.startsWith('image/') ? 'm.image' : mime.startsWith('video/') ? 'm.video' : mime.startsWith('audio/') ? 'm.audio' : 'm.file';
+          await client.sendMessage(room.roomId, {msgtype: kind, body: file.name,
+            file: info, info: {mimetype: mime, size: file.size}});
+        } catch (_) { securityStatus.textContent = 'No se pudo enviar el archivo. Intenta de nuevo.'; }
+        finally {if (encrypted) encrypted.free(); this.value = ''; this.disabled = false;}
+      });
+      document.getElementById('security-panel').hidden = !CONFIG.requireEncryption;
+      function showPendingRecovery(key, visible) {
+        const output = document.getElementById('recovery-output');
+        output.value = key; output.hidden = !visible;
+        document.getElementById('recovery-output-label').hidden = !visible;
+        document.getElementById('show-pending-key').hidden = false;
+        document.getElementById('ack-pending-key').hidden = false;
+      }
+      async function recoveryAction(setup) {
+        const restore = document.getElementById('restore-history');
+        const create = document.getElementById('setup-backup');
+        restore.disabled = create.disabled = true;
+        securityStatus.textContent = 'Procesando recuperación…';
+        try {
+          requireEncryptedRoom();
+          const crypto = client.getCrypto();
+          if (setup) {
+            if (await client.secretStorage.getDefaultKeyId()) throw new Error('RECOVERY_EXISTS');
+            const signing = await crypto.getCrossSigningStatus();
+            if (await crypto.getCrossSigningKeyId() && !signing.privateKeysCachedLocally.masterKey)
+              throw new Error('RECOVERY_NEEDS_VERIFIED_DEVICE');
+            const pendingKey = await pendingRecoveryStore.get();
+            const key = pendingKey
+              ? {encodedPrivateKey: pendingKey, privateKey: window.paraMatrixCrypto.decodeRecoveryKey(pendingKey)}
+              : await crypto.createRecoveryKeyFromPassphrase();
+            recoveryKey = key.privateKey;
+            // Persist the encrypted pending copy before any setup network write.
+            await pendingRecoveryStore.set(key.encodedPrivateKey);
+            showPendingRecovery(key.encodedPrivateKey, true);
+            await crypto.bootstrapCrossSigning({});
+            await crypto.bootstrapSecretStorage({createSecretStorageKey: async () => key, setupNewKeyBackup: true});
+            securityStatus.textContent = 'Recuperación configurada. Guarda la clave antes de cerrar.';
+          } else {
+            const input = document.getElementById('recovery-input');
+            recoveryKey = window.paraMatrixCrypto.decodeRecoveryKey(input.value.trim()); input.value = '';
+            await crypto.loadSessionBackupPrivateKeyFromSecretStorage();
+            const signing = await crypto.getCrossSigningStatus();
+            if (signing.privateKeysInSecretStorage) await crypto.bootstrapCrossSigning({});
+            await crypto.checkKeyBackupAndEnable();
+            const restored = await crypto.restoreKeyBackup({});
+            securityStatus.textContent = restored.imported > 0 ? 'Historial recuperado.' : 'No hay claves de historial disponibles en la copia de seguridad.';
+            loadHistory();
+          }
+        } catch (error) {
+          securityStatus.textContent = error.message === 'RECOVERY_EXISTS'
+            ? 'Ya existe recuperación. Usa tu clave actual; no se reemplazó.'
+            : error.message === 'RECOVERY_NEEDS_VERIFIED_DEVICE'
+              ? 'Verifica este dispositivo con otro cliente antes de configurar recuperación.'
+              : 'No se pudo recuperar o guardar el historial. Revisa la clave y la conexión, y vuelve a intentar.';
+        } finally {
+          recoveryKey = null; secretKeys.clear(); restore.disabled = false;
+          create.disabled = false;
+        }
+      }
+      document.getElementById('verify-device').addEventListener('click', async function() {
+        try {requireEncryptedRoom(); trackVerification(await client.getCrypto().requestOwnUserVerification());}
+        catch {securityStatus.textContent = 'No se pudo solicitar la verificación. Revisa la conexión y abre tu otro dispositivo.';}
+      });
+      document.getElementById('accept-verification').addEventListener('click', async function() {
+        if (verificationRequest) await verificationRequest.accept().catch(() => {resetVerification();});
+      });
+      document.getElementById('verification-match').addEventListener('click', async function() {
+        if (verificationCallbacks) {
+          const callbacks = verificationCallbacks; verificationCallbacks = null;
+          await callbacks.confirm().catch(() => {resetVerification();});
+        }
+      });
+      document.getElementById('verification-mismatch').addEventListener('click', function() {
+        if (verificationCallbacks) verificationCallbacks.mismatch(); resetVerification();
+      });
+      document.getElementById('verification-cancel').addEventListener('click', function() {
+        if (verificationRequest) void verificationRequest.cancel().catch(() => {}); resetVerification();
+      });
+      document.getElementById('restore-history').addEventListener('click', function() {void recoveryAction(false);});
+      document.getElementById('setup-backup').addEventListener('click', function() {void recoveryAction(true);});
+      document.getElementById('show-pending-key').addEventListener('click', async function() {
+        try {
+          const output = document.getElementById('recovery-output');
+          if (output.hidden) {output.value = await pendingRecoveryStore.get() || ''; output.hidden = false;}
+          else {output.value = ''; output.hidden = true;}
+          document.getElementById('recovery-output-label').hidden = output.hidden;
+        } catch {securityStatus.textContent = 'No se pudo abrir la clave pendiente en este dispositivo.';}
+      });
+      document.getElementById('ack-pending-key').addEventListener('click', function() {
+        try {
+          pendingRecoveryStore.acknowledge();
+          document.getElementById('recovery-output').value = '';
+          document.getElementById('recovery-output').hidden = true;
+          document.getElementById('recovery-output-label').hidden = true;
+          document.getElementById('show-pending-key').hidden = true;
+          document.getElementById('ack-pending-key').hidden = true;
+          document.getElementById('setup-backup').disabled = false;
+        } catch {securityStatus.textContent = 'No se pudo actualizar el almacén de recuperación. Reintenta.';}
+      });
       // Event listeners
       sendBtn.addEventListener('click', sendMessage);
       inputEl.addEventListener('keydown', function(e) {
@@ -1015,7 +1306,20 @@ export function buildClientHtml(sdkBundle?: string): string {
       });
 
       // Start
-      window.addEventListener('beforeunload', releaseAllMediaUrls);
+      window.addEventListener('pagehide', function() {
+        releaseAllMediaUrls(); recoveryKey = null; secretKeys.clear();
+        document.getElementById('recovery-output').value = '';
+        document.getElementById('recovery-input').value = '';
+        if (verificationRequest && verificationRequest.pending) void verificationRequest.cancel().catch(() => {});
+        verificationRequest = null; verificationCallbacks = null;
+        if (client) {client.stopClient();}
+      });
+      document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) return;
+        const output = document.getElementById('recovery-output'); output.value = ''; output.hidden = true;
+        document.getElementById('recovery-output-label').hidden = true;
+        document.getElementById('recovery-input').value = '';
+      });
       initClient();
     })();
   </script>

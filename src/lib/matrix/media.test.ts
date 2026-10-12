@@ -43,6 +43,7 @@ describe('WebView media client', () => {
     const source = html.slice(start, end)
     return vm.runInNewContext(`${source}\n({mediaEndpoint, fetchMedia})`, {
       CONFIG: {homeServer: 'https://matrix.example', accessToken: 'secret'},
+      client: {getAccessToken: () => 'refreshed-secret'},
       fetch: fetchMock,
       Blob,
     }) as {
@@ -82,7 +83,7 @@ describe('WebView media client', () => {
         'mxc://matrix.example/photo',
         'thumbnail',
       ),
-      {headers: {Authorization: 'Bearer secret'}},
+      {headers: {Authorization: 'Bearer refreshed-secret'}},
     )
     const [requestedUrl] = fetchMock.mock.calls[0] as [string, RequestInit]
     expect(requestedUrl).not.toContain('secret')

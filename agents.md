@@ -136,7 +136,7 @@ SecureStore. Local tests are not real-provider or staging acceptance.
 If you are a new agent taking over this workspace:
 
 0. **Read the current execution queue and evidence first:** `../WatZappa/docs/QUARTER_PLAN_2026Q4.md` is the canonical pilot plan (re-baselined 2026-10-05). The old September sprint calendar is superseded. Start with the next open item and inspect only relevant changes; do not repeat the whole code audit or rebuild completed OD-6/MAS/QVL/data paths. Distinguish implemented, tested, merged and deployed. On closure, remove the action from active roadmaps and retain commit/test/deployment evidence in the plan or a linked record. Private voting has separate governance gates.
-   - **Map feature roadmap:** the in-repo map plan doc (`docs/MAP_QUARTER_PLAN_2027Q1.md`) was removed on 2026-09-21; map work (Dec 2026 – Feb 2027) remains deliberately outside the Q4 pilot plan until a new planning doc lands.
+   - **Map feature roadmap:** `docs/MAP_MATURITY_PLAN.md` is the current map-specific entry point, replacing the removed `docs/MAP_QUARTER_PLAN_2027Q1.md` and older schedules. Map work remains outside the committed Q4 pilot queue. M0.1 local implementation/test evidence and remaining device/provider acceptance are in `docs/MAP_M0_1_EXECUTION_2026-10-07.md`. Read those records before repeating the map audit.
 1. **Check the Lexicons:** Before modifying API calls, inspect `src/lib/api/para-lexicons.ts` to understand the data schema.
 2. **Respect the Atoms:** Always use the `alf` design system. Do not write ad-hoc CSS/Styles unless absolutely necessary for custom animations.
 3. **Check target files:** This codebase supports both Native and Web. When modifying a screen, check if a `.web.tsx` counterpart exists to maintain parity.
@@ -389,6 +389,15 @@ decision is made.
   write those for any community.
 - Writes still go to the organizer's own repo. The AppView indexes them from
   the firehose, so a new record can take a moment to appear.
+
+## 2026-10-08: Session clients must route by the account's PDS
+
+- `buildBundle` passes the account service / stored PDS URL to
+  `buildAppviewClient` and `buildChatClient`. Keep those constructors using the
+  service-specific proxy helpers in `src/lib/constants.ts`.
+- Demo identities exist only on the local PLC. Sending their background chat
+  requests to production returns `could not resolve iss did` and triggers
+  `emitSessionDropped`, signing the account out despite valid PDS credentials.
 
 ## 2026-09-25: PARA has no reposts (keep it that way across upstream syncs)
 
@@ -988,13 +997,13 @@ pnpm test src/screens/Search/__tests__/searchParams.test.ts
   `/_matrix/client/v1/auth_metadata`, dynamic client registration per MSC2966,
   PKCE). `lib/matrix/useMatrixWebSession.ts` replaces `useMatrixTokenQuery` on
   web. The bridge is not in this path and never sees the token.
-- The MXID still comes from the bridge's `/api/matrix-identity`, which owns the
-  DID↔MXID mapping. The OP's `sub` is its own subject identifier — not an MXID.
+- `/api/matrix-identity` derives the expected MXID from a verified identity
+  proof; there is no persisted DID↔MXID mapping. Check it against the client
+  session's actual MXID. The OP's `sub` is not a Matrix user ID.
 - The Matrix device id comes from the granted scope
-  (`urn:matrix:org.matrix.msc2967.client:device:…`, MSC2967). The OP chooses it;
-  a client that invents one attaches its crypto identity to a device the
-  homeserver does not know. That real id is what gets attested to the bridge —
-  `useChatBootstrap`'s install id is only a request.
+  (`urn:matrix:org.matrix.msc2967.client:device:…`, MSC2967), or the restored
+  native SDK session. Attest that actual device after new login and restoration;
+  never attest `useChatBootstrap`'s installation UUID as a MAS device.
 - The OP redirects to `/matrix-auth`. `App.web.tsx` completes the grant there
   before the app renders, then navigates on; the router has no such route, and
   `bskyweb` needs the path registered or the redirect 404s before any app code
@@ -1004,12 +1013,27 @@ pnpm test src/screens/Search/__tests__/searchParams.test.ts
   refreshes itself through `tokenRefreshFunction`, reporting the new pair back
   as `matrix-token-refreshed` so the next page load does not replay a retired
   token.
-- The web session lives in `localStorage`, so an XSS on this origin can steal a
-  chat session — the same exposure as any browser Matrix client, and why native
-  keeps its session in the OS keystore. Keep it to the chat session: no identity
-  key, no ballot key.
+- Web tokens use account-scoped `sessionStorage`; discard the old unscoped
+  localStorage token. Browser storage does not prevent same-origin XSS. Native
+  sessions stay in the OS keystore; identity and ballot private keys stay in iM8.
 - `lib/storage.ts` must never decide SecureStore is available from a successful
   `require`. On web the require succeeds and only the native binding is missing,
   so the first read throws `getValueWithKeyAsync is not a function`; web uses
   `lib/storage.web.ts` (AsyncStorage, i.e. `localStorage` — not secure storage)
   and native demotes to AsyncStorage on first failure.
+
+## 2026-10-08: Encrypted messaging boundaries
+
+- Keep the native engine opt-in until device acceptance passes. Web crypto
+  initializes before sync/send and uses SDK stores partitioned by account,
+  homeserver and actual device; wrapping keys are non-extractable in IndexedDB.
+  Pending web recovery keys are encrypted with the device store key and removed
+  only after explicit acknowledgement. Require HTTPS or loopback WebCrypto.
+- Native `para://idp-login` approval signs the `para-idp` audience for the
+  configured issuer, posts to its verification endpoint, and resumes MAS before
+  `para://matrix-auth`. React Native's AbortSignal polyfill needs the portable
+  helpers in `lib/matrix/request.ts`; do not use `timeout`, `any` or `throwIfAborted`
+  there. Guard requests, proofs and chat state with the account/credential revision.
+- SAS confirmation requires the user to compare both devices; no automatic
+  approval. Reports contain event IDs and fixed reasons; moderators decrypt
+  through their own authorized SDK clients.

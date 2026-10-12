@@ -44,6 +44,27 @@ export type ChatSecurityStatus = {
 
 export type RecoveryKey = {key: string; persisted: boolean}
 
+export type ChatVerificationState = {
+  status:
+    | 'idle'
+    | 'waiting'
+    | 'requested'
+    | 'comparing'
+    | 'verified'
+    | 'cancelled'
+    | 'failed'
+  deviceId?: string
+  symbols?: string[]
+}
+
+export interface ChatDeviceVerification {
+  watch(listener: (state: ChatVerificationState) => void): () => void
+  request(): Promise<void>
+  accept(): Promise<void>
+  confirm(matches: boolean): Promise<void>
+  cancel(): Promise<void>
+}
+
 export interface ChatRecovery {
   getSecurityStatus(): Promise<ChatSecurityStatus>
   getPendingRecoveryKey(): Promise<RecoveryKey | undefined>
@@ -56,6 +77,7 @@ export interface ChatRecovery {
 /** The UI never receives access tokens, the crypto-store key, or SDK objects. */
 export interface EncryptedChatClient extends ChatRecovery {
   session: ChatSessionInfo
+  verification: ChatDeviceVerification
   createRoom(name: string, invite: string[]): Promise<string>
   openRoom(
     roomId: string,
@@ -63,6 +85,9 @@ export interface EncryptedChatClient extends ChatRecovery {
     onTyping?: (userIds: string[]) => void,
   ): Promise<void>
   sendText(body: string, replyToEventId?: string): Promise<void>
+  editText(eventId: string, body: string): Promise<void>
+  /** Returns true when the beginning of available history was reached. */
+  loadEarlier(): Promise<boolean>
   toggleReaction(eventId: string, key: string): Promise<void>
   markRead(): Promise<void>
   setTyping(typing: boolean): Promise<void>
@@ -87,6 +112,7 @@ export interface EncryptedChatClient extends ChatRecovery {
     size: number
     mimeType: string
   }): Promise<void>
+  registerPush(expoPushToken: string, gatewayUrl: string): Promise<void>
   close(): Promise<void>
   logout(): Promise<void>
 }

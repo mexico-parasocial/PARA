@@ -1,11 +1,12 @@
 import {m8Fetch} from '#/lib/im8/api'
 import {
-  type BridgeAudience,
   hasMatrixAssertionSigner,
   type MatrixAssertionSigner,
+  type MatrixSigningAudience,
   setMatrixAssertionSigner,
   type SignedAssertion,
 } from '#/lib/matrix/proofs'
+import {throwIfAborted} from './request'
 
 /**
  * The PARA↔iM8 signing channel (W1a), broker-mediated.
@@ -31,6 +32,7 @@ const POLL_DEADLINE_MS = 60_000
 export interface AssertionRequestOptions {
   /** Poll deadline; defaults to 60s. Testable callers may shorten it. */
   deadlineMs?: number
+  signal?: AbortSignal
 }
 
 interface SignRequestCreated {
@@ -46,13 +48,15 @@ type SignRequestView =
     }
 
 export async function requestAssertionSignature(
-  audience: BridgeAudience,
+  audience: MatrixSigningAudience,
   challenge: string,
   options: AssertionRequestOptions = {},
 ): Promise<SignedAssertion> {
+  throwIfAborted(options.signal)
   const created = await m8Fetch('/matrix/sign-requests', {
     method: 'POST',
     body: JSON.stringify({challenge, audience}),
+    signal: options.signal,
   })
   if (!created.ok) {
     throw new Error(`No se pudo crear la solicitud de firma: ${created.status}`)
@@ -62,7 +66,11 @@ export async function requestAssertionSignature(
   const deadline = Date.now() + (options.deadlineMs ?? POLL_DEADLINE_MS)
   while (Date.now() < deadline) {
     await new Promise<void>(resolve => setTimeout(resolve, POLL_INTERVAL_MS))
-    const res = await m8Fetch(`/matrix/sign-requests/${id}`, {method: 'GET'})
+    throwIfAborted(options.signal)
+    const res = await m8Fetch(`/matrix/sign-requests/${id}`, {
+      method: 'GET',
+      signal: options.signal,
+    })
     if (res.status === 404) {
       // Expired on the broker (or never existed): stop early, the bridge
       // challenge is equally dead.

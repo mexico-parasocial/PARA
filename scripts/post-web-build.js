@@ -46,3 +46,7 @@ function copyFiles(sourceDir, targetDir) {
 copyFiles('web-build/static/js', 'bskyweb/static/js')
 copyFiles('web-build/static/css', 'bskyweb/static/css')
 copyFiles('web-build/static/media', 'bskyweb/static/media')
+
+// These filenames are stable, so serve with revalidation rather than a year cache.
+fs.mkdirSync(path.join(projectRoot, 'bskyweb/static/chat'), {recursive: true})
+copyFiles('assets/chat', 'bskyweb/static/chat')

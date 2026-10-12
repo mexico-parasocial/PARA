@@ -5,6 +5,14 @@ import {
 } from '@atproto/lex-password-session'
 import {beforeEach, describe, expect, it, jest} from '@jest/globals'
 
+import {
+  BLUESKY_PROXY_HEADER,
+  CHAT_PROXY_SERVICE,
+  DEV_ENV_APPVIEW_DID,
+  LOCAL_DEV_CHAT_PROXY_DID,
+  LOCAL_DEV_SERVICE,
+} from '#/lib/constants'
+import {app, chat} from '#/lexicons'
 import {type SessionAccount} from '../types'
 
 jest.mock('#/state/events', () => ({
@@ -106,12 +114,84 @@ import {
   asFetch,
   DID,
   HANDLE,
+  json,
   makeAccount,
   makeDidDoc,
   makeMockFetch,
   PDS_HOST as PDS_URL,
   SERVICE,
 } from './mock-fetch'
+
+describe('bundle service routing', () => {
+  it.each([
+    'http://localhost:2583',
+    'http://127.0.0.1:2583',
+    'http://192.168.100.31:2583',
+    LOCAL_DEV_SERVICE,
+  ])('routes demo reads and background chat locally for %s', async service => {
+    const fetchMock = makeMockFetch({
+      'app.bsky.actor.getProfile': () => json({did: DID, handle: HANDLE}),
+      'chat.bsky.convo.getLog': () => json({logs: []}),
+    })
+    const session = new PasswordSession(makeSessionData({service}), {
+      fetch: asFetch(fetchMock),
+    })
+    const bundle = buildBundle(session)
+
+    await bundle.appviewClient.call(app.bsky.actor.getProfile, {actor: HANDLE})
+    await bundle.chatClient.call(chat.bsky.convo.getLog, {})
+
+    const headers = fetchMock.mock.calls.map(
+      call => new Headers(call[1]?.headers),
+    )
+    expect(headers[0].get('atproto-proxy')).toBe(
+      `${process.env.EXPO_PUBLIC_LOCAL_BSKY_PROXY_DID || DEV_ENV_APPVIEW_DID}#bsky_appview`,
+    )
+    expect(headers[1].get('atproto-proxy')).toBe(
+      `${LOCAL_DEV_CHAT_PROXY_DID}#bsky_chat`,
+    )
+    expect(session.destroyed).toBe(false)
+  })
+
+  it('selects local proxies for a restored PDS even if the login service differs', async () => {
+    const fetchMock = makeMockFetch({
+      'chat.bsky.convo.getLog': () => json({logs: []}),
+    })
+    const session = new PasswordSession(makeSessionData(), {
+      fetch: asFetch(fetchMock),
+    })
+    const bundle = buildBundle(session, 'http://localhost:2583')
+
+    await bundle.chatClient.call(chat.bsky.convo.getLog, {})
+
+    expect(String(fetchMock.mock.calls[0][0])).toBe(
+      'http://localhost:2583/xrpc/chat.bsky.convo.getLog',
+    )
+    expect(
+      new Headers(fetchMock.mock.calls[0][1]?.headers).get('atproto-proxy'),
+    ).toBe(`${LOCAL_DEV_CHAT_PROXY_DID}#bsky_chat`)
+  })
+
+  it('keeps hosted accounts on their configured proxies', async () => {
+    const fetchMock = makeMockFetch({
+      'app.bsky.actor.getProfile': () => json({did: DID, handle: HANDLE}),
+      'chat.bsky.convo.getLog': () => json({logs: []}),
+    })
+    const session = new PasswordSession(makeSessionData(), {
+      fetch: asFetch(fetchMock),
+    })
+    const bundle = buildBundle(session, PDS_URL)
+
+    await bundle.appviewClient.call(app.bsky.actor.getProfile, {actor: HANDLE})
+    await bundle.chatClient.call(chat.bsky.convo.getLog, {})
+
+    const headers = fetchMock.mock.calls.map(
+      call => new Headers(call[1]?.headers),
+    )
+    expect(headers[0].get('atproto-proxy')).toBe(BLUESKY_PROXY_HEADER.get())
+    expect(headers[1].get('atproto-proxy')).toBe(CHAT_PROXY_SERVICE)
+  })
+})
 
 function synthDidDoc(
   did: string,

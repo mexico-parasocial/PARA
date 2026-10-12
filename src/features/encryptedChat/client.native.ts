@@ -8,18 +8,21 @@ import {
   type ClientLike,
   CollectStrategy,
   DateDividerMode,
+  EditedContent,
   EncryptionState,
   EventOrTransactionId,
   ImageInfo,
   type MediaFileHandleLike,
   type MediaSourceLike,
   messageEventContentFromMarkdown,
+  PusherKind,
+  PushFormat,
   ReceiptType,
   RecoveryState,
   RoomHistoryVisibility,
   RoomPreset,
   RoomVisibility,
-  type Session,
+  type SessionVerificationControllerLike,
   SlidingSyncVersionBuilder,
   SqliteStoreBuilder,
   type SyncServiceLike,
@@ -41,20 +44,19 @@ import {
   chatScopeKey,
   normalizeChatScope,
 } from '#/features/encryptedChat/scope'
+import {
+  createSessionDelegate,
+  type SavedDevice,
+} from '#/features/encryptedChat/sessionStore'
 import {applyTimelineChanges} from '#/features/encryptedChat/timeline'
 import {
+  type ChatVerificationState,
   type ConnectOptions,
   E2EE_ENGINE_ENABLED,
   type EncryptedChatClient,
   MAX_ATTACHMENT_BYTES,
 } from '#/features/encryptedChat/types'
 
-type SavedDevice = {
-  version: 1
-  storeId: string
-  storeKey: string
-  session?: Session
-}
 const activeScopes = new Set<string>()
 const keychainOptions = {
   keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY,
@@ -103,6 +105,9 @@ export async function connectEncryptedChat(
   >()
   const mediaHandles = new Map<string, MediaFileHandleLike>()
   let closed = false
+  let sessionRevoked = false
+  let verificationController: SessionVerificationControllerLike | undefined
+  let verificationTimer: ReturnType<typeof setTimeout> | undefined
   let roomGeneration = 0
   try {
     const raw = await SecureStore.getItemAsync(secretName)
@@ -139,6 +144,14 @@ export async function connectEncryptedChat(
       .enableShareHistoryOnInvite(false)
       .autoEnableCrossSigning(true)
       .autoEnableBackups(false)
+      .setSessionDelegate(
+        createSessionDelegate(scope, saved, {
+          read: () => SecureStore.getItem(secretName),
+          write: value =>
+            SecureStore.setItem(secretName, value, keychainOptions),
+          revoked: () => sessionRevoked,
+        }),
+      )
       .build()
     client = matrix
 
@@ -200,6 +213,80 @@ export async function connectEncryptedChat(
       }
       return timeline
     }
+    const controller = await matrix.getSessionVerificationController()
+    verificationController = controller
+    let verificationState: ChatVerificationState = {status: 'idle'}
+    const verificationListeners = new Set<
+      (state: ChatVerificationState) => void
+    >()
+    const updateVerification = (state: ChatVerificationState) => {
+      if (closed) return
+      verificationState = state
+      if (['verified', 'cancelled', 'failed'].includes(state.status)) {
+        clearTimeout(verificationTimer)
+      }
+      verificationListeners.forEach(listener => listener(state))
+    }
+    const verificationFailed = () => updateVerification({status: 'failed'})
+    const armVerificationTimeout = () => {
+      clearTimeout(verificationTimer)
+      verificationTimer = setTimeout(() => {
+        void controller.cancelVerification().catch(() => {})
+        updateVerification({status: 'cancelled'})
+      }, 120_000)
+    }
+    controller.setDelegate({
+      didReceiveVerificationRequest(details) {
+        if (closed || details.senderProfile.userId !== saved.session!.userId)
+          return
+        if (
+          ['waiting', 'requested', 'comparing'].includes(
+            verificationState.status,
+          )
+        )
+          return
+        updateVerification({status: 'waiting', deviceId: details.deviceId})
+        armVerificationTimeout()
+        void controller
+          .acknowledgeVerificationRequest(
+            details.senderProfile.userId,
+            details.flowId,
+          )
+          .then(() => {
+            if (closed) return
+            updateVerification({
+              status: 'requested',
+              deviceId: details.deviceId,
+            })
+            armVerificationTimeout()
+          })
+          .catch(verificationFailed)
+      },
+      didAcceptVerificationRequest() {
+        if (!closed)
+          void controller.startSasVerification().catch(verificationFailed)
+      },
+      didStartSasVerification() {},
+      didReceiveVerificationData(data) {
+        updateVerification({
+          status: 'comparing',
+          deviceId: verificationState.deviceId,
+          symbols:
+            data.tag === 'Emojis'
+              ? data.inner.emojis.map(
+                  emoji => `${emoji.symbol()} ${emoji.description()}`,
+                )
+              : data.inner.values.map(String),
+        })
+      },
+      didFail: verificationFailed,
+      didCancel() {
+        updateVerification({status: 'cancelled'})
+      },
+      didFinish() {
+        updateVerification({status: 'verified'})
+      },
+    })
     const sessionInfo = {
       userId: saved.session.userId,
       deviceId: saved.session.deviceId,
@@ -265,6 +352,11 @@ export async function connectEncryptedChat(
     const close = async () => {
       if (closed) return
       closed = true
+      clearTimeout(verificationTimer)
+      controller.setDelegate(undefined)
+      await controller.cancelVerification().catch(() => {})
+      verificationListeners.clear()
+      dispose(controller)
       roomGeneration++
       // Let a newly created key reach the keychain before releasing the SDK.
       await recovery.whenIdle()
@@ -287,6 +379,57 @@ export async function connectEncryptedChat(
     }
     return {
       session: sessionInfo,
+      verification: {
+        watch(listener) {
+          requireOpen()
+          verificationListeners.add(listener)
+          listener(verificationState)
+          return () => {
+            verificationListeners.delete(listener)
+          }
+        },
+        async request() {
+          requireOpen()
+          if (
+            ['waiting', 'requested', 'comparing'].includes(
+              verificationState.status,
+            )
+          )
+            throw new Error('CHAT_VERIFICATION_PENDING')
+          updateVerification({status: 'waiting'})
+          armVerificationTimeout()
+          try {
+            await controller.requestDeviceVerification()
+          } catch {
+            verificationFailed()
+            throw new Error('CHAT_VERIFICATION_FAILED')
+          }
+        },
+        async accept() {
+          requireOpen()
+          if (verificationState.status !== 'requested')
+            throw new Error('CHAT_VERIFICATION_NOT_READY')
+          updateVerification({...verificationState, status: 'waiting'})
+          await controller.acceptVerificationRequest()
+        },
+        async confirm(matches) {
+          requireOpen()
+          if (verificationState.status !== 'comparing')
+            throw new Error('CHAT_VERIFICATION_NOT_READY')
+          updateVerification({
+            status: 'waiting',
+            deviceId: verificationState.deviceId,
+          })
+          if (matches) await controller.approveVerification()
+          else await controller.declineVerification()
+        },
+        async cancel() {
+          requireOpen()
+          clearTimeout(verificationTimer)
+          await controller.cancelVerification()
+          updateVerification({status: 'cancelled'})
+        },
+      },
       async createRoom(name, invite) {
         requireOpen()
         return matrix.createRoom({
@@ -390,6 +533,26 @@ export async function connectEncryptedChat(
           EventOrTransactionId.EventId.new({eventId}),
           key,
         )
+      },
+      async editText(eventId, body) {
+        if (!eventId || !body.trim() || body.length > 8000)
+          throw new Error('INVALID_MESSAGE')
+        const currentTimeline = requireEncryptedTimeline()
+        const item =
+          await currentTimeline.getEventTimelineItemByEventId(eventId)
+        if (currentTimeline !== requireEncryptedTimeline())
+          throw new Error('CHAT_NOT_READY')
+        if (item.sender !== saved.session!.userId || !item.isEditable)
+          throw new Error('CHAT_EDIT_FORBIDDEN')
+        await currentTimeline.edit(
+          EventOrTransactionId.EventId.new({eventId}),
+          new EditedContent.RoomMessage({
+            content: messageEventContentFromMarkdown(body),
+          }),
+        )
+      },
+      async loadEarlier() {
+        return requireEncryptedTimeline().paginateBackwards(30)
       },
       async markRead() {
         await requireEncryptedTimeline().markAsRead(ReceiptType.Read)
@@ -550,11 +713,34 @@ export async function connectEncryptedChat(
       },
       recover: recovery.recover,
       syncKeyBackup: recovery.syncKeyBackup,
+      async registerPush(expoPushToken, gatewayUrl) {
+        requireOpen()
+        const gateway = new URL(gatewayUrl)
+        if (
+          !/^Expo(nent)?PushToken\[[^\]]+\]$/.test(expoPushToken) ||
+          gateway.username ||
+          gateway.password ||
+          (gateway.protocol !== 'https:' &&
+            !(__DEV__ && gateway.protocol === 'http:'))
+        )
+          throw new Error('CHAT_PUSH_CONFIGURATION_INVALID')
+        await matrix.setPusher(
+          {pushkey: expoPushToken, appId: 'com.para.app'},
+          new PusherKind.Http({
+            data: {url: gateway.toString(), format: PushFormat.EventIdOnly},
+          }),
+          'PARA',
+          'PARA Native',
+          undefined,
+          'es',
+        )
+      },
       close,
       async logout() {
         requireOpen()
         await recovery.whenIdle()
         await matrix.logout()
+        sessionRevoked = true
         await close()
         await SecureStore.deleteItemAsync(secretName)
         await FileSystem.deleteAsync(dataUri, {idempotent: true})
@@ -562,6 +748,10 @@ export async function connectEncryptedChat(
       },
     }
   } catch (error) {
+    clearTimeout(verificationTimer)
+    verificationController?.setDelegate(undefined)
+    await verificationController?.cancelVerification().catch(() => {})
+    dispose(verificationController)
     subscription?.cancel()
     typingSubscription?.cancel()
     await sync?.stop()
