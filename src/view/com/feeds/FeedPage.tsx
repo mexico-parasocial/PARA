@@ -43,6 +43,7 @@ import {
 import {useTheme} from '#/alf'
 import {useHeaderOffset} from '#/components/hooks/useHeaderOffset'
 import {EditBig_Stroke2_Corner2_Rounded as EditBigIcon} from '#/components/icons/EditBig'
+import {useAnalytics} from '#/analytics'
 import {IS_NATIVE} from '#/env'
 import {app} from '#/lexicons'
 
@@ -73,6 +74,7 @@ export function FeedPage({
 }) {
   const {hasSession} = useSession()
   const {_} = useLingui()
+  const ax = useAnalytics()
   const navigation = useNavigation<NavigationProp<AllNavigatorParams>>()
   const queryClient = useQueryClient()
   const {openComposer} = useOpenComposer()

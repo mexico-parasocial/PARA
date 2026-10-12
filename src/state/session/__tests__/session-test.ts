@@ -845,7 +845,7 @@ describe('session', () => {
     let state = getInitialState([
       {
         service: 'http://localhost:2583',
-        did: 'stale-active-a-did',
+        did: 'did:plc:stale-active-a',
         handle: 'active-a.test',
         active: true,
       },

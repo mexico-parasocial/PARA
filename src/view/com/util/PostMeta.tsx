@@ -18,14 +18,14 @@ import {useProfileShadow} from '#/state/cache/profile-shadow'
 import {precacheProfile} from '#/state/queries/profile'
 import {atoms as a, platform, useTheme, web} from '#/alf'
 import {CivicInsignia} from '#/components/CivicInsignia'
-import {WebOnlyInlineLinkText} from '#/components/Link'
+import {type InlineLinkProps, WebOnlyInlineLinkText} from '#/components/Link'
 import {PostFlairStrip} from '#/components/Post/PostFlairStrip'
 import {ProfileHoverCard} from '#/components/ProfileHoverCard'
 import {Text} from '#/components/Typography'
 import {useSimpleVerificationState} from '#/components/verification'
 import {VerificationCheck} from '#/components/verification/VerificationCheck'
 import {IS_ANDROID} from '#/env'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import {TimeElapsed} from './TimeElapsed'
 import {PreviewableUserAvatar} from './UserAvatar'
 
@@ -49,11 +49,27 @@ interface PostMetaOpts {
   /** Optional multiple post flairs (e.g. one policy + one matter) */
   postFlairs?: PostBadge[]
   postFlairsBelow?: boolean
+  /**
+   * Render the author and timestamp as plain text instead of links. For use
+   * inside another link, where nested anchors are invalid on web.
+   */
+  linkDisabled?: boolean
+}
+
+/** Takes the same props as `WebOnlyInlineLinkText`, but never renders a link. */
+function PlainLinkText({
+  children,
+  to: _to,
+  onPress: _onPress,
+  ...props
+}: Omit<InlineLinkProps, 'onLongPress'>) {
+  return <Text {...props}>{children}</Text>
 }
 
 let PostMeta = (opts: PostMetaOpts): React.ReactNode => {
   const t = useTheme()
   const {i18n, _} = useLingui()
+  const LinkText = opts.linkDisabled ? PlainLinkText : WebOnlyInlineLinkText
 
   const author = useProfileShadow(opts.author)
   const displayName = author.displayName || author.handle
@@ -100,7 +116,7 @@ let PostMeta = (opts: PostMetaOpts): React.ReactNode => {
       <View style={[a.flex_row, a.align_end, a.flex_shrink]}>
         <ProfileHoverCard did={author.did}>
           <View style={[a.flex_row, a.align_end, a.flex_shrink]}>
-            <WebOnlyInlineLinkText
+            <LinkText
               emoji
               numberOfLines={1}
               to={profileLink}
@@ -122,7 +138,7 @@ let PostMeta = (opts: PostMetaOpts): React.ReactNode => {
                   opts.moderation?.ui('displayName'),
                 ),
               )}
-            </WebOnlyInlineLinkText>
+            </LinkText>
             {verification.showBadge && (
               <View
                 style={[
@@ -138,7 +154,7 @@ let PostMeta = (opts: PostMetaOpts): React.ReactNode => {
                 />
               </View>
             )}
-            <WebOnlyInlineLinkText
+            <LinkText
               emoji
               numberOfLines={1}
               to={profileLink}
@@ -153,7 +169,7 @@ let PostMeta = (opts: PostMetaOpts): React.ReactNode => {
                 {flexShrink: 10},
               ]}>
               {NON_BREAKING_SPACE + sanitizeHandle(handle, '@')}
-            </WebOnlyInlineLinkText>
+            </LinkText>
             {/* Civic insignia (party shield) */}
             {opts.partyShield && (
               <View style={[a.ml_xs, a.self_center]}>
@@ -191,7 +207,7 @@ let PostMeta = (opts: PostMetaOpts): React.ReactNode => {
 
         <TimeElapsed timestamp={opts.timestamp}>
           {({timeElapsed}) => (
-            <WebOnlyInlineLinkText
+            <LinkText
               to={opts.postHref}
               label={timestampLabel}
               title={timestampLabel}
@@ -221,7 +237,7 @@ let PostMeta = (opts: PostMetaOpts): React.ReactNode => {
                 </Text>
               )}
               {timeElapsed}
-            </WebOnlyInlineLinkText>
+            </LinkText>
           )}
         </TimeElapsed>
       </View>
