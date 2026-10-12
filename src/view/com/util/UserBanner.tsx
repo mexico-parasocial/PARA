@@ -19,6 +19,7 @@ import {
   type ComposerImage,
   compressImage,
   createComposerImage,
+  POST_IMAGE_COMPRESSION,
 } from '#/state/gallery'
 import {EditImageDialog} from '#/view/com/composer/photos/EditImageDialog'
 import {EventStopper} from '#/view/com/util/EventStopper'
@@ -108,7 +109,7 @@ export function UserBanner({
 
   const onChangeEditImage = useCallback(
     async (image: ComposerImage) => {
-      const compressed = await compressImage(image)
+      const compressed = await compressImage(image, POST_IMAGE_COMPRESSION)
       onSelectNewBanner?.(compressed)
     },
     [onSelectNewBanner],
