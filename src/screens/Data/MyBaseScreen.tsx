@@ -1,5 +1,6 @@
 import {useMemo} from 'react'
 import {StyleSheet} from 'react-native'
+import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {type NavigationProp} from '#/lib/routes/types'
@@ -47,9 +48,11 @@ export function MyBaseScreen() {
     return (
       <Layout.Screen>
         <Layout.Center style={styles.loadingWrap}>
-          <Text style={[styles.loadingTitle, t.atoms.text]}>My Base</Text>
+          <Text style={[styles.loadingTitle, t.atoms.text]}>
+            <Trans>My Base</Trans>
+          </Text>
           <Text style={[styles.loadingText, t.atoms.text_contrast_medium]}>
-            Loading your profile
+            <Trans>Loading your profile</Trans>
           </Text>
         </Layout.Center>
       </Layout.Screen>

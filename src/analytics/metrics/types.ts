@@ -93,6 +93,7 @@ export type Events = {
       | 'menu'
       // PARA-specific navigation items
       | 'data'
+      | 'myBase'
       | 'communities'
       | 'compass'
       | 'explore'

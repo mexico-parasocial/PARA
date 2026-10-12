@@ -132,7 +132,6 @@ import ConsentAuditScreen from '#/screens/m8/ConsentAuditScreen'
 import IdentityHubScreen from '#/screens/m8/IdentityHubScreen'
 import INEVerificationScreen from '#/screens/m8/INEVerificationScreen'
 import TrustedIssuersScreen from '#/screens/m8/TrustedIssuersScreen'
-import VerifyDashboardScreen from '#/screens/m8/VerifyDashboardScreen'
 import WalletScreen from '#/screens/m8/WalletScreen'
 import {AgentChatScreen} from '#/screens/Messages/AgentChat'
 import {MessagesScreen} from '#/screens/Messages/ChatList'
@@ -980,11 +979,6 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
         options={{title: title(msg`My Wallet`), requireAuth: true}}
       />
       <Stack.Screen
-        name="VerifyDashboard"
-        getComponent={() => VerifyDashboardScreen}
-        options={{title: title(msg`Verify Dashboard`), requireAuth: true}}
-      />
-      <Stack.Screen
         name="TrustedIssuers"
         getComponent={() => TrustedIssuersScreen}
         options={{title: title(msg`Trusted Issuers`), requireAuth: true}}
@@ -1189,7 +1183,7 @@ function DataTabNavigator() {
       <DataTab.Screen
         name="MyBase"
         getComponent={() => MyBaseScreen}
-        options={{title: 'My Base'}}
+        options={{title: i18n._(msg`My Base`)}}
       />
       <DataTab.Screen
         name="MyCommunities"

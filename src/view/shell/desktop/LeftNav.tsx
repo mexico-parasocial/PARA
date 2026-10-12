@@ -41,6 +41,10 @@ import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import {type DialogControlProps} from '#/components/Dialog'
 import {ArrowBoxLeft_Stroke2_Corner0_Rounded as LeaveIcon} from '#/components/icons/ArrowBoxLeft'
 import {
+  Atom_Filled_Corner0_Rounded as AtomFilledIcon,
+  Atom_Stroke2_Corner0_Rounded as AtomIcon,
+} from '#/components/icons/Atom'
+import {
   Book_Filled_Corner0_Rounded as BaseFilled,
   Book_Stroke2_Corner0_Rounded as Base,
 } from '#/components/icons/Base'
@@ -620,6 +624,8 @@ function ComposeBtn({minimal}: {minimal: boolean}) {
 }
 
 function BaseNavItem({minimal}: {minimal: boolean}) {
+  const {t: l} = useLingui()
+
   return (
     <NavItem
       href="/data"
@@ -629,22 +635,24 @@ function BaseNavItem({minimal}: {minimal: boolean}) {
         inactive: Base,
         active: BaseFilled,
       }}
-      label="Data"
+      label={l`Data`}
     />
   )
 }
 
 function MyBaseNavItem({minimal}: {minimal: boolean}) {
+  const {t: l} = useLingui()
+
   return (
     <NavItem
       href="/my-base"
       minimal={minimal}
-      navItem="profile"
+      navItem="myBase"
       icons={{
-        inactive: UserCircleIcon,
-        active: UserCircleFilledIcon,
+        inactive: AtomIcon,
+        active: AtomFilledIcon,
       }}
-      label="My Base"
+      label={l`My Base`}
     />
   )
 }

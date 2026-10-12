@@ -31,7 +31,10 @@ import {NavSignupCard} from '#/view/shell/NavSignupCard'
 import {atoms as a, tokens, useTheme, web} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import {Divider} from '#/components/Divider'
-import {Atom_Stroke2_Corner0_Rounded as AtomIcon} from '#/components/icons/Atom'
+import {
+  Atom_Filled_Corner0_Rounded as AtomFilled,
+  Atom_Stroke2_Corner0_Rounded as AtomIcon,
+} from '#/components/icons/Atom'
 import {
   Book_Filled_Corner0_Rounded as BookFilled,
   Book_Stroke2_Corner0_Rounded as Book,
@@ -202,7 +205,6 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
   const isAtIdentityHub =
     currentRoute.name === 'IdentityHub' ||
     currentRoute.name === 'MyWallet' ||
-    currentRoute.name === 'VerifyDashboard' ||
     currentRoute.name === 'TrustedIssuers' ||
     currentRoute.name === 'ConsentAudit'
   const {hasSession, currentAccount} = useSession()
@@ -377,9 +379,10 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
   }, [navigation, setDrawerOpen])
 
   const onPressMyBase = useCallback(() => {
+    ax.metric('nav:click', {item: 'myBase', surface: 'drawer'})
     setDrawerOpen(false)
     navigation.navigate('DataTab', {screen: 'MyBase'} as never)
-  }, [navigation, setDrawerOpen])
+  }, [ax, navigation, setDrawerOpen])
 
   const onPressCivicTree = useCallback(() => {
     setDrawerOpen(false)
@@ -885,6 +888,7 @@ let BaseMenuItem = ({
   onPress: () => void
 }): React.ReactNode => {
   const t = useTheme()
+  const {_} = useLingui()
   return (
     <MenuItem
       icon={
@@ -894,7 +898,7 @@ let BaseMenuItem = ({
           <Book style={[t.atoms.text]} width={iconWidth} />
         )
       }
-      label="Data"
+      label={_(msg`Data`)}
       bold={isActive}
       onPress={onPress}
     />
@@ -913,7 +917,13 @@ let MyBaseMenuItem = ({
   const {_} = useLingui()
   return (
     <MenuItem
-      icon={<AtomIcon style={[t.atoms.text]} width={iconWidth} />}
+      icon={
+        isActive ? (
+          <AtomFilled style={[t.atoms.text]} width={iconWidth} />
+        ) : (
+          <AtomIcon style={[t.atoms.text]} width={iconWidth} />
+        )
+      }
       label={_(msg`My Base`)}
       bold={isActive}
       onPress={onPress}
