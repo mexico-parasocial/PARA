@@ -149,5 +149,13 @@ export const LIVE_EVENTS_URL = IS_DEV
  * Not gated on `__DEV__` — two-device interoperability has to be testable from
  * a TestFlight build, which `__DEV__` would prevent.
  */
+/**
+ * Matrix direct messages by consent (bridge `/api/dm-requests`): ask a profile
+ * for a DM, review requests, and open an encrypted direct room on accept.
+ * Off unless the build sets `EXPO_PUBLIC_MATRIX_DMS=1`; Messages keeps using
+ * chat.bsky meanwhile.
+ */
+export const MATRIX_DMS_ENABLED = process.env.EXPO_PUBLIC_MATRIX_DMS === '1'
+
 export const CHAT_ENGINE: 'native' | 'webview' =
   process.env.EXPO_PUBLIC_CHAT_ENGINE === 'native' ? 'native' : 'webview'
