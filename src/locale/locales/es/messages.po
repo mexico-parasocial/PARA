@@ -16247,3 +16247,149 @@ msgstr "Quién participó (una persona por línea)"
 #: src/screens/Communities/CreateCommunityActivityScreen.tsx:504
 msgid "Your changes will be lost. This activity has not been published."
 msgstr "Se perderán tus cambios. Esta actividad aún no se ha publicado."
+
+#: src/screens/Map/MapComponents.tsx:1556
+msgid " (demo questions)"
+msgstr " (preguntas de demostración)"
+
+#: src/screens/Map/MapComponents.tsx:1303
+msgid " (demo)"
+msgstr " (demostración)"
+
+#: src/screens/Map/MapDataNotice.tsx:96
+msgid "{count} civic discussions in the loaded results."
+msgstr "{count} discusiones cívicas en los resultados cargados."
+
+#: src/screens/Map/CivicHeatToggle.tsx:36
+msgid "Activity density, {pointCount} located in the loaded results"
+msgstr "Densidad de actividad, {pointCount} con ubicación en los resultados cargados"
+
+#: src/screens/Map/CivicHeatToggle.tsx:29
+msgid "Civic activity heat"
+msgstr "Densidad de actividad cívica"
+
+#: src/screens/Map/MapDataNotice.tsx:67
+msgid "Civic activity is unavailable. Counts are unknown."
+msgstr "La actividad cívica no está disponible. Se desconocen las cantidades."
+
+#: src/screens/Map/MapComponents.tsx:1133
+msgid "Close map search"
+msgstr "Cerrar búsqueda del mapa"
+
+#: src/screens/Map/MapComponents.tsx:242
+msgid "Close place details"
+msgstr "Cerrar detalles del lugar"
+
+#: src/screens/Map/MapComponents.tsx:1135
+msgid "Closes the search results and clears the search."
+msgstr "Cierra los resultados y borra la búsqueda."
+
+#: src/screens/Map/MapDataNotice.tsx:72
+msgid "Could not refresh civic activity. Showing the last loaded results."
+msgstr "No se pudo actualizar la actividad cívica. Se muestran los últimos resultados cargados."
+
+#: src/screens/Map/MapDataNotice.tsx:101
+msgid "Coverage is incomplete. Counts show only loaded results."
+msgstr "La cobertura está incompleta. Las cantidades incluyen solo los resultados cargados."
+
+#: src/screens/Map/MapDataNotice.tsx:77
+msgid "Demo civic activity: the service is unavailable. These are sample results."
+msgstr "Actividad cívica de demostración: el servicio no está disponible. Estos resultados son ejemplos."
+
+#: src/screens/Map/MapDataNotice.tsx:82
+msgid "Demo civic activity: the service returned no records. These are sample results."
+msgstr "Actividad cívica de demostración: el servicio no devolvió registros. Estos resultados son ejemplos."
+
+#: src/screens/Map/DistrictProfileScreen.tsx:472
+msgid "Demo party distribution — synthetic percentages, not election results or measured public opinion."
+msgstr "Distribución partidista de demostración: porcentajes simulados, no resultados electorales ni opinión pública medida."
+
+#: src/screens/Map/MapDataNotice.tsx:33
+msgid "Demo statistics and officeholders — not verified civic facts."
+msgstr "Estadísticas y representantes de demostración: no son datos cívicos verificados."
+
+#: src/screens/Map/DistrictProfileScreen.tsx:320
+msgid "Demo term: 2024–2027"
+msgstr "Periodo de demostración: 2024–2027"
+
+#: src/screens/Map/MapComponents.tsx:417
+msgid "Discussions explicitly linked to this city."
+msgstr "Discusiones vinculadas explícitamente a esta ciudad."
+
+#: src/screens/Map/MapComponents.tsx:572
+msgid "Discussions explicitly linked to this district."
+msgstr "Discusiones vinculadas explícitamente a este distrito."
+
+#: src/screens/Map/DistrictProfileScreen.tsx:711
+msgid "District activity is not fully available."
+msgstr "La actividad del distrito no está completamente disponible."
+
+#: src/screens/Map/MapComponents.tsx:1155
+msgid "Find a state, district or city on the map."
+msgstr "Encuentra un estado, distrito o ciudad en el mapa."
+
+#: src/screens/Map/MapDataNotice.tsx:22
+msgid "Illustrative district shapes — not official boundaries."
+msgstr "Las formas de los distritos son ilustrativas, no límites oficiales."
+
+#: src/screens/Map/MapDataNotice.tsx:69
+msgid "Loading civic activity…"
+msgstr "Cargando actividad cívica…"
+
+#: src/screens/Map/CivicHeatToggle.tsx:32
+msgid "Located civic activity count is unknown"
+msgstr "Se desconoce la cantidad de actividad cívica con ubicación"
+
+#: src/screens/Map/MapDataNotice.tsx:93
+msgid "No civic activity matches this view."
+msgstr "No hay actividad cívica que coincida con esta vista."
+
+#: src/screens/Map/DistrictProfileScreen.tsx:710
+msgid "No discussions explicitly linked to this district."
+msgstr "No hay discusiones vinculadas explícitamente a este distrito."
+
+#: src/screens/Map/CivicHeatToggle.tsx:34
+msgid "No located discussions in the loaded results"
+msgstr "No hay discusiones con ubicación en los resultados cargados"
+
+#: src/screens/Map/MapDataNotice.tsx:89
+msgid "No matches in the loaded results. Coverage is incomplete."
+msgstr "No hay coincidencias en los resultados cargados. La cobertura está incompleta."
+
+#: src/screens/Map/DistrictProfileScreen.tsx:292
+#: src/screens/Map/DistrictProfileScreen.tsx:667
+msgid "Officeholder information unavailable"
+msgstr "Información de representantes no disponible"
+
+#: src/screens/Map/MapDataNotice.tsx:28
+msgid "Preview facts: population, mayor and party have no verified source date."
+msgstr "Datos de vista previa: la población, la alcaldía y el partido no tienen una fecha de fuente verificada."
+
+#: src/screens/Map/MapDataNotice.tsx:108
+msgid "Refreshing civic activity…"
+msgstr "Actualizando actividad cívica…"
+
+#: src/screens/Map/MapDataNotice.tsx:118
+msgid "Retry civic activity"
+msgstr "Reintentar cargar la actividad cívica"
+
+#: src/screens/Map/MapComponents.tsx:1153
+msgid "Search map"
+msgstr "Buscar en el mapa"
+
+#: src/screens/Map/MapDataNotice.tsx:113
+msgid "The last loaded results are demo civic activity."
+msgstr "Los últimos resultados cargados son actividad cívica de demostración."
+
+#: src/screens/Map/DistrictProfileScreen.tsx:237
+msgid "Unverified"
+msgstr "Sin verificar"
+
+#: src/screens/Map/MapDataNotice.tsx:38
+msgid "Verified statistics and officeholder information are not available yet."
+msgstr "Las estadísticas verificadas y la información de representantes aún no están disponibles."
+
+#: src/screens/Map/MapComponents.tsx:243
+#: src/screens/Map/MapComponents.tsx:822
+msgid "Closes place details and returns to the map."
+msgstr "Cierra los detalles del lugar y vuelve al mapa."
