@@ -1,7 +1,8 @@
 import {useMemo} from 'react'
 import {ScrollView, StyleSheet, View} from 'react-native'
+import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
-import {msg, Trans} from '@lingui/react/macro'
+import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {ROOM_ORDER, ROOM_PURPOSES} from '#/lib/chat/roomPurposes'

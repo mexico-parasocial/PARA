@@ -2,8 +2,8 @@ import {type Agent, type Client} from '@atproto/lex'
 import {type PasswordSession} from '@atproto/lex-password-session'
 
 import {
-  BLUESKY_PROXY_HEADER,
-  CHAT_PROXY_SERVICE,
+  getBskyProxyHeaderForServiceUrl,
+  getChatServiceForServiceUrl,
   PUBLIC_BSKY_SERVICE,
 } from '#/lib/constants'
 import {createLexClient} from '#/lib/lexClient'
@@ -12,7 +12,7 @@ import {networkAwareFetch} from './network'
 /**
  * Build the signed-in appview {@link Client}.
  *
- * {@link BLUESKY_PROXY_HEADER} is passed as the client's `service`, so lex sets
+ * The account's AppView proxy is passed as the client's `service`, so lex sets
  * `atproto-proxy: <that value>` on every request and raw calls are proxied to
  * the appview. Record helpers force `service: null`, so they still target the
  * account host.
@@ -27,9 +27,9 @@ import {networkAwareFetch} from './network'
  * No `fetch` option: a client built over a session uses that session's own
  * fetch, which is `networkAwareFetch` wrapped in the disposal kill switch.
  */
-export function buildAppviewClient(agent: Agent): Client {
+export function buildAppviewClient(agent: Agent, serviceUrl?: string): Client {
   return createLexClient(agent, {
-    service: BLUESKY_PROXY_HEADER.get(),
+    service: getBskyProxyHeaderForServiceUrl(serviceUrl),
     includeDeviceSessionHeaders: false,
   })
 }
@@ -51,20 +51,18 @@ export function buildPdsClient(agent: Agent): Client {
 /**
  * Build the signed-in chat {@link Client}.
  *
- * {@link CHAT_PROXY_SERVICE} (`${CHAT_PROXY_DID}#bsky_chat`, default
- * `did:web:api.bsky.chat#bsky_chat`) is the client's `service`, so `chat.bsky.*`
- * calls are proxied to the chat service. The DID is read from the
- * env-configurable `CHAT_PROXY_DID` rather than a hard-coded constant, so it can
- * be retargeted per environment.
+ * Local accounts use the dev-env chat proxy; other accounts use the configured
+ * production chat proxy. Production chat cannot resolve identities on the local
+ * PLC, and its rejection would trigger the chat event bus's session-drop path.
  *
  * Unlike the PDS client, chat carries moderation authorities. The service uses
  * them to hydrate labels on profiles embedded in conversation responses, so
  * this client reads the global `Client.appLabelers` and receives the account's
  * subscriptions through `configureModerationForAccount`.
  */
-export function buildChatClient(agent: Agent): Client {
+export function buildChatClient(agent: Agent, serviceUrl?: string): Client {
   return createLexClient(agent, {
-    service: CHAT_PROXY_SERVICE,
+    service: getChatServiceForServiceUrl(serviceUrl),
     includeDeviceSessionHeaders: false,
   })
 }
