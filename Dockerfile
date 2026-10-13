@@ -89,7 +89,7 @@ RUN \. "$NVM_DIR/nvm.sh" && \
   fi && \
   if [ -n "$EXPO_PUBLIC_CHAT_PROXY_DID" ]; then echo "EXPO_PUBLIC_CHAT_PROXY_DID=$EXPO_PUBLIC_CHAT_PROXY_DID" >> .env; fi && \
   if [ -n "$EXPO_PUBLIC_MATRIX_DMS" ]; then echo "EXPO_PUBLIC_MATRIX_DMS=$EXPO_PUBLIC_MATRIX_DMS" >> .env; fi && \
-  npm install --global pnpm@11.11.0 && \
+  npm install --global pnpm@11.21.0 && \
   pnpm install && \
   pnpm intl:build 2>&1 | tee i18n.log && \
   if grep -q "invalid syntax" "i18n.log"; then echo "\n\nFound compilation errors!\n\n" && exit 1; else echo "\n\nNo compile errors!\n\n"; fi && \

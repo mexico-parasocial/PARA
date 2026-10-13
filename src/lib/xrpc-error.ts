@@ -61,6 +61,15 @@ export function matchXrpcError<M extends Procedure | Query>(
 }
 
 /**
+ * Whether `e` is an error response from an XRPC call, as opposed to a network
+ * or internal failure. Narrows to `XrpcResponseError` so callers can read the
+ * server's `error` code and call `shouldRetry()`.
+ */
+export function isXrpcError(e: unknown): e is XrpcResponseError {
+  return e instanceof XrpcResponseError
+}
+
+/**
  * Whether `e` is a `com.atproto.repo.getRecord` failure meaning the record is
  * absent, so the caller can treat the read as "no record" instead of an error.
  *

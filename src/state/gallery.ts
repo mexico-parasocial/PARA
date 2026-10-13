@@ -8,6 +8,7 @@ import {
 import {type ImageManipulatorContext, SaveFormat} from 'expo-image-manipulator'
 import {nanoid} from 'nanoid/non-secure'
 
+import {POST_IMG_MAX} from '#/lib/constants'
 import {renderImage} from '#/lib/media/image-manipulator'
 import {getImageDim} from '#/lib/media/manip'
 import {openCropper} from '#/lib/media/picker'
@@ -191,6 +192,15 @@ export function resetImageManipulation(
   }
 
   return img
+}
+
+/**
+ * Limits for images uploaded with a post or a profile: scaled to fit within
+ * 4000px and re-encoded until the file fits the post image size cap.
+ */
+export const POST_IMAGE_COMPRESSION = {
+  maxDimension: 4000,
+  maxSize: POST_IMG_MAX.size,
 }
 
 export async function compressImage(

@@ -291,9 +291,7 @@ export async function storeRefreshedMatrixWebSession(tokens: {
     ...current,
     accessToken: tokens.accessToken,
     refreshToken: tokens.refreshToken ?? current.refreshToken,
-    expiresAt: tokens.expiresInMs
-      ? Date.now() + tokens.expiresInMs
-      : undefined,
+    expiresAt: tokens.expiresInMs ? Date.now() + tokens.expiresInMs : undefined,
   }
   await Storage.setItemAsync(SESSION_KEY, JSON.stringify(next))
 }

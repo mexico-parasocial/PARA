@@ -27,6 +27,8 @@ export type ChatMessage = {
   readByCount: number
   pending: boolean
   unableToDecrypt: boolean
+  /** Set on the DM intro message (lib/matrix/dmIntro); never rendered. */
+  dmIntro?: {requestId: string; did: string}
 }
 
 export type ChatSessionInfo = {
@@ -57,6 +59,22 @@ export interface ChatRecovery {
 export interface EncryptedChatClient extends ChatRecovery {
   session: ChatSessionInfo
   createRoom(name: string, invite: string[]): Promise<string>
+  /**
+   * An encrypted direct room (`is_direct`, recorded in m.direct) inviting one
+   * MXID, whose first event is the encrypted DM intro (lib/matrix/dmIntro).
+   */
+  createDirectRoom(
+    invitee: string,
+    intro: {requestId: string; did: string},
+  ): Promise<string>
+  /** Direct rooms this account is invited to and has not joined. */
+  listDirectInvites(): Promise<Array<{roomId: string}>>
+  /**
+   * Join a direct invite and resolve its DM intro, or undefined if none
+   * arrives within `timeoutMs`. Leaves the room open in this client.
+   */
+  readDmIntro(roomId: string, timeoutMs?: number): Promise<unknown>
+  leaveRoom(roomId: string): Promise<void>
   openRoom(
     roomId: string,
     onMessages: (messages: ChatMessage[]) => void,

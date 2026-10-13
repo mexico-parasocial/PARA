@@ -1,3 +1,5 @@
+// Webpack config runs in Node.
+// oxlint-disable-next-line import/no-nodejs-modules
 const path = require('path')
 const createExpoWebpackConfigAsync = require('@expo/webpack-config')
 const webpack = require('webpack')
@@ -48,6 +50,8 @@ module.exports = async function (env, argv) {
     dangerouslyAddModulePathsToTranspile: [
       // this covers every package that starts with these strings (e.g. @atproto/lex-client)
       '@bsky.app/expo',
+      '@bsky.app/bottom-sheet',
+      '@bsky.app/react-native-scroll-forwarder',
       '@atproto/lex',
     ],
   }
