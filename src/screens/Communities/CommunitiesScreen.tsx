@@ -273,6 +273,7 @@ export function CommunitiesScreen() {
                   <TouchableOpacity
                     accessibilityRole="button"
                     accessibilityLabel="Clear recent communities"
+                    accessibilityHint="Removes the communities you visited recently from this list"
                     onPress={() => clearRecentCommunities()}
                     hitSlop={8}>
                     <Text
@@ -814,6 +815,7 @@ function RecentCommunityRow({
     <TouchableOpacity
       accessibilityRole="button"
       accessibilityLabel={board.name}
+      accessibilityHint="Opens this community"
       activeOpacity={0.7}
       onPress={onPress}
       style={[

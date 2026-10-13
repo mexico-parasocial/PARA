@@ -1,10 +1,5 @@
 import {useMemo} from 'react'
-import {
-  type AtIdentifierString,
-  AtUri,
-  type AtUriString,
-  type NsidString,
-} from '@atproto/syntax'
+import {AtUri, type AtUriString, type NsidString} from '@atproto/syntax'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {
