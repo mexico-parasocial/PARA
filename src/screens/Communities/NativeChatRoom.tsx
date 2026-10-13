@@ -156,7 +156,11 @@ export function NativeChatRoom({
 
   // The list is inverted so it sticks to the newest message without measuring
   // content height; invert the data to match.
-  const inverted = useMemo(() => [...messages].reverse(), [messages])
+  // The DM intro (lib/matrix/dmIntro) is protocol, not conversation.
+  const inverted = useMemo(
+    () => messages.filter(m => !m.dmIntro).reverse(),
+    [messages],
+  )
 
   const onSend = useCallback(async () => {
     const body = draft.trim()

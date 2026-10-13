@@ -1,6 +1,7 @@
 // oxlint-disable typescript/no-unsafe-enum-comparison -- Generated Uniffi tags have string values.
 import {type TimelineItemLike} from '@unomed/react-native-matrix-sdk'
 
+import {DM_INTRO_MSGTYPE, parseDmIntroBody} from '#/lib/matrix/dmIntro'
 import {type ChatMessage} from './types'
 
 type MessageKind = ChatMessage['kind']
@@ -92,6 +93,10 @@ export function mapTimelineItems(
         ).length,
         pending: !event.isRemote,
         unableToDecrypt: kind.tag === 'UnableToDecrypt',
+        dmIntro:
+          msgType?.tag === 'Other' && msgType.inner.msgtype === DM_INTRO_MSGTYPE
+            ? parseDmIntroBody(msgType.inner.body)
+            : undefined,
       },
     ]
   })
