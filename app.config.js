@@ -311,7 +311,10 @@ module.exports = function (_config) {
             ios: {
               deploymentTarget: '16.4',
               buildReactNativeFromSource: true,
-              ccacheEnabled: IS_DEV,
+              // Opt-in (USE_CCACHE=1): with Xcode 27 the ccache clang wrapper
+              // makes Yoga's -Werror build fail on an unused
+              // -fmodules-cache-path argument.
+              ccacheEnabled: IS_DEV && process.env.USE_CCACHE === '1',
               cxxLanguageStandard: 'c++23',
               // Adopt the UIKit scene lifecycle; fixes the iOS startup crash
               // when built with Xcode 27 (bsky PR #11765).
@@ -346,6 +349,7 @@ module.exports = function (_config) {
         // './plugins/starterPackAppClipExtension/withStarterPackAppClip.js',
         './plugins/withGradleJVMHeapSizeIncrease.js',
         './plugins/withMapsPodfileFix.js',
+        './plugins/withDav1dXcode27Fix.js',
         './plugins/withAndroidManifestLargeHeapPlugin.js',
         './plugins/withAndroidManifestFCMIconPlugin.js',
         './plugins/withAndroidManifestIntentQueriesPlugin.js',

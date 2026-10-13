@@ -83,6 +83,14 @@ export type Metadata = {
   }
 
   /**
+   * Passed through to Sentry as the event `fingerprint`, which controls how
+   * events are grouped into issues.
+   *
+   * @see https://docs.sentry.io/platforms/javascript/usage/sdk-fingerprinting/
+   */
+  fingerprint?: string[]
+
+  /**
    * Any additional data, passed through to Sentry as `extra` param on
    * exceptions, or the `data` param on breadcrumbs.
    */

@@ -68,7 +68,7 @@ import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
 import {IS_INTERNAL, IS_IOS, IS_NATIVE} from '#/env'
 import {useActorStatus} from '#/features/liveNow'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import {device, useStorage} from '#/storage'
 import {useActivitySubscriptionsNudged} from '#/storage/hooks/activity-subscriptions-nudged'
 
@@ -396,7 +396,7 @@ function DevOptions() {
   const {mutate: deleteChatDeclarationRecord} = useDeleteActorDeclaration()
   const {
     tryApplyUpdate,
-    revertToEmbedded,
+    restoreDefaultChannel,
     isCurrentlyRunningPullRequestDeployment,
     currentChannel,
   } = useApplyPullRequestOTAUpdate()
@@ -532,7 +532,7 @@ function DevOptions() {
       ) : null}
       {IS_NATIVE && isCurrentlyRunningPullRequestDeployment ? (
         <SettingsList.PressableItem
-          onPress={() => void revertToEmbedded()}
+          onPress={() => void restoreDefaultChannel()}
           label={l`Unapply Pull Request`}>
           <SettingsList.ItemText>
             <Trans>Unapply Pull Request {currentChannel}</Trans>

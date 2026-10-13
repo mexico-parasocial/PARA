@@ -50,6 +50,7 @@
   },
   "ignorePatterns": [
     "indigo-main/**",
+    "scripts/**",
     "**/__mocks__/*.ts",
     "ios/**",
     "android/**",

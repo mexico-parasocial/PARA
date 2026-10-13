@@ -36,6 +36,7 @@ import {
   type ComposerImage,
   compressImage,
   createComposerImage,
+  POST_IMAGE_COMPRESSION,
 } from '#/state/gallery'
 import {unstableCacheProfileView} from '#/state/queries/unstable-profile-cache'
 import {EditImageDialog} from '#/view/com/composer/photos/EditImageDialog'
@@ -448,7 +449,7 @@ let EditableUserAvatar = ({
 
   const onChangeEditImage = useCallback(
     async (image: ComposerImage) => {
-      const compressed = await compressImage(image)
+      const compressed = await compressImage(image, POST_IMAGE_COMPRESSION)
       onSelectNewAvatar(compressed)
     },
     [onSelectNewAvatar],

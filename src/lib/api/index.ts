@@ -22,7 +22,7 @@ import {shortenLinks, stripInvalidMentions} from '#/lib/strings/rich-text-manip'
 import {type PostType} from '#/lib/tags'
 import {MATTER_POLICY_TAGS} from '#/lib/tags'
 import {logger} from '#/logger'
-import {compressImage} from '#/state/gallery'
+import {compressImage, POST_IMAGE_COMPRESSION} from '#/state/gallery'
 import {
   fetchResolveGifQuery,
   fetchResolveLinkQuery,
@@ -463,7 +463,10 @@ async function resolveMedia(
     const images: app.bsky.embed.images.Image[] = await Promise.all(
       imagesDraft.map(async (image, i) => {
         logger.debug(`Compressing image #${i}`)
-        const {path, width, height, mime} = await compressImage(image)
+        const {path, width, height, mime} = await compressImage(
+          image,
+          POST_IMAGE_COMPRESSION,
+        )
         logger.debug(`Uploading image #${i}`)
         const res = await uploadBlob(pdsClient, path, mime)
         return {
@@ -487,7 +490,10 @@ async function resolveMedia(
     const items: $Typed<app.bsky.embed.gallery.Image>[] = await Promise.all(
       imagesDraft.map(async (image, i) => {
         logger.debug(`Compressing image #${i}`)
-        const {path, width, height, mime} = await compressImage(image)
+        const {path, width, height, mime} = await compressImage(
+          image,
+          POST_IMAGE_COMPRESSION,
+        )
         logger.debug(`Uploading image #${i}`)
         const res = await uploadBlob(pdsClient, path, mime)
         return {

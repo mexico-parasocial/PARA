@@ -35,3 +35,9 @@ jobs:
           # Low-confidence findings (e.g. artipacked on workflows that never
           # push) are too noisy to gate CI on
           min-confidence: medium
+          # Gate on real risks; low-severity findings are style suggestions
+          # (e.g. self-repository's new `$/...` syntax for local actions).
+          min-severity: medium
+          # Only PARA's workflows. indigo-main/ is vendored upstream code whose
+          # own workflows never run here (oxlint skips it too).
+          inputs: .github

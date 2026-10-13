@@ -1,6 +1,6 @@
 import {getGlobalScope, init} from '@sentry/react-native'
 
-import {featureFlagsIntegration} from '#/logger/sentry/featureFlags'
+import {Sentry} from '#/logger/sentry/lib'
 import {dropExpectedNetworkErrors} from '#/logger/sentry/network-errors'
 import * as env from '#/env'
 
@@ -15,7 +15,7 @@ init({
   dist: env.BUNDLE_IDENTIFIER,
   release: env.RELEASE_VERSION,
   beforeSend: dropExpectedNetworkErrors,
-  integrations: [featureFlagsIntegration],
+  integrations: [Sentry.featureFlagsIntegration()],
   ignoreErrors: [
     /*
      * Unknown internals errors

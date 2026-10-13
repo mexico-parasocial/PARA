@@ -1,7 +1,7 @@
 import {beforeAll, describe, expect, it} from '@jest/globals'
 import {i18n} from '@lingui/core'
 
-import {getJoinMessage} from './utils.test'
+import {getJoinMessage} from './utils'
 
 beforeAll(() => {
   i18n.loadAndActivate({locale: 'en', messages: {}})
