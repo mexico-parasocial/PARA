@@ -13,7 +13,7 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
-#: src/screens/Messages/CommunityChatsScreen.tsx:271
+#: src/screens/Messages/CommunityChatsScreen.tsx:272
 msgid "¿Cómo se crea un grupo de chat?"
 msgstr "¿Cómo se crea un grupo de chat?"
 
@@ -567,14 +567,14 @@ msgstr ""
 
 #. placeholder {0}: reaction.key
 #. placeholder {1}: reaction.count
-#: src/screens/Communities/NativeChatRoom.tsx:576
+#: src/screens/Communities/NativeChatRoom.tsx:580
 msgid "{0}: {1} reacciones"
 msgstr "{0}: {1} reacciones"
 
 #. placeholder {0}: sanitizeDisplayName( profile.displayName || sanitizeHandle(profile.handle), )
 #. placeholder {0}: sanitizeDisplayName( profile.displayName || sanitizeHandle(profile.handle), )
-#: src/view/com/util/UserAvatar.tsx:598
-#: src/view/com/util/UserAvatar.tsx:616
+#: src/view/com/util/UserAvatar.tsx:599
+#: src/view/com/util/UserAvatar.tsx:617
 msgid "{0}'s avatar"
 msgstr ""
 
@@ -1063,6 +1063,10 @@ msgstr "{votedCount} policy decisions"
 msgid "@{displayedHandle}"
 msgstr "@{displayedHandle}"
 
+#: src/components/dms/RequestMatrixDmButton.tsx:67
+msgid "@{handle} recibirá tu solicitud. Si la acepta, podrá ver tu cuenta de chat y abrir una conversación cifrada contigo. Nadie más la recibe. Después confirmarás en iM8."
+msgstr "@{handle} recibirá tu solicitud. Si la acepta, podrá ver tu cuenta de chat y abrir una conversación cifrada contigo. Nadie más la recibe. Después confirmarás en iM8."
+
 #: src/components/HighlightOptionsModal.tsx:409
 msgid "+ More"
 msgstr "+ More"
@@ -1187,7 +1191,7 @@ msgstr "🗳️ Vote directly"
 msgid "0 cuenta tu participación sin mover el resultado."
 msgstr "0 cuenta tu participación sin mover el resultado."
 
-#: src/screens/Messages/CommunityChatsScreen.tsx:282
+#: src/screens/Messages/CommunityChatsScreen.tsx:283
 msgid "1. Crea la comunidad. 2. Abre su sala principal: eso une tu cuenta al chat. 3. Las demás salas aparecen aquí en cuanto estén disponibles."
 msgstr "1. Crea la comunidad. 2. Abre su sala principal: eso une tu cuenta al chat. 3. Las demás salas aparecen aquí en cuanto estén disponibles."
 
@@ -1333,8 +1337,8 @@ msgstr "A selected recipient is not followed by the sender."
 msgid "A vote shows support; it does not make a question official."
 msgstr "A vote shows support; it does not make a question official."
 
-#: src/Navigation.tsx:662
-#: src/screens/Communities/CommunityProfileScreen/index.tsx:600
+#: src/Navigation.tsx:664
+#: src/screens/Communities/CommunityProfileScreen/index.tsx:599
 #: src/screens/Settings/AboutSettings.tsx:78
 #: src/screens/Settings/Settings.tsx:267
 #: src/screens/Settings/Settings.tsx:270
@@ -1363,6 +1367,18 @@ msgstr "Abre el agente para resumir el debate"
 msgid "Abre el chat en ese mensaje, leído con tu propia cuenta"
 msgstr "Abre el chat en ese mensaje, leído con tu propia cuenta"
 
+#: src/screens/Communities/CommunityChatPanels.tsx:267
+msgid "Abre el perfil de este miembro"
+msgstr "Abre el perfil de este miembro"
+
+#: src/screens/Communities/CommunityChatPanels.tsx:102
+msgid "Abre esta sala del chat"
+msgstr "Abre esta sala del chat"
+
+#: src/screens/Communities/CommunityChatPanels.tsx:319
+msgid "Abre la lista completa de miembros"
+msgstr "Abre la lista completa de miembros"
+
 #: src/screens/Communities/CommunityChatScreen.tsx:294
 #: src/screens/Communities/CommunityChatScreen.tsx:313
 #: src/screens/Communities/CommunityChatScreen.web.tsx:460
@@ -1375,10 +1391,18 @@ msgstr "Abre la lista de miembros de la comunidad"
 msgid "Abre las herramientas de moderación de la comunidad"
 msgstr "Abre las herramientas de moderación de la comunidad"
 
+#: src/components/dms/MatrixDmConversationList.tsx:83
+msgid "Abrir"
+msgstr "Abrir"
+
 #. placeholder {0}: message.media.filename
-#: src/screens/Communities/NativeChatRoom.tsx:551
+#: src/screens/Communities/NativeChatRoom.tsx:555
 msgid "Abrir {0}"
 msgstr "Abrir {0}"
+
+#: src/components/dms/MatrixDmConversationList.tsx:72
+msgid "Abrir conversación con {name}"
+msgstr "Abrir conversación con {name}"
 
 #: src/screens/Profile/Header/Overview.tsx:85
 msgid "Abs Avg"
@@ -1438,11 +1462,11 @@ msgstr ""
 msgid "Accessibility notes"
 msgstr "Accessibility notes"
 
-#: src/Navigation.tsx:473
+#: src/Navigation.tsx:475
 msgid "Accessibility Settings"
 msgstr ""
 
-#: src/Navigation.tsx:489
+#: src/Navigation.tsx:491
 #: src/screens/Login/LoginForm.tsx:465
 #: src/screens/Settings/AccountSettings.tsx:185
 #: src/screens/Settings/Settings.tsx:177
@@ -1503,8 +1527,8 @@ msgid "Account removed from quick access"
 msgstr ""
 
 #: src/screens/Messages/ConversationSettings/MemberMenu.tsx:103
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:113
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:509
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:114
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:510
 #: src/view/com/profile/ProfileMenu.tsx:157
 msgctxt "toast"
 msgid "Account unblocked"
@@ -1524,6 +1548,15 @@ msgstr ""
 #: src/components/verification/VerifierDialog.tsx:100
 msgid "Accounts with a scalloped blue check mark <0><1/></0> can verify others. These trusted verifiers are selected by PARA."
 msgstr "Accounts with a scalloped blue check mark <0><1/></0> can verify others. These trusted verifiers are selected by PARA."
+
+#: src/components/dms/MatrixDmRequestList.tsx:189
+msgid "Aceptada: te llegará una invitación cifrada"
+msgstr "Aceptada: te llegará una invitación cifrada"
+
+#: src/components/dms/MatrixDmRequestList.tsx:154
+#: src/components/dms/MatrixDmRequestList.tsx:160
+msgid "Aceptar"
+msgstr "Aceptar"
 
 #: src/components/chat/ReportMessageDialog.tsx:31
 msgid "Acoso o intimidación"
@@ -1589,7 +1622,7 @@ msgstr ""
 msgid "Activity kind"
 msgstr "Activity kind"
 
-#: src/Navigation.tsx:622
+#: src/Navigation.tsx:624
 msgid "Activity notifications"
 msgstr "Activity notifications"
 
@@ -1990,11 +2023,11 @@ msgstr "Adds this as a node in your civic tree"
 msgid "Adds this item to the selected collection"
 msgstr "Adds this item to the selected collection"
 
-#: src/screens/Communities/NativeChatRoom.tsx:217
+#: src/screens/Communities/NativeChatRoom.tsx:221
 msgid "Adjuntar"
 msgstr "Adjuntar"
 
-#: src/screens/Communities/NativeChatRoom.tsx:360
+#: src/screens/Communities/NativeChatRoom.tsx:364
 msgid "Adjuntar imagen o archivo"
 msgstr "Adjuntar imagen o archivo"
 
@@ -2070,15 +2103,15 @@ msgstr "Agenda"
 msgid "Agenda (one item per line)"
 msgstr "Agenda (one item per line)"
 
-#: src/Navigation.tsx:716
+#: src/Navigation.tsx:718
 msgid "Agent Chat"
 msgstr "Agent Chat"
 
-#: src/Navigation.tsx:721
+#: src/Navigation.tsx:723
 msgid "Agent Profile"
 msgstr "Agent Profile"
 
-#: src/Navigation.tsx:965
+#: src/Navigation.tsx:967
 #: src/view/shell/desktop/LeftNav.tsx:681
 #: src/view/shell/Drawer.tsx:852
 msgid "Agora"
@@ -2113,7 +2146,7 @@ msgstr "agua potable"
 msgid "Alcance territorial"
 msgstr "Alcance territorial"
 
-#: src/screens/Communities/NativeChatRoom.tsx:325
+#: src/screens/Communities/NativeChatRoom.tsx:329
 #: src/screens/Communities/useMatrixClientStrings.ts:14
 msgid "Alguien está escribiendo..."
 msgstr "Alguien está escribiendo..."
@@ -2534,7 +2567,7 @@ msgstr "Anonymous posting persona"
 msgid "Anonymous voice"
 msgstr "Anonymous voice"
 
-#: src/Navigation.tsx:1010
+#: src/Navigation.tsx:1012
 msgid "Anonymous Voice"
 msgstr "Anonymous Voice"
 
@@ -2631,7 +2664,7 @@ msgstr "Aportes destacados"
 msgid "apoyos"
 msgstr "apoyos"
 
-#: src/Navigation.tsx:678
+#: src/Navigation.tsx:680
 #: src/screens/Settings/AppIconSettings/index.tsx:65
 #: src/screens/Settings/AppIconSettings/SettingsListItem.tsx:19
 #: src/screens/Settings/AppIconSettings/SettingsListItem.tsx:24
@@ -2669,7 +2702,7 @@ msgstr ""
 msgid "App passwords"
 msgstr ""
 
-#: src/Navigation.tsx:441
+#: src/Navigation.tsx:443
 #: src/screens/Settings/AppPasswords.tsx:51
 msgid "App Passwords"
 msgstr ""
@@ -2720,7 +2753,7 @@ msgstr ""
 msgid "Appeal this label"
 msgstr "Appeal this label"
 
-#: src/Navigation.tsx:481
+#: src/Navigation.tsx:483
 #: src/screens/Settings/AppearanceSettings.tsx:73
 #: src/screens/Settings/Settings.tsx:229
 #: src/screens/Settings/Settings.tsx:232
@@ -2786,6 +2819,10 @@ msgstr "Aprobar"
 msgid "Aprueba la firma pendiente en la sección Credenciales de iM8."
 msgstr "Aprueba la firma pendiente en la sección Credenciales de iM8."
 
+#: src/components/dms/RequestMatrixDmButton.tsx:34
+msgid "Aprueba la solicitud en iM8"
+msgstr "Aprueba la solicitud en iM8"
+
 #. placeholder {0}: niceDate(i18n, createdAt, 'medium')
 #: src/screens/PostThread/components/ThreadItemAnchor.tsx:698
 msgid "Archived from {0}"
@@ -2801,7 +2838,7 @@ msgstr ""
 msgid "archivo"
 msgstr "archivo"
 
-#: src/screens/Communities/NativeChatRoom.tsx:224
+#: src/screens/Communities/NativeChatRoom.tsx:228
 msgid "Archivo"
 msgstr "Archivo"
 
@@ -2983,11 +3020,11 @@ msgstr "Audit is not available yet"
 msgid "Audit summary"
 msgstr "Audit summary"
 
-#: src/screens/Communities/NativeChatRoom.tsx:318
+#: src/screens/Communities/NativeChatRoom.tsx:322
 msgid "Aún no hay mensajes en esta sala."
 msgstr "Aún no hay mensajes en esta sala."
 
-#: src/screens/Communities/CommunityChatPanels.tsx:310
+#: src/screens/Communities/CommunityChatPanels.tsx:312
 msgid "Aún no hay miembros para mostrar."
 msgstr "Aún no hay miembros para mostrar."
 
@@ -2995,7 +3032,7 @@ msgstr "Aún no hay miembros para mostrar."
 msgid "Aún no hay postura oficial firmada."
 msgstr "Aún no hay postura oficial firmada."
 
-#: src/screens/Messages/CommunityChatsScreen.tsx:109
+#: src/screens/Messages/CommunityChatsScreen.tsx:110
 msgid "Aún no perteneces a ninguna comunidad. Únete a una para ver sus chats aquí."
 msgstr "Aún no perteneces a ninguna comunidad. Únete a una para ver sus chats aquí."
 
@@ -3045,12 +3082,12 @@ msgstr ""
 msgid "Autoriza el chat"
 msgstr "Autoriza el chat"
 
-#: src/screens/Communities/NativeChatRoom.tsx:674
+#: src/screens/Communities/NativeChatRoom.tsx:678
 msgid "Autoriza este dispositivo"
 msgstr "Autoriza este dispositivo"
 
 #: src/screens/Communities/CommunityChatScreen.web.tsx:383
-#: src/screens/Communities/NativeChatRoom.tsx:690
+#: src/screens/Communities/NativeChatRoom.tsx:694
 msgid "Autorizar"
 msgstr "Autorizar"
 
@@ -3058,12 +3095,12 @@ msgstr "Autorizar"
 msgid "Autorizar el chat"
 msgstr "Autorizar el chat"
 
-#: src/screens/Communities/NativeChatRoom.tsx:684
+#: src/screens/Communities/NativeChatRoom.tsx:688
 msgid "Autorizar este dispositivo"
 msgstr "Autorizar este dispositivo"
 
 #. Shown next to an available username suggestion in the account creation flow
-#: src/screens/Signup/StepHandle/HandleSuggestions.tsx:73
+#: src/screens/Signup/StepHandle/HandleSuggestions.tsx:72
 msgid "Available"
 msgstr ""
 
@@ -3075,12 +3112,12 @@ msgstr "Avatar creator"
 msgid "Awaiting review"
 msgstr "Awaiting review"
 
-#: src/Navigation.tsx:833
+#: src/Navigation.tsx:835
 #: src/screens/RAQ/AxesDiscoveryScreen.tsx:41
 msgid "Axes Discovery"
 msgstr "Axes Discovery"
 
-#: src/Navigation.tsx:838
+#: src/Navigation.tsx:840
 msgid "Axis Detail"
 msgstr "Axis Detail"
 
@@ -3200,10 +3237,10 @@ msgstr ""
 
 #: src/components/dms/dialogs/NewChatDialog.tsx:148
 #: src/components/dms/MessageProfileButton.tsx:60
-#: src/screens/Messages/ChatList.tsx:220
-#: src/screens/Messages/ChatList.tsx:238
-#: src/screens/Messages/ChatList.tsx:340
-#: src/screens/Messages/ChatList.tsx:775
+#: src/screens/Messages/ChatList.tsx:222
+#: src/screens/Messages/ChatList.tsx:240
+#: src/screens/Messages/ChatList.tsx:342
+#: src/screens/Messages/ChatList.tsx:777
 #: src/screens/Messages/Conversation.tsx:206
 #: src/screens/Messages/ConversationSettings/MemberMenu.tsx:93
 msgid "Before you can message another user, you must first verify your email."
@@ -3238,7 +3275,7 @@ msgstr "Beneficiary (optional)"
 msgid "Beta Feature"
 msgstr ""
 
-#: src/Navigation.tsx:670
+#: src/Navigation.tsx:672
 #: src/screens/Settings/BetaFeaturesSettings.tsx:118
 #: src/screens/Settings/Settings.tsx:251
 #: src/screens/Settings/Settings.tsx:254
@@ -3261,6 +3298,10 @@ msgctxt "native"
 msgid "Beta features may be unstable. Some changes may require restarting the app."
 msgstr "Beta features may be unstable. Some changes may require restarting the app."
 
+#: src/screens/Messages/CommunityChatsScreen.tsx:162
+msgid "Bicameral"
+msgstr "Bicameral"
+
 #: src/lib/community-activities.ts:102
 msgid "Bill"
 msgstr "Bill"
@@ -3278,7 +3319,7 @@ msgstr ""
 #: src/components/moderation/BlockDialog.tsx:190
 #: src/components/moderation/BlockDialog.tsx:210
 #: src/screens/Messages/ConversationSettings/MemberMenu.tsx:218
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:245
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:246
 msgid "Block"
 msgstr ""
 
@@ -3358,7 +3399,7 @@ msgstr ""
 msgid "Blocked accounts"
 msgstr ""
 
-#: src/Navigation.tsx:275
+#: src/Navigation.tsx:277
 #: src/view/screens/ModerationBlockedAccounts.tsx:104
 msgid "Blocked Accounts"
 msgstr ""
@@ -3529,7 +3570,7 @@ msgstr "Brings this card to the front"
 msgid "Browse Agora"
 msgstr "Browse Agora"
 
-#: src/screens/Communities/CommunitiesScreen.tsx:319
+#: src/screens/Communities/CommunitiesScreen.tsx:320
 msgid "Browse communities"
 msgstr "Browse communities"
 
@@ -3706,7 +3747,7 @@ msgstr "Cabildeo format"
 msgid "Cabildeo phase"
 msgstr "Cabildeo phase"
 
-#: src/Navigation.tsx:970
+#: src/Navigation.tsx:972
 #: src/screens/Cabildeos/CabildeosScreen.tsx:968
 #: src/screens/Data/CommunityDirectoryScreen.tsx:244
 #: src/screens/Data/CommunityDirectoryScreen.tsx:268
@@ -3878,13 +3919,18 @@ msgstr ""
 
 #: src/components/civic/PublicRecordNotice.tsx:267
 #: src/components/civic/PublicRecordNotice.tsx:273
-#: src/screens/Communities/NativeChatRoom.tsx:228
+#: src/components/dms/MatrixDmRequestList.tsx:206
+#: src/screens/Communities/NativeChatRoom.tsx:232
 msgid "Cancelar"
 msgstr "Cancelar"
 
-#: src/screens/Communities/NativeChatRoom.tsx:347
+#: src/screens/Communities/NativeChatRoom.tsx:351
 msgid "Cancelar respuesta"
 msgstr "Cancelar respuesta"
+
+#: src/components/dms/MatrixDmRequestList.tsx:196
+msgid "Cancelar solicitud"
+msgstr "Cancelar solicitud"
 
 #: src/lib/community-activities.ts:134
 msgid "Cancelled"
@@ -4119,8 +4165,8 @@ msgid "Channel"
 msgstr "Channel"
 
 #: src/lib/hooks/useNotificationHandler.ts:133
-#: src/Navigation.tsx:706
-#: src/Navigation.tsx:1383
+#: src/Navigation.tsx:708
+#: src/Navigation.tsx:1395
 #: src/screens/Communities/useMatrixClientStrings.ts:27
 #: src/view/com/home/HomeHeaderChatButton.tsx:51
 #: src/view/screens/Notifications.tsx:238
@@ -4136,7 +4182,7 @@ msgstr ""
 msgid "Chat de {communityName}"
 msgstr "Chat de {communityName}"
 
-#: src/screens/Messages/ChatList.tsx:715
+#: src/screens/Messages/ChatList.tsx:717
 msgid "Chat de comunidades no disponible por ahora. Puede haber mensajes sin leer."
 msgstr "Chat de comunidades no disponible por ahora. Puede haber mensajes sin leer."
 
@@ -4183,9 +4229,9 @@ msgstr "Chat no disponible"
 msgid "Chat not found."
 msgstr "Chat not found."
 
-#: src/screens/Messages/ChatList.tsx:808
-#: src/screens/Messages/ChatList.tsx:852
-#: src/screens/Messages/ChatList.tsx:899
+#: src/screens/Messages/ChatList.tsx:820
+#: src/screens/Messages/ChatList.tsx:875
+#: src/screens/Messages/ChatList.tsx:922
 msgid "Chat options"
 msgstr "Chat options"
 
@@ -4198,7 +4244,7 @@ msgstr "Chat owners cannot leave a group chat."
 msgid "Chat recipient is not followed by the sender."
 msgstr "Chat recipient is not followed by the sender."
 
-#: src/Navigation.tsx:736
+#: src/Navigation.tsx:738
 msgid "Chat request inbox"
 msgstr ""
 
@@ -4208,12 +4254,12 @@ msgid "Chat requests"
 msgstr ""
 
 #: src/components/dms/ConvoMenu.tsx:88
-#: src/Navigation.tsx:711
-#: src/Navigation.tsx:731
-#: src/screens/Messages/ChatList.tsx:154
-#: src/screens/Messages/ChatList.tsx:158
-#: src/screens/Messages/ChatList.tsx:919
-#: src/screens/Messages/ChatList.tsx:929
+#: src/Navigation.tsx:713
+#: src/Navigation.tsx:733
+#: src/screens/Messages/ChatList.tsx:156
+#: src/screens/Messages/ChatList.tsx:160
+#: src/screens/Messages/ChatList.tsx:942
+#: src/screens/Messages/ChatList.tsx:952
 #: src/screens/Messages/Settings.tsx:48
 msgid "Chat settings"
 msgstr ""
@@ -4240,15 +4286,15 @@ msgctxt "toast"
 msgid "Chat unmuted"
 msgstr ""
 
-#: src/screens/Messages/ChatList.tsx:148
-#: src/screens/Messages/ChatList.tsx:787
-#: src/screens/Messages/ChatList.tsx:834
+#: src/screens/Messages/ChatList.tsx:150
+#: src/screens/Messages/ChatList.tsx:789
+#: src/screens/Messages/ChatList.tsx:846
 msgid "Chats"
 msgstr ""
 
-#: src/screens/Messages/ChatList.tsx:797
-#: src/screens/Messages/ChatList.tsx:840
-#: src/screens/Messages/CommunityChatsScreen.tsx:84
+#: src/screens/Messages/ChatList.tsx:799
+#: src/screens/Messages/ChatList.tsx:852
+#: src/screens/Messages/CommunityChatsScreen.tsx:85
 #: src/screens/Messages/components/CommunityStrip.tsx:195
 msgid "Chats de comunidades"
 msgstr "Chats de comunidades"
@@ -4498,16 +4544,16 @@ msgid "Clave de recuperación"
 msgstr "Clave de recuperación"
 
 #: src/components/chat/ChatRecoveryPanel.tsx:115
-#: src/screens/Communities/NativeChatRoom.tsx:290
+#: src/screens/Communities/NativeChatRoom.tsx:294
 msgid "Claves y dispositivo"
 msgstr "Claves y dispositivo"
 
-#: src/screens/Communities/NativeChatRoom.tsx:284
+#: src/screens/Communities/NativeChatRoom.tsx:288
 msgid "Claves y verificación de este dispositivo"
 msgstr "Claves y verificación de este dispositivo"
 
 #: src/features/communityCivicTree/components/CivicTreeFilterMenu.tsx:143
-#: src/screens/Communities/CommunitiesScreen.tsx:283
+#: src/screens/Communities/CommunitiesScreen.tsx:284
 #: src/screens/Search/components/AdvancedSearchDialog/AutocompleteInput/index.native.tsx:73
 #: src/screens/Search/components/AdvancedSearchDialog/AutocompleteInput/index.tsx:110
 #: src/screens/Search/components/AdvancedSearchDialog/ClearableInput.tsx:59
@@ -4847,7 +4893,7 @@ msgstr ""
 msgid "Collect signatures supporting a bill, law, initiative, referendum, or petition."
 msgstr "Collect signatures supporting a bill, law, initiative, referendum, or petition."
 
-#: src/Navigation.tsx:920
+#: src/Navigation.tsx:922
 #: src/screens/Data/CivicTreeScreen.tsx:222
 #: src/screens/Data/CollectionDetailScreen.tsx:231
 msgid "Collection"
@@ -4948,7 +4994,7 @@ msgstr "Committed {0} before any money moved."
 msgid "Communities"
 msgstr "Communities"
 
-#: src/Navigation.tsx:335
+#: src/Navigation.tsx:337
 msgid "Communities active in"
 msgstr "Communities active in"
 
@@ -4958,12 +5004,12 @@ msgstr "Communities Active In"
 
 #: src/features/communityActivities/components/ActivityReview.tsx:175
 #: src/features/communityCivicTree/components/AddBookDialog.tsx:146
-#: src/Navigation.tsx:1378
-#: src/screens/Communities/CommunityProfileScreen/index.tsx:458
+#: src/Navigation.tsx:1390
+#: src/screens/Communities/CommunityProfileScreen/index.tsx:457
 msgid "Community"
 msgstr "Community"
 
-#: src/Navigation.tsx:910
+#: src/Navigation.tsx:912
 #: src/screens/Data/CommunityDirectoryScreen.tsx:349
 msgid "Community activities"
 msgstr "Community activities"
@@ -4976,7 +5022,7 @@ msgstr "Community Activities"
 msgid "Community activities / Social"
 msgstr "Community activities / Social"
 
-#: src/Navigation.tsx:945
+#: src/Navigation.tsx:947
 msgid "Community Activity"
 msgstr "Community Activity"
 
@@ -4988,7 +5034,7 @@ msgstr "Community alignment"
 msgid "Community alignment on official axes."
 msgstr "Community alignment on official axes."
 
-#: src/Navigation.tsx:858
+#: src/Navigation.tsx:860
 msgid "Community Badges"
 msgstr "Community Badges"
 
@@ -4996,7 +5042,7 @@ msgstr "Community Badges"
 msgid "Community category"
 msgstr "Community category"
 
-#: src/Navigation.tsx:1388
+#: src/Navigation.tsx:1400
 msgid "Community chats"
 msgstr "Community chats"
 
@@ -5004,7 +5050,7 @@ msgstr "Community chats"
 msgid "Community civic tree"
 msgstr "Community civic tree"
 
-#: src/Navigation.tsx:905
+#: src/Navigation.tsx:907
 #: src/screens/Data/CommunityCivicTreeScreen.tsx:410
 msgid "Community Civic Tree"
 msgstr "Community Civic Tree"
@@ -5034,7 +5080,7 @@ msgid "Community fund"
 msgstr "Community fund"
 
 #: src/components/PolicyUpdateOverlay/updates/202508/index.tsx:46
-#: src/Navigation.tsx:431
+#: src/Navigation.tsx:433
 #: src/view/screens/CommunityGuidelines.tsx:38
 msgid "Community Guidelines"
 msgstr ""
@@ -5051,7 +5097,7 @@ msgstr "Community proposal"
 msgid "Community Pulse"
 msgstr "Community Pulse"
 
-#: src/Navigation.tsx:848
+#: src/Navigation.tsx:850
 msgid "Community RAQ"
 msgstr "Community RAQ"
 
@@ -5072,7 +5118,7 @@ msgstr "Community score"
 msgid "Community Tree"
 msgstr "Community Tree"
 
-#: src/Navigation.tsx:853
+#: src/Navigation.tsx:855
 msgid "Community Voters"
 msgstr "Community Voters"
 
@@ -5080,7 +5126,7 @@ msgstr "Community Voters"
 msgid "Community votes"
 msgstr "Community votes"
 
-#: src/Navigation.tsx:955
+#: src/Navigation.tsx:957
 msgid "Community Wiki"
 msgstr "Community Wiki"
 
@@ -5096,7 +5142,7 @@ msgstr "Comparación experimental de conteos"
 msgid "Compare what your political family is carrying publicly with what needs internal work."
 msgstr "Compare what your political family is carrying publicly with what needs internal work."
 
-#: src/Navigation.tsx:803
+#: src/Navigation.tsx:805
 msgid "Comparison"
 msgstr "Comparison"
 
@@ -5167,7 +5213,7 @@ msgstr "Computed from the ledger below and the committed business model."
 msgid "Comunidad"
 msgstr "Comunidad"
 
-#: src/screens/Messages/ChatList.tsx:446
+#: src/screens/Messages/ChatList.tsx:448
 #: src/screens/Messages/components/CommunityStrip.tsx:67
 msgid "Comunidades"
 msgstr "Comunidades"
@@ -5184,7 +5230,7 @@ msgstr "Con"
 msgid "Conectando al chat..."
 msgstr "Conectando al chat..."
 
-#: src/screens/Communities/NativeChatRoom.tsx:663
+#: src/screens/Communities/NativeChatRoom.tsx:667
 msgid "Conectando con el chat cifrado…"
 msgstr "Conectando con el chat cifrado…"
 
@@ -5339,7 +5385,7 @@ msgstr "Consensus"
 msgid "Consensus Areas"
 msgstr "Consensus Areas"
 
-#: src/Navigation.tsx:995
+#: src/Navigation.tsx:997
 msgid "Consent Audit"
 msgstr "Consent Audit"
 
@@ -5393,7 +5439,7 @@ msgstr ""
 msgid "Content and media"
 msgstr ""
 
-#: src/Navigation.tsx:638
+#: src/Navigation.tsx:640
 msgid "Content and Media"
 msgstr ""
 
@@ -5505,6 +5551,20 @@ msgstr "Contributions under review"
 #: src/lib/chat/roomPurposes.ts:18
 msgid "Conversación abierta de toda la comunidad: anuncios, dudas y debate general."
 msgstr "Conversación abierta de toda la comunidad: anuncios, dudas y debate general."
+
+#: src/Navigation.tsx:1410
+#: src/screens/Messages/MatrixDmConversationScreen.web.tsx:18
+msgid "Conversación cifrada"
+msgstr "Conversación cifrada"
+
+#: src/components/dms/MatrixDmRequestList.tsx:59
+#: src/components/dms/MatrixDmRequestList.tsx:85
+msgid "Conversación cifrada creada"
+msgstr "Conversación cifrada creada"
+
+#: src/components/dms/MatrixDmConversationList.tsx:24
+msgid "Conversaciones"
+msgstr "Conversaciones"
 
 #: src/screens/Messages/Conversation.tsx:65
 msgid "Conversation"
@@ -5666,7 +5726,7 @@ msgstr ""
 
 #: src/components/PolicyUpdateOverlay/updates/202508/index.tsx:41
 #: src/components/PolicyUpdateOverlay/updates/202508/index.tsx:108
-#: src/Navigation.tsx:436
+#: src/Navigation.tsx:438
 #: src/view/screens/CopyrightPolicy.tsx:35
 msgid "Copyright Policy"
 msgstr ""
@@ -5883,7 +5943,7 @@ msgstr "Crea un cabildeo desde esta conversación"
 msgid "Crear clave de recuperación"
 msgstr "Crear clave de recuperación"
 
-#: src/screens/Messages/CommunityChatsScreen.tsx:294
+#: src/screens/Messages/CommunityChatsScreen.tsx:295
 msgid "Crear comunidad"
 msgstr "Crear comunidad"
 
@@ -5920,7 +5980,7 @@ msgstr ""
 
 #: src/components/StarterPack/ProfileStarterPacks.tsx:211
 #: src/components/StarterPack/ProfileStarterPacks.tsx:320
-#: src/Navigation.tsx:1025
+#: src/Navigation.tsx:1027
 msgid "Create a starter pack"
 msgstr ""
 
@@ -5979,7 +6039,7 @@ msgstr "Create collection"
 msgid "Create collections to organize policies, topics, evidence, links, and notes under your own control."
 msgstr "Create collections to organize policies, topics, evidence, links, and notes under your own control."
 
-#: src/Navigation.tsx:1358
+#: src/Navigation.tsx:1370
 #: src/screens/Communities/CreateCommunityScreen.tsx:205
 msgid "Create Community"
 msgstr "Create Community"
@@ -6008,7 +6068,7 @@ msgstr ""
 msgid "Create list from starter pack"
 msgstr ""
 
-#: src/Navigation.tsx:940
+#: src/Navigation.tsx:942
 #: src/screens/Cabildeos/CabildeosScreen.tsx:1006
 msgid "Create Lobbying"
 msgstr "Create Lobbying"
@@ -6035,7 +6095,7 @@ msgstr "Create new Policy"
 msgid "Create or modify an invite link for this group chat"
 msgstr "Create or modify an invite link for this group chat"
 
-#: src/Navigation.tsx:1327
+#: src/Navigation.tsx:1339
 msgid "Create Post"
 msgstr "Create Post"
 
@@ -6190,7 +6250,7 @@ msgstr "Dark mode"
 msgid "Dark theme"
 msgstr ""
 
-#: src/Navigation.tsx:1312
+#: src/Navigation.tsx:1324
 #: src/view/shell/bottom-bar/BottomBar.tsx:226
 msgid "Data"
 msgstr "Data"
@@ -6263,7 +6323,7 @@ msgstr ""
 msgid "Default icons"
 msgstr ""
 
-#: src/screens/Communities/CommunityChatPanels.tsx:248
+#: src/screens/Communities/CommunityChatPanels.tsx:249
 #: src/screens/Communities/CommunityChatScreen.tsx:139
 #: src/screens/Communities/CommunityChatScreen.web.tsx:243
 msgid "Delegado"
@@ -6277,7 +6337,7 @@ msgstr "Delegate"
 msgid "Delegate my vote"
 msgstr "Delegate my vote"
 
-#: src/Navigation.tsx:935
+#: src/Navigation.tsx:937
 msgid "Delegate Vote"
 msgstr "Delegate Vote"
 
@@ -6802,7 +6862,7 @@ msgstr ""
 msgid "Disconnected on this device. Server sign-out could not be confirmed."
 msgstr "Disconnected on this device. Server sign-out could not be confirmed."
 
-#: src/Navigation.tsx:798
+#: src/Navigation.tsx:800
 msgid "Discourse Analysis"
 msgstr "Discourse Analysis"
 
@@ -6913,7 +6973,7 @@ msgstr "District Not Found"
 msgid "District not found."
 msgstr "District not found."
 
-#: src/Navigation.tsx:895
+#: src/Navigation.tsx:897
 msgid "District Profile"
 msgstr "District Profile"
 
@@ -6934,7 +6994,7 @@ msgstr ""
 msgid "Do not apply this mute word to users you follow"
 msgstr ""
 
-#: src/Navigation.tsx:793
+#: src/Navigation.tsx:795
 #: src/screens/Dashboard/DocumentsScreen.tsx:269
 msgid "Documents"
 msgstr "Documents"
@@ -7001,7 +7061,7 @@ msgstr "Donation delivered"
 #: src/features/inviteFriends/InviteFriendsDialogInner.tsx:150
 #: src/features/inviteFriends/InviteFriendsDialogInner.tsx:156
 #: src/lib/media/picker.tsx:37
-#: src/screens/Communities/CommunitiesScreen.tsx:646
+#: src/screens/Communities/CommunitiesScreen.tsx:647
 #: src/screens/Data/components/NodeDetailSheet.tsx:527
 #: src/screens/Data/components/SummaryModal.tsx:385
 #: src/screens/Login/components/HostingProviderDialog.tsx:245
@@ -7223,8 +7283,8 @@ msgstr "Edit {0}"
 msgid "Edit activity type"
 msgstr "Edit activity type"
 
-#: src/view/com/util/UserAvatar.tsx:460
-#: src/view/com/util/UserBanner.tsx:122
+#: src/view/com/util/UserAvatar.tsx:461
+#: src/view/com/util/UserBanner.tsx:123
 msgid "Edit avatar"
 msgstr ""
 
@@ -7290,7 +7350,7 @@ msgstr ""
 msgid "Edit moderation list"
 msgstr ""
 
-#: src/Navigation.tsx:446
+#: src/Navigation.tsx:448
 #: src/view/screens/Feeds.tsx:647
 msgid "Edit My Feeds"
 msgstr ""
@@ -7320,12 +7380,12 @@ msgstr ""
 #: src/screens/Profile/Header/EditProfileDialog.tsx:265
 #: src/screens/Profile/Header/EditProfileDialog.tsx:271
 #: src/screens/Profile/Header/ProfileHeaderLabeler.tsx:303
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:554
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:555
 msgid "Edit profile"
 msgstr ""
 
 #: src/screens/Profile/Header/ProfileHeaderLabeler.tsx:306
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:556
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:557
 msgid "Edit Profile"
 msgstr ""
 
@@ -7358,11 +7418,11 @@ msgstr ""
 msgid "Edit window closed"
 msgstr "Edit window closed"
 
-#: src/Navigation.tsx:1030
+#: src/Navigation.tsx:1032
 msgid "Edit your starter pack"
 msgstr ""
 
-#: src/screens/Communities/NativeChatRoom.tsx:565
+#: src/screens/Communities/NativeChatRoom.tsx:569
 msgid "Editado"
 msgstr "Editado"
 
@@ -7403,7 +7463,7 @@ msgstr "el alcance y el partido"
 msgid "El cabildeo ha sido resuelto. Propón a personas u organizaciones para llevar a cabo la solución."
 msgstr "El cabildeo ha sido resuelto. Propón a personas u organizaciones para llevar a cabo la solución."
 
-#: src/screens/Communities/NativeChatRoom.tsx:677
+#: src/screens/Communities/NativeChatRoom.tsx:681
 msgid "El chat cifrado necesita un dispositivo propio. Se abrirá tu navegador para iniciar sesión en el servidor; la contraseña nunca pasa por PARA."
 msgstr "El chat cifrado necesita un dispositivo propio. Se abrirá tu navegador para iniciar sesión en el servidor; la contraseña nunca pasa por PARA."
 
@@ -7432,7 +7492,7 @@ msgstr "Elegibilidad verificada para {0}"
 msgid "Elige a quién delegar y para qué temas. Tu delegación y los criterios que escribas son públicos y están vinculados a tu cuenta. Puedes retirar el registro; las copias ya publicadas pueden permanecer."
 msgstr "Elige a quién delegar y para qué temas. Tu delegación y los criterios que escribas son públicos y están vinculados a tu cuenta. Puedes retirar el registro; las copias ya publicadas pueden permanecer."
 
-#: src/screens/Communities/NativeChatRoom.tsx:217
+#: src/screens/Communities/NativeChatRoom.tsx:221
 msgid "Elige qué enviar a la sala cifrada."
 msgstr "Elige qué enviar a la sala cifrada."
 
@@ -7521,7 +7581,7 @@ msgstr "Empty posts in the middle of your thread will be skipped."
 
 #. placeholder {0}: message.replyTo.sender || message.replyTo.eventId
 #. placeholder {1}: message.replyTo.body || ''
-#: src/screens/Communities/NativeChatRoom.tsx:505
+#: src/screens/Communities/NativeChatRoom.tsx:509
 msgid "En respuesta a {0}: {1}"
 msgstr "En respuesta a {0}: {1}"
 
@@ -7799,12 +7859,16 @@ msgstr "Entry booked"
 msgid "Entry type"
 msgstr "Entry type"
 
+#: src/components/dms/MatrixDmRequestList.tsx:178
+msgid "Enviadas"
+msgstr "Enviadas"
+
 #: src/components/chat/ReportMessageDialog.tsx:156
-#: src/screens/Communities/NativeChatRoom.tsx:398
+#: src/screens/Communities/NativeChatRoom.tsx:402
 msgid "Enviando…"
 msgstr "Enviando…"
 
-#: src/screens/Communities/NativeChatRoom.tsx:398
+#: src/screens/Communities/NativeChatRoom.tsx:402
 msgid "Enviar"
 msgstr "Enviar"
 
@@ -7812,7 +7876,7 @@ msgstr "Enviar"
 msgid "Enviar a revisión"
 msgstr "Enviar a revisión"
 
-#: src/screens/Communities/NativeChatRoom.tsx:391
+#: src/screens/Communities/NativeChatRoom.tsx:395
 #: src/screens/Communities/useMatrixClientStrings.ts:17
 msgid "Enviar mensaje"
 msgstr "Enviar mensaje"
@@ -7821,6 +7885,10 @@ msgstr "Enviar mensaje"
 #: src/components/chat/ReportMessageDialog.tsx:158
 msgid "Enviar reporte"
 msgstr "Enviar reporte"
+
+#: src/components/dms/RequestMatrixDmButton.tsx:74
+msgid "Enviar solicitud"
+msgstr "Enviar solicitud"
 
 #: src/lib/interests.ts:133
 msgid "Environmental Justice"
@@ -7870,11 +7938,11 @@ msgstr ""
 msgid "Error: {error}"
 msgstr ""
 
-#: src/screens/Communities/NativeChatRoom.tsx:369
+#: src/screens/Communities/NativeChatRoom.tsx:373
 msgid "Escribe un mensaje"
 msgstr "Escribe un mensaje"
 
-#: src/screens/Communities/NativeChatRoom.tsx:377
+#: src/screens/Communities/NativeChatRoom.tsx:381
 msgid "Escribe un mensaje cifrado para esta sala"
 msgstr "Escribe un mensaje cifrado para esta sala"
 
@@ -7892,11 +7960,11 @@ msgstr "Escribe una firma, pregunta o señal local..."
 msgid "Esperando el round {0} de Drand"
 msgstr "Esperando el round {0} de Drand"
 
-#: src/screens/Communities/NativeChatRoom.tsx:662
+#: src/screens/Communities/NativeChatRoom.tsx:666
 msgid "Esperando la autorización en el navegador…"
 msgstr "Esperando la autorización en el navegador…"
 
-#: src/screens/Communities/NativeChatRoom.tsx:512
+#: src/screens/Communities/NativeChatRoom.tsx:516
 msgid "Esperando la clave de este mensaje"
 msgstr "Esperando la clave de este mensaje"
 
@@ -7913,9 +7981,17 @@ msgstr "Esta es la {roomLabel}. Los mensajes aquí son parte de la conversación
 msgid "está escribiendo..."
 msgstr "está escribiendo..."
 
+#: src/screens/Messages/MatrixDmConversationScreen.tsx:42
+msgid "Esta versión de la app necesita el chat cifrado nativo."
+msgstr "Esta versión de la app necesita el chat cifrado nativo."
+
 #: src/components/chat/ChatRecoveryPanel.tsx:153
 msgid "Estado de recuperación sin confirmar"
 msgstr "Estado de recuperación sin confirmar"
+
+#: src/screens/Messages/CommunityChatsScreen.tsx:73
+msgid "Estados"
+msgstr "Estados"
 
 #: src/components/chat/ReportedMessageCard.tsx:148
 msgid "Este mensaje está cifrado y este chat no puede descifrarlo. Ábrelo con el chat cifrado."
@@ -8076,7 +8152,7 @@ msgstr "Expands or collapses the meme text"
 msgid "Expected attendance"
 msgstr "Expected attendance"
 
-#: src/lib/api/index.ts:628
+#: src/lib/api/index.ts:634
 msgid "Expected uri to resolve to a record"
 msgstr ""
 
@@ -8151,7 +8227,7 @@ msgstr ""
 msgid "Explore"
 msgstr ""
 
-#: src/screens/Communities/CommunitiesScreen.tsx:427
+#: src/screens/Communities/CommunitiesScreen.tsx:428
 msgid "Explore by participation or geography"
 msgstr "Explore by participation or geography"
 
@@ -8175,7 +8251,7 @@ msgstr "Explore party differences"
 msgid "Explore social events, cabildeos and public financial activity"
 msgstr "Explore social events, cabildeos and public financial activity"
 
-#: src/screens/Communities/CommunitiesScreen.tsx:1048
+#: src/screens/Communities/CommunitiesScreen.tsx:1050
 msgid "Explore territorial context"
 msgstr "Explore territorial context"
 
@@ -8238,7 +8314,7 @@ msgstr ""
 msgid "External media may allow websites to collect information about you and your device. No information is sent or requested until you press the \"play\" button."
 msgstr ""
 
-#: src/Navigation.tsx:465
+#: src/Navigation.tsx:467
 #: src/screens/Settings/ExternalMediaPreferences.tsx:35
 msgid "External Media Preferences"
 msgstr ""
@@ -8394,7 +8470,7 @@ msgstr "Failed to leave group chat"
 msgid "Failed to load communities"
 msgstr "Failed to load communities"
 
-#: src/screens/Messages/ChatList.tsx:642
+#: src/screens/Messages/ChatList.tsx:644
 #: src/screens/Messages/Inbox.tsx:194
 msgid "Failed to load conversations"
 msgstr ""
@@ -8449,12 +8525,12 @@ msgstr ""
 msgid "Failed to lock group chat"
 msgstr "Failed to lock group chat"
 
-#: src/screens/Messages/ChatList.tsx:884
+#: src/screens/Messages/ChatList.tsx:907
 #: src/view/com/home/HomeHeaderChatButton.tsx:127
 msgid "Failed to mark all chats as read"
 msgstr "Failed to mark all chats as read"
 
-#: src/screens/Messages/ChatList.tsx:893
+#: src/screens/Messages/ChatList.tsx:916
 #: src/screens/Messages/Inbox.tsx:294
 #: src/view/com/home/HomeHeaderChatButton.tsx:136
 msgid "Failed to mark all requests as read"
@@ -8672,7 +8748,7 @@ msgstr "Falta configuración de autenticación"
 msgid "Fast-moving public cabildeos with votes, arguments, and delegation pressure."
 msgstr "Fast-moving public cabildeos with votes, arguments, and delegation pressure."
 
-#: src/screens/Communities/CommunitiesScreen.tsx:529
+#: src/screens/Communities/CommunitiesScreen.tsx:530
 msgid "Featured States"
 msgstr "Featured States"
 
@@ -8680,7 +8756,7 @@ msgstr "Featured States"
 msgid "Federal districts"
 msgstr "Federal districts"
 
-#: src/Navigation.tsx:381
+#: src/Navigation.tsx:383
 msgid "Feed"
 msgstr ""
 
@@ -8730,7 +8806,7 @@ msgctxt "toast"
 msgid "Feedback sent to feed operator"
 msgstr ""
 
-#: src/Navigation.tsx:752
+#: src/Navigation.tsx:754
 #: src/screens/SavedFeeds.tsx:135
 #: src/screens/SavedFeeds.tsx:355
 #: src/screens/Search/SearchResults.tsx:180
@@ -8962,8 +9038,8 @@ msgstr ""
 msgid "Find and invite friends"
 msgstr "Find and invite friends"
 
-#: src/Navigation.tsx:569
-#: src/Navigation.tsx:780
+#: src/Navigation.tsx:571
+#: src/Navigation.tsx:782
 msgid "Find Contacts"
 msgstr ""
 
@@ -9040,7 +9116,7 @@ msgstr "Fit"
 msgid "Fit map"
 msgstr "Fit map"
 
-#: src/Navigation.tsx:690
+#: src/Navigation.tsx:692
 msgid "Flair Feed"
 msgstr "Flair Feed"
 
@@ -9097,7 +9173,7 @@ msgstr "Focuses this topic or data cluster"
 #: src/screens/Dashboard/MemesScreen/ExpandedMediaCardModal/ExpandedMediaCardModal.tsx:327
 #: src/screens/Messages/ConversationSettings/Member.tsx:172
 #: src/screens/PostThread/components/ThreadItemAnchorFollowButton.tsx:159
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:636
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:641
 #: src/screens/VideoFeed/index.tsx:994
 #: src/view/com/notifications/NotificationFeedItem.tsx:814
 #: src/view/com/notifications/NotificationFeedItem.tsx:821
@@ -9106,7 +9182,7 @@ msgstr ""
 
 #. placeholder {0}: profile.handle
 #: src/screens/PostThread/components/ThreadItemAnchorFollowButton.tsx:146
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:624
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:629
 msgid "Follow {0}"
 msgstr ""
 
@@ -9157,7 +9233,7 @@ msgstr ""
 #. User is not following this account, click to follow back
 #: src/components/ProfileCard.tsx:542
 #: src/screens/PostThread/components/ThreadItemAnchorFollowButton.tsx:157
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:634
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:639
 #: src/view/com/notifications/NotificationFeedItem.tsx:814
 #: src/view/com/notifications/NotificationFeedItem.tsx:821
 msgid "Follow back"
@@ -9221,7 +9297,7 @@ msgstr ""
 msgid "Followed by <0>{0}</0>, <1>{1}</1>, and {2, plural, one {# other} other {# others}}"
 msgstr ""
 
-#: src/Navigation.tsx:654
+#: src/Navigation.tsx:656
 #: src/screens/Settings/FollowedElementsSettings.tsx:129
 #: src/view/screens/Feeds.tsx:858
 msgid "Followed Elements"
@@ -9236,7 +9312,7 @@ msgid "Followers can join"
 msgstr "Followers can join"
 
 #. placeholder {0}: route.params.name
-#: src/Navigation.tsx:328
+#: src/Navigation.tsx:330
 msgid "Followers of @{0} that you know"
 msgstr ""
 
@@ -9253,7 +9329,7 @@ msgstr ""
 #: src/screens/Dashboard/MemesScreen/ExpandedMediaCardModal/ExpandedMediaCardModal.tsx:327
 #: src/screens/m8/AnonymousVoiceScreen.tsx:196
 #: src/screens/PostThread/components/ThreadItemAnchorFollowButton.tsx:162
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:632
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:637
 #: src/screens/VideoFeed/index.tsx:992
 #: src/view/com/notifications/NotificationFeedItem.tsx:793
 #: src/view/com/notifications/NotificationFeedItem.tsx:809
@@ -9278,7 +9354,7 @@ msgstr ""
 msgid "Following {displayName}"
 msgstr "Following {displayName}"
 
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:472
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:473
 msgid "Following {formattedDisplayName}"
 msgstr "Following {formattedDisplayName}"
 
@@ -9292,7 +9368,7 @@ msgstr ""
 msgid "Following feed preferences"
 msgstr ""
 
-#: src/Navigation.tsx:452
+#: src/Navigation.tsx:454
 #: src/screens/Settings/FollowingFeedPreferences.tsx:52
 msgid "Following Feed Preferences"
 msgstr ""
@@ -9376,7 +9452,7 @@ msgstr "Forgot?"
 msgid "Format"
 msgstr "Format"
 
-#: src/screens/Communities/NativeChatRoom.tsx:219
+#: src/screens/Communities/NativeChatRoom.tsx:223
 msgid "Foto"
 msgstr "Foto"
 
@@ -9948,7 +10024,7 @@ msgstr ""
 msgid "Harming or endangering minors"
 msgstr ""
 
-#: src/Navigation.tsx:685
+#: src/Navigation.tsx:687
 msgid "Hashtag"
 msgstr ""
 
@@ -10157,7 +10233,7 @@ msgctxt "action"
 msgid "Highlight"
 msgstr "Highlight"
 
-#: src/Navigation.tsx:874
+#: src/Navigation.tsx:876
 msgid "Highlight Details"
 msgstr "Highlight Details"
 
@@ -10185,7 +10261,7 @@ msgstr "Highlight tag"
 msgid "Highlight this post"
 msgstr "Highlight this post"
 
-#: src/Navigation.tsx:863
+#: src/Navigation.tsx:865
 #: src/screens/Highlights/HighlightsScreen.tsx:386
 #: src/screens/Post/PostHighlights.tsx:35
 #: src/screens/Settings/ProfileVisibility.tsx:316
@@ -10241,7 +10317,7 @@ msgstr ""
 msgid "Hold up! We’re gradually giving access to video, and you’re still waiting in line. Check back soon!"
 msgstr ""
 
-#: src/Navigation.tsx:1363
+#: src/Navigation.tsx:1375
 #: src/view/shell/bottom-bar/BottomBar.tsx:185
 #: src/view/shell/desktop/LeftNav.tsx:755
 #: src/view/shell/Drawer.tsx:611
@@ -10358,7 +10434,7 @@ msgstr "Identidad: {identityLabel}. {encryptionLabel}. {0} insignias."
 msgid "Identity"
 msgstr "Identity"
 
-#: src/Navigation.tsx:1000
+#: src/Navigation.tsx:1002
 #: src/view/shell/Drawer.tsx:957
 msgid "Identity & Wallet"
 msgstr "Identity & Wallet"
@@ -10536,7 +10612,7 @@ msgstr "imagen"
 msgid "Imagen"
 msgstr "Imagen"
 
-#: src/screens/Communities/NativeChatRoom.tsx:546
+#: src/screens/Communities/NativeChatRoom.tsx:550
 msgid "Imagen enviada a la sala cifrada"
 msgstr "Imagen enviada a la sala cifrada"
 
@@ -10636,7 +10712,7 @@ msgstr "In-app, push, everyone"
 msgid "In-app, push, people you follow"
 msgstr "In-app, push, people you follow"
 
-#: src/screens/Messages/ChatList.tsx:662
+#: src/screens/Messages/ChatList.tsx:664
 msgid "Inbox empty"
 msgstr "Inbox empty"
 
@@ -10706,7 +10782,7 @@ msgstr "Indigenous Rights"
 msgid "Individual freedoms should take priority over collective security measures."
 msgstr "Individual freedoms should take priority over collective security measures."
 
-#: src/Navigation.tsx:1005
+#: src/Navigation.tsx:1007
 msgid "INE Verification"
 msgstr "INE Verification"
 
@@ -10725,11 +10801,11 @@ msgstr "influence"
 msgid "Influence"
 msgstr "Influence"
 
-#: src/Navigation.tsx:606
+#: src/Navigation.tsx:608
 msgid "Influence notifications"
 msgstr "Influence notifications"
 
-#: src/Navigation.tsx:532
+#: src/Navigation.tsx:534
 msgid "Influence Score"
 msgstr "Influence Score"
 
@@ -10905,7 +10981,7 @@ msgstr ""
 msgid "Invite code not accepted. Check that you input it correctly and try again."
 msgstr ""
 
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:576
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:577
 msgid "Invite friends"
 msgstr "Invite friends"
 
@@ -11189,7 +11265,7 @@ msgstr ""
 msgid "Language"
 msgstr "Language"
 
-#: src/Navigation.tsx:301
+#: src/Navigation.tsx:303
 msgid "Language Settings"
 msgstr ""
 
@@ -11433,7 +11509,7 @@ msgid "left to go."
 msgstr ""
 
 #. placeholder {0}: message.readByCount
-#: src/screens/Communities/NativeChatRoom.tsx:589
+#: src/screens/Communities/NativeChatRoom.tsx:593
 msgid "Leído por {0}"
 msgstr "Leído por {0}"
 
@@ -11497,8 +11573,8 @@ msgstr ""
 msgid "Like this labeler"
 msgstr ""
 
-#: src/Navigation.tsx:386
-#: src/Navigation.tsx:391
+#: src/Navigation.tsx:388
+#: src/Navigation.tsx:393
 msgid "Liked by"
 msgstr ""
 
@@ -11610,7 +11686,7 @@ msgstr "Links"
 msgid "Links the two items"
 msgstr "Links the two items"
 
-#: src/Navigation.tsx:341
+#: src/Navigation.tsx:343
 msgid "List"
 msgstr ""
 
@@ -11717,7 +11793,7 @@ msgstr ""
 msgid "Listo"
 msgstr "Listo"
 
-#: src/Navigation.tsx:250
+#: src/Navigation.tsx:252
 #: src/view/screens/Lists.tsx:68
 #: src/view/screens/Profile.tsx:314
 #: src/view/screens/Profile.tsx:325
@@ -11817,7 +11893,7 @@ msgstr ""
 #: src/screens/Profile/ProfileFeed/index.tsx:239
 #: src/screens/Profile/Sections/Feed.tsx:118
 #: src/screens/ProfileList/FeedSection.tsx:113
-#: src/view/com/feeds/FeedPage.tsx:189
+#: src/view/com/feeds/FeedPage.tsx:191
 msgid "Load new posts"
 msgstr ""
 
@@ -11884,8 +11960,8 @@ msgstr "Loading…"
 msgid "Loads more memes"
 msgstr "Loads more memes"
 
-#: src/Navigation.tsx:925
-#: src/Navigation.tsx:930
+#: src/Navigation.tsx:927
+#: src/Navigation.tsx:932
 #: src/screens/Cabildeos/CabildeosScreen.tsx:656
 #: src/screens/Cabildeos/CabildeosScreen.tsx:689
 #: src/screens/Communities/CabildeoDetailScreen.tsx:542
@@ -11937,7 +12013,7 @@ msgstr "Lock this group chat"
 msgid "Locked"
 msgstr "Locked"
 
-#: src/Navigation.tsx:411
+#: src/Navigation.tsx:413
 msgid "Log"
 msgstr ""
 
@@ -11983,7 +12059,7 @@ msgstr ""
 msgid "Los conteos plano y ponderado usan registros distintos. No son resultados oficiales. El ajuste por correlación no dispone de un estado de cálculo verificable y no se muestra."
 msgstr "Los conteos plano y ponderado usan registros distintos. No son resultados oficiales. El ajuste por correlación no dispone de un estado de cálculo verificable y no se muestra."
 
-#: src/screens/Messages/CommunityChatsScreen.tsx:274
+#: src/screens/Messages/CommunityChatsScreen.tsx:275
 msgid "Los grupos de chat nacen con la comunidad y cada uno tiene un propósito fijo. Al crear una comunidad se abre su sala principal. Si la comunidad es bicameral, también se crean la Cámara A, la Cámara B y el Consejo observador."
 msgstr "Los grupos de chat nacen con la comunidad y cada uno tiene un propósito fijo. Al crear una comunidad se abre su sala principal. Si la comunidad es bicameral, también se crean la Cámara A, la Cámara B y el Consejo observador."
 
@@ -12057,7 +12133,7 @@ msgstr ""
 msgid "Manage your muted words and tags"
 msgstr ""
 
-#: src/screens/Communities/NativeChatRoom.tsx:489
+#: src/screens/Communities/NativeChatRoom.tsx:493
 msgid "Mantén pulsado para responder o reaccionar"
 msgstr "Mantén pulsado para responder o reaccionar"
 
@@ -12066,7 +12142,7 @@ msgstr "Mantén pulsado para responder o reaccionar"
 msgid "Manual"
 msgstr "Manual"
 
-#: src/Navigation.tsx:884
+#: src/Navigation.tsx:886
 msgid "Map"
 msgstr "Map"
 
@@ -12102,8 +12178,8 @@ msgstr "Mark all actions as read"
 msgid "Mark all as read"
 msgstr ""
 
-#: src/screens/Messages/ChatList.tsx:903
-#: src/screens/Messages/ChatList.tsx:907
+#: src/screens/Messages/ChatList.tsx:926
+#: src/screens/Messages/ChatList.tsx:930
 #: src/view/com/home/HomeHeaderChatButton.tsx:145
 #: src/view/com/home/HomeHeaderChatButton.tsx:149
 msgid "Mark all chats as read"
@@ -12113,8 +12189,8 @@ msgstr "Mark all chats as read"
 msgid "Mark all reports as read"
 msgstr "Mark all reports as read"
 
-#: src/screens/Messages/ChatList.tsx:911
-#: src/screens/Messages/ChatList.tsx:915
+#: src/screens/Messages/ChatList.tsx:934
+#: src/screens/Messages/ChatList.tsx:938
 #: src/view/com/home/HomeHeaderChatButton.tsx:153
 #: src/view/com/home/HomeHeaderChatButton.tsx:157
 msgid "Mark all requests as read"
@@ -12146,12 +12222,12 @@ msgstr "Mark this question as disagree"
 msgid "Marked all as read"
 msgstr ""
 
-#: src/screens/Messages/ChatList.tsx:881
+#: src/screens/Messages/ChatList.tsx:904
 #: src/view/com/home/HomeHeaderChatButton.tsx:124
 msgid "Marked all chats as read"
 msgstr "Marked all chats as read"
 
-#: src/screens/Messages/ChatList.tsx:890
+#: src/screens/Messages/ChatList.tsx:913
 #: src/view/com/home/HomeHeaderChatButton.tsx:133
 msgid "Marked all requests as read"
 msgstr "Marked all requests as read"
@@ -12160,7 +12236,7 @@ msgstr "Marked all requests as read"
 msgid "Matter details"
 msgstr "Matter details"
 
-#: src/Navigation.tsx:1408
+#: src/Navigation.tsx:1430
 msgid "Matter Details"
 msgstr "Matter Details"
 
@@ -12224,7 +12300,7 @@ msgid "Member removed from group chat."
 msgstr "Member removed from group chat."
 
 #. The heading above the list of chat members.
-#: src/Navigation.tsx:1393
+#: src/Navigation.tsx:1415
 #: src/screens/Communities/CommunityVotersScreen.tsx:163
 #: src/screens/Messages/ConversationSettings/MembersAndRequests.tsx:34
 msgid "Members"
@@ -12234,21 +12310,21 @@ msgstr "Members"
 msgid "Members can still read chat history but can’t send new messages."
 msgstr "Members can still read chat history but can’t send new messages."
 
-#: src/Navigation.tsx:788
+#: src/Navigation.tsx:790
 #: src/screens/Dashboard/MemesScreen/MemeSearchAutocomplete/MemeSearchAutocomplete.tsx:128
 msgid "Memes"
 msgstr "Memes"
 
 #: src/screens/Communities/ModeratorDashboardScreen.tsx:325
-#: src/screens/Communities/NativeChatRoom.tsx:375
+#: src/screens/Communities/NativeChatRoom.tsx:379
 msgid "Mensaje"
 msgstr "Mensaje"
 
-#: src/screens/Communities/NativeChatRoom.tsx:487
+#: src/screens/Communities/NativeChatRoom.tsx:491
 msgid "Mensaje cifrado"
 msgstr "Mensaje cifrado"
 
-#: src/screens/Communities/NativeChatRoom.tsx:526
+#: src/screens/Communities/NativeChatRoom.tsx:530
 msgid "Mensaje eliminado"
 msgstr "Mensaje eliminado"
 
@@ -12256,11 +12332,19 @@ msgstr "Mensaje eliminado"
 msgid "Mensaje reportado"
 msgstr "Mensaje reportado"
 
-#: src/screens/Messages/ChatList.tsx:468
+#: src/Navigation.tsx:1405
+#: src/screens/Messages/ChatList.tsx:808
+#: src/screens/Messages/ChatList.tsx:862
+#: src/screens/Messages/MatrixDmRequestsScreen.tsx:146
+#: src/screens/Messages/MatrixDmRequestsScreen.web.tsx:26
+msgid "Mensajes cifrados"
+msgstr "Mensajes cifrados"
+
+#: src/screens/Messages/ChatList.tsx:470
 msgid "Mensajes directos"
 msgstr "Mensajes directos"
 
-#: src/Navigation.tsx:590
+#: src/Navigation.tsx:592
 msgid "Mention notifications"
 msgstr "Mention notifications"
 
@@ -12282,7 +12366,7 @@ msgid "Mentions of these people"
 msgstr "Mentions of these people"
 
 #: src/components/Menu/index.tsx:119
-#: src/screens/Communities/CommunityProfileScreen/index.tsx:601
+#: src/screens/Communities/CommunityProfileScreen/index.tsx:600
 msgid "Menu"
 msgstr ""
 
@@ -12354,7 +12438,7 @@ msgstr "Message is too long ({graphemeCount}/{MAX_DM_GRAPHEME_LENGTH})"
 msgid "Message options"
 msgstr ""
 
-#: src/Navigation.tsx:701
+#: src/Navigation.tsx:703
 msgid "Messages"
 msgstr ""
 
@@ -12384,6 +12468,10 @@ msgstr ""
 msgid "Miembro"
 msgstr "Miembro"
 
+#: src/screens/Messages/CommunityChatsScreen.tsx:160
+msgid "miembros"
+msgstr "miembros"
+
 #: src/screens/Communities/CommunityChatScreen.tsx:311
 #: src/screens/Communities/CommunityChatScreen.tsx:393
 #: src/screens/Communities/CommunityChatScreen.web.tsx:477
@@ -12391,7 +12479,7 @@ msgstr "Miembro"
 msgid "Miembros"
 msgstr "Miembros"
 
-#: src/screens/Communities/CommunityChatPanels.tsx:229
+#: src/screens/Communities/CommunityChatPanels.tsx:230
 msgid "MIEMBROS — {total}"
 msgstr "MIEMBROS — {total}"
 
@@ -12420,7 +12508,7 @@ msgstr ""
 msgid "Mis Votos Bloqueados"
 msgstr "Mis Votos Bloqueados"
 
-#: src/Navigation.tsx:630
+#: src/Navigation.tsx:632
 msgid "Miscellaneous notifications"
 msgstr "Miscellaneous notifications"
 
@@ -12436,14 +12524,14 @@ msgstr ""
 msgid "Moderación verá el mensaje en la sala, desde su propia cuenta. No enviamos una copia del texto."
 msgstr "Moderación verá el mensaje en la sala, desde su propia cuenta. No enviamos una copia del texto."
 
-#: src/screens/Communities/CommunityChatPanels.tsx:245
+#: src/screens/Communities/CommunityChatPanels.tsx:246
 #: src/screens/Communities/CommunityChatScreen.tsx:138
 #: src/screens/Communities/CommunityChatScreen.web.tsx:242
 msgid "Moderador"
 msgstr "Moderador"
 
-#: src/Navigation.tsx:255
-#: src/Navigation.tsx:1398
+#: src/Navigation.tsx:257
+#: src/Navigation.tsx:1420
 #: src/screens/Moderation/index.tsx:102
 msgid "Moderation"
 msgstr ""
@@ -12457,7 +12545,7 @@ msgstr "Moderation and content filters"
 msgid "Moderation details"
 msgstr ""
 
-#: src/Navigation.tsx:260
+#: src/Navigation.tsx:262
 #: src/screens/Moderation/index.tsx:292
 #: src/screens/ModerationInbox/index.tsx:39
 msgid "Moderation inbox"
@@ -12493,7 +12581,7 @@ msgstr ""
 msgid "Moderation lists"
 msgstr ""
 
-#: src/Navigation.tsx:265
+#: src/Navigation.tsx:267
 #: src/view/screens/ModerationModlists.tsx:68
 msgid "Moderation Lists"
 msgstr ""
@@ -12502,7 +12590,7 @@ msgstr ""
 msgid "moderation settings"
 msgstr ""
 
-#: src/Navigation.tsx:401
+#: src/Navigation.tsx:403
 msgid "Moderation states"
 msgstr ""
 
@@ -12700,7 +12788,7 @@ msgstr "Muted"
 msgid "Muted accounts"
 msgstr ""
 
-#: src/Navigation.tsx:270
+#: src/Navigation.tsx:272
 #: src/view/screens/ModerationMutedAccounts.tsx:116
 msgid "Muted Accounts"
 msgstr ""
@@ -12726,12 +12814,12 @@ msgstr ""
 msgid "Mutual group chats"
 msgstr "Mutual group chats"
 
-#: src/Navigation.tsx:1348
+#: src/Navigation.tsx:1360
 #: src/screens/Data/MyAffiliationsScreen.tsx:303
 msgid "My Affiliations"
 msgstr "My Affiliations"
 
-#: src/Navigation.tsx:1332
+#: src/Navigation.tsx:1344
 #: src/view/shell/Drawer.tsx:917
 msgid "My Base"
 msgstr "My Base"
@@ -12741,7 +12829,7 @@ msgstr "My Base"
 msgid "My Birthday"
 msgstr "My Birthday"
 
-#: src/Navigation.tsx:1338
+#: src/Navigation.tsx:1350
 #: src/screens/Communities/MyCommunitiesScreen.tsx:173
 msgid "My Communities"
 msgstr "My Communities"
@@ -12754,7 +12842,7 @@ msgstr "My favorite feeds and people - join me!"
 msgid "My Feeds"
 msgstr ""
 
-#: src/Navigation.tsx:1343
+#: src/Navigation.tsx:1355
 #: src/screens/RAQ/MyRAQScreen.tsx:44
 #: src/screens/RAQ/RAQMenu.tsx:101
 msgid "My RAQ"
@@ -12768,7 +12856,7 @@ msgstr "My starter pack"
 msgid "My Voice"
 msgstr "My Voice"
 
-#: src/Navigation.tsx:980
+#: src/Navigation.tsx:982
 msgid "My Wallet"
 msgstr "My Wallet"
 
@@ -12911,11 +12999,11 @@ msgstr ""
 
 #: src/components/dms/dialogs/NewChatDialog.tsx:162
 #: src/components/dms/dialogs/NewChatDialog.tsx:177
-#: src/screens/Messages/ChatList.tsx:283
-#: src/screens/Messages/ChatList.tsx:284
-#: src/screens/Messages/ChatList.tsx:683
-#: src/screens/Messages/ChatList.tsx:684
-#: src/screens/Messages/ChatList.tsx:819
+#: src/screens/Messages/ChatList.tsx:285
+#: src/screens/Messages/ChatList.tsx:286
+#: src/screens/Messages/ChatList.tsx:685
+#: src/screens/Messages/ChatList.tsx:686
+#: src/screens/Messages/ChatList.tsx:831
 msgid "New chat"
 msgstr ""
 
@@ -12966,7 +13054,7 @@ msgstr ""
 msgid "New Feature"
 msgstr ""
 
-#: src/Navigation.tsx:614
+#: src/Navigation.tsx:616
 msgid "New follower notifications"
 msgstr "New follower notifications"
 
@@ -13042,7 +13130,7 @@ msgid "New post"
 msgstr ""
 
 #: src/screens/Data/DataScreen.tsx:631
-#: src/view/com/feeds/FeedPage.tsx:200
+#: src/view/com/feeds/FeedPage.tsx:202
 #: src/view/shell/desktop/LeftNav.tsx:614
 msgctxt "action"
 msgid "New post"
@@ -13302,11 +13390,15 @@ msgstr "No GIFs found for \"{query}\"."
 msgid "No GIFs to show right now. Try again in a moment."
 msgstr "No GIFs to show right now. Try again in a moment."
 
+#: src/components/dms/MatrixDmRequestList.tsx:180
+msgid "No has enviado solicitudes."
+msgstr "No has enviado solicitudes."
+
 #: src/screens/Data/components/NodeDetailSheet.tsx:440
 msgid "No hay nodos disponibles para conectar."
 msgstr "No hay nodos disponibles para conectar."
 
-#: src/screens/Communities/CommunityChatPanels.tsx:145
+#: src/screens/Communities/CommunityChatPanels.tsx:146
 msgid "No hay otras salas disponibles."
 msgstr "No hay otras salas disponibles."
 
@@ -13364,7 +13456,7 @@ msgstr "No live policy matches that."
 msgid "No longer following {0}"
 msgstr ""
 
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:491
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:492
 msgid "No longer following {formattedDisplayName}"
 msgstr "No longer following {formattedDisplayName}"
 
@@ -13618,6 +13710,10 @@ msgstr "No sales, raffles or fundraisers yet."
 msgid "NO SE PUBLICA"
 msgstr "NO SE PUBLICA"
 
+#: src/components/dms/MatrixDmRequestList.tsx:102
+msgid "No se pudieron cargar las solicitudes."
+msgstr "No se pudieron cargar las solicitudes."
+
 #: src/screens/Communities/ModeratorDashboardScreen.tsx:300
 msgid "No se pudieron cargar los reportes."
 msgstr "No se pudieron cargar los reportes."
@@ -13630,7 +13726,7 @@ msgstr "No se pudieron recuperar las claves. Revisa la clave, la cuenta y tu con
 msgid "No se pudo abrir el archivo"
 msgstr "No se pudo abrir el archivo"
 
-#: src/screens/Communities/NativeChatRoom.tsx:560
+#: src/screens/Communities/NativeChatRoom.tsx:564
 msgid "No se pudo abrir el archivo."
 msgstr "No se pudo abrir el archivo."
 
@@ -13666,13 +13762,18 @@ msgstr "No se pudo completar la operación o consultar el estado. Reintenta con 
 msgid "No se pudo conectar al chat"
 msgstr "No se pudo conectar al chat"
 
-#: src/screens/Messages/CommunityChatsScreen.tsx:94
+#: src/screens/Messages/CommunityChatsScreen.tsx:95
 msgid "No se pudo conectar con el chat de comunidades. Las salas se abrirán cuando el servicio esté disponible."
 msgstr "No se pudo conectar con el chat de comunidades. Las salas se abrirán cuando el servicio esté disponible."
 
 #: src/components/chat/ChatRecoveryPanel.tsx:104
 msgid "No se pudo confirmar la sincronización del respaldo. Reintenta con conexión."
 msgstr "No se pudo confirmar la sincronización del respaldo. Reintenta con conexión."
+
+#: src/components/dms/MatrixDmRequestList.tsx:72
+#: src/components/dms/MatrixDmRequestList.tsx:87
+msgid "No se pudo crear la conversación"
+msgstr "No se pudo crear la conversación"
 
 #: src/screens/Communities/useMatrixClientStrings.ts:26
 msgid "No se pudo descargar - reintentar"
@@ -13681,6 +13782,10 @@ msgstr "No se pudo descargar - reintentar"
 #: src/components/chat/ReportMessageDialog.tsx:183
 msgid "No se pudo enviar el reporte. Inténtalo de nuevo."
 msgstr "No se pudo enviar el reporte. Inténtalo de nuevo."
+
+#: src/components/dms/RequestMatrixDmButton.tsx:42
+msgid "No se pudo enviar la solicitud"
+msgstr "No se pudo enviar la solicitud"
 
 #: src/screens/Communities/CabildeoDetailScreen.tsx:763
 msgid "No se pudo firmar la postura oficial."
@@ -13731,6 +13836,10 @@ msgstr "No tienes acceso a este mensaje. Es posible que se enviara antes de que 
 #: src/screens/Communities/CabildeoDetailScreen.tsx:710
 msgid "No tienes el tier requerido para participar."
 msgstr "No tienes el tier requerido para participar."
+
+#: src/components/dms/MatrixDmRequestList.tsx:149
+msgid "No tienes solicitudes de mensaje."
+msgstr "No tienes solicitudes de mensaje."
 
 #: src/features/communityCivicTree/components/CommunityTopicRail.tsx:57
 msgid "No topics yet. A topic names what the cards below are about, and is how the tree gets a shape everyone can add to."
@@ -13854,7 +13963,7 @@ msgstr "Not enough claims to generate a summary yet."
 msgid "Not followed by anyone you’re following"
 msgstr "Not followed by anyone you’re following"
 
-#: src/Navigation.tsx:245
+#: src/Navigation.tsx:247
 #: src/view/screens/Profile.tsx:141
 msgid "Not Found"
 msgstr ""
@@ -13909,8 +14018,8 @@ msgid "Nothing selected to connect."
 msgstr "Nothing selected to connect."
 
 #: src/components/dialogs/NotificationSettingsDialog.tsx:72
-#: src/Navigation.tsx:576
-#: src/Navigation.tsx:747
+#: src/Navigation.tsx:578
+#: src/Navigation.tsx:749
 #: src/view/screens/Notifications.tsx:147
 msgid "Notification settings"
 msgstr ""
@@ -13920,8 +14029,8 @@ msgstr ""
 msgid "Notification sounds"
 msgstr ""
 
-#: src/Navigation.tsx:742
-#: src/Navigation.tsx:1317
+#: src/Navigation.tsx:744
+#: src/Navigation.tsx:1329
 #: src/screens/Messages/Settings.tsx:255
 #: src/screens/Notifications/ActivityList.tsx:31
 #: src/screens/Settings/NotificationSettings/ActivityNotificationSettings.tsx:93
@@ -13954,6 +14063,10 @@ msgstr "Notifications off"
 #: src/view/screens/Feeds.tsx:984
 msgid "Notifications on"
 msgstr "Notifications on"
+
+#: src/screens/Messages/CommunityChatsScreen.tsx:72
+msgid "Novenos"
+msgstr "Novenos"
 
 #: src/lib/hooks/useTimeAgo.ts:135
 msgid "now"
@@ -14407,7 +14520,7 @@ msgctxt "description"
 msgid "Open Question"
 msgstr "Open Question"
 
-#: src/Navigation.tsx:823
+#: src/Navigation.tsx:825
 #: src/screens/Data/components/SummaryModal.tsx:201
 #: src/screens/RAQ/MyRAQScreen.tsx:189
 #: src/screens/RAQ/MyRAQScreen.tsx:195
@@ -14590,7 +14703,7 @@ msgstr "Opens interface to cast your own vote instead of delegate's"
 msgid "Opens link {0}"
 msgstr ""
 
-#: src/view/com/util/UserAvatar.tsx:602
+#: src/view/com/util/UserAvatar.tsx:603
 msgid "Opens live status dialog"
 msgstr ""
 
@@ -14710,7 +14823,7 @@ msgstr "Opens this meme in full screen"
 msgid "Opens this node's details"
 msgstr "Opens this node's details"
 
-#: src/view/com/util/UserAvatar.tsx:620
+#: src/view/com/util/UserAvatar.tsx:621
 msgid "Opens this profile"
 msgstr ""
 
@@ -14877,6 +14990,10 @@ msgstr ""
 msgid "Other violent content"
 msgstr ""
 
+#: src/screens/Messages/CommunityChatsScreen.tsx:74
+msgid "Otras comunidades"
+msgstr "Otras comunidades"
+
 #: src/components/chat/ReportMessageDialog.tsx:35
 msgid "Otro motivo"
 msgstr "Otro motivo"
@@ -14961,6 +15078,10 @@ msgstr "Pajareo response input"
 #: src/screens/Communities/CommunityChatScreen.web.tsx:491
 msgid "Panel de moderación"
 msgstr "Panel de moderación"
+
+#: src/screens/Messages/MatrixDmRequestsScreen.tsx:165
+msgid "Para aceptar solicitudes, esta versión de la app necesita el chat cifrado nativo."
+msgstr "Para aceptar solicitudes, esta versión de la app necesita el chat cifrado nativo."
 
 #: src/screens/PostThread/components/ThreadItemAnchor.tsx:729
 msgid "PARA cannot confirm the authenticity of the claimed date."
@@ -15053,7 +15174,11 @@ msgstr "Participants"
 msgid "Participation"
 msgstr "Participation"
 
-#: src/Navigation.tsx:1307
+#: src/screens/Messages/CommunityChatsScreen.tsx:71
+msgid "Partidos"
+msgstr "Partidos"
+
+#: src/Navigation.tsx:1319
 msgid "Parties"
 msgstr "Parties"
 
@@ -15069,7 +15194,7 @@ msgstr "Party"
 msgid "Party activity"
 msgstr "Party activity"
 
-#: src/Navigation.tsx:757
+#: src/Navigation.tsx:759
 #: src/screens/Feeds/PartyFeed.tsx:39
 msgid "Party feed"
 msgstr "Party feed"
@@ -15156,6 +15281,14 @@ msgstr ""
 msgid "Peaceful march"
 msgstr "Peaceful march"
 
+#: src/components/dms/RequestMatrixDmButton.tsx:57
+msgid "Pedir mensaje cifrado a @{handle}"
+msgstr "Pedir mensaje cifrado a @{handle}"
+
+#: src/components/dms/RequestMatrixDmButton.tsx:64
+msgid "Pedir un mensaje cifrado"
+msgstr "Pedir un mensaje cifrado"
+
 #: src/features/communityActivities/components/detail/EconomicCards.tsx:366
 msgid "Pending"
 msgstr "Pending"
@@ -15179,12 +15312,12 @@ msgid "People {ownerName} follows can request to join"
 msgstr "People {ownerName} follows can request to join"
 
 #. placeholder {0}: route.params.name
-#: src/Navigation.tsx:321
+#: src/Navigation.tsx:323
 msgid "People followed by @{0}"
 msgstr ""
 
 #. placeholder {0}: route.params.name
-#: src/Navigation.tsx:314
+#: src/Navigation.tsx:316
 msgid "People following @{0}"
 msgstr ""
 
@@ -15261,7 +15394,7 @@ msgstr "Permit status"
 msgid "Person toggle"
 msgstr ""
 
-#: src/Navigation.tsx:915
+#: src/Navigation.tsx:917
 #: src/view/shell/Drawer.tsx:937
 msgid "Personal Civic Tree"
 msgstr "Personal Civic Tree"
@@ -15590,7 +15723,7 @@ msgstr ""
 msgid "Policies"
 msgstr "Policies"
 
-#: src/Navigation.tsx:1368
+#: src/Navigation.tsx:1380
 msgid "Policies & Matters"
 msgstr "Policies & Matters"
 
@@ -15613,7 +15746,7 @@ msgstr "Policy areas"
 msgid "Policy details"
 msgstr "Policy details"
 
-#: src/Navigation.tsx:1403
+#: src/Navigation.tsx:1425
 msgid "Policy Details"
 msgstr "Policy Details"
 
@@ -15638,7 +15771,7 @@ msgstr "Policy Results"
 msgid "Policy votes for {profileName}. Tap a card to review or change your stance."
 msgstr "Policy votes for {profileName}. Tap a card to review or change your stance."
 
-#: src/Navigation.tsx:505
+#: src/Navigation.tsx:507
 #: src/screens/Settings/AccountSettings.tsx:420
 #: src/screens/Settings/AccountSettings.tsx:423
 #: src/screens/Settings/PoliticalAffiliation.tsx:143
@@ -15649,7 +15782,7 @@ msgstr "Political Affiliation"
 msgid "Political affiliations cleared"
 msgstr "Political affiliations cleared"
 
-#: src/Navigation.tsx:900
+#: src/Navigation.tsx:902
 #: src/screens/Data/CompassScreen.tsx:665
 #: src/screens/Data/components/CivicDashboard.tsx:214
 #: src/view/shell/Drawer.tsx:723
@@ -15669,13 +15802,25 @@ msgstr ""
 msgid "Ponderado √n"
 msgstr "Ponderado √n"
 
-#: src/screens/Communities/CommunitiesScreen.tsx:480
+#: src/screens/Communities/CommunitiesScreen.tsx:481
 msgid "Popular Policies"
 msgstr "Popular Policies"
+
+#: src/screens/Messages/MatrixDmConversationScreen.web.tsx:25
+msgid "Por ahora, las conversaciones cifradas se abren desde la app de iOS o Android."
+msgstr "Por ahora, las conversaciones cifradas se abren desde la app de iOS o Android."
+
+#: src/screens/Messages/MatrixDmRequestsScreen.web.tsx:36
+msgid "Por ahora, las solicitudes se aceptan desde la app de iOS o Android."
+msgstr "Por ahora, las solicitudes se aceptan desde la app de iOS o Android."
 
 #: src/view/com/composer/Composer.tsx:1018
 msgid "Por favor, selecciona una insignia específica en lugar de usar etiquetas genéricas (#Policy / #Matter)."
 msgstr "Por favor, selecciona una insignia específica en lugar de usar etiquetas genéricas (#Policy / #Matter)."
+
+#: src/components/dms/MatrixDmRequestList.tsx:129
+msgid "Por terminar"
+msgstr "Por terminar"
 
 #: src/view/com/composer/labels/LabelsBtn.tsx:148
 msgid "Porn"
@@ -15753,10 +15898,10 @@ msgid "Post by {account}"
 msgstr "Post by {account}"
 
 #. placeholder {0}: route.params.name
-#: src/Navigation.tsx:354
-#: src/Navigation.tsx:361
-#: src/Navigation.tsx:368
-#: src/Navigation.tsx:375
+#: src/Navigation.tsx:356
+#: src/Navigation.tsx:363
+#: src/Navigation.tsx:370
+#: src/Navigation.tsx:377
 msgid "Post by @{0}"
 msgstr ""
 
@@ -15790,7 +15935,7 @@ msgstr ""
 msgid "Post interaction settings"
 msgstr ""
 
-#: src/Navigation.tsx:281
+#: src/Navigation.tsx:283
 #: src/screens/ModerationInteractionSettings/index.tsx:36
 msgid "Post Interaction Settings"
 msgstr ""
@@ -15852,8 +15997,8 @@ msgstr ""
 #: src/components/activity-notifications/SubscribeProfileDialog.tsx:254
 #: src/components/activity-notifications/SubscribeProfileDialog.tsx:266
 #: src/features/personalCivicTree/map.ts:22
-#: src/Navigation.tsx:545
-#: src/screens/Communities/CommunityProfileScreen/index.tsx:599
+#: src/Navigation.tsx:547
+#: src/screens/Communities/CommunityProfileScreen/index.tsx:598
 #: src/screens/Data/components/MyBaseDashboard.tsx:181
 #: src/screens/Data/SeePostsScreen.tsx:38
 #: src/screens/ProfileList/index.tsx:166
@@ -15956,8 +16101,8 @@ msgstr ""
 msgid "Privacy and security"
 msgstr ""
 
-#: src/Navigation.tsx:553
-#: src/Navigation.tsx:561
+#: src/Navigation.tsx:555
+#: src/Navigation.tsx:563
 #: src/screens/Settings/ActivityPrivacySettings.tsx:41
 #: src/screens/Settings/PrivacyAndSecuritySettings.tsx:55
 msgid "Privacy and Security"
@@ -15970,7 +16115,7 @@ msgstr ""
 
 #: src/components/PolicyUpdateOverlay/updates/202508/index.tsx:36
 #: src/components/PolicyUpdateOverlay/updates/202508/index.tsx:103
-#: src/Navigation.tsx:421
+#: src/Navigation.tsx:423
 #: src/screens/Settings/AboutSettings.tsx:95
 #: src/screens/Settings/AboutSettings.tsx:98
 #: src/view/screens/PrivacyPolicy.tsx:35
@@ -16050,7 +16195,7 @@ msgctxt "toast"
 msgid "Profile updated"
 msgstr ""
 
-#: src/Navigation.tsx:497
+#: src/Navigation.tsx:499
 #: src/screens/Settings/AccountSettings.tsx:396
 #: src/screens/Settings/AccountSettings.tsx:414
 #: src/screens/Settings/ProfileVisibility.tsx:197
@@ -16074,7 +16219,7 @@ msgstr "Programando..."
 msgid "Promoting or selling prohibited items or services"
 msgstr ""
 
-#: src/Navigation.tsx:975
+#: src/Navigation.tsx:977
 #: src/screens/Agora/ProposalDetailScreen.tsx:261
 msgid "Proposal"
 msgstr "Proposal"
@@ -16126,7 +16271,7 @@ msgstr "Proposed for: {0}"
 msgid "Proposed questions"
 msgstr "Proposed questions"
 
-#: src/Navigation.tsx:818
+#: src/Navigation.tsx:820
 #: src/screens/RAQ/ProposedRAQList.tsx:25
 msgid "Proposed RAQs"
 msgstr "Proposed RAQs"
@@ -16167,7 +16312,7 @@ msgstr "Public Debt"
 msgid "Public figure"
 msgstr "Public figure"
 
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:331
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:332
 #: src/screens/Settings/AccountSettings.tsx:335
 #: src/screens/Settings/ProfileVisibility.tsx:207
 msgid "Public Figure"
@@ -16397,9 +16542,17 @@ msgstr "Quién lo ve"
 msgid "Quién te cedió su voto. Tu papeleta nunca nombra a tus cedentes."
 msgstr "Quién te cedió su voto. Tu papeleta nunca nombra a tus cedentes."
 
-#: src/screens/Communities/NativeChatRoom.tsx:349
+#: src/screens/Communities/NativeChatRoom.tsx:353
 msgid "Quita el mensaje citado de la respuesta"
 msgstr "Quita el mensaje citado de la respuesta"
+
+#: src/components/dms/MatrixDmRequestList.tsx:204
+msgid "Quitar"
+msgstr "Quitar"
+
+#: src/components/dms/MatrixDmRequestList.tsx:195
+msgid "Quitar de la lista"
+msgstr "Quitar de la lista"
 
 #: src/screens/Cabildeos/CabildeosScreen.tsx:417
 msgid "Quorum"
@@ -16414,7 +16567,7 @@ msgstr "Quorum required"
 msgid "Quorum required (optional)"
 msgstr "Quorum required (optional)"
 
-#: src/Navigation.tsx:598
+#: src/Navigation.tsx:600
 msgid "Quote notifications"
 msgstr "Quote notifications"
 
@@ -16479,12 +16632,12 @@ msgstr "RAQ"
 msgid "RAQ Answers"
 msgstr "RAQ Answers"
 
-#: src/Navigation.tsx:813
+#: src/Navigation.tsx:815
 #: src/screens/RAQ/RAQAssessment.tsx:197
 msgid "RAQ Assessment"
 msgstr "RAQ Assessment"
 
-#: src/Navigation.tsx:808
+#: src/Navigation.tsx:810
 #: src/screens/RAQ/RAQMenu.tsx:74
 msgid "RAQ Menu"
 msgstr "RAQ Menu"
@@ -16518,7 +16671,7 @@ msgstr "Re-enable invite link"
 msgid "Re-enable link"
 msgstr "Re-enable link"
 
-#: src/screens/Communities/NativeChatRoom.tsx:609
+#: src/screens/Communities/NativeChatRoom.tsx:613
 msgid "Reaccionar con {key}"
 msgstr "Reaccionar con {key}"
 
@@ -16646,9 +16799,15 @@ msgstr "Recent searches"
 msgid "Recently used"
 msgstr ""
 
+#: src/components/dms/MatrixDmRequestList.tsx:164
+#: src/components/dms/MatrixDmRequestList.tsx:170
 #: src/screens/Data/components/ContributionReviewDetail.tsx:176
 msgid "Rechazar"
 msgstr "Rechazar"
+
+#: src/components/dms/MatrixDmRequestList.tsx:147
+msgid "Recibidas"
+msgstr "Recibidas"
 
 #: src/features/communityActivities/components/forms/FinancialPlanFields.tsx:88
 msgid "Recipient"
@@ -16710,7 +16869,7 @@ msgstr "Region-scoped proposals where place, residency, and local evidence matte
 msgid "Register activity"
 msgstr "Register activity"
 
-#: src/Navigation.tsx:950
+#: src/Navigation.tsx:952
 msgid "Register Activity"
 msgstr "Register Activity"
 
@@ -16729,10 +16888,13 @@ msgid "Registrar una delegación no equivale a emitir una papeleta. El voto con 
 msgstr "Registrar una delegación no equivale a emitir una papeleta. El voto con intensidad y el conteo cuadrático privado siguen en desarrollo. Aquí no se calcula ni se promete un peso electoral."
 
 #: src/components/chat/ReportedMessageCard.tsx:124
+#: src/components/dms/MatrixDmRequestList.tsx:105
+#: src/components/dms/MatrixDmRequestList.tsx:110
+#: src/components/dms/MatrixDmRequestList.tsx:139
 #: src/screens/Agora/components/QuadraticTallyPanel.tsx:154
 #: src/screens/Communities/CommunityChatScreen.tsx:241
-#: src/screens/Communities/NativeChatRoom.tsx:520
-#: src/screens/Communities/NativeChatRoom.tsx:710
+#: src/screens/Communities/NativeChatRoom.tsx:524
+#: src/screens/Communities/NativeChatRoom.tsx:714
 #: src/screens/Communities/useMatrixClientStrings.ts:13
 msgid "Reintentar"
 msgstr "Reintentar"
@@ -16741,7 +16903,11 @@ msgstr "Reintentar"
 msgid "Reintentar conteo"
 msgstr "Reintentar conteo"
 
-#: src/screens/Communities/NativeChatRoom.tsx:704
+#: src/components/dms/MatrixDmRequestList.tsx:133
+msgid "Reintentar crear la conversación"
+msgstr "Reintentar crear la conversación"
+
+#: src/screens/Communities/NativeChatRoom.tsx:708
 msgid "Reintentar la conexión"
 msgstr "Reintentar la conexión"
 
@@ -16784,7 +16950,7 @@ msgstr "Relationship type"
 msgid "Relationships"
 msgstr "Relationships"
 
-#: src/screens/Messages/ChatList.tsx:646
+#: src/screens/Messages/ChatList.tsx:648
 #: src/screens/Messages/Inbox.tsx:198
 msgid "Reload conversations"
 msgstr ""
@@ -16869,13 +17035,13 @@ msgstr "Remove all highlights"
 msgid "Remove attachment"
 msgstr ""
 
-#: src/view/com/util/UserAvatar.tsx:519
-#: src/view/com/util/UserAvatar.tsx:522
+#: src/view/com/util/UserAvatar.tsx:520
+#: src/view/com/util/UserAvatar.tsx:523
 msgid "Remove Avatar"
 msgstr ""
 
-#: src/view/com/util/UserBanner.tsx:190
-#: src/view/com/util/UserBanner.tsx:193
+#: src/view/com/util/UserBanner.tsx:191
+#: src/view/com/util/UserBanner.tsx:194
 msgid "Remove Banner"
 msgstr ""
 
@@ -17181,7 +17347,7 @@ msgstr ""
 msgid "Reply Hidden by You"
 msgstr ""
 
-#: src/Navigation.tsx:582
+#: src/Navigation.tsx:584
 msgid "Reply notifications"
 msgstr "Reply notifications"
 
@@ -17306,12 +17472,12 @@ msgstr ""
 msgid "Report this user"
 msgstr ""
 
-#: src/screens/Communities/NativeChatRoom.tsx:627
+#: src/screens/Communities/NativeChatRoom.tsx:631
 #: src/screens/Profile/Sections/Pajareo.tsx:625
 msgid "Reportar"
 msgstr "Reportar"
 
-#: src/screens/Communities/NativeChatRoom.tsx:618
+#: src/screens/Communities/NativeChatRoom.tsx:622
 msgid "Reportar este mensaje a moderación"
 msgstr "Reportar este mensaje a moderación"
 
@@ -17329,7 +17495,7 @@ msgstr "Reporte enviado a moderación"
 msgid "Reportes recientes"
 msgstr "Reportes recientes"
 
-#: src/Navigation.tsx:1373
+#: src/Navigation.tsx:1385
 #: src/screens/Dashboard/Representatives.tsx:87
 msgid "Representatives"
 msgstr "Representatives"
@@ -17366,7 +17532,7 @@ msgstr "Requested"
 msgid "Requests"
 msgstr "Requests"
 
-#: src/Navigation.tsx:726
+#: src/Navigation.tsx:728
 #: src/screens/Messages/JoinRequests.tsx:55
 #: src/screens/Messages/JoinRequests.tsx:417
 msgid "Requests to join"
@@ -17476,13 +17642,13 @@ msgctxt "moderation-report-filter"
 msgid "Resolved"
 msgstr "Resolved"
 
-#: src/screens/Communities/NativeChatRoom.tsx:603
+#: src/screens/Communities/NativeChatRoom.tsx:607
 #: src/screens/Profile/Sections/Pajareo.tsx:607
 #: src/screens/Profile/Sections/Pajareo.tsx:641
 msgid "Responder"
 msgstr "Responder"
 
-#: src/screens/Communities/NativeChatRoom.tsx:595
+#: src/screens/Communities/NativeChatRoom.tsx:599
 msgid "Responder a este mensaje"
 msgstr "Responder a este mensaje"
 
@@ -17504,7 +17670,7 @@ msgstr "Responder públicamente..."
 
 #. placeholder {0}: replyTo.sender
 #. placeholder {1}: replyTo.body
-#: src/screens/Communities/NativeChatRoom.tsx:354
+#: src/screens/Communities/NativeChatRoom.tsx:358
 msgid "Respondiendo a {0}: {1}"
 msgstr "Respondiendo a {0}: {1}"
 
@@ -17535,7 +17701,7 @@ msgstr "Restricted"
 msgid "resultados"
 msgstr "resultados"
 
-#: src/Navigation.tsx:843
+#: src/Navigation.tsx:845
 msgid "Results"
 msgstr "Results"
 
@@ -17587,7 +17753,7 @@ msgstr ""
 #: src/screens/Data/SeeInfluenceScreen.tsx:61
 #: src/screens/Login/LoginForm.tsx:712
 #: src/screens/Login/LoginForm.tsx:719
-#: src/screens/Messages/ChatList.tsx:651
+#: src/screens/Messages/ChatList.tsx:653
 #: src/screens/Messages/components/MessageListError.tsx:24
 #: src/screens/Messages/Inbox.tsx:203
 #: src/screens/Messages/JoinRequests.tsx:352
@@ -17885,7 +18051,7 @@ msgid "Saved Feeds"
 msgstr ""
 
 #: src/components/dialogs/nuxs/BookmarksAnnouncement.tsx:145
-#: src/Navigation.tsx:772
+#: src/Navigation.tsx:774
 #: src/screens/Bookmarks/index.tsx:59
 msgid "Saved Posts"
 msgstr ""
@@ -17926,8 +18092,8 @@ msgstr "Saving…"
 msgid "Say hello!"
 msgstr ""
 
-#: src/screens/Messages/ChatList.tsx:274
-#: src/screens/Messages/ChatList.tsx:674
+#: src/screens/Messages/ChatList.tsx:276
+#: src/screens/Messages/ChatList.tsx:676
 msgid "Say hi to someone"
 msgstr "Say hi to someone"
 
@@ -17979,6 +18145,10 @@ msgstr "Scroll to the message this is replying to"
 msgid "Scroll to top"
 msgstr ""
 
+#: src/screens/Messages/CommunityChatsScreen.tsx:236
+msgid "Se activa al abrir la sala principal."
+msgstr "Se activa al abrir la sala principal."
+
 #: src/components/civic/PublicRecordNotice.tsx:213
 msgid "SE PUBLICA EN TU REPOSITORIO"
 msgstr "SE PUBLICA EN TU REPOSITORIO"
@@ -17997,7 +18167,7 @@ msgstr ""
 
 #. placeholder {0}: profile.handle
 #. placeholder {0}: route.params.name
-#: src/Navigation.tsx:347
+#: src/Navigation.tsx:349
 #: src/screens/Profile/ProfileSearch.tsx:37
 msgid "Search @{0}'s posts"
 msgstr ""
@@ -18301,8 +18471,8 @@ msgid "Select \"{interestsDisplayName}\" category"
 msgstr ""
 
 #. Accessibility label for a username suggestion in the account creation flow
-#. placeholder {0}: suggestion.handle
-#: src/screens/Signup/StepHandle/HandleSuggestions.tsx:43
+#. placeholder {0}: item.handle
+#: src/screens/Signup/StepHandle/HandleSuggestions.tsx:54
 msgid "Select {0}"
 msgstr ""
 
@@ -18335,7 +18505,7 @@ msgstr "Select a community tree"
 msgid "Select a reason"
 msgstr ""
 
-#: src/screens/Communities/CommunitiesScreen.tsx:628
+#: src/screens/Communities/CommunitiesScreen.tsx:629
 msgid "Select a state"
 msgstr "Select a state"
 
@@ -18775,7 +18945,7 @@ msgstr ""
 msgid "Sets the relationship type"
 msgstr "Sets the relationship type"
 
-#: src/Navigation.tsx:296
+#: src/Navigation.tsx:298
 #: src/screens/Settings/Settings.tsx:102
 #: src/view/shell/desktop/LeftNav.tsx:850
 #: src/view/shell/Drawer.tsx:802
@@ -18960,7 +19130,7 @@ msgstr "Share your thoughts…"
 msgid "Shared"
 msgstr "Shared"
 
-#: src/Navigation.tsx:406
+#: src/Navigation.tsx:408
 msgid "Shared Preferences Tester"
 msgstr ""
 
@@ -19490,6 +19660,10 @@ msgstr "Social proofing on posts"
 msgid "Software Dev"
 msgstr ""
 
+#: src/components/dms/RequestMatrixDmButton.tsx:37
+msgid "Solicitud enviada a @{handle}"
+msgstr "Solicitud enviada a @{handle}"
+
 #: src/screens/Agora/components/DelegateReachCard.tsx:77
 msgid "Solo el suyo."
 msgstr "Solo el suyo."
@@ -19760,8 +19934,8 @@ msgstr "Start with people worth hearing from"
 msgid "Start your personal civic tree"
 msgstr "Start your personal civic tree"
 
-#: src/Navigation.tsx:1015
-#: src/Navigation.tsx:1020
+#: src/Navigation.tsx:1017
+#: src/Navigation.tsx:1022
 #: src/screens/StarterPack/Wizard/index.tsx:193
 msgid "Starter Pack"
 msgstr ""
@@ -19852,7 +20026,7 @@ msgstr ""
 msgid "Stored as part of a secure code for matching with others"
 msgstr ""
 
-#: src/Navigation.tsx:396
+#: src/Navigation.tsx:398
 #: src/screens/Settings/Settings.tsx:477
 msgid "Storybook"
 msgstr ""
@@ -20046,7 +20220,7 @@ msgid "Suplantación de identidad"
 msgstr "Suplantación de identidad"
 
 #: src/components/VotingButtonHorizontal.web.tsx:87
-#: src/Navigation.tsx:416
+#: src/Navigation.tsx:418
 #: src/screens/Agora/components/SignalBadge.tsx:24
 #: src/screens/Agora/components/SignalBadge.tsx:60
 #: src/screens/Agora/components/VoteComposer.tsx:59
@@ -20139,7 +20313,7 @@ msgstr "Tag or note (optional)…"
 msgid "Tags only"
 msgstr ""
 
-#: src/Navigation.tsx:960
+#: src/Navigation.tsx:962
 msgid "Take Position"
 msgstr "Take Position"
 
@@ -20331,7 +20505,7 @@ msgstr "Terms fingerprint {0}"
 #: src/components/dialogs/BirthDateSettings.tsx:188
 #: src/components/PolicyUpdateOverlay/updates/202508/index.tsx:31
 #: src/components/PolicyUpdateOverlay/updates/202508/index.tsx:98
-#: src/Navigation.tsx:426
+#: src/Navigation.tsx:428
 #: src/screens/Settings/AboutSettings.tsx:87
 #: src/screens/Settings/AboutSettings.tsx:90
 #: src/view/screens/TermsOfService.tsx:35
@@ -20401,8 +20575,8 @@ msgid "That's everything!"
 msgstr ""
 
 #: src/components/moderation/BlockDialog.tsx:150
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:239
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:649
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:240
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:654
 msgid "The account will be able to interact with you after unblocking."
 msgstr ""
 
@@ -20669,10 +20843,10 @@ msgstr ""
 #: src/screens/Messages/ConversationSettings/MemberMenu.tsx:121
 #: src/screens/PostThread/components/ThreadItemAnchorFollowButton.tsx:118
 #: src/screens/PostThread/components/ThreadItemAnchorFollowButton.tsx:132
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:118
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:477
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:498
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:514
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:119
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:478
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:499
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:515
 #: src/view/com/profile/ProfileMenu.tsx:132
 #: src/view/com/profile/ProfileMenu.tsx:145
 #: src/view/com/profile/ProfileMenu.tsx:162
@@ -21243,7 +21417,7 @@ msgstr "This will remove the item from this collection."
 msgid "This will remove your post from this quote post for all users, and replace it with a placeholder."
 msgstr ""
 
-#: src/Navigation.tsx:828
+#: src/Navigation.tsx:830
 msgid "Thread"
 msgstr "Thread"
 
@@ -21266,7 +21440,7 @@ msgstr ""
 msgid "Threaded"
 msgstr ""
 
-#: src/Navigation.tsx:459
+#: src/Navigation.tsx:461
 msgid "Threads Preferences"
 msgstr ""
 
@@ -21300,6 +21474,10 @@ msgstr "tickets sold"
 #: src/features/communityActivities/components/detail/EconomicCards.tsx:622
 msgid "Tickets sold"
 msgstr "Tickets sold"
+
+#: src/components/dms/RequestMatrixDmButton.tsx:41
+msgid "Tienes demasiadas solicitudes pendientes"
+msgstr "Tienes demasiadas solicitudes pendientes"
 
 #: src/features/communityActivities/components/forms/FormBits.tsx:220
 msgid "Time"
@@ -21368,6 +21546,10 @@ msgstr "To log out, <0>click here</0>. Or if you’d prefer, you can <1>delete y
 #: src/screens/Profile/Sections/Pajareo.tsx:662
 msgid "Todavía no hay Pajareo para este representante."
 msgstr "Todavía no hay Pajareo para este representante."
+
+#: src/components/dms/MatrixDmConversationList.tsx:28
+msgid "Todavía no tienes conversaciones cifradas."
+msgstr "Todavía no tienes conversaciones cifradas."
 
 #: src/screens/Agora/components/DelegateReachCard.tsx:73
 msgid "Todavía no vota, así que no lleva ningún voto prestado."
@@ -21439,7 +21621,7 @@ msgstr ""
 msgid "Top Topics"
 msgstr "Top Topics"
 
-#: src/Navigation.tsx:695
+#: src/Navigation.tsx:697
 msgid "Topic"
 msgstr ""
 
@@ -21553,7 +21735,7 @@ msgstr ""
 msgid "Trending GIFs"
 msgstr "Trending GIFs"
 
-#: src/screens/Communities/CommunitiesScreen.tsx:454
+#: src/screens/Communities/CommunitiesScreen.tsx:455
 msgid "Trending Matters"
 msgstr "Trending Matters"
 
@@ -21587,7 +21769,7 @@ msgstr ""
 msgid "Trust emerges from relationships, communities, and shared context, so we’re also enabling <0>trusted verifiers</0>: organizations that can directly issue verification."
 msgstr ""
 
-#: src/Navigation.tsx:990
+#: src/Navigation.tsx:992
 msgid "Trusted Issuers"
 msgstr "Trusted Issuers"
 
@@ -21811,15 +21993,15 @@ msgstr ""
 #: src/components/moderation/BlockDialog.tsx:184
 #: src/components/moderation/BlockDialog.tsx:188
 #: src/components/moderation/BlockDialog.tsx:210
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:245
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:589
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:654
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:246
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:590
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:659
 #: src/screens/ProfileList/components/Header.tsx:174
 #: src/screens/ProfileList/components/Header.tsx:181
 msgid "Unblock"
 msgstr ""
 
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:593
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:594
 msgctxt "action"
 msgid "Unblock"
 msgstr ""
@@ -21839,8 +22021,8 @@ msgstr ""
 msgid "Unblock account?"
 msgstr "Unblock account?"
 
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:237
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:647
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:238
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:652
 msgid "Unblock Account?"
 msgstr ""
 
@@ -21893,7 +22075,7 @@ msgid "Únete a una comunidad para aportar a su árbol cívico."
 msgstr "Únete a una comunidad para aportar a su árbol cívico."
 
 #. placeholder {0}: profile.handle
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:623
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:628
 msgid "Unfollow {0}"
 msgstr ""
 
@@ -21927,6 +22109,10 @@ msgstr "Unfortunately, the birthdate you have saved to your profile makes you to
 #: src/ageAssurance/components/NoAccessScreen.tsx:187
 msgid "Unfortunately, your declared age indicates that you are not old enough to access PARA in your region."
 msgstr "Unfortunately, your declared age indicates that you are not old enough to access PARA in your region."
+
+#: src/screens/Messages/CommunityChatsScreen.tsx:162
+msgid "Unicameral"
+msgstr "Unicameral"
 
 #: src/screens/Communities/CommunityActivityScreen.tsx:172
 msgid "units sold"
@@ -22203,22 +22389,22 @@ msgstr ""
 msgid "Upload a text file to:"
 msgstr ""
 
-#: src/view/com/util/UserAvatar.tsx:490
-#: src/view/com/util/UserAvatar.tsx:493
-#: src/view/com/util/UserBanner.tsx:161
-#: src/view/com/util/UserBanner.tsx:164
+#: src/view/com/util/UserAvatar.tsx:491
+#: src/view/com/util/UserAvatar.tsx:494
+#: src/view/com/util/UserBanner.tsx:162
+#: src/view/com/util/UserBanner.tsx:165
 msgid "Upload from Camera"
 msgstr ""
 
-#: src/view/com/util/UserAvatar.tsx:507
-#: src/view/com/util/UserBanner.tsx:178
+#: src/view/com/util/UserAvatar.tsx:508
+#: src/view/com/util/UserBanner.tsx:179
 msgid "Upload from Files"
 msgstr ""
 
-#: src/view/com/util/UserAvatar.tsx:501
-#: src/view/com/util/UserAvatar.tsx:505
-#: src/view/com/util/UserBanner.tsx:172
-#: src/view/com/util/UserBanner.tsx:176
+#: src/view/com/util/UserAvatar.tsx:502
+#: src/view/com/util/UserAvatar.tsx:506
+#: src/view/com/util/UserBanner.tsx:173
+#: src/view/com/util/UserBanner.tsx:177
 msgid "Upload from Library"
 msgstr ""
 
@@ -22228,12 +22414,12 @@ msgid "Uploading GIF..."
 msgstr ""
 
 #: src/lib/api/index.ts:462
-#: src/lib/api/index.ts:486
+#: src/lib/api/index.ts:489
 msgid "Uploading images..."
 msgstr ""
 
-#: src/lib/api/index.ts:556
-#: src/lib/api/index.ts:580
+#: src/lib/api/index.ts:562
+#: src/lib/api/index.ts:586
 msgid "Uploading link thumbnail..."
 msgstr ""
 
@@ -22404,6 +22590,11 @@ msgstr "Value (optional)"
 msgid "Value:"
 msgstr ""
 
+#. placeholder {0}: new Date(expiresAt).toLocaleDateString()
+#: src/components/dms/MatrixDmRequestList.tsx:277
+msgid "Vence el {0}"
+msgstr "Vence el {0}"
+
 #: src/screens/Communities/ModeratorDashboardScreen.tsx:354
 msgid "Ver el mensaje reportado"
 msgstr "Ver el mensaje reportado"
@@ -22420,11 +22611,11 @@ msgstr "Ver mensaje"
 msgid "Ver todas"
 msgstr "Ver todas"
 
-#: src/screens/Communities/CommunityChatPanels.tsx:321
+#: src/screens/Communities/CommunityChatPanels.tsx:324
 msgid "Ver todos"
 msgstr "Ver todos"
 
-#: src/screens/Communities/CommunityChatPanels.tsx:316
+#: src/screens/Communities/CommunityChatPanels.tsx:318
 msgid "Ver todos los miembros"
 msgstr "Ver todos los miembros"
 
@@ -22444,7 +22635,7 @@ msgstr ""
 msgid "Verification settings"
 msgstr ""
 
-#: src/Navigation.tsx:289
+#: src/Navigation.tsx:291
 #: src/screens/Moderation/VerificationSettings.tsx:33
 msgid "Verification Settings"
 msgstr ""
@@ -22457,7 +22648,7 @@ msgstr "Verifications on PARA work differently than on other platforms. <0>Learn
 msgid "Verified by:"
 msgstr ""
 
-#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:310
+#: src/screens/Profile/Header/ProfileHeaderStandard.tsx:311
 msgid "Verified Citizen"
 msgstr "Verified Citizen"
 
@@ -22488,7 +22679,7 @@ msgctxt "action"
 msgid "Verify code"
 msgstr ""
 
-#: src/Navigation.tsx:985
+#: src/Navigation.tsx:987
 msgid "Verify Dashboard"
 msgstr "Verify Dashboard"
 
@@ -22597,7 +22788,7 @@ msgstr ""
 msgid "Video failed to process"
 msgstr ""
 
-#: src/Navigation.tsx:764
+#: src/Navigation.tsx:766
 msgid "Video Feed"
 msgstr ""
 
@@ -22801,8 +22992,8 @@ msgstr "View posts"
 #: src/components/ProfileHoverCard/index.web.tsx:504
 #: src/components/ProfileHoverCard/index.web.tsx:531
 #: src/view/com/posts/PostFeedErrorMessage.tsx:187
-#: src/view/com/util/PostMeta.tsx:107
-#: src/view/com/util/PostMeta.tsx:145
+#: src/view/com/util/PostMeta.tsx:123
+#: src/view/com/util/PostMeta.tsx:161
 msgid "View profile"
 msgstr ""
 
@@ -22946,7 +23137,7 @@ msgstr "Volver"
 msgid "Volver a cargar el mensaje reportado"
 msgstr "Volver a cargar el mensaje reportado"
 
-#: src/screens/Communities/NativeChatRoom.tsx:515
+#: src/screens/Communities/NativeChatRoom.tsx:519
 msgid "Volver a intentar descifrar"
 msgstr "Volver a intentar descifrar"
 
@@ -23004,7 +23195,7 @@ msgstr "Votes"
 msgid "votes cast"
 msgstr "votes cast"
 
-#: src/Navigation.tsx:518
+#: src/Navigation.tsx:520
 msgid "Votes History"
 msgstr "Votes History"
 
@@ -23441,7 +23632,7 @@ msgid "Who took part (one per line)"
 msgstr "Who took part (one per line)"
 
 #: src/screens/Home/NoFeedsPinned.tsx:70
-#: src/screens/Messages/ChatList.tsx:631
+#: src/screens/Messages/ChatList.tsx:633
 #: src/screens/Messages/Inbox.tsx:183
 msgid "Whoops!"
 msgstr ""
@@ -24455,7 +24646,7 @@ msgstr "Your identity is already verified."
 msgid "Your Influence is the total upvotes received minus downvotes across your posts, replies, and proposed questions over time. Each upvote adds one and each downvote subtracts one."
 msgstr "Your Influence is the total upvotes received minus downvotes across your posts, replies, and proposed questions over time. Each upvote adds one and each downvote subtracts one."
 
-#: src/Navigation.tsx:646
+#: src/Navigation.tsx:648
 #: src/screens/Search/modules/ExploreInterestsCard.tsx:62
 #: src/screens/Settings/ContentAndMediaSettings.tsx:106
 #: src/screens/Settings/ContentAndMediaSettings.tsx:109
