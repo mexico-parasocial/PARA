@@ -3,7 +3,7 @@ import {View} from 'react-native'
 
 import {useCinzelFont} from '#/lib/hooks/useCinzelFont'
 import {useSession} from '#/state/session'
-import {useShellLayout} from '#/state/shell/shell-layout'
+import {useShellHeaderLayout} from '#/state/shell/shell-layout'
 import {HomeHeaderChatButton} from '#/view/com/home/HomeHeaderChatButton'
 import {HomeHeaderLayoutMobile} from '#/view/com/home/HomeHeaderLayoutMobile'
 import {Logomark} from '#/view/icons/Logomark'
@@ -32,7 +32,7 @@ function HomeHeaderLayoutDesktopAndTablet({
 }) {
   useCinzelFont()
   const t = useTheme()
-  const {headerHeight} = useShellLayout()
+  const {onLayout} = useShellHeaderLayout()
   const {hasSession} = useSession()
   const gutters = useGutters([0, 'base'])
 
@@ -135,9 +135,7 @@ function HomeHeaderLayoutDesktopAndTablet({
       {tabBarAnchor}
       <Layout.Center
         style={[a.sticky, a.z_10, a.align_center, t.atoms.bg, {top: 0}]}
-        onLayout={e => {
-          headerHeight.set(e.nativeEvent.layout.height)
-        }}>
+        onLayout={onLayout}>
         {children}
       </Layout.Center>
     </>

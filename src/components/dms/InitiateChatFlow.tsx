@@ -47,7 +47,7 @@ import {
 } from '#/components/icons/Arrow'
 import {ChevronRight_Stroke2_Corner0_Rounded as ChevronRightIcon} from '#/components/icons/Chevron'
 import {PersonGroup_Stroke2_Corner2_Rounded as PersonGroupIcon} from '#/components/icons/Person'
-import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/Times'
+import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/TimesLarge'
 import {ProfileBadges} from '#/components/ProfileBadges'
 import * as ProfileCard from '#/components/ProfileCard'
 import * as Prompt from '#/components/Prompt'

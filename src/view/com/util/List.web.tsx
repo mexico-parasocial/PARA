@@ -715,8 +715,11 @@ let Row = function RowImpl<ItemT>({
   }
 
   return (
-    <View ref={rowRef}>
-      {renderItem({
+    <View
+      ref={rowRef}
+      // @ts-expect-error web only, for the tooltip rule in style.css
+      dataSet={{listRow: ''}}>
+    {renderItem({
         item,
         index,
         separators: null as unknown as ListRenderItemInfo<ItemT>['separators'],

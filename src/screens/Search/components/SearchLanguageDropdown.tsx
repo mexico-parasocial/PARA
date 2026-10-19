@@ -10,7 +10,7 @@ import {
   ChevronBottom_Stroke2_Corner0_Rounded as ChevronDownIcon,
   ChevronTopBottom_Stroke2_Corner0_Rounded as ChevronUpDownIcon,
 } from '#/components/icons/Chevron'
-import {Earth_Stroke2_Corner0_Rounded as EarthIcon} from '#/components/icons/Globe'
+import {Earth_Stroke2_Corner0_Rounded as EarthIcon} from '#/components/icons/Earth'
 import * as Menu from '#/components/Menu'
 
 export function SearchLanguageDropdown({

@@ -4,6 +4,7 @@ import {
   refreshM8AccessToken,
 } from '#/lib/im8/api'
 import {m8CredentialRevision} from '#/lib/im8/credentials'
+import {requestDeadline} from './request'
 
 export const MATRIX_BRIDGE_API_URL =
   process.env.EXPO_PUBLIC_MATRIX_BRIDGE_URL || 'https://bridge.para.social'
@@ -20,6 +21,23 @@ export class BridgeAuthError extends Error {
 
 /** Thrown before any request when this device holds no M8 session. */
 export const M8_SESSION_REQUIRED = 'M8 session required'
+
+export class BridgeResponseError extends Error {
+  constructor(
+    public statusCode: number,
+    message: string,
+  ) {
+    super(message)
+    this.name = 'BridgeResponseError'
+  }
+}
+
+export class BridgeUnavailableError extends Error {
+  constructor() {
+    super('Chat service unavailable')
+    this.name = 'BridgeUnavailableError'
+  }
+}
 
 export function isBridgeAuthError(error: unknown): error is BridgeAuthError {
   return error instanceof BridgeAuthError
@@ -48,11 +66,23 @@ export async function matrixBridgeFetch(
     ...(options.headers as Record<string, string> | undefined),
   }
 
-  const request = () =>
-    fetch(`${MATRIX_BRIDGE_API_URL}${path}`, {
-      ...options,
-      headers,
-    })
+  const request = async () => {
+    const deadline = requestDeadline(options.signal ?? undefined)
+    try {
+      return await fetch(`${MATRIX_BRIDGE_API_URL}${path}`, {
+        ...options,
+        headers,
+        signal: deadline.signal,
+      })
+    } catch (error) {
+      if (options.signal?.aborted) throw error
+      if (version !== m8CredentialRevision())
+        throw new BridgeAuthError(401, M8_SESSION_REQUIRED)
+      throw new BridgeUnavailableError()
+    } finally {
+      deadline.dispose()
+    }
+  }
 
   const res = await request()
   if (version !== m8CredentialRevision())

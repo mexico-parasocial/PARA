@@ -11,7 +11,7 @@ import {s} from '#/lib/styles'
 import {atoms as a, useTheme} from '#/alf'
 import {Upvote_Stroke2_Corner0_Rounded as UpArrow} from '#/components/icons/ArrowTriangle'
 import {Bubble_Stroke2_Corner2_Rounded as Bubble} from '#/components/icons/Bubble'
-import {CloseQuote_Stroke2_Corner1_Rounded as Quote} from '#/components/icons/Quote'
+import {CloseQuote_Stroke2_Corner1_Rounded as Quote} from '#/components/icons/CloseQuote'
 
 export function LoadingPlaceholder({
   width,

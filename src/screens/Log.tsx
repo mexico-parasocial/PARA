@@ -17,7 +17,7 @@ import {
   ChevronBottom_Stroke2_Corner0_Rounded as ChevronBottomIcon,
   ChevronTop_Stroke2_Corner0_Rounded as ChevronTopIcon,
 } from '#/components/icons/Chevron'
-import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfoIcon} from '#/components/icons/CircleInfo'
+import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfoIcon} from '#/components/icons/Circle'
 import {Warning_Stroke2_Corner0_Rounded as WarningIcon} from '#/components/icons/Warning'
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'

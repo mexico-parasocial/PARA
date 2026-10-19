@@ -276,6 +276,7 @@ func serve(cctx *cli.Context) error {
 		e.GET("/robots.txt", echo.WrapHandler(staticHandler))
 	}
 
+	e.GET("/assets/chat/*", echo.WrapHandler(http.StripPrefix("/assets/", staticHandler)))
 	e.GET("/iframe/*", echo.WrapHandler(staticHandler))
 	e.GET("/static/*", echo.WrapHandler(http.StripPrefix("/static/", staticHandler)), func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
@@ -778,6 +779,7 @@ func (srv *Server) WebStarterPack(c echo.Context) error {
 		return c.Render(http.StatusOK, "starterpack.html", data)
 	}
 	data["title"] = rec.Name
+	data["starterPackURI"] = spv.StarterPack.Uri;
 	if srv.cfg.ogcardHost != "" {
 		data["imgThumbUrl"] = fmt.Sprintf("%s/start/%s/%s", srv.cfg.ogcardHost, identifier, rkey)
 	}

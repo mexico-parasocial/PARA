@@ -5,7 +5,7 @@ import {Trans, useLingui} from '@lingui/react/macro'
 import {atoms as a, useBreakpoints, useTheme} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import {ChevronRight_Stroke2_Corner0_Rounded as ChevronRightIcon} from '#/components/icons/Chevron'
-import {TimesLarge_Stroke2_Corner0_Rounded as CloseIcon} from '#/components/icons/Times'
+import {TimesLarge_Stroke2_Corner0_Rounded as CloseIcon} from '#/components/icons/TimesLarge'
 import {Text} from '#/components/Typography'
 import {type TreeCard, type TreeCardLink} from './CivicTreeCards'
 

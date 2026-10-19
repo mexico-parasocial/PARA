@@ -66,6 +66,7 @@ jobs:
           key: base-bundle-size-v2-main-${{ github.sha }}
 
   bundle-analyzer:
+    name: Web bundle size and browser support
     runs-on: ubuntu-24.04
     if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event_name == 'pull_request'}}
     permissions:
@@ -115,6 +116,9 @@ jobs:
           pnpm build-web
           node scripts/measure-web-bundle.js --json > ../pr-bundle-size.json
           cp scripts/measure-web-bundle.js "$RUNNER_TEMP/measure-web-bundle.js"
+
+      - name: 🔎 Check web browser support
+        run: pnpm check-web-browser-support
 
       - name: ⬇️ Get base bundle size from cache
         id: get-base-size
@@ -319,6 +323,7 @@ jobs:
         uses: $/.github/actions/setup-expo-project
         with:
           expo-token: ${{ secrets.EXPO_TOKEN }}
+          eas-version: '24.12.0'
 
       - name: 🔤 Compile translations
         uses: $/.github/actions/compile-i18n
@@ -337,12 +342,12 @@ jobs:
       - name: 🏗️ Create Bundle
         run: >
           SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_RELEASE=${{ steps.env.outputs.release-version }}
+          SENTRY_RELEASE=xyz.blueskyweb.app@${{ steps.env.outputs.release-version }}
           SENTRY_DIST=${{ steps.env.outputs.bundle-identifier }}
           pnpm export
 
       - name: ☁️ Configure AWS credentials (denis, PR-scoped)
-        uses: aws-actions/configure-aws-credentials@cbe3b392738ccf3f987d68400dafcf4b0624a56c # v6.2.4
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
         with:
           role-to-assume: arn:aws:iam::007404326489:role/denis-ci-publish-pr
           aws-region: us-east-2

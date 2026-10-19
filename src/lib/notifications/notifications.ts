@@ -1,5 +1,6 @@
 import {useCallback, useEffect} from 'react'
 import {Platform} from 'react-native'
+import Constants from 'expo-constants'
 import * as Notifications from 'expo-notifications'
 import {getBadgeCountAsync, setBadgeCountAsync} from 'expo-notifications'
 import {type Client} from '@atproto/lex'
@@ -11,6 +12,7 @@ import {
   PUBLIC_APPVIEW_DID,
   PUBLIC_STAGING_APPVIEW_DID,
 } from '#/lib/constants'
+import {m8CredentialRevision} from '#/lib/im8/credentials'
 import {matrixBridgeFetch} from '#/lib/matrix/bridge'
 import {logger as notyLogger} from '#/lib/notifications/util'
 import {isNetworkError} from '#/lib/strings/errors'
@@ -150,16 +152,21 @@ async function getPushToken() {
  */
 async function _registerMatrixPushToken({
   did,
-  token,
 }: {
   did: string
   token: Notifications.DevicePushToken
 }) {
+  const revision = m8CredentialRevision()
   try {
+    const projectId =
+      Constants.easConfig?.projectId ??
+      Constants.expoConfig?.extra?.eas?.projectId
+    const expo = await Notifications.getExpoPushTokenAsync({projectId})
+    if (revision !== m8CredentialRevision()) return
     const res = await matrixBridgeFetch('/api/push-token', {
       method: 'POST',
       body: JSON.stringify({
-        expoPushToken: token.data,
+        expoPushToken: expo.data,
         platform: Platform.OS,
       }),
     })

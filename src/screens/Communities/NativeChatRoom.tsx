@@ -67,8 +67,11 @@ export function NativeChatRoom({
     typingUserIds,
     session,
     recovery,
+    verification,
     error,
     send,
+    edit,
+    loadEarlier,
     sendImage,
     sendFile,
     openMedia,
@@ -77,6 +80,7 @@ export function NativeChatRoom({
     setTyping,
     markRead,
     retryDecryption,
+    logout,
     authorize,
     retry,
   } = useEncryptedChatRoom(roomId)
@@ -103,6 +107,11 @@ export function NativeChatRoom({
   const [sending, setSending] = useState(false)
   const [sendError, setSendError] = useState<string | undefined>()
   const [replyTo, setReplyTo] = useState<ChatMessage | undefined>()
+  const [editing, setEditing] = useState<ChatMessage>()
+  const [loadingEarlier, setLoadingEarlier] = useState(false)
+  const [historyComplete, setHistoryComplete] = useState(false)
+  const [historyFailed, setHistoryFailed] = useState(false)
+  const paging = useRef(false)
   const listRef = useRef<FlatList<ChatMessage>>(null)
   const latestRead = useRef<string | undefined>(undefined)
   const typingSent = useRef(false)
@@ -116,6 +125,10 @@ export function NativeChatRoom({
     latestRead.current = undefined
     typingSent.current = false
     setReplyTo(undefined)
+    setEditing(undefined)
+    setDraft('')
+    setHistoryComplete(false)
+    setHistoryFailed(false)
   }, [roomId])
 
   useEffect(() => {
@@ -168,17 +181,34 @@ export function NativeChatRoom({
     setSending(true)
     setSendError(undefined)
     try {
-      await send(body, replyTo?.eventId)
+      if (editing?.eventId) await edit(editing.eventId, body)
+      else await send(body, replyTo?.eventId)
       // Only clear on success. Losing what someone typed because the room
       // rejected it is worse than leaving it in the box to retry.
       setDraft('')
       setReplyTo(undefined)
+      setEditing(undefined)
     } catch (err) {
       setSendError(chatErrorCode(err))
     } finally {
       setSending(false)
     }
-  }, [draft, sending, send, replyTo])
+  }, [draft, sending, send, replyTo, editing, edit])
+
+  const onLoadEarlier = useCallback(async () => {
+    if (paging.current || historyComplete || status !== 'ready') return
+    paging.current = true
+    setLoadingEarlier(true)
+    setHistoryFailed(false)
+    try {
+      setHistoryComplete(await loadEarlier())
+    } catch {
+      setHistoryFailed(true)
+    } finally {
+      paging.current = false
+      setLoadingEarlier(false)
+    }
+  }, [historyComplete, status, loadEarlier])
 
   const attachImage = useCallback(async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -243,7 +273,15 @@ export function NativeChatRoom({
           new Date(item.timestamp).toDateString() !==
             new Date(inverted[index + 1].timestamp).toDateString()
         }
-        onReply={() => setReplyTo(item)}
+        onReply={() => {
+          setEditing(undefined)
+          setReplyTo(item)
+        }}
+        onEdit={() => {
+          setReplyTo(undefined)
+          setEditing(item)
+          setDraft(item.body)
+        }}
         onReaction={toggleReaction}
         onOpenMedia={openMedia}
         onRetryDecryption={retryDecryption}
@@ -276,6 +314,8 @@ export function NativeChatRoom({
       <ChatRecoveryPanel
         key={`${session.userId}:${session.deviceId}`}
         recovery={recovery}
+        verification={verification}
+        onLogout={logout}
         deviceId={session.deviceId}
         onClose={() => setSecurityOpen(false)}
       />
@@ -311,6 +351,25 @@ export function NativeChatRoom({
         renderItem={renderItem}
         contentContainerStyle={[a.px_md, a.py_sm, a.gap_xs]}
         keyboardDismissMode="interactive"
+        onEndReached={() => {
+          if (!historyFailed) void onLoadEarlier()
+        }}
+        onEndReachedThreshold={0.2}
+        ListFooterComponent={
+          loadingEarlier ? (
+            <ActivityIndicator />
+          ) : historyFailed ? (
+            <Button
+              label={_(msg`Reintentar cargar mensajes anteriores`)}
+              size="small"
+              color="secondary"
+              onPress={() => void onLoadEarlier()}>
+              <ButtonText>
+                <Trans>Reintentar historial</Trans>
+              </ButtonText>
+            </Button>
+          ) : undefined
+        }
         ListEmptyComponent={
           <Text
             style={[
@@ -359,6 +418,20 @@ export function NativeChatRoom({
               </Text>
             </Pressable>
           )}
+          {editing && (
+            <Button
+              label={_(msg`Cancelar edición`)}
+              size="tiny"
+              color="secondary"
+              onPress={() => {
+                setEditing(undefined)
+                setDraft('')
+              }}>
+              <ButtonText>
+                <Trans>Editando mensaje · Cancelar</Trans>
+              </ButtonText>
+            </Button>
+          )}
           <View style={[a.flex_row, a.align_end, a.gap_sm]}>
             <Button
               label={_(msg`Adjuntar imagen o archivo`)}
@@ -399,7 +472,11 @@ export function NativeChatRoom({
               disabled={!draft.trim() || sending}
               onPress={onSend}>
               <ButtonText>
-                {sending ? _(msg`Enviando…`) : _(msg`Enviar`)}
+                {sending
+                  ? _(msg`Enviando…`)
+                  : editing
+                    ? _(msg`Guardar cambio`)
+                    : _(msg`Enviar`)}
               </ButtonText>
             </Button>
           </View>
@@ -414,6 +491,7 @@ function MessageRow({
   isOwn,
   showDate,
   onReply,
+  onEdit,
   onReaction,
   onOpenMedia,
   onRetryDecryption,
@@ -423,6 +501,7 @@ function MessageRow({
   isOwn: boolean
   showDate: boolean
   onReply: () => void
+  onEdit: () => void
   onReaction: (eventId: string, key: string) => Promise<void>
   onOpenMedia: (eventId: string) => Promise<string>
   onRetryDecryption: () => void
@@ -595,6 +674,20 @@ function MessageRow({
         )}
         {showActions && message.eventId && (
           <View style={[a.flex_row, a.align_center, a.gap_xs, a.mt_xs]}>
+            {isOwn && message.kind === 'text' && !message.pending && (
+              <Button
+                label={_(msg`Editar este mensaje`)}
+                size="tiny"
+                color="secondary"
+                onPress={() => {
+                  onEdit()
+                  setShowActions(false)
+                }}>
+                <ButtonText>
+                  <Trans>Editar</Trans>
+                </ButtonText>
+              </Button>
+            )}
             <Button
               label={_(msg`Responder a este mensaje`)}
               size="tiny"

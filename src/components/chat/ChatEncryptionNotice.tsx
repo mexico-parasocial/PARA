@@ -3,7 +3,7 @@ import {StyleSheet, View} from 'react-native'
 import {atoms as a, useTheme} from '#/alf'
 import {Button} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
-import {Unlock_Stroke2_Corner2_Rounded as UnlockIcon} from '#/components/icons/Lock'
+import {Unlock_Stroke2_Corner2_Rounded as UnlockIcon} from '#/components/icons/Unlock'
 import {Text} from '#/components/Typography'
 
 /**

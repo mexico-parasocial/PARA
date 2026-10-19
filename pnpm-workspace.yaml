@@ -19,39 +19,36 @@ overrides:
   '@react-native/normalize-colors': '0.86.3'
   '@expo/image-utils': '0.8.12'
   '@types/estree': '1.0.6'
-  'react-native-reanimated': '4.6.0'
-  'react-native-worklets': '0.12.2'
+  'react-native-reanimated': '4.7.1'
+  'react-native-worklets': '0.13.0'
   'psl': '1.9.0'
   '@types/psl': '1.1.1'
-  'react-native-screens': '4.26.2'
+  'react-native-screens': '4.30.0'
 allowBuilds:
   '@sentry/cli': true
   '@swc/core': false
   '@unomed/react-native-matrix-sdk': true
   'core-js': false
   'core-js-pure': false
-  dtrace-provider: true
+  'dtrace-provider': false
   'esbuild': false
-  # false because true provably fails here: its run.js shells out to
-  # `npm run postinstall`, and package.json pins devEngines.packageManager to
-  # pnpm, so npm exits with EBADDEVENGINES. The package exists for npm users;
-  # pnpm runs the repo's own postinstall directly and does not need it.
+  'protobufjs': false
   postinstall-postinstall: false
   'unrs-resolver': true
 patchedDependencies:
   '@sentry/expo-upload-sourcemaps@8.18.0': patches/@sentry__expo-upload-sourcemaps@8.18.0.patch
   'expo-age-range@57.0.2': patches/expo-age-range@57.0.2.patch
-  'expo-haptics@57.0.3': patches/expo-haptics@57.0.3.patch
   'expo-media-library@57.0.5': patches/expo-media-library@57.0.5.patch
   'expo-modules-core@57.0.20': patches/expo-modules-core@57.0.20.patch
   'expo-notifications@57.0.21': patches/expo-notifications@57.0.21.patch
   'expo-updates@57.0.24': patches/expo-updates@57.0.24.patch
   expo@57.0.26: patches/expo@57.0.26.patch
+  'metro-runtime@0.84.5': patches/metro-runtime@0.84.5.patch
+  'metro@0.84.5': patches/metro@0.84.5.patch
   'react-native-dotenv@3.4.11': patches/react-native-dotenv@3.4.11.patch
-  'react-native-drawer-layout@4.2.3': patches/react-native-drawer-layout@4.2.3.patch
-  'react-native-keyboard-controller@1.21.9': patches/react-native-keyboard-controller@1.21.9.patch
   'react-native-pager-view@6.8.0': patches/react-native-pager-view@6.8.0.patch
-  'react-native-screens@4.26.2': patches/react-native-screens@4.26.2.patch
+  react-native-reanimated@4.7.1: patches/react-native-reanimated@4.7.1.patch
+  react-native-screens@4.30.0: patches/react-native-screens@4.30.0.patch
   'react-native-svg@15.15.4': patches/react-native-svg@15.15.4.patch
   'react-native@0.86.3': patches/react-native@0.86.3.patch
 minimumReleaseAgeExclude:
@@ -62,18 +59,9 @@ minimumReleaseAgeExclude:
   - '@atproto-labs/*'
   - '@bsky.app/*'
   - '@bsky/*'
-  - react-native-worklets@0.12.2
-  - '@expo/cli@57.0.27'
-  - '@expo/router-server@57.0.11'
-  - babel-preset-expo@57.0.13
-  - expo@57.0.26
-  - expo-build-properties@57.0.22
-  - expo-image-manipulator@57.0.20
-  - expo-image-picker@57.0.20
-  - expo-location@57.0.20
-  - expo-notifications@57.0.21
+  - react-native-nano-icons@1.0.1
+  - react-native-reanimated@4.7.1
   - expo-updates@57.0.24
-  - expo-sharing@57.0.22 # TODO
-  - '@expo/ui@57.0.20'
+  - react-native-keyboard-controller@1.22.7
 trustPolicyExclude:
   - 'fast-xml-parser@4.5.7'

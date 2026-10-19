@@ -21,6 +21,7 @@ import {Trans} from '@lingui/react/macro'
 import {useNavigation, useRoute} from '@react-navigation/native'
 
 import {getDefaultChatIdentityMode} from '#/lib/chat/identity'
+import {chatFailureMessage} from '#/lib/matrix/failure'
 import {shareMatrixMedia} from '#/lib/matrix/media.native'
 import {useChatBootstrap} from '#/lib/matrix/useChatBootstrap'
 import {useReportedMessage} from '#/lib/matrix/useReportedMessage'
@@ -42,7 +43,7 @@ import {
 } from '#/components/chat/ReportMessageDialog'
 import * as Dialog from '#/components/Dialog'
 import {type Props as SVGIconProps} from '#/components/icons/common'
-import {Group3_Stroke2_Corner0_Rounded as MembersIcon} from '#/components/icons/Group'
+import {Group3_Stroke2_Corner0_Rounded as MembersIcon} from '#/components/icons/Group3'
 import {Megaphone_Stroke2_Corner0_Rounded as ProposalIcon} from '#/components/icons/Megaphone'
 import {Newspaper_Stroke2_Corner2_Rounded as EvidenceIcon} from '#/components/icons/Newspaper'
 import {Shield_Stroke2_Corner0_Rounded as ShieldIcon} from '#/components/icons/Shield'
@@ -71,7 +72,7 @@ export function CommunityChatScreen() {
   }>()
   const navigation = useNavigation<NavigationProp>()
   const t = useTheme()
-  const {_} = useLingui()
+  const {_, i18n} = useLingui()
   const matrixStrings = useMatrixClientStrings()
   const agent = useAgent()
   const {
@@ -92,8 +93,11 @@ export function CommunityChatScreen() {
     [reportControl],
   )
 
-  const {data: spaceData, isLoading: spaceLoading} =
-    useCommunitySpaceQuery(communityUri)
+  const {
+    data: spaceData,
+    isLoading: spaceLoading,
+    error: spaceError,
+  } = useCommunitySpaceQuery(communityUri)
   const {
     data: tokenData,
     isLoading: tokenLoading,
@@ -229,9 +233,11 @@ export function CommunityChatScreen() {
             <Trans>Chat no disponible</Trans>
           </Layout.Header.TitleText>
           <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_sm]}>
-            {chatBootstrap.error ??
-              tokenError?.message ??
-              _(msg`No se pudo abrir el chat.`)}
+            {i18n._(
+              chatFailureMessage(
+                chatBootstrap.error ?? spaceError ?? tokenError,
+              ),
+            )}
           </Text>
           {chatBootstrap.error && (
             <TouchableOpacity
@@ -245,7 +251,7 @@ export function CommunityChatScreen() {
         </Layout.Content>
       </View>
     ),
-    [t, chatBootstrap, tokenError?.message, _],
+    [t, chatBootstrap, tokenError, spaceError, i18n],
   )
 
   if (isLoading) {
@@ -263,7 +269,13 @@ export function CommunityChatScreen() {
     )
   }
 
-  if (!spaceData || (CHAT_ENGINE !== 'native' && !tokenData) || !activeRoomId) {
+  if (
+    chatBootstrap.error ||
+    spaceError ||
+    !spaceData ||
+    (CHAT_ENGINE !== 'native' && !tokenData) ||
+    !activeRoomId
+  ) {
     return (
       <Layout.Screen>
         <Layout.Header.Outer noBottomBorder>

@@ -1,6 +1,5 @@
 import {useState} from 'react'
 import {View} from 'react-native'
-import {type DidString} from '@atproto/syntax'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -16,7 +15,8 @@ import {Loader} from '#/components/Loader'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {logger} from '#/ageAssurance'
-import {com, tools} from '#/lexicons'
+import {useAnalytics} from '#/analytics'
+import {tools} from '#/lexicons'
 
 export function AgeAssuranceAppealDialog({
   control,
@@ -39,6 +39,7 @@ export function AgeAssuranceAppealDialog({
 
 function Inner({control}: {control: Dialog.DialogControlProps}) {
   const {_} = useLingui()
+  const ax = useAnalytics()
   const {currentAccount} = useSession()
   const {gtPhone} = useBreakpoints()
   const client = useAppviewClient()
@@ -48,20 +49,18 @@ function Inner({control}: {control: Dialog.DialogControlProps}) {
 
   const {mutate, isPending} = useMutation({
     mutationFn: async () => {
-      logger.metric('ageAssurance:appealDialogSubmit', {})
+      ax.metric('ageAssurance:appealDialogSubmit', {})
 
       if (!currentAccount) {
         throw new Error('No current account, should be unreachable')
       }
 
       await client.call(
-        com.atproto.moderation.createReport,
+        tools.ozone.inbox.appealActionedSubject,
         {
-          reasonType: tools.ozone.report.defs.reasonAppeal.value,
           subject: {
             $type: 'com.atproto.admin.defs#repoRef',
-            // the persisted account did is already resolved
-            did: currentAccount.did as DidString,
+            did: currentAccount.did,
           },
           reason: `AGE_ASSURANCE_INQUIRY: ` + details,
         },

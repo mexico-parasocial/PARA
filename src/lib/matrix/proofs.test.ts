@@ -1,3 +1,4 @@
+import {setM8ActiveAccount} from '#/lib/im8/credentials'
 import {matrixBridgeFetch} from '#/lib/matrix/bridge'
 import {
   BRIDGE_AUDIENCES,
@@ -10,6 +11,7 @@ import {
 } from '#/lib/matrix/proofs'
 
 jest.mock('#/lib/matrix/bridge', () => ({
+  ...jest.requireActual('#/lib/matrix/bridge'),
   matrixBridgeFetch: jest.fn(),
 }))
 
@@ -124,5 +126,38 @@ describe('bridgeCallWithProof (CD-M6)', () => {
     await expect(
       bridgeCallWithProof(BRIDGE_AUDIENCES.session, '/api/matrix-token'),
     ).rejects.toThrow('Invalid identity proof')
+  })
+
+  it('does not post a proof approved while the account changed', async () => {
+    await setM8ActiveAccount('did:plc:proof-alice')
+    fetchMock.mockResolvedValueOnce(
+      okJson({challenge: 'f'.repeat(64), purpose: MATRIX_PROOF_PURPOSE}),
+    )
+    setMatrixAssertionSigner(async ({audience, challenge}) => {
+      await setM8ActiveAccount('did:plc:proof-bob')
+      return {
+        assertion: {
+          type: 'para.identity.pop.v1',
+          purpose: MATRIX_PROOF_PURPOSE,
+          audience,
+          identityPub: 'ab'.repeat(32),
+          challenge,
+          signedAt: '2026-10-08T00:00:00Z',
+        },
+        signature: '00'.repeat(64),
+      }
+    })
+    try {
+      await expect(
+        bridgeCallWithProof(BRIDGE_AUDIENCES.identity, '/api/matrix-identity'),
+      ).rejects.toMatchObject({
+        statusCode: 401,
+        message: 'Chat account changed',
+      })
+      expect(fetchMock).toHaveBeenCalledTimes(1)
+    } finally {
+      await setM8ActiveAccount(undefined)
+      clearMatrixAssertionSigner()
+    }
   })
 })

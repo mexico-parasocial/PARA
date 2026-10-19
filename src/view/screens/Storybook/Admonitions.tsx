@@ -14,8 +14,8 @@ import {
   Text as AdmonitionText,
 } from '#/components/Admonition'
 import {ButtonIcon, ButtonText} from '#/components/Button'
-import {ArrowRotateCounterClockwise_Stroke2_Corner0_Rounded as Retry} from '#/components/icons/ArrowRotateCounterClockwise'
-import {BellRinging_Filled_Corner0_Rounded as BellRingingFilledIcon} from '#/components/icons/BellRinging'
+import {ArrowRotateCounterClockwise_Stroke2_Corner0_Rounded as Retry} from '#/components/icons/Arrow'
+import {BellRinging_Filled_Corner0_Rounded as BellRingingFilledIcon} from '#/components/icons/Bell'
 import {InlineLinkText} from '#/components/Link'
 import {H1} from '#/components/Typography'
 

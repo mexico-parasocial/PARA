@@ -5,7 +5,7 @@ import {useQueryClient} from '@tanstack/react-query'
 
 import {makeProfileLink} from '#/lib/routes/links'
 import {type NavigationProp} from '#/lib/routes/types'
-import {shareText, shareUrl} from '#/lib/sharing'
+import {shareUrl, simpleShareText} from '#/lib/sharing'
 import {toShareUrl} from '#/lib/strings/url-helpers'
 import {type Shadow} from '#/state/cache/types'
 import {
@@ -20,14 +20,14 @@ import {Button, ButtonIcon} from '#/components/Button'
 import {useDialogControl} from '#/components/Dialog'
 import {UserAddRemoveListsDialog} from '#/components/dialogs/lists/UserAddRemoveListsDialog'
 import {StarterPackDialog} from '#/components/dialogs/StarterPackDialog'
-import {ArrowOutOfBoxModified_Stroke2_Corner2_Rounded as ArrowOutOfBoxIcon} from '#/components/icons/ArrowOutOfBox'
+import {ArrowOutOfBoxModified_Stroke2_Corner2_Rounded as ArrowOutOfBoxIcon} from '#/components/icons/Arrow'
 import {ChainLink_Stroke2_Corner0_Rounded as ChainLinkIcon} from '#/components/icons/ChainLink'
-import {CircleCheck_Stroke2_Corner0_Rounded as CircleCheckIcon} from '#/components/icons/CircleCheck'
-import {CircleX_Stroke2_Corner0_Rounded as CircleXIcon} from '#/components/icons/CircleX'
+import {CircleCheck_Stroke2_Corner0_Rounded as CircleCheckIcon} from '#/components/icons/Circle'
+import {CircleX_Stroke2_Corner0_Rounded as CircleXIcon} from '#/components/icons/Circle'
 import {Clipboard_Stroke2_Corner2_Rounded as ClipboardIcon} from '#/components/icons/Clipboard'
 import {DotGrid3x1_Stroke2_Corner0_Rounded as EllipsisIcon} from '#/components/icons/DotGrid'
 import {Flag_Stroke2_Corner0_Rounded as Flag} from '#/components/icons/Flag'
-import {ListSparkle_Stroke2_Corner0_Rounded as List} from '#/components/icons/ListSparkle'
+import {ListSparkle_Stroke2_Corner0_Rounded as List} from '#/components/icons/List'
 import {Live_Stroke2_Corner0_Rounded as LiveIcon} from '#/components/icons/Live'
 import {MagnifyingGlass_Stroke2_Corner0_Rounded as SearchIcon} from '#/components/icons/MagnifyingGlass'
 import {Mute_Stroke2_Corner0_Rounded as Mute} from '#/components/icons/Mute'
@@ -37,8 +37,8 @@ import {
   PersonX_Stroke2_Corner0_Rounded as PersonX,
 } from '#/components/icons/Person'
 import {PlusLarge_Stroke2_Corner0_Rounded as Plus} from '#/components/icons/Plus'
-import {SpeakerVolumeFull_Stroke2_Corner0_Rounded as Unmute} from '#/components/icons/Speaker'
-import {StarterPack_Stroke2_Corner0_Rounded as StarterPack} from '#/components/icons/StarterPack'
+import {SpeakerVolumeFull_Stroke2_Corner0_Rounded as Unmute} from '#/components/icons/SpeakerVolumeFull'
+import {StarterPack_Stroke2_Corner0_Rounded as StarterPack} from '#/components/icons/brands/StarterPack'
 import * as Menu from '#/components/Menu'
 import {BlockDialog} from '#/components/moderation/BlockDialog'
 import {
@@ -215,11 +215,11 @@ let ProfileMenu = ({
   }, [reportDialogControl])
 
   const onPressShareATUri = useCallback(() => {
-    void shareText(`at://${profile.did}`)
+    void simpleShareText(`at://${profile.did}`)
   }, [profile.did])
 
   const onPressShareDID = useCallback(() => {
-    void shareText(profile.did)
+    void simpleShareText(profile.did)
   }, [profile.did])
 
   const onPressSearch = useCallback(() => {

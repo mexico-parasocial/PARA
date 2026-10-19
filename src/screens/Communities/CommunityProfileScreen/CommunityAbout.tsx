@@ -16,7 +16,7 @@ import {useCommunityRelationsQuery} from '#/state/queries/community-shared-conte
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import {CivicInsignia} from '#/components/CivicInsignia'
-import {PageText_Stroke2_Corner0_Rounded as PageTextIcon} from '#/components/icons/PageText'
+import {PageText_Stroke2_Corner0_Rounded as PageTextIcon} from '#/components/icons/Page'
 import {Tree_Stroke2_Corner0_Rounded as TreeIcon} from '#/components/icons/Tree'
 import {CIVIC_TREE_COPY, CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
 import {CommunityUriChip} from './CommunityUriChip'

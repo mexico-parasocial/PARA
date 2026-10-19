@@ -12,7 +12,7 @@ import {
   type ButtonSize,
   ButtonText,
 } from '#/components/Button'
-import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfo} from '#/components/icons/CircleInfo'
+import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfo} from '#/components/icons/Circle'
 import {
   LabelsOnMeDialog,
   useLabelsOnMeDialogControl,

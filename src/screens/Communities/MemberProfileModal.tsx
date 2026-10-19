@@ -1,17 +1,15 @@
 import {useState} from 'react'
 import {StyleSheet, TouchableOpacity, View} from 'react-native'
 
-import {
-  useApplySanctionMutation,
-  useChatBadgesQuery,
-  useReportUserMutation,
-} from '#/state/queries/matrix'
+import {useChatBadgesQuery, useReportUserMutation} from '#/state/queries/matrix'
+import {useProfileQuery} from '#/state/queries/profile'
 import {useSession} from '#/state/session'
 import {UserAvatar} from '#/view/com/util/UserAvatar'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
 import {Text} from '#/components/Typography'
+import {SANCTION_PRESETS, useModeratorActions} from './useModeratorActions'
 
 interface MemberProfileModalProps {
   control: Dialog.DialogControlProps
@@ -26,13 +24,6 @@ const REPORT_REASONS = [
   {key: 'other', label: 'Otro'},
 ]
 
-const SANCTION_PRESETS = [
-  {label: '15 min', minutes: 15},
-  {label: '1 h', minutes: 60},
-  {label: '24 h', minutes: 1440},
-  {label: '7 d', minutes: 10080},
-]
-
 export function MemberProfileModal({
   control,
   did,
@@ -42,15 +33,32 @@ export function MemberProfileModal({
   const {currentAccount} = useSession()
   const myDid = currentAccount?.did
 
+  // The member being viewed, and the viewer: the bridge only answers for
+  // another member's badges when the viewer is a moderator.
   const {data} = useChatBadgesQuery(did, communityUri)
+  const {data: viewerBadges} = useChatBadgesQuery(myDid, communityUri)
+  const {data: profile} = useProfileQuery({did})
   const reportMutation = useReportUserMutation()
-  const sanctionMutation = useApplySanctionMutation()
+  const {askMute, askLift, prompts, isPending} =
+    useModeratorActions(communityUri)
 
   const [reportMode, setReportMode] = useState(false)
   const [reportReason, setReportReason] = useState('')
 
   const isMe = did === myDid
-  const isMod = data?.participation?.isModerator && did !== myDid
+  const name =
+    profile?.displayName || (profile ? `@${profile.handle}` : did.slice(-8))
+  // Whether the *viewer* moderates, and the member is neither a moderator nor
+  // an owner: the bridge refuses to sanction those, so do not offer it. This
+  // used to test the viewed member, which showed the controls on moderators'
+  // profiles and hid them on everyone else's.
+  const canSanction =
+    !!viewerBadges?.participation?.isModerator &&
+    !isMe &&
+    !data?.participation?.isModerator
+  const isSanctioned = (data?.visibleBadges ?? []).some(
+    b => b.type === 'sanctioned',
+  )
 
   const visibleBadges = data?.visibleBadges ?? []
   const hiddenBadges = data?.hiddenBadges ?? []
@@ -75,9 +83,7 @@ export function MemberProfileModal({
         {/* Header: avatar + basic info */}
         <View style={[a.align_center, a.gap_sm, a.py_md]}>
           <UserAvatar size={64} type="user" avatar={null} />
-          <Text style={[a.text_lg, a.font_bold, t.atoms.text]}>
-            {did.slice(-12)}
-          </Text>
+          <Text style={[a.text_lg, a.font_bold, t.atoms.text]}>{name}</Text>
           {participation && (
             <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
               {participation.messageCount} msgs · {participation.votesCast}{' '}
@@ -155,26 +161,30 @@ export function MemberProfileModal({
               <ButtonText>Reportar</ButtonText>
             </Button>
 
-            {isMod && (
+            {canSanction && isSanctioned && (
+              <Button
+                variant="solid"
+                color="secondary"
+                size="small"
+                label="Levantar la restricción"
+                disabled={isPending}
+                onPress={() => askLift({did, name})}>
+                <ButtonText>Levantar la restricción</ButtonText>
+              </Button>
+            )}
+
+            {canSanction && (
               <View style={[a.gap_xs, a.pt_sm]}>
                 <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-                  Sancionar rápido
+                  Silenciar
                 </Text>
                 <View style={[a.flex_row, a.flex_wrap, a.gap_xs]}>
                   {SANCTION_PRESETS.map(preset => (
                     <TouchableOpacity
                       accessibilityRole="button"
                       key={preset.minutes}
-                      onPress={() => {
-                        if (!myDid) return
-                        sanctionMutation.mutate({
-                          targetDid: did,
-                          sanctionedByDid: myDid,
-                          communityUri,
-                          type: 'mute',
-                          durationMinutes: preset.minutes,
-                        })
-                      }}
+                      disabled={isPending}
+                      onPress={() => askMute({did, name}, preset)}
                       style={[styles.sanctionChip]}>
                       <Text style={[a.text_xs, t.atoms.text]}>
                         🔇 {preset.label}
@@ -234,6 +244,7 @@ export function MemberProfileModal({
             </Button>
           </View>
         )}
+        {prompts}
       </Dialog.ScrollableInner>
     </Dialog.Outer>
   )

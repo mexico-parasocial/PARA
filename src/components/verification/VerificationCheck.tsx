@@ -2,8 +2,8 @@ import {useWindowDimensions} from 'react-native'
 
 import {useAlf} from '#/alf'
 import {type Props, sizes} from '#/components/icons/common'
-import {VerifiedCheck} from '#/components/icons/VerifiedCheck'
-import {VerifierCheck} from '#/components/icons/VerifierCheck'
+import {VerifiedCheck} from '#/components/icons/brands/VerifiedCheck'
+import {VerifierCheck} from '#/components/icons/brands/VerifierCheck'
 
 export function VerificationCheck({
   verifier,

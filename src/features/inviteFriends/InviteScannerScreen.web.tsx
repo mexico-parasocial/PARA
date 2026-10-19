@@ -2,7 +2,7 @@ import {View} from 'react-native'
 import {useLingui} from '@lingui/react/macro'
 
 import {atoms as a, useTheme} from '#/alf'
-import {CircleInfo_Stroke2_Corner0_Rounded as InfoIcon} from '#/components/icons/CircleInfo'
+import {CircleInfo_Stroke2_Corner0_Rounded as InfoIcon} from '#/components/icons/Circle'
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'
 

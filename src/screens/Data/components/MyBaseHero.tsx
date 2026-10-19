@@ -10,7 +10,7 @@ import {ArrowLeft_Stroke2_Corner0_Rounded as BackIcon} from '#/components/icons/
 import {BulletList_Stroke2_Corner0_Rounded as ListIcon} from '#/components/icons/BulletList'
 import {ChainLink_Stroke2_Corner0_Rounded as ChainLinkIcon} from '#/components/icons/ChainLink'
 import {CommunityIcon_Stroke as CommunityIcon} from '#/components/icons/Community'
-import {SettingsGear2_Stroke2_Corner0_Rounded as SettingsIcon} from '#/components/icons/SettingsGear2'
+import {SettingsGear2_Stroke2_Corner0_Rounded as SettingsIcon} from '#/components/icons/Settings'
 import * as Layout from '#/components/Layout'
 import {type app} from '#/lexicons'
 import {type CivicWeight} from '../mybase-metrics'

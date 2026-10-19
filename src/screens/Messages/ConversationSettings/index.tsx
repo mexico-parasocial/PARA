@@ -38,11 +38,11 @@ import {
   parseConvoView,
 } from '#/components/dms/util'
 import {Error} from '#/components/Error'
-import {ArrowBoxLeft_Stroke2_Corner0_Rounded as ArrowBoxLeftIcon} from '#/components/icons/ArrowBoxLeft'
+import {ArrowBoxLeft_Stroke2_Corner0_Rounded as ArrowBoxLeftIcon} from '#/components/icons/Arrow'
 import {
   Bell2_Stroke2_Corner0_Rounded as BellIcon,
   Bell2Off_Stroke2_Corner0_Rounded as BellOffIcon,
-} from '#/components/icons/Bell2'
+} from '#/components/icons/Bell'
 import {ChainLink_Stroke2_Corner0_Rounded as ChainLinkIcon} from '#/components/icons/ChainLink'
 import {type Props as SVGIconProps} from '#/components/icons/common'
 import {EditBig_Stroke2_Corner2_Rounded as EditIcon} from '#/components/icons/EditBig'
@@ -339,11 +339,9 @@ function SettingsHeader({
 
   const groupName = convo.details.name
   const [newGroupName, setNewGroupName] = useState(groupName)
-  const [editNameInputKey, setEditNameInputKey] = useState(0)
 
   const openEditNamePrompt = () => {
     setNewGroupName(groupName)
-    setEditNameInputKey(k => k + 1)
     editNamePrompt.open()
   }
 
@@ -591,7 +589,6 @@ function SettingsHeader({
       <EditNamePrompt
         control={editNamePrompt}
         value={newGroupName}
-        inputKey={editNameInputKey}
         onChangeText={setNewGroupName}
         onConfirm={() => editGroupName({name: newGroupName})}
       />

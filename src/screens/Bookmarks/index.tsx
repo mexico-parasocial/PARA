@@ -27,8 +27,11 @@ import {List} from '#/view/com/util/List'
 import {PostFeedLoadingPlaceholder} from '#/view/com/util/LoadingPlaceholder'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
-import {BookmarkDeleteLarge, BookmarkFilled} from '#/components/icons/Bookmark'
-import {CircleQuestion_Stroke2_Corner2_Rounded as QuestionIcon} from '#/components/icons/CircleQuestion'
+import {
+  BookmarkDeleteLarge_Stroke2_Corner0_Rounded as BookmarkDeleteLarge,
+  Bookmark_Filled_Corner0_Rounded as BookmarkFilled,
+} from '#/components/icons/Bookmark'
+import {CircleQuestion_Stroke2_Corner2_Rounded as QuestionIcon} from '#/components/icons/Circle'
 import * as Layout from '#/components/Layout'
 import {ListFooter} from '#/components/Lists'
 import * as Skele from '#/components/Skeleton'

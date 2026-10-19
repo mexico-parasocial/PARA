@@ -320,6 +320,7 @@ export function ExploreView({
             nodeId={focusNode.id}
             onClose={onOverview}
             onOpenCollection={onOpenCollection}
+            onSelectNode={id => setTrail(prev => [...prev, id])}
             onEdit={onEditItem}
             onRemove={onRemoveItem}
           />

@@ -1,6 +1,14 @@
 import {useEffect, useMemo, useState} from 'react'
 import {ScrollView, TouchableOpacity, View} from 'react-native'
-import Svg, {Circle, Defs, G, Line, Pattern, Rect} from 'react-native-svg'
+import Svg, {
+  Circle,
+  Defs,
+  G,
+  Line,
+  Pattern,
+  Polygon,
+  Rect,
+} from 'react-native-svg'
 import {plural} from '@lingui/core/macro'
 import {Trans, useLingui} from '@lingui/react/macro'
 
@@ -11,14 +19,21 @@ import {
 import {atoms as a, useBreakpoints, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import {Text} from '#/components/Typography'
-import {STANCE_COLORS} from '#/features/civicTree/colors'
+import {
+  COMMUNITY_RELATION_DIRECTED,
+  STANCE_COLORS,
+} from '#/features/civicTree/colors'
 import {MapViewport} from '#/features/civicTree/components/MapViewport'
 import {
+  arrowFor,
+  clusterTitleBox,
   MAP_GROUPINGS,
   type MapCamera,
   type MapGrouping,
+  screenRadius,
   zoomMapCamera,
 } from '#/features/civicTree/map'
+import {placeMapLabels} from '#/features/civicTree/mapLabels'
 import {type GraphData} from '#/features/civicTree/types'
 import {buildCommunityMapLayout, communityEdgeColor} from '../workspace'
 
@@ -68,6 +83,55 @@ export function CommunityCivicTreeMap({
     setClusterId(undefined)
   }, [fit, grouping, data])
   const points = new Map(layout.nodes.map(point => [point.node.id, point]))
+
+  /*
+   * As on the personal map: labels go to the best-connected cards where they
+   * fit, and a selection fades everything it does not touch.
+   */
+  const degrees = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const edge of data.edges) {
+      counts.set(edge.source, (counts.get(edge.source) ?? 0) + 1)
+      counts.set(edge.target, (counts.get(edge.target) ?? 0) + 1)
+    }
+    return counts
+  }, [data.edges])
+  const neighbours = useMemo(() => {
+    if (!selectedNodeId) return undefined
+    const ids = new Set<string>()
+    for (const edge of data.edges) {
+      if (edge.source === selectedNodeId) ids.add(edge.target)
+      if (edge.target === selectedNodeId) ids.add(edge.source)
+    }
+    return ids
+  }, [data.edges, selectedNodeId])
+  const inFocus = (id: string) =>
+    !neighbours || id === selectedNodeId || neighbours.has(id)
+  const labels = placeMapLabels(
+    layout.nodes
+      .filter(({node}) => inFocus(node.id))
+      .map(({node, x, y}) => ({
+        id: node.id,
+        x: camera.x + x * camera.scale,
+        y: camera.y + y * camera.scale,
+        r: screenRadius(node.radius, camera.scale),
+        text: node.title,
+        priority: degrees.get(node.id) ?? 0,
+        force: node.id === selectedNodeId,
+      })),
+    {
+      viewport: size,
+      obstacles: layout.clusters.map(cluster => {
+        const box = clusterTitleBox(cluster, camera)
+        return {
+          left: box.left,
+          top: box.top,
+          right: box.left + box.width,
+          bottom: box.top + box.height,
+        }
+      }),
+    },
+  )
   const focus = (id: string) => {
     const cluster = layout.clusters.find(item => item.id === id)
     if (!cluster) return
@@ -214,53 +278,70 @@ export function CommunityCivicTreeMap({
                 const selected =
                   edge.source === selectedNodeId ||
                   edge.target === selectedNodeId
+                const color = communityEdgeColor(edge.relationship_type)
+                const arrow =
+                  selected &&
+                  COMMUNITY_RELATION_DIRECTED[edge.relationship_type]
+                    ? arrowFor(
+                        source,
+                        target,
+                        screenRadius(target.node.radius, camera.scale) /
+                          camera.scale,
+                        camera.scale,
+                      )
+                    : undefined
+                const end = arrow?.end ?? target
                 return (
-                  <Line
-                    key={edge.id}
-                    x1={source.x}
-                    y1={source.y}
-                    x2={target.x}
-                    y2={target.y}
-                    stroke={communityEdgeColor(edge.relationship_type)}
-                    strokeWidth={selected ? 2.5 : 1.5}
-                    strokeOpacity={selected ? 1 : 0.35}
-                  />
+                  <G key={edge.id}>
+                    <Line
+                      x1={source.x}
+                      y1={source.y}
+                      x2={end.x}
+                      y2={end.y}
+                      stroke={color}
+                      strokeWidth={selected ? 2.5 : 1.5}
+                      strokeOpacity={
+                        selected ? 1 : selectedNodeId ? 0.06 : 0.35
+                      }
+                    />
+                    {arrow ? (
+                      <Polygon points={arrow.points} fill={color} />
+                    ) : null}
+                  </G>
                 )
               })}
             </G>
           </Svg>
-          {layout.clusters.map(cluster => (
-            <TouchableOpacity
-              key={cluster.id}
-              accessibilityRole="button"
-              accessibilityLabel={l`Inspect cluster ${cluster.label}`}
-              accessibilityHint={l`Focuses this topic or data cluster`}
-              onPress={() => focus(cluster.id)}
-              style={[
-                a.absolute,
-                a.align_center,
-                {
-                  left: camera.x + cluster.x * camera.scale - 90,
-                  top:
-                    camera.y + (cluster.y - cluster.radius) * camera.scale - 36,
-                  width: 180,
-                },
-              ]}>
-              <Text
-                numberOfLines={1}
-                style={[a.text_sm, a.font_bold, t.atoms.text]}>
-                {cluster.label}
-              </Text>
-              <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-                {plural(cluster.nodes.length, {
-                  one: '# card',
-                  other: '# cards',
-                })}
-              </Text>
-            </TouchableOpacity>
-          ))}
+          {layout.clusters.map(cluster => {
+            const title = clusterTitleBox(cluster, camera)
+            return (
+              <TouchableOpacity
+                key={cluster.id}
+                accessibilityRole="button"
+                accessibilityLabel={l`Inspect cluster ${cluster.label}`}
+                accessibilityHint={l`Focuses this topic or data cluster`}
+                onPress={() => focus(cluster.id)}
+                style={[
+                  a.absolute,
+                  a.align_center,
+                  {left: title.left, top: title.top, width: title.width},
+                ]}>
+                <Text
+                  numberOfLines={1}
+                  style={[a.text_sm, a.font_bold, t.atoms.text]}>
+                  {cluster.label}
+                </Text>
+                <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
+                  {plural(cluster.nodes.length, {
+                    one: '# card',
+                    other: '# cards',
+                  })}
+                </Text>
+              </TouchableOpacity>
+            )
+          })}
           {layout.nodes.map(({node, x, y}) => {
-            const radius = Math.max(3, Math.min(18, node.radius * camera.scale))
+            const radius = screenRadius(node.radius, camera.scale)
             const selected = node.id === selectedNodeId
             return (
               <TouchableOpacity
@@ -275,6 +356,7 @@ export function CommunityCivicTreeMap({
                   a.align_center,
                   a.justify_center,
                   {
+                    opacity: inFocus(node.id) ? 1 : 0.22,
                     left: camera.x + x * camera.scale - radius - 3,
                     top: camera.y + y * camera.scale - radius - 3,
                     width: radius * 2 + 6,
@@ -299,18 +381,36 @@ export function CommunityCivicTreeMap({
                     },
                   ]}
                 />
-                {camera.scale >= 0.85 || selected ? (
-                  <View
-                    pointerEvents="none"
-                    style={[a.absolute, {top: radius * 2 + 10, width: 112}]}>
-                    <Text
-                      numberOfLines={1}
-                      style={[a.text_xs, a.text_center, t.atoms.text]}>
-                      {node.title}
-                    </Text>
-                  </View>
-                ) : null}
               </TouchableOpacity>
+            )
+          })}
+          {layout.nodes.map(({node}) => {
+            const label = labels.get(node.id)
+            if (!label) return null
+            return (
+              <View
+                key={`label:${node.id}`}
+                pointerEvents="none"
+                style={[
+                  a.absolute,
+                  {left: label.left, top: label.top, width: label.width},
+                ]}>
+                <Text
+                  numberOfLines={1}
+                  style={[
+                    a.text_xs,
+                    label.side === 'right'
+                      ? a.text_left
+                      : label.side === 'left'
+                        ? a.text_right
+                        : a.text_center,
+                    node.id === selectedNodeId ? a.font_bold : null,
+                    t.atoms.text,
+                    {lineHeight: 16},
+                  ]}>
+                  {node.title}
+                </Text>
+              </View>
             )
           })}
         </MapViewport>

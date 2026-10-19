@@ -9,7 +9,7 @@ import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonIcon} from '#/components/Button'
 import * as TextField from '#/components/forms/TextField'
 import {MagnifyingGlass_Stroke2_Corner0_Rounded as MagnifyingGlassIcon} from '#/components/icons/MagnifyingGlass'
-import {TimesLarge_Stroke2_Corner0_Rounded as X} from '#/components/icons/Times'
+import {TimesLarge_Stroke2_Corner0_Rounded as X} from '#/components/icons/TimesLarge'
 import {IS_NATIVE} from '#/env'
 
 type Props = Omit<TextField.InputProps, 'label'> & {

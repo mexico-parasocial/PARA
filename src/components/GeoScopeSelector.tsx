@@ -7,7 +7,7 @@ import {
 } from 'react-native'
 
 import {atoms as a, useTheme} from '#/alf'
-import {PinLocation_Stroke2_Corner0_Rounded as MapPinIcon} from '#/components/icons/PinLocation'
+import {PinLocation_Stroke2_Corner0_Rounded as MapPinIcon} from '#/components/icons/Pin'
 import {Text} from '#/components/Typography'
 import {
   fetchAccurateLocation,

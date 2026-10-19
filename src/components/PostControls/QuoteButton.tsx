@@ -10,7 +10,7 @@ import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
 import {Pencil_Stroke2_Corner0_Rounded as PencilIcon} from '#/components/icons/Pencil'
-import {CloseQuote_Stroke2_Corner1_Rounded as QuoteIcon} from '#/components/icons/Quote'
+import {CloseQuote_Stroke2_Corner1_Rounded as QuoteIcon} from '#/components/icons/CloseQuote'
 import {useFormatPostStatCount} from '#/components/PostControls/util'
 import {Text} from '#/components/Typography'
 import {
@@ -113,29 +113,29 @@ let QuoteButtonDialogInner = ({
 }): React.ReactNode => {
   const t = useTheme()
   const {_} = useLingui()
-  const playHaptic = useHaptics()
+  const haptics = useHaptics()
   const control = Dialog.useDialogContext()
 
   const onPressHighlight = useCallback(() => {
-    playHaptic()
+    haptics.confirm()
     control.close(() => {
       onHighlight()
     })
-  }, [control, onHighlight, playHaptic])
+  }, [control, onHighlight, haptics])
 
   const onPressRemoveHighlights = useCallback(() => {
-    playHaptic()
+    haptics.confirm()
     control.close(() => {
       onRemoveAllHighlights()
     })
-  }, [control, onRemoveAllHighlights, playHaptic])
+  }, [control, onRemoveAllHighlights, haptics])
 
   const onPressQuote = useCallback(() => {
-    playHaptic()
+    haptics.confirm()
     control.close(() => {
       onQuote()
     })
-  }, [control, onQuote, playHaptic])
+  }, [control, onQuote, haptics])
 
   const onPressClose = useCallback(() => control.close(), [control])
 

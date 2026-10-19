@@ -12,18 +12,11 @@ import {Text} from '#/components/Typography'
 export function EditNamePrompt({
   control,
   value,
-  inputKey,
   onChangeText,
   onConfirm,
 }: {
   control: Dialog.DialogOuterProps['control']
   value: string
-  /**
-   * Bump this whenever the prompt is opened to remount the (uncontrolled)
-   * input and reseed it from `value`. Required because the native bottom sheet
-   * keeps its children mounted across opens.
-   */
-  inputKey: number
   onChangeText: (value: string) => void
   onConfirm: () => void
 }) {
@@ -45,10 +38,9 @@ export function EditNamePrompt({
           <View style={[a.my_sm]}>
             <TextField.Root isInvalid={nameTooLong}>
               <TextField.Input
-                key={inputKey}
                 label={l`Edit group name`}
                 placeholder={l`Group name`}
-                defaultValue={value}
+                value={value}
                 onChangeText={onChangeText}
                 returnKeyType="done"
                 autoCapitalize="none"
@@ -67,13 +59,11 @@ export function EditNamePrompt({
                   {color: t.palette.negative_400},
                 ]}>
                 <Trans>
-                  Group name is too long. The maximum number of characters is{' '}
+                  Group name is too long.{' '}
                   <Plural
                     value={MAX_GROUP_NAME_GRAPHEME_LENGTH}
-                    one="# character"
-                    other="# characters"
+                    other="The maximum number of characters is #."
                   />
-                  .
                 </Trans>
               </Text>
             ) : null}
@@ -128,7 +118,7 @@ export function LeaveChatPrompt({
     <Prompt.Basic
       control={control}
       title={l`Are you sure you want to leave ${groupName}?`}
-      description={l`You won't be able to rejoin unless you're invited.`}
+      description={l`You won’t be able to rejoin unless you’re invited.`}
       confirmButtonCta={l`Leave group chat`}
       confirmButtonColor="negative"
       cancelButtonCta={l`Cancel`}
@@ -151,9 +141,9 @@ export function LeaveAndLockChatPrompt({
   return (
     <Prompt.Basic
       control={control}
-      title={l`Leave ${groupName}?`}
-      description={l`As the owner, you must lock this group chat before leaving. Once locked, no new members can join and the chat will be read-only for existing members.`}
-      confirmButtonCta={l`Lock and leave`}
+      title={l`Are you sure you want to leave ${groupName}?`}
+      description={l`Leaving this chat will lock it permanently and you won’t be able to rejoin.`}
+      confirmButtonCta={l`Leave group chat`}
       confirmButtonColor="negative"
       cancelButtonCta={l`Cancel`}
       onConfirm={onConfirm}

@@ -29,18 +29,58 @@ async function main() {
   }
 
   const result = await esbuild.build({
-    entryPoints: [require.resolve('matrix-js-sdk')],
+    stdin: {
+      contents: `export * from 'matrix-js-sdk';
+        import {Attachment, EncryptedAttachment, initAsync} from '@matrix-org/matrix-sdk-crypto-wasm';
+        import {decodeRecoveryKey} from 'matrix-js-sdk/lib/crypto-api/recovery-key.js';
+        import {createPendingRecoveryStore} from './src/features/encryptedChat/webPendingRecovery.ts';
+        window.paraMatrixCrypto = {Attachment, EncryptedAttachment, decodeRecoveryKey, initAsync, createPendingRecoveryStore};`,
+      resolveDir: path.join(__dirname, '..'),
+      loader: 'js',
+    },
     bundle: true,
     format: 'iife',
     globalName: 'matrixcs',
     outfile: OUT_FILE,
     sourcemap: false,
     minify: true,
-    target: ['chrome90', 'ios14'],
+    target: ['chrome90', 'ios16.4'],
     define: {
       global: 'window',
     },
     metafile: true,
+    plugins: [
+      {
+        name: 'self-hosted-matrix-crypto',
+        setup(build) {
+          const cryptoDir = path.dirname(
+            require.resolve('@matrix-org/matrix-sdk-crypto-wasm'),
+          )
+          build.onResolve(
+            {filter: /^@matrix-org\/matrix-sdk-crypto-wasm$/},
+            () => ({
+              path: path.join(cryptoDir, 'index.mjs'),
+            }),
+          )
+          build.onLoad(
+            {filter: /matrix-sdk-crypto-wasm\/index\.mjs$/},
+            args => ({
+              contents: fs
+                .readFileSync(args.path, 'utf8')
+                .replace(
+                  'new URL("./pkg/matrix_sdk_crypto_wasm_bg.wasm", import.meta.url)',
+                  'new URL("/assets/chat/matrix-sdk-crypto.wasm", document.baseURI)',
+                ),
+              loader: 'js',
+            }),
+          )
+          fs.copyFileSync(
+            path.join(cryptoDir, 'pkg/matrix_sdk_crypto_wasm_bg.wasm'),
+            path.join(OUT_DIR, 'matrix-sdk-crypto.wasm'),
+          )
+        },
+      },
+    ],
   })
 
   const size = (fs.statSync(OUT_FILE).size / 1024 / 1024).toFixed(2)

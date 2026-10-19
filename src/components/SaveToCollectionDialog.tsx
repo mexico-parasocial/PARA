@@ -12,7 +12,7 @@ import {
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import * as Dialog from '#/components/Dialog'
-import {Bookmark as BookmarkIcon} from '#/components/icons/Bookmark'
+import {Bookmark_Stroke2_Corner0_Rounded as BookmarkIcon} from '#/components/icons/Bookmark'
 import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/Plus'
 import * as Toast from '#/components/Toast'
 import {CIVIC_TREE_LABELS} from '#/features/civicTree/labels'

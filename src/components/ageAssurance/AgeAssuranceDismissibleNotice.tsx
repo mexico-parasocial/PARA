@@ -8,7 +8,7 @@ import {AgeAssuranceAdmonition} from '#/components/ageAssurance/AgeAssuranceAdmo
 import {AgeAssuranceConfigUnavailableError} from '#/components/ageAssurance/AgeAssuranceErrors'
 import {useAgeAssuranceCopy} from '#/components/ageAssurance/useAgeAssuranceCopy'
 import {Button, ButtonIcon} from '#/components/Button'
-import {TimesLarge_Stroke2_Corner0_Rounded as X} from '#/components/icons/Times'
+import {TimesLarge_Stroke2_Corner0_Rounded as X} from '#/components/icons/TimesLarge'
 import {logger, useAgeAssurance} from '#/ageAssurance'
 
 export function AgeAssuranceDismissibleNotice({style}: ViewStyleProp & {}) {

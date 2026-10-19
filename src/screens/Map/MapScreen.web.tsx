@@ -20,6 +20,22 @@ import {
   type PolygonProps,
   type Props,
 } from './MapScreen.shared'
+import {GOOGLE_MAPS_WEB_API_KEY, resolveWebMapProvider} from './webMapProvider'
+
+const GoogleMapView = MapView as unknown as ComponentType<
+  MapViewProps & {googleMapsApiKey: string}
+>
+const GoogleMapAdapter = forwardRef<MapViewRef, MapViewProps>(
+  function GoogleMapAdapter(props, ref) {
+    return (
+      <GoogleMapView
+        {...props}
+        ref={ref}
+        googleMapsApiKey={GOOGLE_MAPS_WEB_API_KEY}
+      />
+    )
+  },
+)
 
 /**
  * Adapts MapLibreWeb to the MapViewComponent interface expected by
@@ -124,17 +140,13 @@ function MapLibrePolygonStub(_props: PolygonProps) {
 export function MapScreen(props: Props) {
   const {provider} = useMapProvider()
 
-  const isMapLibre = provider === 'maplibre'
+  const isMapLibre = resolveWebMapProvider(provider) === 'maplibre'
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   return (
     <MapScreenImpl
       {...props}
-      MapViewComponent={
-        isMapLibre
-          ? MapLibreAdapter
-          : (MapView as unknown as ComponentType<MapViewProps>)
-      }
+      MapViewComponent={isMapLibre ? MapLibreAdapter : GoogleMapAdapter}
       MarkerComponent={
         isMapLibre
           ? MapLibreMarkerStub

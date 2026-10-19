@@ -5,7 +5,7 @@ import {Trans} from '@lingui/react/macro'
 import {type ViewStyleProp} from '#/alf'
 import * as Admonition from '#/components/Admonition'
 import {ButtonIcon, ButtonText} from '#/components/Button'
-import {ArrowRotateCounterClockwise_Stroke2_Corner0_Rounded as RetryIcon} from '#/components/icons/ArrowRotate'
+import {ArrowRotateCounterClockwise_Stroke2_Corner0_Rounded as RetryIcon} from '#/components/icons/Arrow'
 import {refetchConfig} from '#/ageAssurance/data'
 
 export function AgeAssuranceConfigUnavailableError(props: ViewStyleProp) {

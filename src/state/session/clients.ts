@@ -155,6 +155,6 @@ export function getPublicAppviewClient(): Client {
       service: PUBLIC_BSKY_SERVICE,
       fetch: networkAwareFetch,
     },
-    {includeDeviceSessionHeaders: false},
+    {includeDeviceSessionHeaders: true},
   ))
 }

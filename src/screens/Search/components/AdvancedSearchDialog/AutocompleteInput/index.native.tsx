@@ -8,7 +8,7 @@ import {type AutocompleteItem, useAutocomplete} from '#/components/Autocomplete'
 import {Button, ButtonIcon} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
 import * as TextField from '#/components/forms/TextField'
-import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/Times'
+import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/TimesLarge'
 import * as ProfileCard from '#/components/ProfileCard'
 import {
   appendSelection,

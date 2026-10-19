@@ -1,5 +1,9 @@
 # MapLibre map: one-month plan (Oct 2026)
 
+> Planning update (2026-10-07): the remaining-work schedule below is superseded
+> by [the map maturity plan](./MAP_MATURITY_PLAN.md). Retain the Done section as
+> historical implementation evidence; it is not proof of current release acceptance.
+
 Scope: the web map (`src/screens/Map/MapLibreWeb.tsx`, `MapScreen.web.tsx`,
 `MapScreen.shared.tsx`, `MapDesktopLayout.tsx`). Native keeps `react-native-maps`.
 This is outside the Q4 pilot plan; treat it as a polish track, not a committed sprint item.

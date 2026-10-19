@@ -556,7 +556,7 @@ let PreviewableUserAvatar = ({
   const queryClient = useQueryClient()
   const status = useActorStatus(profile)
   const liveControl = useDialogControl()
-  const playHaptic = useHaptics()
+  const haptics = useHaptics()
 
   const onPress = useCallback(() => {
     onBeforePress?.()
@@ -564,14 +564,14 @@ let PreviewableUserAvatar = ({
   }, [profile, queryClient, onBeforePress])
 
   const onOpenLiveStatus = useCallback(() => {
-    playHaptic('Light')
+    haptics.tap()
     logger.metric(
       'live:card:open',
       {subject: profile.did, from: 'post'},
       {statsig: true},
     )
     liveControl.open()
-  }, [liveControl, playHaptic, profile.did])
+  }, [liveControl, haptics, profile.did])
 
   const avatarEl = (
     <UserAvatar

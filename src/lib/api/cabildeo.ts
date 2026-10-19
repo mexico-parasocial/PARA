@@ -333,6 +333,14 @@ export async function fetchCabildeos(
     limit?: number
   },
 ): Promise<CabildeoReadView[]> {
+  return (await fetchCabildeosWithCoverage(agent, opts)).cabildeos
+}
+
+/** Keep the pagination cap visible to callers that display territorial totals. */
+export async function fetchCabildeosWithCoverage(
+  agent: CabildeoServiceAgent,
+  opts?: {community?: string; phase?: CabildeoPhase; limit?: number},
+): Promise<{cabildeos: CabildeoReadView[]; hasMore: boolean}> {
   const pageLimit = opts?.limit ?? 50
   const all: CabildeoReadView[] = []
   let cursor: string | undefined
@@ -345,11 +353,11 @@ export async function fetchCabildeos(
       cursor,
     })
     all.push(...result.cabildeos)
-    if (!result.cursor) break
     cursor = result.cursor
+    if (!cursor) break
   }
 
-  return all
+  return {cabildeos: all, hasMore: Boolean(cursor)}
 }
 
 export async function fetchCabildeo(

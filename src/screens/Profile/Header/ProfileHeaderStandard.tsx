@@ -43,7 +43,7 @@ import {useDialogControl} from '#/components/Dialog'
 import {MessageProfileButton} from '#/components/dms/MessageProfileButton'
 import {RequestMatrixDmButton} from '#/components/dms/RequestMatrixDmButton'
 import {GermContactButton} from '#/components/germ/GermContactButton'
-import {ArrowShareRight_Stroke2_Corner2_Rounded as ArrowShareRight} from '#/components/icons/ArrowShareRight'
+import {ArrowShareRight_Stroke2_Corner2_Rounded as ArrowShareRight} from '#/components/icons/Arrow'
 import {PlusLarge_Stroke2_Corner0_Rounded as Plus} from '#/components/icons/Plus'
 import {
   KnownFollowers,
@@ -219,6 +219,8 @@ let ProfileHeaderStandard = ({
 
               {!isMe &&
                 !isBlockedUser &&
+                // Social proof is only useful when deciding whether to follow
+                !profile.viewer?.following &&
                 shouldShowKnownFollowers(profile.viewer?.knownFollowers) && (
                   <View style={[a.flex_row, a.align_center, a.gap_sm]}>
                     <KnownFollowers
@@ -443,7 +445,7 @@ export function HeaderStandardButtons({
 }) {
   const {_} = useLingui()
   const {hasSession, currentAccount} = useSession()
-  const playHaptic = useHaptics()
+  const haptics = useHaptics()
   const requireAuth = useRequireAuth()
   const [queueFollow, queueUnfollow] = useProfileFollowMutationQueue(
     profile,
@@ -465,7 +467,7 @@ export function HeaderStandardButtons({
   const isMe = currentAccount?.did === profile.did
 
   const onPressFollow = () => {
-    playHaptic()
+    haptics.confirm()
     requireAuth(async () => {
       try {
         await queueFollow()
@@ -484,7 +486,7 @@ export function HeaderStandardButtons({
   }
 
   const onPressUnfollow = () => {
-    playHaptic()
+    haptics.confirm()
     requireAuth(async () => {
       try {
         await queueUnfollow()
@@ -549,7 +551,7 @@ export function HeaderStandardButtons({
             size="small"
             color="secondary"
             onPress={() => {
-              playHaptic('Light')
+              haptics.tap('Light')
               editProfileControl.open()
             }}
             label={_(msg`Edit profile`)}>
@@ -570,7 +572,7 @@ export function HeaderStandardButtons({
               // overlap the neighboring buttons' own targets
               hitSlop={{top: 6, bottom: 6, left: 2, right: 2}}
               onPress={() => {
-                playHaptic('Light')
+                haptics.tap()
                 ax.metric('invite:dialog:open', {logContext: 'ProfileHeader'})
                 inviteFriendsControl.open()
               }}

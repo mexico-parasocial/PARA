@@ -22,7 +22,7 @@ import {Signup} from '#/screens/Signup'
 import {LandingScreen} from '#/screens/StarterPack/StarterPackLandingScreen'
 import {atoms as a, native, tokens, useTheme} from '#/alf'
 import {Button, ButtonIcon} from '#/components/Button'
-import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/Times'
+import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/TimesLarge'
 import {app} from '#/lexicons'
 import {SplashScreen} from './SplashScreen'
 

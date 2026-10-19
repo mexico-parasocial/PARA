@@ -1,4 +1,9 @@
-import {matrixBridgeFetch} from '#/lib/matrix/bridge'
+import {m8CredentialRevision} from '#/lib/im8/credentials'
+import {
+  BridgeAuthError,
+  BridgeResponseError,
+  matrixBridgeFetch,
+} from '#/lib/matrix/bridge'
 
 /**
  * CD-M6 proof-of-possession client (WatZappa matrix-bridge contract — see
@@ -29,6 +34,8 @@ export const BRIDGE_AUDIENCES = {
 export type BridgeAudience =
   (typeof BRIDGE_AUDIENCES)[keyof typeof BRIDGE_AUDIENCES]
 
+export type MatrixSigningAudience = BridgeAudience | 'para-idp'
+
 export const MATRIX_PROOF_PURPOSE = 'matrix-login'
 
 export interface IdentityAssertion {
@@ -53,7 +60,7 @@ export interface SignedAssertion {
  * allowlist's job, not ours.
  */
 export type MatrixAssertionSigner = (input: {
-  audience: BridgeAudience
+  audience: MatrixSigningAudience
   challenge: string
 }) => Promise<SignedAssertion>
 
@@ -113,15 +120,24 @@ export async function bridgeCallWithProof<T>(
   if (!signer) {
     throw new MatrixProofUnavailableError()
   }
+  const revision = m8CredentialRevision()
+  const activeSigner = signer
   const challenge = await requestChallenge()
-  const signed = await signer({audience, challenge})
+  if (revision !== m8CredentialRevision())
+    throw new BridgeAuthError(401, 'Chat account changed')
+  const signed = await activeSigner({audience, challenge})
+  if (revision !== m8CredentialRevision())
+    throw new BridgeAuthError(401, 'Chat account changed')
   const res = await matrixBridgeFetch(path, {
     method: 'POST',
     body: JSON.stringify({...fields, ...signed}),
   })
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as {error?: string}
-    throw new Error(body.error || `Bridge call failed: ${res.status}`)
+    throw new BridgeResponseError(
+      res.status,
+      body.error || `Bridge call failed: ${res.status}`,
+    )
   }
   return (await res.json()) as T
 }

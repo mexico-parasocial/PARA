@@ -7,7 +7,7 @@ import {HITSLOP_20} from '#/lib/constants'
 import {android, atoms as a} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
-import {CircleInfo_Stroke2_Corner0_Rounded as InfoIcon} from '#/components/icons/CircleInfo'
+import {CircleInfo_Stroke2_Corner0_Rounded as InfoIcon} from '#/components/icons/Circle'
 import {Text} from '#/components/Typography'
 
 export function InviteInfo({

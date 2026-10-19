@@ -15,6 +15,7 @@ import {type SessionData} from '@atproto/lex-password-session'
 import {isLikelyLocalServiceUrl} from '#/lib/constants'
 import {revokeM8Session} from '#/lib/im8/api'
 import {setM8ActiveAccount} from '#/lib/im8/credentials'
+import {logoutChatAccount} from '#/lib/matrix/chatLogout'
 import {logger} from '#/logger'
 import * as persisted from '#/state/persisted'
 import * as userActionHistory from '#/state/userActionHistory'
@@ -368,6 +369,11 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
       )
       cancelPendingTask()
       const prevState = store.getState()
+      if (prevState.currentBundleState.did) {
+        void logoutChatAccount(prevState.currentBundleState.did).catch(() =>
+          logger.warn('matrix: chat logout could not be fully confirmed'),
+        )
+      }
       store.dispatch({
         type: 'logged-out-current-account',
       })
@@ -405,6 +411,11 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
       )
       cancelPendingTask()
       const prevState = store.getState()
+      for (const account of prevState.accounts) {
+        void logoutChatAccount(account.did).catch(() =>
+          logger.warn('matrix: chat logout could not be fully confirmed'),
+        )
+      }
       store.dispatch({
         type: 'logged-out-every-account',
       })
@@ -570,6 +581,11 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
         account: redactAccount(account),
       })
       cancelPendingTask()
+      void logoutChatAccount(account.did).catch(() =>
+        logger.warn(
+          'matrix: removed account chat logout could not be fully confirmed',
+        ),
+      )
       store.dispatch({
         type: 'removed-account',
         accountDid: account.did,
@@ -580,6 +596,7 @@ export function Provider({children}: React.PropsWithChildren<{}>) {
         account: redactAccount(account),
       })
       clearAgeAssuranceServerDataForDid({did: account.did})
+      void clearPersistedQueryStorage(account.did)
     },
     [store, cancelPendingTask],
   )

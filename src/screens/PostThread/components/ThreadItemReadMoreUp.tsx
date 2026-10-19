@@ -11,7 +11,7 @@ import {
   REPLY_LINE_WIDTH,
 } from '#/screens/PostThread/const'
 import {atoms as a, useTheme} from '#/alf'
-import {ArrowTopCircle_Stroke2_Corner0_Rounded as UpIcon} from '#/components/icons/ArrowTopCircle'
+import {ArrowTopCircle_Stroke2_Corner0_Rounded as UpIcon} from '#/components/icons/Arrow'
 import {Link} from '#/components/Link'
 import {Text} from '#/components/Typography'
 

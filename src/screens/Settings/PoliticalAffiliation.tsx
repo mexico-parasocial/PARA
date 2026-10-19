@@ -34,7 +34,7 @@ import {
 } from '#/components/AffiliationChangeModal'
 import {ColorStack} from '#/components/AvatarStack'
 import {Check_Stroke2_Corner0_Rounded as CheckIcon} from '#/components/icons/Check'
-import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/Times'
+import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/TimesLarge'
 import * as Layout from '#/components/Layout'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'

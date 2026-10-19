@@ -109,6 +109,8 @@ export interface PolicyItem {
   participantCount?: number
   voteCount?: number
   positionCount?: number
+  /** The flairs the item is filed under, e.g. its `|#` matter. */
+  flairs?: string[]
 }
 
 // --- RAQ (Rapid Answer Questions) ---

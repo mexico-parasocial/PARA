@@ -5,7 +5,7 @@ import {useRequireAuth, useSession} from '#/state/session'
 import {EventStopper} from '#/view/com/util/EventStopper'
 import {useTheme} from '#/alf'
 import {Pencil_Stroke2_Corner0_Rounded as PencilIcon} from '#/components/icons/Pencil'
-import {CloseQuote_Stroke2_Corner1_Rounded as QuoteIcon} from '#/components/icons/Quote'
+import {CloseQuote_Stroke2_Corner1_Rounded as QuoteIcon} from '#/components/icons/CloseQuote'
 import * as Menu from '#/components/Menu'
 import {
   PostControlButton,

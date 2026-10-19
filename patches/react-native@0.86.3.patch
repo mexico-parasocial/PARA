@@ -1,5 +1,24 @@
+diff --git a/React/Fabric/Mounting/ComponentViews/Modal/RCTModalHostViewComponentView.mm b/React/Fabric/Mounting/ComponentViews/Modal/RCTModalHostViewComponentView.mm
+index c27f816e14e1bd33e41b92aea075c5e6379fc758..a77961366293d8077b294aa402bb88ace51b0f2c 100644
+--- a/React/Fabric/Mounting/ComponentViews/Modal/RCTModalHostViewComponentView.mm
++++ b/React/Fabric/Mounting/ComponentViews/Modal/RCTModalHostViewComponentView.mm
+@@ -159,7 +159,13 @@ - (void)dismissViewController:(UIViewController *)modalViewController
+                      animated:(BOOL)animated
+                    completion:(void (^)(void))completion
+ {
+-  [modalViewController dismissViewControllerAnimated:animated completion:completion];
++  if (modalViewController.presentedViewController) {
++    // Dismissing a controller that is itself presenting only dismisses its child, so dismiss both.
++    UIViewController *presentingViewController = modalViewController.presentingViewController ?: modalViewController;
++    [presentingViewController dismissViewControllerAnimated:animated completion:completion];
++  } else {
++    [modalViewController dismissViewControllerAnimated:animated completion:completion];
++  }
+ }
+ 
+ - (void)ensurePresentedOnlyIfNeeded
 diff --git a/React/Fabric/Mounting/ComponentViews/ScrollView/RCTEnhancedScrollView.mm b/React/Fabric/Mounting/ComponentViews/ScrollView/RCTEnhancedScrollView.mm
-index 1b02e8b..b3481c1 100644
+index 1b02e8b2d39672063551411d5c403a69b671a869..b3481c1b98b45dea769035140dc2fd8d9b088b24 100644
 --- a/React/Fabric/Mounting/ComponentViews/ScrollView/RCTEnhancedScrollView.mm
 +++ b/React/Fabric/Mounting/ComponentViews/ScrollView/RCTEnhancedScrollView.mm
 @@ -102,6 +102,20 @@ - (void)setContentOffset:(CGPoint)contentOffset
@@ -24,7 +43,7 @@ index 1b02e8b..b3481c1 100644
  {
    [super setFrame:frame];
 diff --git a/React/Fabric/Mounting/ComponentViews/ScrollView/RCTPullToRefreshViewComponentView.mm b/React/Fabric/Mounting/ComponentViews/ScrollView/RCTPullToRefreshViewComponentView.mm
-index 60160ef..fb646fe 100644
+index 60160efb163d91813fa2ca7ca758b51afcf261e1..fb646fe945ffe4aa4a386f80a1e42a90180691f1 100644
 --- a/React/Fabric/Mounting/ComponentViews/ScrollView/RCTPullToRefreshViewComponentView.mm
 +++ b/React/Fabric/Mounting/ComponentViews/ScrollView/RCTPullToRefreshViewComponentView.mm
 @@ -42,6 +42,32 @@ - (void)setRefreshing:(BOOL)refreshing
@@ -198,7 +217,7 @@ index 60160ef..fb646fe 100644
  }
  
 diff --git a/React/Fabric/Mounting/ComponentViews/ScrollView/RCTScrollViewComponentView.mm b/React/Fabric/Mounting/ComponentViews/ScrollView/RCTScrollViewComponentView.mm
-index 9ab1db4..a0a15be 100644
+index 9ab1db4e21e922f69c1ce17976eb1001f01b571a..a0a15bef87537f715298d7c88a52c8f6c4aea0bd 100644
 --- a/React/Fabric/Mounting/ComponentViews/ScrollView/RCTScrollViewComponentView.mm
 +++ b/React/Fabric/Mounting/ComponentViews/ScrollView/RCTScrollViewComponentView.mm
 @@ -396,7 +396,15 @@ - (void)updateProps:(const Props::Shared &)props oldProps:(const Props::Shared &
@@ -239,8 +258,71 @@ index 9ab1db4..a0a15be 100644
  @end
  
  Class<RCTComponentViewProtocol> RCTScrollViewCls(void)
+diff --git a/React/Fabric/Mounting/ComponentViews/TextInput/RCTTextInputComponentView.mm b/React/Fabric/Mounting/ComponentViews/TextInput/RCTTextInputComponentView.mm
+index c0e56acd2a0f1015f5a4581909e9209a56c46166..06184e0a095decd1559f8888d1d67d62eda00df2 100644
+--- a/React/Fabric/Mounting/ComponentViews/TextInput/RCTTextInputComponentView.mm
++++ b/React/Fabric/Mounting/ComponentViews/TextInput/RCTTextInputComponentView.mm
+@@ -372,6 +372,10 @@ - (void)updateLayoutMetrics:(const LayoutMetrics &)layoutMetrics
+     _previousContentSize = _backedTextInputView.contentSize;
+     static_cast<const TextInputEventEmitter &>(*_eventEmitter).onContentSizeChange([self _textInputMetrics]);
+   }
++
++  if (layoutMetrics.frame.size.height > oldLayoutMetrics.frame.size.height) {
++    [self _scrollCaretIntoEnclosingScrollView];
++  }
+ }
+ 
+ - (void)prepareForRecycle
+@@ -821,6 +825,47 @@ - (void)scrollCursorIntoView
+   }
+ }
+ 
++/*
++ * A multiline input grows one commit after UIKit has inserted the newline. UIKit reveals the caret
++ * synchronously inside the text change and never again when the frame changes. While scrolling is
++ * disabled the text container tracks the frame, so at that moment the new line has no layout yet and
++ * UIKit reveals the previous line instead; the new line then sits under the keyboard until the next
++ * keystroke. Reveal it here, right after the taller frame has been applied, so growth and scroll land
++ * in the same frame.
++ */
++- (void)_scrollCaretIntoEnclosingScrollView
++{
++  if (![_backedTextInputView isKindOfClass:[UITextView class]] || !_backedTextInputView.isFirstResponder) {
++    return;
++  }
++
++  UIScrollView *enclosingScrollView = nil;
++  for (UIView *view = self.superview; view != nil; view = view.superview) {
++    if ([view isKindOfClass:[UIScrollView class]]) {
++      enclosingScrollView = (UIScrollView *)view;
++      break;
++    }
++  }
++  if (enclosingScrollView == nil) {
++    return;
++  }
++
++  UITextRange *selectedTextRange = _backedTextInputView.selectedTextRange;
++  if (selectedTextRange == nil) {
++    return;
++  }
++
++  [_backedTextInputView layoutIfNeeded];
++  CGRect caretRect = [_backedTextInputView caretRectForPosition:selectedTextRange.end];
++  if (CGRectIsNull(caretRect) || CGRectIsInfinite(caretRect) || CGRectGetMaxY(caretRect) <= 0) {
++    return;
++  }
++
++  CGRect caretRectInScrollView = [_backedTextInputView convertRect:caretRect toView:enclosingScrollView];
++  // Keep the same breathing room UIKit adds when it reveals the caret itself.
++  [enclosingScrollView scrollRectToVisible:CGRectInset(caretRectInScrollView, 0, -4) animated:NO];
++}
++
+ - (void)_setMultiline:(BOOL)multiline
+ {
+   [_backedTextInputView removeFromSuperview];
 diff --git a/React/Fabric/Mounting/ComponentViews/View/RCTViewComponentView.mm b/React/Fabric/Mounting/ComponentViews/View/RCTViewComponentView.mm
-index b033b7c..7e10dc9 100644
+index b033b7c71914d287470b7b86bd6bf39d311294ba..7e10dc929147fa4474ca9f955f5cd85d27aea935 100644
 --- a/React/Fabric/Mounting/ComponentViews/View/RCTViewComponentView.mm
 +++ b/React/Fabric/Mounting/ComponentViews/View/RCTViewComponentView.mm
 @@ -827,9 +827,17 @@ static void RCTAddContourEffectToLayer(
@@ -263,7 +345,7 @@ index b033b7c..7e10dc9 100644
      layer.contentsScale = image.scale;
  
 diff --git a/React/Views/RefreshControl/RCTRefreshControl.h b/React/Views/RefreshControl/RCTRefreshControl.h
-index ed306d7..d447dad 100644
+index ed306d7cadbf36a2fed79be8bd9d68b5dca135bd..d447dad534fefa9fcbdbbde6dcbbdcddadd5a824 100644
 --- a/React/Views/RefreshControl/RCTRefreshControl.h
 +++ b/React/Views/RefreshControl/RCTRefreshControl.h
 @@ -18,6 +18,7 @@ __attribute__((deprecated("This API will be removed along with the legacy archit
@@ -275,7 +357,7 @@ index ed306d7..d447dad 100644
  @end
  
 diff --git a/React/Views/RefreshControl/RCTRefreshControl.m b/React/Views/RefreshControl/RCTRefreshControl.m
-index 2dc86e4..6661dc6 100644
+index 2dc86e464264c9450eef18d7b153d35bf6a5cc55..6661dc69a04766afa0284d6e83839b219e98cf57 100644
 --- a/React/Views/RefreshControl/RCTRefreshControl.m
 +++ b/React/Views/RefreshControl/RCTRefreshControl.m
 @@ -25,6 +25,7 @@ @implementation RCTRefreshControl {
@@ -319,7 +401,7 @@ index 2dc86e4..6661dc6 100644
  
  #endif // RCT_REMOVE_LEGACY_ARCH
 diff --git a/React/Views/RefreshControl/RCTRefreshControlManager.m b/React/Views/RefreshControl/RCTRefreshControlManager.m
-index 1e9ff52..44329c5 100644
+index 1e9ff527f4e6691d716da624031113a397876981..44329c5422c6f24d8a437fa35c6f2bad6bf8622b 100644
 --- a/React/Views/RefreshControl/RCTRefreshControlManager.m
 +++ b/React/Views/RefreshControl/RCTRefreshControlManager.m
 @@ -24,11 +24,12 @@ - (UIView *)view
@@ -337,7 +419,7 @@ index 1e9ff52..44329c5 100644
  {
    [self.bridge.uiManager addUIBlock:^(RCTUIManager *uiManager, NSDictionary<NSNumber *, UIView *> *viewRegistry) {
 diff --git a/ReactAndroid/src/main/java/com/facebook/react/views/view/ReactViewGroup.kt b/ReactAndroid/src/main/java/com/facebook/react/views/view/ReactViewGroup.kt
-index 5977524..426de3a 100644
+index 59775241c80bec99ad3ec080f2425aacc8900c24..426de3aa77cda2032d7b0991e2ca3f8482a438d3 100644
 --- a/ReactAndroid/src/main/java/com/facebook/react/views/view/ReactViewGroup.kt
 +++ b/ReactAndroid/src/main/java/com/facebook/react/views/view/ReactViewGroup.kt
 @@ -459,6 +459,13 @@ public open class ReactViewGroup public constructor(context: Context?) :
@@ -366,7 +448,7 @@ index 5977524..426de3a 100644
      var needUpdateClippingRecursive = false
  
 diff --git a/ReactCommon/react/featureflags/ReactNativeFeatureFlagsOverridesOSSStable.h b/ReactCommon/react/featureflags/ReactNativeFeatureFlagsOverridesOSSStable.h
-index fdabd7b..ef70011 100644
+index fdabd7bab1f03966dc04ba9a462465daeccf8ae3..ef70011ee5c270fb2cac52f3a7408d1e87334145 100644
 --- a/ReactCommon/react/featureflags/ReactNativeFeatureFlagsOverridesOSSStable.h
 +++ b/ReactCommon/react/featureflags/ReactNativeFeatureFlagsOverridesOSSStable.h
 @@ -21,6 +21,10 @@ class ReactNativeFeatureFlagsOverridesOSSStable : public ReactNativeFeatureFlags
@@ -381,7 +463,7 @@ index fdabd7b..ef70011 100644
    {
      return true;
 diff --git a/ReactCommon/react/renderer/textlayoutmanager/platform/ios/react/renderer/textlayoutmanager/RCTTextLayoutManager.mm b/ReactCommon/react/renderer/textlayoutmanager/platform/ios/react/renderer/textlayoutmanager/RCTTextLayoutManager.mm
-index ac55304..d99c8f4 100644
+index ac553045a9c0ce77e288277912538d9e131ebc01..d99c8f4db5a07f1e4ffe7e03ff23adce9c63137b 100644
 --- a/ReactCommon/react/renderer/textlayoutmanager/platform/ios/react/renderer/textlayoutmanager/RCTTextLayoutManager.mm
 +++ b/ReactCommon/react/renderer/textlayoutmanager/platform/ios/react/renderer/textlayoutmanager/RCTTextLayoutManager.mm
 @@ -389,8 +389,9 @@ - (TextMeasurement)_measureTextStorage:(NSTextStorage *)textStorage
@@ -397,7 +479,7 @@ index ac55304..d99c8f4 100644
    NSRange visibleGlyphRange = [layoutManager glyphRangeForTextContainer:textContainer];
  
 diff --git a/ReactCommon/react/renderer/uimanager/UIManager.cpp b/ReactCommon/react/renderer/uimanager/UIManager.cpp
-index 4d64040..ecbd4bd 100644
+index 4d640400dc129724b1a46e429fc90da2fb1919cc..ecbd4bdbdbbebfd1bb8c893b44f90bc66103711e 100644
 --- a/ReactCommon/react/renderer/uimanager/UIManager.cpp
 +++ b/ReactCommon/react/renderer/uimanager/UIManager.cpp
 @@ -535,30 +535,8 @@ std::shared_ptr<const ShadowNode> UIManager::findShadowNodeByTag_DEPRECATED(

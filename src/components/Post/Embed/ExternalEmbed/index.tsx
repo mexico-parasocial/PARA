@@ -15,7 +15,7 @@ import {toNiceDomain} from '#/lib/strings/url-helpers'
 import {useExternalEmbedsPrefs} from '#/state/preferences'
 import {atoms as a, useTheme} from '#/alf'
 import {Divider} from '#/components/Divider'
-import {Earth_Stroke2_Corner0_Rounded as Globe} from '#/components/icons/Globe'
+import {Earth_Stroke2_Corner0_Rounded as Globe} from '#/components/icons/Earth'
 import {Link} from '#/components/Link'
 import {Text} from '#/components/Typography'
 import {IS_NATIVE} from '#/env'
@@ -39,7 +39,7 @@ export const ExternalEmbed = ({
 }) => {
   const {_} = useLingui()
   const t = useTheme()
-  const playHaptic = useHaptics()
+  const haptics = useHaptics()
   const externalEmbedPrefs = useExternalEmbedsPrefs()
   const niceUrl = toNiceDomain(link.uri)
   const imageUri = link.thumb
@@ -58,14 +58,14 @@ export const ExternalEmbed = ({
   const hasMedia = Boolean(imageUri || embedPlayerParams)
 
   const onPress = () => {
-    playHaptic('Light')
+    haptics.tap()
     onOpen?.()
   }
 
   const onShareExternal = IS_NATIVE
     ? () => {
         if (link.uri) {
-          playHaptic('Heavy')
+          haptics.longPress()
           void shareUrl(link.uri)
         }
       }

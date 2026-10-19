@@ -6,7 +6,7 @@ import {HITSLOP_10} from '#/lib/constants'
 import {logger} from '#/logger'
 import {type ThreadPreferences} from '#/state/queries/preferences/useThreadPreferences'
 import {Button, ButtonIcon} from '#/components/Button'
-import {SettingsSliderVertical_Stroke2_Corner0_Rounded as SettingsSlider} from '#/components/icons/SettingsSlider'
+import {SettingsSliderVertical_Stroke2_Corner0_Rounded as SettingsSlider} from '#/components/icons/Settings'
 import * as Menu from '#/components/Menu'
 
 export function HeaderDropdown({

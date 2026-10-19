@@ -9,7 +9,7 @@ import {type NavigationProp} from '#/lib/routes/types'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
-import {RaisingHand4Finger_Stroke2_Corner0_Rounded as RaisingHand} from '#/components/icons/RaisingHand'
+import {RaisingHand4Finger_Stroke2_Corner0_Rounded as RaisingHand} from '#/components/icons/RaisingHand4Finger'
 import {Text} from '#/components/Typography'
 
 export function CivicProofDialog({

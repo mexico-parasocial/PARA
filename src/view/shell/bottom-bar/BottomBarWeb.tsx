@@ -36,14 +36,15 @@ import {
 } from '#/components/icons/Bell'
 import {
   HomeOpen_Filled_Corner0_Rounded as HomeFilled,
-  HomeOpen_Stoke2_Corner0_Rounded as Home,
-} from '#/components/icons/HomeOpen'
+  HomeOpen_Stroke2_Corner0_Rounded as Home,
+} from '#/components/icons/Home'
 import {
   MagnifyingGlass_Filled_Stroke2_Corner0_Rounded as MagnifyingGlassFilled,
   MagnifyingGlass_Stroke2_Corner0_Rounded as MagnifyingGlass,
 } from '#/components/icons/MagnifyingGlass'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
+import {isFollowingV2HomeDotEnabled} from '#/features/followingV2/eligibility'
 import {styles} from './BottomBarStyles'
 
 type NavItemValue =
@@ -102,10 +103,7 @@ export function BottomBarWeb() {
               routeName="Home"
               href="/"
               navItem="home"
-              hasNew={
-                hasHomeBadge &&
-                ax.features.enabled(ax.features.FollowingV2Enable)
-              }>
+              hasNew={hasHomeBadge && isFollowingV2HomeDotEnabled(ax)}>
               {({isActive}) => {
                 const Icon = isActive ? HomeFilled : Home
                 return (

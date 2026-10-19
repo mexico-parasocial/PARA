@@ -9,6 +9,7 @@ import {
   PERSONAL_RELATION_LABELS,
 } from '#/features/civicTree/colors'
 import {
+  appearancesOf,
   type PersonalTreeGraph,
   relationsForNode,
 } from '#/features/personalCivicTree/graph'
@@ -23,15 +24,27 @@ export function PersonalTreeNodeSheet({
   nodeId,
   onClose,
   onOpenCollection,
+  onSelectNode,
   onEdit,
   onRemove,
+  fill,
 }: {
   graph: PersonalTreeGraph
   nodeId: string
   onClose: () => void
   onOpenCollection: (collectionId: string) => void
+  /**
+   * Moves the selection to another copy of this item. Without it, choosing a
+   * copy opens the collection that holds it.
+   */
+  onSelectNode?: (nodeId: string) => void
   onEdit?: (nodeId: string) => void
   onRemove?: (nodeId: string) => void
+  /**
+   * The sheet has a whole column to itself, so connections list in full
+   * instead of scrolling inside a short box.
+   */
+  fill?: boolean
 }) {
   const t = useTheme()
   const {t: l} = useLingui()
@@ -40,6 +53,7 @@ export function PersonalTreeNodeSheet({
   if (!node) return null
 
   const relations = relationsForNode(graph, nodeId)
+  const appearances = appearancesOf(graph, nodeId)
   const {item} = node.metadata
 
   return (
@@ -108,6 +122,53 @@ export function PersonalTreeNodeSheet({
         </Text>
       ) : null}
 
+      {appearances.length > 0 ? (
+        <View
+          style={[
+            a.px_md,
+            a.py_sm,
+            a.gap_xs,
+            {borderTopWidth: 1, borderTopColor: t.palette.contrast_50},
+          ]}>
+          <Text style={[a.text_xs, a.font_bold, t.atoms.text_contrast_medium]}>
+            <Trans>Also in your collections</Trans>
+          </Text>
+          <View style={[a.flex_row, a.flex_wrap, a.gap_xs]}>
+            {appearances.map(copy => {
+              const color =
+                graph.groups.find(g => g.id === copy.collectionId)?.color ??
+                t.palette.contrast_400
+              return (
+                <TouchableOpacity
+                  key={copy.nodeId}
+                  accessibilityRole="button"
+                  accessibilityLabel={copy.collectionName}
+                  accessibilityHint={
+                    onSelectNode
+                      ? l`Shows this item in that collection`
+                      : l`Opens this collection`
+                  }
+                  onPress={() =>
+                    onSelectNode
+                      ? onSelectNode(copy.nodeId)
+                      : onOpenCollection(copy.collectionId)
+                  }
+                  style={[
+                    a.rounded_full,
+                    a.px_sm,
+                    a.py_2xs,
+                    {borderWidth: 1, borderColor: color},
+                  ]}>
+                  <Text style={[a.text_xs, {color}]} numberOfLines={1}>
+                    {copy.collectionName}
+                  </Text>
+                </TouchableOpacity>
+              )
+            })}
+          </View>
+        </View>
+      ) : null}
+
       <View
         style={[
           a.px_md,
@@ -131,7 +192,9 @@ export function PersonalTreeNodeSheet({
             </Trans>
           </Text>
         ) : (
-          <ScrollView style={{maxHeight: 168}} nestedScrollEnabled>
+          <ScrollView
+            style={fill ? undefined : {maxHeight: 168}}
+            nestedScrollEnabled>
             {relations.map(({edge, otherTitle, outgoing}) => {
               const color =
                 PERSONAL_RELATION_COLORS[edge.kind] ?? t.palette.contrast_400

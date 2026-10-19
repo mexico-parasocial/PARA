@@ -13,6 +13,7 @@ import {
   createNavigationContainerRef,
   DarkTheme,
   DefaultTheme,
+  getActionFromState as getActionFromStateDefault,
   type LinkingOptions,
   NavigationContainer,
   StackActions,
@@ -26,13 +27,16 @@ import {
   type ChatNotificationPayload,
   getNotificationPayload,
   isChatNotificationPayload,
-  type NotificationPayload,
   notificationToURL,
   storePayloadForAccountSwitch,
 } from '#/lib/hooks/useNotificationHandler'
 import {useWebScrollRestoration} from '#/lib/hooks/useWebScrollRestoration'
 import {useCallOnce} from '#/lib/once'
-import {buildStateObject} from '#/lib/routes/helpers'
+import {
+  buildStateObject,
+  getCurrentRoute,
+  NATIVE_LINK_ACTION_CONFIG,
+} from '#/lib/routes/helpers'
 import {
   type AllNavigatorParams,
   type BottomTabNavigatorParams,
@@ -70,7 +74,6 @@ import {ModerationBlockedAccounts} from '#/view/screens/ModerationBlockedAccount
 import {ModerationModlistsScreen} from '#/view/screens/ModerationModlists'
 import {ModerationMutedAccounts} from '#/view/screens/ModerationMutedAccounts'
 import {NotFoundScreen} from '#/view/screens/NotFound'
-import {NotificationsScreen} from '#/view/screens/Notifications'
 import {PostThreadScreen} from '#/view/screens/PostThread'
 import {PrivacyPolicyScreen} from '#/view/screens/PrivacyPolicy'
 import {ProfileScreen} from '#/view/screens/Profile'
@@ -82,6 +85,7 @@ import {BottomBar} from '#/view/shell/bottom-bar/BottomBar'
 import {createNativeStackNavigatorWithAuth} from '#/view/shell/createNativeStackNavigatorWithAuth'
 import {AgoraScreen} from '#/screens/Agora/AgoraScreen'
 import {ProposalDetailScreen} from '#/screens/Agora/ProposalDetailScreen'
+import {AtmosphereScreen} from '#/screens/Atmosphere'
 import {BookmarksScreen} from '#/screens/Bookmarks'
 import {CabildeosScreen} from '#/screens/Cabildeos/CabildeosScreen'
 import {CabildeoDetailScreen} from '#/screens/Communities/CabildeoDetailScreen'
@@ -103,12 +107,13 @@ import {CreatePositionScreen} from '#/screens/Communities/CreatePositionScreen'
 import {DelegateVoteScreen} from '#/screens/Communities/DelegateVoteScreen'
 import {ModeratorDashboardScreen} from '#/screens/Communities/ModeratorDashboardScreen'
 import {MyCommunitiesScreen} from '#/screens/Communities/MyCommunitiesScreen'
+import {CustomFeedScreen} from '#/screens/CustomFeed'
+import {CustomFeedLikedByScreen} from '#/screens/CustomFeed/CustomFeedLikedBy'
 import {DiscourseAnalysisScreen} from '#/screens/Dashboard/DiscourseAnalysis'
 import {DocumentsScreen} from '#/screens/Dashboard/DocumentsScreen'
 import {MatterDetailsScreen} from '#/screens/Dashboard/MatterDetails'
 import {MemesScreen} from '#/screens/Dashboard/MemesScreen'
 import {PoliciesDashboard} from '#/screens/Dashboard/PoliciesAndMatters'
-import {PolicyDetailsScreen} from '#/screens/Dashboard/PolicyDetails'
 import {RepresentativesScreen} from '#/screens/Dashboard/Representatives'
 import {VSScreen} from '#/screens/Dashboard/VSScreen'
 import {CivicTreeScreen} from '#/screens/Data/CivicTreeScreen'
@@ -132,7 +137,6 @@ import ConsentAuditScreen from '#/screens/m8/ConsentAuditScreen'
 import IdentityHubScreen from '#/screens/m8/IdentityHubScreen'
 import INEVerificationScreen from '#/screens/m8/INEVerificationScreen'
 import TrustedIssuersScreen from '#/screens/m8/TrustedIssuersScreen'
-import VerifyDashboardScreen from '#/screens/m8/VerifyDashboardScreen'
 import WalletScreen from '#/screens/m8/WalletScreen'
 import {AgentChatScreen} from '#/screens/Messages/AgentChat'
 import {MessagesScreen} from '#/screens/Messages/ChatList'
@@ -147,8 +151,13 @@ import {MessagesSettingsScreen} from '#/screens/Messages/Settings'
 import {ModerationScreen} from '#/screens/Moderation'
 import {Screen as ModerationVerificationSettings} from '#/screens/Moderation/VerificationSettings'
 import {ModerationInboxScreen} from '#/screens/ModerationInbox'
+import {ModerationInboxNoticeDetailsScreen} from '#/screens/ModerationInbox/Notice'
+import {ModerationInboxReportDetailsScreen} from '#/screens/ModerationInbox/Report'
+import {ModerationInboxSettingsScreen} from '#/screens/ModerationInbox/Settings'
 import {Screen as ModerationInteractionSettings} from '#/screens/ModerationInteractionSettings'
+import {NotificationsScreen} from '#/screens/Notifications'
 import {NotificationsActivityListScreen} from '#/screens/Notifications/ActivityList'
+import {PolicyDetailsScreen} from '#/screens/Policies/PolicyDetailsScreen'
 import {PostHighlightsScreen} from '#/screens/Post/PostHighlights'
 import {PostLikedByScreen} from '#/screens/Post/PostLikedBy'
 import {PostQuotesScreen} from '#/screens/Post/PostQuotes'
@@ -178,6 +187,7 @@ import {ActivityPrivacySettingsScreen} from '#/screens/Settings/ActivityPrivacyS
 import {AppearanceSettingsScreen} from '#/screens/Settings/AppearanceSettings'
 import {AppIconSettingsScreen} from '#/screens/Settings/AppIconSettings'
 import {AppPasswordsScreen} from '#/screens/Settings/AppPasswords'
+import {AutomationLabelSettingsScreen} from '#/screens/Settings/AutomationLabelSettings'
 import {BetaFeaturesSettingsScreen} from '#/screens/Settings/BetaFeaturesSettings'
 import {ContentAndMediaSettingsScreen} from '#/screens/Settings/ContentAndMediaSettings'
 import {ExternalMediaPreferencesScreen} from '#/screens/Settings/ExternalMediaPreferences'
@@ -215,6 +225,7 @@ import {
 import {useAnalytics} from '#/analytics'
 import {setNavigationMetadata} from '#/analytics/metadata'
 import {IS_LIQUID_GLASS, IS_NATIVE, IS_WEB} from '#/env'
+import {InviteScannerScreen} from '#/features/inviteFriends'
 import {router} from '#/routes'
 import {renderMessagesSplitViewLayout} from './screens/Messages/components/splitView/MessagesSplitViewLayout'
 const navigationRef = createNavigationContainerRef<AllNavigatorParams>()
@@ -247,6 +258,11 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
         options={{title: title(msg`Not Found`)}}
       />
       <Stack.Screen
+        name="Atmosphere"
+        getComponent={() => AtmosphereScreen}
+        options={{title: title(msg`Atmosphere`)}}
+      />
+      <Stack.Screen
         name="Lists"
         component={ListsScreen}
         options={{title: title(msg`Lists`), requireAuth: true}}
@@ -260,6 +276,21 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
         name="ModerationInbox"
         getComponent={() => ModerationInboxScreen}
         options={{title: title(msg`Moderation inbox`), requireAuth: true}}
+      />
+      <Stack.Screen
+        name="ModerationInboxSettings"
+        getComponent={() => ModerationInboxSettingsScreen}
+        options={{title: title(msg`Mod inbox settings`), requireAuth: true}}
+      />
+      <Stack.Screen
+        name="ModerationInboxReportDetails"
+        getComponent={() => ModerationInboxReportDetailsScreen}
+        options={{title: title(msg`Your report`), requireAuth: true}}
+      />
+      <Stack.Screen
+        name="ModerationInboxNoticeDetails"
+        getComponent={() => ModerationInboxNoticeDetailsScreen}
+        options={{title: title(msg`Notice`), requireAuth: true}}
       />
       <Stack.Screen
         name="ModerationModlists"
@@ -378,6 +409,16 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
         })}
       />
       <Stack.Screen
+        name="CustomFeed"
+        getComponent={() => CustomFeedScreen}
+        options={{title: title(msg`Feed`)}}
+      />
+      <Stack.Screen
+        name="CustomFeedLikedBy"
+        getComponent={() => CustomFeedLikedByScreen}
+        options={{title: title(msg`Liked by`)}}
+      />
+      <Stack.Screen
         name="ProfileFeed"
         getComponent={() => ProfileFeedScreen}
         options={{title: title(msg`Feed`)}}
@@ -411,6 +452,16 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
         name="Log"
         getComponent={() => LogScreen}
         options={{title: title(msg`Log`), requireAuth: true}}
+      />
+      <Stack.Screen
+        name="InviteScanner"
+        getComponent={() => InviteScannerScreen}
+        options={{title: title(msg`Scan QR code`), requireAuth: true}}
+      />
+      <Stack.Screen
+        name="AutomationLabelSettings"
+        getComponent={() => AutomationLabelSettingsScreen}
+        options={{title: title(msg`Automation Label`), requireAuth: true}}
       />
       <Stack.Screen
         name="Support"
@@ -982,11 +1033,6 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
         options={{title: title(msg`My Wallet`), requireAuth: true}}
       />
       <Stack.Screen
-        name="VerifyDashboard"
-        getComponent={() => VerifyDashboardScreen}
-        options={{title: title(msg`Verify Dashboard`), requireAuth: true}}
-      />
-      <Stack.Screen
         name="TrustedIssuers"
         getComponent={() => TrustedIssuersScreen}
         options={{title: title(msg`Trusted Issuers`), requireAuth: true}}
@@ -1191,7 +1237,7 @@ function DataTabNavigator() {
       <DataTab.Screen
         name="MyBase"
         getComponent={() => MyBaseScreen}
-        options={{title: 'My Base'}}
+        options={{title: i18n._(msg`My Base`)}}
       />
       <DataTab.Screen
         name="MyCommunities"
@@ -1441,15 +1487,11 @@ const FlatNavigator = ({
 
 const LINKING = {
   // TODO figure out what we are going to use
-  // note: `bluesky://` is what is used in app.config.js
-  prefixes: ['bsky://', 'bluesky://', 'https://bsky.app'],
+  prefixes: ['para://', 'bsky://', 'bluesky://', 'https://bsky.app'],
 
   getPathFromState(state: State) {
     // find the current node in the navigation tree
-    let node = state.routes[state.index || 0]
-    while (node.state?.routes && typeof node.state?.index === 'number') {
-      node = node.state?.routes[node.state?.index]
-    }
+    const node = getCurrentRoute(state)
 
     // build the path
     const route = router.matchName(node.name)
@@ -1523,6 +1565,12 @@ const LINKING = {
       const res = buildStateObject('Flat', name, params)
       return res
     }
+  },
+  getActionFromState(state, options) {
+    return getActionFromStateDefault(
+      state,
+      IS_NATIVE ? NATIVE_LINK_ACTION_CONFIG : options,
+    )
   },
 } satisfies LinkingOptions<AllNavigatorParams>
 
@@ -1627,10 +1675,7 @@ function RoutesContainer({children}: React.PropsWithChildren<{}>) {
         if (isChatNotificationPayload(payload)) {
           handleChatNotification(payload)
         } else if (payload.reason === 'matrix-message') {
-          const matrixPayload = payload as Extract<
-            NonNullable<NotificationPayload>,
-            {reason: 'matrix-message'}
-          >
+          const matrixPayload = payload
           // @ts-expect-error nested navigators aren't typed -sfn
           void navigate('MessagesTab', {
             screen: 'CommunityChat',

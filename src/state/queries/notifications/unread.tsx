@@ -4,7 +4,6 @@
 
 import {
   createContext,
-  type PropsWithChildren,
   useContext,
   useEffect,
   useMemo,
@@ -18,14 +17,13 @@ import {EventEmitter} from 'eventemitter3'
 
 import BroadcastChannel from '#/lib/broadcast'
 import {resetBadgeCount} from '#/lib/notifications/notifications'
-import {logger} from '#/logger'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
 import {truncateAndInvalidate} from '#/state/queries/util'
 import {useAppviewClient, useSession} from '#/state/session'
 import {app} from '#/lexicons'
 import {RQKEY as RQKEY_NOTIFS} from './feed'
-import {type CachedFeedPage, type FeedPage} from './types'
-import {fetchPage} from './util'
+import {type CachedFeedPage, type FeedPage, type UnreadCheck} from './types'
+import {fetchPage, markUnreadCheckSeen, summarizeUnreadCheck} from './util'
 
 const UPDATE_INTERVAL = 30 * 1e3 // 30sec
 
@@ -36,7 +34,11 @@ const emitter = new EventEmitter()
 type StateContext = string
 
 interface ApiContext {
-  markAllRead: () => Promise<void>
+  /**
+   * Marks notifications as seen on the server, up to `seenAt` if given,
+   * otherwise up to the last unread check.
+   */
+  markAllRead: (opts?: {seenAt?: Date}) => Promise<void>
   checkUnread: (opts?: {
     invalidate?: boolean
     isPoll?: boolean
@@ -47,6 +49,9 @@ interface ApiContext {
 const stateContext = createContext<StateContext>('')
 stateContext.displayName = 'NotificationsUnreadStateContext'
 
+const lastCheckContext = createContext<UnreadCheck | undefined>(undefined)
+lastCheckContext.displayName = 'NotificationsUnreadLastCheckContext'
+
 const apiContext = createContext<ApiContext>({
   async markAllRead() {},
   async checkUnread() {},
@@ -54,13 +59,14 @@ const apiContext = createContext<ApiContext>({
 })
 apiContext.displayName = 'NotificationsUnreadApiContext'
 
-export function Provider({children}: PropsWithChildren<{}>) {
+export function Provider({children}: React.PropsWithChildren<{}>) {
   const {hasSession} = useSession()
   const client = useAppviewClient()
   const queryClient = useQueryClient()
   const moderationOpts = useModerationOpts()
 
   const [numUnread, setNumUnread] = useState('')
+  const [lastCheck, setLastCheck] = useState<UnreadCheck>()
 
   const checkUnreadRef = useRef<ApiContext['checkUnread'] | null>(null)
   const cacheRef = useRef<CachedFeedPage>({
@@ -118,19 +124,36 @@ export function Provider({children}: PropsWithChildren<{}>) {
   }, [setNumUnread])
 
   const isFetchingRef = useRef(false)
+  /**
+   * When notifications were last marked as seen, in ms since the epoch. A
+   * check asked before then may count notifications that have been seen since.
+   */
+  const lastMarkedReadAt = useRef(0)
 
   // create API
   const api = useMemo<ApiContext>(() => {
     return {
-      async markAllRead() {
+      async markAllRead({seenAt = cacheRef.current.syncedAt} = {}) {
         // update server
         await client.call(app.bsky.notification.updateSeen, {
           // toISOString always emits the Z-suffixed form the format requires
-          seenAt: cacheRef.current.syncedAt.toISOString() as ISODatetimeString,
+          seenAt: seenAt.toISOString() as ISODatetimeString,
         })
+        lastMarkedReadAt.current = Date.now()
+
+        /*
+         * Nothing is unread any more, so polling goes back to its usual rate,
+         * and the page from the last check is out of date.
+         */
+        cacheRef.current = {
+          ...cacheRef.current,
+          unreadCount: 0,
+          usableInFeed: false,
+        }
 
         // update & broadcast
         setNumUnread('')
+        setLastCheck(check => markUnreadCheckSeen(check, seenAt.getTime()))
         broadcast.postMessage({event: ''})
         resetBadgeCount()
       },
@@ -160,6 +183,7 @@ export function Provider({children}: PropsWithChildren<{}>) {
           isFetchingRef.current = true
 
           // count
+          const requestedAt = Date.now()
           const {page, indexedAt: lastIndexed} = await fetchPage({
             client,
             cursor: undefined,
@@ -172,6 +196,14 @@ export function Provider({children}: PropsWithChildren<{}>) {
             // in the notifications query, otherwise skip it
             fetchAdditionalData: !!invalidate,
           })
+          /*
+           * Marked read while this was in flight, so the count may be stale.
+           * The next check will catch up. A check that loads into the feed
+           * goes ahead, since that feed marks what it shows as read anyway.
+           */
+          if (!invalidate && requestedAt < lastMarkedReadAt.current) {
+            return
+          }
           const unreadCount = countUnread(page)
           const unreadCountStr =
             unreadCount >= 30
@@ -195,18 +227,12 @@ export function Provider({children}: PropsWithChildren<{}>) {
 
           // update & broadcast
           setNumUnread(unreadCountStr)
+          setLastCheck(summarizeUnreadCheck(page, requestedAt))
           if (invalidate) {
             truncateAndInvalidate(queryClient, RQKEY_NOTIFS('all'))
             truncateAndInvalidate(queryClient, RQKEY_NOTIFS('mentions'))
           }
           broadcast.postMessage({event: unreadCountStr})
-        } catch (e) {
-          // Background sync: callers fire and forget, so a rejection here
-          // surfaces as an unhandled-error red screen over the whole app
-          // whenever the server is down or erroring.
-          logger.warn('notifications: unread check failed', {
-            safeMessage: e instanceof Error ? e.message : String(e),
-          })
         } finally {
           isFetchingRef.current = false
         }
@@ -224,13 +250,23 @@ export function Provider({children}: PropsWithChildren<{}>) {
 
   return (
     <stateContext.Provider value={numUnread}>
-      <apiContext.Provider value={api}>{children}</apiContext.Provider>
+      <lastCheckContext.Provider value={lastCheck}>
+        <apiContext.Provider value={api}>{children}</apiContext.Provider>
+      </lastCheckContext.Provider>
     </stateContext.Provider>
   )
 }
 
 export function useUnreadNotifications() {
   return useContext(stateContext)
+}
+
+/**
+ * What the last unread check found, or undefined before the first one.
+ * Updated on every check, and whenever notifications are marked read.
+ */
+export function useLastUnreadCheck() {
+  return useContext(lastCheckContext)
 }
 
 export function useUnreadNotificationsApi() {

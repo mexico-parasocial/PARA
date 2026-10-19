@@ -27,9 +27,9 @@ import {Text} from '#/view/com/util/text/Text'
 import {atoms as a, useBreakpoints, useLayoutBreakpoints, useTheme} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
-import {Bookmark as BookmarkIcon} from '#/components/icons/Bookmark'
+import {Bookmark_Stroke2_Corner0_Rounded as BookmarkIcon} from '#/components/icons/Bookmark'
 import {DotGrid3x1_Stroke2_Corner0_Rounded as EllipsisIcon} from '#/components/icons/DotGrid'
-import {ListPlus_Stroke2_Corner0_Rounded as NewCollectionIcon} from '#/components/icons/ListPlus'
+import {ListPlus_Stroke2_Corner0_Rounded as NewCollectionIcon} from '#/components/icons/List'
 import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/Plus'
 import * as Layout from '#/components/Layout'
 import * as Prompt from '#/components/Prompt'
@@ -617,6 +617,7 @@ function CivicTreeInner({
               graph={graph}
               nodeId={selectedNodeId}
               onClose={() => cardDetailsControl.close()}
+              onSelectNode={setSelectedNodeId}
               onOpenCollection={collectionId =>
                 cardDetailsControl.close(() =>
                   navigation.navigate('CollectionDetail', {collectionId}),

@@ -13,7 +13,7 @@ import {Logotype} from '#/view/icons/Logotype'
 import {atoms as a, flatten, useBreakpoints, web} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import {type WelcomeModalControl} from '#/components/hooks/useWelcomeModal.shared'
-import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/Times'
+import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/TimesLarge'
 import {Text} from '#/components/Typography'
 
 const welcomeModalBg = require('../../assets/images/welcome-modal-bg.jpg')

@@ -7,11 +7,11 @@ import {
   type ButtonProps,
   type UninheritableButtonProps,
 } from '#/components/Button'
-import {CircleCheck_Stroke2_Corner0_Rounded as CircleCheck} from '#/components/icons/CircleCheck'
+import {CircleCheck_Stroke2_Corner0_Rounded as CircleCheck} from '#/components/icons/Circle'
 import {
   CircleInfo_Stroke2_Corner0_Rounded as CircleInfo,
   CircleInfo_Stroke2_Corner0_Rounded as ErrorIcon,
-} from '#/components/icons/CircleInfo'
+} from '#/components/icons/Circle'
 import {type Props as SVGIconProps} from '#/components/icons/common'
 import {Warning_Stroke2_Corner0_Rounded as WarningIcon} from '#/components/icons/Warning'
 import {dismiss} from '#/components/Toast/sonner'

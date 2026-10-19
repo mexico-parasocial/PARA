@@ -4,26 +4,38 @@ import {isBefore, subYears} from 'date-fns'
 
 import {atoms as a, useTheme} from '#/alf'
 import {ChevronRight_Stroke2_Corner0_Rounded as ChevronRightIcon} from '#/components/icons/Chevron'
+import {Link} from '#/components/Link'
 import {Text} from '#/components/Typography'
 
 export function ReportRow({
   subject,
   action,
   date,
+  dateEnd,
+  to,
   unread,
 }: {
   subject: string
-  action: string
+  action?: string
   date: Date
+  dateEnd?: Date
+  to: React.ComponentProps<typeof Link>['to']
   unread?: boolean
 }) {
   const t = useTheme()
-  const {i18n} = useLingui()
+  const {i18n, t: l} = useLingui()
 
   const shouldShowYear = isBefore(date, subYears(new Date(), 1))
 
   return (
-    <View
+    <Link
+      label={l`View report details: ${subject}`}
+      to={to}
+      hoverStyle={
+        unread
+          ? {backgroundColor: t.palette.primary_50}
+          : t.atoms.bg_contrast_25
+      }
       style={[
         a.flex_row,
         a.w_full,
@@ -41,13 +53,25 @@ export function ReportRow({
           style={[a.text_md, unread ? a.font_semi_bold : a.font_medium]}>
           {subject}
         </Text>
-        <Text style={[a.text_sm, t.atoms.text_contrast_high]}>{action}</Text>
+        {action ? (
+          <Text style={[a.text_sm, t.atoms.text_contrast_high]}>{action}</Text>
+        ) : undefined}
         <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-          {i18n.date(date, {
-            month: 'short',
-            day: 'numeric',
-            year: shouldShowYear ? 'numeric' : undefined,
-          })}
+          {dateEnd
+            ? `${i18n.date(date, {
+                month: 'short',
+                day: 'numeric',
+                year: shouldShowYear ? 'numeric' : undefined,
+              })} – ${i18n.date(dateEnd, {
+                month: 'short',
+                day: 'numeric',
+                year: shouldShowYear ? 'numeric' : undefined,
+              })}`
+            : i18n.date(date, {
+                month: 'short',
+                day: 'numeric',
+                year: shouldShowYear ? 'numeric' : undefined,
+              })}
         </Text>
       </View>
       <View
@@ -68,6 +92,6 @@ export function ReportRow({
         ) : undefined}
         <ChevronRightIcon size="md" style={[t.atoms.text_contrast_medium]} />
       </View>
-    </View>
+    </Link>
   )
 }

@@ -1,6 +1,6 @@
 import {memo, useCallback, useMemo, useState} from 'react'
 import {View} from 'react-native'
-import {type ModerationOpts} from '@bsky/sdk/moderation'
+import {moderateProfile, type ModerationOpts} from '@bsky/sdk/moderation'
 import {type RichText as RichTextAPI} from '@bsky/sdk/richtext'
 import {msg, plural} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -10,7 +10,6 @@ import {Plural, Trans} from '@lingui/react/macro'
 import {MAX_LABELERS} from '#/lib/constants'
 import {useHaptics} from '#/lib/haptics'
 import {isAppLabeler} from '#/lib/moderation'
-import {moderateProfile} from '#/lib/moderation/subjects'
 import {useProfileShadow} from '#/state/cache/profile-shadow'
 import {type Shadow} from '#/state/cache/types'
 import {useLabelerSubscriptionMutation} from '#/state/queries/labeler'
@@ -63,7 +62,7 @@ let ProfileHeaderLabeler = ({
   const ax = useAnalytics()
   const {_} = useLingui()
   const {currentAccount, hasSession} = useSession()
-  const playHaptic = useHaptics()
+  const haptics = useHaptics()
   const isSelf = currentAccount?.did === profile.did
 
   const moderation = useMemo(
@@ -81,7 +80,7 @@ let ProfileHeaderLabeler = ({
       return
     }
     try {
-      playHaptic()
+      haptics.tap()
 
       if (likeUri) {
         await unlikeMod({uri: likeUri})
@@ -101,7 +100,7 @@ let ProfileHeaderLabeler = ({
       )
       ax.logger.error(`Failed to toggle labeler like`, {message: e.message})
     }
-  }, [ax, labeler, playHaptic, likeUri, unlikeMod, likeMod, _])
+  }, [ax, labeler, haptics, likeUri, unlikeMod, likeMod, _])
 
   return (
     <ProfileHeaderShell
@@ -241,7 +240,7 @@ export function HeaderLabelerButtons({
   const {_} = useLingui()
   const {currentAccount, hasSession} = useSession()
   const requireAuth = useRequireAuth()
-  const playHaptic = useHaptics()
+  const haptics = useHaptics()
   const editProfileControl = useDialogControl()
   const {data: preferences} = usePreferencesQuery()
   const {
@@ -259,8 +258,11 @@ export function HeaderLabelerButtons({
 
   const onPressSubscribe = () =>
     requireAuth(async (): Promise<void> => {
-      playHaptic()
+      haptics.confirm()
       const subscribe = !isSubscribed
+      const subscribeMetric = subscribe
+        ? 'moderation:subscribedToLabeler'
+        : 'moderation:unsubscribedFromLabeler'
 
       try {
         await toggleSubscription({
@@ -268,12 +270,7 @@ export function HeaderLabelerButtons({
           subscribe,
         })
 
-        ax.metric(
-          subscribe
-            ? 'moderation:subscribedToLabeler'
-            : 'moderation:unsubscribedFromLabeler',
-          {},
-        )
+        ax.metric(subscribeMetric, {})
       } catch (e: any) {
         reset()
         if (e.message === 'MAX_LABELERS') {
@@ -297,7 +294,7 @@ export function HeaderLabelerButtons({
             size="small"
             color="secondary"
             onPress={() => {
-              playHaptic('Light')
+              haptics.tap()
               editProfileControl.open()
             }}
             label={_(msg`Edit profile`)}

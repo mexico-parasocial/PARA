@@ -1,7 +1,7 @@
 import {StyleSheet} from 'react-native'
 
 import {usePalette} from '#/lib/hooks/usePalette'
-import {ArrowRotateCounterClockwise_Stroke2_Corner0_Rounded as ArrowRotateIcon} from '#/components/icons/ArrowRotate'
+import {ArrowRotateCounterClockwise_Stroke2_Corner0_Rounded as ArrowRotateIcon} from '#/components/icons/Arrow'
 import {Button} from './forms/Button'
 import {Text} from './text/Text'
 

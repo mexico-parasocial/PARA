@@ -29,7 +29,7 @@ import {
 } from '#/components/dms/util'
 import {useInteractionState} from '#/components/hooks/useInteractionState'
 import {MagnifyingGlass_Stroke2_Corner0_Rounded as Search} from '#/components/icons/MagnifyingGlass'
-import {TimesLarge_Stroke2_Corner0_Rounded as X} from '#/components/icons/Times'
+import {TimesLarge_Stroke2_Corner0_Rounded as X} from '#/components/icons/TimesLarge'
 import * as ProfileCard from '#/components/ProfileCard'
 import {Text} from '#/components/Typography'
 import {IS_WEB} from '#/env'

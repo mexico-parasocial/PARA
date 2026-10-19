@@ -43,7 +43,7 @@
 - [x] **Offline Capable**: Verification works without network (with cached Merkle root)
 
 ### Mobile Security
-- [x] **Biometric Lock**: Wallet auto-locks on background, requires biometric to unlock
+- PARA does not require a separate device authentication prompt for iM8 sessions.
 - [x] **Screenshot Prevention**: Wallet screen protected from screenshots (FLAG_SECURE)
 - [x] **Root/Jailbreak Detection**: App warns or blocks on compromised devices
 - [x] **Memory Safety**: Credential data zeroed from RAM after use
@@ -116,10 +116,6 @@ const presentation = createPresentation(credential, claims)
 // ... use it ...
 presentation.encryptedPayload = '' // zero out
 
-// 3. Require biometric for high-sensitivity claims
-if (claims.includes('curvHash')) {
-  await biometricAuth.authenticate()
-}
 ```
 
 ## 📊 Current Test Coverage

@@ -15448,3 +15448,149 @@ msgstr "Bydd eich enw defnyddiwr a'ch cyfrinair yn cael eu rhannu gyda <0>{host}
 #: src/components/verification/VerificationsDialog.tsx:67
 msgid "Your verifications"
 msgstr "Eich dilysiadau"
+
+#: src/screens/Map/MapComponents.tsx:1556
+msgid " (demo questions)"
+msgstr ""
+
+#: src/screens/Map/MapComponents.tsx:1303
+msgid " (demo)"
+msgstr ""
+
+#: src/screens/Map/MapDataNotice.tsx:96
+msgid "{count} civic discussions in the loaded results."
+msgstr ""
+
+#: src/screens/Map/CivicHeatToggle.tsx:36
+msgid "Activity density, {pointCount} located in the loaded results"
+msgstr ""
+
+#: src/screens/Map/CivicHeatToggle.tsx:29
+msgid "Civic activity heat"
+msgstr ""
+
+#: src/screens/Map/MapDataNotice.tsx:67
+msgid "Civic activity is unavailable. Counts are unknown."
+msgstr ""
+
+#: src/screens/Map/MapComponents.tsx:1133
+msgid "Close map search"
+msgstr ""
+
+#: src/screens/Map/MapComponents.tsx:242
+msgid "Close place details"
+msgstr ""
+
+#: src/screens/Map/MapComponents.tsx:1135
+msgid "Closes the search results and clears the search."
+msgstr ""
+
+#: src/screens/Map/MapDataNotice.tsx:72
+msgid "Could not refresh civic activity. Showing the last loaded results."
+msgstr ""
+
+#: src/screens/Map/MapDataNotice.tsx:101
+msgid "Coverage is incomplete. Counts show only loaded results."
+msgstr ""
+
+#: src/screens/Map/MapDataNotice.tsx:77
+msgid "Demo civic activity: the service is unavailable. These are sample results."
+msgstr ""
+
+#: src/screens/Map/MapDataNotice.tsx:82
+msgid "Demo civic activity: the service returned no records. These are sample results."
+msgstr ""
+
+#: src/screens/Map/DistrictProfileScreen.tsx:472
+msgid "Demo party distribution — synthetic percentages, not election results or measured public opinion."
+msgstr ""
+
+#: src/screens/Map/MapDataNotice.tsx:33
+msgid "Demo statistics and officeholders — not verified civic facts."
+msgstr ""
+
+#: src/screens/Map/DistrictProfileScreen.tsx:320
+msgid "Demo term: 2024–2027"
+msgstr ""
+
+#: src/screens/Map/MapComponents.tsx:417
+msgid "Discussions explicitly linked to this city."
+msgstr ""
+
+#: src/screens/Map/MapComponents.tsx:572
+msgid "Discussions explicitly linked to this district."
+msgstr ""
+
+#: src/screens/Map/DistrictProfileScreen.tsx:711
+msgid "District activity is not fully available."
+msgstr ""
+
+#: src/screens/Map/MapComponents.tsx:1155
+msgid "Find a state, district or city on the map."
+msgstr ""
+
+#: src/screens/Map/MapDataNotice.tsx:22
+msgid "Illustrative district shapes — not official boundaries."
+msgstr ""
+
+#: src/screens/Map/MapDataNotice.tsx:69
+msgid "Loading civic activity…"
+msgstr ""
+
+#: src/screens/Map/CivicHeatToggle.tsx:32
+msgid "Located civic activity count is unknown"
+msgstr ""
+
+#: src/screens/Map/MapDataNotice.tsx:93
+msgid "No civic activity matches this view."
+msgstr ""
+
+#: src/screens/Map/DistrictProfileScreen.tsx:710
+msgid "No discussions explicitly linked to this district."
+msgstr ""
+
+#: src/screens/Map/CivicHeatToggle.tsx:34
+msgid "No located discussions in the loaded results"
+msgstr ""
+
+#: src/screens/Map/MapDataNotice.tsx:89
+msgid "No matches in the loaded results. Coverage is incomplete."
+msgstr ""
+
+#: src/screens/Map/DistrictProfileScreen.tsx:292
+#: src/screens/Map/DistrictProfileScreen.tsx:667
+msgid "Officeholder information unavailable"
+msgstr ""
+
+#: src/screens/Map/MapDataNotice.tsx:28
+msgid "Preview facts: population, mayor and party have no verified source date."
+msgstr ""
+
+#: src/screens/Map/MapDataNotice.tsx:108
+msgid "Refreshing civic activity…"
+msgstr ""
+
+#: src/screens/Map/MapDataNotice.tsx:118
+msgid "Retry civic activity"
+msgstr ""
+
+#: src/screens/Map/MapComponents.tsx:1153
+msgid "Search map"
+msgstr ""
+
+#: src/screens/Map/MapDataNotice.tsx:113
+msgid "The last loaded results are demo civic activity."
+msgstr ""
+
+#: src/screens/Map/DistrictProfileScreen.tsx:237
+msgid "Unverified"
+msgstr ""
+
+#: src/screens/Map/MapDataNotice.tsx:38
+msgid "Verified statistics and officeholder information are not available yet."
+msgstr ""
+
+#: src/screens/Map/MapComponents.tsx:243
+#: src/screens/Map/MapComponents.tsx:822
+msgid "Closes place details and returns to the map."
+msgstr ""

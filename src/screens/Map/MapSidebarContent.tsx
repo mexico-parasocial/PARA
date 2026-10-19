@@ -10,10 +10,10 @@ import {
   ChevronBottom_Stroke2_Corner0_Rounded as ChevronDown,
   ChevronTop_Stroke2_Corner0_Rounded as ChevronUp,
 } from '#/components/icons/Chevron'
-import {CircleX_Stroke2_Corner0_Rounded as CircleX} from '#/components/icons/CircleX'
+import {CircleX_Stroke2_Corner0_Rounded as CircleX} from '#/components/icons/Circle'
 import {Filter_Stroke2_Corner0_Rounded as FilterIcon} from '#/components/icons/Filter'
 import {MagnifyingGlass_Stroke2_Corner0_Rounded as MagnifyingGlass} from '#/components/icons/MagnifyingGlass'
-import {SquareBehindSquare4_Stroke2_Corner0_Rounded as LayersIcon} from '#/components/icons/SquareBehindSquare4'
+import {SquareBehindSquare4_Stroke2_Corner0_Rounded as LayersIcon} from '#/components/icons/Square'
 import {Text} from '#/components/Typography'
 import {CivicHeatToggle} from './CivicHeatToggle'
 import {MapDiscourseLensContent} from './MapDiscourseLensContent'
@@ -277,7 +277,7 @@ export function MapSidebarLayers({
   onSelectLayer: (layer: MapLayer) => void
   civicHeatOn: boolean
   onToggleCivicHeat: () => void
-  civicPointCount: number
+  civicPointCount: number | undefined
 }) {
   const t = useTheme()
 
@@ -340,6 +340,7 @@ export function MapSidebarLayers({
               key={layer.id}
               accessibilityRole="tab"
               accessibilityState={{selected}}
+              aria-selected={selected}
               onPress={() => onSelectLayer(layer.id)}
               style={[
                 a.flex_row,

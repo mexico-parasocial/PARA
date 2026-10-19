@@ -4,6 +4,300 @@ This file serves as a high-fidelity "Brain" for future AI agents and human devel
 
 ---
 
+## Current development guide: upstream integration (2026-10-19)
+
+Adapted from [Bluesky Social App's AGENTS.md](https://github.com/bluesky-social/social-app/blob/4ba2e7a4134b5a362172549856b8bbdde8b4b480/AGENTS.md),
+upstream revision `4ba2e7a4134b5a362172549856b8bbdde8b4b480`.
+The original PARA knowledge base is retained below in full.
+
+### Scope, precedence, and historical notes
+
+- PARA's product decisions, identity and encryption boundaries, civic governance
+  rules, demo runbook, and canonical execution queue remain authoritative. An
+  upstream sync must preserve them, including highlights/quotes, public
+  up/down reactions, compass colors, and the absence of reposts.
+- Apply the upstream engineering conventions below to PARA's actual APIs and
+  installed dependencies. This is documentation work, not authorization to
+  upgrade dependencies, change signing, deploy services, or enable gated features.
+- Dated implementation notes below retain their historical evidence. For the
+  specific persistence, localization, runtime, and haptics differences called out
+  here, these checked current notes supersede conflicting older instructions.
+  Otherwise retain the existing PARA-specific rules.
+- The tracked root file is `agents.md`. On this checkout's case-insensitive
+  filesystem, `AGENTS.md` resolves to the same file. `CLAUDE.md` references it.
+  Maintain this one document rather than creating two files with different case.
+
+### Stack and runtime: use the local versions
+
+PARA uses React Native and Expo for iOS, Android, and web, with React Navigation,
+TanStack Query, Lingui, TypeScript, and ALF. Prefer supported modern APIs when
+editing a feature, without copying upstream version requirements blindly.
+
+Checked in this checkout on 2026-10-19:
+
+| Dependency | PARA declaration |
+| --- | --- |
+| React | `19.2.3` |
+| React Native | `0.86.3` |
+| Expo | `57.0.26` |
+| TypeScript | `~6.0.3` (upstream's guide describes TypeScript 7) |
+| React Navigation | `^7.1.33` |
+| TanStack Query | `^5.96.2` |
+| Lingui | `^5.9.2` |
+
+Read `package.json`, `.nvmrc`, and `pnpm-workspace.yaml` before changing tooling.
+PARA's `.nvmrc` is `24.18.0`; WatZappa's separate Node 22 pin still applies.
+There is a local package-manager declaration mismatch: `packageManager` names
+`pnpm@11.21.0`, while `devEngines.packageManager` requires `11.28.5` with
+`onFail: error`. Do not silently edit either declaration or bypass the check to
+make a command run; report the mismatch if it blocks the requested work.
+
+### Development and validation commands
+
+Use the repository's pnpm scripts for development, tests, lint, type checks,
+formatting checks, and builds, rather than invoking their underlying binaries
+and losing the script's options. Run commands from the relevant subproject.
+
+```bash
+pnpm start
+pnpm web
+pnpm android
+pnpm ios
+
+pnpm test --runInBand <path-to-test>
+pnpm lint
+pnpm typecheck
+pnpm typecheck:ios
+pnpm typecheck:android
+pnpm typecheck:web
+pnpm prettier
+
+pnpm build-web
+```
+
+- Select tests that cover the changed behavior. Add colocated tests when useful;
+  documentation-only changes do not require an application build.
+- Distinguish a targeted pass from a full-project pass. Record unrelated build
+  or type errors accurately; do not remove unrelated local work to hide them.
+- `pnpm prebuild` runs `expo prebuild --clean` here. It regenerates native
+  projects and can overwrite PARA's signing, entitlements, and target changes.
+  Follow the existing native runbook when native regeneration is actually needed.
+- Do not run translation extraction or compilation as a routine consequence of
+  editing strings. Upstream delegates this to CI; PARA has
+  `.github/workflows/nightly-update-source-languages.yaml` for source extraction.
+  Use the localization scripts only for an explicitly requested localization
+  build or a demonstrated runtime compilation prerequisite. The older Search
+  Filters recipe below is historical, not a mandatory extraction step.
+
+### Project structure and naming
+
+- Put new route screens in `src/screens/`, shared UI in `src/components/`, and
+  utilities/API helpers in `src/lib/`. Existing `src/view/` consumers can be
+  maintained in place; avoid putting unrelated new modules there.
+- A feature spanning UI, hooks, context, and data may live in `src/features/`.
+  Keep screen-specific components under their screen and feature-specific state
+  near the feature. Use `src/state/queries/` for shared query hooks and follow
+  the surrounding structure instead of creating large unrelated modules.
+- Avoid new top-level `src/` directories when one of those categories fits.
+- Components use PascalCase; ordinary functions, files, and directories use
+  camelCase according to surrounding conventions. A substantial module may use
+  `Feature/index.tsx` with sibling components/hooks/utilities. Keep a small
+  standalone component in one file instead of adding an unnecessary directory.
+- Colocate optional feature documentation in `README.md` and tests in
+  `*.test.ts(x)` or `__tests__/`.
+- Use `#/` for imports rooted at `src/`. Reuse existing components before
+  introducing another implementation.
+
+### Comments and React component patterns
+
+- Explain decisions and constraints in comments rather than restating the code.
+  Use ASCII punctuation in code comments. Use `/** ... */` for documentation
+  attached to a declaration or type member, `/* ... */` for other multiline
+  comments, and `//` for short single-line notes.
+- Prefer function declarations, destructured parameters, inline prop types,
+  sensible optional defaults, and fragment shorthand. Use an explicit keyed
+  `Fragment` only when needed. Global `React` types can be used without importing
+  the React namespace.
+- React Compiler is enabled in `babel.config.js`. Do not add `useMemo` or
+  `useCallback` by default. Keep manual memoization when there is a concrete
+  dependency, external-library identity requirement, or worklet requirement;
+  do not strip existing hooks as unrelated cleanup.
+
+### ALF, layout, typography, and shared controls
+
+Use `atoms as a` and `useTheme()` from `#/alf`. Static atoms describe layout;
+theme atoms and palette values supply semantic colors. Order style arrays by
+layout, spacing, typography, theme styles, then necessary custom values.
+
+```tsx
+import {atoms as a, useTheme} from '#/alf'
+
+const t = useTheme()
+<View style={[a.flex_row, a.gap_md, a.p_lg, t.atoms.bg]} />
+```
+
+- Use ALF's `web`, `native`, `ios`, `android`, and `platform` helpers for conditional
+  styles and `useBreakpoints()` for responsive layouts. Existing PARA center-column
+  geometry and the canonical compass palette below still apply.
+- Use shared typography from `#/components/Typography`. Add `emoji` to text that
+  may include emoji, especially user-authored display names and content.
+- `Button`, `ButtonText`, and `ButtonIcon` form the shared button API. Prefer
+  semantic `color`; `variant` is deprecated upstream. Check the local `ButtonProps`
+  before choosing values: PARA currently also supports `size="medium"`.
+- `TextField` is a compound control at `#/components/forms/TextField` with
+  `Root`, `LabelText`, `Icon`, and `Input`. Controlled `value`/`onChangeText` inputs
+  are supported. The old New Architecture advice to default to uncontrolled
+  inputs no longer applies; use `defaultValue` when external state is unnecessary.
+- Give interactive controls descriptive `label`/`accessibilityLabel` values,
+  useful accessibility hints, and stable `testID`s where automation needs them.
+
+### Dialogs, menus, and post-close actions
+
+`#/components/Dialog` is a bottom sheet on native and a modal on web. Manage it
+with `useDialogControl()`. `#/components/Menu` uses a dropdown on web and a
+sheet on native, with its compound `Root`/`Trigger`/`Outer`/`Group`/`Item` API.
+
+Actions that must happen after a dialog closes belong in its completion callback:
+
+```tsx
+control.close(() => {
+  navigation.navigate('Home')
+})
+```
+
+This includes opening another dialog or menu, navigation, UI state changes,
+query invalidation, and parent callbacks that depend on dismissal. Calling
+`close()` and then immediately performing those actions can race the animation.
+
+Platform-specific parts need care: upstream documents `Dialog.Handle` and
+`Menu.ContainerItem` for native, and `Dialog.Close` and `Menu.Divider` for web.
+Check the local component exports and verify affected native/web behavior.
+
+### Haptics: upstream intent API versus PARA's active API
+
+Use `#/lib/haptics` and honor the user's disabled-haptics preference; application
+components should not call `expo-haptics` directly. Verify actual module
+resolution before adopting a newer API.
+
+- Upstream's intent API has `tap`, `confirm`, `longPress`, `toggle(on)`,
+  `selection`, `threshold`, `dragStart`, `success`, and `error`. Use an explicit
+  platform override only when no intent fits. When that API is available,
+  destructure the method passed to `scheduleOnRN` rather than capturing its
+  entire object in a worklet. Test physical feedback on a device.
+- PARA currently resolves `#/lib/haptics` to `src/lib/haptics.ts`, whose hook
+  returns a callable accepting `Light`, `Medium`, or `Heavy`. Use the exported
+  shape that actually exists; do not call `.tap()` on that function.
+- The presence of `src/lib/haptics/index.ts` is not proof that the upstream
+  intent API is active. Migrate the helper and its consumers together in a
+  separate, verified change before documenting that migration as complete.
+
+### Internationalization
+
+Use Lingui for user-visible text. Prefer `Trans` and `useLingui` from
+`@lingui/react/macro`, aliasing the translation function as `l` so `t` can remain
+an ALF theme. Replace legacy `_(msg...)` uses when editing that code. Supply
+message context or translator comments where wording is ambiguous.
+
+```tsx
+import {plural} from '@lingui/core/macro'
+import {Trans, useLingui} from '@lingui/react/macro'
+
+const {t: l, i18n} = useLingui()
+const title = l`Settings`
+const countLabel = plural(count, {one: '# item', other: '# items'})
+const createdAtLabel = i18n.date(createdAt, {dateStyle: 'medium'})
+```
+
+- Debug menus, developer-only screens, logs, and Storybook-only text should use
+  plain strings rather than adding translation messages.
+- Prefer typographic punctuation in product copy, including curly quotes and
+  a non-breaking space before an en dash. This differs from code-comment style.
+- Prefer `i18n.date` to a separately constructed `Intl.DateTimeFormat` so locale
+  changes update the rendered text. Keep PARA's message files and locale setup.
+- Follow the command policy above instead of regenerating all locale files for
+  each UI edit.
+
+### Queries, persistence, preferences, and session clients
+
+Use TanStack Query for server state and existing paired preference hooks/React
+Context for UI preferences. `src/state/queries/feed.ts` illustrates the current
+structured query pattern.
+
+- Build new structured keys with `createQueryKey(root, args)`, using an object
+  for arguments and a root matching the query family. Include every input that
+  changes a response, and the viewer DID for account-dependent data. Preserve
+  the full existing key shape when maintaining a legacy query.
+- Name hooks `useNameQuery`, `useNameMutation`, and `useNameCacheMutation`.
+  Reuse `STALE` constants from `src/state/queries/index.ts`.
+- Cursor APIs belong in `useInfiniteQuery` with the returned cursor supplying
+  `getNextPageParam`. Flatten page items for display without discarding query
+  metadata or genuine errors.
+- **Current persistence correction:** `src/lib/react-query.tsx` now dehydrates
+  successful queries accepted by `isQueryPersisted()` or the dedicated Following
+  snapshot predicate. Structured persisted keys use
+  `createQueryKey(root, args, {persistedVersion: n})`; use `GCTIME.INFINITY` where
+  appropriate and bump the version when stored shapes change. The older
+  `PERSISTED_QUERY_ROOT`/`PERSISTED_QUERY_GCTIME` exports still exist, but a legacy
+  root at index zero alone no longer satisfies the active dehydration predicate.
+  The earlier root-only persistence instruction below is historical.
+- Preserve PARA's refresh rules: use `truncateAndInvalidate` for reload-from-top
+  behavior and include `feedParams` in the query key. Do not infer electoral
+  weight from registrations or blur unavailable/private ballots into network
+  errors.
+- Handle typed XRPC errors specifically. Inform users about network failures
+  without logging them as unexpected application faults. Log unexpected failures
+  with `logger.error` and `safeMessage`, following the surrounding logger API.
+- `useSession()` exposes `hasSession` and `currentAccount`. Prefer typed
+  `useAppviewClient()`, `usePdsClient()`, and `useChatClient()` for the appropriate
+  service. PARA's retained `useAgent()` is a compatibility session bundle, not
+  the older SDK agent described by upstream's guide. Preserve account-PDS routing
+  and the identity/encryption boundaries documented below.
+
+### Navigation, platform variants, and upstream sync checks
+
+- Treat `src/Navigation.tsx`, `src/routes.ts`, and `src/lib/routes/types.ts` as
+  one routing contract: registration, URL matching/building, and typed params
+  must agree. Type screens with
+  `NativeStackScreenProps<CommonNavigatorParams, 'ScreenName'>` as appropriate.
+  Use React Navigation hooks, links, or the existing navigation helper.
+- Check common-screen registration across native stacks and the flat web
+  navigator. Preserve PARA's Data tab, chat destinations, profile-feed aliases,
+  optional feed insets, and `para://` support when importing upstream changes.
+- A route type or registered screen is not evidence of a working provider,
+  completed moderation data integration, or deployed service. Keep feature gates
+  and distinguish placeholders, local test evidence, and device acceptance.
+- Import a platform module by its base path; let `.web`, `.native`, `.ios`, and
+  `.android` file resolution select the implementation. Avoid conditional
+  `require()` calls for platform variants. Directory variants such as
+  `Component/index.tsx` and `Component/index.web.tsx` are preferred for substantial
+  new modules; maintain existing sibling-file patterns where appropriate.
+- Use `IS_WEB`, `IS_NATIVE`, `IS_IOS`, and `IS_ANDROID` from `#/env` for runtime
+  decisions. Check platform counterparts and test the affected behaviors.
+- When syncing upstream, preserve local parameter extensions and compare the
+  route consumers, not just exported names. Reuse actual local icon exports
+  instead of copying names that do not exist in this checkout.
+
+### Key files and maintenance references
+
+| Purpose | Location |
+| --- | --- |
+| ALF themes, tokens, atoms | `src/alf/themes.ts`, `src/alf/tokens.ts`, `src/alf/atoms.ts` |
+| Shared controls | `src/components/` |
+| Navigation and route contract | `src/Navigation.tsx`, `src/routes.ts`, `src/lib/routes/types.ts` |
+| Query helpers and persistence selection | `src/state/queries/util.ts`, `src/lib/react-query.tsx` |
+| Session and service clients | `src/state/session/index.tsx` |
+| Localization setup and CI | `src/locale/i18n.ts`, `.github/workflows/nightly-update-source-languages.yaml` |
+| PARA schema extensions | `src/lib/api/para-lexicons.ts`, `lexicons/com/para/` |
+| Generated protocol clients | `src/lexicons/` (regenerate using the existing script) |
+| Current pilot execution plan | `../WatZappa/docs/QUARTER_PLAN_2026Q4.md` |
+| Map-specific execution entry | `docs/MAP_MATURITY_PLAN.md` |
+
+The remaining sections preserve PARA's original architecture, operating runbook,
+product decisions, and handover evidence.
+
+
+---
+
 ## 🏛️ Project Architecture & DNA
 
 PARA is a React Native mobile application built on the **AT Protocol (atproto)** architecture. It uses a custom lexicon layer (`com.para`) to extend or specialize its functionality.
@@ -136,7 +430,7 @@ SecureStore. Local tests are not real-provider or staging acceptance.
 If you are a new agent taking over this workspace:
 
 0. **Read the current execution queue and evidence first:** `../WatZappa/docs/QUARTER_PLAN_2026Q4.md` is the canonical pilot plan (re-baselined 2026-10-05). The old September sprint calendar is superseded. Start with the next open item and inspect only relevant changes; do not repeat the whole code audit or rebuild completed OD-6/MAS/QVL/data paths. Distinguish implemented, tested, merged and deployed. On closure, remove the action from active roadmaps and retain commit/test/deployment evidence in the plan or a linked record. Private voting has separate governance gates.
-   - **Map feature roadmap:** the in-repo map plan doc (`docs/MAP_QUARTER_PLAN_2027Q1.md`) was removed on 2026-09-21; map work (Dec 2026 – Feb 2027) remains deliberately outside the Q4 pilot plan until a new planning doc lands.
+   - **Map feature roadmap:** `docs/MAP_MATURITY_PLAN.md` is the current map-specific entry point, replacing the removed `docs/MAP_QUARTER_PLAN_2027Q1.md` and older schedules. Map work remains outside the committed Q4 pilot queue. M0.1 local implementation/test evidence and remaining device/provider acceptance are in `docs/MAP_M0_1_EXECUTION_2026-10-07.md`. Read those records before repeating the map audit.
 1. **Check the Lexicons:** Before modifying API calls, inspect `src/lib/api/para-lexicons.ts` to understand the data schema.
 2. **Respect the Atoms:** Always use the `alf` design system. Do not write ad-hoc CSS/Styles unless absolutely necessary for custom animations.
 3. **Check target files:** This codebase supports both Native and Web. When modifying a screen, check if a `.web.tsx` counterpart exists to maintain parity.
@@ -375,6 +669,30 @@ decision is made.
 
 ---
 
+## 2026-10-14: Policies are posts voted from -3 to +3
+
+- Data → Policies lists `com.para.post` records with `postType: 'policy'`
+  (`com.para.feed.searchPosts`, a blank `q` of `' '` because the AppView refuses
+  an empty one). Policies are not cabildeos; Lobbying owns phases and options.
+- The vote is `PolicyBallotControl` (the feed's `VotingButton`). Policy screens
+  pass `showNotice={false}`, so a vote is cast after a short pause with no
+  public-ballot notice; the feed keeps the notice. `castPolicyVote` writes a
+  public `com.para.civic.vote` authorized by m8 (`m8:policy:v1`, binds the
+  signal). The viewer's own ballots come from their repo, never the AppView.
+- The matter filter is the composer's six groups (`FLAIR_GROUPS.MATTER`), one
+  pill each, plus a verified toggle meaning "official" (in the catalog). A
+  policy's matter is its single-pipe flair; a flair outside the six groups is
+  not shown as a matter (`lib/matter-filter.ts`).
+- "En tu comunidad" uses `com.para.civic.getPolicyCommunityVotes`: how many of a
+  community's active members voted, the mean, and each member's vote. The
+  AppView answers only a member of that community
+  (`CommunityMembershipRequired`). The details no longer show "eligible
+  voters".
+- Local voting needs both halves: mubEZ with `feat/policy-ballot-authorization`
+  and WatZappa with the public policy ballots commit (`verifyPublicBallotProof`).
+  The dev-env verifier mints and accepts policy proofs (`devPolicyVoteProof`),
+  so the seed casts real ballots that nothing outside dev-env accepts.
+
 ## 2026-10-03: Community activities are served by the AppView
 
 - Activities, ledger entries and wiki pages are read through
@@ -389,6 +707,15 @@ decision is made.
   write those for any community.
 - Writes still go to the organizer's own repo. The AppView indexes them from
   the firehose, so a new record can take a moment to appear.
+
+## 2026-10-08: Session clients must route by the account's PDS
+
+- `buildBundle` passes the account service / stored PDS URL to
+  `buildAppviewClient` and `buildChatClient`. Keep those constructors using the
+  service-specific proxy helpers in `src/lib/constants.ts`.
+- Demo identities exist only on the local PLC. Sending their background chat
+  requests to production returns `could not resolve iss did` and triggers
+  `emitSessionDropped`, signing the account out despite valid PDS credentials.
 
 ## 2026-09-25: PARA has no reposts (keep it that way across upstream syncs)
 
@@ -988,13 +1315,13 @@ pnpm test src/screens/Search/__tests__/searchParams.test.ts
   `/_matrix/client/v1/auth_metadata`, dynamic client registration per MSC2966,
   PKCE). `lib/matrix/useMatrixWebSession.ts` replaces `useMatrixTokenQuery` on
   web. The bridge is not in this path and never sees the token.
-- The MXID still comes from the bridge's `/api/matrix-identity`, which owns the
-  DID↔MXID mapping. The OP's `sub` is its own subject identifier — not an MXID.
+- `/api/matrix-identity` derives the expected MXID from a verified identity
+  proof; there is no persisted DID↔MXID mapping. Check it against the client
+  session's actual MXID. The OP's `sub` is not a Matrix user ID.
 - The Matrix device id comes from the granted scope
-  (`urn:matrix:org.matrix.msc2967.client:device:…`, MSC2967). The OP chooses it;
-  a client that invents one attaches its crypto identity to a device the
-  homeserver does not know. That real id is what gets attested to the bridge —
-  `useChatBootstrap`'s install id is only a request.
+  (`urn:matrix:org.matrix.msc2967.client:device:…`, MSC2967), or the restored
+  native SDK session. Attest that actual device after new login and restoration;
+  never attest `useChatBootstrap`'s installation UUID as a MAS device.
 - The OP redirects to `/matrix-auth`. `App.web.tsx` completes the grant there
   before the app renders, then navigates on; the router has no such route, and
   `bskyweb` needs the path registered or the redirect 404s before any app code
@@ -1004,12 +1331,47 @@ pnpm test src/screens/Search/__tests__/searchParams.test.ts
   refreshes itself through `tokenRefreshFunction`, reporting the new pair back
   as `matrix-token-refreshed` so the next page load does not replay a retired
   token.
-- The web session lives in `localStorage`, so an XSS on this origin can steal a
-  chat session — the same exposure as any browser Matrix client, and why native
-  keeps its session in the OS keystore. Keep it to the chat session: no identity
-  key, no ballot key.
+- Web tokens use account-scoped `sessionStorage`; discard the old unscoped
+  localStorage token. Browser storage does not prevent same-origin XSS. Native
+  sessions stay in the OS keystore; identity and ballot private keys stay in iM8.
 - `lib/storage.ts` must never decide SecureStore is available from a successful
   `require`. On web the require succeeds and only the native binding is missing,
   so the first read throws `getValueWithKeyAsync is not a function`; web uses
   `lib/storage.web.ts` (AsyncStorage, i.e. `localStorage` — not secure storage)
   and native demotes to AsyncStorage on first failure.
+
+## 2026-10-08: Encrypted messaging boundaries
+
+- Keep the native engine opt-in until device acceptance passes. Web crypto
+  initializes before sync/send and uses SDK stores partitioned by account,
+  homeserver and actual device; wrapping keys are non-extractable in IndexedDB.
+  Pending web recovery keys are encrypted with the device store key and removed
+  only after explicit acknowledgement. Require HTTPS or loopback WebCrypto.
+- Native `para://idp-login` approval signs the `para-idp` audience for the
+  configured issuer, posts to its verification endpoint, and resumes MAS before
+  `para://matrix-auth`. React Native's AbortSignal polyfill needs the portable
+  helpers in `lib/matrix/request.ts`; do not use `timeout`, `any` or `throwIfAborted`
+  there. Guard requests, proofs and chat state with the account/credential revision.
+- SAS confirmation requires the user to compare both devices; no automatic
+  approval. Reports contain event IDs and fixed reasons; moderators decrypt
+  through their own authorized SDK clients.
+
+## 2026-10-19: Matters list what civic trees connected to them
+
+- Matter details (`DetailsScreenBase`, matters only, signed-in viewers) show
+  "Relacionados en árboles cívicos" (`screens/Dashboard/MatterRelated.tsx`). A
+  tree reaches a matter through a flair-backed topic (`flairId`, from the
+  debate's flairs) or the debate's own AT-URI; whatever is *connected* to that
+  node is related. Sharing a flair is not a connection
+  (`features/civicTree/matterRelated.ts`).
+- Sources: the viewer's collections plus up to 12 community trees (joined
+  first), read client-side with `useMatterRelatedItems`. Community topic cards
+  carry the flair in `metadata.flairId`, not in the card id. One entry per
+  thing, with every tree that connected it.
+- The header's save / civic-tree buttons must receive the decoded debate URI
+  (`model.cabildeoUri`), not the raw route param.
+- Seed: `demo-content/content.json` has `matter` on policy posts (second,
+  single-pipe flair), single-pipe flairs on matter posts, and matter topics
+  (`t-hidrica`, `t-emisiones`) with connected policies and data. The seed's
+  edge de-duplication must read `source_card_id`/`target_card_id`, which is the
+  AppView's shape; reading `source`/`target` re-created every edge on re-runs.

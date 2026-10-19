@@ -4,9 +4,11 @@ import {Trans, useLingui} from '@lingui/react/macro'
 
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
+import {ChatVerificationPanel} from '#/components/chat/ChatVerificationPanel'
 import {Text} from '#/components/Typography'
 import {chatErrorCode} from '#/features/encryptedChat/errors'
 import {
+  type ChatDeviceVerification,
   type ChatRecovery,
   type ChatSecurityStatus,
   type RecoveryKey,
@@ -15,12 +17,16 @@ import {
 /** Native device recovery; key material never enters navigation or query caches. */
 export function ChatRecoveryPanel({
   recovery,
+  verification,
   deviceId,
   onClose,
+  onLogout,
 }: {
   recovery: ChatRecovery
+  verification?: ChatDeviceVerification
   deviceId: string
   onClose: () => void
+  onLogout?: () => Promise<void>
 }) {
   const t = useTheme()
   const {t: l} = useLingui()
@@ -159,6 +165,7 @@ export function ChatRecoveryPanel({
           </Trans>
         </Text>
       </View>
+      {verification && <ChatVerificationPanel verification={verification} />}
       {pendingKey ? (
         <View
           style={[
@@ -296,6 +303,24 @@ export function ChatRecoveryPanel({
           <Trans>Actualizar estado</Trans>
         </ButtonText>
       </Button>
+      {onLogout && (
+        <Button
+          label={l`Cerrar sesión de chat en este dispositivo`}
+          size="small"
+          color="secondary"
+          disabled={busy || !!pendingKey}
+          onPress={() => {
+            setBusy(true)
+            void onLogout().catch(() => {
+              setError('CHAT_LOGOUT_FAILED')
+              setBusy(false)
+            })
+          }}>
+          <ButtonText>
+            <Trans>Cerrar sesión de chat</Trans>
+          </ButtonText>
+        </Button>
+      )}
     </ScrollView>
   )
 }

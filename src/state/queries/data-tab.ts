@@ -1,5 +1,6 @@
 import {useInfiniteQuery} from '@tanstack/react-query'
 
+import {matchesMatters} from '#/lib/matter-filter'
 import {type PolicyItem, type RepresentativeItem} from '#/lib/mock-data'
 import {fetchPolicies} from '#/lib/services/policies'
 import {fetchRepresentatives} from '#/lib/services/representatives'
@@ -16,6 +17,7 @@ interface PolicyQueryParams {
   query?: string
   type?: 'Policy' | 'Matter'
   filters?: string[] // selected community/party filter names
+  matterTags?: string[] // selected matter flairs; empty means every matter
 }
 
 // Shared filtering logic
@@ -31,6 +33,11 @@ function applyFilters(data: PolicyItem[], params: PolicyQueryParams) {
   if (params.query) {
     const q = params.query.toLowerCase()
     filtered = filtered.filter(p => p.title.toLowerCase().includes(q))
+  }
+  if (params.matterTags && params.matterTags.length > 0) {
+    filtered = filtered.filter(p =>
+      matchesMatters(p.flairs, params.matterTags!),
+    )
   }
   if (params.filters && params.filters.length > 0) {
     filtered = filtered.filter(
@@ -58,6 +65,7 @@ export function useStatePoliciesQuery(
       params.query,
       params.type,
       params.filters,
+      params.matterTags,
     ],
     queryFn: async ({pageParam}) => {
       const response = await fetchPolicies(agent, {
@@ -91,6 +99,7 @@ export function useFeaturedPoliciesQuery(params: PolicyQueryParams) {
       params.query,
       params.type,
       params.filters,
+      params.matterTags,
     ],
     queryFn: async ({pageParam}) => {
       const response = await fetchPolicies(agent, {
@@ -119,6 +128,7 @@ export function useCommunityPoliciesQuery(params: PolicyQueryParams) {
       params.query,
       params.type,
       params.filters,
+      params.matterTags,
     ],
     queryFn: async ({pageParam}) => {
       const response = await fetchPolicies(agent, {
@@ -147,6 +157,7 @@ export function usePartyPoliciesQuery(params: PolicyQueryParams) {
       params.query,
       params.type,
       params.filters,
+      params.matterTags,
     ],
     queryFn: async ({pageParam}) => {
       const response = await fetchPolicies(agent, {
@@ -174,6 +185,7 @@ export function useRecommendedPoliciesQuery(params: PolicyQueryParams) {
       params.query,
       params.type,
       params.filters,
+      params.matterTags,
     ],
     queryFn: async ({pageParam}) => {
       const response = await fetchPolicies(agent, {

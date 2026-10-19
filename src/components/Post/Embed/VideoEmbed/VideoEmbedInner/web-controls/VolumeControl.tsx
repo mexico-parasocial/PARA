@@ -6,7 +6,7 @@ import {useLingui} from '@lingui/react'
 
 import {atoms as a} from '#/alf'
 import {Mute_Stroke2_Corner0_Rounded as MuteIcon} from '#/components/icons/Mute'
-import {SpeakerVolumeFull_Stroke2_Corner0_Rounded as UnmuteIcon} from '#/components/icons/Speaker'
+import {SpeakerVolumeFull_Stroke2_Corner0_Rounded as UnmuteIcon} from '#/components/icons/SpeakerVolumeFull'
 import {useVideoVolumeState} from '#/components/Post/Embed/VideoEmbed/VideoVolumeContext'
 import {IS_WEB_SAFARI, IS_WEB_TOUCH_DEVICE} from '#/env'
 import {ControlButton} from './ControlButton'

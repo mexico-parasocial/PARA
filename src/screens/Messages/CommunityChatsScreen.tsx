@@ -6,6 +6,8 @@ import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {ROOM_ORDER, ROOM_PURPOSES} from '#/lib/chat/roomPurposes'
+import {BridgeAuthError} from '#/lib/matrix/bridge'
+import {chatFailureMessage} from '#/lib/matrix/failure'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
   type CommunityBoardView,
@@ -36,9 +38,10 @@ const GROUP_ORDER: Group[] = ['party', 'ninth', 'state', 'other']
  */
 export function CommunityChatsScreen() {
   const t = useTheme()
-  const {_} = useLingui()
+  const {_, i18n} = useLingui()
   const {currentAccount} = useSession()
   const did = currentAccount?.did
+  const navigation = useNavigation<NavigationProp>()
 
   const boards = useCommunityBoardsQuery({limit: 100}, !!did)
   const rooms = useMatrixRoomsQuery({enabled: !!did})
@@ -90,13 +93,36 @@ export function CommunityChatsScreen() {
 
       <Layout.Center style={styles.flex}>
         <ScrollView style={styles.flex} contentContainerStyle={styles.content}>
-          {bridgeDown && (
-            <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.pb_md]}>
-              <Trans>
-                No se pudo conectar con el chat de comunidades. Las salas se
-                abrirán cuando el servicio esté disponible.
-              </Trans>
-            </Text>
+          {(rooms.error || boards.error || bridgeDown) && (
+            <View style={[a.pb_md, a.gap_sm]}>
+              <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
+                {i18n._(chatFailureMessage(rooms.error ?? boards.error))}
+              </Text>
+              <Button
+                label={_(msg`Reintentar`)}
+                variant="outline"
+                color="secondary"
+                size="small"
+                onPress={() => {
+                  if (
+                    rooms.error instanceof BridgeAuthError &&
+                    rooms.error.statusCode === 401
+                  ) {
+                    navigation.navigate('IdentityHub')
+                  } else {
+                    void rooms.refetch()
+                    void boards.refetch()
+                    void unread.refetch()
+                  }
+                }}>
+                <ButtonText>
+                  {rooms.error instanceof BridgeAuthError &&
+                  rooms.error.statusCode === 401
+                    ? _(msg`Conectar identidad`)
+                    : _(msg`Reintentar`)}
+                </ButtonText>
+              </Button>
+            </View>
           )}
 
           {isLoading && (
@@ -105,14 +131,18 @@ export function CommunityChatsScreen() {
             </View>
           )}
 
-          {!isLoading && sections.length === 0 && (
-            <Text style={[a.text_md, t.atoms.text_contrast_medium, a.py_lg]}>
-              <Trans>
-                Aún no perteneces a ninguna comunidad. Únete a una para ver sus
-                chats aquí.
-              </Trans>
-            </Text>
-          )}
+          {!isLoading &&
+            !boards.error &&
+            !rooms.error &&
+            !bridgeDown &&
+            sections.length === 0 && (
+              <Text style={[a.text_md, t.atoms.text_contrast_medium, a.py_lg]}>
+                <Trans>
+                  Aún no perteneces a ninguna comunidad. Únete a una para ver
+                  sus chats aquí.
+                </Trans>
+              </Text>
+            )}
 
           {sections.map(section => (
             <View key={section.group} style={styles.section}>

@@ -40,12 +40,12 @@ import {Admonition} from '#/components/Admonition'
 import {Button} from '#/components/Button'
 import * as FeedCard from '#/components/FeedCard'
 import {ChevronBottom_Stroke2_Corner0_Rounded as ChevronDownIcon} from '#/components/icons/Chevron'
-import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfo} from '#/components/icons/CircleInfo'
+import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfo} from '#/components/icons/Circle'
 import {
   type Props as IcoProps,
   type Props as SVGIconProps,
 } from '#/components/icons/common'
-import {ListSparkle_Stroke2_Corner0_Rounded as ListSparkle} from '#/components/icons/ListSparkle'
+import {ListSparkle_Stroke2_Corner0_Rounded as ListSparkle} from '#/components/icons/List'
 import {UserCircle_Stroke2_Corner0_Rounded as Person} from '#/components/icons/UserCircle'
 import {Loader} from '#/components/Loader'
 import * as ProfileCard from '#/components/ProfileCard'

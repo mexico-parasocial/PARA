@@ -1,5 +1,4 @@
 export * from './api'
-export * from './biometric'
 export * from './identity'
 export * from './session'
 export * from './types'

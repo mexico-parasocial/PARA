@@ -7,6 +7,7 @@ import {batchedUpdates} from '#/lib/batchedUpdates'
 import {findAllPostsInQueryData as findAllPostsInBookmarksQueryData} from '#/state/queries/bookmarks/useBookmarksQuery'
 import {findAllPostsInQueryData as findAllPostsInExploreFeedPreviewsQueryData} from '#/state/queries/explore-feed-previews'
 import {findAllPostsInQueryData as findAllPostsInNotifsQueryData} from '#/state/queries/notifications/feed'
+import {findAllPostsInQueryData as findAllPostsInGroupedNotifsQueryData} from '#/state/queries/notifications/grouped'
 import {findAllPostsInQueryData as findAllPostsInFeedQueryData} from '#/state/queries/post-feed'
 import {findAllPostsInQueryData as findAllPostsInQuoteQueryData} from '#/state/queries/post-quotes'
 import {findAllPostsInQueryData as findAllPostsInSearchQueryData} from '#/state/queries/search-posts-v2'
@@ -16,16 +17,19 @@ import * as bsky from '#/types/bsky'
 import {castAsShadow, type Shadow} from './types'
 export type {Shadow} from './types'
 
+/**
+ * `'pending'` is the optimistic sentinel written before the real record uri
+ * comes back, so the two uri slots admit it alongside a real at-uri.
+ */
 export interface PostShadow {
-  likeUri: string | undefined
+  likeUri: AtUriString | 'pending' | undefined
+  repostUri: AtUriString | 'pending' | undefined
   isDeleted: boolean
   embed:
     app.bsky.embed.record.View | app.bsky.embed.recordWithMedia.View | undefined
   pinned: boolean
   optimisticReplyCount: number | undefined
   bookmarked: boolean | undefined
-  voteScore: number | undefined
-  voteUri: string | undefined
 }
 
 export const POST_TOMBSTONE = Symbol('PostTombstone')
@@ -105,6 +109,18 @@ function mergeShadow(
     bookmarkCount = Math.max(0, bookmarkCount)
   }
 
+  let repostCount = post.repostCount ?? 0
+  if ('repostUri' in shadow) {
+    const wasReposted = !!post.viewer?.repost
+    const isReposted = !!shadow.repostUri
+    if (wasReposted && !isReposted) {
+      repostCount--
+    } else if (!wasReposted && isReposted) {
+      repostCount++
+    }
+    repostCount = Math.max(0, repostCount)
+  }
+
   let replyCount = post.replyCount ?? 0
   if ('optimisticReplyCount' in shadow) {
     replyCount = shadow.optimisticReplyCount ?? replyCount
@@ -118,6 +134,11 @@ function mergeShadow(
       (bsky.isType(app.bsky.embed.recordWithMedia.view, post.embed) &&
         bsky.isType(app.bsky.embed.recordWithMedia.view, shadow.embed))
     ) {
+      /*
+       * `isType` asserts a present, matching `$type` at runtime but narrows to
+       * the schema's input type, whose `$type` is optional - so the value does
+       * not satisfy the `$Typed` arm of `PostView['embed']` without this cast.
+       */
       embed = shadow.embed as typeof post.embed
     }
   }
@@ -126,22 +147,23 @@ function mergeShadow(
     ...post,
     embed: embed || post.embed,
     likeCount: likeCount,
+    repostCount: repostCount,
     replyCount: replyCount,
     bookmarkCount: bookmarkCount,
-    voteCount: shadow.voteScore ?? (post as {voteCount?: number}).voteCount,
     viewer: {
       ...(post.viewer || {}),
-      like:
-        'likeUri' in shadow
-          ? (shadow.likeUri as AtUriString)
-          : post.viewer?.like,
+      /*
+       * The optimistic `'pending'` sentinel is not a real at-uri; consumers only
+       * test these for presence while the write is in flight.
+       */
+      like: (('likeUri' in shadow ? shadow.likeUri : post.viewer?.like) ??
+        undefined) as AtUriString | undefined,
+      repost: (('repostUri' in shadow
+        ? shadow.repostUri
+        : post.viewer?.repost) ?? undefined) as AtUriString | undefined,
       pinned: 'pinned' in shadow ? shadow.pinned : post.viewer?.pinned,
       bookmarked:
         'bookmarked' in shadow ? shadow.bookmarked : post.viewer?.bookmarked,
-      voteUri:
-        'voteUri' in shadow
-          ? shadow.voteUri
-          : (post.viewer as {voteUri?: string} | undefined)?.voteUri,
     },
   })
 }
@@ -168,6 +190,9 @@ function* findPostsInCache(
     yield post
   }
   for (let post of findAllPostsInNotifsQueryData(queryClient, uri)) {
+    yield post
+  }
+  for (let post of findAllPostsInGroupedNotifsQueryData(queryClient, uri)) {
     yield post
   }
   for (let post of findAllPostsInThreadV2QueryData(queryClient, uri)) {

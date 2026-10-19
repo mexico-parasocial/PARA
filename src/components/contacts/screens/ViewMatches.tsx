@@ -34,7 +34,7 @@ import {Check_Stroke2_Corner0_Rounded as CheckIcon} from '#/components/icons/Che
 import {MagnifyingGlassX_Stroke2_Corner0_Rounded_Large as SearchFailedIcon} from '#/components/icons/MagnifyingGlass'
 import {PersonX_Stroke2_Corner0_Rounded_Large as PersonXIcon} from '#/components/icons/Person'
 import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/Plus'
-import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/Times'
+import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/TimesLarge'
 import * as Layout from '#/components/Layout'
 import {ListFooter} from '#/components/Lists'
 import {Loader} from '#/components/Loader'

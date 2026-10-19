@@ -34,7 +34,7 @@ export interface MatrixBootstrapResult {
   homeServer: string
   attestedDeviceId?: string
   joined: string[]
-  failedJoins: Array<{communityUri: string; error: string}>
+  failedJoins: Array<{communityUri: string; error: string; statusCode?: number}>
 }
 
 export async function bootstrapMatrixIdentity(
@@ -68,7 +68,11 @@ export async function bootstrapMatrixIdentity(
   }
 
   const joined: string[] = []
-  const failedJoins: Array<{communityUri: string; error: string}> = []
+  const failedJoins: Array<{
+    communityUri: string
+    error: string
+    statusCode?: number
+  }> = []
   for (const communityUri of input.communityUris) {
     try {
       const join = await bridgeCallWithProof<{spaceId: string}>(
@@ -83,6 +87,11 @@ export async function bootstrapMatrixIdentity(
       failedJoins.push({
         communityUri,
         error: err instanceof Error ? err.message : String(err),
+        ...(err instanceof Error &&
+        'statusCode' in err &&
+        typeof err.statusCode === 'number'
+          ? {statusCode: err.statusCode}
+          : {}),
       })
     }
   }

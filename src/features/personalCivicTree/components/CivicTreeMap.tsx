@@ -1,6 +1,22 @@
-import {useEffect, useMemo, useState} from 'react'
+import {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import {ScrollView, TouchableOpacity, View} from 'react-native'
-import Svg, {Circle, Defs, G, Line, Pattern, Rect} from 'react-native-svg'
+import Svg, {
+  Circle,
+  Defs,
+  G,
+  Line,
+  Pattern,
+  Polygon,
+  Rect,
+} from 'react-native-svg'
 import {msg, plural} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -10,17 +26,30 @@ import {atoms as a, useBreakpoints, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
 import {Text} from '#/components/Typography'
+import {PERSONAL_RELATION_DIRECTED} from '#/features/civicTree/colors'
 import {MapViewport} from '#/features/civicTree/components/MapViewport'
 import {
+  arrowFor,
+  cameraToShow,
+  clusterTitleBox,
   MAP_GROUPINGS,
   type MapCamera,
   type MapGrouping,
+  type MapVisibleRect,
+  screenRadius,
   zoomMapCamera,
 } from '#/features/civicTree/map'
+import {placeMapLabels} from '#/features/civicTree/mapLabels'
 import {type PersonalTreeGraph} from '../graph'
 import {buildCivicMapLayout} from '../map'
 import {ConnectTreeItemsDialog} from './ConnectTreeItemsDialog'
 import {PersonalTreeNodeSheet} from './PersonalTreeNodeSheet'
+
+/** Width of the details column docked beside the map on wide screens. */
+const PANEL_WIDTH = 340
+/** Below this map width the details open as a bottom sheet instead. */
+const DOCK_MIN_WIDTH = 720
+const GLIDE_MS = 260
 
 export function CivicTreeMap({
   graph,
@@ -84,6 +113,144 @@ export function CivicTreeMap({
     onSelectCollection(targetCollectionId)
   }, [targetCollectionId, onSelectCollection])
   const pointById = new Map(layout.nodes.map(n => [n.node.id, n]))
+
+  /*
+   * Moves the map makes on its own (bringing a selection into view, fitting)
+   * glide; a drag, pinch or wheel takes over at once.
+   */
+  const cameraRef = useRef(camera)
+  cameraRef.current = camera
+  const frame = useRef<number | undefined>(undefined)
+  const stopGlide = useCallback(() => {
+    if (frame.current !== undefined) cancelAnimationFrame(frame.current)
+    frame.current = undefined
+  }, [])
+  useEffect(() => stopGlide, [stopGlide])
+  const setCameraFromUser = useCallback<Dispatch<SetStateAction<MapCamera>>>(
+    update => {
+      stopGlide()
+      setCamera(update)
+    },
+    [stopGlide],
+  )
+  const glideTo = useCallback(
+    (target: MapCamera) => {
+      stopGlide()
+      const from = cameraRef.current
+      if (
+        from.x === target.x &&
+        from.y === target.y &&
+        from.scale === target.scale
+      ) {
+        return
+      }
+      const start = Date.now()
+      const step = () => {
+        const p = Math.min(1, (Date.now() - start) / GLIDE_MS)
+        const e = 1 - Math.pow(1 - p, 3)
+        setCamera({
+          x: from.x + (target.x - from.x) * e,
+          y: from.y + (target.y - from.y) * e,
+          scale: from.scale + (target.scale - from.scale) * e,
+        })
+        frame.current = p < 1 ? requestAnimationFrame(step) : undefined
+      }
+      frame.current = requestAnimationFrame(step)
+    },
+    [stopGlide],
+  )
+
+  /*
+   * The details panel sits over the map rather than beside it, so opening it
+   * never resizes the map and resets the zoom. Instead the camera works within
+   * the part the panel leaves uncovered: a column on the right on wide
+   * screens, a bottom sheet on narrow ones.
+   */
+  const docked = gtMobile && size.width >= DOCK_MIN_WIDTH
+  const [sheetHeight, setSheetHeight] = useState(0)
+  const panelOpen = !!(selectedNode || selectedCluster)
+  const uncovered = (open: boolean): MapVisibleRect => {
+    if (!open) return {x: 0, y: 0, width: size.width, height: size.height}
+    if (docked) {
+      return {x: 0, y: 0, width: size.width - PANEL_WIDTH, height: size.height}
+    }
+    const sheet = sheetHeight || size.height * 0.5
+    return {
+      x: 0,
+      y: 0,
+      width: size.width,
+      height: Math.max(120, size.height - sheet),
+    }
+  }
+  const visibleRect = uncovered(panelOpen)
+
+  /* Tapping the selected item again lets go of it. */
+  const selectNode = (id: string) => {
+    if (id === selectedId) {
+      setSelectedId(undefined)
+      return
+    }
+    setSelectedId(id)
+    setClusterId(undefined)
+    const point = pointById.get(id)
+    if (point) glideTo(cameraToShow(cameraRef.current, point, uncovered(true)))
+  }
+
+  const neighbours = useMemo(() => {
+    if (!selectedId) return undefined
+    const ids = new Set<string>()
+    for (const edge of graph.edges) {
+      if (edge.source === selectedId) ids.add(edge.target)
+      if (edge.target === selectedId) ids.add(edge.source)
+    }
+    return ids
+  }, [graph.edges, selectedId])
+  const inFocus = (id: string) =>
+    !neighbours || id === selectedId || neighbours.has(id)
+
+  /*
+   * Labels go to the best-connected items first and only where they fit, so
+   * the map is legible at any zoom. With a selection, only the selection and
+   * what it connects to compete, and every neighbour outranks the rest.
+   */
+  const labels = useMemo(
+    () =>
+      placeMapLabels(
+        layout.nodes
+          .filter(({node}) => inFocus(node.id))
+          .map(({node, x, y}) => ({
+            id: node.id,
+            x: camera.x + x * camera.scale,
+            y: camera.y + y * camera.scale,
+            r: screenRadius(node.radius, camera.scale),
+            text: node.title,
+            priority: node.metadata.degree,
+            force: node.id === selectedId,
+          })),
+        {
+          viewport: visibleRect,
+          obstacles: layout.clusters.map(cluster => {
+            const box = clusterTitleBox(cluster, camera)
+            return {
+              left: box.left,
+              top: box.top,
+              right: box.left + box.width,
+              bottom: box.top + box.height,
+            }
+          }),
+        },
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      layout.nodes,
+      layout.clusters,
+      camera,
+      selectedId,
+      neighbours,
+      visibleRect.width,
+      visibleRect.height,
+    ],
+  )
   const zoom = (factor: number) =>
     setCamera(previous =>
       zoomMapCamera(previous, previous.scale * factor, {
@@ -96,18 +263,19 @@ export function CivicTreeMap({
     if (!cluster) return
     setSelectedId(undefined)
     setClusterId(id)
+    const area = uncovered(true)
     const scale = Math.max(
       0.15,
       Math.min(
         1.5,
-        (size.width - 80) / (cluster.radius * 2 + 100),
-        (size.height - 100) / (cluster.radius * 2 + 100),
+        (area.width - 80) / (cluster.radius * 2 + 100),
+        (area.height - 60) / (cluster.radius * 2 + 100),
       ),
     )
-    setCamera({
+    glideTo({
       scale,
-      x: size.width / 2 - cluster.x * scale,
-      y: size.height / 2 - cluster.y * scale,
+      x: area.x + area.width / 2 - cluster.x * scale,
+      y: area.y + area.height / 2 - cluster.y * scale,
     })
   }
 
@@ -204,7 +372,7 @@ export function CivicTreeMap({
           a.overflow_hidden,
           t.atoms.bg_contrast_25,
         ]}>
-        <MapViewport camera={camera} setCamera={setCamera}>
+        <MapViewport camera={camera} setCamera={setCameraFromUser}>
           <Svg width={size.width} height={size.height}>
             <Defs>
               <Pattern
@@ -241,71 +409,74 @@ export function CivicTreeMap({
                 if (!source || !target) return null
                 const active =
                   edge.source === selectedId || edge.target === selectedId
+                const arrow =
+                  active && PERSONAL_RELATION_DIRECTED[edge.kind]
+                    ? arrowFor(
+                        source,
+                        target,
+                        screenRadius(target.node.radius, camera.scale) /
+                          camera.scale,
+                        camera.scale,
+                      )
+                    : undefined
+                const end = arrow?.end ?? target
                 return (
-                  <Line
-                    key={`${source.node.group}:${edge.id}`}
-                    x1={source.x}
-                    y1={source.y}
-                    x2={target.x}
-                    y2={target.y}
-                    stroke={edge.color}
-                    strokeWidth={active ? 2.5 : 1.5}
-                    strokeOpacity={active ? 1 : 0.3}
-                  />
+                  <G key={`${source.node.group}:${edge.id}`}>
+                    <Line
+                      x1={source.x}
+                      y1={source.y}
+                      x2={end.x}
+                      y2={end.y}
+                      stroke={edge.color}
+                      strokeWidth={active ? 2.5 : 1.5}
+                      strokeOpacity={active ? 1 : selectedId ? 0.06 : 0.35}
+                    />
+                    {arrow ? (
+                      <Polygon points={arrow.points} fill={edge.color} />
+                    ) : null}
+                  </G>
                 )
               })}
             </G>
           </Svg>
-          {layout.clusters.map(cluster => (
-            <TouchableOpacity
-              key={cluster.id}
-              accessibilityRole="button"
-              accessibilityLabel={_(msg`Inspect cluster ${cluster.label}`)}
-              accessibilityHint={_(
-                msg`Focuses this cluster and shows its collections`,
-              )}
-              onPress={() => focusCluster(cluster.id)}
-              style={[
-                a.absolute,
-                a.align_center,
-                {
-                  left:
-                    camera.x +
-                    cluster.x * camera.scale -
-                    Math.max(
-                      72,
-                      Math.min(200, (cluster.radius * 2 + 48) * camera.scale),
-                    ) /
-                      2,
-                  top:
-                    camera.y + (cluster.y - cluster.radius) * camera.scale - 36,
-                  width: Math.max(
-                    72,
-                    Math.min(200, (cluster.radius * 2 + 48) * camera.scale),
-                  ),
-                },
-              ]}>
-              {cluster.section ? (
-                <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-                  {cluster.section}
+          {layout.clusters.map(cluster => {
+            const title = clusterTitleBox(cluster, camera)
+            return (
+              <TouchableOpacity
+                key={cluster.id}
+                accessibilityRole="button"
+                accessibilityLabel={_(msg`Inspect cluster ${cluster.label}`)}
+                accessibilityHint={_(
+                  msg`Focuses this cluster and shows its collections`,
+                )}
+                onPress={() => focusCluster(cluster.id)}
+                style={[
+                  a.absolute,
+                  a.align_center,
+                  {left: title.left, top: title.top, width: title.width},
+                ]}>
+                {cluster.section ? (
+                  <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
+                    {cluster.section}
+                  </Text>
+                ) : null}
+                <Text
+                  numberOfLines={1}
+                  style={[a.text_sm, a.font_bold, t.atoms.text]}>
+                  {cluster.label}
                 </Text>
-              ) : null}
-              <Text
-                numberOfLines={1}
-                style={[a.text_sm, a.font_bold, t.atoms.text]}>
-                {cluster.label}
-              </Text>
-              <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-                {plural(cluster.nodes.length, {
-                  one: '# item',
-                  other: '# items',
-                })}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
+                  {plural(cluster.nodes.length, {
+                    one: '# item',
+                    other: '# items',
+                  })}
+                </Text>
+              </TouchableOpacity>
+            )
+          })}
           {layout.nodes.map(({node, x, y}) => {
             const selected = selectedId === node.id
-            const radius = Math.max(3, Math.min(18, node.radius * camera.scale))
+            const radius = screenRadius(node.radius, camera.scale)
             return (
               <TouchableOpacity
                 key={node.id}
@@ -313,15 +484,13 @@ export function CivicTreeMap({
                 accessibilityLabel={_(msg`Inspect ${node.title}`)}
                 accessibilityHint={_(msg`Shows this item and its connections`)}
                 accessibilityState={{selected}}
-                onPress={() => {
-                  setSelectedId(node.id)
-                  setClusterId(undefined)
-                }}
+                onPress={() => selectNode(node.id)}
                 style={[
                   a.absolute,
                   a.align_center,
                   a.justify_center,
                   {
+                    opacity: inFocus(node.id) ? 1 : 0.22,
                     left: camera.x + x * camera.scale - radius - 3,
                     top: camera.y + y * camera.scale - radius - 3,
                     width: radius * 2 + 6,
@@ -342,19 +511,36 @@ export function CivicTreeMap({
                     },
                   ]}
                 />
-                {(camera.scale >= 0.85 && layout.nodes.length <= 80) ||
-                selected ? (
-                  <View
-                    pointerEvents="none"
-                    style={[a.absolute, {top: radius * 2 + 10, width: 112}]}>
-                    <Text
-                      numberOfLines={1}
-                      style={[a.text_xs, a.text_center, t.atoms.text]}>
-                      {node.title}
-                    </Text>
-                  </View>
-                ) : null}
               </TouchableOpacity>
+            )
+          })}
+          {layout.nodes.map(({node}) => {
+            const label = labels.get(node.id)
+            if (!label) return null
+            return (
+              <View
+                key={`label:${node.id}`}
+                pointerEvents="none"
+                style={[
+                  a.absolute,
+                  {left: label.left, top: label.top, width: label.width},
+                ]}>
+                <Text
+                  numberOfLines={1}
+                  style={[
+                    a.text_xs,
+                    label.side === 'right'
+                      ? a.text_left
+                      : label.side === 'left'
+                        ? a.text_right
+                        : a.text_center,
+                    node.id === selectedId ? a.font_bold : null,
+                    t.atoms.text,
+                    {lineHeight: 16},
+                  ]}>
+                  {node.title}
+                </Text>
+              </View>
             )
           })}
         </MapViewport>
@@ -444,21 +630,46 @@ export function CivicTreeMap({
             </View>
           </View>
         ) : null}
-        {selectedNode || selectedCluster ? (
+        {panelOpen ? (
           <View
+            onLayout={
+              docked
+                ? undefined
+                : event => setSheetHeight(event.nativeEvent.layout.height)
+            }
             style={[
               a.absolute,
               t.atoms.bg,
-              a.border,
               t.atoms.border_contrast_low,
-              a.rounded_lg,
-              {
-                top: 12,
-                right: 12,
-                width: Math.min(340, size.width - 24),
-                maxHeight: size.height - 84,
-              },
+              docked
+                ? [
+                    a.border_l,
+                    {top: 0, right: 0, bottom: 0, width: PANEL_WIDTH},
+                  ]
+                : [
+                    a.border_t,
+                    {
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      maxHeight: size.height * 0.5,
+                      borderTopLeftRadius: 16,
+                      borderTopRightRadius: 16,
+                    },
+                  ],
             ]}>
+            {docked ? null : (
+              <View style={[a.align_center, a.pt_sm]}>
+                <View
+                  style={{
+                    width: 36,
+                    height: 4,
+                    borderRadius: 2,
+                    backgroundColor: t.palette.contrast_200,
+                  }}
+                />
+              </View>
+            )}
             <ScrollView>
               {selectedNode ? (
                 <>
@@ -479,6 +690,8 @@ export function CivicTreeMap({
                     nodeId={selectedNode.id}
                     onClose={() => setSelectedId(undefined)}
                     onOpenCollection={onOpenCollection}
+                    onSelectNode={selectNode}
+                    fill={docked}
                     onEdit={onEditItem}
                     onRemove={onRemoveItem}
                   />
@@ -536,60 +749,68 @@ export function CivicTreeMap({
             </ScrollView>
           </View>
         ) : null}
-        <View
-          style={[
-            a.absolute,
-            a.flex_row,
-            a.align_center,
-            a.gap_xs,
-            a.p_xs,
-            a.rounded_md,
-            a.border,
-            t.atoms.bg,
-            t.atoms.border_contrast_low,
-            // Phones keep the bottom-right corner for the screen's FABs.
-            gtMobile ? {bottom: 16, right: 16} : {bottom: 16, left: 16},
-          ]}>
-          <Button
-            label={_(msg`Zoom out`)}
-            variant="ghost"
-            color="secondary"
-            size="small"
-            onPress={() => zoom(1 / 1.25)}>
-            <ButtonText>−</ButtonText>
-          </Button>
-          <Text
+        {/* A bottom sheet covers the controls' corner; pinching still zooms. */}
+        {panelOpen && !docked ? null : (
+          <View
             style={[
-              a.text_xs,
-              a.text_center,
-              t.atoms.text_contrast_medium,
-              {minWidth: 40},
+              a.absolute,
+              a.flex_row,
+              a.align_center,
+              a.gap_xs,
+              a.p_xs,
+              a.rounded_md,
+              a.border,
+              t.atoms.bg,
+              t.atoms.border_contrast_low,
+              // Phones keep the bottom-right corner for the screen's FABs.
+              gtMobile
+                ? {
+                    bottom: 16,
+                    right: 16 + (panelOpen && docked ? PANEL_WIDTH : 0),
+                  }
+                : {bottom: 16, left: 16},
             ]}>
-            {Math.round(camera.scale * 100)}%
-          </Text>
-          <Button
-            label={_(msg`Zoom in`)}
-            variant="ghost"
-            color="secondary"
-            size="small"
-            onPress={() => zoom(1.25)}>
-            <ButtonText>+</ButtonText>
-          </Button>
-          <Button
-            label={_(msg`Fit map`)}
-            variant="ghost"
-            color="secondary"
-            size="small"
-            onPress={() => {
-              setCamera(fitCamera)
-              setSelectedId(undefined)
-              setClusterId(undefined)
-            }}>
-            <ButtonText>
-              <Trans>Fit</Trans>
-            </ButtonText>
-          </Button>
-        </View>
+            <Button
+              label={_(msg`Zoom out`)}
+              variant="ghost"
+              color="secondary"
+              size="small"
+              onPress={() => zoom(1 / 1.25)}>
+              <ButtonText>−</ButtonText>
+            </Button>
+            <Text
+              style={[
+                a.text_xs,
+                a.text_center,
+                t.atoms.text_contrast_medium,
+                {minWidth: 40},
+              ]}>
+              {Math.round(camera.scale * 100)}%
+            </Text>
+            <Button
+              label={_(msg`Zoom in`)}
+              variant="ghost"
+              color="secondary"
+              size="small"
+              onPress={() => zoom(1.25)}>
+              <ButtonText>+</ButtonText>
+            </Button>
+            <Button
+              label={_(msg`Fit map`)}
+              variant="ghost"
+              color="secondary"
+              size="small"
+              onPress={() => {
+                glideTo(fitCamera)
+                setSelectedId(undefined)
+                setClusterId(undefined)
+              }}>
+              <ButtonText>
+                <Trans>Fit</Trans>
+              </ButtonText>
+            </Button>
+          </View>
+        )}
       </View>
       <View
         style={[

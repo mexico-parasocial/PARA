@@ -1,86 +1,51 @@
-import {describe, expect, jest, test} from '@jest/globals'
+import {type app} from '#/lexicons'
+import {createFeedViewPostsSlices} from './feed-manip'
 
 jest.mock('./feed/home', () => ({
-  FALLBACK_MARKER_POST: {
-    post: {
-      uri: 'fallback-uri',
-      record: {},
-    },
-  },
+  FALLBACK_MARKER_POST: {post: {uri: 'at://did:plc:test/app.bsky.feed.post/1'}},
 }))
 
-import {type app} from '#/lexicons'
-import {FeedTuner} from './feed-manip'
+const author = {
+  $type: 'app.bsky.actor.defs#profileViewBasic',
+  did: 'did:plc:alice',
+  handle: 'alice.test',
+} satisfies app.bsky.actor.defs.ProfileViewBasic
 
-// Mock data
-const mockFeedItemRaw = {
-  post: {
-    uri: 'at://did:plc:edbptemwovho4nfqqtxf5ydt/app.bsky.feed.post/3mdw2hhtjif2r',
-    cid: 'bafyreic4esgbbfqbxi4g4o7eo6uozamei7svfy4f3x6curkbsu2t36n5ca',
-    author: {
-      did: 'did:plc:edbptemwovho4nfqqtxf5ydt',
-      handle: 'carla.test',
-      displayName: 'Carla',
-      associated: {
-        activitySubscription: {
-          allowSubscriptions: 'followers',
-        },
-      },
-      viewer: {
-        muted: false,
-        blockedBy: false,
-        following:
-          'at://did:plc:s6iszirpjhrokcmjudgjg7pq/app.bsky.graph.follow/3mdw2hdumwq2r',
-        followedBy:
-          'at://did:plc:edbptemwovho4nfqqtxf5ydt/app.bsky.graph.follow/3mdw2bgzly22r',
-      },
-      labels: [],
-    },
+function post(id: string) {
+  return {
+    $type: 'app.bsky.feed.defs#postView',
+    uri: `at://did:plc:alice/app.bsky.feed.post/${id}`,
+    cid: id,
+    author,
     record: {
-      text: 'Hello World',
       $type: 'app.bsky.feed.post',
-      langs: ['es'],
-      createdAt: '2026-02-02T23:58:52.439Z',
+      text: id,
+      createdAt: '2026-08-31T00:00:00.000Z',
     },
-    bookmarkCount: 0,
-    replyCount: 0,
-    repostCount: 0,
-    likeCount: 0,
-    quoteCount: 0,
-    indexedAt: '2026-02-02T23:58:52.439Z',
-    viewer: {
-      bookmarked: false,
-      threadMuted: false,
-      embeddingDisabled: false,
-    },
-    labels: [],
-  },
+    indexedAt: '2026-08-31T00:00:00.000Z',
+  } satisfies app.bsky.feed.defs.PostView
 }
 
-describe('FeedTuner Debug', () => {
-  test('should not filter out valid following feed posts', () => {
-    // Re-create the tuners used in feed-tuners.tsx
-    const feedTuners = [
-      FeedTuner.removeOrphans,
-      // Default Following logic (assuming no prefs)
-      FeedTuner.followedRepliesOnly({
-        userDid: 'did:plc:s6iszirpjhrokcmjudgjg7pq',
-      }),
-      FeedTuner.dedupThreads,
-      FeedTuner.removeMutedThreads,
-    ]
+describe('createFeedViewPostsSlices', () => {
+  it('preserves selected numbering and infers hydrated parent and root numbering', () => {
+    const root = post('root')
+    const parent = post('parent')
+    const selected = post('selected')
+    const feedPost = {
+      post: selected,
+      reply: {root, parent},
+      opThreadPostIndex: 3,
+      opThreadPostCount: 4,
+    } satisfies app.bsky.feed.defs.FeedViewPost
 
-    const tuner = new FeedTuner(feedTuners)
+    const [slice] = createFeedViewPostsSlices([feedPost])
 
-    console.log('Running tune in TEST...')
-    const slices = tuner.tune(
-      [mockFeedItemRaw as app.bsky.feed.defs.FeedViewPost],
-      {
-        dryRun: false,
-      },
-    )
-
-    console.log('Test Result slices:', slices.length)
-    expect(slices.length).toBeGreaterThan(0)
+    expect(
+      slice.items.map(item => [item.post.uri, item.postNumbering]),
+    ).toEqual([
+      [root.uri, {opThreadPostIndex: 1, opThreadPostCount: 4}],
+      [parent.uri, {opThreadPostIndex: 2, opThreadPostCount: 4}],
+      [selected.uri, {opThreadPostIndex: 3, opThreadPostCount: 4}],
+    ])
   })
 })

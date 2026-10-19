@@ -12,7 +12,7 @@ import * as env from '#/env'
 
 export {Features} from '#/analytics/features/types'
 
-const logger = Logger.create(Logger.Context.GrowthBook)
+const logger = Logger.create(Logger.Context.Growthbook)
 const CACHE = new MMKV({id: 'bsky_features_cache'})
 
 const BETA_USER_ATTRIBUTE = 'isBetaUser'
@@ -41,8 +41,14 @@ const TIMEOUT_PREFER_FRESH_GATES = 1500
 const sdkOptions = {
   apiHost: env.GROWTHBOOK_API_HOST,
   clientKey: env.GROWTHBOOK_CLIENT_KEY,
+  enableDevMode: env.IS_INTERNAL,
 }
 const bootstrap = readFeatureBootstrap(sdkOptions)
+
+/**
+ * Shared SDK instance. Assumes a single active account context, with attributes
+ * supplied by AnalyticsFeaturesContext before its children evaluate features.
+ */
 export const features = createGrowthBook(sdkOptions, bootstrap)
 
 /**
@@ -63,8 +69,7 @@ export const init = bootstrap
     })
 
 /**
- * Refresh feature gates from GrowthBook. Updates attributes based on the
- * provided account, if any.
+ * Refresh feature gates from GrowthBook.
  */
 export async function refresh({strategy}: {strategy: FeatureFetchStrategy}) {
   const options = {
@@ -85,7 +90,6 @@ export function getFeatures() {
 export function getFeatureDescription(feature: Features, i18n: I18n) {
   switch (feature) {
     case Features.PostFeedKnownLikersEnable:
-    case Features.PostThreadKnownLikersEnable:
       return {
         key: feature,
         name: i18n._(
@@ -98,6 +102,43 @@ export function getFeatureDescription(feature: Features, i18n: I18n) {
           msg({
             message: 'Spot posts your friends and follows have liked.',
             comment: 'Description of a feature flag (Social proofing on posts)',
+          }),
+        ),
+      }
+    case Features.FollowingV2Enable:
+      // Following v2 behaviour is native-only, see `isFollowingV2Eligible`
+      if (env.IS_WEB) return null
+      return {
+        key: feature,
+        name: i18n._(
+          msg({
+            message: 'Keep your place in the Following feed',
+            comment: 'Name for a feature flag',
+          }),
+        ),
+        description: i18n._(
+          msg({
+            message:
+              'Save your position in the Following feed between sessions. New posts wait above you until you’re ready to view them.',
+            comment:
+              'Description of a feature flag (Keep your place in the Following feed)',
+          }),
+        ),
+      }
+    case Features.NotificationsV2Enable:
+      return {
+        key: feature,
+        name: i18n._(
+          msg({
+            message: 'Redesigned notifications',
+            comment: 'Name for a feature flag',
+          }),
+        ),
+        description: i18n._(
+          msg({
+            message:
+              'Notifications sorted into tabs – people you follow, followers, replies and activity.',
+            comment: 'Description of a feature flag (Redesigned notifications)',
           }),
         ),
       }
@@ -167,6 +208,10 @@ export function getTargetedFeatures(i18n: I18n) {
  * attributes are manually configured in the GrowthBook dashboard. So these
  * values need to match exactly. Therefore, let's add them here manually to and
  * not spread them to avoid mistakes.
+ *
+ * Analytics session IDs are event metadata only, not feature targeting or
+ * experiment bucketing inputs. They are intentionally excluded from GrowthBook
+ * attributes, so session rotation does not require feature reevaluation.
  */
 export function setAttributes({
   base,
@@ -176,7 +221,6 @@ export function setAttributes({
 }: Metadata) {
   void features.setAttributes({
     deviceId: base.deviceId,
-    sessionId: base.sessionId,
     platform: base.platform,
     appVersion: base.appVersion,
     countryCode: geolocation.countryCode,

@@ -8,7 +8,7 @@ import {type PoliticalAffiliationType} from '#/lib/political-affiliations'
 import {BADGE_INFO} from '#/state/shell/political-affiliation'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
-import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/Times'
+import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/TimesLarge'
 import {Warning_Stroke2_Corner0_Rounded as WarningIcon} from '#/components/icons/Warning'
 import {Text} from '#/components/Typography'
 

@@ -3,7 +3,6 @@ import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 
 import {getM8AccessToken, restoreM8Session} from '#/lib/im8/api'
-import {authenticateBiometric} from '#/lib/im8/biometric'
 import {openM8Verification} from '#/lib/im8/linking'
 import {
   useAuthFactorQuery,
@@ -27,9 +26,6 @@ export function Im8FAToggle() {
     if (busy || (emailOn && !im8On)) return
     setIsVerifying(true)
     try {
-      // Gate on biometrics before we touch anything server-side.
-      const ok = await authenticateBiometric()
-      if (!ok) return
       // Require a live iM8 session or enabling would lock the user out.
       let token = await getM8AccessToken()
       if (!token) {

@@ -14,7 +14,7 @@ import {
 import {atoms as a, useTheme} from '#/alf'
 import {Admonition} from '#/components/Admonition'
 import * as Toggle from '#/components/forms/Toggle'
-import {BellRinging_Stroke2_Corner0_Rounded as BellRingingIcon} from '#/components/icons/BellRinging'
+import {BellRinging_Stroke2_Corner0_Rounded as BellRingingIcon} from '#/components/icons/Bell'
 import * as Layout from '#/components/Layout'
 import {Loader} from '#/components/Loader'
 import {app} from '#/lexicons'

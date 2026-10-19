@@ -27,14 +27,14 @@ import {useSession} from '#/state/session'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import * as Dialog from '#/components/Dialog'
-import {ArrowCornerDownRight_Stroke2_Corner2_Rounded as ConnectIcon} from '#/components/icons/ArrowCornerDownRight'
+import {ArrowCornerDownRight_Stroke2_Corner2_Rounded as ConnectIcon} from '#/components/icons/Arrow'
 import {
   ChevronBottom_Stroke2_Corner0_Rounded as DownIcon,
   ChevronTop_Stroke2_Corner0_Rounded as UpIcon,
 } from '#/components/icons/Chevron'
 import {Pencil_Stroke2_Corner0_Rounded as PencilIcon} from '#/components/icons/Pencil'
 import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/Plus'
-import {SquareArrowTopRight_Stroke2_Corner0_Rounded as ExportIcon} from '#/components/icons/SquareArrowTopRight'
+import {SquareArrowTopRight_Stroke2_Corner0_Rounded as ExportIcon} from '#/components/icons/Square'
 import {Trash_Stroke2_Corner0_Rounded as TrashIcon} from '#/components/icons/Trash'
 import {Tree_Stroke2_Corner0_Rounded as TreeIcon} from '#/components/icons/Tree'
 import * as Layout from '#/components/Layout'
@@ -44,9 +44,11 @@ import {
   canContributeItem,
   contributionFromItem,
 } from '#/features/civicTree/contribution'
+import {type SembleExportPlan} from '#/features/civicTree/sembleExport'
 import {ContributeToCommunityTreeDialog} from '#/features/communityCivicTree/components/ContributeToCommunityTreeDialog'
 import {AddTreeItemDialog} from '#/features/personalCivicTree/components/AddTreeItemDialog'
 import {ConnectTreeItemsDialog} from '#/features/personalCivicTree/components/ConnectTreeItemsDialog'
+import {ExportToSembleDialog} from '#/features/personalCivicTree/components/ExportToSembleDialog'
 
 export function CollectionDetailScreen() {
   const {_} = useLingui()
@@ -71,7 +73,7 @@ export function CollectionDetailScreen() {
     string | undefined
   >()
   const [connectSourceKey, setConnectSourceKey] = useState<string | undefined>()
-  const exportPrompt = Prompt.usePromptControl()
+  const exportControl = Dialog.useDialogControl()
 
   const deletePrompt = Prompt.usePromptControl()
   const [itemToDelete, setItemToDelete] = useState<string | null>(null)
@@ -172,31 +174,33 @@ export function CollectionDetailScreen() {
     addItemControl.open()
   }, [addItemControl])
 
-  const onExportToSemble = useCallback(() => {
-    if (!collection) return
-    exportMutation.mutate(
-      {collection},
-      {
-        onSuccess: data => {
-          Toast.show(_(msg`Exported to Semble.so`))
-          // Open the collection on Semble.so
-          const rkey = data.collectionUri.split('/').pop()
-          if (rkey) {
-            Linking.openURL(
-              `https://semble.so/profile/${currentAccount?.handle}/collections/${rkey}`,
-            ).catch(() => {
-              // silently fail
+  const onExportToSemble = useCallback(
+    (plan: SembleExportPlan) => {
+      exportMutation.mutate(
+        {plan},
+        {
+          onSuccess: data => {
+            Toast.show(_(msg`Exported to Semble.so`))
+            // Open the collection on Semble.so
+            const rkey = data.collectionUri.split('/').pop()
+            if (rkey) {
+              Linking.openURL(
+                `https://semble.so/profile/${currentAccount?.handle}/collections/${rkey}`,
+              ).catch(() => {
+                // silently fail
+              })
+            }
+          },
+          onError: (err: Error) => {
+            Toast.show(err.message || _(msg`Failed to export to Semble.so`), {
+              type: 'error',
             })
-          }
+          },
         },
-        onError: (err: Error) => {
-          Toast.show(err.message || _(msg`Failed to export to Semble.so`), {
-            type: 'error',
-          })
-        },
-      },
-    )
-  }, [collection, exportMutation, currentAccount?.handle, _])
+      )
+    },
+    [exportMutation, currentAccount?.handle, _],
+  )
 
   const contributionDraft = useMemo(
     () =>
@@ -374,7 +378,7 @@ export function CollectionDetailScreen() {
                     accessibilityHint={_(
                       msg`Exports this collection to Semble.so as a research trail`,
                     )}
-                    onPress={() => exportPrompt.open()}
+                    onPress={() => exportControl.open()}
                     disabled={
                       exportMutation.isPending || collection.items.length === 0
                     }
@@ -444,16 +448,14 @@ export function CollectionDetailScreen() {
         )}
       </Layout.Center>
 
-      <Prompt.Basic
-        control={exportPrompt}
-        title={_(msg`Export to Semble.so?`)}
-        description={_(
-          msg`This will create a public research collection on Semble.so with your cards and connections.`,
-        )}
-        onConfirm={onExportToSemble}
-        confirmButtonCta={_(msg`Export`)}
-        isPending={exportMutation.isPending}
-      />
+      {collection ? (
+        <ExportToSembleDialog
+          control={exportControl}
+          collection={collection}
+          isPending={exportMutation.isPending}
+          onConfirm={onExportToSemble}
+        />
+      ) : null}
       <Prompt.Basic
         control={deletePrompt}
         title={_(msg`Remove item?`)}

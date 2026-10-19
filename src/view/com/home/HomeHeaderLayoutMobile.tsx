@@ -1,18 +1,27 @@
 import {Platform, View} from 'react-native'
 import Animated from 'react-native-reanimated'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
+import {useLingui} from '@lingui/react/macro'
+import {useNavigation} from '@react-navigation/native'
 
+import {HITSLOP_10} from '#/lib/constants'
+import {PressableScale} from '#/lib/custom-animations/PressableScale'
+import {useHaptics} from '#/lib/haptics'
+import {type NavigationProp} from '#/lib/routes/types'
+import {emitSoftReset} from '#/state/events'
 import {useSession} from '#/state/session'
-import {useShellLayout} from '#/state/shell/shell-layout'
+import {useShellHeaderLayout} from '#/state/shell/shell-layout'
 import {HomeHeaderChatButton} from '#/view/com/home/HomeHeaderChatButton'
 import {useHomeHeaderTransform} from '#/view/com/util/MainScrollProvider'
 import {Logomark} from '#/view/icons/Logomark'
 import {Logotype} from '#/view/icons/Logotype'
 import {atoms as a, useTheme} from '#/alf'
+import {ButtonIcon} from '#/components/Button'
+import {Hashtag_Stroke2_Corner0_Rounded as FeedsIcon} from '#/components/icons/Hashtag'
 import * as Layout from '#/components/Layout'
-import {IS_IOS} from '#/env'
-
-const HOME_HEADER_TOP_ROW_HEIGHT = 52
+import {Link} from '#/components/Link'
+import {useAnalytics} from '#/analytics'
+import {IS_DEV, IS_LIQUID_GLASS} from '#/env'
 
 export function HomeHeaderLayoutMobile({
   children,
@@ -21,11 +30,14 @@ export function HomeHeaderLayoutMobile({
   tabBarAnchor: React.ReactElement | null | undefined
 }) {
   const t = useTheme()
-  const {headerHeight} = useShellLayout()
+  const {t: l} = useLingui()
+  const ax = useAnalytics()
+  const playHaptic = useHaptics()
+  const {navigate} = useNavigation<NavigationProp>()
+  const {onLayout} = useShellHeaderLayout()
   const insets = useSafeAreaInsets()
   const headerMinimalShellTransform = useHomeHeaderTransform()
   const {hasSession} = useSession()
-  const topRowOffset = insets.top
 
   return (
     <Animated.View
@@ -38,29 +50,34 @@ export function HomeHeaderLayoutMobile({
           left: 0,
           right: 0,
         },
-        !IS_IOS && headerMinimalShellTransform,
+        IS_LIQUID_GLASS && {paddingTop: insets.top},
+        headerMinimalShellTransform,
       ]}
-      onLayout={e => {
-        headerHeight.set(e.nativeEvent.layout.height)
-      }}>
-      <View
-        pointerEvents="box-none"
-        style={[
-          a.absolute,
-          {
-            top: topRowOffset,
-            left: 0,
-            right: 0,
-            zIndex: 2,
-          },
-          t.atoms.bg,
-        ]}>
-        <Layout.Header.Outer noBottomBorder>
+      onLayout={onLayout}>
+      <Layout.Header.Outer noBottomBorder>
+        <Layout.Header.Slot>
           <Layout.Header.MenuButton />
+        </Layout.Header.Slot>
 
-          <View
-            style={[a.flex_1, a.align_center, a.justify_center]}
-            pointerEvents="none">
+        <View style={[a.flex_1, a.align_center, a.justify_center]}>
+          <PressableScale
+            testID="viewHeaderHomeLogoBtn"
+            targetScale={0.9}
+            hitSlop={HITSLOP_10}
+            accessibilityLabel={IS_DEV ? l`Debug` : l`Scroll to top`}
+            accessibilityHint={
+              IS_DEV
+                ? l`Opens developer tools`
+                : l`Returns to the top of your feed`
+            }
+            onPress={() => {
+              if (IS_DEV) {
+                navigate('Debug')
+              } else {
+                playHaptic('Light')
+                emitSoftReset()
+              }
+            }}>
             <View
               style={[
                 a.align_center,
@@ -162,23 +179,33 @@ export function HomeHeaderLayoutMobile({
                 </View>
               </View>
             </View>
-          </View>
+          </PressableScale>
+        </View>
 
+        <Layout.Header.Slot fitContent>
           {hasSession && (
-            <View style={[a.flex_row, a.align_center, a.gap_xs, a.z_50]}>
+            <View style={[a.flex_row, a.align_center, a.gap_xs]}>
+              <Link
+                testID="viewHeaderHomeFeedPrefsBtn"
+                to={{screen: 'Feeds'}}
+                hitSlop={HITSLOP_10}
+                label={l`View your feeds and explore more`}
+                size="small"
+                variant="ghost"
+                color="secondary"
+                shape="square"
+                onPress={() => {
+                  ax.metric('nav:click', {item: 'feeds', surface: 'topBar'})
+                }}
+                style={[a.justify_center, a.bg_transparent]}>
+                <ButtonIcon icon={FeedsIcon} size="lg" />
+              </Link>
               <HomeHeaderChatButton alignToEdge />
             </View>
           )}
-        </Layout.Header.Outer>
-      </View>
-
-      <View
-        style={{
-          paddingTop: topRowOffset + HOME_HEADER_TOP_ROW_HEIGHT,
-          zIndex: 1,
-        }}>
-        {children}
-      </View>
+        </Layout.Header.Slot>
+      </Layout.Header.Outer>
+      {children}
     </Animated.View>
   )
 }

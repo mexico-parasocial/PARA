@@ -38,6 +38,7 @@ export function useIntentHandler() {
 
   useEffect(() => {
     const handleIncomingURL = async (url: string) => {
+      if (/^para:\/\/(idp-login|matrix-auth|m8-auth)([/?]|$)/.test(url)) return
       if (IS_IOS) {
         // Close in-app browser if it's open (iOS only)
         await WebBrowser.dismissBrowser().catch(() => {})

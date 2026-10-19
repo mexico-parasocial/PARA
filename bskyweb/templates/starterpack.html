@@ -28,4 +28,7 @@
 <meta
   name="twitter:description"
   content="Join PARA communities and civic conversations." />
+  {%- if starterPackURI %}
+  <meta name="at:canonical" content="{{ starterPackURI }}" />
+  {% endif -%}
 {%- endblock %}

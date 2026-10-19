@@ -1,4 +1,6 @@
 import {TouchableOpacity} from 'react-native'
+import {msg} from '@lingui/core/macro'
+import {useLingui} from '@lingui/react'
 
 import {atoms as a, useTheme, web} from '#/alf'
 import {Flame_Stroke2_Corner1_Rounded as FlameIcon} from '#/components/icons/Flame'
@@ -16,18 +18,23 @@ export function CivicHeatToggle({
   on: boolean
   onToggle: () => void
   /** Cabildeos that have a location and can contribute heat. */
-  pointCount: number
+  pointCount: number | undefined
 }) {
   const t = useTheme()
+  const {_} = useLingui()
 
   return (
     <TouchableOpacity
       accessibilityRole="switch"
-      accessibilityLabel="Civic activity heat"
+      accessibilityLabel={_(msg`Civic activity heat`)}
       accessibilityHint={
-        pointCount === 0
-          ? 'No located cabildeos yet'
-          : `Activity density, ${pointCount} located`
+        pointCount === undefined
+          ? _(msg`Located civic activity count is unknown`)
+          : pointCount === 0
+            ? _(msg`No located discussions in the loaded results`)
+            : _(
+                msg`Activity density, ${pointCount} located in the loaded results`,
+              )
       }
       accessibilityState={{checked: on}}
       onPress={onToggle}
@@ -37,7 +44,7 @@ export function CivicHeatToggle({
         a.justify_center,
         a.rounded_full,
         a.border,
-        {width: 32, height: 32},
+        {width: 44, height: 44},
         on
           ? {
               borderColor: t.palette.primary_500,

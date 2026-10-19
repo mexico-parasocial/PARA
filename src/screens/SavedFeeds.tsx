@@ -46,7 +46,7 @@ import {
   ArrowBottom_Stroke2_Corner0_Rounded as ArrowDownIcon,
   ArrowTop_Stroke2_Corner0_Rounded as ArrowUpIcon,
 } from '#/components/icons/Arrow'
-import {FilterTimeline_Stroke2_Corner0_Rounded as FilterTimeline} from '#/components/icons/FilterTimeline'
+import {FilterTimeline_Stroke2_Corner0_Rounded as FilterTimeline} from '#/components/icons/Filter'
 import {FloppyDisk_Stroke2_Corner0_Rounded as SaveIcon} from '#/components/icons/FloppyDisk'
 import {Person_Stroke2_Corner0_Rounded as UserIcon} from '#/components/icons/Person'
 import {Pin_Filled_Corner0_Rounded as PinIcon} from '#/components/icons/Pin'
@@ -487,11 +487,11 @@ function PinnedFeedItem({
 }) {
   const {_} = useLingui()
   const t = useTheme()
-  const playHaptic = useHaptics()
+  const haptics = useHaptics()
   const feedUri = feed.value
 
   const onTogglePinned = () => {
-    playHaptic()
+    haptics.confirm()
     setCurrentFeeds(
       currentFeeds.map(f =>
         f.id === feed.id ? {...feed, pinned: !feed.pinned} : f,
@@ -563,11 +563,11 @@ function UnpinnedFeedItem({
 }) {
   const {_} = useLingui()
   const t = useTheme()
-  const playHaptic = useHaptics()
+  const haptics = useHaptics()
   const feedUri = feed.value
 
   const onTogglePinned = () => {
-    playHaptic()
+    haptics.confirm()
     setCurrentFeeds(
       currentFeeds.map(f =>
         f.id === feed.id ? {...feed, pinned: !feed.pinned} : f,
@@ -576,7 +576,7 @@ function UnpinnedFeedItem({
   }
 
   const onPressRemove = () => {
-    playHaptic()
+    haptics.confirm()
     setCurrentFeeds(currentFeeds.filter(f => f.id !== feed.id))
   }
 

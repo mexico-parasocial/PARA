@@ -49,11 +49,19 @@ export type CommunityCivicTreeRouteParams =
     }
   | undefined
 
+export type ModerationInboxTab = 'reports' | 'account'
+
 export type CommonNavigatorParams = {
   NotFound: undefined
+  Atmosphere: undefined
   Lists: undefined
   Moderation: undefined
-  ModerationInbox: undefined
+  ModerationInbox: {tab?: ModerationInboxTab} | undefined
+  ModerationInboxSettings: undefined
+  ModerationInboxReportDetails:
+    {moderationService: string; id: string} | undefined
+  ModerationInboxNoticeDetails:
+    {moderationService: string; subject: string} | undefined
   ModerationModlists: undefined
   ModerationMutedAccounts: undefined
   ModerationBlockedAccounts: undefined
@@ -126,6 +134,7 @@ export type CommonNavigatorParams = {
   AboutSettings: undefined
   AppIconSettings: undefined
   FindContactsSettings: undefined
+  InviteScanner: undefined
   Search: SearchParams
   Hashtag: {tag: string; author?: string}
   FlairFeed: {
@@ -164,7 +173,11 @@ export type CommonNavigatorParams = {
     filter?: 'Communities' | 'Parties' | 'Both'
     mode?: 'Policies' | 'Matters'
   }
-  PolicyDetails: {item?: Record<string, unknown>; cabildeoUri?: string}
+  PolicyDetails: {
+    item?: Record<string, unknown>
+    cabildeoUri?: string
+    policyUri?: string
+  }
   MatterDetails: {item?: Record<string, unknown>; cabildeoUri?: string}
   Representatives: {category?: string; q?: string}
   NotificationsActivityList: {posts: string}
@@ -328,14 +341,17 @@ export type FlatNavigatorParams = CommonNavigatorParams & {
     filter?: 'Communities' | 'Parties' | 'Both'
     mode?: 'Policies' | 'Matters'
   }
-  PolicyDetails: {item?: Record<string, unknown>; cabildeoUri?: string}
+  PolicyDetails: {
+    item?: Record<string, unknown>
+    cabildeoUri?: string
+    policyUri?: string
+  }
   MatterDetails: {item?: Record<string, unknown>; cabildeoUri?: string}
   Representatives: {category?: string; q?: string}
   Data: undefined
   CreatePost: undefined
   MyBase: undefined
   MyWallet: undefined
-  VerifyDashboard: undefined
   TrustedIssuers: undefined
   ConsentAudit: undefined
   IdentityHub: undefined
@@ -368,7 +384,11 @@ export type AllNavigatorParams = CommonNavigatorParams & {
     filter?: 'Communities' | 'Parties' | 'Both'
     mode?: 'Policies' | 'Matters'
   }
-  PolicyDetails: {item?: Record<string, unknown>; cabildeoUri?: string}
+  PolicyDetails: {
+    item?: Record<string, unknown>
+    cabildeoUri?: string
+    policyUri?: string
+  }
   MatterDetails: {item?: Record<string, unknown>; cabildeoUri?: string}
   Representatives: {category?: string; q?: string}
   SearchTab: undefined
@@ -378,11 +398,11 @@ export type AllNavigatorParams = CommonNavigatorParams & {
   NotificationsTab: {screen?: string; params?: object} | undefined
   Notifications: undefined
   MyProfileTab: undefined
+  MessagesTab: BottomTabNavigatorParams['MessagesTab']
   DataTab: undefined
   Data: undefined
   MyBase: undefined
   MyWallet: undefined
-  VerifyDashboard: undefined
   TrustedIssuers: undefined
   ConsentAudit: undefined
   IdentityHub: undefined

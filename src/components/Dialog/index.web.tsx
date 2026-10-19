@@ -36,7 +36,7 @@ import {
   type DialogInnerProps,
   type DialogOuterProps,
 } from '#/components/Dialog/types'
-import {TimesLarge_Stroke2_Corner0_Rounded as X} from '#/components/icons/Times'
+import {TimesLarge_Stroke2_Corner0_Rounded as X} from '#/components/icons/TimesLarge'
 import {Portal} from '#/components/Portal'
 
 export {useDialogContext, useDialogControl} from '#/components/Dialog/context'

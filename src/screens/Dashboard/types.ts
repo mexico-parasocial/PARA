@@ -18,4 +18,5 @@ export interface PolicyItem {
   participantCount?: number
   voteCount?: number
   positionCount?: number
+  flairs?: string[]
 }

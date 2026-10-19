@@ -11,8 +11,7 @@ import {
   Reanimated3DefaultSpringConfig,
   withSpring,
 } from 'react-native-reanimated'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
+import {useLingui} from '@lingui/react/macro'
 import {type NavigationProp, useNavigation} from '@react-navigation/native'
 import {useQueryClient} from '@tanstack/react-query'
 
@@ -20,7 +19,6 @@ import {isDefaultDiscoverFeedUri, VIDEO_FEED_URIS} from '#/lib/constants'
 import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
 import {getRootNavigation, getTabState, TabState} from '#/lib/routes/helpers'
 import {type AllNavigatorParams} from '#/lib/routes/types'
-import {logEvent} from '#/lib/statsig/statsig'
 import {listenSoftReset} from '#/state/events'
 import {FeedFeedbackProvider, useFeedFeedback} from '#/state/feed-feedback'
 import {useSetHomeBadge} from '#/state/home-badge'
@@ -40,11 +38,15 @@ import {
   MainScrollProvider,
   useHomeHeaderMode,
 } from '#/view/com/util/MainScrollProvider'
-import {useTheme} from '#/alf'
+import {useBreakpoints, useTheme} from '#/alf'
 import {useHeaderOffset} from '#/components/hooks/useHeaderOffset'
 import {EditBig_Stroke2_Corner2_Rounded as EditBigIcon} from '#/components/icons/EditBig'
 import {useAnalytics} from '#/analytics'
 import {IS_NATIVE} from '#/env'
+import {
+  isFollowingV2Eligible,
+  isFollowingV2HomeDotEnabled,
+} from '#/features/followingV2/elegibility'
 import {app} from '#/lexicons'
 
 const POLL_FREQ = 60e3 // 60sec
@@ -73,7 +75,7 @@ export function FeedPage({
   useHeaderInset?: boolean
 }) {
   const {hasSession} = useSession()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const ax = useAnalytics()
   const navigation = useNavigation<NavigationProp<AllNavigatorParams>>()
   const queryClient = useQueryClient()
@@ -103,6 +105,7 @@ export function FeedPage({
     return IS_NATIVE && _isVideoFeed
   }, [feedInfo])
   const t = useTheme()
+  const {gtMobile} = useBreakpoints()
 
   useEffect(() => {
     if (isPageFocused) {
@@ -124,15 +127,23 @@ export function FeedPage({
       TabState.InsideAtRoot
     if (isScreenFocused && isPageFocused) {
       scrollToTop()
-      truncateAndInvalidate(queryClient, FEED_RQKEY(feed))
+      void truncateAndInvalidate(queryClient, FEED_RQKEY(feed, feedParams))
       setHasNew(false)
-      logEvent('feed:refresh', {
+      ax.metric('feed:refresh', {
         feedType: feed.split('|')[0],
         feedUrl: feed,
         reason: 'soft-reset',
       })
     }
-  }, [navigation, isPageFocused, scrollToTop, queryClient, feed])
+  }, [
+    ax,
+    navigation,
+    isPageFocused,
+    scrollToTop,
+    queryClient,
+    feed,
+    feedParams,
+  ])
 
   // fires when page within screen is activated/deactivated
   useEffect(() => {
@@ -148,14 +159,14 @@ export function FeedPage({
 
   const onPressLoadLatest = useCallback(() => {
     scrollToTop()
-    truncateAndInvalidate(queryClient, FEED_RQKEY(feed))
+    void truncateAndInvalidate(queryClient, FEED_RQKEY(feed, feedParams))
     setHasNew(false)
-    logEvent('feed:refresh', {
+    ax.metric('feed:refresh', {
       feedType: feed.split('|')[0],
       feedUrl: feed,
       reason: 'load-latest',
     })
-  }, [scrollToTop, feed, queryClient])
+  }, [ax, scrollToTop, feed, feedParams, queryClient])
 
   const shouldPrefetch = IS_NATIVE && isPageAdjacent
   const isDiscoverFeed = isDefaultDiscoverFeedUri(feedInfo.uri)
@@ -184,11 +195,16 @@ export function FeedPage({
           />
         </FeedFeedbackProvider>
       </MainScrollProvider>
+      {/*
+       * Following v2 replaces this button with a native pill or mobile web's
+       * Home tab dot. Tablet and desktop web keep the button.
+       */}
       {(isScrolledDown || hasNew) &&
-        !ax.features.enabled(ax.features.FollowingV2Enable) && (
+        !isFollowingV2Eligible(ax) &&
+        !(isFollowingV2HomeDotEnabled(ax) && !gtMobile) && (
           <LoadLatestBtn
             onPress={onPressLoadLatest}
-            label={_(msg`Load new posts`)}
+            label={l`Load new posts`}
             showIndicator={hasNew}
           />
         )}
@@ -199,7 +215,7 @@ export function FeedPage({
           onPress={onPressCompose}
           icon={<EditBigIcon size="lg" fill={t.palette.white} />}
           accessibilityRole="button"
-          accessibilityLabel={_(msg({message: `New post`, context: 'action'}))}
+          accessibilityLabel={l({message: `New post`, context: 'action'})}
           accessibilityHint=""
         />
       )}

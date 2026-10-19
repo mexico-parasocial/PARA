@@ -4,12 +4,16 @@
  */
 import {fireEvent, render} from '@testing-library/react-native'
 
+import {getDistrictsByState} from '#/lib/constants/electoralDistrictsData'
+import {type MapCivicQuery} from '#/state/queries/map-cabildeos'
 import {
   BigCitiesDataOverlay,
+  DistrictsDataOverlay,
   MapLayersPanel,
   SelectedStateOverlay,
 } from '#/screens/Map/MapComponents'
-import {CircleX_Stroke2_Corner0_Rounded as CircleX} from '#/components/icons/CircleX'
+import {CircleX_Stroke2_Corner0_Rounded as CircleX} from '#/components/icons/Circle'
+import {MapCivicDataNotice} from '../MapDataNotice'
 
 jest.mock('react-native-reanimated', () => {
   const {View} = require('react-native')
@@ -84,16 +88,54 @@ jest.mock('react-responsive', () => ({
   useMediaQuery: () => false,
 }))
 
+// Android's Expo entry imports asset/font native modules at startup; these
+// map sheets only need the same device capability used by persisted settings.
+jest.mock('../../../../modules/expo-bluesky-swiss-army', () => ({
+  PlatformInfo: {getIsReducedMotionEnabled: () => false},
+}))
+
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({navigate: jest.fn()}),
 }))
 
-jest.mock('#/state/queries/cabildeo', () => ({
-  useCabildeosQuery: () => ({data: []}),
+let mockCivicQuery: MapCivicQuery
+let mockPreviewFacts = true
+jest.mock('#/state/queries/map-cabildeos', () => ({
+  useMapCabildeosQuery: () => mockCivicQuery,
 }))
+jest.mock('#/lib/services/config', () => ({
+  get USE_MOCK_DATA() {
+    return mockPreviewFacts
+  },
+}))
+// Read the preview flag at render time for both release and demo scenarios.
+jest.mock('../mapData', () =>
+  Object.defineProperty(
+    {...jest.requireActual('../mapData')},
+    'SHOW_MAP_PREVIEW_FACTS',
+    {
+      get: () => mockPreviewFacts,
+    },
+  ),
+)
+beforeEach(() => {
+  mockPreviewFacts = true
+  mockCivicQuery = {
+    data: [],
+    provenance: {items: [], source: 'appview', hasMore: false},
+    isPending: false,
+    isFetching: false,
+    isError: false,
+    refetch: jest.fn(),
+  } as unknown as MapCivicQuery
+})
 
 jest.mock('@lingui/react', () => ({
-  useLingui: () => ({i18n: {locale: 'en'}, _: (value: unknown) => value}),
+  useLingui: () => ({
+    i18n: {locale: 'en'},
+    _: (value: {message?: string} | string) =>
+      typeof value === 'string' ? value : value.message,
+  }),
   // The macro plugin rewrites <Trans> to import from here with the compiled
   // message as a prop.
   Trans: ({
@@ -181,6 +223,115 @@ describe('BigCitiesDataOverlay', () => {
     ).toBeTruthy()
     expect(getByText('CIUDAD ACTIVA')).toBeTruthy()
   })
+
+  it('hides unsourced city officeholders and population in release mode', () => {
+    mockPreviewFacts = false
+    const {getByText, queryByText} = render(
+      <BigCitiesDataOverlay
+        selectedState={{name: 'Sinaloa'}}
+        showCities
+        selectedCityName="Mazatlán"
+        onSelectCity={jest.fn()}
+        onClose={jest.fn()}
+      />,
+    )
+    expect(getByText(/Verified statistics and officeholder/)).toBeTruthy()
+    expect(queryByText(/Mayor:/)).toBeNull()
+    expect(queryByText(/Population:/)).toBeNull()
+  })
+})
+
+describe('Map civic read states', () => {
+  it('shows loading without an empty-result claim', () => {
+    mockCivicQuery.data = undefined
+    mockCivicQuery.isPending = true
+    const {getByText, queryByText} = render(
+      <MapCivicDataNotice query={mockCivicQuery} count={0} />,
+    )
+    expect(getByText(/Loading civic activity/)).toBeTruthy()
+    expect(queryByText(/No civic activity/)).toBeNull()
+  })
+
+  it('offers retry after a failed read and treats counts as unknown', () => {
+    mockCivicQuery.data = undefined
+    mockCivicQuery.isError = true
+    const {getByText, getByRole, queryByText} = render(
+      <MapCivicDataNotice query={mockCivicQuery} count={0} />,
+    )
+    expect(getByText(/Counts are unknown/)).toBeTruthy()
+    expect(queryByText(/No civic activity/)).toBeNull()
+    fireEvent.press(getByRole('button', {name: 'Retry civic activity'}))
+    expect(mockCivicQuery.refetch).toHaveBeenCalledTimes(1)
+  })
+
+  it('keeps cached results clearly stale after refresh failure', () => {
+    mockCivicQuery.isError = true
+    const {getByText} = render(
+      <MapCivicDataNotice query={mockCivicQuery} count={2} />,
+    )
+    expect(getByText(/Showing the last loaded results/)).toBeTruthy()
+  })
+
+  it('identifies sample civic records and allows a real-data retry', () => {
+    mockCivicQuery.provenance = {
+      items: [],
+      source: 'demo',
+      hasMore: false,
+      demoReason: 'unavailable',
+    }
+    const {getByText, getByRole} = render(
+      <MapCivicDataNotice query={mockCivicQuery} count={2} />,
+    )
+    expect(
+      getByText(/Demo civic activity: the service is unavailable/),
+    ).toBeTruthy()
+    expect(getByRole('button', {name: 'Retry civic activity'})).toBeTruthy()
+  })
+
+  it('does not call a partial empty match a complete absence of activity', () => {
+    mockCivicQuery.provenance = {items: [], source: 'appview', hasMore: true}
+    const {getByText, queryByText} = render(
+      <MapCivicDataNotice query={mockCivicQuery} count={0} />,
+    )
+    expect(getByText(/Coverage is incomplete/)).toBeTruthy()
+    expect(queryByText('No civic activity matches this view.')).toBeNull()
+  })
+})
+
+it('labels illustrative district shapes and hides seeded district facts in release mode', () => {
+  mockPreviewFacts = false
+  const district = getDistrictsByState('Sinaloa')[0]
+  const {getByText, queryByText} = render(
+    <DistrictsDataOverlay
+      selectedState={{name: 'Sinaloa'}}
+      showDistricts
+      selectedDistrictId={district.id}
+      onSelectDistrict={jest.fn()}
+      onClose={jest.fn()}
+      onBackToState={jest.fn()}
+    />,
+  )
+  expect(getByText(/Illustrative district shapes/)).toBeTruthy()
+  expect(queryByText(new RegExp(district.currentDeputy))).toBeNull()
+  expect(queryByText(/Deputy:/)).toBeNull()
+  expect(queryByText(/Registered/)).toBeNull()
+})
+
+it('hides seeded statewide indicators in release mode', () => {
+  mockPreviewFacts = false
+  const {getByText, queryByText} = render(
+    <SelectedStateOverlay
+      selectedState={{name: 'Sinaloa'}}
+      visible
+      insets={insets}
+      onClose={jest.fn()}
+      onShowCities={jest.fn()}
+      onShowDistricts={jest.fn()}
+    />,
+  )
+  expect(getByText(/Verified statistics and officeholder/)).toBeTruthy()
+  expect(queryByText('Morena')).toBeNull()
+  expect(queryByText('Approval')).toBeNull()
 })
 
 describe('MapLayersPanel', () => {

@@ -22,6 +22,19 @@ export const RELATIONSHIP_COLORS: Record<string, string> = {
   compares_to: '#06b6d4',
 }
 
+/**
+ * Community relationships that read source -> target, and so render with an
+ * arrowhead when the map focuses on them. Comparison is the symmetric one.
+ */
+export const COMMUNITY_RELATION_DIRECTED: Record<string, boolean> = {
+  supports: true,
+  opposes: true,
+  addresses: true,
+  helpful: true,
+  explainer: true,
+  compares_to: false,
+}
+
 /** Canonical stance colors — single source of truth */
 export const STANCE_COLORS: Record<string, string> = {
   pro: '#22c55e',

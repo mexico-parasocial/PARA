@@ -5,9 +5,8 @@ import {useNavigation} from '@react-navigation/native'
 
 import {makeProfileLink} from '#/lib/routes/links'
 import {type NavigationProp} from '#/lib/routes/types'
-import {shareText, shareUrl} from '#/lib/sharing'
+import {shareUrl, simpleShareText} from '#/lib/sharing'
 import {toShareUrl} from '#/lib/strings/url-helpers'
-import {logger} from '#/logger'
 import {useProfileShadow} from '#/state/cache/profile-shadow'
 import {useSession} from '#/state/session'
 import {useBreakpoints} from '#/alf'
@@ -16,10 +15,11 @@ import {EmbedDialog} from '#/components/dialogs/Embed'
 import {SendViaChatDialog} from '#/components/dms/dialogs/ShareViaChatDialog'
 import {ChainLink_Stroke2_Corner0_Rounded as ChainLinkIcon} from '#/components/icons/ChainLink'
 import {Clipboard_Stroke2_Corner2_Rounded as ClipboardIcon} from '#/components/icons/Clipboard'
-import {CodeBrackets_Stroke2_Corner0_Rounded as CodeBracketsIcon} from '#/components/icons/CodeBrackets'
+import {CodeBrackets_Stroke2_Corner0_Rounded as CodeBracketsIcon} from '#/components/icons/Code'
 import {PaperPlane_Stroke2_Corner0_Rounded as Send} from '#/components/icons/PaperPlane'
 import * as Menu from '#/components/Menu'
 import {useAgeAssurance} from '#/ageAssurance'
+import {useAnalytics} from '#/analytics'
 import {IS_WEB} from '#/env'
 import {useDevMode} from '#/storage/hooks/dev-mode'
 import {type ShareMenuItemsProps} from './ShareMenuItems.types'
@@ -30,6 +30,7 @@ let ShareMenuItems = ({
   timestamp,
   onShare: onShareProp,
 }: ShareMenuItemsProps): React.ReactNode => {
+  const ax = useAnalytics()
   const {hasSession} = useSession()
   const {gtMobile} = useBreakpoints()
   const {t: l} = useLingui()
@@ -55,14 +56,14 @@ let ShareMenuItems = ({
   }, [postAuthor])
 
   const onCopyLink = () => {
-    logger.metric('share:press:copyLink', {}, {statsig: true})
+    ax.metric('share:press:copyLink', {uri: postUri})
     const url = toShareUrl(href)
     void shareUrl(url)
     onShareProp()
   }
 
   const onSelectChatToShareTo = (conversation: string) => {
-    logger.metric('share:press:dmSelected', {}, {statsig: true})
+    ax.metric('share:press:dmSelected', {uri: postUri})
     navigation.navigate('MessagesConversation', {
       conversation,
       embed: postUri,
@@ -72,11 +73,11 @@ let ShareMenuItems = ({
   const canEmbed = IS_WEB && gtMobile && !hideInPWI
 
   const onShareATURI = () => {
-    void shareText(postUri)
+    void simpleShareText(postUri)
   }
 
   const onShareAuthorDID = () => {
-    void shareText(postAuthor.did)
+    void simpleShareText(postAuthor.did)
   }
 
   const copyLinkItem = (
@@ -101,7 +102,7 @@ let ShareMenuItems = ({
             testID="postDropdownSendViaDMBtn"
             label={l`Send via chat`}
             onPress={() => {
-              logger.metric('share:press:openDmSearch', {}, {statsig: true})
+              ax.metric('share:press:openDmSearch', {})
               sendViaChatControl.open()
             }}>
             <Menu.ItemText>
@@ -116,7 +117,7 @@ let ShareMenuItems = ({
             testID="postDropdownEmbedBtn"
             label={l`Embed post`}
             onPress={() => {
-              logger.metric('share:press:embed', {}, {statsig: true})
+              ax.metric('share:press:embed', {uri: postUri})
               embedPostControl.open()
             }}>
             <Menu.ItemText>{l`Embed post`}</Menu.ItemText>

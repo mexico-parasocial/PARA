@@ -20,10 +20,10 @@ import {
   PostInteractionSettingsDialog,
   usePrefetchPostInteractionSettings,
 } from '#/components/dialogs/PostInteractionSettingsDialog'
-import {TinyChevronBottom_Stroke2_Corner0_Rounded as TinyChevronDownIcon} from '#/components/icons/Chevron'
-import {CircleBanSign_Stroke2_Corner0_Rounded as CircleBanSignIcon} from '#/components/icons/CircleBanSign'
-import {Earth_Stroke2_Corner0_Rounded as EarthIcon} from '#/components/icons/Globe'
-import {Group3_Stroke2_Corner0_Rounded as GroupIcon} from '#/components/icons/Group'
+import {TinyChevronBottom_Stroke2_Corner0_Rounded as TinyChevronDownIcon} from '#/components/icons/TinyChevronBottom'
+import {CircleBanSign_Stroke2_Corner0_Rounded as CircleBanSignIcon} from '#/components/icons/Circle'
+import {Earth_Stroke2_Corner0_Rounded as EarthIcon} from '#/components/icons/Earth'
+import {Group3_Stroke2_Corner0_Rounded as GroupIcon} from '#/components/icons/Group3'
 import {InlineLinkText} from '#/components/Link'
 import {Text} from '#/components/Typography'
 import {IS_NATIVE, IS_WEB} from '#/env'

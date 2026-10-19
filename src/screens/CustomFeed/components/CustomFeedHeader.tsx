@@ -25,8 +25,8 @@ import {atoms as a, useBreakpoints, useTheme, web} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import * as Dialog from '#/components/Dialog'
 import {Divider} from '#/components/Divider'
-import {ArrowOutOfBoxModified_Stroke2_Corner2_Rounded as ShareIcon} from '#/components/icons/ArrowOutOfBox'
-import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfoIcon} from '#/components/icons/CircleInfo'
+import {ArrowOutOfBoxModified_Stroke2_Corner2_Rounded as ShareIcon} from '#/components/icons/Arrow'
+import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfoIcon} from '#/components/icons/Circle'
 import {DotGrid3x1_Stroke2_Corner0_Rounded as EllipsisIcon} from '#/components/icons/DotGrid'
 import {
   Heart2_Filled_Stroke2_Corner0_Rounded as HeartFilledIcon,
@@ -37,7 +37,7 @@ import {
   Pin_Stroke2_Corner0_Rounded as PinIcon,
 } from '#/components/icons/Pin'
 import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/Plus'
-import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/Times'
+import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/TimesLarge'
 import {Trash_Stroke2_Corner0_Rounded as TrashIcon} from '#/components/icons/Trash'
 import * as Layout from '#/components/Layout'
 import {InlineLinkText} from '#/components/Link'
@@ -95,7 +95,7 @@ export function CustomFeedHeader({
   const {hasSession} = useSession()
   const {gtMobile} = useBreakpoints()
   const infoControl = Dialog.useDialogControl()
-  const playHaptic = useHaptics()
+  const haptics = useHaptics()
 
   const {data: preferences} = usePreferencesQuery()
 
@@ -121,7 +121,7 @@ export function CustomFeedHeader({
 
   const onToggleSaved = async () => {
     try {
-      playHaptic()
+      haptics.confirm()
 
       if (savedFeedConfig) {
         await removeFeed(savedFeedConfig)
@@ -151,7 +151,7 @@ export function CustomFeedHeader({
 
   const onTogglePinned = async () => {
     try {
-      playHaptic()
+      haptics.confirm()
 
       if (savedFeedConfig) {
         const pinned = !savedFeedConfig.pinned
@@ -217,7 +217,7 @@ export function CustomFeedHeader({
                   color="secondary"
                   variant="ghost"
                   onPress={() => {
-                    playHaptic()
+                    haptics.tap()
                     infoControl.open()
                   }}>
                   <ButtonIcon icon={EllipsisIcon} />
@@ -234,7 +234,7 @@ export function CustomFeedHeader({
                   },
                 ]}
                 onPress={() => {
-                  playHaptic()
+                  haptics.tap()
                   infoControl.open()
                 }}>
                 {({hovered, pressed}) => (
@@ -441,7 +441,7 @@ function DialogInner({
   const {t: l} = useLingui()
   const ax = useAnalytics()
   const {hasSession} = useSession()
-  const playHaptic = useHaptics()
+  const haptics = useHaptics()
   const control = Dialog.useDialogContext()
   const reportDialogControl = useReportDialogControl()
   const {mutateAsync: likeFeed, isPending: isLikePending} = useLikeMutation()
@@ -453,7 +453,7 @@ function DialogInner({
 
   const onToggleLiked = async () => {
     try {
-      playHaptic()
+      haptics.tap()
 
       if (isLiked && likeUri) {
         await unlikeFeed({uri: likeUri})

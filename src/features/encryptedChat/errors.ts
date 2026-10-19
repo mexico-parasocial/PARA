@@ -22,6 +22,12 @@ export function chatErrorCode(err: unknown): string {
 /** Copy for a failure that stopped the room from opening. */
 export function connectionErrorCopy(code?: string): string {
   switch (code) {
+    case 'CHAT_M8_SESSION_REQUIRED':
+      return 'Conecta tu identidad M8 y vuelve a autorizar el chat.'
+    case 'CHAT_ROOM_FORBIDDEN':
+      return 'No tienes permiso para entrar en esta sala.'
+    case 'CHAT_IDP_NOT_CONFIGURED':
+      return 'El inicio de sesión del chat aún no está configurado. Contacta al administrador.'
     case 'ENCRYPTED_ROOM_REQUIRED':
       // Fail-closed, stated plainly: the engine will not open a room whose
       // protection it cannot guarantee.

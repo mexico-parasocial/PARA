@@ -29,8 +29,11 @@ import {List} from '#/view/com/util/List'
 import {Text} from '#/view/com/util/text/Text'
 import {ThreadItemPost} from '#/screens/PostThread/components/ThreadItemPost'
 import {useTheme} from '#/alf'
-import {ArrowShareRight_Stroke2_Corner2_Rounded as ShareIcon} from '#/components/icons/ArrowShareRight'
-import {Bookmark, BookmarkFilled} from '#/components/icons/Bookmark'
+import {ArrowShareRight_Stroke2_Corner2_Rounded as ShareIcon} from '#/components/icons/Arrow'
+import {
+  Bookmark_Stroke2_Corner0_Rounded as Bookmark,
+  Bookmark_Filled_Corner0_Rounded as BookmarkFilled,
+} from '#/components/icons/Bookmark'
 import {DotGrid_Stroke2_Corner0_Rounded as MoreIcon} from '#/components/icons/DotGrid'
 import {Message_Stroke2_Corner0_Rounded as MessageIcon} from '#/components/icons/Message'
 import {Verified_Stroke2_Corner2_Rounded as VerifiedIcon} from '#/components/icons/Verified'

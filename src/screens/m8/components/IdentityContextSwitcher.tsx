@@ -3,9 +3,9 @@ import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 
 import {atoms as a, useTheme} from '#/alf'
-import {EyeSlash_Stroke2_Corner0_Rounded as EyeSlash} from '#/components/icons/EyeSlash'
+import {EyeSlash_Stroke2_Corner0_Rounded as EyeSlash} from '#/components/icons/Eye'
 import {Person_Stroke2_Corner0_Rounded as Person} from '#/components/icons/Person'
-import {RaisingHand4Finger_Stroke2_Corner0_Rounded as RaisingHand} from '#/components/icons/RaisingHand'
+import {RaisingHand4Finger_Stroke2_Corner0_Rounded as RaisingHand} from '#/components/icons/RaisingHand4Finger'
 import {Text} from '#/components/Typography'
 import {type IdentityContext, type IdentityContextId} from '../types'
 

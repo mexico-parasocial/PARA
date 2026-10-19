@@ -14,9 +14,10 @@ import {useNavigation, useRoute} from '@react-navigation/native'
 import {useGetTimeAgo} from '#/lib/hooks/useTimeAgo'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
+  type MemberListItem,
   type ModerationReportGroup,
-  useApplySanctionMutation,
   useChatMemberListQuery,
+  useDismissReportsMutation,
   useModerationDashboardQuery,
   useModerationReportsQuery,
 } from '#/state/queries/matrix'
@@ -26,19 +27,14 @@ import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import {useMessageReportReasonLabels} from '#/components/chat/ReportMessageDialog'
 import * as Layout from '#/components/Layout'
+import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
+import {SANCTION_PRESETS, useModeratorActions} from './useModeratorActions'
 
 interface ModeratorDashboardParams {
   communityUri: string
   communityName: string
 }
-
-const SANCTION_PRESETS = [
-  {label: '15 min', minutes: 15},
-  {label: '1 h', minutes: 60},
-  {label: '24 h', minutes: 1440},
-  {label: '7 d', minutes: 10080},
-]
 
 export function ModeratorDashboardScreen() {
   const route = useRoute<{
@@ -58,9 +54,13 @@ export function ModeratorDashboardScreen() {
 
     refetch,
   } = useModerationDashboardQuery(communityUri, modDid)
-  const {data: memberList} = useChatMemberListQuery(communityUri, 20, 0)
+  // The same window the chat screen asks for, so they share one cache entry,
+  // and a sanctioned member is not missed for being past the first 20.
+  const {data: memberList} = useChatMemberListQuery(communityUri, 100, 0)
   const reports = useModerationReportsQuery(communityUri, modDid)
-  const sanctionMutation = useApplySanctionMutation()
+  const {askMute, askLift, prompts, isPending} =
+    useModeratorActions(communityUri)
+  const {_, i18n} = useLingui()
 
   const refetchReports = reports.refetch
   const onRefresh = useCallback(async () => {
@@ -79,6 +79,40 @@ export function ModeratorDashboardScreen() {
             b.type === 'high_risk'),
       ),
     ) ?? []
+
+  const sanctionedMembers =
+    memberList?.members.filter(
+      (
+        m,
+      ): m is MemberListItem & {
+        sanction: NonNullable<MemberListItem['sanction']>
+      } => !!m.sanction,
+    ) ?? []
+
+  // Real names, not ID fragments. getProfiles takes at most 25 actors.
+  const memberDids = [
+    ...new Set([...sanctionedMembers, ...reportedMembers].map(m => m.did)),
+  ].slice(0, 25)
+  const {data: memberProfiles} = useProfilesQuery({handles: memberDids})
+  const memberName = (did: string) => {
+    const profile = memberProfiles?.profiles.find(p => p.did === did)
+    return (
+      profile?.displayName || (profile ? `@${profile.handle}` : did.slice(-8))
+    )
+  }
+  const sanctionLabel = (sanction: {
+    type: 'mute' | 'ban'
+    until: string | null
+  }) => {
+    const what =
+      sanction.type === 'ban' ? _(msg`Expulsado`) : _(msg`Silenciado`)
+    if (!sanction.until) return _(msg`${what} · sin fecha de fin`)
+    const until = i18n.date(new Date(sanction.until), {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    })
+    return _(msg`${what} · hasta ${until}`)
+  }
 
   return (
     <Layout.Screen>
@@ -183,6 +217,55 @@ export function ModeratorDashboardScreen() {
           isError={reports.isError}
         />
 
+        {/* Members restricted right now, with a way to lift it */}
+        {sanctionedMembers.length > 0 && (
+          <View style={[a.px_md, a.pt_md]}>
+            <Text style={[a.text_sm, a.font_bold, t.atoms.text, a.mb_md]}>
+              <Trans>Sancionados ahora</Trans>
+            </Text>
+            <View style={[a.gap_sm]}>
+              {sanctionedMembers.map(member => (
+                <View
+                  key={member.did}
+                  style={[
+                    styles.reportRow,
+                    a.p_md,
+                    a.rounded_md,
+                    {backgroundColor: t.atoms.bg_contrast_50.backgroundColor},
+                  ]}>
+                  <View style={[a.flex_1, a.gap_2xs]}>
+                    <Text
+                      style={[a.text_sm, a.font_bold, t.atoms.text]}
+                      numberOfLines={1}>
+                      {memberName(member.did)}
+                    </Text>
+                    <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
+                      {sanctionLabel(member.sanction)}
+                    </Text>
+                  </View>
+                  <Button
+                    label={_(
+                      msg`Levantar la restricción de ${memberName(member.did)}`,
+                    )}
+                    size="tiny"
+                    color="secondary"
+                    disabled={isPending}
+                    onPress={() =>
+                      askLift(
+                        {did: member.did, name: memberName(member.did)},
+                        member.sanction.type,
+                      )
+                    }>
+                    <ButtonText>
+                      <Trans>Levantar</Trans>
+                    </ButtonText>
+                  </Button>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
         {/* Reported members quick list */}
         <View style={[a.px_md, a.pt_md]}>
           <Text style={[a.text_sm, a.font_bold, t.atoms.text, a.mb_md]}>
@@ -205,8 +288,7 @@ export function ModeratorDashboardScreen() {
                   ]}>
                   <View style={[a.flex_1]}>
                     <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
-                      {member.matrixUserId?.split(':')[0]?.replace('@', '') ??
-                        member.did.slice(-8)}
+                      {memberName(member.did)}
                     </Text>
                     <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
                       {member.badges
@@ -223,15 +305,13 @@ export function ModeratorDashboardScreen() {
                         <TouchableOpacity
                           accessibilityRole="button"
                           key={preset.minutes}
-                          onPress={() => {
-                            sanctionMutation.mutate({
-                              targetDid: member.did,
-                              sanctionedByDid: modDid!,
-                              communityUri,
-                              type: 'mute',
-                              durationMinutes: preset.minutes,
-                            })
-                          }}
+                          disabled={isPending}
+                          onPress={() =>
+                            askMute(
+                              {did: member.did, name: memberName(member.did)},
+                              preset,
+                            )
+                          }
                           style={[styles.sanctionBtn]}>
                           <Text style={[a.text_xs, t.atoms.text]}>
                             🔇 {preset.label}
@@ -246,6 +326,7 @@ export function ModeratorDashboardScreen() {
           )}
         </View>
       </ScrollView>
+      {prompts}
     </Layout.Screen>
   )
 }
@@ -273,6 +354,20 @@ function ReportQueue({
   const reasonLabels = useMessageReportReasonLabels()
   const timeAgo = useGetTimeAgo()
   const navigation = useNavigation<NavigationProp>()
+  const dismiss = useDismissReportsMutation()
+  const onDismiss = (report: ModerationReportGroup) => {
+    dismiss.mutate(
+      {
+        reportedDid: report.reportedDid,
+        communityUri,
+        matrixEventId: report.matrixEventId,
+      },
+      {
+        onSuccess: () => Toast.show(_(msg`Reporte descartado`)),
+        onError: err => Toast.show(err.message, {type: 'error'}),
+      },
+    )
+  }
   // getProfiles accepts at most 25 actors.
   const dids = [...new Set((reports ?? []).map(r => r.reportedDid))].slice(
     0,
@@ -349,28 +444,42 @@ function ReportQueue({
                   )
                   .join(' · ')}
               </Text>
-              {report.matrixEventId && report.matrixRoomId && (
+              <View style={[a.flex_row, a.gap_sm, a.mt_xs]}>
+                {report.matrixEventId && report.matrixRoomId && (
+                  <Button
+                    label={_(msg`Ver el mensaje reportado`)}
+                    accessibilityHint={_(
+                      msg`Abre el chat en ese mensaje, leído con tu propia cuenta`,
+                    )}
+                    size="tiny"
+                    color="secondary"
+                    onPress={() =>
+                      navigation.navigate('CommunityChat', {
+                        communityUri,
+                        communityName,
+                        roomId: report.matrixRoomId ?? undefined,
+                        focusEventId: report.matrixEventId ?? undefined,
+                      })
+                    }>
+                    <ButtonText>
+                      <Trans>Ver mensaje</Trans>
+                    </ButtonText>
+                  </Button>
+                )}
                 <Button
-                  label={_(msg`Ver el mensaje reportado`)}
+                  label={_(msg`Descartar este reporte`)}
                   accessibilityHint={_(
-                    msg`Abre el chat en ese mensaje, leído con tu propia cuenta`,
+                    msg`Lo quita de la lista y deja de contar para el riesgo. Un reporte nuevo lo reabre.`,
                   )}
                   size="tiny"
                   color="secondary"
-                  style={[a.self_start, a.mt_xs]}
-                  onPress={() =>
-                    navigation.navigate('CommunityChat', {
-                      communityUri,
-                      communityName,
-                      roomId: report.matrixRoomId ?? undefined,
-                      focusEventId: report.matrixEventId ?? undefined,
-                    })
-                  }>
+                  disabled={dismiss.isPending}
+                  onPress={() => onDismiss(report)}>
                   <ButtonText>
-                    <Trans>Ver mensaje</Trans>
+                    <Trans>Descartar</Trans>
                   </ButtonText>
                 </Button>
-              )}
+              </View>
             </View>
           ))}
         </View>

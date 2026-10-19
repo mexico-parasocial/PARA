@@ -5,6 +5,10 @@ import {
   validateAuthMetadataAndKeys,
 } from 'matrix-js-sdk/lib/oidc/index.js'
 
+import {
+  chatAccountRevision,
+  waitForChatLogout,
+} from '#/lib/matrix/accountLifecycle'
 import * as Storage from '#/lib/storage'
 import {logger} from '#/logger'
 
@@ -22,13 +26,8 @@ import {logger} from '#/logger'
  *
  * The bridge is never in this path and never sees the resulting token.
  *
- * Storage: the session lands in `localStorage` (via `#/lib/storage`, which on
- * web is AsyncStorage). That is reachable by any script running on this origin,
- * so an XSS on PARA web can steal a chat session — the same exposure every
- * browser Matrix client has, and the reason the native engine keeps its
- * session in the OS keystore instead. It holds a chat session only: no PARA
- * identity key, no ballot key, and nothing that can mint a new session beyond
- * its own refresh token.
+ * Bearer tokens are tab-scoped in sessionStorage and partitioned by PARA
+ * account. Device crypto state has a separate encrypted IndexedDB store.
  */
 
 /** Where the OP sends the browser back. Must be served by the SPA. */
@@ -36,9 +35,21 @@ export const MATRIX_OIDC_CALLBACK_PATH = '/matrix-auth'
 
 const CLIENT_ID_KEY_PREFIX = 'matrix_oidc_client_id.'
 const SESSION_KEY = 'matrix_oidc_session'
-const RETURN_TO_KEY = 'matrix_oidc_return_to'
+const PENDING_KEY = 'matrix_oidc_pending'
+
+function sessionKey(accountDid: string): string {
+  return `${SESSION_KEY}.${encodeURIComponent(accountDid)}`
+}
+
+function save(session: MatrixWebSession): void {
+  sessionStorage.setItem(
+    sessionKey(session.accountDid),
+    JSON.stringify(session),
+  )
+}
 
 export interface MatrixWebSession {
+  accountDid: string
   accessToken: string
   /** Absent when the OP issues no refresh token; the session then just expires. */
   refreshToken?: string
@@ -127,18 +138,17 @@ async function clientIdFor(
  */
 export async function beginMatrixWebAuthorization({
   homeServer,
+  accountDid,
   returnTo,
 }: {
   homeServer: string
+  accountDid: string
   returnTo?: string
 }): Promise<never> {
+  await waitForChatLogout(accountDid)
+  const revision = chatAccountRevision(accountDid)
   const config = await authMetadata(homeServer)
   const clientId = await clientIdFor(config)
-  // Where to land afterwards. The callback path renders nothing itself.
-  await Storage.setItemAsync(
-    RETURN_TO_KEY,
-    returnTo ?? `${window.location.pathname}${window.location.search}`,
-  )
   const url = await generateOidcAuthorizationUrl({
     metadata: config,
     redirectUri: redirectUri(),
@@ -146,6 +156,18 @@ export async function beginMatrixWebAuthorization({
     homeserverUrl: homeServer,
     nonce: crypto.randomUUID(),
   })
+  if (revision !== chatAccountRevision(accountDid))
+    throw new Error('MATRIX_AUTH_ACCOUNT_MISMATCH')
+  sessionStorage.setItem(
+    PENDING_KEY,
+    JSON.stringify({
+      accountDid,
+      homeServer,
+      state: new URL(url).searchParams.get('state'),
+      returnTo:
+        returnTo ?? `${window.location.pathname}${window.location.search}`,
+    }),
+  )
   window.location.assign(url)
   // Navigation is not instantaneous; keep callers from proceeding meanwhile.
   return new Promise<never>(() => {})
@@ -165,8 +187,28 @@ export async function completeMatrixWebAuthorization(): Promise<
   const params = new URLSearchParams(window.location.search)
   const code = params.get('code')
   const state = params.get('state')
-  const returnTo = (await Storage.getItemAsync(RETURN_TO_KEY)) ?? '/'
-  await Storage.deleteItemAsync(RETURN_TO_KEY)
+  const rawPending = sessionStorage.getItem(PENDING_KEY)
+  sessionStorage.removeItem(PENDING_KEY)
+  if (!rawPending) throw new Error('MATRIX_AUTH_NO_PENDING_ACCOUNT')
+  const pending = JSON.parse(rawPending) as {
+    accountDid: string
+    homeServer: string
+    state: string
+    returnTo: string
+  }
+  const accountRevision = chatAccountRevision(pending.accountDid)
+  await waitForChatLogout(pending.accountDid)
+  const requireCurrentAccount = () => {
+    if (chatAccountRevision(pending.accountDid) !== accountRevision)
+      throw new Error('MATRIX_AUTH_ACCOUNT_MISMATCH')
+  }
+  requireCurrentAccount()
+  if (!pending.accountDid || (state && pending.state !== state))
+    throw new Error('MATRIX_AUTH_ACCOUNT_MISMATCH')
+  const returnTo =
+    pending.returnTo.startsWith('/') && !pending.returnTo.startsWith('//')
+      ? pending.returnTo
+      : '/'
 
   if (!code || !state) {
     // The OP reports a refusal here too — a declined consent screen is not an
@@ -181,47 +223,83 @@ export async function completeMatrixWebAuthorization(): Promise<
   }
 
   const grant = await completeAuthorizationCodeGrant(code, state)
+  requireCurrentAccount()
   const deviceId = deviceIdFromScope(grant.tokenResponse.scope)
   if (!deviceId) throw new Error('MATRIX_AUTH_NO_DEVICE_ID')
 
+  if (
+    grant.homeserverUrl.replace(/\/$/, '') !==
+    pending.homeServer.replace(/\/$/, '')
+  )
+    throw new Error('MATRIX_AUTH_HOMESERVER_MISMATCH')
+  const whoami = await fetch(
+    `${grant.homeserverUrl.replace(/\/$/, '')}/_matrix/client/v3/account/whoami`,
+    {
+      headers: {Authorization: `Bearer ${grant.tokenResponse.access_token}`},
+      signal: AbortSignal.timeout(15_000),
+    },
+  )
+  if (!whoami.ok) throw new Error('MATRIX_AUTH_IDENTITY_UNAVAILABLE')
+  const identity = (await whoami.json()) as {user_id: string; device_id: string}
+  if (!identity.user_id || identity.device_id !== deviceId)
+    throw new Error('MATRIX_AUTH_DEVICE_MISMATCH')
   const config = await authMetadata(grant.homeserverUrl)
   const session: MatrixWebSession = {
+    accountDid: pending.accountDid,
     accessToken: grant.tokenResponse.access_token,
     refreshToken: grant.tokenResponse.refresh_token,
     expiresAt: grant.tokenResponse.expires_in
       ? Date.now() + grant.tokenResponse.expires_in * 1000
       : undefined,
     deviceId,
-    // `sub` is the OP's own subject identifier, not an MXID. The MXID comes
-    // from the bridge's identity endpoint, which is the mapping's owner.
-    userId: '',
+    userId: identity.user_id,
     homeServer: grant.homeserverUrl,
     clientId: grant.oidcClientSettings.clientId,
     tokenEndpoint: config.token_endpoint,
   }
-  await Storage.setItemAsync(SESSION_KEY, JSON.stringify(session))
+  requireCurrentAccount()
+  save(session)
   return returnTo
 }
 
-export async function loadMatrixWebSession(): Promise<
-  MatrixWebSession | undefined
-> {
-  const raw = await Storage.getItemAsync(SESSION_KEY)
+export async function loadMatrixWebSession(
+  accountDid: string,
+): Promise<MatrixWebSession | undefined> {
+  // Discard the old unscoped durable bearer token.
+  await Storage.deleteItemAsync(SESSION_KEY)
+  const raw = sessionStorage.getItem(sessionKey(accountDid))
   if (!raw) return undefined
   try {
     const session = JSON.parse(raw) as MatrixWebSession
-    if (!session.accessToken || !session.deviceId || !session.homeServer) {
+    if (
+      session.accountDid !== accountDid ||
+      !session.accessToken ||
+      !session.userId ||
+      !session.deviceId ||
+      !session.homeServer
+    ) {
       return undefined
     }
     return session
   } catch {
-    await Storage.deleteItemAsync(SESSION_KEY)
+    sessionStorage.removeItem(sessionKey(accountDid))
     return undefined
   }
 }
 
-export async function clearMatrixWebSession(): Promise<void> {
-  await Storage.deleteItemAsync(SESSION_KEY)
+export async function clearMatrixWebSession(accountDid: string): Promise<void> {
+  sessionStorage.removeItem(sessionKey(accountDid))
+}
+
+export function cancelMatrixWebAuthorization(accountDid: string): void {
+  const raw = sessionStorage.getItem(PENDING_KEY)
+  if (!raw) return
+  try {
+    if (JSON.parse(raw).accountDid === accountDid)
+      sessionStorage.removeItem(PENDING_KEY)
+  } catch {
+    sessionStorage.removeItem(PENDING_KEY)
+  }
 }
 
 /**
@@ -249,8 +327,13 @@ export async function refreshMatrixWebSession(
     // An expired or revoked refresh token means the session is over, not that
     // something went wrong: drop it so the UI asks for authorization again
     // instead of retrying a grant the OP has already rejected.
-    await clearMatrixWebSession()
-    return undefined
+    if (res.status === 400 || res.status === 401) {
+      const current = await loadMatrixWebSession(session.accountDid)
+      if (current?.accessToken === session.accessToken)
+        await clearMatrixWebSession(session.accountDid)
+      return undefined
+    }
+    throw new Error('MATRIX_REFRESH_UNAVAILABLE')
   }
   const body = (await res.json()) as {
     access_token: string
@@ -258,6 +341,7 @@ export async function refreshMatrixWebSession(
     expires_in?: number
     scope?: string
   }
+  if (!body.access_token) throw new Error('MATRIX_REFRESH_INVALID_RESPONSE')
   const refreshed: MatrixWebSession = {
     ...session,
     accessToken: body.access_token,
@@ -268,7 +352,9 @@ export async function refreshMatrixWebSession(
       ? Date.now() + body.expires_in * 1000
       : undefined,
   }
-  await Storage.setItemAsync(SESSION_KEY, JSON.stringify(refreshed))
+  const current = await loadMatrixWebSession(session.accountDid)
+  if (current?.accessToken !== session.accessToken) return current
+  save(refreshed)
   return refreshed
 }
 
@@ -280,20 +366,24 @@ export async function refreshMatrixWebSession(
  * the rotation, the next page load would replay a refresh token the OP has
  * already retired and the session would be lost for no reason.
  */
-export async function storeRefreshedMatrixWebSession(tokens: {
-  accessToken: string
-  refreshToken?: string
-  expiresInMs?: number
-}): Promise<void> {
-  const current = await loadMatrixWebSession()
-  if (!current) return
+export async function storeRefreshedMatrixWebSession(
+  accountDid: string,
+  deviceId: string,
+  tokens: {
+    accessToken: string
+    refreshToken?: string
+    expiresInMs?: number
+  },
+): Promise<void> {
+  const current = await loadMatrixWebSession(accountDid)
+  if (!current || current.deviceId !== deviceId) return
   const next: MatrixWebSession = {
     ...current,
     accessToken: tokens.accessToken,
     refreshToken: tokens.refreshToken ?? current.refreshToken,
     expiresAt: tokens.expiresInMs ? Date.now() + tokens.expiresInMs : undefined,
   }
-  await Storage.setItemAsync(SESSION_KEY, JSON.stringify(next))
+  save(next)
 }
 
 /** Treat a session as expired slightly early, so it does not die mid-request. */

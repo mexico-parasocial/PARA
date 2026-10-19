@@ -26,7 +26,7 @@ import {
 } from '#/components/dms/util'
 import * as Toggle from '#/components/forms/Toggle'
 import {ArrowRight_Stroke2_Corner0_Rounded as ArrowRightIcon} from '#/components/icons/Arrow'
-import {ArrowShareRight_Stroke2_Corner2_Rounded as ArrowShareRightIcon} from '#/components/icons/ArrowShareRight'
+import {ArrowShareRight_Stroke2_Corner2_Rounded as ArrowShareRightIcon} from '#/components/icons/Arrow'
 import {ChainLinkBroken_Stroke2_Corner0_Rounded as ChainLinkBrokenIcon} from '#/components/icons/ChainLink'
 import {EditBig_Stroke2_Corner2_Rounded as EditIcon} from '#/components/icons/EditBig'
 import {Loader} from '#/components/Loader'
