@@ -63,7 +63,8 @@ it('loads subsequent pages and sends the selected community on every request', a
   await act(async () => {
     await hook.result.current.fetchNextPage()
   })
-  expect(hook.result.current.data).toHaveLength(2)
+  // The second page lands on the next render, after fetchNextPage resolves.
+  await waitFor(() => expect(hook.result.current.data).toHaveLength(2))
   expect(hook.result.current.hasNextPage).toBe(false)
   expect(call.mock.calls[1][1]).toMatchObject({
     community: 'community-uri',
@@ -129,10 +130,13 @@ it('refreshes from the first page without trimming another community cache', asy
   await act(async () => {
     await hook.result.current.fetchNextPage()
   })
+  await waitFor(() => expect(hook.result.current.data).toHaveLength(2))
   await act(async () => {
     await hook.result.current.refresh()
   })
-  expect(hook.result.current.data?.map(p => p.id)).toEqual(['fresh'])
+  await waitFor(() =>
+    expect(hook.result.current.data?.map(p => p.id)).toEqual(['fresh']),
+  )
   expect(call.mock.calls[2][1]).toMatchObject({
     community: 'community-uri',
     cursor: undefined,
@@ -148,12 +152,10 @@ it('keeps one viewer’s reaction state out of another viewer’s cache', async 
   const {wrapper, client} = setup(call)
   const hook = renderHook(() => useProposedQuestions(), {wrapper})
   await waitFor(() => expect(hook.result.current.isSuccess).toBe(true))
-  jest
-    .mocked(useAgent)
-    .mockReturnValue({
-      session: {did: 'did:plc:other'},
-      appviewClient: {call},
-    } as never)
+  jest.mocked(useAgent).mockReturnValue({
+    session: {did: 'did:plc:other'},
+    appviewClient: {call},
+  } as never)
   call.mockResolvedValue({proposals: [{...proposal, viewerUpvote: false}]})
   hook.rerender({})
   expect(hook.result.current.data).toBeUndefined()

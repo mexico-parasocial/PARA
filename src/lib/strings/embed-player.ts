@@ -129,14 +129,13 @@ const freemixRkeyRegex = /^[2-7a-z]{13}$/
 /** staging.freemix.fm is FreeMix's live test environment */
 const freemixHosts = ['app.freemix.fm', 'staging.freemix.fm']
 
-/**
- * Converts a YouTube `t` param such as `90`, `90s` or `1h2m3s` to seconds.
- */
-function parseYouTubeStart(t: string | null) {
-  const match = t?.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?$/)
+// YouTube's t= is seconds ("90", "90s") or a duration ("1h3m20s"). Anything
+// else starts the video from the beginning.
+function parseYouTubeStartSeconds(t: string | null): number {
+  const match = /^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?$/.exec(t ?? '')
   if (!match) return 0
-  const [, h = 0, m = 0, s = 0] = match
-  return Number(h) * 3600 + Number(m) * 60 + Number(s)
+  const [, hours = '0', minutes = '0', seconds = '0'] = match
+  return Number(hours) * 3600 + Number(minutes) * 60 + Number(seconds)
 }
 
 export function parseEmbedPlayerFromUrl(
@@ -152,7 +151,7 @@ export function parseEmbedPlayerFromUrl(
   // youtube
   if (urlp.hostname === 'youtu.be') {
     const videoId = urlp.pathname.split('/')[1]
-    const seek = parseYouTubeStart(urlp.searchParams.get('t'))
+    const seek = parseYouTubeStartSeconds(urlp.searchParams.get('t'))
 
     if (videoId) {
       return {
@@ -176,7 +175,7 @@ export function parseEmbedPlayerFromUrl(
       isShorts || isLive
         ? shortOrLiveVideoId
         : (urlp.searchParams.get('v') as string)
-    const seek = parseYouTubeStart(urlp.searchParams.get('t'))
+    const seek = parseYouTubeStartSeconds(urlp.searchParams.get('t'))
 
     if (videoId) {
       return {

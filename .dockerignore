@@ -1,0 +1,18 @@
+# Build context for the Dockerfiles at the repo root. The web image writes its
+# own .env from build args, so local env files must never ride along: they
+# hold a developer's machine IPs and, in .env.local, private values.
+.env
+.env.*
+!.env.example
+
+# Installed and built inside the image, for its own platform.
+node_modules
+**/node_modules
+web-build
+dist
+
+# Native projects and tooling the web, link, ogcard and embed images never use.
+ios
+android
+.expo
+.git

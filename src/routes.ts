@@ -176,5 +176,7 @@ export const router = new Router({
   ],
   MyCommunities: '/my-communities',
   CommunityChats: '/community-chats',
+  MatrixDmRequests: '/messages/encrypted-requests',
+  MatrixDmConversation: '/messages/encrypted/:roomId',
   MyRAQ: '/raq/my',
 })

@@ -47,6 +47,7 @@ import {
   Inbox_Stroke2_Corner2_Rounded as InboxIcon,
   Inbox_Stroke2_Corner2_Rounded_Large as InboxLargeIcon,
 } from '#/components/icons/Inbox'
+import {Lock_Stroke2_Corner2_Rounded as LockIcon} from '#/components/icons/Lock'
 import {
   MessagePlus_Stroke2_Corner0_Rounded as MessagePlusIcon,
   MessagePlus_Stroke2_Corner0_Rounded as NewChatIcon,
@@ -60,6 +61,7 @@ import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {useAgeAssurance} from '#/ageAssurance'
 import {IS_NATIVE, IS_WEB} from '#/env'
+import {MATRIX_DMS_ENABLED} from '#/env'
 import {chat} from '#/lexicons'
 import {AgentSelection} from './components/AgentSelection'
 import {ChatDisabled} from './components/ChatDisabled'
@@ -801,6 +803,16 @@ export function Header({
               onPress={() => navigation.navigate('CommunityChats')}>
               <ButtonIcon icon={CommunitiesIcon} />
             </Button>
+            {MATRIX_DMS_ENABLED && (
+              <Button
+                label={l`Mensajes cifrados`}
+                size="small"
+                color="secondary"
+                shape="round"
+                onPress={() => navigation.navigate('MatrixDmRequests')}>
+                <ButtonIcon icon={LockIcon} />
+              </Button>
+            )}
             <ChatSettingsMenu action={action}>
               {({props}) => (
                 <Button
@@ -845,6 +857,17 @@ export function Header({
               onPress={() => navigation.navigate('CommunityChats')}>
               <ButtonIcon icon={CommunitiesIcon} size="lg" />
             </Button>
+            {MATRIX_DMS_ENABLED && (
+              <Button
+                label={l`Mensajes cifrados`}
+                size="small"
+                variant="ghost"
+                color="secondary"
+                shape="round"
+                onPress={() => navigation.navigate('MatrixDmRequests')}>
+                <ButtonIcon icon={LockIcon} size="lg" />
+              </Button>
+            )}
             <ChatSettingsMenu action={action}>
               {({props}) => (
                 <Button

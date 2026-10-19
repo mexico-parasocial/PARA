@@ -1,0 +1,79 @@
+# Builds and publishes the PARA web image (bskyweb plus the web build) for
+# para-platform's `web` profile.
+#
+# The web build bakes the platform's URLs in, so the image is built for one
+# domain: set the repository variable PARA_DOMAIN (Settings → Variables). Any
+# EXPO_PUBLIC_* repository variable overrides the URL derived from it.
+#
+# Tags: sha-<full commit> on every push to main (what deploys pin) and main.
+# The upstream build-and-push-bskyweb-* workflows only publish in
+# bluesky-social/social-app.
+name: para-web-image
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: para-web-image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  image:
+    if: github.repository == 'mexico-parasocial/PARA'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: ⬇️ Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: 🔧 Setup Docker buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: 🔑 Log into ghcr.io
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🏷️ Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/para-web
+          tags: |
+            type=sha,format=long
+            type=raw,value=main,enable={{is_default_branch}}
+
+      - name: 🏗️ Build and push
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            EXPO_PUBLIC_ENV=production
+            EXPO_PUBLIC_RELEASE_VERSION=${{ github.sha }}
+            EXPO_PUBLIC_BUNDLE_IDENTIFIER=${{ github.sha }}
+            PARA_DOMAIN=${{ vars.PARA_DOMAIN }}
+            EXPO_PUBLIC_DEFAULT_SERVICE=${{ vars.EXPO_PUBLIC_DEFAULT_SERVICE }}
+            EXPO_PUBLIC_BLUESKY_PROXY_DID=${{ vars.EXPO_PUBLIC_BLUESKY_PROXY_DID }}
+            EXPO_PUBLIC_CHAT_PROXY_DID=${{ vars.EXPO_PUBLIC_CHAT_PROXY_DID }}
+            EXPO_PUBLIC_M8_BROKER_URL=${{ vars.EXPO_PUBLIC_M8_BROKER_URL }}
+            EXPO_PUBLIC_MATRIX_BRIDGE_URL=${{ vars.EXPO_PUBLIC_MATRIX_BRIDGE_URL }}
+            EXPO_PUBLIC_MATRIX_IDP_URL=${{ vars.EXPO_PUBLIC_MATRIX_IDP_URL }}
+            EXPO_PUBLIC_MATRIX_PUSH_GATEWAY_URL=${{ vars.EXPO_PUBLIC_MATRIX_PUSH_GATEWAY_URL }}
+            EXPO_PUBLIC_MATRIX_DMS=${{ vars.EXPO_PUBLIC_MATRIX_DMS }}
+          cache-from: type=gha,scope=para-web
+          cache-to: type=gha,mode=max,scope=para-web

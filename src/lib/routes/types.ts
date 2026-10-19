@@ -166,6 +166,8 @@ export type CommonNavigatorParams = {
   Communities: undefined
   MyCommunities: undefined
   CommunityChats: undefined
+  MatrixDmRequests: undefined
+  MatrixDmConversation: {roomId: string; did: string}
   CreateCommunity: undefined
   PoliciesDashboard: {
     filter?: 'Communities' | 'Parties' | 'Both'

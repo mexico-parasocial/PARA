@@ -14,6 +14,7 @@ import {
   ImageInfo,
   type MediaFileHandleLike,
   type MediaSourceLike,
+  Membership,
   messageEventContentFromMarkdown,
   PusherKind,
   PushFormat,
@@ -46,6 +47,7 @@ import {
   saveChatDevice,
   trackChatDevice,
 } from '#/lib/matrix/chatLogout'
+import {dmIntroMessage} from '#/lib/matrix/dmIntro'
 import {mapTimelineItems} from '#/features/encryptedChat/mapTimeline'
 import {buildOidcConfiguration} from '#/features/encryptedChat/oidc'
 import {createChatRecovery} from '#/features/encryptedChat/recovery'
@@ -426,7 +428,7 @@ export async function connectEncryptedChat(
       }
     }
     closeForLogout = close
-    return {
+    const chat: EncryptedChatClient = {
       session: sessionInfo,
       verification: {
         watch(listener) {
@@ -490,6 +492,67 @@ export async function connectEncryptedChat(
           preset: RoomPreset.PrivateChat,
           historyVisibilityOverride: new RoomHistoryVisibility.Joined(),
         })
+      },
+      async createDirectRoom(invitee, intro) {
+        requireOpen()
+        // isDirect also records the room in this account's m.direct data.
+        // History visible to invited members: the invitee must receive the
+        // keys of the intro, which is sent before it joins.
+        const roomId = await matrix.createRoom({
+          invite: [invitee],
+          isEncrypted: true,
+          isDirect: true,
+          visibility: new RoomVisibility.Private(),
+          preset: RoomPreset.TrustedPrivateChat,
+          historyVisibilityOverride: new RoomHistoryVisibility.Invited(),
+        })
+        const room = matrix.getRoom(roomId)
+        if (!room) throw new Error('DIRECT_ROOM_NOT_FOUND')
+        // Encrypted like any message of an encrypted room.
+        await room.sendRaw(
+          'm.room.message',
+          JSON.stringify(dmIntroMessage(intro)),
+        )
+        return roomId
+      },
+      async listDirectInvites() {
+        requireOpen()
+        const invites: Array<{roomId: string}> = []
+        for (const room of matrix.rooms()) {
+          if (room.membership() !== Membership.Invited) continue
+          if (await room.isDirect()) invites.push({roomId: room.id()})
+        }
+        return invites
+      },
+      async readDmIntro(roomId, timeoutMs = 15_000) {
+        requireOpen()
+        // Opening joins the invite and decrypts its timeline; the intro is
+        // the room's first message.
+        return new Promise((resolve, reject) => {
+          let settled = false
+          const finish = (value: unknown) => {
+            if (settled) return
+            settled = true
+            clearTimeout(timer)
+            resolve(value)
+          }
+          const timer = setTimeout(() => finish(undefined), timeoutMs)
+          chat
+            .openRoom(roomId, messages => {
+              const intro = messages.find(m => m.dmIntro)?.dmIntro
+              if (intro) finish(intro)
+            })
+            .catch((err: unknown) => {
+              if (settled) return
+              settled = true
+              clearTimeout(timer)
+              reject(err instanceof Error ? err : new Error(String(err)))
+            })
+        })
+      },
+      async leaveRoom(roomId) {
+        requireOpen()
+        await matrix.getRoom(roomId)?.leave()
       },
       async openRoom(roomId, onMessages, onTyping) {
         requireOpen()
@@ -791,6 +854,7 @@ export async function connectEncryptedChat(
         await logoutChatAccount(scope.accountId)
       },
     }
+    return chat
   } catch (error) {
     removeLogoutListener()
     clearTimeout(verificationTimer)

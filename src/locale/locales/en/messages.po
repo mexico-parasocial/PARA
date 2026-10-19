@@ -25548,3 +25548,230 @@ msgstr "Zoom in"
 #: src/screens/Data/CompassScreen.tsx:1284
 msgid "Zoom out"
 msgstr "Zoom out"
+
+#: src/components/dms/RequestMatrixDmButton.tsx:67
+msgid "@{handle} recibirá tu solicitud. Si la acepta, podrá ver tu cuenta de chat y abrir una conversación cifrada contigo. Nadie más la recibe. Después confirmarás en iM8."
+msgstr "@{handle} recibirá tu solicitud. Si la acepta, podrá ver tu cuenta de chat y abrir una conversación cifrada contigo. Nadie más la recibe. Después confirmarás en iM8."
+
+#: src/screens/Communities/CommunityChatPanels.tsx:267
+msgid "Abre el perfil de este miembro"
+msgstr "Abre el perfil de este miembro"
+
+#: src/screens/Communities/CommunityChatPanels.tsx:102
+msgid "Abre esta sala del chat"
+msgstr "Abre esta sala del chat"
+
+#: src/screens/Communities/CommunityChatPanels.tsx:319
+msgid "Abre la lista completa de miembros"
+msgstr "Abre la lista completa de miembros"
+
+#: src/components/dms/MatrixDmConversationList.tsx:83
+msgid "Abrir"
+msgstr "Abrir"
+
+#: src/components/dms/MatrixDmConversationList.tsx:72
+msgid "Abrir conversación con {name}"
+msgstr "Abrir conversación con {name}"
+
+#: src/components/dms/MatrixDmRequestList.tsx:189
+msgid "Aceptada: te llegará una invitación cifrada"
+msgstr "Aceptada: te llegará una invitación cifrada"
+
+#: src/components/dms/MatrixDmRequestList.tsx:154
+#: src/components/dms/MatrixDmRequestList.tsx:160
+msgid "Aceptar"
+msgstr "Aceptar"
+
+#: src/screens/m8/ConsentAuditScreen.tsx:182
+msgid "Active Grants"
+msgstr "Active Grants"
+
+#: src/screens/m8/ConsentAuditScreen.tsx:192
+msgid "Active Proofs"
+msgstr "Active Proofs"
+
+#: src/components/dms/RequestMatrixDmButton.tsx:34
+msgid "Aprueba la solicitud en iM8"
+msgstr "Aprueba la solicitud en iM8"
+
+#. placeholder {0}: grant.appName
+#: src/screens/m8/ConsentAuditScreen.tsx:130
+msgid "Are you sure you want to revoke access for {0}?"
+msgstr "Are you sure you want to revoke access for {0}?"
+
+#: src/components/dms/MatrixDmRequestList.tsx:196
+msgid "Cancelar solicitud"
+msgstr "Cancelar solicitud"
+
+#: src/screens/m8/components/M8SessionBanner.tsx:145
+msgid "Connected identity wallet"
+msgstr "Connected identity wallet"
+
+#: src/Navigation.tsx:1410
+#: src/screens/Messages/MatrixDmConversationScreen.web.tsx:18
+msgid "Conversación cifrada"
+msgstr "Conversación cifrada"
+
+#: src/components/dms/MatrixDmRequestList.tsx:59
+#: src/components/dms/MatrixDmRequestList.tsx:85
+msgid "Conversación cifrada creada"
+msgstr "Conversación cifrada creada"
+
+#: src/components/dms/MatrixDmConversationList.tsx:24
+msgid "Conversaciones"
+msgstr "Conversaciones"
+
+#: src/screens/m8/WalletScreen.tsx:447
+msgid "Credentials are shared from your iM8 wallet, not from PARA. A shared credential includes your account DID and every fact in it, and apps can link repeat shares. It is not anonymous, and single facts cannot be hidden."
+msgstr "Credentials are shared from your iM8 wallet, not from PARA. A shared credential includes your account DID and every fact in it, and apps can link repeat shares. It is not anonymous, and single facts cannot be hidden."
+
+#: src/components/dms/MatrixDmRequestList.tsx:178
+msgid "Enviadas"
+msgstr "Enviadas"
+
+#: src/components/dms/RequestMatrixDmButton.tsx:74
+msgid "Enviar solicitud"
+msgstr "Enviar solicitud"
+
+#: src/screens/Messages/MatrixDmConversationScreen.tsx:42
+msgid "Esta versión de la app necesita el chat cifrado nativo."
+msgstr "Esta versión de la app necesita el chat cifrado nativo."
+
+#: src/screens/Data/CollectionDetailScreen.tsx:454
+msgid "Export"
+msgstr "Export"
+
+#: src/screens/Data/CollectionDetailScreen.tsx:449
+msgid "Export to Semble.so?"
+msgstr "Export to Semble.so?"
+
+#: src/screens/m8/ConsentAuditScreen.tsx:144
+msgid "Failed to revoke grant"
+msgstr "Failed to revoke grant"
+
+#: src/Navigation.tsx:1405
+#: src/screens/Messages/ChatList.tsx:808
+#: src/screens/Messages/ChatList.tsx:862
+#: src/screens/Messages/MatrixDmRequestsScreen.tsx:146
+#: src/screens/Messages/MatrixDmRequestsScreen.web.tsx:26
+msgid "Mensajes cifrados"
+msgstr "Mensajes cifrados"
+
+#: src/components/dms/MatrixDmRequestList.tsx:180
+msgid "No has enviado solicitudes."
+msgstr "No has enviado solicitudes."
+
+#: src/components/dms/MatrixDmRequestList.tsx:102
+msgid "No se pudieron cargar las solicitudes."
+msgstr "No se pudieron cargar las solicitudes."
+
+#: src/screens/Communities/CommunityChatScreen.tsx:234
+msgid "No se pudo abrir el chat."
+msgstr "No se pudo abrir el chat."
+
+#: src/screens/Communities/CommunityChatScreen.web.tsx:430
+msgid "No se pudo abrir el chat. Inténtalo de nuevo."
+msgstr "No se pudo abrir el chat. Inténtalo de nuevo."
+
+#: src/screens/Messages/CommunityChatsScreen.tsx:95
+msgid "No se pudo conectar con el chat de comunidades. Las salas se abrirán cuando el servicio esté disponible."
+msgstr "No se pudo conectar con el chat de comunidades. Las salas se abrirán cuando el servicio esté disponible."
+
+#: src/components/dms/MatrixDmRequestList.tsx:72
+#: src/components/dms/MatrixDmRequestList.tsx:87
+msgid "No se pudo crear la conversación"
+msgstr "No se pudo crear la conversación"
+
+#: src/components/dms/RequestMatrixDmButton.tsx:42
+msgid "No se pudo enviar la solicitud"
+msgstr "No se pudo enviar la solicitud"
+
+#: src/components/dms/MatrixDmRequestList.tsx:149
+msgid "No tienes solicitudes de mensaje."
+msgstr "No tienes solicitudes de mensaje."
+
+#: src/screens/Messages/MatrixDmRequestsScreen.tsx:165
+msgid "Para aceptar solicitudes, esta versión de la app necesita el chat cifrado nativo."
+msgstr "Para aceptar solicitudes, esta versión de la app necesita el chat cifrado nativo."
+
+#: src/components/dms/RequestMatrixDmButton.tsx:57
+msgid "Pedir mensaje cifrado a @{handle}"
+msgstr "Pedir mensaje cifrado a @{handle}"
+
+#: src/components/dms/RequestMatrixDmButton.tsx:64
+msgid "Pedir un mensaje cifrado"
+msgstr "Pedir un mensaje cifrado"
+
+#: src/screens/Map/DistrictProfileScreen.tsx:463
+msgid "Placeholder preview — will be computed from PARA civic engagement data when district-level party affiliation aggregates are available."
+msgstr "Placeholder preview — will be computed from PARA civic engagement data when district-level party affiliation aggregates are available."
+
+#: src/screens/Messages/MatrixDmConversationScreen.web.tsx:25
+msgid "Por ahora, las conversaciones cifradas se abren desde la app de iOS o Android."
+msgstr "Por ahora, las conversaciones cifradas se abren desde la app de iOS o Android."
+
+#: src/screens/Messages/MatrixDmRequestsScreen.web.tsx:36
+msgid "Por ahora, las solicitudes se aceptan desde la app de iOS o Android."
+msgstr "Por ahora, las solicitudes se aceptan desde la app de iOS o Android."
+
+#: src/components/dms/MatrixDmRequestList.tsx:129
+msgid "Por terminar"
+msgstr "Por terminar"
+
+#: src/components/dms/MatrixDmRequestList.tsx:204
+msgid "Quitar"
+msgstr "Quitar"
+
+#: src/components/dms/MatrixDmRequestList.tsx:195
+msgid "Quitar de la lista"
+msgstr "Quitar de la lista"
+
+#: src/components/dms/MatrixDmRequestList.tsx:147
+msgid "Recibidas"
+msgstr "Recibidas"
+
+#: src/components/dms/MatrixDmRequestList.tsx:133
+msgid "Reintentar crear la conversación"
+msgstr "Reintentar crear la conversación"
+
+#: src/screens/m8/ConsentAuditScreen.tsx:129
+msgid "Revoke Grant"
+msgstr "Revoke Grant"
+
+#: src/screens/m8/ConsentAuditScreen.tsx:340
+msgid "Revokes this app's access to your credential data"
+msgstr "Revokes this app's access to your credential data"
+
+#: src/screens/m8/WalletScreen.tsx:444
+msgid "Sharing"
+msgstr "Sharing"
+
+#: src/components/dms/RequestMatrixDmButton.tsx:37
+msgid "Solicitud enviada a @{handle}"
+msgstr "Solicitud enviada a @{handle}"
+
+#: src/screens/Data/CollectionDetailScreen.tsx:451
+msgid "This will create a public research collection on Semble.so with your cards and connections."
+msgstr "This will create a public research collection on Semble.so with your cards and connections."
+
+#: src/components/dms/RequestMatrixDmButton.tsx:41
+msgid "Tienes demasiadas solicitudes pendientes"
+msgstr "Tienes demasiadas solicitudes pendientes"
+
+#: src/components/dms/MatrixDmConversationList.tsx:28
+msgid "Todavía no tienes conversaciones cifradas."
+msgstr "Todavía no tienes conversaciones cifradas."
+
+#. placeholder {0}: new Date(expiresAt).toLocaleDateString()
+#: src/components/dms/MatrixDmRequestList.tsx:277
+msgid "Vence el {0}"
+msgstr "Vence el {0}"
+
+#: src/Navigation.tsx:987
+msgid "Verify Dashboard"
+msgstr "Verify Dashboard"
+
+#. placeholder {0}: district.stateName
+#: src/screens/Map/DistrictProfileScreen.tsx:256
+msgid "You are not in {0}. Some votes may be restricted to residents."
+msgstr "You are not in {0}. Some votes may be restricted to residents."

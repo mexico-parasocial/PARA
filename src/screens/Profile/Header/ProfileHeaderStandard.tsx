@@ -41,6 +41,7 @@ import {CivicInsignia} from '#/components/CivicInsignia'
 import {DebugFieldDisplay} from '#/components/DebugFieldDisplay'
 import {useDialogControl} from '#/components/Dialog'
 import {MessageProfileButton} from '#/components/dms/MessageProfileButton'
+import {RequestMatrixDmButton} from '#/components/dms/RequestMatrixDmButton'
 import {GermContactButton} from '#/components/germ/GermContactButton'
 import {ArrowShareRight_Stroke2_Corner2_Rounded as ArrowShareRight} from '#/components/icons/Arrow'
 import {PlusLarge_Stroke2_Corner0_Rounded as Plus} from '#/components/icons/Plus'
@@ -609,6 +610,10 @@ export function HeaderStandardButtons({
               )}
 
               <MessageProfileButton profile={profile} />
+              <RequestMatrixDmButton
+                did={profile.did}
+                handle={profile.handle}
+              />
               {germButton && (
                 <GermContactButton url={germButton.url} label="Germ" />
               )}

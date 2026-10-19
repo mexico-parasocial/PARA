@@ -145,6 +145,8 @@ import {MessagesConversationScreen} from '#/screens/Messages/Conversation'
 import {MessagesConversationSettingsScreen} from '#/screens/Messages/ConversationSettings'
 import {MessagesInboxScreen} from '#/screens/Messages/Inbox'
 import {MessagesJoinRequestsScreen} from '#/screens/Messages/JoinRequests'
+import {MatrixDmConversationScreen} from '#/screens/Messages/MatrixDmConversationScreen'
+import {MatrixDmRequestsScreen} from '#/screens/Messages/MatrixDmRequestsScreen'
 import {MessagesSettingsScreen} from '#/screens/Messages/Settings'
 import {ModerationScreen} from '#/screens/Moderation'
 import {Screen as ModerationVerificationSettings} from '#/screens/Moderation/VerificationSettings'
@@ -1323,6 +1325,16 @@ function MessagesTabNavigator() {
         getComponent={() => CommunityChatsScreen}
         options={{title: 'Community chats'}}
       />
+      <MessagesTab.Screen
+        name="MatrixDmRequests"
+        getComponent={() => MatrixDmRequestsScreen}
+        options={{title: 'Mensajes cifrados'}}
+      />
+      <MessagesTab.Screen
+        name="MatrixDmConversation"
+        getComponent={() => MatrixDmConversationScreen}
+        options={{title: 'Conversación cifrada'}}
+      />
       {commonScreens(MessagesTab as typeof Flat)}
     </MessagesTab.Navigator>
   )
@@ -1432,6 +1444,16 @@ const FlatNavigator = ({
         name="CommunityChats"
         getComponent={() => CommunityChatsScreen}
         options={{title: title(msg`Community chats`), requireAuth: true}}
+      />
+      <Flat.Screen
+        name="MatrixDmRequests"
+        getComponent={() => MatrixDmRequestsScreen}
+        options={{title: title(msg`Mensajes cifrados`), requireAuth: true}}
+      />
+      <Flat.Screen
+        name="MatrixDmConversation"
+        getComponent={() => MatrixDmConversationScreen}
+        options={{title: title(msg`Conversación cifrada`), requireAuth: true}}
       />
       <Flat.Screen
         name="CommunityMembers"

@@ -99,6 +99,7 @@ export function ChatRoomsRail({
               key={room.roomId}
               accessibilityRole="button"
               accessibilityLabel={labels[room.kind]}
+              accessibilityHint={_(msg`Abre esta sala del chat`)}
               accessibilityState={{selected: active}}
               onPress={() => onSelect(room)}
               style={hovered => [
@@ -263,6 +264,7 @@ export function ChatMembersPanel({
               key={member.did}
               accessibilityRole="button"
               accessibilityLabel={name}
+              accessibilityHint={_(msg`Abre el perfil de este miembro`)}
               onPress={() => onOpenMember(member.did)}
               style={hovered => [
                 styles.memberRow,
@@ -314,6 +316,7 @@ export function ChatMembersPanel({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={_(msg`Ver todos los miembros`)}
+            accessibilityHint={_(msg`Abre la lista completa de miembros`)}
             onPress={onOpenAll}
             style={styles.viewAll}>
             <Text
