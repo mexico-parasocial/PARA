@@ -3,17 +3,17 @@ FROM node:24.18.0-alpine3.23 AS build
 # Move files into the image and install
 WORKDIR /app
 
-RUN npm install -g pnpm@11.21.0
-
+# bskylink is its own yarn project (bskylink/yarn.lock), not part of the
+# app's pnpm workspace: the root pnpm-lock.yaml does not describe it.
 COPY ./bskylink/package.json ./
-COPY ./pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+COPY ./bskylink/yarn.lock ./
+RUN yarn install --frozen-lockfile
 
 COPY ./bskylink ./
 
 # build then prune dev deps
-RUN pnpm build
-RUN pnpm install --production --ignore-scripts --prefer-offline
+RUN yarn build
+RUN yarn install --production --ignore-scripts --prefer-offline
 
 # Uses assets from build stage to reduce build size
 FROM node:24.18.0-alpine3.23
