@@ -18,6 +18,7 @@ import {
   type MatrixWebSession,
   refreshMatrixWebSession,
 } from '#/features/encryptedChat/webOidc'
+import {logoutChatAccount} from './chatLogout'
 
 export type MatrixWebSessionStatus =
   'loading' | 'authorizationRequired' | 'ready' | 'error'
@@ -116,22 +117,9 @@ export function useMatrixWebSession({
   const retry = useCallback(() => setAttempt(value => value + 1), [])
   const signOut = useCallback(async () => {
     if (!did) return
-    const current = await loadMatrixWebSession(did)
     try {
-      if (current) {
-        const response = await fetch(
-          `${current.homeServer.replace(/\/$/, '')}/_matrix/client/v3/logout`,
-          {
-            method: 'POST',
-            headers: {Authorization: `Bearer ${current.accessToken}`},
-            signal: AbortSignal.timeout(15_000),
-          },
-        )
-        if (!response.ok && response.status !== 401)
-          throw new Error('MATRIX_LOGOUT_UNAVAILABLE')
-      }
+      await logoutChatAccount(did)
     } finally {
-      await clearMatrixWebSession(did)
       setResult({did, status: 'authorizationRequired'})
     }
   }, [did])

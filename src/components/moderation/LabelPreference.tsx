@@ -18,7 +18,7 @@ import {atoms as a, useBreakpoints, useTheme} from '#/alf'
 import * as ToggleButton from '#/components/forms/ToggleButton'
 import {InlineLinkText} from '#/components/Link'
 import {Text} from '#/components/Typography'
-import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfo} from '../icons/CircleInfo'
+import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfo} from '#/components/icons/Circle'
 
 export function Outer({children}: React.PropsWithChildren<{}>) {
   return (

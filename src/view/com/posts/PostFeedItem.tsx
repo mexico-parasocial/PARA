@@ -406,10 +406,7 @@ let FeedItemInner = ({
                   ]}
                 />
                 <View style={{marginTop: 8, alignItems: 'center'}}>
-                  <PolicyBallotControl
-                    policyUri={post.uri}
-                    initialVote={(post as {voteCount?: number}).voteCount || 0}
-                  />
+<PolicyBallotControl policyUri={post.uri} />
                 </View>
               </>
             )}

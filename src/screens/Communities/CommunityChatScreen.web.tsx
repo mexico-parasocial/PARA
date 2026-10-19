@@ -43,7 +43,7 @@ import {
 } from '#/components/chat/ReportMessageDialog'
 import * as Dialog from '#/components/Dialog'
 import {type Props as SVGIconProps} from '#/components/icons/common'
-import {Group3_Stroke2_Corner0_Rounded as MembersIcon} from '#/components/icons/Group'
+import {Group3_Stroke2_Corner0_Rounded as MembersIcon} from '#/components/icons/Group3'
 import {Megaphone_Stroke2_Corner0_Rounded as ProposalIcon} from '#/components/icons/Megaphone'
 import {Newspaper_Stroke2_Corner2_Rounded as EvidenceIcon} from '#/components/icons/Newspaper'
 import {Shield_Stroke2_Corner0_Rounded as ShieldIcon} from '#/components/icons/Shield'

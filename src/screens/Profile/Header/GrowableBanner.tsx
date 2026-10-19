@@ -1,17 +1,16 @@
 import {useEffect, useState} from 'react'
-import {type ReactNode} from 'react'
 import {ActivityIndicator, Pressable, View} from 'react-native'
 import Animated, {
   type AnimatedRef,
   Extrapolation,
   interpolate,
-  runOnJS,
   type SharedValue,
   useAnimatedProps,
   useAnimatedReaction,
   useAnimatedStyle,
 } from 'react-native-reanimated'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
+import {scheduleOnRN} from 'react-native-worklets'
 import {BlurView} from 'expo-blur'
 import {useIsFetching} from '@tanstack/react-query'
 
@@ -33,8 +32,8 @@ export function GrowableBanner({
   testID,
   label,
 }: {
-  backButton?: ReactNode
-  children: ReactNode
+  backButton?: React.ReactNode
+  children: React.ReactNode
   onPress?: () => void
   bannerRef?: AnimatedRef
   testID?: string
@@ -85,8 +84,8 @@ function GrowableBannerInner({
   label,
 }: {
   scrollY: SharedValue<number>
-  backButton?: ReactNode
-  children: ReactNode
+  backButton?: React.ReactNode
+  children: React.ReactNode
   onPress?: () => void
   bannerRef?: AnimatedRef
   testID?: string
@@ -119,8 +118,17 @@ function GrowableBannerInner({
 
   const animatedSpinnerStyle = useAnimatedStyle(() => {
     const scrollYValue = scrollY.get()
+    /*
+     * Return the same style while the header isn't overscrolled, so Reanimated
+     * skips the update. Otherwise every scroll frame commits this hidden view,
+     * and Yoga never cleans the dirty flags of a `display: none` subtree, so
+     * each commit re-runs layout over the whole tree.
+     */
+    if (scrollYValue >= 0) {
+      return {display: 'none'}
+    }
     return {
-      display: scrollYValue < 0 ? 'flex' : 'none',
+      display: 'flex',
       opacity: interpolate(
         scrollYValue,
         [-60, -15],
@@ -227,10 +235,9 @@ function useShouldAnimateSpinner({
     () => scrollY.get() < -5,
     (value, prevValue) => {
       if (value !== prevValue) {
-        runOnJS(setIsOverscrolled)(value)
+        scheduleOnRN(setIsOverscrolled, value)
       }
     },
-    [scrollY],
   )
 
   const [isAnimating, setIsAnimating] = useState(isFetching)

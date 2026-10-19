@@ -1,26 +1,10 @@
-import {useCallback, useRef, useState} from 'react'
-import {
-  ActivityIndicator,
-  Keyboard,
-  LayoutAnimation,
-  Pressable,
-  StyleSheet,
-  type TextInput,
-  View,
-} from 'react-native'
+import {useRef, useState} from 'react'
+import {Keyboard, type TextInput, View} from 'react-native'
 import {LexAuthFactorError} from '@atproto/lex-password-session'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
-import {Trans} from '@lingui/react/macro'
+import {Trans, useLingui} from '@lingui/react/macro'
 
-import {
-  DEFAULT_SERVICE,
-  HITSLOP_10,
-  IS_LOCAL_DEV_MODE,
-  LOCAL_DEV_SERVICE,
-} from '#/lib/constants'
+import {DEFAULT_SERVICE, HITSLOP_10} from '#/lib/constants'
 import {getM8AccessToken, restoreM8Session} from '#/lib/im8/api'
-import {authenticateBiometric} from '#/lib/im8/biometric'
 import {openM8Verification} from '#/lib/im8/linking'
 import {useRequestNotificationsPermission} from '#/lib/notifications/notifications'
 import {cleanError, isNetworkError} from '#/lib/strings/errors'
@@ -28,25 +12,27 @@ import {createFullHandle} from '#/lib/strings/handles'
 import {isBlueskyHostedUrl, toNiceHostingUrl} from '#/lib/strings/url-helpers'
 import {logger} from '#/logger'
 import {useSetHasCheckedForStarterPack} from '#/state/preferences/used-starter-packs'
-import {useHostingProvider} from '#/state/queries/pds-detection'
-import {useSessionApi} from '#/state/session'
+import {
+  type HostingProviderState,
+  useHostingProvider,
+} from '#/state/queries/pds-detection'
+import {useSession, useSessionApi} from '#/state/session'
 import {useLoggedOutViewControls} from '#/state/shell/logged-out'
 import {atoms as a, native, useBreakpoints, useTheme} from '#/alf'
-import {Admonition} from '#/components/Admonition'
+import * as Admonition from '#/components/Admonition'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import {useDialogControl} from '#/components/Dialog'
+import {TokenField} from '#/components/dialogs/EmailDialog/components/TokenField'
+import {PasswordField} from '#/components/forms/PasswordField'
 import * as SegmentedControl from '#/components/forms/SegmentedControl'
 import * as TextField from '#/components/forms/TextField'
-import {useTextFieldContext} from '#/components/forms/TextField'
-import {At_Stroke2_Corner0_Rounded as At} from '#/components/icons/At'
-import {Eye_Stroke2_Corner0_Rounded as Eye} from '#/components/icons/Eye'
-import {EyeSlash_Stroke2_Corner0_Rounded as EyeSlash} from '#/components/icons/EyeSlash'
-import {Lock_Stroke2_Corner0_Rounded as Lock} from '#/components/icons/Lock'
-import {PencilLine_Stroke2_Corner0_Rounded as PencilLine} from '#/components/icons/Pencil'
-import {Ticket_Stroke2_Corner0_Rounded as Ticket} from '#/components/icons/Ticket'
+import {At_Stroke2_Corner0_Rounded as AtIcon} from '#/components/icons/At'
+import {TinyChevronBottom_Stroke2_Corner0_Rounded as TinyChevronIcon} from '#/components/icons/TinyChevronBottom'
+import {Envelope_Stroke2_Corner0_Rounded as EmailIcon} from '#/components/icons/Envelope'
+import {createStaticClick, InlineLinkText} from '#/components/Link'
 import {Loader} from '#/components/Loader'
 import {Text} from '#/components/Typography'
-import {IS_IOS} from '#/env'
+import {IS_IOS, IS_NATIVE} from '#/env'
 import {type com} from '#/lexicons'
 import {ConfirmHostingProviderDialog} from './components/ConfirmHostingProviderDialog'
 import {HostingProviderDialog} from './components/HostingProviderDialog'
@@ -60,11 +46,13 @@ export const LoginForm = ({
   serviceDescription,
   initialHandle,
   setError,
+  setServiceUrl,
   onPressRetryConnect,
   onPressBack,
   onPressForgotPassword,
   onAttemptSuccess,
   onAttemptFailed,
+  onPressCreateAccount,
 }: {
   error: string
   serviceUrl: string
@@ -77,71 +65,229 @@ export const LoginForm = ({
   onPressForgotPassword: () => void
   onAttemptSuccess: () => void
   onAttemptFailed: () => void
+  onPressCreateAccount?: () => void
 }) => {
-  const {_} = useLingui()
   const t = useTheme()
-  const {gtMobile} = useBreakpoints()
-  const {login} = useSessionApi()
-  const requestNotificationsPermission = useRequestNotificationsPermission()
-  const {setShowLoggedOut} = useLoggedOutViewControls()
-  const setHasCheckedForStarterPack = useSetHasCheckedForStarterPack()
-
-  const hostingProviderControl = useDialogControl()
-  const confirmHostingProviderControl = useDialogControl()
-
   const [isProcessing, setIsProcessing] = useState(false)
+  const [errorField, setErrorField] = useState<
+    'none' | 'identifier' | 'password' | '2fa'
+  >('none')
   const [isAuthFactorTokenNeeded, setIsAuthFactorTokenNeeded] = useState(false)
   const [authFactorMethod, setAuthFactorMethod] = useState<'email' | 'im8'>(
     'email',
   )
-  const [revealPassword, setRevealPassword] = useState(false)
-  const [hasPassword, setHasPassword] = useState(false)
-  const [errorField, setErrorField] = useState<
-    'identifier' | 'password' | 'authFactorToken' | 'unknown'
-  >('unknown')
-  const identifierValueRef = useRef(initialHandle || '')
-  const passwordValueRef = useRef('')
-  const [authFactorToken, setAuthFactorToken] = useState('')
-  // Reactive mirror of the identifier input. The refs above don't trigger
-  // re-renders, so without this the hosting-provider detection hook would
-  // only ever see the initial handle.
+  const [showResolveError, setShowResolveError] = useState(false)
   const [identifier, setIdentifier] = useState(initialHandle || '')
-  const [pendingConfirm, setPendingConfirm] = useState<{
-    service: string
-    identifier: string
-    passwordLength: number
-  } | null>(null)
-  // Host the user already acknowledged in the typosquatting dialog. Reset
-  // whenever the identifier changes so a new host re-arms the gate.
-  const confirmedHostRef = useRef<string | null>(null)
+  const [password, setPassword] = useState('')
+  const [identifierFocused, setIdentifierFocused] = useState(false)
+  const [authFactorToken, setAuthFactorToken] = useState('')
   const identifierRef = useRef<React.ComponentRef<typeof TextInput>>(null)
   const passwordRef = useRef<React.ComponentRef<typeof TextInput>>(null)
   const hasFocusedOnce = useRef(false)
-
-  const {
-    state: hostingProviderState,
-    override: overrideHostingProvider,
-    clearOverride: clearHostingOverride,
-  } = useHostingProvider({
+  const {t: l} = useLingui()
+  const {login} = useSessionApi()
+  const {accounts} = useSession()
+  const requestNotificationsPermission = useRequestNotificationsPermission()
+  const {setShowLoggedOut} = useLoggedOutViewControls()
+  const setHasCheckedForStarterPack = useSetHasCheckedForStarterPack()
+  const serverInputControl = useDialogControl()
+  const confirmHostingProviderControl = useDialogControl()
+  const [pendingLogin, setPendingLogin] = useState<{
+    service: string
+    fullIdent: string
+    passwordLength: number
+  } | null>(null)
+  const hostingProvider = useHostingProvider({
     identifier,
+    defaultService: serviceUrl,
   })
+  const {gtMobile} = useBreakpoints()
 
-  const isEmail = identifier.includes('@')
+  /*
+   * Surface an inline error on the username field only once detection has
+   * settled on an unresolvable identifier and the user has moved on from the
+   * field. Hidden while focused so we don't nag mid-type, and it clears
+   * automatically when the identifier resolves or an override is set (both
+   * move `state.status` away from 'unresolved').
+   */
+  const showUnresolvedError =
+    hostingProvider.state.status === 'unresolved' && !identifierFocused
 
-  const onPressSelectService = useCallback(() => {
+  /**
+   * Performs the actual login attempt against a resolved service. Reads the
+   * password and 2FA token from the current form state, and manages
+   * `setIsProcessing` itself: it stays processing on success (the app
+   * transitions away) and clears it on any failure.
+   */
+  const attemptLogin = async (
+    service: string,
+    fullIdent: string,
+    token = authFactorToken.trim(),
+  ) => {
+    setIsProcessing(true)
+
+    try {
+      // TODO remove double login
+      await login(
+        {
+          service,
+          identifier: fullIdent,
+          password,
+          authFactorToken: token,
+        },
+        'LoginForm',
+      )
+      onAttemptSuccess()
+      setShowLoggedOut(false)
+      setHasCheckedForStarterPack(true)
+      void requestNotificationsPermission('Login')
+    } catch (err) {
+      const errMsg = String(err)
+      setIsProcessing(false)
+      /*
+       * `LexAuthFactorError` is what `PasswordSession.login` throws when the
+       * server demands an email 2FA token.
+       */
+      if (err instanceof LexAuthFactorError) {
+        setIsAuthFactorTokenNeeded(true)
+      } else {
+        onAttemptFailed()
+        if (errMsg.includes('Token is invalid')) {
+          logger.debug('Failed to login due to invalid 2fa token', {
+            error: errMsg,
+          })
+          setError(l`Invalid 2FA confirmation code.`)
+          setErrorField('2fa')
+        } else if (
+          errMsg.includes('Authentication Required') ||
+          errMsg.includes('Invalid identifier or password')
+        ) {
+          logger.debug('Failed to login due to invalid credentials', {
+            error: errMsg,
+          })
+          setError(l`Incorrect username or password`)
+        } else if (isNetworkError(err)) {
+          logger.warn('Failed to login due to network error', {error: errMsg})
+          setError(
+            l`Unable to contact your service. Please check your Internet connection.`,
+          )
+        } else {
+          logger.warn('Failed to login', {error: errMsg})
+          /* the error object, not its stringification: cleanError only
+           * extracts the clean server message from a live LexError */
+          setError(cleanError(err))
+        }
+      }
+    }
+  }
+
+  /** PARA/iM8-specific 2FA path. */
+  const onPressIm8Verify = async () => {
+    if (isProcessing) return
     Keyboard.dismiss()
-    hostingProviderControl.open()
-  }, [hostingProviderControl])
+    setAuthFactorMethod('im8')
+    setError('')
+    setErrorField('none')
 
-  // Shared login plumbing used by both the email-code and iM8 2FA paths.
-  // Resolves the handle-guessing and effective service for the attempt.
-  const resolveLoginInput = () => {
-    const rawIdentifier = identifierValueRef.current.toLowerCase().trim()
-    const password = passwordValueRef.current
-    let fullIdent = rawIdentifier
+    const normalizedIdentifier = identifier.toLowerCase().trim()
+    if (!normalizedIdentifier) {
+      setError(l`Please enter your username`)
+      setErrorField('identifier')
+      return
+    }
+    if (!password) {
+      setError(l`Please enter your password`)
+      setErrorField('password')
+      return
+    }
+
+    setIsProcessing(true)
+
+    let token = await getM8AccessToken()
+    if (!token && (await restoreM8Session().catch(() => null))) {
+      token = await getM8AccessToken()
+    }
+    if (!token) {
+      setIsProcessing(false)
+      setError(
+        l`No iM8 session found on this device. Open the iM8 app to connect, or use an email code instead.`,
+      )
+      await openM8Verification()
+      return
+    }
+
+    setAuthFactorToken(token)
+    let fullIdent = normalizedIdentifier
     if (
-      !rawIdentifier.includes('@') &&
-      !rawIdentifier.includes('.') &&
+      !normalizedIdentifier.includes('@') &&
+      !normalizedIdentifier.includes('.') &&
+      !normalizedIdentifier.startsWith('did:') &&
+      serviceDescription &&
+      serviceDescription.availableUserDomains.length > 0
+    ) {
+      fullIdent = createFullHandle(
+        normalizedIdentifier,
+        serviceDescription.availableUserDomains[0],
+      )
+    }
+
+    let service: string
+    let did: string | null
+    try {
+      ;({service, did} =
+        await hostingProvider.resolveService(normalizedIdentifier))
+    } catch (err) {
+      logger.debug('Failed to resolve hosting provider', {error: String(err)})
+      setIsProcessing(false)
+      setShowResolveError(true)
+      return
+    }
+
+    const isKnownAccount =
+      did != null && accounts.some(account => account.did === did)
+    const needsConfirmation =
+      !isBlueskyHostedUrl(service) &&
+      hostingProvider.state.status !== 'overridden' &&
+      !isKnownAccount
+    if (needsConfirmation) {
+      setIsProcessing(false)
+      setPendingLogin({service, fullIdent, passwordLength: password.length})
+      confirmHostingProviderControl.open()
+      return
+    }
+
+    await attemptLogin(service, fullIdent, token)
+  }
+
+  const onPressNext = async () => {
+    if (isProcessing) return
+    Keyboard.dismiss()
+    setError('')
+    setErrorField('none')
+    setShowResolveError(false)
+
+    const normalizedIdentifier = identifier.toLowerCase().trim()
+
+    if (!normalizedIdentifier) {
+      setError(l`Please enter your username`)
+      setErrorField('identifier')
+      return
+    }
+
+    if (!password) {
+      setError(l`Please enter your password`)
+      setErrorField('password')
+      return
+    }
+
+    setIsProcessing(true)
+
+    // try to guess the handle if the user just gave their own username
+    let fullIdent = normalizedIdentifier
+    if (
+      !normalizedIdentifier.includes('@') && // not an email
+      !normalizedIdentifier.includes('.') && // not a domain
+      !normalizedIdentifier.startsWith('did:') && // not a DID
       serviceDescription &&
       serviceDescription.availableUserDomains.length > 0
     ) {
@@ -153,479 +299,251 @@ export const LoginForm = ({
       }
       if (!matched) {
         fullIdent = createFullHandle(
-          rawIdentifier,
+          normalizedIdentifier,
           serviceDescription.availableUserDomains[0],
         )
       }
     }
-    const service =
-      hostingProviderState.status === 'overridden' &&
-      hostingProviderState.pdsUrl
-        ? hostingProviderState.pdsUrl
-        : serviceUrl
-    return {fullIdent, password, service}
-  }
 
-  // Opens the typosquatting confirmation dialog when the typed handle
-  // auto-resolved to a third-party PDS. Returns true when the attempt
-  // was gated (caller must not proceed to login).
-  const maybeGateThirdParty = (
-    fullIdent: string,
-    password: string,
-  ): boolean => {
-    if (
-      !IS_LOCAL_DEV_MODE &&
-      hostingProviderState.status === 'detected' &&
-      hostingProviderState.pdsUrl !== DEFAULT_SERVICE &&
-      !isBlueskyHostedUrl(hostingProviderState.pdsUrl) &&
-      confirmedHostRef.current !== hostingProviderState.pdsUrl
-    ) {
+    /*
+     * Await autodetection against the current identifier before logging in.
+     * If detection is still in flight this waits for it (bypassing the
+     * debounce); otherwise it resolves near-instantly from cache. Falls back
+     * to the default service on anything unresolvable, but a network error
+     * throws - in that case we must NOT log in, since we can't be sure which
+     * server to send the password to.
+     */
+    let service: string
+    let did: string | null
+    try {
+      ;({service, did} =
+        await hostingProvider.resolveService(normalizedIdentifier))
+    } catch (err) {
+      logger.debug('Failed to resolve hosting provider', {error: String(err)})
       setIsProcessing(false)
-      setPendingConfirm({
-        service: hostingProviderState.pdsUrl,
-        identifier: fullIdent,
-        passwordLength: password.length,
-      })
+      setShowResolveError(true)
+      return
+    }
+
+    /*
+     * If detection landed on a non-Bluesky server, confirm before sending the
+     * password, to guard against typosquatted handles capturing credentials. A
+     * manual override is skipped: choosing a server by hand is explicit user
+     * consent, so only auto-detected hosts need the guard. An identity the
+     * user has signed into on this device before is also trusted: a
+     * typosquatted handle would resolve to the attacker's different DID, so
+     * DID membership in the account list is the correct skip condition
+     * (handles and hosts are not stable keys - service URLs drift and pdsUrl
+     * is often unset).
+     */
+    const isKnownAccount =
+      did != null && accounts.some(account => account.did === did)
+    const needsConfirmation =
+      !isBlueskyHostedUrl(service) &&
+      hostingProvider.state.status !== 'overridden' &&
+      !isKnownAccount
+
+    if (needsConfirmation) {
+      setIsProcessing(false)
+      setPendingLogin({service, fullIdent, passwordLength: password.length})
       confirmHostingProviderControl.open()
-      return true
+      return
     }
-    return false
+
+    await attemptLogin(service, fullIdent)
   }
-
-  // Performs the login attempt. Throws on failure; callers own error
-  // presentation because the email and iM8 paths explain failures
-  // differently.
-  const submitLogin = async (authToken: string) => {
-    const {fullIdent, password, service} = resolveLoginInput()
-    if (maybeGateThirdParty(fullIdent, password)) return
-    await login(
-      {
-        service,
-        identifier: fullIdent,
-        password,
-        authFactorToken: authToken,
-      },
-      'LoginForm',
-    )
-    onAttemptSuccess()
-    setShowLoggedOut(false)
-    setHasCheckedForStarterPack(true)
-    requestNotificationsPermission('Login')
-  }
-
-  const onPressIm8Verify = async () => {
-    if (isProcessing) return
-    Keyboard.dismiss()
-    setAuthFactorMethod('im8')
-    setError('')
-    setErrorField('unknown')
-
-    const identifier = identifierValueRef.current.toLowerCase().trim()
-    const password = passwordValueRef.current
-    if (!identifier) {
-      setErrorField('identifier')
-      setError(_(msg`Your username or email address appears to be invalid.`))
-      return
-    }
-    if (!password) {
-      setErrorField('password')
-      setError(_(msg`Your password appears to be invalid.`))
-      return
-    }
-
-    setIsProcessing(true)
-
-    // Easy UX: biometric gate in-app, then reuse the M8 session PARA
-    // already holds. No app-switch, no polling loop.
-    const biometricOk = await authenticateBiometric()
-    if (!biometricOk) {
-      setIsProcessing(false)
-      setError(
-        _(msg`Biometric check didn't pass. Try again or use an email code.`),
-      )
-      return
-    }
-
-    let token = await getM8AccessToken()
-    if (!token) {
-      const session = await restoreM8Session().catch(() => null)
-      if (session) {
-        token = await getM8AccessToken()
-      }
-    }
-    if (!token) {
-      setIsProcessing(false)
-      setError(
-        _(
-          msg`No iM8 session found on this device. Open the iM8 app to connect, or use an email code instead.`,
-        ),
-      )
-      await openM8Verification()
-      return
-    }
-
-    setAuthFactorToken(token)
-    // Auto-submit with the M8 token (isProcessing already true)
-    try {
-      await submitLogin(token)
-    } catch (e: unknown) {
-      const errMsg = String(e)
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-      setIsProcessing(false)
-      if (e instanceof LexAuthFactorError) {
-        setError(_(msg`iM8 verification did not complete. Try again.`))
-      } else {
-        onAttemptFailed()
-        setError(cleanError(errMsg))
-      }
-    }
-  }
-
-  const onPressNext = async () => {
-    if (isProcessing) return
-    Keyboard.dismiss()
-    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-    setError('')
-    setErrorField('unknown')
-
-    const identifier = identifierValueRef.current.toLowerCase().trim()
-    const password = passwordValueRef.current
-
-    if (!identifier) {
-      setErrorField('identifier')
-      setError(_(msg`Your username or email address appears to be invalid.`))
-      return
-    }
-
-    if (!password) {
-      setErrorField('password')
-      setError(_(msg`Your password appears to be invalid.`))
-      return
-    }
-
-    setIsProcessing(true)
-
-    try {
-      await submitLogin(authFactorToken.trim())
-    } catch (e: unknown) {
-      const errMsg = String(e)
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-      setIsProcessing(false)
-
-      if (e instanceof LexAuthFactorError) {
-        setErrorField('authFactorToken')
-        setIsAuthFactorTokenNeeded(true)
-      } else {
-        onAttemptFailed()
-        if (errMsg.includes('Token is invalid')) {
-          setErrorField('authFactorToken')
-          logger.debug('Failed to login due to invalid 2fa token', {
-            error: errMsg,
-          })
-          setError(_(msg`Your confirmation code is incorrect.`))
-        } else if (
-          errMsg.includes('Authentication Required') ||
-          errMsg.includes('Invalid identifier or password')
-        ) {
-          logger.debug('Failed to login due to invalid credentials', {
-            error: errMsg,
-          })
-
-          setErrorField('unknown')
-          setError(_(msg`Sorry, your password was incorrect.`))
-        } else if (isNetworkError(e)) {
-          logger.warn('Failed to login due to network error', {error: errMsg})
-          setErrorField('unknown')
-          setError(
-            _(
-              msg`Unable to contact your service. Please check your Internet connection.`,
-            ),
-          )
-        } else if (errMsg.includes('Could not resolve identifier')) {
-          setErrorField('identifier')
-          setError(
-            _(
-              msg`It looks like you're not using a Bluesky-hosted PDS. Try signing in with your username and password instead.`,
-            ),
-          )
-        } else {
-          logger.warn('Failed to login', {error: errMsg})
-          setErrorField('unknown')
-          setError(cleanError(errMsg))
-        }
-      }
-    }
-  }
-
-  const onSelectAutomatic = useCallback(() => {
-    confirmedHostRef.current = null
-    clearHostingOverride()
-  }, [clearHostingOverride])
-
-  const onSelectManual = useCallback(
-    (url: string) => {
-      confirmedHostRef.current = null
-      overrideHostingProvider(url)
-    },
-    [overrideHostingProvider],
-  )
-
-  const onConfirm = useCallback(() => {
-    if (pendingConfirm) {
-      confirmedHostRef.current = pendingConfirm.service
-      setPendingConfirm(null)
-    }
-    onPressNext()
-  }, [onPressNext, pendingConfirm])
 
   return (
     <FormContainer testID="loginForm" titleText={<Trans>Sign in</Trans>}>
+      <HostingProviderDialog
+        control={serverInputControl}
+        currentOverride={
+          hostingProvider.state.status === 'overridden'
+            ? hostingProvider.state.pdsUrl
+            : null
+        }
+        isEmail={hostingProvider.state.status === 'email'}
+        onSelectManual={url => {
+          hostingProvider.override(url)
+          setServiceUrl(url)
+        }}
+        onSelectAutomatic={() => {
+          hostingProvider.clearOverride()
+          setServiceUrl(DEFAULT_SERVICE)
+        }}
+      />
+      <ConfirmHostingProviderDialog
+        control={confirmHostingProviderControl}
+        host={toNiceHostingUrl(pendingLogin?.service ?? '')}
+        identifier={pendingLogin?.fullIdent ?? ''}
+        passwordLength={pendingLogin?.passwordLength ?? 0}
+        onConfirm={() => {
+          if (pendingLogin) {
+            void attemptLogin(pendingLogin.service, pendingLogin.fullIdent)
+          }
+        }}
+      />
       <View>
         <TextField.LabelText>
-          <Trans>Hosting provider</Trans>
+          <Trans>Username or email</Trans>
         </TextField.LabelText>
-
-        <Pressable
-          testID="hostingProviderSelectBtn"
-          accessibilityRole="button"
-          accessibilityLabel={_(msg`Change hosting provider`)}
-          accessibilityHint={_(
-            msg`Opens a dialog to change your hosting provider`,
-          )}
-          onPress={onPressSelectService}
-          style={({pressed}) => [
-            a.rounded_md,
-            a.border,
-            t.atoms.border_contrast_medium,
-            a.overflow_hidden,
-            {
-              flexDirection: 'row',
-              height: 56,
-              alignItems: 'center',
-              opacity: pressed ? 0.7 : 1,
-            },
-            t.atoms.bg_contrast_25,
-          ]}>
-          <View style={[{paddingLeft: 16}]}>
-            <Text style={[t.atoms.text_contrast_medium, a.text_sm]}>PARA</Text>
-          </View>
-          <View
-            style={[
-              {
-                borderLeftWidth: StyleSheet.hairlineWidth,
-                height: 28,
-                marginVertical: 14,
-                marginLeft: 12,
-              },
-              t.atoms.border_contrast_medium,
-            ]}
+        <TextField.Root
+          isInvalid={errorField === 'identifier' || showUnresolvedError}>
+          <TextField.Icon
+            icon={hostingProvider.state.status === 'email' ? EmailIcon : AtIcon}
           />
-          <View style={[{flex: 1, paddingLeft: 12}]}>
-            <Text numberOfLines={1} style={[t.atoms.text, a.text_md]}>
-              {hostingProviderState.status === 'overridden' &&
-              hostingProviderState.pdsUrl
-                ? toNiceHostingUrl(hostingProviderState.pdsUrl)
-                : 'bsky.social'}
-            </Text>
-          </View>
-          <View
+          <TextField.Input
+            testID="loginUsernameInput"
+            inputRef={identifierRef}
+            label={l`Username or email address`}
+            placeholder={null}
+            autoCapitalize="none"
+            autoFocus={!IS_IOS && !initialHandle}
+            autoCorrect={false}
+            autoComplete="username"
+            returnKeyType="next"
+            textContentType="username"
+            value={identifier}
+            onChangeText={v => {
+              setIdentifier(v)
+              if (errorField) setErrorField('none')
+              if (showResolveError) setShowResolveError(false)
+            }}
+            onFocus={() => setIdentifierFocused(true)}
+            onBlur={() => setIdentifierFocused(false)}
+            onSubmitEditing={() => {
+              passwordRef.current?.focus()
+            }}
+            blurOnSubmit={false} // prevents flickering due to onSubmitEditing going to next field
+            editable={!isProcessing}
+            accessibilityHint={l`Enter the username or email address you used when you created your account`}
+          />
+        </TextField.Root>
+        {showUnresolvedError && (
+          <Text
             style={[
-              {
-                paddingRight: 12,
-                alignItems: 'center',
-                justifyContent: 'center',
-              },
+              a.text_sm,
+              a.leading_snug,
+              a.mt_sm,
+              {color: t.palette.negative_500},
             ]}>
-            {hostingProviderState.status === 'overridden' ? (
-              <Text
-                style={[
-                  a.text_xs,
-                  t.atoms.text_contrast_low,
-                  {paddingRight: 6},
-                ]}>
-                <Trans>Custom</Trans>
-              </Text>
-            ) : null}
-            <PencilLine size="sm" style={[t.atoms.text_contrast_medium]} />
-          </View>
-        </Pressable>
-
-        {IS_LOCAL_DEV_MODE && (
-          <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_sm]}>
             <Trans>
-              Local demo login: use provider {LOCAL_DEV_SERVICE}, account{' '}
-              alice.test, password para-test-pw.
+              We couldn't find an account with that username. Please check that
+              you've typed it correctly, or{' '}
+              <InlineLinkText
+                label={l`set your hosting provider manually`}
+                style={[a.text_sm, a.leading_snug]}
+                {...createStaticClick(() => serverInputControl.open())}>
+                set your hosting provider manually
+              </InlineLinkText>
+              .
             </Trans>
           </Text>
         )}
       </View>
 
       <View>
-        <TextField.LabelText nativeID="login-username-label">
-          <Trans>Account</Trans>
+        <TextField.LabelText>
+          <Trans>Password</Trans>
         </TextField.LabelText>
-        <View style={[a.gap_sm]}>
-          <TextField.Root isInvalid={errorField === 'identifier'}>
-            <TextField.Icon icon={At} />
-            <TextField.Input
-              testID="loginUsernameInput"
-              inputRef={identifierRef}
-              label={_(msg`Username or email address`)}
-              nativeID="login-username-label"
-              autoCapitalize="none"
-              autoFocus={!IS_IOS}
-              autoCorrect={false}
-              autoComplete="username"
-              returnKeyType="next"
-              textContentType="username"
-              defaultValue={initialHandle || ''}
-              onChangeText={v => {
-                identifierValueRef.current = v
-                setIdentifier(v)
-                confirmedHostRef.current = null
-              }}
-              onSubmitEditing={() => {
-                passwordRef.current?.focus()
-              }}
-              blurOnSubmit={false}
-              editable={!isProcessing}
-              accessibilityHint={_(
-                msg`Enter the username or email address you used when you created your account`,
-              )}
-            />
-          </TextField.Root>
-
-          <TextField.Root
-            isInvalid={errorField === 'password'}
-            style={
-              !hasPassword || !revealPassword
-                ? undefined
-                : {color: t.palette.primary_500}
-            }>
-            <TextField.Icon icon={Lock} />
-            <TextField.Input
-              testID="loginPasswordInput"
-              inputRef={passwordRef}
-              label={_(msg`Password`)}
-              autoCapitalize="none"
-              autoCorrect={false}
-              autoComplete="current-password"
-              returnKeyType="done"
-              enablesReturnKeyAutomatically={true}
-              secureTextEntry={!revealPassword}
-              clearButtonMode="while-editing"
-              onChangeText={v => {
-                passwordValueRef.current = v
-                if (v.length > 0) {
-                  setHasPassword(true)
-                } else {
-                  setHasPassword(false)
+        <PasswordField
+          isInvalid={errorField === 'password'}
+          testID="loginPasswordInput"
+          inputRef={passwordRef}
+          label={l`Password`}
+          placeholder={null}
+          autoFocus={!IS_IOS && !!initialHandle}
+          autoComplete="current-password"
+          returnKeyType="done"
+          enablesReturnKeyAutomatically={true}
+          value={password}
+          onChangeText={v => {
+            setPassword(v)
+            if (errorField) setErrorField('none')
+          }}
+          onSubmitEditing={() => void onPressNext()}
+          blurOnSubmit={false} // HACK: https://github.com/facebook/react-native/issues/21911#issuecomment-558343069 Keyboard blur behavior is now handled in onSubmitEditing
+          editable={!isProcessing}
+          accessibilityHint={l`Enter your password`}
+          onLayout={
+            IS_IOS
+              ? () => {
+                  if (hasFocusedOnce.current) return
+                  hasFocusedOnce.current = true
+                  // kinda dumb, but if we use `autoFocus` to focus an
+                  // input, it happens before the password input gets
+                  // rendered. this breaks the password autofill on iOS (it
+                  // only does the username part). delaying it until both
+                  // inputs are rendered fixes the autofill. when a handle is
+                  // prefilled we focus the password field directly so the
+                  // user can go straight to typing it -sfn
+                  if (initialHandle) {
+                    passwordRef.current?.focus()
+                  } else {
+                    identifierRef.current?.focus()
+                  }
                 }
-              }}
-              onSubmitEditing={onPressNext}
-              blurOnSubmit={false}
-              editable={!isProcessing}
-              accessibilityHint={_(msg`Enter your password`)}
-              onLayout={native(() => {
-                if (hasFocusedOnce.current) return
-                hasFocusedOnce.current = true
-                identifierRef.current?.focus()
-              })}
-            />
-            {gtMobile ? (
-              <Button
-                testID="forgotPasswordButton"
-                onPress={onPressForgotPassword}
-                label={_(msg`Forgot password?`)}
-                accessibilityHint={_(msg`Opens password reset form`)}
-                hitSlop={HITSLOP_10}>
-                <ButtonText>
-                  <Trans>Forgot?</Trans>
-                </ButtonText>
-              </Button>
-            ) : (
-              <RevealPasswordButton
-                revealPassword={revealPassword}
-                hasPassword={hasPassword}
-                onPress={() => setRevealPassword(prev => !prev)}
-              />
-            )}
-          </TextField.Root>
-        </View>
-      </View>
+              : undefined
+          }
+        />
 
+        {!isAuthFactorTokenNeeded && (
+          <Button
+            label={l`Forgot password?`}
+            accessibilityHint={l`Reset your password by sending a code to your email`}
+            style={[a.mt_md, a.self_start]}
+            hoverStyle={{opacity: 0.5}}
+            hitSlop={HITSLOP_10}
+            onPress={onPressForgotPassword}>
+            <ButtonText style={[t.atoms.text_contrast_medium]}>
+              <Trans>Forgot password?</Trans>
+            </ButtonText>
+          </Button>
+        )}
+      </View>
       {isAuthFactorTokenNeeded && (
         <View>
           <SegmentedControl.Root
             type="tabs"
-            label={_(msg`2FA method`)}
+            label={l`2FA method`}
             value={authFactorMethod}
-            onChange={v => setAuthFactorMethod(v)}>
-            <SegmentedControl.Item
-              testID="authFactorEmail"
-              value="email"
-              label={_(msg`Email code`)}>
+            onChange={value => {
+              setAuthFactorMethod(value)
+              // A broker credential must never be shown or submitted as an
+              // email confirmation code after switching methods.
+              if (value === 'email') setAuthFactorToken('')
+            }}>
+            <SegmentedControl.Item value="email" label={l`Email code`}>
               <SegmentedControl.ItemText>
-                {_(msg`Email code`)}
+                <Trans>Email code</Trans>
               </SegmentedControl.ItemText>
             </SegmentedControl.Item>
-            <SegmentedControl.Item
-              testID="authFactorIm8"
-              value="im8"
-              label={_(msg`iM8`)}>
-              <SegmentedControl.ItemText>
-                {_(msg`iM8`)}
-              </SegmentedControl.ItemText>
+            <SegmentedControl.Item value="im8" label={l`iM8`}>
+              <SegmentedControl.ItemText>iM8</SegmentedControl.ItemText>
             </SegmentedControl.Item>
           </SegmentedControl.Root>
 
           {authFactorMethod === 'email' ? (
             <>
-              <View
-                style={[
-                  a.flex_row,
-                  a.align_center,
-                  a.gap_md,
-                  a.justify_between,
-                  a.mt_md,
-                ]}>
-                <TextField.LabelText nativeID="auth-factor-token-label">
-                  <Trans>2FA code</Trans>
-                </TextField.LabelText>
-                <Button
-                  label={_(msg`Resend code`)}
-                  accessibilityHint={_(msg`Resends the 2FA code to your email`)}
-                  hitSlop={HITSLOP_10}>
-                  <ButtonText>
-                    <Trans>Resend</Trans>
-                  </ButtonText>
-                </Button>
-              </View>
-              <TextField.Root isInvalid={errorField === 'authFactorToken'}>
-                <TextField.Icon icon={Ticket} />
-                <TextField.Input
-                  testID="loginAuthFactorTokenInput"
-                  label={_(msg`Confirmation code`)}
-                  nativeID="auth-factor-token-label"
-                  autoCapitalize="none"
-                  autoFocus
-                  autoCorrect={false}
-                  autoComplete="one-time-code"
-                  returnKeyType="done"
-                  blurOnSubmit={false}
-                  onChangeText={setAuthFactorToken}
-                  value={authFactorToken}
-                  onSubmitEditing={onPressNext}
-                  editable={!isProcessing}
-                  accessibilityHint={_(
-                    msg`Input the code which has been emailed to you`,
-                  )}
-                  style={{
-                    textTransform:
-                      authFactorToken === '' ? 'none' : 'uppercase',
-                  }}
-                />
-              </TextField.Root>
+              <TextField.LabelText style={[a.mt_md]}>
+                <Trans>2FA Confirmation</Trans>
+              </TextField.LabelText>
+              <TokenField
+                testID="loginAuthFactorTokenInput"
+                autoFocus
+                autoComplete="one-time-code"
+                returnKeyType="done"
+                blurOnSubmit={false}
+                value={authFactorToken}
+                onChangeText={text => {
+                  setAuthFactorToken(text)
+                  if (errorField) setErrorField('none')
+                }}
+                onSubmitEditing={() => void onPressNext()}
+                editable={!isProcessing}
+                isInvalid={errorField === '2fa'}
+                accessibilityHint={l`Input the code which has been emailed to you`}
+              />
               <Text style={[a.text_sm, t.atoms.text_contrast_medium, a.mt_sm]}>
                 <Trans>
                   Check your email for a sign in code and enter it here.
@@ -634,85 +552,93 @@ export const LoginForm = ({
             </>
           ) : (
             <View style={[a.mt_md]}>
-              {authFactorToken ? (
-                <Admonition type="tip">
-                  <Trans>iM8 verified. Signing in...</Trans>
-                </Admonition>
-              ) : (
-                <>
-                  <Admonition type="info">
-                    <Trans>
-                      One tap: confirm with FaceID and we'll use your iM8
-                      session on this device to finish signing in. No codes to
-                      type.
-                    </Trans>
-                  </Admonition>
-                  <Button
-                    testID="loginIm8VerifyButton"
-                    label={_(msg`Verify with iM8`)}
-                    accessibilityHint={_(
-                      msg`Confirms your identity with biometrics and signs in using iM8`,
-                    )}
-                    variant="solid"
-                    color="primary"
-                    size="large"
-                    onPress={onPressIm8Verify}
-                    style={[a.mt_md]}>
-                    <ButtonText>
-                      <Trans>Verify with iM8</Trans>
-                    </ButtonText>
-                  </Button>
-                </>
-              )}
+              <Admonition.Admonition type="info">
+                <Trans>
+                  Use the iM8 session on this device to finish signing in.
+                </Trans>
+              </Admonition.Admonition>
+              <Button
+                testID="loginIm8VerifyButton"
+                label={l`Verify with iM8`}
+                accessibilityHint={l`Signs in using the iM8 session on this device`}
+                color="primary"
+                size="large"
+                style={[a.mt_md]}
+                onPress={() => void onPressIm8Verify()}>
+                <ButtonText>
+                  <Trans>Verify with iM8</Trans>
+                </ButtonText>
+                {isProcessing && <ButtonIcon icon={Loader} />}
+              </Button>
             </View>
           )}
         </View>
       )}
 
-      <View>
-        {error ? (
-          <Admonition type="error" style={[{marginBottom: 4}]}>
-            {error}
-          </Admonition>
-        ) : null}
-        {isAuthFactorTokenNeeded && !error ? (
-          <Admonition type="info">
-            <Trans>
-              Enter the two-factor authentication code provided by your identity
-              provider.
-            </Trans>
-          </Admonition>
-        ) : null}
-        {!serviceDescription && !error ? (
-          <Admonition type="info">
-            <Trans>
-              If this service is using a Bluesky hosting provider, you can sign
-              in with your Bluesky account. Otherwise, you'll need to sign in
-              with the username and password for that specific hosting provider.
-            </Trans>
-          </Admonition>
-        ) : null}
-      </View>
+      {/*
+       * At most one error is visible at a time. The inline username error
+       * (under the field) wins; otherwise the resolution-failure error takes
+       * precedence over the generic form error.
+       */}
+      {!showUnresolvedError &&
+        (showResolveError ? (
+          <Admonition.Outer type="error">
+            <Admonition.Row>
+              <Admonition.Icon />
+              <Admonition.Content>
+                <Admonition.Text>
+                  <Trans>
+                    We couldn’t verify your hosting provider. Check your
+                    internet connection, or{' '}
+                    <InlineLinkText
+                      label={l`Set your hosting provider manually`}
+                      style={[a.text_sm, a.leading_snug]}
+                      {...createStaticClick(() => serverInputControl.open())}>
+                      set your hosting provider manually
+                    </InlineLinkText>
+                    .
+                  </Trans>
+                </Admonition.Text>
+              </Admonition.Content>
+            </Admonition.Row>
+          </Admonition.Outer>
+        ) : (
+          error && (
+            <Admonition.Admonition type="error">{error}</Admonition.Admonition>
+          )
+        ))}
 
-      <View style={[a.flex_row, a.align_center, a.pt_md]}>
-        <Button
-          label={_(msg`Back`)}
-          variant="solid"
-          color="secondary"
-          size="large"
-          onPress={onPressBack}>
-          <ButtonText>
-            <Trans>Back</Trans>
-          </ButtonText>
-        </Button>
-        <View style={a.flex_1} />
+      <View
+        style={[
+          a.pt_md,
+          gtMobile && [a.justify_between, a.flex_row, a.gap_sm],
+        ]}>
+        {gtMobile && (
+          <>
+            <Button
+              label={l`Back`}
+              color="secondary"
+              size="large"
+              onPress={onPressBack}>
+              <ButtonText>
+                <Trans>Back</Trans>
+              </ButtonText>
+            </Button>
+
+            <View style={[a.flex_shrink, a.justify_center, a.ml_auto]}>
+              <HostingProviderIndicator
+                state={hostingProvider.state}
+                onPress={() => serverInputControl.open()}
+              />
+            </View>
+          </>
+        )}
         {!serviceDescription && error ? (
           <Button
             testID="loginRetryButton"
-            label={_(msg`Retry`)}
-            accessibilityHint={_(msg`Retries signing in`)}
-            variant="solid"
-            color="secondary"
+            label={l`Retry`}
+            accessibilityHint={l`Retries signing in`}
+            color="primary_subtle"
             size="large"
             onPress={onPressRetryConnect}>
             <ButtonText>
@@ -720,21 +646,24 @@ export const LoginForm = ({
             </ButtonText>
           </Button>
         ) : !serviceDescription ? (
-          <>
-            <ActivityIndicator />
-            <Text style={[t.atoms.text_contrast_high, a.pl_md]}>
-              <Trans>Connecting...</Trans>
-            </Text>
-          </>
+          <Button
+            label={l`Connecting to service…`}
+            size="large"
+            color="secondary"
+            disabled>
+            <ButtonIcon icon={Loader} />
+            <ButtonText>
+              <Trans>Connecting…</Trans>
+            </ButtonText>
+          </Button>
         ) : (
           <Button
             testID="loginNextButton"
-            label={_(msg`Sign in`)}
-            accessibilityHint={_(msg`Attempts to sign in`)}
-            variant="solid"
+            label={l`Sign in`}
+            accessibilityHint={l`Navigates to the next screen`}
             color="primary"
             size="large"
-            onPress={onPressNext}>
+            onPress={() => void onPressNext()}>
             <ButtonText>
               <Trans>Sign in</Trans>
             </ButtonText>
@@ -743,80 +672,63 @@ export const LoginForm = ({
         )}
       </View>
 
-      <HostingProviderDialog
-        control={hostingProviderControl}
-        currentOverride={
-          hostingProviderState.status === 'overridden' &&
-          hostingProviderState.pdsUrl
-            ? hostingProviderState.pdsUrl
-            : null
-        }
-        isEmail={isEmail}
-        onSelectManual={onSelectManual}
-        onSelectAutomatic={onSelectAutomatic}
-      />
+      {IS_NATIVE && onPressCreateAccount && (
+        <Text style={[a.text_md, native([a.text_center, a.mx_auto]), a.mt_sm]}>
+          <Trans>
+            New to Bluesky?{' '}
+            <InlineLinkText
+              label={l`Sign up`}
+              style={[a.text_md, native(a.text_center)]}
+              {...createStaticClick(() => onPressCreateAccount())}>
+              Sign up
+            </InlineLinkText>
+          </Trans>
+        </Text>
+      )}
 
-      <ConfirmHostingProviderDialog
-        control={confirmHostingProviderControl}
-        host={pendingConfirm ? toNiceHostingUrl(pendingConfirm.service) : ''}
-        identifier={pendingConfirm?.identifier ?? identifierValueRef.current}
-        passwordLength={
-          pendingConfirm?.passwordLength ?? passwordValueRef.current.length
-        }
-        onConfirm={onConfirm}
-      />
+      {!gtMobile && (
+        <HostingProviderIndicator
+          state={hostingProvider.state}
+          onPress={() => serverInputControl.open()}
+        />
+      )}
     </FormContainer>
   )
 }
 
-function RevealPasswordButton({
-  revealPassword,
-  hasPassword,
+function HostingProviderIndicator({
+  state,
   onPress,
 }: {
-  revealPassword: boolean
-  hasPassword: boolean
+  state: HostingProviderState
   onPress: () => void
 }) {
-  const {_} = useLingui()
   const t = useTheme()
+  const {t: l} = useLingui()
+  const {gtMobile} = useBreakpoints()
+
   return (
     <Button
-      testID="revealPasswordButton"
-      label={_(msg`Reveal password`)}
-      accessibilityHint={_(msg`Reveals your current password`)}
-      onPress={onPress}
-      hitSlop={HITSLOP_10}
-      style={[{padding: 6}]}>
-      {hasPassword ? (
-        <RevealPasswordIcon revealPassword={revealPassword} />
-      ) : (
-        <Lock size="sm" style={[t.atoms.text_contrast_low]} />
-      )}
+      testID="selectServiceButton"
+      label={l`Change hosting provider`}
+      accessibilityHint={l`Opens a dialog to change the hosting provider you sign in to`}
+      style={[!gtMobile && [a.mt_auto, a.mb_sm, a.self_center]]}
+      size="small"
+      color="secondary"
+      variant="ghost"
+      onPress={onPress}>
+      <ButtonText
+        style={[t.atoms.text_contrast_medium, a.font_normal]}
+        numberOfLines={1}>
+        {state.status === 'detected' || state.status === 'overridden' ? (
+          <Trans>Hosting provider: {toNiceHostingUrl(state.pdsUrl)}</Trans>
+        ) : state.status === 'email' ? (
+          <Trans>Hosting provider: Bluesky</Trans>
+        ) : (
+          <Trans>Hosting provider</Trans>
+        )}
+      </ButtonText>
+      <TinyChevronIcon width={8} style={[t.atoms.text_contrast_medium]} />
     </Button>
-  )
-}
-
-function RevealPasswordIcon({revealPassword}: {revealPassword: boolean}) {
-  const {focused} = useTextFieldContext()
-  const t = useTheme()
-  return (
-    <>
-      {!revealPassword ? (
-        <Eye
-          size="sm"
-          style={[
-            focused ? t.atoms.text_contrast_high : t.atoms.text_contrast_medium,
-          ]}
-        />
-      ) : (
-        <EyeSlash
-          size="sm"
-          style={[
-            focused ? t.atoms.text_contrast_high : t.atoms.text_contrast_medium,
-          ]}
-        />
-      )}
-    </>
   )
 }

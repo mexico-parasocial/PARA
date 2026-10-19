@@ -6,12 +6,7 @@ import {
   useMemo,
   useState,
 } from 'react'
-import {
-  type GestureResponderEvent,
-  type StyleProp,
-  View,
-  type ViewStyle,
-} from 'react-native'
+import {type StyleProp, View, type ViewStyle} from 'react-native'
 import Animated, {Easing, LinearTransition} from 'react-native-reanimated'
 
 import {useHaptics} from '#/lib/haptics'
@@ -148,7 +143,7 @@ export function Item({
   onPress: onPressProp,
   ...props
 }: {value: string; children: React.ReactNode} & Omit<ButtonProps, 'children'>) {
-  const playHaptic = useHaptics()
+  const haptics = useHaptics()
   const [position, setPosition] = useState<{x: number; width: number} | null>(
     null,
   )
@@ -180,12 +175,12 @@ export function Item({
   }, [needsUpdate, update])
 
   const onPress = useCallback(
-    (evt: GestureResponderEvent) => {
-      playHaptic('Light')
+    (evt: any) => {
+      haptics.selection()
       ctx.onSelectValue(value, position)
       onPressProp?.(evt)
     },
-    [ctx, value, position, onPressProp, playHaptic],
+    [ctx, value, position, onPressProp, haptics],
   )
 
   return (
@@ -256,7 +251,6 @@ function Slider({x, width}: {x: number; width: number}) {
 
   return (
     <Animated.View
-      pointerEvents="none"
       layout={native(LinearTransition.easing(Easing.out(Easing.exp)))}
       style={[
         a.absolute,

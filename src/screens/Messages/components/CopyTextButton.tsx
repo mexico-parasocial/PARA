@@ -10,7 +10,7 @@ import {Trans} from '@lingui/react/macro'
 
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonIcon, type ButtonProps} from '#/components/Button'
-import {SquareBehindSquare4_Stroke2_Corner0_Rounded as CopyIcon} from '#/components/icons/SquareBehindSquare4'
+import {SquareBehindSquare4_Stroke2_Corner0_Rounded as CopyIcon} from '#/components/icons/Square'
 import {Text} from '#/components/Typography'
 
 export function CopyTextButton({

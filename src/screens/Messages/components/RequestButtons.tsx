@@ -31,9 +31,9 @@ import {
   type ConvoWithDetails,
   getConvoReportSubject,
 } from '#/components/dms/util'
-import {ArrowBoxLeft_Stroke2_Corner0_Rounded as LeaveIcon} from '#/components/icons/ArrowBoxLeft'
+import {ArrowBoxLeft_Stroke2_Corner0_Rounded as LeaveIcon} from '#/components/icons/Arrow'
 import {Check_Stroke2_Corner0_Rounded as CheckIcon} from '#/components/icons/Check'
-import {CircleX_Stroke2_Corner0_Rounded} from '#/components/icons/CircleX'
+import {CircleX_Stroke2_Corner0_Rounded} from '#/components/icons/Circle'
 import {Flag_Stroke2_Corner0_Rounded as FlagIcon} from '#/components/icons/Flag'
 import {PersonX_Stroke2_Corner0_Rounded as PersonXIcon} from '#/components/icons/Person'
 import {Loader} from '#/components/Loader'

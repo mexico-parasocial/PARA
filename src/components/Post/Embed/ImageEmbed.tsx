@@ -5,7 +5,7 @@ import {Image} from 'expo-image'
 
 import {atoms as a, tokens} from '#/alf'
 import {AutoSizedImage} from '#/components/images/AutoSizedImage'
-import {Gallery} from '#/components/images/Gallery/index'
+import {Gallery} from '#/components/images/Gallery'
 import {ImageLayoutGrid} from '#/components/images/ImageLayoutGrid'
 import {
   type LightboxMetricsContext,
@@ -16,43 +16,38 @@ import {ImageContextMenu} from '#/components/Post/Embed/ImageContextMenu'
 import {PostEmbedViewContext} from '#/components/Post/Embed/types'
 import {useAnalytics} from '#/analytics'
 import {app} from '#/lexicons'
+import * as bsky from '#/types/bsky'
 import {type EmbedType} from '#/types/bsky/post'
 import {type CommonProps} from './types'
 
+const MAX_GRID_IMAGES = 4
+
 export function ImageEmbed({
-  embed: rawEmbed,
+  embed,
   ...rest
 }: CommonProps & {
   embed: EmbedType<'images'> | EmbedType<'gallery'>
 }) {
-  const embed =
-    rawEmbed.type === 'images'
-      ? rawEmbed
-      : ({
-          type: 'images',
-          view: {
-            $type: 'app.bsky.embed.images#view',
-            images: rawEmbed.view.items.flatMap(item => {
-              const img = item as app.bsky.embed.gallery.ViewImage
-              return [
-                {
-                  $type: 'app.bsky.embed.images#viewImage' as const,
-                  thumb: img.thumbnail,
-                  fullsize: img.fullsize,
-                  alt: img.alt,
-                  aspectRatio: img.aspectRatio,
-                },
-              ]
-            }),
-          },
-        } as EmbedType<'images'>)
   const ax = useAnalytics()
   const {openLightbox} = useLightboxControls()
-  const {images} = embed.view
-  const galleryEnabled = ax.features.enabled(ax.features.PostGalleryEmbedEnable)
+  const images: app.bsky.embed.images.ViewImage[] =
+    embed.type === 'gallery'
+      ? embed.view.items
+          .filter(item => bsky.isType(app.bsky.embed.gallery.viewImage, item))
+          .map(item => ({
+            thumb: item.thumbnail,
+            fullsize: item.fullsize,
+            alt: item.alt,
+            aspectRatio: item.aspectRatio,
+          }))
+      : embed.view.images
+  const useExpandedLayout =
+    embed.type === 'gallery'
+      ? images.length > MAX_GRID_IMAGES
+      : ax.features.enabled(ax.features.PostGalleryEmbedEnable)
 
   const layout: 'single' | 'grid' | 'carousel' =
-    images.length === 1 ? 'single' : galleryEnabled ? 'carousel' : 'grid'
+    images.length === 1 ? 'single' : useExpandedLayout ? 'carousel' : 'grid'
 
   const postContext = rest.post
     ? {
@@ -81,6 +76,7 @@ export function ImageEmbed({
       index: number,
       refs: AnimatedRef[],
       fetchedDims: (Dimensions | null)[],
+      onIndexChange?: (index: number) => void,
     ) => {
       if (postContext) {
         ax.metric('post:photoEmbed:open', {
@@ -101,6 +97,7 @@ export function ImageEmbed({
         })),
         index,
         metricsContext,
+        onIndexChange,
       })
     }
     const onPressIn = (_: number) => {
@@ -108,7 +105,7 @@ export function ImageEmbed({
         void Image.prefetch(
           items.map(i => i.uri),
           'memory',
-        ).catch(() => undefined)
+        )
       })
     }
 
@@ -123,6 +120,7 @@ export function ImageEmbed({
           onPress(0, [singleContainerRef.current], [singleDimsRef.current])
         }
       }
+
       return (
         <View style={[a.mt_sm, rest.style]}>
           <ImageContextMenu
@@ -135,10 +133,7 @@ export function ImageEmbed({
               crop={
                 rest.viewContext === PostEmbedViewContext.ThreadHighlighted
                   ? 'none'
-                  : rest.viewContext ===
-                      PostEmbedViewContext.FeedEmbedRecordWithMedia
-                    ? 'square'
-                    : 'constrained'
+                  : 'constrained'
               }
               image={image}
               onContainerRef={ref => {
@@ -157,7 +152,7 @@ export function ImageEmbed({
       )
     }
 
-    if (galleryEnabled) {
+    if (useExpandedLayout) {
       return (
         <View style={[a.mt_sm, rest.style]}>
           <Gallery
@@ -165,6 +160,7 @@ export function ImageEmbed({
             onPress={onPress}
             onPressIn={onPressIn}
             viewContext={rest.viewContext}
+            isWithinQuote={rest.isWithinQuote}
             metricsPostContext={postContext}
           />
         </View>
@@ -178,6 +174,7 @@ export function ImageEmbed({
           onPress={onPress}
           onPressIn={onPressIn}
           viewContext={rest.viewContext}
+          isWithinQuote={rest.isWithinQuote}
         />
       </View>
     )

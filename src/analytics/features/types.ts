@@ -14,7 +14,6 @@ export enum Features {
   PostGalleryEmbedEnable = 'post_gallery_embed:enable',
   PostFeedKnownLikersEnable = 'post_feed:known_likers:enable',
   PostThreadKnownLikersEnable = 'post_thread:known_likers:enable',
-  CustomLogoJapanEnable = 'custom_logo:japan:enable',
   SearchStarterPacksV2Enable = 'search_starter_packs_v2:enable',
   FollowSortEnable = 'follow_sort:enable',
   FollowingV2Enable = 'following_v2:enable',
@@ -22,7 +21,10 @@ export enum Features {
   NotificationsExpandedProfileCardEnable = 'notifications:expanded_profile_card:enable',
   ContentVisibilitySettingsEnable = 'content_visibility_settings:enable',
   ModerationInboxEnable = 'moderation_inbox:enable',
-
+  AtmosphereExploreEnable = 'atmosphere_explore:enable',
+  NotificationsV2Enable = 'notifications_v2:enable',
+  ProfileLinksEnable = 'profile_links:enable',
+  
   // values
   TrendingDiscoverValues = 'trending_discover:values',
   TrendingExploreTopicsCountValue = 'trending_explore_topics_count:value',

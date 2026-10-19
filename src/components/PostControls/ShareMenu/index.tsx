@@ -8,7 +8,6 @@ import {useLingui} from '@lingui/react'
 import {makeProfileLink} from '#/lib/routes/links'
 import {shareUrl} from '#/lib/sharing'
 import {toShareUrl} from '#/lib/strings/url-helpers'
-import {logger} from '#/logger'
 import {type Shadow} from '#/state/cache/post-shadow'
 import {useFeedFeedbackContext} from '#/state/feed-feedback'
 import {EventStopper} from '#/view/com/util/EventStopper'
@@ -16,7 +15,8 @@ import {native} from '#/alf'
 import {ArrowShareRight_Stroke2_Corner2_Rounded as ArrowShareRightIcon} from '#/components/icons/ArrowShareRight'
 import * as Menu from '#/components/Menu'
 import {useMenuControl} from '#/components/Menu'
-import {app} from '#/lexicons'
+import {useAnalytics} from '#/analytics'
+import {type app} from '#/lexicons'
 import {PostControlButton, PostControlButtonIcon} from '../PostControlButton'
 import {ShareMenuItems} from './ShareMenuItems'
 
@@ -43,6 +43,7 @@ let ShareMenuButton = ({
   hitSlop?: Insets
   logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
 }): React.ReactNode => {
+  const ax = useAnalytics()
   const {_} = useLingui()
   const {feedDescriptor} = useFeedFeedbackContext()
 
@@ -57,20 +58,17 @@ let ShareMenuButton = ({
         // menuControl.open() fires but RN doesn't expose flushSync.
         setTimeout(menuControl.open)
 
-        logger.metric(
-          'post:share',
-          {
-            uri: post.uri,
-            authorDid: post.author.did,
-            logContext,
-            feedDescriptor,
-            postContext: big ? 'thread' : 'feed',
-          },
-          {statsig: true},
-        )
+        ax.metric('post:share', {
+          uri: post.uri,
+          authorDid: post.author.did,
+          logContext,
+          feedDescriptor,
+          postContext: big ? 'thread' : 'feed',
+        })
       },
     }),
     [
+      ax,
       menuControl,
       setHasBeenOpen,
       big,
@@ -82,11 +80,19 @@ let ShareMenuButton = ({
   )
 
   const onNativeLongPress = () => {
-    logger.metric('share:press:nativeShare', {}, {statsig: true})
+    ax.metric('share:press:nativeShare', {})
     const urip = new AtUri(post.uri)
     const href = makeProfileLink(post.author, 'post', urip.rkey)
     const url = toShareUrl(href)
-    shareUrl(url)
+    void shareUrl(url).then(result => {
+      if (!result) return
+      ax.metric('share:nativeShare:result', {
+        uri: post.uri,
+        authorDid: post.author.did,
+        entryPoint: 'LongPress',
+        ...result,
+      })
+    })
     onShare()
   }
 

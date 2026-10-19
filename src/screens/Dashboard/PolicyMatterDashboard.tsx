@@ -1,4 +1,4 @@
-import {useRef, useState} from 'react'
+import {useState} from 'react'
 import {
   ActivityIndicator,
   ScrollView,
@@ -10,7 +10,7 @@ import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
-import {CATEGORIES} from '#/lib/constants/mockData'
+import {countByGroup, countMatters, tagsForGroups} from '#/lib/matter-filter'
 import {type NavigationProp} from '#/lib/routes/types'
 import {
   useCommunityPoliciesQuery,
@@ -21,12 +21,12 @@ import {
 } from '#/state/queries/data-tab'
 import {useCompassFilter} from '#/state/shell/compass-filter'
 import {Text} from '#/view/com/util/text/Text'
-import {atoms as a, useTheme} from '#/alf'
+import {useTheme} from '#/alf'
 import {ActiveFiltersStackButton} from '#/components/CompassFilterControls'
 import {SearchInput} from '#/components/forms/SearchInput'
 import {Verified_Stroke2_Corner2_Rounded as VerifiedIcon} from '#/components/icons/Verified'
 import * as Layout from '#/components/Layout'
-import {WebScrollControls} from '#/components/WebScrollControls'
+import {MatterFilter} from '#/components/MatterFilter'
 import {type PolicyItem} from './types'
 
 const PHASE_META: Record<string, {label: string; color: string}> = {
@@ -98,9 +98,6 @@ export function PolicyMatterDashboard({
   const t = useTheme()
   useLingui()
   const navigation = useNavigation<NavigationProp>()
-  const categoryScrollRef = useRef<React.ComponentRef<
-    typeof ScrollView
-  > | null>(null)
 
   const routeMode = route.params?.mode as PolicyMatterMode | undefined
   const mode = forcedMode || routeMode
@@ -123,9 +120,7 @@ export function PolicyMatterDashboard({
   const activeMode = mode || activeTab
   const {activeFilters, activeState} = useCompassFilter()
 
-  const [selectedCategory, setSelectedCategory] = useState(
-    route.params?.category || 'All',
-  )
+  const [selectedGroups, setSelectedGroups] = useState<string[]>([])
   const [isVerifiedOnly, setIsVerifiedOnly] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -133,12 +128,24 @@ export function PolicyMatterDashboard({
   const queryType: 'Policy' | 'Matter' =
     activeMode === 'Policies' ? 'Policy' : 'Matter'
   const commonParams = {
-    category: selectedCategory,
+    matterTags: tagsForGroups(selectedGroups),
     verified: isVerifiedOnly,
     query: searchQuery,
     type: queryType,
     filters: activeFilters.length > 0 ? activeFilters : undefined,
   }
+
+  // Every item, unfiltered: what the matter filter counts and lists from.
+  const everythingQuery = useRecommendedPoliciesQuery({type: queryType})
+  const groupCounts = countByGroup(
+    countMatters(
+      (
+        everythingQuery.data?.pages.flatMap(
+          p => (p as {items?: PolicyItem[]}).items ?? [],
+        ) ?? []
+      ).map(item => item.flairs),
+    ),
+  )
 
   // V2: Specialized Feed Queries
   const featuredQuery = useFeaturedPoliciesQuery(commonParams)
@@ -260,106 +267,20 @@ export function PolicyMatterDashboard({
             />
           </View>
 
-          <View style={{position: 'relative'}}>
-            <WebScrollControls
-              scrollViewRef={categoryScrollRef}
-              iconSize={16}
+          <View style={styles.filterRow}>
+            <MatterFilter
+              selected={selectedGroups}
+              onChange={setSelectedGroups}
+              counts={groupCounts}
+              verified={isVerifiedOnly}
+              onVerifiedChange={setIsVerifiedOnly}
             />
-            <ScrollView
-              ref={categoryScrollRef}
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.categoryScroll}>
-              <TouchableOpacity
-                accessibilityRole="button"
-                onPress={() => setIsVerifiedOnly(!isVerifiedOnly)}
-                style={{marginRight: 10, justifyContent: 'center'}}>
-                {isVerifiedOnly ? (
-                  <View
-                    style={[
-                      a.rounded_full,
-                      {
-                        backgroundColor: t.palette.primary_500,
-                        width: 38, // Slightly smaller to match pills
-                        height: 38,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                      },
-                    ]}>
-                    <VerifiedIcon
-                      width={20}
-                      height={20}
-                      style={{color: 'white'}}
-                    />
-                  </View>
-                ) : (
-                  <View
-                    style={[
-                      a.rounded_full,
-                      t.atoms.bg_contrast_25,
-                      {
-                        width: 38, // Slightly smaller to match pills
-                        height: 38,
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                        borderWidth: 1,
-                        borderColor: t.atoms.border_contrast_low.borderColor,
-                      },
-                    ]}>
-                    <VerifiedIcon width={20} height={20} style={t.atoms.text} />
-                  </View>
-                )}
-              </TouchableOpacity>
-              {CATEGORIES.map(cat => {
-                const isSelected = selectedCategory === cat
-                return (
-                  <TouchableOpacity
-                    accessibilityRole="button"
-                    key={cat}
-                    onPress={() => setSelectedCategory(cat)}>
-                    {isSelected ? (
-                      <View
-                        style={[
-                          styles.categoryPill,
-                          {
-                            backgroundColor: t.palette.primary_500,
-                          },
-                        ]}>
-                        <Text
-                          style={[styles.categoryPillText, {color: 'white'}]}>
-                          {cat}
-                        </Text>
-                      </View>
-                    ) : (
-                      <View
-                        style={[
-                          styles.categoryPill,
-                          t.atoms.bg_contrast_25,
-                          {
-                            borderWidth: 1,
-                            borderColor:
-                              t.atoms.border_contrast_low.borderColor,
-                          },
-                        ]}>
-                        <Text style={[styles.categoryPillText, t.atoms.text]}>
-                          {cat}
-                        </Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                )
-              })}
-            </ScrollView>
           </View>
 
           {/* Featured Feed */}
           {featuredItems.length > 0 && (
             <View style={styles.section}>
-              <Text style={[styles.sectionTitle, t.atoms.text]}>
-                {selectedCategory !== 'All'
-                  ? `${selectedCategory} Featured`
-                  : 'Featured'}
-              </Text>
+              <Text style={[styles.sectionTitle, t.atoms.text]}>Featured</Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -381,9 +302,7 @@ export function PolicyMatterDashboard({
           {showCommunity && communityItems.length > 0 && (
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, t.atoms.text]}>
-                {selectedCategory !== 'All'
-                  ? `${selectedCategory} Community ${activeMode}`
-                  : `Community ${activeMode}`}
+                {`Community ${activeMode}`}
               </Text>
               {communityItems.map((item: PolicyItem) => (
                 <PolicyCard
@@ -400,12 +319,8 @@ export function PolicyMatterDashboard({
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, t.atoms.text]}>
                 {activeState !== 'None'
-                  ? selectedCategory !== 'All'
-                    ? `${selectedCategory} ${activeMode} in ${activeState}`
-                    : `${activeMode} in ${activeState}`
-                  : selectedCategory !== 'All'
-                    ? `${selectedCategory} State ${activeMode}`
-                    : `State ${activeMode} Around Mexico`}
+                  ? `${activeMode} in ${activeState}`
+                  : `State ${activeMode} Around Mexico`}
               </Text>
               {stateItems.map((item: PolicyItem) => (
                 <PolicyCard
@@ -421,9 +336,7 @@ export function PolicyMatterDashboard({
           {showParty && partyItems.length > 0 && (
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, t.atoms.text]}>
-                {selectedCategory !== 'All'
-                  ? `${selectedCategory} Party ${activeMode}`
-                  : `Party ${activeMode}`}
+                {`Party ${activeMode}`}
               </Text>
               {partyItems.map((item: PolicyItem) => (
                 <PolicyCard
@@ -566,6 +479,12 @@ function getItemStatus(item: PolicyItem) {
 }
 
 const styles = StyleSheet.create({
+  filterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 24,
+  },
   container: {
     flex: 1,
   },

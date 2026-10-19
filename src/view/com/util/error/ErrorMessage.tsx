@@ -3,7 +3,7 @@ import {useLingui} from '@lingui/react/macro'
 
 import {atoms as a, useGutters, useTheme, utils} from '#/alf'
 import {Button} from '#/components/Button'
-import {ArrowRotateClockwise_Stroke2_Corner0_Rounded as ArrowRotateIcon} from '#/components/icons/ArrowRotate'
+import {ArrowRotateClockwise_Stroke2_Corner0_Rounded as ArrowRotateIcon} from '#/components/icons/Arrow'
 import {Warning_Stroke2_Corner0_Rounded as WarningIcon} from '#/components/icons/Warning'
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'

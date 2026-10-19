@@ -222,12 +222,9 @@ export function Update(_props: ScreenProps<ScreenID.Update>) {
             <TextField.Input
               label={_(msg`New email address`)}
               placeholder={_(msg`alice@example.com`)}
-              defaultValue={state.email}
-              onChangeText={
-                state.mutationStatus === 'success'
-                  ? undefined
-                  : handleEmailChange
-              }
+              value={state.email}
+              editable={state.mutationStatus !== 'success'}
+              onChangeText={handleEmailChange}
               keyboardType="email-address"
               autoComplete="email"
               autoCapitalize="none"

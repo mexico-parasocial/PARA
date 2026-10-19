@@ -1,9 +1,14 @@
-import {memo, type ReactElement, useCallback} from 'react'
-import {Linking, ScrollView, TouchableOpacity, View} from 'react-native'
+import {type ComponentProps, memo, type ReactElement, useCallback} from 'react'
+import {
+  Linking,
+  Pressable,
+  ScrollView,
+  TouchableOpacity,
+  View,
+} from 'react-native'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
-import {msg, plural} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
-import {Plural, Trans} from '@lingui/react/macro'
+import {plural} from '@lingui/core/macro'
+import {Plural, Trans, useLingui} from '@lingui/react/macro'
 import {
   StackActions,
   useNavigation,
@@ -17,7 +22,6 @@ import {getCurrentRoute, getTabState, TabState} from '#/lib/routes/helpers'
 import {type SharedNavTab, TAB_TO_NAV_ITEM} from '#/lib/routes/tab-to-nav-item'
 import {type NavigationProp} from '#/lib/routes/types'
 import {sanitizeHandle} from '#/lib/strings/handles'
-import {colors} from '#/lib/styles'
 import {useTotalChatUnread} from '#/state/chat/useTotalChatUnread'
 import {emitSoftReset} from '#/state/events'
 import {useUnreadNotifications} from '#/state/queries/notifications/unread'
@@ -29,8 +33,11 @@ import {UserAvatar} from '#/view/com/util/UserAvatar'
 import {useLogoVariant} from '#/view/icons/useLogoVariant'
 import {NavSignupCard} from '#/view/shell/NavSignupCard'
 import {atoms as a, tokens, useTheme, web} from '#/alf'
+import {BetaTag} from '#/components/BetaTag'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
+import {useDialogControl} from '#/components/Dialog'
 import {Divider} from '#/components/Divider'
+import {ArrowShareRight_Stroke2_Corner2_Rounded as ArrowShareRightIcon} from '#/components/icons/ArrowShareRight'
 import {
   Atom_Filled_Corner0_Rounded as AtomFilled,
   Atom_Stroke2_Corner0_Rounded as AtomIcon,
@@ -50,6 +57,7 @@ import {
   CommunityIcon_Stroke as Community,
 } from '#/components/icons/Community'
 import {Compass_Stroke2_Corner0_Rounded as CompassIcon} from '#/components/icons/Compass'
+import {Earth_Stroke2_Corner0_Rounded as EarthIcon} from '#/components/icons/Earth'
 import {
   Hashtag_Filled_Corner0_Rounded as HashtagFilled,
   Hashtag_Stroke2_Corner0_Rounded as Hashtag,
@@ -71,7 +79,7 @@ import {
   Message_Stroke2_Corner0_Rounded as Message,
   Message_Stroke2_Corner0_Rounded_Filled as MessageFilled,
 } from '#/components/icons/Message'
-import {SettingsGear2_Stroke2_Corner0_Rounded as Settings} from '#/components/icons/SettingsGear2'
+import {SettingsGear2_Stroke2_Corner0_Rounded as Settings} from '#/components/icons/Settings'
 import {Shapes_Stroke2_Corner0_Rounded as Shapes} from '#/components/icons/Shapes'
 import {Tree_Stroke2_Corner0_Rounded as Tree} from '#/components/icons/Tree'
 import {
@@ -79,32 +87,34 @@ import {
   UserCircle_Stroke2_Corner0_Rounded as UserCircle,
 } from '#/components/icons/UserCircle'
 import {InlineLinkText} from '#/components/Link'
+import {OTAChannelNotice} from '#/components/OTAChannelNotice'
+import {ProfileBadges} from '#/components/ProfileBadges'
 import {Text} from '#/components/Typography'
-import {useSimpleVerificationState} from '#/components/verification'
-import {VerificationCheck} from '#/components/verification/VerificationCheck'
 import {useAnalytics} from '#/analytics'
-import {IS_WEB} from '#/env'
+import {IS_NATIVE, IS_WEB} from '#/env'
+import {InviteFriendsDialog} from '#/features/inviteFriends'
 
 const iconWidth = 26
 
 let DrawerProfileCard = ({
   account,
   onPressProfile,
+  onPressShare,
 }: {
   account: SessionAccount
   onPressProfile: () => void
+  onPressShare?: () => void
 }): React.ReactNode => {
-  const {_, i18n} = useLingui()
+  const {t: l, i18n} = useLingui()
   const t = useTheme()
   const {data: profile} = useProfileQuery({did: account.did})
-  const verification = useSimpleVerificationState({profile})
   const {isActive: live} = useActorStatus(profile)
 
   return (
     <TouchableOpacity
       testID="profileCardButton"
-      accessibilityLabel={_(msg`Profile`)}
-      accessibilityHint={_(msg`Navigates to your profile`)}
+      accessibilityLabel={l`Profile`}
+      accessibilityHint={l`Navigates to your profile`}
       onPress={onPressProfile}
       style={[a.gap_sm, a.pr_lg]}>
       <UserAvatar
@@ -119,20 +129,38 @@ let DrawerProfileCard = ({
         <View style={[a.flex_row, a.align_center, a.gap_xs, a.flex_1]}>
           <Text
             emoji
-            style={[a.font_bold, a.text_xl, a.mt_2xs, a.leading_tight]}
+            style={[
+              a.font_bold,
+              a.text_xl,
+              a.mt_2xs,
+              a.leading_tight,
+              a.flex_shrink,
+            ]}
             numberOfLines={1}>
             {profile?.displayName || account.handle}
           </Text>
-          {verification.showBadge && (
-            <View
-              style={{
-                top: 0,
-              }}>
-              <VerificationCheck
+          {profile && <ProfileBadges profile={profile} size="lg" />}
+          {onPressShare && (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={l`Invite friends`}
+              accessibilityHint={l`Opens the invite friends sheet to share your profile`}
+              onPress={onPressShare}
+              hitSlop={8}
+              style={({pressed}) => [
+                a.ml_auto,
+                a.align_center,
+                a.justify_center,
+                a.rounded_full,
+                t.atoms.bg_contrast_50,
+                {width: 32, height: 32, opacity: pressed ? 0.7 : 1},
+              ]}>
+              <ArrowShareRightIcon
                 width={16}
-                verifier={verification.role === 'verifier'}
+                height={16}
+                fill={t.palette.primary_500}
               />
-            </View>
+            </Pressable>
           )}
         </View>
         <Text
@@ -179,6 +207,7 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
   const {
     isAtHome,
     isAtSearch,
+    isAtAtmosphere,
     isAtFeeds,
     isAtBookmarks,
     isAtNotifications,
@@ -209,6 +238,10 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
     currentRoute.name === 'ConsentAudit'
   const {hasSession, currentAccount} = useSession()
   const ax = useAnalytics()
+  const inviteFriendsControl = useDialogControl()
+  const isAtmosphereExploreEnabled = ax.features.enabled(
+    ax.features.AtmosphereExploreEnable,
+  )
 
   // events
   // =
@@ -287,6 +320,12 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
     setDrawerOpen(false)
   }, [navigation, setDrawerOpen, ax])
 
+  const onPressAtmosphere = useCallback(() => {
+    ax.metric('nav:click', {item: 'atmosphere', surface: 'drawer'})
+    navigation.navigate('Atmosphere')
+    setDrawerOpen(false)
+  }, [navigation, setDrawerOpen, ax])
+
   const onPressLists = useCallback(() => {
     ax.metric('nav:click', {item: 'lists', surface: 'drawer'})
     navigation.navigate('Lists')
@@ -324,7 +363,7 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
       navigation.navigate('DataTab')
       navigation.navigate('Communities')
     }
-  }, [navigation, setDrawerOpen])
+  }, [navigation, setDrawerOpen, ax])
 
   const onPressCompass = useCallback(() => {
     ax.metric('nav:click', {item: 'compass', surface: 'drawer'})
@@ -395,7 +434,7 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
   }, [navigation, setDrawerOpen])
 
   const onPressFeedback = useCallback(() => {
-    Linking.openURL(
+    void Linking.openURL(
       FEEDBACK_FORM_URL({
         email: currentAccount?.email,
         handle: currentAccount?.handle,
@@ -404,7 +443,7 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
   }, [currentAccount])
 
   const onPressHelp = useCallback(() => {
-    Linking.openURL(HELP_DESK_URL)
+    void Linking.openURL(HELP_DESK_URL)
   }, [])
 
   // rendering
@@ -429,12 +468,23 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
             <DrawerProfileCard
               account={currentAccount}
               onPressProfile={onPressDrawerHeaderProfile}
+              onPressShare={
+                IS_NATIVE
+                  ? () => {
+                      ax.metric('invite:dialog:open', {logContext: 'Drawer'})
+                      setDrawerOpen(false)
+                      inviteFriendsControl.open()
+                    }
+                  : undefined
+              }
             />
           ) : (
             <View style={[a.pr_xl]}>
               <NavSignupCard />
             </View>
           )}
+
+          <OTAChannelNotice style={[a.mt_lg]} />
 
           <Divider style={[a.mt_xl, a.mb_sm]} />
         </View>
@@ -448,6 +498,12 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
               isActive={isAtNotifications}
               onPress={onPressNotifications}
             />
+            {isAtmosphereExploreEnabled && (
+              <AtmosphereMenuItem
+                isActive={isAtAtmosphere}
+                onPress={onPressAtmosphere}
+              />
+            )}
             <FeedsMenuItem isActive={isAtFeeds} onPress={onPressMyFeeds} />
             <CompassMenuItem isActive={isAtCompass} onPress={onPressCompass} />
             <BaseMenuItem isActive={isAtData} onPress={onPressData} />
@@ -499,6 +555,7 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
         onPressFeedback={onPressFeedback}
         onPressHelp={onPressHelp}
       />
+      <InviteFriendsDialog control={inviteFriendsControl} />
     </View>
   )
 }
@@ -512,7 +569,7 @@ let DrawerFooter = ({
   onPressFeedback: () => void
   onPressHelp: () => void
 }): React.ReactNode => {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const insets = useSafeAreaInsets()
   return (
     <View
@@ -530,7 +587,7 @@ let DrawerFooter = ({
         },
       ]}>
       <Button
-        label={_(msg`Send feedback`)}
+        label={l`Send feedback`}
         size="small"
         variant="solid"
         color="secondary"
@@ -541,7 +598,7 @@ let DrawerFooter = ({
         </ButtonText>
       </Button>
       <Button
-        label={_(msg`Get help`)}
+        label={l`Get help`}
         size="small"
         variant="outline"
         color="secondary"
@@ -558,12 +615,16 @@ let DrawerFooter = ({
 }
 DrawerFooter = memo(DrawerFooter)
 
-interface MenuItemProps {
+interface MenuItemProps extends Omit<
+  ComponentProps<typeof Button>,
+  'children'
+> {
   icon: ReactElement
   label: string
   accessibilityHint?: string
   count?: string
   bold?: boolean
+  beta?: boolean
   onPress: () => void
 }
 
@@ -574,7 +635,7 @@ let SearchMenuItem = ({
   isActive: boolean
   onPress: () => void
 }): React.ReactNode => {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const t = useTheme()
   return (
     <MenuItem
@@ -585,13 +646,33 @@ let SearchMenuItem = ({
           <MagnifyingGlass style={[t.atoms.text]} width={iconWidth} />
         )
       }
-      label={_(msg`Explore`)}
+      label={l`Explore`}
       bold={isActive}
       onPress={onPress}
     />
   )
 }
 SearchMenuItem = memo(SearchMenuItem)
+
+function AtmosphereMenuItem({
+  isActive,
+  onPress,
+}: {
+  isActive: boolean
+  onPress: () => void
+}) {
+  const {t: l} = useLingui()
+  const t = useTheme()
+  return (
+    <MenuItem
+      icon={<EarthIcon style={[t.atoms.text]} width={iconWidth} />}
+      label={l`Atmosphere`}
+      beta
+      bold={isActive}
+      onPress={onPress}
+    />
+  )
+}
 
 let HomeMenuItem = ({
   isActive,
@@ -600,7 +681,7 @@ let HomeMenuItem = ({
   isActive: boolean
   onPress: () => void
 }): React.ReactNode => {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const t = useTheme()
   return (
     <MenuItem
@@ -611,7 +692,7 @@ let HomeMenuItem = ({
           <Home style={[t.atoms.text]} width={iconWidth} />
         )
       }
-      label={_(msg`Home`)}
+      label={l`Home`}
       bold={isActive}
       onPress={onPress}
     />
@@ -626,7 +707,7 @@ let ChatMenuItem = ({
   isActive: boolean
   onPress: () => void
 }): React.ReactNode => {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const t = useTheme()
   const {numUnread} = useTotalChatUnread()
   return (
@@ -638,7 +719,7 @@ let ChatMenuItem = ({
           <Message style={[t.atoms.text]} width={iconWidth} />
         )
       }
-      label={_(msg`Chat`)}
+      label={l`Chat`}
       bold={isActive}
       onPress={onPress}
       count={numUnread}
@@ -654,7 +735,7 @@ let NotificationsMenuItem = ({
   isActive: boolean
   onPress: () => void
 }): React.ReactNode => {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const t = useTheme()
   const numUnreadNotifications = useUnreadNotifications()
   return (
@@ -666,16 +747,14 @@ let NotificationsMenuItem = ({
           <Bell style={[t.atoms.text]} width={iconWidth} />
         )
       }
-      label={_(msg`Notifications`)}
+      label={l`Notifications`}
       accessibilityHint={
         numUnreadNotifications === ''
           ? ''
-          : _(
-              plural(numUnreadNotifications ?? 0, {
-                one: '# unread item',
-                other: '# unread items',
-              }),
-            )
+          : plural(numUnreadNotifications ?? 0, {
+              one: '# unread item',
+              other: '# unread items',
+            })
       }
       count={numUnreadNotifications}
       bold={isActive}
@@ -692,7 +771,7 @@ let FeedsMenuItem = ({
   isActive: boolean
   onPress: () => void
 }): React.ReactNode => {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const t = useTheme()
   return (
     <MenuItem
@@ -703,7 +782,7 @@ let FeedsMenuItem = ({
           <Hashtag width={iconWidth} style={[t.atoms.text]} />
         )
       }
-      label={_(msg`Feeds`)}
+      label={l`Feeds`}
       bold={isActive}
       onPress={onPress}
     />
@@ -718,12 +797,12 @@ let CompassMenuItem = ({
   isActive: boolean
   onPress: () => void
 }): React.ReactNode => {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const t = useTheme()
   return (
     <MenuItem
       icon={<CompassIcon width={iconWidth} style={[t.atoms.text]} />}
-      label={_(msg`Political Compass`)}
+      label={l`Political Compass`}
       bold={isActive}
       onPress={onPress}
     />
@@ -732,13 +811,13 @@ let CompassMenuItem = ({
 CompassMenuItem = memo(CompassMenuItem)
 
 let ListsMenuItem = ({onPress}: {onPress: () => void}): React.ReactNode => {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const t = useTheme()
 
   return (
     <MenuItem
       icon={<List style={[t.atoms.text]} width={iconWidth} />}
-      label={_(msg`Lists`)}
+      label={l`Lists`}
       onPress={onPress}
     />
   )
@@ -752,7 +831,7 @@ let BookmarksMenuItem = ({
   isActive: boolean
   onPress: () => void
 }): React.ReactNode => {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const t = useTheme()
 
   return (
@@ -764,7 +843,7 @@ let BookmarksMenuItem = ({
           <Bookmark style={[t.atoms.text]} width={iconWidth} />
         )
       }
-      label={_(msg({message: 'Saved', context: 'link to bookmarks screen'}))}
+      label={l({message: 'Saved', context: 'link to bookmarks screen'})}
       onPress={onPress}
     />
   )
@@ -778,7 +857,7 @@ let ProfileMenuItem = ({
   isActive: boolean
   onPress: () => void
 }): React.ReactNode => {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const t = useTheme()
   return (
     <MenuItem
@@ -789,7 +868,7 @@ let ProfileMenuItem = ({
           <UserCircle style={[t.atoms.text]} width={iconWidth} />
         )
       }
-      label={_(msg`Profile`)}
+      label={l`Profile`}
       onPress={onPress}
     />
   )
@@ -797,12 +876,12 @@ let ProfileMenuItem = ({
 ProfileMenuItem = memo(ProfileMenuItem)
 
 let SettingsMenuItem = ({onPress}: {onPress: () => void}): React.ReactNode => {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const t = useTheme()
   return (
     <MenuItem
       icon={<Settings style={[t.atoms.text]} width={iconWidth} />}
-      label={_(msg`Settings`)}
+      label={l`Settings`}
       onPress={onPress}
     />
   )
@@ -842,7 +921,7 @@ let AgoraMenuItem = ({
   onPress: () => void
 }): React.ReactNode => {
   const t = useTheme()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   return (
     <MenuItem
       icon={
@@ -852,7 +931,7 @@ let AgoraMenuItem = ({
           <Library style={[t.atoms.text]} width={iconWidth} />
         )
       }
-      label={_(msg`Agora`)}
+      label={l`Agora`}
       bold={isActive}
       onPress={onPress}
     />
@@ -868,11 +947,11 @@ let DeliberationMenuItem = ({
   onPress: () => void
 }): React.ReactNode => {
   const t = useTheme()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   return (
     <MenuItem
       icon={<Shapes style={[t.atoms.text]} width={iconWidth} />}
-      label={_(msg`Community Tree`)}
+      label={l`Community Tree`}
       bold={isActive}
       onPress={onPress}
     />
@@ -888,7 +967,7 @@ let BaseMenuItem = ({
   onPress: () => void
 }): React.ReactNode => {
   const t = useTheme()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   return (
     <MenuItem
       icon={
@@ -898,7 +977,7 @@ let BaseMenuItem = ({
           <Book style={[t.atoms.text]} width={iconWidth} />
         )
       }
-      label={_(msg`Data`)}
+      label={l`Data`}
       bold={isActive}
       onPress={onPress}
     />
@@ -914,7 +993,7 @@ let MyBaseMenuItem = ({
   onPress: () => void
 }): React.ReactNode => {
   const t = useTheme()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   return (
     <MenuItem
       icon={
@@ -924,7 +1003,7 @@ let MyBaseMenuItem = ({
           <AtomIcon style={[t.atoms.text]} width={iconWidth} />
         )
       }
-      label={_(msg`My Base`)}
+      label={l`My Base`}
       bold={isActive}
       onPress={onPress}
     />
@@ -940,11 +1019,11 @@ let CivicTreeMenuItem = ({
   onPress: () => void
 }): React.ReactNode => {
   const t = useTheme()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   return (
     <MenuItem
       icon={<Tree style={[t.atoms.text]} width={iconWidth} />}
-      label={_(msg`Personal Civic Tree`)}
+      label={l`Personal Civic Tree`}
       bold={isActive}
       onPress={onPress}
     />
@@ -960,11 +1039,11 @@ let IdentityHubMenuItem = ({
   onPress: () => void
 }): React.ReactNode => {
   const t = useTheme()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   return (
     <MenuItem
       icon={<Key style={[t.atoms.text]} width={iconWidth} />}
-      label={_(msg`Identity & Wallet`)}
+      label={l`Identity & Wallet`}
       bold={isActive}
       onPress={onPress}
     />
@@ -972,14 +1051,26 @@ let IdentityHubMenuItem = ({
 }
 IdentityHubMenuItem = memo(IdentityHubMenuItem)
 
-function MenuItem({icon, label, count, bold, onPress}: MenuItemProps) {
+function MenuItem({
+  icon,
+  label,
+  count,
+  bold,
+  beta,
+  onPress,
+  accessibilityHint,
+  ...props
+}: MenuItemProps) {
   const t = useTheme()
+  const {t: l} = useLingui()
   return (
     <Button
+      {...props}
       testID={`menuItemButton-${label}`}
       onPress={onPress}
       accessibilityRole="tab"
-      label={label}>
+      accessibilityHint={accessibilityHint}
+      label={beta ? l`${label}, Beta` : label}>
       {({hovered, pressed}) => (
         <View
           style={[
@@ -1018,7 +1109,7 @@ function MenuItem({icon, label, count, bold, onPress}: MenuItemProps) {
                       a.font_semi_bold,
                       {
                         fontVariant: ['tabular-nums'],
-                        color: colors.white,
+                        color: t.palette.white,
                       },
                     ]}
                     numberOfLines={1}>
@@ -1028,16 +1119,19 @@ function MenuItem({icon, label, count, bold, onPress}: MenuItemProps) {
               </View>
             ) : undefined}
           </View>
-          <Text
-            style={[
-              a.flex_1,
-              a.text_2xl,
-              bold && a.font_bold,
-              web(a.leading_snug),
-            ]}
-            numberOfLines={1}>
-            {label}
-          </Text>
+          <View style={[a.flex_1, a.flex_row, a.align_center, a.gap_sm]}>
+            <Text
+              style={[
+                a.flex_shrink,
+                a.text_2xl,
+                bold && a.font_bold,
+                web(a.leading_snug),
+              ]}
+              numberOfLines={1}>
+              {label}
+            </Text>
+            {beta && <BetaTag />}
+          </View>
         </View>
       )}
     </Button>
@@ -1045,7 +1139,7 @@ function MenuItem({icon, label, count, bold, onPress}: MenuItemProps) {
 }
 
 function ExtraLinks() {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const t = useTheme()
   const logoVariant = useLogoVariant()
 
@@ -1053,14 +1147,14 @@ function ExtraLinks() {
     <View style={[a.flex_col, a.gap_md, a.flex_wrap]}>
       <InlineLinkText
         style={[a.text_md]}
-        label={_(msg`Terms of Service`)}
+        label={l`Terms of Service`}
         to="https://bsky.social/about/support/tos">
         <Trans>Terms of Service</Trans>
       </InlineLinkText>
       <InlineLinkText
         style={[a.text_md]}
         to="https://bsky.social/about/support/privacy-policy"
-        label={_(msg`Privacy Policy`)}>
+        label={l`Privacy Policy`}>
         <Trans>Privacy Policy</Trans>
       </InlineLinkText>
       {logoVariant === 'kawaii' && (

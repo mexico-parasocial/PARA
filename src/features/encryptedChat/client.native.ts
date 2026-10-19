@@ -36,6 +36,16 @@ import {
   VerificationState,
 } from '@unomed/react-native-matrix-sdk'
 
+import {
+  chatAccountRevision,
+  onChatAccountLogout,
+  waitForChatLogout,
+} from '#/lib/matrix/accountLifecycle'
+import {
+  logoutChatAccount,
+  saveChatDevice,
+  trackChatDevice,
+} from '#/lib/matrix/chatLogout'
 import {mapTimelineItems} from '#/features/encryptedChat/mapTimeline'
 import {buildOidcConfiguration} from '#/features/encryptedChat/oidc'
 import {createChatRecovery} from '#/features/encryptedChat/recovery'
@@ -86,6 +96,8 @@ export async function connectEncryptedChat(
 ): Promise<EncryptedChatClient> {
   if (!E2EE_ENGINE_ENABLED) throw new Error('CHAT_ENGINE_NOT_NATIVE')
   const scope = normalizeChatScope(options.scope, __DEV__)
+  await waitForChatLogout(scope.accountId)
+  const accountRevision = chatAccountRevision(scope.accountId)
   const scopeId = await Crypto.digestStringAsync(
     Crypto.CryptoDigestAlgorithm.SHA256,
     chatScopeKey(scope),
@@ -106,6 +118,18 @@ export async function connectEncryptedChat(
   const mediaHandles = new Map<string, MediaFileHandleLike>()
   let closed = false
   let sessionRevoked = false
+  let closeForLogout: (() => Promise<void>) | undefined
+  const removeLogoutListener = onChatAccountLogout(scope.accountId, () => {
+    sessionRevoked = true
+    return closeForLogout?.()
+  })
+  const requireCurrentAccount = () => {
+    if (
+      sessionRevoked ||
+      accountRevision !== chatAccountRevision(scope.accountId)
+    )
+      throw new Error('CHAT_ACCOUNT_CHANGED')
+  }
   let verificationController: SessionVerificationControllerLike | undefined
   let verificationTimer: ReturnType<typeof setTimeout> | undefined
   let roomGeneration = 0
@@ -126,6 +150,13 @@ export async function connectEncryptedChat(
       throw new Error('CHAT_LOGIN_REQUIRED')
     if (saved.session && options.authorize)
       throw new Error('CHAT_USE_SAVED_DEVICE')
+
+    await trackChatDevice(
+      scope.accountId,
+      {secretName, storeId: saved.storeId},
+      accountRevision,
+    )
+    requireCurrentAccount()
 
     const dataUri = `${FileSystem.documentDirectory}matrix-lab/${saved.storeId}`
     const cacheUri = `${FileSystem.cacheDirectory}matrix-lab/${saved.storeId}`
@@ -149,17 +180,21 @@ export async function connectEncryptedChat(
           read: () => SecureStore.getItem(secretName),
           write: value =>
             SecureStore.setItem(secretName, value, keychainOptions),
-          revoked: () => sessionRevoked,
+          revoked: () =>
+            sessionRevoked ||
+            accountRevision !== chatAccountRevision(scope.accountId),
         }),
       )
       .build()
     client = matrix
+    requireCurrentAccount()
 
     /** Save the crypto-store key before a login can create a device on the server. */
-    await SecureStore.setItemAsync(
+    await saveChatDevice(
+      scope.accountId,
       secretName,
       JSON.stringify(saved),
-      keychainOptions,
+      accountRevision,
     )
     if (saved.session) {
       await matrix.restoreSession(saved.session)
@@ -193,16 +228,19 @@ export async function connectEncryptedChat(
       }
     }
     saved.session = matrix.session()
+    requireCurrentAccount()
     assertSessionScope(scope, saved.session)
-    await SecureStore.setItemAsync(
+    await saveChatDevice(
+      scope.accountId,
       secretName,
       JSON.stringify(saved),
-      keychainOptions,
+      accountRevision,
     )
     sync = await matrix.syncService().finish()
     await sync.start()
 
     const requireOpen = () => {
+      requireCurrentAccount()
       if (closed) throw new Error('CHAT_CLOSED')
     }
     const requireEncryptedTimeline = () => {
@@ -346,12 +384,13 @@ export async function connectEncryptedChat(
       },
       loadPending: () => SecureStore.getItemAsync(pendingKeyName),
       savePending: key =>
-        SecureStore.setItemAsync(pendingKeyName, key, keychainOptions),
+        saveChatDevice(scope.accountId, pendingKeyName, key, accountRevision),
       clearPending: () => SecureStore.deleteItemAsync(pendingKeyName),
     })
     const close = async () => {
       if (closed) return
       closed = true
+      removeLogoutListener()
       clearTimeout(verificationTimer)
       controller.setDelegate(undefined)
       await controller.cancelVerification().catch(() => {})
@@ -371,12 +410,22 @@ export async function connectEncryptedChat(
       mediaSources.clear()
       dispose(timeline)
       timeline = undefined
-      await sync?.stop()
-      await matrix.enableAllSendQueues(false)
-      dispose(sync)
-      dispose(matrix)
-      activeScopes.delete(scopeId)
+      try {
+        await sync?.stop()
+        await matrix.enableAllSendQueues(false)
+      } finally {
+        try {
+          dispose(sync)
+        } finally {
+          try {
+            dispose(matrix)
+          } finally {
+            activeScopes.delete(scopeId)
+          }
+        }
+      }
     }
+    closeForLogout = close
     return {
       session: sessionInfo,
       verification: {
@@ -739,15 +788,11 @@ export async function connectEncryptedChat(
       async logout() {
         requireOpen()
         await recovery.whenIdle()
-        await matrix.logout()
-        sessionRevoked = true
-        await close()
-        await SecureStore.deleteItemAsync(secretName)
-        await FileSystem.deleteAsync(dataUri, {idempotent: true})
-        await FileSystem.deleteAsync(cacheUri, {idempotent: true})
+        await logoutChatAccount(scope.accountId)
       },
     }
   } catch (error) {
+    removeLogoutListener()
     clearTimeout(verificationTimer)
     verificationController?.setDelegate(undefined)
     await verificationController?.cancelVerification().catch(() => {})

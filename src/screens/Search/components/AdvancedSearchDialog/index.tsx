@@ -18,9 +18,9 @@ import {
   ChevronBottom_Stroke2_Corner0_Rounded as ChevronDownIcon,
   ChevronTopBottom_Stroke2_Corner0_Rounded as ChevronUpDownIcon,
 } from '#/components/icons/Chevron'
-import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfoIcon} from '#/components/icons/CircleInfo'
+import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfoIcon} from '#/components/icons/Circle'
 import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/Plus'
-import {SettingsSliderVertical_Stroke2_Corner0_Rounded as SettingsSliderIcon} from '#/components/icons/SettingsSlider'
+import {SettingsSliderVertical_Stroke2_Corner0_Rounded as SettingsSliderIcon} from '#/components/icons/Settings'
 import * as Menu from '#/components/Menu'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
@@ -397,7 +397,7 @@ function DialogInner({
           </TextField.LabelText>
           <ClearableInput
             label={l`Search query`}
-            defaultValue={query}
+            value={query}
             placeholder={suggestions[suggestion].all}
             onChangeText={setQuery}
             onSubmitEditing={handlePressSearch}
@@ -411,7 +411,7 @@ function DialogInner({
             </TextField.LabelText>
             <ClearableInput
               label={l`None of these words`}
-              defaultValue={negatedWords}
+              value={negatedWords}
               placeholder={l({
                 message: 'cows pigs',
                 comment:
@@ -428,7 +428,7 @@ function DialogInner({
             </TextField.LabelText>
             <ClearableInput
               label={l`This exact phrase`}
-              defaultValue={exactPhrase}
+              value={exactPhrase}
               onChangeText={setExactPhrase}
               onSubmitEditing={handlePressSearch}
             />

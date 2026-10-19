@@ -45,7 +45,7 @@ import {InlineLinkText} from '#/components/Link'
 import {Loader} from '#/components/Loader'
 import {Text} from '#/components/Typography'
 import {useSimpleVerificationState} from '#/components/verification'
-import {com} from '#/lexicons'
+import {type com} from '#/lexicons'
 import {CopyButton} from './CopyButton'
 
 export function ChangeHandleDialog({
@@ -231,7 +231,7 @@ function ProvidedHandlePage({
               <TextField.Icon icon={AtIcon} />
               <Dialog.Input
                 editable={!isPending}
-                defaultValue={subdomain}
+                value={subdomain}
                 onChangeText={text => setSubdomain(text)}
                 label={_(msg`New handle`)}
                 placeholder={_(msg`e.g. alice`)}
@@ -387,7 +387,7 @@ function OwnHandlePage({goToServiceHandle}: {goToServiceHandle: () => void}) {
               label={_(msg`New handle`)}
               placeholder={_(msg`e.g. alice.com`)}
               editable={!isPending}
-              defaultValue={domain}
+              value={domain}
               onChangeText={text => {
                 setDomain(text)
                 resetVerification()

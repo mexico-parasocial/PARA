@@ -173,6 +173,7 @@ function mapCabildeoToPolicyItem(
     participantCount,
     voteCount: cabildeo.voteTotals.total,
     positionCount: cabildeo.positionCounts.total,
+    flairs: cabildeo.flairs,
   }
 }
 

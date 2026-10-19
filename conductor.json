@@ -1,6 +1,0 @@
-{
-  "scripts": {
-    "setup": "pnpminstall",
-    "run": "pnpmweb --port $CONDUCTOR_PORT"
-  }
-}

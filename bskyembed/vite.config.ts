@@ -1,10 +1,10 @@
 import fs from 'node:fs'
 import {resolve} from 'node:path'
 
-import preact from '@preact/preset-vite'
+import {preact} from '@preact/preset-vite'
 import legacy from '@vitejs/plugin-legacy'
 import type {Plugin, UserConfig} from 'vite'
-import paths from 'vite-tsconfig-paths'
+import {analyzer} from 'vite-bundle-analyzer'
 
 /**
  * World's hackiest router, for dev only. Serves `/post.html` to requests that start with `/embed/`
@@ -50,8 +50,8 @@ const config: UserConfig = {
     assetsDir: 'static',
     rollupOptions: {
       input: {
-        index: resolve(__dirname, 'index.html'),
-        post: resolve(__dirname, 'post.html'),
+        index: resolve(import.meta.dirname, 'index.html'),
+        post: resolve(import.meta.dirname, 'post.html'),
       },
     },
   },

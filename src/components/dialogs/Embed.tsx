@@ -18,7 +18,7 @@ import {
   ChevronBottom_Stroke2_Corner0_Rounded as ChevronBottomIcon,
   ChevronRight_Stroke2_Corner0_Rounded as ChevronRightIcon,
 } from '#/components/icons/Chevron'
-import {CodeBrackets_Stroke2_Corner0_Rounded as CodeBracketsIcon} from '#/components/icons/CodeBrackets'
+import {CodeBrackets_Stroke2_Corner0_Rounded as CodeBracketsIcon} from '#/components/icons/Code'
 import {Text} from '#/components/Typography'
 import {app} from '#/lexicons'
 

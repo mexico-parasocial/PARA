@@ -15,7 +15,7 @@ import {
   TREE_INDENT,
 } from '#/screens/PostThread/const'
 import {atoms as a, useTheme} from '#/alf'
-import {CirclePlus_Stroke2_Corner0_Rounded as CirclePlus} from '#/components/icons/CirclePlus'
+import {CirclePlus_Stroke2_Corner0_Rounded as CirclePlus} from '#/components/icons/Circle'
 import {Link} from '#/components/Link'
 import {Text} from '#/components/Typography'
 

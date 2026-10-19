@@ -5,7 +5,7 @@ import {atoms as a} from '#/alf'
 import {Button, ButtonIcon} from '#/components/Button'
 import {DateField} from '#/components/forms/DateField'
 import {toSimpleDateString} from '#/components/forms/DateField/utils'
-import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/Times'
+import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/TimesLarge'
 
 /** The date picker requires a valid date, so default to today. */
 export const DEFAULT_DATE = toSimpleDateString(new Date())

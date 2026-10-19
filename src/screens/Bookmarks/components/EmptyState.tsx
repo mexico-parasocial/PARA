@@ -5,7 +5,7 @@ import {Trans} from '@lingui/react/macro'
 
 import {atoms as a, useTheme} from '#/alf'
 import {ButtonText} from '#/components/Button'
-import {BookmarkDeleteLarge} from '#/components/icons/Bookmark'
+import {BookmarkDeleteLarge_Stroke2_Corner0_Rounded as BookmarkDeleteLarge} from '#/components/icons/Bookmark'
 import {Link} from '#/components/Link'
 import {Text} from '#/components/Typography'
 

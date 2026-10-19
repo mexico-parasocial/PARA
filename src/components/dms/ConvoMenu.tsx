@@ -28,7 +28,7 @@ import {
   type ConvoWithDetails,
   getConvoReportSubject,
 } from '#/components/dms/util'
-import {ArrowBoxLeft_Stroke2_Corner0_Rounded as ArrowBoxLeftIcon} from '#/components/icons/ArrowBoxLeft'
+import {ArrowBoxLeft_Stroke2_Corner0_Rounded as ArrowBoxLeftIcon} from '#/components/icons/Arrow'
 import {Bubble_Stroke2_Corner2_Rounded as BubbleIcon} from '#/components/icons/Bubble'
 import {DotGrid3x1_Stroke2_Corner0_Rounded as DotsHorizontalIcon} from '#/components/icons/DotGrid'
 import {Flag_Stroke2_Corner0_Rounded as Flag} from '#/components/icons/Flag'
@@ -38,7 +38,7 @@ import {
   PersonCheck_Stroke2_Corner0_Rounded as PersonCheck,
   PersonX_Stroke2_Corner0_Rounded as PersonX,
 } from '#/components/icons/Person'
-import {SpeakerVolumeFull_Stroke2_Corner0_Rounded as Unmute} from '#/components/icons/Speaker'
+import {SpeakerVolumeFull_Stroke2_Corner0_Rounded as Unmute} from '#/components/icons/SpeakerVolumeFull'
 import * as Menu from '#/components/Menu'
 import {ReportDialog} from '#/components/moderation/ReportDialog'
 import * as Prompt from '#/components/Prompt'

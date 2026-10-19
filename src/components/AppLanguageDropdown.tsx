@@ -10,7 +10,7 @@ import {resetPostsFeedQueries} from '#/state/queries/post-feed'
 import {atoms as a, platform, useTheme, web} from '#/alf'
 import * as Select from '#/components/Select'
 import {Button, ButtonIcon} from './Button'
-import {Earth_Stroke2_Corner2_Rounded as EarthIcon} from './icons/Globe'
+import {Earth_Stroke2_Corner2_Rounded as EarthIcon} from '#/components/icons/Earth'
 
 export function AppLanguageDropdown() {
   const t = useTheme()

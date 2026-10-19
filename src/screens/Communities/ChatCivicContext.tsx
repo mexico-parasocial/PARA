@@ -11,10 +11,8 @@ import {
 } from '#/components/chat/ChatEncryptionNotice'
 import {ChatIdentityPill} from '#/components/chat/ChatIdentityPill'
 import {ChevronBottom_Stroke2_Corner0_Rounded as ChevronDownIcon} from '#/components/icons/Chevron'
-import {
-  Lock_Stroke2_Corner0_Rounded as LockIcon,
-  Unlock_Stroke2_Corner2_Rounded as UnlockIcon,
-} from '#/components/icons/Lock'
+import {Lock_Stroke2_Corner0_Rounded as LockIcon} from '#/components/icons/Lock'
+import {Unlock_Stroke2_Corner2_Rounded as UnlockIcon} from '#/components/icons/Unlock'
 import {Text} from '#/components/Typography'
 
 export function ChatCivicContext({

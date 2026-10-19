@@ -1,7 +1,6 @@
 import {useCallback, useEffect, useState} from 'react'
 import {MMKV} from 'react-native-mmkv'
 
-import {logger} from '#/logger'
 import {type Account, type Device} from '#/storage/schema'
 
 export * from '#/storage/schema'
@@ -33,6 +32,16 @@ export class Storage<Scopes extends unknown[], Schema> {
   }
 
   /**
+   * Read the serialized `{data: value}` envelope without parsing it. Callers can
+   * compare raw values before repeating expensive parsing or validation.
+   */
+  getRaw<Key extends keyof Schema>(
+    scopes: [...Scopes, Key],
+  ): string | undefined {
+    return this.store.getString(scopes.join(this.sep))
+  }
+
+  /**
    * Get a value from storage based on scopes and/or keys
    *
    *   `get([key])`
@@ -41,20 +50,10 @@ export class Storage<Scopes extends unknown[], Schema> {
   get<Key extends keyof Schema>(
     scopes: [...Scopes, Key],
   ): Schema[Key] | undefined {
-    const res = this.store.getString(scopes.join(this.sep))
+    const res = this.getRaw(scopes)
     if (!res) return undefined
-    try {
-      // parsed from storage structure `{ data: <value> }`
-      return JSON.parse(res).data
-    } catch (e) {
-      // a corrupt value should degrade to "not set", never crash the caller
-      // (this runs inside `useStorage`'s state initializer, i.e. during render)
-      logger.error(
-        `storage: failed to parse value for key "${scopes.join(this.sep)}"`,
-        {message: e},
-      )
-      return undefined
-    }
+    // parsed from storage structure `{ data: <value> }`
+    return JSON.parse(res).data
   }
 
   /**
@@ -101,8 +100,10 @@ export class Storage<Scopes extends unknown[], Schema> {
   }
 }
 
-type StorageSchema<T> = T extends Storage<any, infer U> ? U : never
-type StorageScopes<T> = T extends Storage<infer S, any> ? S : never
+type StorageSchema<T extends Storage<any, any>> =
+  T extends Storage<any, infer U> ? U : never
+type StorageScopes<T extends Storage<any, any>> =
+  T extends Storage<infer S, any> ? S : never
 
 /**
  * Hook to use a storage instance. Acts like a useState hook, but persists the

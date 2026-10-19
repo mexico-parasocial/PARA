@@ -5,6 +5,10 @@ import {
   validateAuthMetadataAndKeys,
 } from 'matrix-js-sdk/lib/oidc/index.js'
 
+import {
+  chatAccountRevision,
+  waitForChatLogout,
+} from '#/lib/matrix/accountLifecycle'
 import * as Storage from '#/lib/storage'
 import {logger} from '#/logger'
 
@@ -141,6 +145,8 @@ export async function beginMatrixWebAuthorization({
   accountDid: string
   returnTo?: string
 }): Promise<never> {
+  await waitForChatLogout(accountDid)
+  const revision = chatAccountRevision(accountDid)
   const config = await authMetadata(homeServer)
   const clientId = await clientIdFor(config)
   const url = await generateOidcAuthorizationUrl({
@@ -150,6 +156,8 @@ export async function beginMatrixWebAuthorization({
     homeserverUrl: homeServer,
     nonce: crypto.randomUUID(),
   })
+  if (revision !== chatAccountRevision(accountDid))
+    throw new Error('MATRIX_AUTH_ACCOUNT_MISMATCH')
   sessionStorage.setItem(
     PENDING_KEY,
     JSON.stringify({
@@ -188,6 +196,13 @@ export async function completeMatrixWebAuthorization(): Promise<
     state: string
     returnTo: string
   }
+  const accountRevision = chatAccountRevision(pending.accountDid)
+  await waitForChatLogout(pending.accountDid)
+  const requireCurrentAccount = () => {
+    if (chatAccountRevision(pending.accountDid) !== accountRevision)
+      throw new Error('MATRIX_AUTH_ACCOUNT_MISMATCH')
+  }
+  requireCurrentAccount()
   if (!pending.accountDid || (state && pending.state !== state))
     throw new Error('MATRIX_AUTH_ACCOUNT_MISMATCH')
   const returnTo =
@@ -208,6 +223,7 @@ export async function completeMatrixWebAuthorization(): Promise<
   }
 
   const grant = await completeAuthorizationCodeGrant(code, state)
+  requireCurrentAccount()
   const deviceId = deviceIdFromScope(grant.tokenResponse.scope)
   if (!deviceId) throw new Error('MATRIX_AUTH_NO_DEVICE_ID')
 
@@ -241,6 +257,7 @@ export async function completeMatrixWebAuthorization(): Promise<
     clientId: grant.oidcClientSettings.clientId,
     tokenEndpoint: config.token_endpoint,
   }
+  requireCurrentAccount()
   save(session)
   return returnTo
 }
@@ -272,6 +289,17 @@ export async function loadMatrixWebSession(
 
 export async function clearMatrixWebSession(accountDid: string): Promise<void> {
   sessionStorage.removeItem(sessionKey(accountDid))
+}
+
+export function cancelMatrixWebAuthorization(accountDid: string): void {
+  const raw = sessionStorage.getItem(PENDING_KEY)
+  if (!raw) return
+  try {
+    if (JSON.parse(raw).accountDid === accountDid)
+      sessionStorage.removeItem(PENDING_KEY)
+  } catch {
+    sessionStorage.removeItem(PENDING_KEY)
+  }
 }
 
 /**

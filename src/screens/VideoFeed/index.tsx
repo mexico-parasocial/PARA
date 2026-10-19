@@ -7,9 +7,9 @@ import {
   View,
 } from 'react-native'
 import {
-  Gesture,
   GestureDetector,
   type NativeGesture,
+  useNativeGesture,
 } from 'react-native-gesture-handler'
 import Animated, {
   useAnimatedStyle,
@@ -88,7 +88,7 @@ import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import {Divider} from '#/components/Divider'
 import {ArrowLeft_Stroke2_Corner0_Rounded as ArrowLeftIcon} from '#/components/icons/Arrow'
 import {Check_Stroke2_Corner0_Rounded as CheckIcon} from '#/components/icons/Check'
-import {EyeSlash_Stroke2_Corner0_Rounded as Eye} from '#/components/icons/EyeSlash'
+import {EyeSlash_Stroke2_Corner0_Rounded as Eye} from '#/components/icons/Eye'
 import {Leaf_Stroke2_Corner0_Rounded as LeafIcon} from '#/components/icons/Leaf'
 import {KeepAwake} from '#/components/KeepAwake'
 import * as Layout from '#/components/Layout'
@@ -258,7 +258,7 @@ function Feed() {
 
   const [currentIndex, setCurrentIndex] = useState(0)
 
-  const scrollGesture = useMemo(() => Gesture.Native(), [])
+  const scrollGesture = useNativeGesture()
 
   const renderItem: ListRenderItem<VideoItem> = useCallback(
     ({item, index}) => {
@@ -1171,7 +1171,7 @@ function PlayPauseTapArea({
 }) {
   const {t: l} = useLingui()
   const doubleTapRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const playHaptic = useHaptics()
+  const haptics = useHaptics()
   const [queueLike] = usePostLikeMutationQueue(
     post,
     undefined,
@@ -1209,7 +1209,7 @@ function PlayPauseTapArea({
     if (doubleTapRef.current) {
       clearTimeout(doubleTapRef.current)
       doubleTapRef.current = null
-      playHaptic('Light')
+      haptics.tap()
       void queueLike()
       sendInteraction({
         item: post.uri,

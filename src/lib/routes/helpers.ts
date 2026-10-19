@@ -98,3 +98,8 @@ export function buildStateObject(
     ],
   }
 }
+
+/** Keep Home's feeds and scroll position when a native link opens above it. */
+export const NATIVE_LINK_ACTION_CONFIG = {
+  screens: {HomeTab: {initialRouteName: 'Home'}},
+}

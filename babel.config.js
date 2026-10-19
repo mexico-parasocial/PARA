@@ -3,7 +3,7 @@
  * which breaks the structuredClone Metro performs on the AST when
  * EXPO_UNSTABLE_TREE_SHAKING is enabled. Strip them after all other
  * transforms have run.
- *
+ * 
  * @returns {import('@babel/core').PluginObj}
  */
 const stripSymbolLocs = () => ({
@@ -66,6 +66,11 @@ const stripSentryDebug = ({types}) => ({
   },
 })
 
+const workletsPluginOptions = {
+  bundleMode: true,
+  strictGlobal: true, // optional, but recommended
+}
+
 /**
  * @param {import("@babel/core").ConfigAPI} api
  * @returns {import("@babel/core").InputOptions}
@@ -115,7 +120,7 @@ module.exports = function (api) {
         : []),
 
       stripSymbolLocs,
-      'react-native-worklets/plugin', // NOTE: this plugin MUST be last
+      ['react-native-worklets/plugin', workletsPluginOptions], // NOTE: this plugin MUST be last
     ],
   }
 }

@@ -27,8 +27,11 @@ import {atoms as a, useTheme} from '#/alf'
 import {ActiveFiltersStackButton} from '#/components/CompassFilterControls'
 import {EmptyStateNoData} from '#/components/EmptyStates'
 import {SearchInput} from '#/components/forms/SearchInput'
-import {ArrowShareRight_Stroke2_Corner2_Rounded as ShareIcon} from '#/components/icons/ArrowShareRight'
-import {Bookmark, BookmarkFilled} from '#/components/icons/Bookmark'
+import {ArrowShareRight_Stroke2_Corner2_Rounded as ShareIcon} from '#/components/icons/Arrow'
+import {
+  Bookmark_Stroke2_Corner0_Rounded as Bookmark,
+  Bookmark_Filled_Corner0_Rounded as BookmarkFilled,
+} from '#/components/icons/Bookmark'
 import {CommunityIcon_Stroke as CommunityIcon} from '#/components/icons/Community'
 import {Compass_Stroke2_Corner0_Rounded as CompassIcon} from '#/components/icons/Compass'
 import {Flame_Stroke2_Corner1_Rounded as FlameIcon} from '#/components/icons/Flame'

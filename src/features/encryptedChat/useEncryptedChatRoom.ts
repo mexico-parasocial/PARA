@@ -279,14 +279,18 @@ export function useEncryptedChatRoom(
   )
   const logout = useCallback(async () => {
     const client = withClient()
-    await client.logout()
-    if (clientRef.current !== client) return
-    clientRef.current = undefined
-    setMessages([])
-    setTypingUserIds([])
-    setSession(undefined)
-    setAuthorizationScope(undefined)
-    setStatus('authorizationRequired')
+    try {
+      await client.logout()
+    } finally {
+      if (clientRef.current === client) {
+        clientRef.current = undefined
+        setMessages([])
+        setTypingUserIds([])
+        setSession(undefined)
+        setAuthorizationScope(undefined)
+        setStatus('authorizationRequired')
+      }
+    }
   }, [withClient])
 
   const authorize = useCallback(() => {

@@ -8,7 +8,7 @@ import {JOIN_REQUESTS_THRESHOLD} from '#/state/queries/messages/list-join-reques
 import {atoms as a, tokens, useTheme} from '#/alf'
 import {GlassView} from '#/components/GlassView'
 import {Envelope_Stroke2_Corner2_Rounded as EnvelopeIcon} from '#/components/icons/Envelope'
-import {TimesLarge_Stroke2_Corner0_Rounded as CloseIcon} from '#/components/icons/Times'
+import {TimesLarge_Stroke2_Corner0_Rounded as CloseIcon} from '#/components/icons/TimesLarge'
 import {Text} from '#/components/Typography'
 import {IS_LIQUID_GLASS} from '#/env'
 

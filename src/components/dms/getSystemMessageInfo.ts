@@ -2,17 +2,15 @@ import {type MessageDescriptor} from '@lingui/core'
 import {msg} from '@lingui/core/macro'
 
 import {createSanitizedDisplayName} from '#/lib/moderation/create-sanitized-display-name'
-import {ArrowBoxLeft_Stroke2_Corner0_Rounded as LeaveIcon} from '#/components/icons/ArrowBoxLeft'
-import {ArrowBoxRight_Stroke2_Corner3_Rounded as JoinIcon} from '#/components/icons/ArrowBoxRight'
+import {ArrowBoxLeft_Stroke2_Corner0_Rounded as LeaveIcon} from '#/components/icons/Arrow'
+import {ArrowBoxRight_Stroke2_Corner3_Rounded as JoinIcon} from '#/components/icons/Arrow'
 import {
   ChainLink_Stroke2_Corner0_Rounded as ChainLinkIcon,
   ChainLinkBroken_Stroke2_Corner0_Rounded as ChainLinkBrokenIcon,
 } from '#/components/icons/ChainLink'
 import {type Props as SVGIconProps} from '#/components/icons/common'
-import {
-  Lock_Stroke2_Corner0_Rounded as LockIcon,
-  Unlock_Stroke2_Corner2_Rounded as UnlockIcon,
-} from '#/components/icons/Lock'
+import {Lock_Stroke2_Corner0_Rounded as LockIcon} from '#/components/icons/Lock'
+import {Unlock_Stroke2_Corner2_Rounded as UnlockIcon} from '#/components/icons/Unlock'
 import {PencilLine_Stroke2_Corner0_Rounded as PencilIcon} from '#/components/icons/Pencil'
 import {chat} from '#/lexicons'
 import * as bsky from '#/types/bsky'

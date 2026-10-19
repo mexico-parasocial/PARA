@@ -44,9 +44,9 @@ import {getReactionInfo} from '#/components/dms/getReactionInfo'
 import {getSystemMessageInfo} from '#/components/dms/getSystemMessageInfo'
 import {LeaveConvoPrompt} from '#/components/dms/LeaveConvoPrompt'
 import {type ConvoWithDetails, parseConvoView} from '#/components/dms/util'
-import {Bell2Off_Filled_Corner0_Rounded as BellStrokeIcon} from '#/components/icons/Bell2'
+import {Bell2Off_Filled_Corner0_Rounded as BellStrokeIcon} from '#/components/icons/Bell'
 import {type Props as SVGIconProps} from '#/components/icons/common'
-import {Envelope_Open_Stroke2_Corner0_Rounded as EnvelopeOpenIcon} from '#/components/icons/EnveopeOpen'
+import {EnvelopeOpen_Stroke2_Corner0_Rounded as EnvelopeOpenIcon} from '#/components/icons/Envelope'
 import {Lock_Stroke2_Corner2_Rounded as LockIcon} from '#/components/icons/Lock'
 import {Trash_Stroke2_Corner0_Rounded as TrashIcon} from '#/components/icons/Trash'
 import {Link} from '#/components/Link'
@@ -313,7 +313,7 @@ function BaseChatItem({
   const {gtMobile} = useBreakpoints()
   const {isWithinLeftPanel} = useIsWithinSplitView()
 
-  const playHaptic = useHaptics()
+  const haptics = useHaptics()
   const queryClient = useQueryClient()
   const hasUnread =
     !selected &&
@@ -468,9 +468,9 @@ function BaseChatItem({
   )
 
   const onLongPress = useCallback(() => {
-    playHaptic()
+    haptics.longPress()
     menuControl.open()
-  }, [playHaptic, menuControl])
+  }, [haptics, menuControl])
 
   const markReadAction = {
     threshold: 120,

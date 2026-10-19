@@ -63,8 +63,8 @@ import {
   usePrefetchPostInteractionSettings,
 } from '#/components/dialogs/PostInteractionSettingsDialog'
 import {Atom_Stroke2_Corner0_Rounded as AtomIcon} from '#/components/icons/Atom'
-import {BellPlus_Stroke2_Corner0_Rounded as BellPlus} from '#/components/icons/BellPlus'
-import {BellRinging_Stroke2_Corner0_Rounded as BellRinging} from '#/components/icons/BellRinging'
+import {BellPlus_Stroke2_Corner0_Rounded as BellPlus} from '#/components/icons/Bell'
+import {BellRinging_Stroke2_Corner0_Rounded as BellRinging} from '#/components/icons/Bell'
 import {BubbleQuestion_Stroke2_Corner0_Rounded as Translate} from '#/components/icons/Bubble'
 import {Clipboard_Stroke2_Corner2_Rounded as ClipboardIcon} from '#/components/icons/Clipboard'
 import {
@@ -72,7 +72,7 @@ import {
   EmojiSmile_Stroke2_Corner0_Rounded as EmojiSmile,
 } from '#/components/icons/Emoji'
 import {Eye_Stroke2_Corner0_Rounded as Eye} from '#/components/icons/Eye'
-import {EyeSlash_Stroke2_Corner0_Rounded as EyeSlash} from '#/components/icons/EyeSlash'
+import {EyeSlash_Stroke2_Corner0_Rounded as EyeSlash} from '#/components/icons/Eye'
 import {Filter_Stroke2_Corner0_Rounded as Filter} from '#/components/icons/Filter'
 import {
   Mute_Stroke2_Corner0_Rounded as Mute,
@@ -80,11 +80,11 @@ import {
 } from '#/components/icons/Mute'
 import {PersonX_Stroke2_Corner0_Rounded as PersonX} from '#/components/icons/Person'
 import {Pin_Stroke2_Corner0_Rounded as PinIcon} from '#/components/icons/Pin'
-import {SettingsGear2_Stroke2_Corner0_Rounded as Gear} from '#/components/icons/SettingsGear2'
+import {SettingsGear2_Stroke2_Corner0_Rounded as Gear} from '#/components/icons/Settings'
 import {
   SpeakerVolumeFull_Stroke2_Corner0_Rounded as Unmute,
   SpeakerVolumeFull_Stroke2_Corner0_Rounded as UnmuteIcon,
-} from '#/components/icons/Speaker'
+} from '#/components/icons/SpeakerVolumeFull'
 import {Trash_Stroke2_Corner0_Rounded as Trash} from '#/components/icons/Trash'
 import {Warning_Stroke2_Corner0_Rounded as Warning} from '#/components/icons/Warning'
 import {Loader} from '#/components/Loader'

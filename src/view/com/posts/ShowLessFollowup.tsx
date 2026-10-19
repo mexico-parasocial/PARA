@@ -2,7 +2,7 @@ import {View} from 'react-native'
 import {Trans} from '@lingui/react/macro'
 
 import {atoms as a, useTheme} from '#/alf'
-import {CircleCheck_Stroke2_Corner0_Rounded} from '#/components/icons/CircleCheck'
+import {CircleCheck_Stroke2_Corner0_Rounded} from '#/components/icons/Circle'
 import {Text} from '#/components/Typography'
 
 export function ShowLessFollowup() {

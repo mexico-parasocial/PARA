@@ -8,7 +8,7 @@ import {atoms as a, useTheme} from '#/alf'
 import {Button} from '#/components/Button'
 import {useMessageReplies} from '#/components/dms/MessageReplies'
 import {useReplyPreviewText} from '#/components/dms/replyPreview'
-import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/Times'
+import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/TimesLarge'
 import {Text} from '#/components/Typography'
 import {chat} from '#/lexicons'
 

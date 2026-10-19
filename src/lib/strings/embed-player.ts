@@ -129,6 +129,16 @@ const freemixRkeyRegex = /^[2-7a-z]{13}$/
 /** staging.freemix.fm is FreeMix's live test environment */
 const freemixHosts = ['app.freemix.fm', 'staging.freemix.fm']
 
+/**
+ * Converts a YouTube `t` param such as `90`, `90s` or `1h2m3s` to seconds.
+ */
+function parseYouTubeStart(t: string | null) {
+  const match = t?.match(/^(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?$/)
+  if (!match) return 0
+  const [, h = 0, m = 0, s = 0] = match
+  return Number(h) * 3600 + Number(m) * 60 + Number(s)
+}
+
 export function parseEmbedPlayerFromUrl(
   url: string,
 ): EmbedPlayerParams | undefined {
@@ -142,8 +152,7 @@ export function parseEmbedPlayerFromUrl(
   // youtube
   if (urlp.hostname === 'youtu.be') {
     const videoId = urlp.pathname.split('/')[1]
-    const t = urlp.searchParams.get('t') ?? '0'
-    const seek = encodeURIComponent(t.replace(/s$/, ''))
+    const seek = parseYouTubeStart(urlp.searchParams.get('t'))
 
     if (videoId) {
       return {
@@ -167,8 +176,7 @@ export function parseEmbedPlayerFromUrl(
       isShorts || isLive
         ? shortOrLiveVideoId
         : (urlp.searchParams.get('v') as string)
-    const t = urlp.searchParams.get('t') ?? '0'
-    const seek = encodeURIComponent(t.replace(/s$/, ''))
+    const seek = parseYouTubeStart(urlp.searchParams.get('t'))
 
     if (videoId) {
       return {
@@ -558,17 +566,17 @@ export function parseEmbedPlayerFromUrl(
   if (freemixHosts.includes(urlp.hostname)) {
     const segments = urlp.pathname.split('/').filter(Boolean)
     /*
-     * /track/{rkey} is the canonical track URL. Other paths, such as
-     * /track/{rkey}/tree (remix-tree view), fall through to a link card.
+     * /track/{actor}/{rkey} is the canonical track URL. Other paths, such as
+     * /track/{actor}/{rkey}/tree (remix-tree view), fall through to a link card.
      */
-    if (segments[0] === 'track' && segments.length === 2) {
-      const rkey = segments[1]
+    if (segments[0] === 'track' && segments.length === 3) {
+      const [, actor, rkey] = segments
       if (freemixRkeyRegex.test(rkey)) {
         return {
           type: 'freemix_track',
           source: 'freemix',
           // the player lives on the same host as the track URL
-          playerUri: `https://${urlp.hostname}/embed/${rkey}`,
+          playerUri: `https://${urlp.hostname}/embed/${actor}/${rkey}`,
         }
       }
     }

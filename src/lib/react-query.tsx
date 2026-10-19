@@ -2,37 +2,32 @@ import {useEffect, useState} from 'react'
 import {AppState, type AppStateStatus} from 'react-native'
 import {createAsyncStoragePersister} from '@tanstack/query-async-storage-persister'
 import {
+  type DehydrateOptions,
   focusManager,
   onlineManager,
-  QueryCache,
   QueryClient,
 } from '@tanstack/react-query'
 import {
   type PersistQueryClientOptions,
   PersistQueryClientProvider,
-  type PersistQueryClientProviderProps,
 } from '@tanstack/react-query-persist-client'
 
-import {isUnsupportedMethodError} from '#/lib/api/unsupported-method'
 import {createPersistedQueryStorage} from '#/lib/persisted-query-storage'
-import {logger} from '#/logger'
-import {
-  emitSessionDropped,
-  listenNetworkConfirmed,
-  listenNetworkLost,
-  listenSessionDropped,
-} from '#/state/events'
-import {PERSISTED_QUERY_ROOT} from '#/state/queries'
+import {listenNetworkConfirmed, listenNetworkLost} from '#/state/events'
+import {isQueryPersisted} from '#/state/queries/util'
 import * as env from '#/env'
 import {IS_NATIVE, IS_WEB} from '#/env'
+import {
+  isFollowingSnapshotQuery,
+  loadFollowingSnapshot,
+  saveFollowingSnapshot,
+} from '#/features/followingV2/home/queries/followingSnapshot'
 
 declare global {
   interface Window {
-    __TANSTACK_QUERY_CLIENT__: import('@tanstack/query-core').QueryClient
+    __TANSTACK_QUERY_CLIENT__: QueryClient
   }
 }
-
-// any query keys in this array will be persisted to AsyncStorage
 
 async function checkIsOnline(): Promise<boolean> {
   try {
@@ -62,15 +57,6 @@ let isNetworkStateUnclear = false
 listenNetworkLost(() => {
   receivedNetworkLost = true
   onlineManager.setOnline(false)
-})
-
-/*
- * Re-arm auth reporting once the session layer has acted on the drop, so a
- * later dead session is reported again instead of being silenced for the
- * lifetime of the process.
- */
-listenSessionDropped(() => {
-  resetQueryAuthErrorReporting()
 })
 
 listenNetworkConfirmed(() => {
@@ -133,89 +119,8 @@ focusManager.setEventListener(onFocus => {
   }
 })
 
-/*
- * A dead session fails every in-flight query at once, and each rejection
- * surfaces separately. In practice that was 758 identical
- * "XrpcResponseError: Token has expired" lines in one run - enough to bury any
- * real error in the log.
- *
- * Auth failures are already handled where they belong: the session layer
- * refreshes, and emits `session-dropped` when it cannot. There is nothing a
- * query can add, so report the first one per session and stay quiet after that.
- * Any other error still logs every time.
- */
-const AUTH_ERROR_NAMES = new Set([
-  'ExpiredToken',
-  'InvalidToken',
-  'AuthMissing',
-  'AuthenticationRequired',
-  'XrpcAuthenticationError',
-])
-
-function isAuthError(error: unknown): boolean {
-  if (!error || typeof error !== 'object') return false
-  const {name, message, status} = error as {
-    name?: unknown
-    message?: unknown
-    status?: unknown
-  }
-  if (status === 401) return true
-  if (typeof name === 'string' && AUTH_ERROR_NAMES.has(name)) return true
-  return (
-    typeof message === 'string' &&
-    /token has expired|invalid token|expiredtoken|could not resolve iss did|identity unknown/i.test(
-      message,
-    )
-  )
-}
-
-function isDeadIdentityError(error: unknown): boolean {
-  if (!error || typeof error !== 'object') return false
-  const {message} = error as {message?: unknown}
-  return (
-    typeof message === 'string' &&
-    /could not resolve iss did|identity unknown/i.test(message)
-  )
-}
-
-let reportedAuthFailure = false
-
-/** Called on `session-dropped` so the next dead session reports again. */
-export function resetQueryAuthErrorReporting() {
-  reportedAuthFailure = false
-}
-
 const createQueryClient = () =>
   new QueryClient({
-    queryCache: new QueryCache({
-      onError: (error, query) => {
-        if (isAuthError(error)) {
-          if (isDeadIdentityError(error)) {
-            emitSessionDropped()
-          }
-          if (reportedAuthFailure) return
-          reportedAuthFailure = true
-          logger.warn(
-            'query: failing on an expired session or unknown identity',
-            {
-              queryKey: String(query.queryKey[0]),
-            },
-          )
-          return
-        }
-        if (isUnsupportedMethodError(error)) {
-          logger.warn('query: method not supported by server', {
-            safeMessage: 'method not supported',
-            queryKey: String(query.queryKey[0]),
-          })
-          return
-        }
-        logger.error(error instanceof Error ? error : String(error), {
-          safeMessage: 'query failed',
-          queryKey: String(query.queryKey[0]),
-        })
-      },
-    }),
     defaultOptions: {
       queries: {
         // NOTE
@@ -236,14 +141,15 @@ const createQueryClient = () =>
     },
   })
 
-const dehydrateOptions: PersistQueryClientProviderProps['persistOptions']['dehydrateOptions'] =
-  {
-    shouldDehydrateMutation: (_: unknown) => false,
-    shouldDehydrateQuery: query => {
-      const root = String(query.queryKey[0])
-      return root === PERSISTED_QUERY_ROOT && query.state.status === 'success'
-    },
-  }
+const dehydrateOptions: DehydrateOptions = {
+  shouldDehydrateMutation: (_: any) => false,
+  shouldDehydrateQuery: query => {
+    return (
+      (isQueryPersisted(query.queryKey) || isFollowingSnapshotQuery(query)) &&
+      query.state.status === 'success'
+    )
+  },
+}
 
 export function QueryProvider({
   children,
@@ -284,17 +190,21 @@ function QueryProviderInner({
     const asyncPersister = createAsyncStoragePersister({
       storage,
       key: 'queryClient-' + (currentDid ?? 'logged-out'),
+      // JSON, as by default, but with Following v2's Home Following snapshot.
+      serialize: client => JSON.stringify(saveFollowingSnapshot(client)),
+      deserialize: cached => loadFollowingSnapshot(JSON.parse(cached)),
     })
     return {
       persister: asyncPersister,
       dehydrateOptions,
-      buster: `${env.APP_VERSION}:persisted-success-only-v1`,
+      buster: env.APP_VERSION,
     } satisfies Omit<PersistQueryClientOptions, 'queryClient'>
   })
   useEffect(() => {
     if (IS_WEB) {
-      // WARNING: leaving this enabled on newer TanStack Query builds can cause
-      // the browser integration to OOM, so keep the extension hook disabled.
+      // WARNING, BROKEN
+      // something since v5.32.0 causes OOMs. not important
+      // so disable for now
       // window.__TANSTACK_QUERY_CLIENT__ = queryClient
     }
   }, [queryClient])

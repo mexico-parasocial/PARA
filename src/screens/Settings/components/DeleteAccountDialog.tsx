@@ -1,6 +1,5 @@
 import {useCallback, useRef, useState} from 'react'
 import {type TextInput, View} from 'react-native'
-import {type DidString} from '@atproto/syntax'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -21,9 +20,9 @@ import {
   isValidCode,
   TokenField,
 } from '#/components/dialogs/EmailDialog/components/TokenField'
+import {PasswordField} from '#/components/forms/PasswordField'
 import * as TextField from '#/components/forms/TextField'
 import {Envelope_Stroke2_Corner0_Rounded as Envelope} from '#/components/icons/Envelope'
-import {Lock_Stroke2_Corner0_Rounded as Lock} from '#/components/icons/Lock'
 import {createStaticClick, SimpleInlineLinkText} from '#/components/Link'
 import {Loader} from '#/components/Loader'
 import * as Prompt from '#/components/Prompt'
@@ -126,7 +125,7 @@ function DeleteAccountDialogInner({
        */
       await chatClient.call(chat.bsky.actor.deleteAccount)
       await client.call(com.atproto.server.deleteAccount, {
-        did: currentAccount.did as DidString,
+        did: currentAccount.did,
         password,
         token,
       })
@@ -290,24 +289,18 @@ function DeleteAccountDialogInner({
             <TextField.LabelText>
               <Trans>Password</Trans>
             </TextField.LabelText>
-            <TextField.Root>
-              <TextField.Icon icon={Lock} />
-              <TextField.Input
-                inputRef={passwordRef}
-                testID="newPasswordInput"
-                label={_(msg`Enter your password`)}
-                autoCapitalize="none"
-                autoCorrect={false}
-                returnKeyType="done"
-                secureTextEntry={true}
-                autoComplete="off"
-                clearButtonMode="while-editing"
-                passwordRules={`minlength: ${PASSWORD_MIN_LENGTH}};`}
-                value={password}
-                onChangeText={setPassword}
-                onSubmitEditing={handleDeleteAccount}
-              />
-            </TextField.Root>
+            <PasswordField
+              inputRef={passwordRef}
+              testID="newPasswordInput"
+              label={_(msg`Enter your password`)}
+              returnKeyType="done"
+              autoComplete="off"
+              clearButtonMode="while-editing"
+              passwordRules={`minlength: ${PASSWORD_MIN_LENGTH}};`}
+              value={password}
+              onChangeText={setPassword}
+              onSubmitEditing={handleDeleteAccount}
+            />
           </View>
           <Prompt.Actions>
             <Prompt.Action

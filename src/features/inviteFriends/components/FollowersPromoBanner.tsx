@@ -4,7 +4,7 @@ import {Image} from 'expo-image'
 import {useLingui} from '@lingui/react/macro'
 
 import {atoms as a, useTheme} from '#/alf'
-import {TimesLarge_Stroke2_Corner0_Rounded as TimesIcon} from '#/components/icons/Times'
+import {TimesLarge_Stroke2_Corner0_Rounded as TimesIcon} from '#/components/icons/TimesLarge'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
 

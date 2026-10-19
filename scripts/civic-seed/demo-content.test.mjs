@@ -167,8 +167,8 @@ function mockBackend(t, {emptyCommunities = false} = {}) {
         assert.ok(graph.nodes.some(node => node.id === body.sourceCardId))
         assert.ok(graph.nodes.some(node => node.id === body.targetCardId))
         graph.edges.push({
-          source: body.sourceCardId,
-          target: body.targetCardId,
+          source_card_id: body.sourceCardId,
+          target_card_id: body.targetCardId,
           relationship_type: body.relationshipType,
         })
         return respond({relationship: body})
@@ -256,6 +256,63 @@ test('both trees reference real records, preserve books and approve without self
   await seedDemoContent(options)
   assert.equal(backend.treeWrites, writes)
   assert.equal(backend.records.size, 15)
+})
+
+test('matters are single-pipe flairs and have connected policies or data to relate', async t => {
+  const backend = mockBackend(t)
+  await seedDemoContent({service: 'http://seed.test', includeMemes: false})
+
+  const posts = [...backend.records.values()].filter(
+    record => record.$type === 'com.para.post',
+  )
+  for (const post of posts.filter(p => p.postType === 'matter')) {
+    assert.ok(
+      post.flairs.some(flair => /^\|#[^|#]/.test(flair)),
+      `${post.title} is filed under a matter`,
+    )
+  }
+  for (const post of posts.filter(p => p.postType === 'policy')) {
+    assert.ok(post.flairs.some(flair => flair.startsWith('||#')))
+  }
+
+  // Each community matter topic has something attached besides other topics.
+  const matterTopics = fixture.communityTrees.flatMap(tree =>
+    tree.cards
+      .filter(
+        card =>
+          card.sourceType === 'topic' &&
+          card.metadata?.flairId?.startsWith('matter_'),
+      )
+      .map(card => ({tree, card})),
+  )
+  assert.ok(matterTopics.length >= 4)
+  for (const {tree, card} of matterTopics) {
+    const attached = tree.relationships.filter(
+      rel => rel.from === card.key || rel.to === card.key,
+    )
+    assert.ok(attached.length > 0, `${card.title} has a connection`)
+  }
+  const connected = new Set(
+    fixture.communityTrees.flatMap(tree =>
+      tree.relationships
+        .filter(rel =>
+          tree.cards.some(
+            card =>
+              card.key === rel.to &&
+              card.metadata?.flairId?.startsWith('matter_'),
+          ),
+        )
+        .map(rel => rel.from),
+    ),
+  )
+  const kinds = new Set(
+    fixture.communityTrees
+      .flatMap(tree => tree.cards)
+      .filter(card => connected.has(card.key))
+      .map(card => card.metadata?.postType ?? card.sourceType),
+  )
+  assert.ok(kinds.has('policy'), 'a policy is connected to a matter')
+  assert.ok(kinds.has('research'), 'data is connected to a matter')
 })
 
 test('dry-run makes no network requests and validates references before writes', async t => {

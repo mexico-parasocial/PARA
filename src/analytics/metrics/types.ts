@@ -6,9 +6,27 @@ import {type Platform} from 'react-native'
 
 import {type NotificationReason} from '#/lib/hooks/useNotificationHandler'
 import {type VideoCompressSkipReason} from '#/lib/media/video/types'
+import {type GroupedNotificationsFeed} from '#/state/queries/notifications/grouped/types'
 import {type NotificationType} from '#/state/queries/notifications/types'
 import {type FeedDescriptor} from '#/state/queries/post-feed'
 import {type LiveEventFeedMetricContext} from '#/features/liveEvents/types'
+
+/**
+ * Feed mutations from Explore carry recommendation attribution. PARA's
+ * existing feed-management surfaces intentionally emit only the feed URI.
+ */
+type FeedMutationMetric = {feedUrl: string} & (
+  | {
+      logContext?: never
+      recId?: never
+      position?: never
+    }
+  | {
+      logContext: 'Explore'
+      recId: string
+      position: number
+    }
+)
 
 export type Events = {
   // App events
@@ -20,12 +38,23 @@ export type Events = {
   }
   'web:list:size': {
     itemCount: number
-    milestone: number
-    [key: string]: unknown
+    renderedRowCount: number
+    contentHeight: number
+    sessionAgeMs: number
+    milestone: 100 | 250 | 500 | 1000
+    heapUsedBytes?: number
+    heapLimitBytes?: number
   }
   'web:list:longTasks': {
+    itemCount: number
+    renderedRowCount: number
     taskCount: number
-    [key: string]: unknown
+    totalDurationMs: number
+    maxDurationMs: number
+    intervalMs: number
+    sessionAgeMs: number
+    heapUsedBytes?: number
+    heapLimitBytes?: number
   }
   'experiment:viewed': {
     experimentId: string
@@ -72,9 +101,91 @@ export type Events = {
     notificationType: NotificationType
     authorCount: number
   }
-  'state:background': {
-    secondsActive: number
+  /**
+   * A tab of the Notifications screen came into view: the tab it's on when
+   * the screen gains focus, which includes mounting, and each tab the user
+   * switches to. A switch is logged once, as the pager settles on the new
+   * tab.
+   */
+  'notifications:tabDisplayed': {
+    tab: GroupedNotificationsFeed
+    /** The tab's position in the tab pills, from 0. */
+    index: number
+    /**
+     * - `focus`: the screen gained focus, or mounted, on the tab. Web mounts
+     *   the screen on every visit.
+     * - `tap`: the user pressed the tab's pill.
+     * - `swipe`: the user swiped the pager to the tab, which only native
+     *   does.
+     */
+    reason: 'focus' | 'tap' | 'swipe'
   }
+  /**
+   * A tab of the Notifications screen started loading its newest
+   * notifications, in place of what it shows. Not the tab's first load or a
+   * retry of it, nor a check that only asks whether there's anything new, as
+   * a quick return to the app or a switch between tabs does, or any return
+   * while the user is partway down the tab. Nor the refresh of "All" that
+   * refreshing any other tab sets off behind it.
+   */
+  'notifications:refresh': {
+    tab: GroupedNotificationsFeed
+    /**
+     * - `pullToRefresh`: the user pulled the tab down.
+     * - `softReset`: the user pressed Notifications in the app's navigation,
+     *   or the tab's own pill, while already on the tab.
+     * - `pill`: the user pressed the "Refresh" pill.
+     * - `focus`: the screen came back into view, e.g. from a post opened
+     *   from it, or mounted with the tab already loaded, as web's does on
+     *   every visit.
+     * - `significantReturn`: the user came back to the app after a while
+     *   away, with the screen in view.
+     * - `pushOpened`: the user opened a push notification with the screen in
+     *   view.
+     */
+    reason:
+      | 'pullToRefresh'
+      | 'softReset'
+      | 'pill'
+      | 'focus'
+      | 'significantReturn'
+      | 'pushOpened'
+  }
+  /**
+   * The "Refresh" pill came into view on a Notifications tab, offering what an
+   * unread check found that the tab hasn't loaded. Only while the tab is the
+   * one in view, on the focused screen, with the app in the foreground, and
+   * again each time it comes back into view still up. One hide follows each.
+   */
+  'notifications:refreshPill:impression': {
+    tab: GroupedNotificationsFeed
+  }
+  /**
+   * The user pressed the pill, which loads the tab's newest notifications.
+   */
+  'notifications:refreshPill:press': {
+    tab: GroupedNotificationsFeed
+    /** How long since it came into view. */
+    shownMs: number
+  }
+  /** The pill went, after it came into view. */
+  'notifications:refreshPill:hide': {
+    tab: GroupedNotificationsFeed
+    /**
+     * - `pressed`: the user pressed it.
+     * - `left`: the tab went out of view: the user switched tab, opened
+     *   another screen, or left the app, or the screen closed, as web's does
+     *   on every navigation away.
+     * - `refreshed`: the tab started loading its newest notifications some
+     *   other way, e.g. a pull-to-refresh.
+     * - `gone`: a later unread check found nothing new for the tab to load,
+     *   e.g. once the notifications were seen somewhere else.
+     */
+    reason: 'pressed' | 'left' | 'refreshed' | 'gone'
+    /** How long it was in view. */
+    shownMs: number
+  }
+  'state:background': {}
   'state:foreground': {}
   'router:navigate': {
     from?: string
@@ -83,6 +194,7 @@ export type Events = {
     item:
       | 'home'
       | 'search'
+      | 'atmosphere'
       | 'chat'
       | 'notifications'
       | 'profile'
@@ -134,7 +246,11 @@ export type Events = {
   'signup:createAccountFailure': {
     reason: string
   }
-  'signup:captchaFailure': {}
+  'signup:captchaFailure': {
+    reason: 'state-mismatch' | 'webview-error' | 'http-error'
+    host?: string
+    statusCode?: number
+  }
   'signup:fieldError': {
     field: string
     errorCount: number
@@ -217,23 +333,22 @@ export type Events = {
     feedType: string
     itemCount: number
   }
+  'moderation:inbox:filter': {
+    tab: 'reports' | 'account'
+    filter: 'all' | 'pending' | 'resolved' | 'unread'
+  }
+  'moderation:inbox:viewAccountStatus': {
+    status: 'good' | 'warning' | 'atRisk'
+  }
   'feed:refresh': {
     feedUrl: string
     feedType: string
     reason: 'pull-to-refresh' | 'soft-reset' | 'load-latest'
   }
-  'feed:save': {
-    feedUrl: string
-  }
-  'feed:unsave': {
-    feedUrl: string
-  }
-  'feed:pin': {
-    feedUrl: string
-  }
-  'feed:unpin': {
-    feedUrl: string
-  }
+  'feed:save': FeedMutationMetric
+  'feed:unsave': FeedMutationMetric
+  'feed:pin': FeedMutationMetric
+  'feed:unpin': FeedMutationMetric
   'feed:like': {
     feedUrl: string
   }
@@ -245,9 +360,17 @@ export type Events = {
   }
   'feed:suggestion:seen': {
     feedUrl: string
+    /** Present for Explore recommendations; older PARA callers omit it. */
+    logContext?: 'Explore'
+    recId?: string
+    position?: number
   }
   'feed:suggestion:press': {
     feedUrl: string
+    /** Present for Explore recommendations; older PARA callers omit it. */
+    logContext?: 'Explore'
+    recId?: string
+    position?: number
   }
   'post:showMore': {
     uri: string
@@ -471,6 +594,10 @@ export type Events = {
     feedDescriptor?: string
     position?: number
   }
+  'post:quotes:view': {
+    uri: string
+    quoteSort: 'top' | 'latest'
+  }
   'post:view': {
     uri: string
     authorDid: string
@@ -487,6 +614,7 @@ export type Events = {
       | 'Topic'
       | 'PostQuotes'
       | 'FlairFeed'
+    quoteSort?: 'top' | 'latest'
     feedDescriptor?: string
     position?: number
   }
@@ -517,6 +645,9 @@ export type Events = {
       | 'FindContacts'
       | 'GroupChat'
       | 'NotificationExpandedProfileCard'
+      | 'NotificationFollowRow'
+      | 'NotificationFollowersTabRow'
+      | 'NotificationContactMatchRow'
   }
   'profile:followers:view': {
     contextProfileDid: string
@@ -561,7 +692,7 @@ export type Events = {
       | 'ProgressGuide'
     location: 'Card' | 'Profile' | 'FollowAll'
     recSource?: 'Search'
-    recId?: string | number
+    recId?: string
     position: number
     suggestedDid: string
     category: string | null
@@ -574,7 +705,7 @@ export type Events = {
       | 'ProfileHeader'
       | 'Onboarding'
       | 'SeeMoreSuggestedUsers'
-    recId?: string | number
+    recId?: string
     position: number
     suggestedDid: string
     category: string | null
@@ -589,7 +720,7 @@ export type Events = {
       | 'SeeMoreSuggestedUsers'
       | 'ProgressGuide'
     recSource?: 'Search'
-    recId?: string | number
+    recId?: string
     position: number
     suggestedDid: string
     category: string | null
@@ -601,11 +732,11 @@ export type Events = {
       | 'ProfileInterstitial'
       | 'ProfileHeader'
       | 'Onboarding'
-    recId?: string | number
+    recId?: string
   }
   'suggestedUser:dismiss': {
     logContext: 'DiscoverInterstitial' | 'ProfileInterstitial' | 'ProfileHeader'
-    recId?: string | number
+    recId?: string
     position: number
     suggestedDid: string
   }
@@ -629,6 +760,9 @@ export type Events = {
       | 'FindContacts'
       | 'GroupChat'
       | 'NotificationExpandedProfileCard'
+      | 'NotificationFollowRow'
+      | 'NotificationFollowersTabRow'
+      | 'NotificationContactMatchRow'
   }
   'chat:create': {
     logContext:
@@ -738,6 +872,20 @@ export type Events = {
     logContext: 'StarterPackProfilesList' | 'Onboarding'
     starterPack: string
     count: number
+    recId?: string
+    position?: number
+  }
+  'starterPack:suggestion:seen': {
+    logContext: 'Explore' | 'Onboarding'
+    starterPack: string
+    recId: string
+    position: number
+  }
+  'starterPack:suggestion:press': {
+    logContext: 'Explore'
+    starterPack: string
+    recId: string
+    position: number
   }
   'starterPack:delete': {}
   'starterPack:optOut': {
@@ -796,13 +944,15 @@ export type Events = {
   }
   'trendingTopic:seen': {
     context: 'sidebar' | 'interstitial' | 'explore'
-    recId?: string | number
+    feedUri?: string
+    recId?: string
     rank: number
     feedSliceIndex?: number
   }
   'trendingTopic:click': {
     context: 'sidebar' | 'interstitial' | 'explore'
-    recId?: string | number
+    feedUri?: string
+    recId?: string
     // Optional here (required upstream) so PARA's existing call sites, which
     // predate rank tracking, keep type-checking.
     rank?: number
@@ -1144,13 +1294,28 @@ export type Events = {
     postContext: 'feed' | 'thread'
     position?: number
   }
-  'share:press:copyLink': {}
+  'share:press:copyLink': {uri: string}
   'share:press:nativeShare': {}
+  /**
+   * Fires when the system share sheet closes after sharing a post. Not
+   * logged on web, or on Android builds without the native share module.
+   */
+  'share:nativeShare:result': {
+    uri: string
+    authorDid: string
+    entryPoint: 'ShareMenu' | 'LongPress'
+    status: 'shared' | 'dismissed'
+    /**
+     * The app the user picked: the `activityType` on iOS, the package name on
+     * Android. Android reports the chooser's own actions (e.g. Copy) as
+     * `dismissed` with no target.
+     */
+    target?: string
+  }
   'share:press:openDmSearch': {}
-  'share:press:dmSelected': {}
-  'share:press:recentDm': {}
-  'share:press:embed': {}
-
+  'share:press:dmSelected': {uri: string}
+  'share:press:recentDm': {uri: string}
+  'share:press:embed': {uri: string}
   'embed:standardSite:view': {url: string}
   'embed:standardSite:article:press': {url: string}
   'embed:standardSite:article:longPress': {url: string}
@@ -1338,6 +1503,29 @@ export type Events = {
   'profile:associated:germ:click-self-info': {}
   'profile:associated:germ:self-disconnect': {}
   'profile:associated:germ:self-reconnect': {}
+
+  'profile:links:click': {
+    domain: string
+    supportProvider: string | undefined
+    isOwnProfile: boolean
+  }
+  /** A profile showing links was viewed. */
+  'profile:links:impression': {
+    linkCount: number
+    supportLinkCount: number
+    isOwnProfile: boolean
+  }
+  /** Edit Profile was opened with the Links section available. */
+  'profile:links:editorOpen': {linkCount: number}
+  /** Logged once for every link actually added or removed. */
+  'profile:links:add': {domain: string; supportProvider: string | undefined}
+  'profile:links:remove': {domain: string; supportProvider: string | undefined}
+  /** A visitor continued past the leaving-app notice. */
+  'profile:links:continue': {
+    domain: string
+    supportProvider: string | undefined
+  }
+  'profile:links:rejected': {reason: 'blocked'; domain: string}
 
   // Post photo embed events
   'post:photoEmbed:impression': {

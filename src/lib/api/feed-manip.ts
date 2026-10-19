@@ -4,25 +4,12 @@ import {isPostInLanguage} from '../../locale/helpers'
 import {FALLBACK_MARKER_POST} from './feed/home'
 import {type ReasonFeedSource} from './feed/types'
 
-/*
- * AppView adds these fields to feed and thread responses ahead of their feed
- * lexicon, so the generated `ThreadItemPost`/`FeedViewPost` types do not
- * declare them yet.
- */
-export type FeedPostNumbering = {
-  opThreadPostIndex?: number | null
-  opThreadPostCount?: number | null
-}
+export type FeedPostNumbering = Pick<
+  app.bsky.feed.defs.FeedViewPost,
+  'opThreadPostIndex' | 'opThreadPostCount'
+>
 
-export type ValidFeedPostNumbering = {
-  opThreadPostIndex: number
-  opThreadPostCount: number
-}
-
-// AppView adds these fields to feed responses ahead of their feed lexicon.
-// The pipeline is api-typed (`the legacy SDK` query responses) with the
-// numbering fields injected, so the canonical shape is api-based.
-type FeedViewPost = app.bsky.feed.defs.FeedViewPost & FeedPostNumbering
+export type ValidFeedPostNumbering = Required<FeedPostNumbering>
 
 function getPostNumbering(
   value: FeedPostNumbering,
@@ -30,8 +17,8 @@ function getPostNumbering(
   const {opThreadPostIndex: index, opThreadPostCount: count} = value
 
   if (
-    index == null ||
-    count == null ||
+    index === undefined ||
+    count === undefined ||
     index < 1 ||
     count < 1 ||
     index > count
@@ -46,7 +33,7 @@ function getPostNumbering(
 }
 
 function inferPostNumbering(
-  feedPost: FeedViewPost,
+  feedPost: app.bsky.feed.defs.FeedViewPost,
   position: 'parent' | 'root',
 ): ValidFeedPostNumbering | undefined {
   const postNumbering = getPostNumbering(feedPost)
@@ -87,7 +74,7 @@ type AuthorContext = {
 
 export class FeedViewPostsSlice {
   _reactKey: string
-  _feedPost: FeedViewPost
+  _feedPost: app.bsky.feed.defs.FeedViewPost
   items: FeedSliceItem[]
   isIncompleteThread: boolean
   isFallbackMarker: boolean
@@ -97,7 +84,7 @@ export class FeedViewPostsSlice {
   feedPostUri: string
 
   constructor(
-    feedPost: FeedViewPost,
+    feedPost: app.bsky.feed.defs.FeedViewPost,
     postNumberingByUri: Map<string, ValidFeedPostNumbering>,
   ) {
     const {post, reply, reason} = feedPost
@@ -122,9 +109,10 @@ export class FeedViewPostsSlice {
       this.isFallbackMarker = true
       return
     }
-    // AppView records are trusted here; strict lexicon validation can reject
-    // otherwise valid video BlobRefs when package instances drift.
-    if (!bsky.isType(app.bsky.feed.post, post.record)) {
+    if (
+      !bsky.isType(app.bsky.feed.post, post.record) ||
+      !bsky.matches(app.bsky.feed.post, post.record)
+    ) {
       return
     }
     const parent = reply?.parent
@@ -158,7 +146,8 @@ export class FeedViewPostsSlice {
     }
     if (
       !bsky.isType(app.bsky.feed.defs.postView, parent) ||
-      !bsky.isType(app.bsky.feed.post, parent.record)
+      !bsky.isType(app.bsky.feed.post, parent.record) ||
+      !bsky.matches(app.bsky.feed.post, parent.record)
     ) {
       this.isOrphan = true
       return
@@ -202,7 +191,8 @@ export class FeedViewPostsSlice {
     }
     if (
       !bsky.isType(app.bsky.feed.defs.postView, root) ||
-      !bsky.isType(app.bsky.feed.post, root.record)
+      !bsky.isType(app.bsky.feed.post, root.record) ||
+      !bsky.matches(app.bsky.feed.post, root.record)
     ) {
       this.isOrphan = true
       return
@@ -294,7 +284,7 @@ export class FeedViewPostsSlice {
 }
 
 export function createFeedViewPostsSlices(
-  feed: FeedViewPost[],
+  feed: app.bsky.feed.defs.FeedViewPost[],
 ): FeedViewPostsSlice[] {
   const postNumberingByUri = new Map<string, ValidFeedPostNumbering>()
   for (const item of feed) {
@@ -317,7 +307,7 @@ export class FeedTuner {
   constructor(public tunerFns: FeedTunerFn[]) {}
 
   tune(
-    feed: FeedViewPost[],
+    feed: app.bsky.feed.defs.FeedViewPost[],
     {dryRun}: {dryRun: boolean} = {
       dryRun: false,
     },
@@ -389,6 +379,20 @@ export class FeedTuner {
         // detecting threads without having to peek ahead.
         !areSameAuthor(slice.getAuthors())
       ) {
+        slices.splice(i, 1)
+        i--
+      }
+    }
+    return slices
+  }
+
+  static removeReposts(
+    tuner: FeedTuner,
+    slices: FeedViewPostsSlice[],
+    _dryRun: boolean,
+  ) {
+    for (let i = 0; i < slices.length; i++) {
+      if (slices[i].isRepost) {
         slices.splice(i, 1)
         i--
       }
@@ -498,8 +502,6 @@ export class FeedTuner {
 
       const candidateSlices = slices.filter(slice => {
         for (const item of slice.items) {
-          // Feed slice items are api-typed; the helper reads the generated
-          // lexicon shape, which the runtime payload satisfies.
           if (isPostInLanguage(item.post, preferredLangsCode2)) {
             return true
           }

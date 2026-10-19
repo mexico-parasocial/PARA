@@ -273,7 +273,7 @@ Sync frequency: Every 6 hours or on-demand via gossip.
 | Replay attack | One-time nonce in presentation |
 | Revocation bypass | Online + Merkle proof check |
 | Issuer compromise | Key rotation + transparency log |
-| Device theft | Biometric lock + auto-lock on background |
+| Device theft | Device access controls; PARA does not add a separate wallet unlock prompt |
 | Network eavesdropping | TLS 1.3 + no credential over wire |
 | Verifier tracking | Selective disclosure + per-verifier nonces |
 

@@ -2,7 +2,6 @@ import {useState} from 'react'
 import {View} from 'react-native'
 import {KeyboardAwareScrollView} from 'react-native-keyboard-controller'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
-import {type DidString} from '@atproto/syntax'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -24,7 +23,7 @@ import {SimpleInlineLinkText} from '#/components/Link'
 import {Loader} from '#/components/Loader'
 import {P, Text} from '#/components/Typography'
 import {IS_WEB} from '#/env'
-import {com, tools} from '#/lexicons'
+import {tools} from '#/lexicons'
 
 const COL_WIDTH = 400
 
@@ -52,13 +51,14 @@ export function Takendown() {
     mutationFn: async (appealText: string) => {
       if (!currentAccount) throw new Error('No session')
       await client.call(
-        com.atproto.moderation.createReport,
+        tools.ozone.inbox.appealActionedSubject,
         {
-          reasonType: tools.ozone.report.defs.reasonAppeal.value,
+          action: {
+            $type: 'tools.ozone.inbox.appealActionedSubject#takedownRef',
+          },
           subject: {
             $type: 'com.atproto.admin.defs#repoRef',
-            // the persisted account did is already resolved
-            did: currentAccount.did as DidString,
+            did: currentAccount.did,
           },
           reason: appealText,
         },
@@ -210,10 +210,10 @@ export function Takendown() {
                 <Trans>
                   Your account was found to be in violation of the{' '}
                   <SimpleInlineLinkText
-                    label={_(msg`PARA Social Terms of Service`)}
+                    label={_(msg`Bluesky Social Terms of Service`)}
                     to="https://bsky.social/about/support/tos"
                     style={[a.text_md, a.leading_snug]}>
-                    PARA Social Terms of Service
+                    Bluesky Social Terms of Service
                   </SimpleInlineLinkText>
                   . You have been sent an email outlining the specific violation
                   and suspension period, if applicable. You can appeal this

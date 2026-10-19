@@ -3,7 +3,7 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import {useLingui} from '@lingui/react/macro'
 
 import {atoms as a} from '#/alf'
-import {TimesLarge_Stroke2_Corner0_Rounded as CloseIcon} from '#/components/icons/Times'
+import {TimesLarge_Stroke2_Corner0_Rounded as CloseIcon} from '#/components/icons/TimesLarge'
 import {CircleChromeButton} from './CircleChromeButton'
 import {ImageMenu} from './ImageMenu'
 import {PagerDots} from './PagerDots'

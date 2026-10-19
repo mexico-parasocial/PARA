@@ -330,24 +330,24 @@ export function didContributionBecomeApproved(
   return contribution.status === 'approved' && !!contribution.approved_card_id
 }
 
+export async function fetchCommunityCivicTreeGraph(
+  agent: ReturnType<typeof useAgent>,
+  communityUri: string | undefined,
+): Promise<CommunityCivicTreeGraph> {
+  if (!communityUri) throw new Error('No community URI')
+  const res = await agent.appviewClient.call(com.para.community.getCivicTree, {
+    community: communityUri as AtUriString,
+  })
+  return isCommunityCivicTreeGraphResponse(res) ? res : {nodes: [], edges: []}
+}
+
 export function useCommunityCivicTreeGraphQuery(
   communityUri: string | undefined,
 ) {
   const agent = useAgent()
   return useQuery<CommunityCivicTreeGraph>({
     queryKey: getCommunityCivicTreeGraphQueryKey(communityUri),
-    queryFn: async () => {
-      if (!communityUri) throw new Error('No community URI')
-      const res = await agent.appviewClient.call(
-        com.para.community.getCivicTree,
-        {
-          community: communityUri as AtUriString,
-        },
-      )
-      return isCommunityCivicTreeGraphResponse(res)
-        ? res
-        : {nodes: [], edges: []}
-    },
+    queryFn: () => fetchCommunityCivicTreeGraph(agent, communityUri),
     enabled: !!communityUri,
     staleTime: 1000 * 60 * 2,
   })

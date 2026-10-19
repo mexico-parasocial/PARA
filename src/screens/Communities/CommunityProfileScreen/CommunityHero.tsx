@@ -6,7 +6,7 @@ import {type PartyFeedProfile} from '#/lib/party-feeds'
 import {cleanError} from '#/lib/strings/errors'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
-import {PageText_Stroke2_Corner0_Rounded as PageTextIcon} from '#/components/icons/PageText'
+import {PageText_Stroke2_Corner0_Rounded as PageTextIcon} from '#/components/icons/Page'
 import {styles} from './styles'
 
 // ---------------------------------------------------------------------------

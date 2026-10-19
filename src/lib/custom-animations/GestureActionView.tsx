@@ -1,11 +1,10 @@
-import {type ReactNode, useMemo, useState} from 'react'
+import {useMemo, useState} from 'react'
 import {type ColorValue, Dimensions, View} from 'react-native'
-import {Gesture, GestureDetector} from 'react-native-gesture-handler'
+import {GestureDetector, usePanGesture} from 'react-native-gesture-handler'
 import Animated, {
   clamp,
   interpolate,
   interpolateColor,
-  runOnJS,
   useAnimatedReaction,
   useAnimatedStyle,
   useDerivedValue,
@@ -14,6 +13,7 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated'
+import {scheduleOnRN} from 'react-native-worklets'
 
 import {useHaptics} from '#/lib/haptics'
 import {atoms as a} from '#/alf'
@@ -26,7 +26,7 @@ export function GestureActionView({
   children,
   actions,
 }: {
-  children: ReactNode
+  children: React.ReactNode
   actions: GestureActions
 }) {
   if (
@@ -42,7 +42,7 @@ export function GestureActionView({
     'leftFirst' | 'leftSecond' | 'rightFirst' | 'rightSecond' | null
   >(null)
 
-  const haptic = useHaptics()
+  const {threshold: playThresholdHaptic} = useHaptics()
   const isReducedMotion = useReducedMotion()
 
   const transX = useSharedValue(0)
@@ -75,17 +75,17 @@ export function GestureActionView({
     () => transX,
     () => {
       if (transX.get() === 0) {
-        runOnJS(setActiveAction)(null)
+        scheduleOnRN(setActiveAction, null)
       } else if (transX.get() < 0) {
         if (
           actions.leftSecond &&
           transX.get() <= -actions.leftSecond.threshold
         ) {
           if (activeAction !== 'leftSecond') {
-            runOnJS(setActiveAction)('leftSecond')
+            scheduleOnRN(setActiveAction, 'leftSecond')
           }
         } else if (activeAction !== 'leftFirst') {
-          runOnJS(setActiveAction)('leftFirst')
+          scheduleOnRN(setActiveAction, 'leftFirst')
         }
       } else if (transX.get() > 0) {
         if (
@@ -93,10 +93,10 @@ export function GestureActionView({
           transX.get() > actions.rightSecond.threshold
         ) {
           if (activeAction !== 'rightSecond') {
-            runOnJS(setActiveAction)('rightSecond')
+            scheduleOnRN(setActiveAction, 'rightSecond')
           }
         } else if (activeAction !== 'rightFirst') {
-          runOnJS(setActiveAction)('rightFirst')
+          scheduleOnRN(setActiveAction, 'rightFirst')
         }
       }
     },
@@ -106,17 +106,17 @@ export function GestureActionView({
   // Absurdly high value so it doesn't interfere with the pan gestures above (i.e., scroll)
   // reanimated doesn't offer great support for disabling y/x axes :/
   const effectivelyDisabledOffset = 200
-  const panGesture = Gesture.Pan()
-    .activeOffsetX([
+  const panGesture = usePanGesture({
+    activeOffsetX: [
       actions.leftFirst ? -10 : -effectivelyDisabledOffset,
       actions.rightFirst ? 10 : effectivelyDisabledOffset,
-    ])
-    .activeOffsetY([-effectivelyDisabledOffset, effectivelyDisabledOffset])
-    .onStart(() => {
+    ],
+    failOffsetY: [-10, 10],
+    onActivate: () => {
       'worklet'
       isActive.set(true)
-    })
-    .onChange(e => {
+    },
+    onUpdate: e => {
       'worklet'
       transX.set(e.translationX)
 
@@ -128,7 +128,7 @@ export function GestureActionView({
             !hitSecond.get()
           ) {
             runPopAnimation()
-            runOnJS(haptic)()
+            scheduleOnRN(playThresholdHaptic)
             hitSecond.set(true)
           } else if (
             hitSecond.get() &&
@@ -145,7 +145,7 @@ export function GestureActionView({
             !hitFirst.get()
           ) {
             runPopAnimation()
-            runOnJS(haptic)()
+            scheduleOnRN(playThresholdHaptic)
             hitFirst.set(true)
           } else if (
             hitFirst.get() &&
@@ -162,7 +162,7 @@ export function GestureActionView({
             !hitSecond.get()
           ) {
             runPopAnimation()
-            runOnJS(haptic)()
+            scheduleOnRN(playThresholdHaptic)
             hitSecond.set(true)
           } else if (
             hitSecond.get() &&
@@ -179,7 +179,7 @@ export function GestureActionView({
             !hitFirst.get()
           ) {
             runPopAnimation()
-            runOnJS(haptic)()
+            scheduleOnRN(playThresholdHaptic)
             hitFirst.set(true)
           } else if (
             hitFirst.get() &&
@@ -189,29 +189,28 @@ export function GestureActionView({
           }
         }
       }
-    })
-    .onEnd(e => {
+    },
+    onDeactivate: e => {
       'worklet'
       if (e.translationX < 0) {
         if (hitSecond.get() && actions.leftSecond) {
-          runOnJS(actions.leftSecond.action)()
+          scheduleOnRN(actions.leftSecond.action)
         } else if (hitFirst.get() && actions.leftFirst) {
-          runOnJS(actions.leftFirst.action)()
+          scheduleOnRN(actions.leftFirst.action)
         }
       } else if (e.translationX > 0) {
         if (hitSecond.get() && actions.rightSecond) {
-          runOnJS(actions.rightSecond.action)()
+          scheduleOnRN(actions.rightSecond.action)
         } else if (hitSecond.get() && actions.rightFirst) {
-          runOnJS(actions.rightFirst.action)()
+          scheduleOnRN(actions.rightFirst.action)
         }
       }
       transX.set(withTiming(0, {duration: 200}))
       hitFirst.set(false)
       hitSecond.set(false)
       isActive.set(false)
-    })
-
-  const composedGesture = Gesture.Simultaneous(panGesture)
+    },
+  })
 
   const animatedSliderStyle = useAnimatedStyle(() => {
     return {
@@ -286,7 +285,7 @@ export function GestureActionView({
   })
 
   return (
-    <GestureDetector gesture={composedGesture}>
+    <GestureDetector gesture={panGesture}>
       <View>
         <Animated.View style={[a.absolute, a.inset_0, animatedBackgroundStyle]}>
           <View

@@ -71,6 +71,7 @@ import {
   setupDeviceId,
 } from '#/analytics'
 import {getDeviceId} from '#/analytics/identifiers'
+import {useSessionActivity} from '#/analytics/useSessionActivity'
 import {
   completeMatrixWebAuthorization,
   MATRIX_OIDC_CALLBACK_PATH,
@@ -201,6 +202,7 @@ function InnerApp() {
 }
 
 function App() {
+  useSessionActivity()
   const [isReady, setReady] = useState(false)
 
   useEffect(() => {

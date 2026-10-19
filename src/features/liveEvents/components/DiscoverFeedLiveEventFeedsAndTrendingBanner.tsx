@@ -4,7 +4,7 @@ import {useLingui} from '@lingui/react'
 
 import {atoms as a, useLayoutBreakpoints} from '#/alf'
 import {Button} from '#/components/Button'
-import {DotGrid_Stroke2_Corner0_Rounded as EllipsisIcon} from '#/components/icons/DotGrid'
+import {DotGrid2x3_Stroke2_Corner0_Rounded as EllipsisIcon} from '#/components/icons/DotGrid'
 import {LiveEventFeedCardWide} from '#/features/liveEvents/components/LiveEventFeedCardWide'
 import {
   LiveEventFeedOptionsMenu,

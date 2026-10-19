@@ -27,14 +27,14 @@ import {useSession} from '#/state/session'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import * as Dialog from '#/components/Dialog'
-import {ArrowCornerDownRight_Stroke2_Corner2_Rounded as ConnectIcon} from '#/components/icons/ArrowCornerDownRight'
+import {ArrowCornerDownRight_Stroke2_Corner2_Rounded as ConnectIcon} from '#/components/icons/Arrow'
 import {
   ChevronBottom_Stroke2_Corner0_Rounded as DownIcon,
   ChevronTop_Stroke2_Corner0_Rounded as UpIcon,
 } from '#/components/icons/Chevron'
 import {Pencil_Stroke2_Corner0_Rounded as PencilIcon} from '#/components/icons/Pencil'
 import {PlusLarge_Stroke2_Corner0_Rounded as PlusIcon} from '#/components/icons/Plus'
-import {SquareArrowTopRight_Stroke2_Corner0_Rounded as ExportIcon} from '#/components/icons/SquareArrowTopRight'
+import {SquareArrowTopRight_Stroke2_Corner0_Rounded as ExportIcon} from '#/components/icons/Square'
 import {Trash_Stroke2_Corner0_Rounded as TrashIcon} from '#/components/icons/Trash'
 import {Tree_Stroke2_Corner0_Rounded as TreeIcon} from '#/components/icons/Tree'
 import * as Layout from '#/components/Layout'

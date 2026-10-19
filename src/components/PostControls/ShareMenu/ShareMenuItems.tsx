@@ -3,25 +3,27 @@ import * as ExpoClipboard from 'expo-clipboard'
 import {AtUri} from '@atproto/syntax'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
+import {useQueryClient} from '@tanstack/react-query'
 
 import {makeProfileLink} from '#/lib/routes/links'
 import {type NavigationProp} from '#/lib/routes/types'
-import {shareText, shareUrl} from '#/lib/sharing'
+import {shareUrl, simpleShareText} from '#/lib/sharing'
 import {toShareUrl} from '#/lib/strings/url-helpers'
-import {logger} from '#/logger'
 import {useProfileShadow} from '#/state/cache/profile-shadow'
+import {precachePost} from '#/state/queries/post'
 import {useSession} from '#/state/session'
 import {atoms as a} from '#/alf'
 import {Admonition} from '#/components/Admonition'
 import {useDialogControl} from '#/components/Dialog'
 import {SendViaChatDialog} from '#/components/dms/dialogs/ShareViaChatDialog'
-import {ArrowOutOfBoxModified_Stroke2_Corner2_Rounded as ArrowOutOfBoxIcon} from '#/components/icons/ArrowOutOfBox'
+import {ArrowOutOfBoxModified_Stroke2_Corner2_Rounded as ArrowOutOfBoxIcon} from '#/components/icons/Arrow'
 import {ChainLink_Stroke2_Corner0_Rounded as ChainLinkIcon} from '#/components/icons/ChainLink'
 import {Clipboard_Stroke2_Corner2_Rounded as ClipboardIcon} from '#/components/icons/Clipboard'
 import {PaperPlane_Stroke2_Corner0_Rounded as PaperPlaneIcon} from '#/components/icons/PaperPlane'
 import * as Menu from '#/components/Menu'
 import * as Toast from '#/components/Toast'
 import {useAgeAssurance} from '#/ageAssurance'
+import {useAnalytics} from '#/analytics'
 import {IS_IOS} from '#/env'
 import {useDevMode} from '#/storage/hooks/dev-mode'
 import {RecentChats} from './RecentChats'
@@ -31,12 +33,14 @@ let ShareMenuItems = ({
   post,
   onShare: onShareProp,
 }: ShareMenuItemsProps): React.ReactNode => {
+  const ax = useAnalytics()
   const {hasSession} = useSession()
   const {t: l} = useLingui()
   const navigation = useNavigation<NavigationProp>()
   const sendViaChatControl = useDialogControl()
   const [devModeEnabled] = useDevMode()
   const aa = useAgeAssurance()
+  const queryClient = useQueryClient()
 
   const postUri = post.uri
   const postAuthor = useProfileShadow(post.author)
@@ -53,14 +57,22 @@ let ShareMenuItems = ({
   }, [postAuthor])
 
   const onSharePost = () => {
-    logger.metric('share:press:nativeShare', {}, {statsig: true})
+    ax.metric('share:press:nativeShare', {})
     const url = toShareUrl(href)
-    void shareUrl(url)
+    void shareUrl(url).then(result => {
+      if (!result) return
+      ax.metric('share:nativeShare:result', {
+        uri: postUri,
+        authorDid: postAuthor.did,
+        entryPoint: 'ShareMenu',
+        ...result,
+      })
+    })
     onShareProp()
   }
 
   const onCopyLink = async () => {
-    logger.metric('share:press:copyLink', {}, {statsig: true})
+    ax.metric('share:press:copyLink', {uri: postUri})
     const url = toShareUrl(href)
     if (IS_IOS) {
       // iOS only
@@ -74,7 +86,12 @@ let ShareMenuItems = ({
     onShareProp()
   }
 
+  const onBeforeShareViaChat = () => {
+    precachePost(queryClient, postUri, post)
+  }
+
   const onSelectChatToShareTo = (conversation: string) => {
+    onBeforeShareViaChat()
     navigation.navigate('MessagesConversation', {
       conversation,
       embed: postUri,
@@ -82,11 +99,11 @@ let ShareMenuItems = ({
   }
 
   const onShareATURI = () => {
-    void shareText(postUri)
+    void simpleShareText(postUri)
   }
 
   const onShareAuthorDID = () => {
-    void shareText(postAuthor.did)
+    void simpleShareText(postAuthor.did)
   }
 
   return (
@@ -95,17 +112,20 @@ let ShareMenuItems = ({
         {hasSession && aa.state.access === aa.Access.Full && (
           <Menu.Group>
             <Menu.ContainerItem>
-              <RecentChats postUri={postUri} />
+              <RecentChats
+                postUri={postUri}
+                onBeforePress={onBeforeShareViaChat}
+              />
             </Menu.ContainerItem>
             <Menu.Item
               testID="postDropdownSendViaDMBtn"
               label={l`Send via chat`}
               onPress={() => {
-                logger.metric('share:press:openDmSearch', {}, {statsig: true})
+                ax.metric('share:press:openDmSearch', {})
                 sendViaChatControl.open()
               }}>
               <Menu.ItemText>
-                <Trans>Send via direct message</Trans>
+                <Trans>Send via chat</Trans>
               </Menu.ItemText>
               <Menu.ItemIcon icon={PaperPlaneIcon} position="right" />
             </Menu.Item>

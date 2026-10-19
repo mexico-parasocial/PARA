@@ -12,7 +12,7 @@ import {
   MapLayersPanel,
   SelectedStateOverlay,
 } from '#/screens/Map/MapComponents'
-import {CircleX_Stroke2_Corner0_Rounded as CircleX} from '#/components/icons/CircleX'
+import {CircleX_Stroke2_Corner0_Rounded as CircleX} from '#/components/icons/Circle'
 import {MapCivicDataNotice} from '../MapDataNotice'
 
 jest.mock('react-native-reanimated', () => {

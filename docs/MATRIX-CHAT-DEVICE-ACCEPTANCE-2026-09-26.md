@@ -308,3 +308,107 @@ to start from that profile, or from the rescue snapshot, has not been decided.
 Dedicated AppView authority credential provisioning is also still required.
 
 All other open gates in the table above are unchanged.
+
+
+## 2026-10-14 — connectivity, logout and notification reliability
+
+Messaging remains **not release-ready**. The user confirmed that a working
+iPhone is not available. VLPDS stays deferred; the native engine remains opt-in
+and existing community mappings have not been migrated.
+
+### Source and environment
+
+Local bases: PARA `019c6910cf4076c6391292098a2b6a28d155efba` and WatZappa
+`bc77528f7f4a480a52eddba9a95011e6ee44f2e0`, with uncommitted changes. Selected
+source hashes, sanitized results and test logs are retained in
+`../../messaging-acceptance-2026-10-14/`. These are local source revisions, not
+merged, deployed or signed release revisions.
+
+The original disposable demo remains on PDS 2583. A separate persistent
+acceptance unit now uses PDS 3583 / PLC 3582 / AppView 3584 / chat 3590,
+PostgreSQL 5544, Redis 6481 and a private source-bound bridge database under
+WatZappa `.messaging-dev-data`. Its bridge listens on 3001 and has no failed
+syncs. Restart preserved the PDS generation, service DIDs and firehose cursor;
+SQLite integrity passed. No original accounts, databases or cursors were reset.
+This does not make demo accounts interchangeable with acceptance accounts.
+
+### Implemented locally
+
+- Overall app logout, logout-all and account removal now close Matrix clients,
+  invalidate outstanding work, clear tracked native session/recovery secrets
+  and native crypto directories, and attempt homeserver logout with a deadline.
+  Local deletion still runs offline. Device registry entries contain metadata;
+  secrets remain in SecureStore. Saved devices from older builds are indexed
+  on first use after upgrade; unopened legacy devices are not proven purged.
+- Web logout clears only the target account's session/pending authorization.
+  A grant arriving after logout cannot repopulate its session. Another account's
+  session remains separate. Browser crypto stores stay account/device scoped.
+  Account switching retains saved sessions; logout revokes the selected account.
+- Matrix event push submissions now have per-event/per-token durable claims,
+  accepted ticket persistence and Expo receipt checks on both database drivers.
+  Partial failures retry only unsubmitted tokens. Terminal rows are retained for
+  seven days; pending receipts expire after 24 hours. Provider acceptance is a
+  separate state from device display. Network/crash ambiguity before persisting
+  a ticket can still duplicate a submission; this is not exactly-once delivery.
+  Count-only badge updates and non-Matrix governance pushes do not use this ledger.
+- Receipt errors/backlog expose metrics and alert rules. They have not been
+  wired to an operator receiver or delivery-tested.
+- Backup format 2 now includes Synapse + MAS dumps, IdP/MAS/signing configuration,
+  operator configuration, media and an online source-bound SQLite snapshot.
+  Safe verification and disposable component restoration passed. PDS, M8 keys/DB
+  and edge TLS remain separate dependencies; off-host shipping is not configured.
+
+### Verification actually run
+
+| Check | Result | Evidence / limits |
+| --- | --- | --- |
+| Focused client/session tests | Passed | 132 assertions / 18 suites, including offline logout, cross-account isolation, late grant refusal and existing session events. `para-tests-final.log`; web logout re-run passed 2 cases after its test typing fix. |
+| PARA platform typechecks | Passed | Full iOS, Android and web checks. `para-typecheck-final.log`. An initial new test callback type error was corrected. A later run encountered six diagnostics in concurrently edited civic-tree source; the import was corrected in that independent work before the final re-run (`para-typecheck-concurrent-edit.log`). |
+| Changed client lint | Passed | Scoped oxlint, `para-lint-final.log`. |
+| Bridge build and typecheck | Passed | `bridge-build-final.log`, `bridge-typecheck-final.log`. |
+| SQLite/PostgreSQL bridge suite | Passed | 385 assertions / 34 files, single worker, `bridge-tests-final.log`. An earlier concurrent replay test timed out; sequential complete run passed. |
+| Additional push durability checks | Passed | 9 cases across both drivers and SQLite reopening; shutdown waits for the receipt write, and accepted tickets survive database reopen. `push-durability-final.log`. Three assertions are additional to the 385-case full run. |
+| Bridge changed-source lint | Passed with warnings | Zero errors, four existing-style default-import warnings; `bridge-lint-final.log`. |
+| Ozone focused regressions | Passed | 48 assertions / 4 suites, 6 snapshots; `ozone-tests.log`. Includes current shared Ozone edits, not a messaging ownership claim. |
+| Existing Matrix smoke | Passed | Isolated Synapse → appservice → durable metadata/SSE, duplicate suppression; `bridge-smoke.log`. No user-device E2EE claim. |
+| Real SDK/WASM browser fixture | Passed | All 10 checks true; `browser-crypto.log`. Crypto/media/storage fixture only; no authorized live history restore. |
+| PARA web startup | Passed | Browser rendered logged-out PARA with no page errors on `http://localhost:19006`; `browser-launch-results.json`. No client grant or message exchange. |
+| Persistent profile restart | Passed | Source/DIDs/cursor preserved, bridge integrity/health good, original demo retained; `restart-results.json`. |
+| Backup preflight | Passed | Six structural/source/tampering/traversal checks; `backup-verification-tests.log`. No deployment mutation. |
+| Database component restore | Passed | Disposable PostgreSQL 14/16 restored 480 Synapse events and 34 MAS public tables; SQLite integrity/source passed. `restore-drill-results.json`. Initial initdb readiness race fixed by waiting for TCP. No full service/client restoration. |
+
+### Consistent local test entrypoints
+
+```bash
+# Terminal 1, WatZappa, Node 24.18+: independent broker on 8788
+bash scripts/messaging-broker.sh
+# Terminal 2, WatZappa, Node 22: persistent PDS/AppView/chat/bridge
+make run-messaging-env
+# Terminal 3, PARA, Node 24.18+: live DIDs, no default .env edits
+node scripts/messaging-web.mjs
+```
+
+The browser is served at `http://localhost:19006`; Expo Metro uses 8084.
+The launcher reads/validates live DIDs and selects the same isolated broker/PDS
+profile. It does not alter the existing Metro/demo environment. Current Matrix,
+MAS and IdP discovery still advertises loopback URLs: a real phone requires
+reviewed reachable HTTPS addresses and corresponding issuer/client settings.
+Do not replace operator credentials or mutate default identity databases to
+simulate authorized client acceptance.
+
+### Still open
+
+- Real iPhone + PARA browser login through iM8/IdP/MAS, actual-device attestation,
+  proof-based admission, encrypted text/media and recovery on a fresh device.
+- Client acceptance for expired sessions/cancellation, restart/account switching,
+  bridge outage/retry, supported pagination/replies/edits/reactions/typing/receipts,
+  unread counts and PARA/Element interoperability.
+- Ordinary-member denial and removal of moderator future access on separately
+  authorized devices; backend fixtures alone do not establish encryption outcomes.
+- Push/background display in properly signed builds and existing DM navigation.
+  The earlier DM API smoke remains historical; it was not repeated as UI acceptance.
+- Reviewed encrypted successor/read-only legacy history tooling, older-client
+  upgrade requirement, then accepted mapping cutover/rollback. No cutover occurred.
+- Real deployment health, actionable alert delivery, encrypted off-host backups,
+  full isolated deployment/client restore and rollback. Component restore results
+  must not be promoted to those gates.

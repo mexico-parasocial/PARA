@@ -35,16 +35,12 @@ import {Text} from '#/view/com/util/text/Text'
 import {atoms as a, useBreakpoints, useTheme, web} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import {CompassMini} from '#/components/CompassMini'
-import * as Dialog from '#/components/Dialog'
-import {ArrowShareRight_Stroke2_Corner2_Rounded as ShareIcon} from '#/components/icons/ArrowShareRight'
-import {Bookmark as BookmarkIcon} from '#/components/icons/Bookmark'
-import {Tree_Stroke2_Corner0_Rounded as TreeIcon} from '#/components/icons/Tree'
+import {ArrowShareRight_Stroke2_Corner2_Rounded as ShareIcon} from '#/components/icons/Arrow'
 import * as Layout from '#/components/Layout'
 import {LinearGradientBackground} from '#/components/LinearGradientBackground'
 import {ListMaybePlaceholder} from '#/components/Lists'
-import {SaveToCollectionDialog} from '#/components/SaveToCollectionDialog'
-import {CIVIC_TREE_LABELS} from '#/features/civicTree/labels'
-import {ContributeToCommunityTreeDialog} from '#/features/communityCivicTree/components/ContributeToCommunityTreeDialog'
+import {MatterRelated} from './MatterRelated'
+import {SaveButton} from './SaveButton'
 import {type PolicyItem} from './types'
 
 type Props = NativeStackScreenProps<
@@ -212,6 +208,15 @@ export function DetailsScreenBase({route, navigation}: Props) {
 
   const {gtMobile} = useBreakpoints()
 
+  // What a matter is tied to in the trees: the debate itself, or its flairs.
+  const relatedAnchor = useMemo(
+    () => ({
+      uri: cabildeo?.uri ?? cabildeoUri,
+      flairs: cabildeo?.flairs ?? legacyItem?.flairs,
+    }),
+    [cabildeo?.uri, cabildeo?.flairs, cabildeoUri, legacyItem?.flairs],
+  )
+
   if (cabildeoUri && !cabildeo && (isLoading || !isFetched)) {
     return (
       <Layout.Screen>
@@ -305,7 +310,7 @@ export function DetailsScreenBase({route, navigation}: Props) {
         </Layout.Header.Content>
         <View style={[a.flex_row, a.align_center, a.z_50]}>
           <SaveButton
-            policyUri={route.params?.cabildeoUri || ''}
+            policyUri={model.cabildeoUri ?? cabildeoUri ?? ''}
             policyTitle={model.title}
             policyCategory={model.categoryLabel}
             policyColor={model.categoryColor}
@@ -765,6 +770,13 @@ export function DetailsScreenBase({route, navigation}: Props) {
                 </View>
               )}
             </View>
+
+            {/* CIVIC TREES: what has been connected to this matter */}
+            {model.isMatter && isLoggedIn ? (
+              <View style={styles.section}>
+                <MatterRelated anchor={relatedAnchor} />
+              </View>
+            ) : null}
 
             {/* GOVERNANCE V2 */}
             {model.governanceCommunity ? (
@@ -1424,55 +1436,3 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 })
-
-function SaveButton({
-  policyUri,
-  policyTitle,
-  policyCategory,
-  policyColor,
-}: {
-  policyUri: string
-  policyTitle?: string
-  policyCategory?: string
-  policyColor?: string
-}) {
-  const control = Dialog.useDialogControl()
-  const contributeControl = Dialog.useDialogControl()
-  if (!policyUri) return null
-  const title = policyTitle || policyUri
-  return (
-    <>
-      <Button
-        label={CIVIC_TREE_LABELS.savePersonal}
-        size="small"
-        variant="ghost"
-        color="secondary"
-        shape="round"
-        onPress={control.open}>
-        <ButtonIcon icon={BookmarkIcon} size="lg" />
-      </Button>
-      <SaveToCollectionDialog
-        control={control}
-        policyUri={policyUri}
-        policyTitle={policyTitle}
-        policyCategory={policyCategory}
-        policyColor={policyColor}
-      />
-      <Button
-        label={CIVIC_TREE_LABELS.contributeCommunity}
-        size="small"
-        variant="ghost"
-        color="secondary"
-        shape="round"
-        onPress={contributeControl.open}>
-        <ButtonIcon icon={TreeIcon} size="lg" />
-      </Button>
-      <ContributeToCommunityTreeDialog
-        control={contributeControl}
-        sourceUri={policyUri}
-        title={title}
-        category={policyCategory}
-      />
-    </>
-  )
-}

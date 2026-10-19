@@ -5,7 +5,7 @@ import {useLingui} from '@lingui/react'
 import {logger} from '#/logger'
 import {atoms as a, useTheme} from '#/alf'
 import {Button} from '#/components/Button'
-import {EyeSlash_Stroke2_Corner0_Rounded as EyeSlash} from '#/components/icons/EyeSlash'
+import {EyeSlash_Stroke2_Corner0_Rounded as EyeSlash} from '#/components/icons/Eye'
 import {Text} from '#/components/Typography'
 
 export function ThreadItemShowOtherReplies({onPress}: {onPress: () => void}) {

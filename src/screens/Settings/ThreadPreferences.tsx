@@ -14,7 +14,7 @@ import {
 } from '#/state/queries/preferences/useThreadPreferences'
 import {atoms as a, useTheme} from '#/alf'
 import * as Toggle from '#/components/forms/Toggle'
-import {Bubbles_Stroke2_Corner2_Rounded as BubblesIcon} from '#/components/icons/Bubble'
+import {Bubbles_Stroke2_Corner2_Rounded as BubblesIcon} from '#/components/icons/Bubbles'
 import {Tree_Stroke2_Corner0_Rounded as TreeIcon} from '#/components/icons/Tree'
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'

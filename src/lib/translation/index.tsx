@@ -1,4 +1,4 @@
-import {type PropsWithChildren, useCallback, useEffect, useState} from 'react'
+import {useCallback, useContext, useMemo, useRef, useState} from 'react'
 import {LayoutAnimation, Platform} from 'react-native'
 import {getLocales} from 'expo-localization'
 import {onTranslateTask} from '@bsky.app/expo-translate-text'
@@ -12,7 +12,9 @@ import {logger} from '#/logger'
 import {useLanguagePrefs} from '#/state/preferences'
 import {useAnalytics} from '#/analytics'
 import {IS_ANDROID, IS_IOS, IS_TRANSLATION_SUPPORTED} from '#/env'
+import {Context} from './context'
 import {
+  type ContextType,
   type TranslationFunctionParams,
   type TranslationOptions,
   type TranslationState,
@@ -27,52 +29,23 @@ const E_SAME_AS_SOURCE_LANGUAGE =
 const E_EMPTY_RESULT = 'Translation result is empty.'
 const E_INVALID_SOURCE_LANGUAGE = 'Invalid source language'
 
-const translationStateStore: Record<string, TranslationState> = {}
-const refCountsStore: Record<string, number> = {}
-const subscribers = new Set<() => void>()
-
-function emitStoreUpdate() {
-  subscribers.forEach(subscriber => subscriber())
-}
-
-function setTranslationStateForKey(key: string, state?: TranslationState) {
-  if (state) {
-    translationStateStore[key] = state
-  } else {
-    delete translationStateStore[key]
-  }
-  emitStoreUpdate()
-}
-
-function acquireTranslation(key: string) {
-  refCountsStore[key] = (refCountsStore[key] ?? 0) + 1
-
-  return () => {
-    const newCount = (refCountsStore[key] ?? 1) - 1
-    if (newCount <= 0) {
-      delete refCountsStore[key]
-      if (translationStateStore[key]) {
-        delete translationStateStore[key]
-        emitStoreUpdate()
-      }
-      return
-    }
-    refCountsStore[key] = newCount
-  }
-}
-
 /**
  * Attempts on-device translation via @bsky.app/expo-translate-text.
+ * Uses a lazy import to avoid crashing if the native module isn't linked into
+ * the current build.
  */
 async function attemptTranslation(
   input: string,
   targetLangCodeOriginal: string,
-  sourceLangCodeOriginal?: string,
+  sourceLangCodeOriginal?: string, // Auto-detects if not provided
 ): Promise<{
   translatedText: string
   targetLanguage: TranslationTaskResult['targetLanguage']
   sourceLanguage: TranslationTaskResult['sourceLanguage']
 }> {
+  // Note that Android only supports two-character language codes and will fail
+  // on other input.
+  // https://developers.google.com/android/reference/com/google/mlkit/nl/translate/TranslateLanguage
   let targetLangCode = IS_ANDROID
     ? targetLangCodeOriginal.split('-')[0]
     : targetLangCodeOriginal
@@ -80,14 +53,16 @@ async function attemptTranslation(
     ? sourceLangCodeOriginal?.split('-')[0]
     : sourceLangCodeOriginal
 
+  // Special cases for regional languages since iOS differentiates and missing
+  // language packs must be downloaded and installed.
   if (IS_IOS) {
     const deviceLocales = getLocales()
     const primaryLanguageTag = deviceLocales[0]?.languageTag
     switch (targetLangCodeOriginal) {
-      case 'en':
-      case 'es':
-      case 'pt':
-      case 'zh':
+      case 'en': // en-US, en-GB
+      case 'es': // es-419, es-ES
+      case 'pt': // pt-BR, pt-PT
+      case 'zh': // zh-Hans-CN, zh-Hant-HK, zh-Hant-TW
         if (
           primaryLanguageTag &&
           primaryLanguageTag.startsWith(targetLangCodeOriginal)
@@ -104,6 +79,7 @@ async function attemptTranslation(
     sourceLangCode,
   })
 
+  // Since `input` is always a string, the result should always be a string.
   const translatedText =
     typeof result.translatedTexts === 'string' ? result.translatedTexts : ''
 
@@ -119,44 +95,149 @@ async function attemptTranslation(
     translatedText,
     targetLanguage: result.targetLanguage,
     sourceLanguage:
-      result.sourceLanguage ?? sourceLangCode ?? guessLanguage(input),
+      result.sourceLanguage ?? sourceLangCode ?? guessLanguage(input), // iOS doesn't return the source language
   }
 }
 
+/**
+ * Native translation hook. Attempts on-device translation using Apple
+ * Translation (iOS 18+) or Google ML Kit (Android).
+ *
+ * Falls back to Google Translate URL if the language pack is unavailable.
+ *
+ * Web uses index.web.ts which always opens Google Translate.
+ */
 export function useTranslate({
   key,
   forceGoogleTranslate = false,
 }: TranslationOptions) {
-  const [, setVersion] = useState(0)
+  const context = useContext(Context)
+  if (!context) {
+    throw new Error(
+      'useTranslate must be used within a TranslateOnDeviceProvider',
+    )
+  }
+
+  useFocusEffect(
+    useCallback(() => {
+      const cleanup = context.acquireTranslation(key)
+      return cleanup
+    }, [key, context]),
+  )
+
+  const translate = useCallback(
+    async (params: TranslationFunctionParams) => {
+      return context.translate(
+        {
+          ...params,
+        },
+        {
+          key,
+          forceGoogleTranslate,
+        },
+      )
+    },
+    [context, forceGoogleTranslate, key],
+  )
+
+  const clearTranslation = useCallback(
+    () => context.clearTranslation(key),
+    [context, key],
+  )
+
+  return useMemo(
+    () => ({
+      translationState: context.translationState[key] ?? {
+        status: 'idle',
+      },
+      translate,
+      clearTranslation,
+    }),
+    [clearTranslation, context.translationState, key, translate],
+  )
+}
+
+export function Provider({children}: React.PropsWithChildren<unknown>) {
+  const [translationState, setTranslationState] = useState<
+    Record<string, TranslationState>
+  >({})
+  /*
+   * Kept in a ref rather than state: every post acquires a key on mount and
+   * releases it on unmount, so state here re-rendered this near-root provider
+   * for every post that scrolled in or out of the feed.
+   */
+  const refCounts = useRef(new Map<string, number>())
+  const isPruneScheduled = useRef(false)
   const ax = useAnalytics()
   const langPrefs = useLanguagePrefs()
   const {t: l} = useLingui()
   const googleTranslate = useGoogleTranslate()
 
-  useEffect(() => {
-    const onStoreUpdate = () => {
-      setVersion(version => version + 1)
-    }
-    subscribers.add(onStoreUpdate)
+  const acquireTranslation = useCallback((key: string) => {
+    refCounts.current.set(key, (refCounts.current.get(key) ?? 0) + 1)
+
     return () => {
-      subscribers.delete(onStoreUpdate)
+      const newCount = (refCounts.current.get(key) ?? 1) - 1
+      if (newCount > 0) {
+        refCounts.current.set(key, newCount)
+        return
+      }
+      refCounts.current.delete(key)
+
+      /*
+       * Wait for the current flush of effects to finish before pruning. A
+       * release is often followed by an acquire of the same key in the same
+       * flush - going back from a thread to the feed blurs one screen and
+       * focuses the other - and the translation has to survive that.
+       */
+      if (isPruneScheduled.current) return
+      isPruneScheduled.current = true
+      queueMicrotask(() => {
+        isPruneScheduled.current = false
+        /*
+         * Drop translations that no mounted post uses anymore. Returning
+         * `prev` when there is nothing to drop (the common case) lets React
+         * skip the update entirely.
+         */
+        setTranslationState(prev => {
+          const keysToDelete = Object.keys(prev).filter(
+            k => !refCounts.current.has(k),
+          )
+          if (keysToDelete.length === 0) {
+            return prev
+          }
+          const newState = {...prev}
+          keysToDelete.forEach(k => {
+            delete newState[k]
+          })
+          return newState
+        })
+      })
     }
   }, [])
 
-  useFocusEffect(
-    useCallback(() => {
-      return acquireTranslation(key)
-    }, [key]),
-  )
+  const clearTranslation = useCallback((key: string) => {
+    if (!IS_ANDROID) {
+      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
+    }
+    setTranslationState(prev => {
+      const next = {...prev}
+      delete next[key]
+      return next
+    })
+  }, [])
 
-  const translate = useCallback(
-    async ({
-      text,
-      expectedTargetLanguage,
-      expectedSourceLanguage,
-      possibleSourceLanguages,
-      forceGoogleTranslate: forceGoogleTranslateOverride,
-    }: TranslationFunctionParams) => {
+  const translate = useCallback<ContextType['translate']>(
+    async (
+      {
+        text,
+        expectedTargetLanguage,
+        expectedSourceLanguage,
+        possibleSourceLanguages,
+        forceGoogleTranslate: forceGoogleTranslateOverride,
+      },
+      {key, forceGoogleTranslate},
+    ) => {
       const shouldForceGoogleTranslate = Boolean(
         forceGoogleTranslateOverride ?? forceGoogleTranslate,
       )
@@ -164,7 +245,7 @@ export function useTranslate({
       ax.metric('translate', {
         os: Platform.OS,
         possibleSourceLanguages,
-        expectedTargetLanguage,
+        expectedTargetLanguage: expectedTargetLanguage,
         textLength: text.length,
         googleTranslate: shouldForceGoogleTranslate,
       })
@@ -181,15 +262,16 @@ export function useTranslate({
       if (!IS_ANDROID) {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
       }
-      setTranslationStateForKey(key, {status: 'loading'})
-
+      setTranslationState(prev => ({
+        ...prev,
+        [key]: {status: 'loading'},
+      }))
       try {
         const result = await attemptTranslation(
           text,
           expectedTargetLanguage,
           expectedSourceLanguage,
         )
-
         ax.metric('translate:result', {
           success: true,
           os: Platform.OS,
@@ -200,22 +282,24 @@ export function useTranslate({
           resultTargetLanguage: result.targetLanguage,
           textLength: text.length,
         })
-
         if (!IS_ANDROID) {
           LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
         }
-
-        setTranslationStateForKey(key, {
-          status: 'success',
-          translatedText: result.translatedText,
-          sourceLanguage: result.sourceLanguage,
-          targetLanguage: result.targetLanguage,
-          postLanguages: possibleSourceLanguages,
-        })
+        setTranslationState(prev => ({
+          ...prev,
+          [key]: {
+            status: 'success',
+            translatedText: result.translatedText,
+            sourceLanguage: result.sourceLanguage,
+            targetLanguage: result.targetLanguage,
+            postLanguages: possibleSourceLanguages,
+          },
+        }))
       } catch (err) {
         const e = err as Error
-        logger.error('Failed to translate text on device', {safeMessage: e})
-
+        logger.warn('Failed to translate text on device', {safeMessage: e})
+        // On-device translation failed (language pack missing or user
+        // dismissed the download prompt).
         ax.metric('translate:result', {
           success: false,
           os: Platform.OS,
@@ -226,7 +310,6 @@ export function useTranslate({
           resultTargetLanguage: null,
           textLength: text.length,
         })
-
         let errorMessage = l`Device failed to translate :(`
         if (e.message === E_SAME_AS_SOURCE_LANGUAGE) {
           errorMessage = l`Translation to the same language is unavailable on your device.`
@@ -243,36 +326,22 @@ export function useTranslate({
             langPrefs.appLanguage,
           )} is not supported by your device.`
         }
-
         if (!IS_ANDROID) {
           LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
         }
-
-        setTranslationStateForKey(key, {
-          status: 'error',
-          message: errorMessage,
-        })
+        setTranslationState(prev => ({
+          ...prev,
+          [key]: {status: 'error', message: errorMessage},
+        }))
       }
     },
-    [ax, forceGoogleTranslate, googleTranslate, key, l, langPrefs.appLanguage],
+    [ax, googleTranslate, l, langPrefs.appLanguage],
   )
 
-  const clearTranslation = useCallback(() => {
-    if (!IS_ANDROID) {
-      LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
-    }
-    setTranslationStateForKey(key)
-  }, [key])
+  const ctx = useMemo(
+    () => ({acquireTranslation, clearTranslation, translate, translationState}),
+    [acquireTranslation, clearTranslation, translate, translationState],
+  )
 
-  return {
-    translationState: translationStateStore[key] ?? {
-      status: 'idle',
-    },
-    translate,
-    clearTranslation,
-  }
-}
-
-export function Provider({children}: PropsWithChildren<unknown>) {
-  return children
+  return <Context.Provider value={ctx}>{children}</Context.Provider>
 }

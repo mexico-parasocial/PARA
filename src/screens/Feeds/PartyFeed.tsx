@@ -18,7 +18,7 @@ import {FeedPage} from '#/view/com/feeds/FeedPage'
 import {HomeHeaderModeProvider} from '#/view/com/util/MainScrollProvider'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonIcon} from '#/components/Button'
-import {ArrowOutOfBoxModified_Stroke2_Corner2_Rounded as Share} from '#/components/icons/ArrowOutOfBox'
+import {ArrowOutOfBoxModified_Stroke2_Corner2_Rounded as Share} from '#/components/icons/Arrow'
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'
 

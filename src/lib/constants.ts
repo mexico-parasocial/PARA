@@ -40,7 +40,8 @@ export const DEFAULT_SERVICE =
   DEFAULT_SERVICE_OVERRIDE ||
   (USE_LOCAL_DEMO_DEFAULTS ? LOCAL_DEV_SERVICE : BSKY_SERVICE)
 export const IS_LOCAL_DEV_MODE = DEFAULT_SERVICE === LOCAL_DEV_SERVICE
-export const DEV_ENV_APPVIEW = `http://${LOCAL_DEV_IP}:2584` // always the same
+export const DEV_ENV_APPVIEW =
+  process.env.EXPO_PUBLIC_LOCAL_APPVIEW_URL || `http://${LOCAL_DEV_IP}:2584`
 // The local AppView's DID, used as the `atproto-proxy` target for local
 // accounts. dev-env derives it from a PLC create-op signed with the fixed dev
 // `bsky` key (DEV_BSKY_HEX) that names `http://localhost:2584` as endpoint

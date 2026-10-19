@@ -1,6 +1,6 @@
 import {memo, useCallback} from 'react'
 import {Platform} from 'react-native'
-import {type GestureType} from 'react-native-gesture-handler'
+import {type PanGesture} from 'react-native-gesture-handler'
 import * as Clipboard from 'expo-clipboard'
 import {type ModerationOpts} from '@bsky/sdk/moderation'
 import {RichText} from '@bsky/sdk/richtext'
@@ -19,7 +19,7 @@ import * as ContextMenu from '#/components/ContextMenu'
 import {type TriggerProps} from '#/components/ContextMenu/types'
 import {useMessageDialogs} from '#/components/dms/MessageOverlays'
 import {useMessageReplies} from '#/components/dms/MessageReplies'
-import {ArrowCornerDownRight_Stroke2_Corner2_Rounded as ReplyIcon} from '#/components/icons/ArrowCornerDownRight'
+import {ArrowCornerDownRight_Stroke2_Corner2_Rounded as ReplyIcon} from '#/components/icons/Arrow'
 import {Clipboard_Stroke2_Corner2_Rounded as ClipboardIcon} from '#/components/icons/Clipboard'
 import {Flag_Stroke2_Corner0_Rounded as FlagIcon} from '#/components/icons/Flag'
 import {Language_Stroke2_Corner2_Rounded as LanguageIcon} from '#/components/icons/Language'
@@ -47,7 +47,7 @@ export let MessageContextMenu = ({
    * Native only. A swipe gesture (swipe-to-reply) composed into the trigger's
    * gesture group so it's mutually exclusive with the tap and long-press.
    */
-  swipeGesture?: GestureType
+  swipeGesture?: PanGesture
 }): React.ReactNode => {
   const {t: l, i18n} = useLingui()
   const ax = useAnalytics()

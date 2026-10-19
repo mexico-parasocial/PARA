@@ -13,7 +13,7 @@ import {
   ChevronBottom_Stroke2_Corner0_Rounded as ChevronDownIcon,
   ChevronTopBottom_Stroke2_Corner0_Rounded as ChevronUpDownIcon,
 } from '#/components/icons/Chevron'
-import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/Times'
+import {TimesLarge_Stroke2_Corner0_Rounded as XIcon} from '#/components/icons/TimesLarge'
 import * as Menu from '#/components/Menu'
 import {Text} from '#/components/Typography'
 import {AutocompleteInput} from './AutocompleteInput'
@@ -184,11 +184,6 @@ export function FilterBlock({
         />
       ) : HANDLE_FIELDS.has(filter.field) ? (
         <AutocompleteInput
-          /*
-           * Remount on field-type change so the input resets to the cleared
-           * value; mode changes keep the same field and so preserve the text.
-           */
-          key={filter.field}
           label={labels[filter.field].label}
           value={filter.value}
           onChangeText={text => onChange({value: text})}
@@ -196,13 +191,8 @@ export function FilterBlock({
         />
       ) : (
         <ClearableInput
-          /*
-           * The input is uncontrolled (defaultValue), so remount on field-type
-           * change to reset it; mode changes keep the same field and text.
-           */
-          key={filter.field}
           label={labels[filter.field].label}
-          defaultValue={filter.value}
+          value={filter.value}
           onChangeText={text => onChange({value: text})}
           onSubmitEditing={onSubmitEditing}
         />
