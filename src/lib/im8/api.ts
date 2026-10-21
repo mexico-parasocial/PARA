@@ -8,6 +8,7 @@ import {
   readM8Credentials,
   storeM8Credentials,
 } from './credentials'
+import {M8_COOKIE_REFRESH, M8_WEB_COOKIE_REFRESH} from './refreshTransport'
 import {
   type AnonymousGermConnection,
   type AnonymousIdentityCard,
@@ -66,6 +67,58 @@ function assertBrokerConfigured() {
 export const getM8AccessToken = getBoundM8AccessToken
 let refreshing: Promise<boolean> | undefined
 
+// Web asks the broker to keep the refresh token in its HttpOnly cookie.
+const refreshTransport: {headers: Record<string, string>; init: RequestInit} =
+  M8_WEB_COOKIE_REFRESH
+    ? {
+        headers: {'x-m8-refresh-transport': 'cookie'},
+        init: {credentials: 'include'},
+      }
+    : {headers: {}, init: {}}
+
+type M8WireTokens = Omit<M8Tokens, 'refreshToken'> & {
+  refreshToken: string | null
+  refreshTransport?: 'cookie'
+}
+function acceptTokens(tokens: M8WireTokens): M8Tokens {
+  return {
+    ...tokens,
+    refreshToken:
+      tokens.refreshToken ??
+      (tokens.refreshTransport === 'cookie' ? M8_COOKIE_REFRESH : ''),
+  }
+}
+
+type WebLocks = {request<T>(name: string, work: () => Promise<T>): Promise<T>}
+
+function requestRefresh(refreshToken: string): Promise<Response> {
+  const send = () =>
+    fetch(`${API_BASE}/sessions/refresh`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        ...refreshTransport.headers,
+      },
+      ...refreshTransport.init,
+      body: JSON.stringify(M8_WEB_COOKIE_REFRESH ? {} : {refreshToken}),
+    })
+  if (!M8_WEB_COOKIE_REFRESH) return send()
+  // Every tab shares one cookie. Serialize rotations across tabs, and retry
+  // once if another tab rotated the cookie between our read and its write.
+  const once = async () => {
+    const res = await send()
+    if (res.status !== 401) return res
+    const {code} = (await res
+      .clone()
+      .json()
+      .catch(() => ({}))) as {code?: string}
+    return code === 'REFRESH_TOKEN_REUSED' ? send() : res
+  }
+  const locks = (globalThis as {navigator?: {locks?: WebLocks}}).navigator
+    ?.locks
+  return locks ? locks.request('m8-refresh', once) : once()
+}
+
 export async function m8Fetch(
   path: string,
   options: RequestInit = {},
@@ -110,17 +163,31 @@ export function refreshM8AccessToken(): Promise<boolean> {
       return false
     try {
       assertBrokerConfigured()
-      const res = await fetch(`${API_BASE}/sessions/refresh`, {
-        method: 'POST',
-        headers: {'content-type': 'application/json'},
-        body: JSON.stringify({refreshToken: credentials.refreshToken}),
-      })
-      if (!res.ok) return false
-      const tokens = (await res.json()) as M8Tokens
+      const res = await requestRefresh(credentials.refreshToken)
+      if (!res.ok) {
+        // The cookie is gone or expired: forget the marker so later loads
+        // stop retrying. A reuse rejection means another tab won the rotation.
+        if (M8_WEB_COOKIE_REFRESH && res.status === 401) {
+          const {code} = (await res.json().catch(() => ({}))) as {
+            code?: string
+          }
+          if (code !== 'REFRESH_TOKEN_REUSED') await clearM8Credentials()
+        }
+        return false
+      }
+      const body = (await res.json()) as M8WireTokens & {
+        session?: {sessionId: string; did: string | null}
+      }
+      if (
+        body.session &&
+        (body.session.did !== credentials.did ||
+          body.session.sessionId !== credentials.sessionId)
+      )
+        return false
       await storeM8Credentials(
         credentials.did,
         credentials.sessionId,
-        tokens,
+        acceptTokens(body),
         credentials.version,
       )
       return true
@@ -133,6 +200,20 @@ export function refreshM8AccessToken(): Promise<boolean> {
     if (refreshing === work) refreshing = undefined
   })
   return work
+}
+
+/**
+ * After a web reload only the cookie session survives: mint a fresh access
+ * token for it when it belongs to `did`. Native keeps its tokens in
+ * SecureStore and has nothing to resume.
+ */
+export async function resumeM8WebSession(did: string): Promise<boolean> {
+  if (!M8_WEB_COOKIE_REFRESH || !M8_BROKER_URL) return false
+  const credentials = await readM8Credentials()
+  if (credentials.did !== did) return false
+  if (credentials.accessToken) return true
+  if (credentials.refreshToken !== M8_COOKIE_REFRESH) return false
+  return refreshM8AccessToken()
 }
 
 /**
@@ -180,26 +261,42 @@ export async function exchangeM8Code(
   assertBrokerConfigured()
   const res = await fetch(`${API_BASE}/sessions/exchange`, {
     method: 'POST',
-    headers: {'content-type': 'application/json'},
+    headers: {'content-type': 'application/json', ...refreshTransport.headers},
+    ...refreshTransport.init,
     body: JSON.stringify({code, attemptId, verifier}),
   })
   if (!res.ok) {
     const error = (await res.json().catch(() => ({}))) as {code?: string}
     throw new Error(error.code ?? 'M8_EXCHANGE_FAILED')
   }
-  return (await res.json()) as M8SessionExchangeResponse
+  const body = (await res.json()) as Omit<
+    M8SessionExchangeResponse,
+    'tokens'
+  > & {tokens: M8WireTokens}
+  return {...body, tokens: acceptTokens(body.tokens)}
 }
 export async function revokeM8Session(): Promise<void> {
+  // Logout needs an access token, which a reloaded web page may not have yet.
+  const current = await readM8Credentials()
+  if (
+    M8_WEB_COOKIE_REFRESH &&
+    !current.accessToken &&
+    current.refreshToken === M8_COOKIE_REFRESH
+  )
+    await refreshM8AccessToken()
   const {accessToken, refreshToken} = await detachM8Credentials()
   if (!accessToken || !refreshToken || !M8_BROKER_URL) return
   assertBrokerConfigured()
+  const cookie = refreshToken === M8_COOKIE_REFRESH
   const res = await fetch(`${API_BASE}/sessions/logout`, {
     method: 'POST',
     headers: {
       'content-type': 'application/json',
       authorization: `Bearer ${accessToken}`,
+      ...(cookie ? refreshTransport.headers : {}),
     },
-    body: JSON.stringify({refreshToken}),
+    ...(cookie ? refreshTransport.init : {}),
+    body: JSON.stringify(cookie ? {} : {refreshToken}),
   })
   if (!res.ok) throw new Error('M8_LOGOUT_REVOCATION_FAILED')
 }
