@@ -56,10 +56,9 @@ export type CommonNavigatorParams = {
   Atmosphere: undefined
   Lists: undefined
   Moderation: undefined
-  ModerationInbox: {tab?: ModerationInboxTab} | undefined
+  ModerationInbox: {tab?: ModerationInboxTab}
   ModerationInboxSettings: undefined
-  ModerationInboxReportDetails:
-    {moderationService: string; id: string} | undefined
+  ModerationInboxReportDetails: {moderationService: string; id: string}
   ModerationInboxNoticeDetails:
     {moderationService: string; subject: string} | undefined
   ModerationModlists: undefined
@@ -275,6 +274,11 @@ export type BottomTabNavigatorParams = CommonNavigatorParams & {
   MyProfileTab: undefined
   DataTab: undefined
   MessagesTab: {screen?: string; params?: object} | undefined
+  AtmosphereTab: undefined
+  FeedsTab: undefined
+  ListsTab: undefined
+  BookmarksTab: undefined
+  SettingsTab: undefined
 }
 
 export type HomeTabNavigatorParams = CommonNavigatorParams & {
@@ -399,6 +403,7 @@ export type AllNavigatorParams = CommonNavigatorParams & {
   Notifications: undefined
   MyProfileTab: undefined
   MessagesTab: BottomTabNavigatorParams['MessagesTab']
+  AtmosphereTab: undefined
   DataTab: undefined
   Data: undefined
   MyBase: undefined
@@ -418,6 +423,10 @@ export type AllNavigatorParams = CommonNavigatorParams & {
     /** A reported message a moderator opened from the report queue. */
     focusEventId?: string
   }
+  FeedsTab: undefined
+  ListsTab: undefined
+  BookmarksTab: undefined
+  SettingsTab: undefined
   CommunityMembers: {communityUri: string; communityName: string}
   ModeratorDashboard: {communityUri: string; communityName: string}
   CommunityRoles: {communityId: string; communityName: string}

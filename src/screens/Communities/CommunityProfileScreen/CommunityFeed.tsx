@@ -5,10 +5,10 @@ import {useLingui} from '@lingui/react'
 import {type UsePaletteValue} from '#/lib/hooks/usePalette'
 import {cleanError} from '#/lib/strings/errors'
 import {Post} from '#/view/com/post/Post'
-import {PostFeedLoadingPlaceholder} from '#/view/com/util/LoadingPlaceholder'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import {ListFooter} from '#/components/Lists'
+import {PostFeedSkeleton} from '#/components/PostFeedSkeleton'
 import {app} from '#/lexicons'
 import {styles} from './styles'
 
@@ -41,7 +41,7 @@ export function CommunityFeed({
   return (
     <View style={styles.feedScroll}>
       {isLoading || !isFetched ? (
-        <PostFeedLoadingPlaceholder />
+        <PostFeedSkeleton />
       ) : isError ? (
         <View
           style={[

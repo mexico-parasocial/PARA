@@ -1,4 +1,10 @@
-import {type ComponentType, type JSX, useCallback, useRef} from 'react'
+import {
+  type ComponentType,
+  type JSX,
+  useCallback,
+  useEffect,
+  useRef,
+} from 'react'
 import * as Linking from 'expo-linking'
 import * as Notifications from 'expo-notifications'
 import {Referrer} from '@bsky.app/expo-bluesky-swiss-army'
@@ -35,11 +41,15 @@ import {useCallOnce} from '#/lib/once'
 import {
   buildStateObject,
   getCurrentRoute,
+  getTabState,
   NATIVE_LINK_ACTION_CONFIG,
+  TabState,
 } from '#/lib/routes/helpers'
+import {type SidebarTab} from '#/lib/routes/tab-to-nav-item'
 import {
   type AllNavigatorParams,
   type BottomTabNavigatorParams,
+  type CommonNavigatorParams,
   type DataTabNavigatorParams,
   type FlatNavigatorParams,
   type HomeTabNavigatorParams,
@@ -53,8 +63,10 @@ import {
 } from '#/lib/routes/types'
 import {bskyTitle} from '#/lib/strings/headings'
 import {CHAT_INVITE_CODE_REGEX} from '#/lib/strings/url-helpers'
+import {emitSoftReset} from '#/state/events'
 import {useUnreadNotifications} from '#/state/queries/notifications/unread'
 import {useSession} from '#/state/session'
+import {useOnboardingState} from '#/state/shell'
 import {
   useLoggedOutView,
   useLoggedOutViewControls,
@@ -63,6 +75,7 @@ import {
   shouldRequestEmailConfirmation,
   snoozeEmailConfirmationPrompt,
 } from '#/state/shell/reminders'
+import {useShellLayout} from '#/state/shell/shell-layout'
 import {useCloseAllActiveElements} from '#/state/util'
 import {CommunityGuidelinesScreen} from '#/view/screens/CommunityGuidelines'
 import {CopyrightPolicyScreen} from '#/view/screens/CopyrightPolicy'
@@ -83,6 +96,8 @@ import {SupportScreen} from '#/view/screens/Support'
 import {TermsOfServiceScreen} from '#/view/screens/TermsOfService'
 import {BottomBar} from '#/view/shell/bottom-bar/BottomBar'
 import {createNativeStackNavigatorWithAuth} from '#/view/shell/createNativeStackNavigatorWithAuth'
+import {DesktopLeftNav} from '#/view/shell/desktop/LeftNav'
+import {getNativeTabBarVisibility} from '#/view/shell/nativeTabBarVisibility'
 import {AgoraScreen} from '#/screens/Agora/AgoraScreen'
 import {ProposalDetailScreen} from '#/screens/Agora/ProposalDetailScreen'
 import {AtmosphereScreen} from '#/screens/Atmosphere'
@@ -217,7 +232,7 @@ import {
 import {Wizard} from '#/screens/StarterPack/Wizard'
 import TopicScreen from '#/screens/Topic'
 import {VideoFeed} from '#/screens/VideoFeed'
-import {type Theme, useTheme} from '#/alf'
+import {type Theme, useBreakpoints, useTheme} from '#/alf'
 import {
   EmailDialogScreenID,
   useEmailDialogControl,
@@ -239,6 +254,7 @@ const MyProfileTab =
 const DataTab = createNativeStackNavigatorWithAuth<DataTabNavigatorParams>()
 const MessagesTab =
   createNativeStackNavigatorWithAuth<MessagesTabNavigatorParams>()
+const SecondaryTab = createNativeStackNavigatorWithAuth<CommonNavigatorParams>()
 const Flat = createNativeStackNavigatorWithAuth<FlatNavigatorParams>()
 const Tab = createBottomTabNavigator<BottomTabNavigatorParams>()
 const RootStack = createNativeStackNavigatorWithAuth<RootStackParams>()
@@ -1090,12 +1106,11 @@ function TabsNavigator({
 }: {
   layout?: React.ComponentProps<typeof Tab.Navigator>['layout']
 }) {
-  const {hasSession} = useSession()
-  const {showLoggedOut} = useLoggedOutView()
   const tabBar = useCallback(
-    (props: JSX.IntrinsicAttributes & BottomTabBarProps) =>
-      hasSession && !showLoggedOut ? <BottomBar {...props} /> : null,
-    [hasSession, showLoggedOut],
+    (props: JSX.IntrinsicAttributes & BottomTabBarProps) => (
+      <NativeTabBar {...props} />
+    ),
+    [],
   )
 
   return (
@@ -1115,6 +1130,20 @@ function TabsNavigator({
       <Tab.Screen
         name="MyProfileTab"
         getComponent={() => MyProfileTabNavigator}
+      />
+      <Tab.Screen
+        name="AtmosphereTab"
+        getComponent={() => AtmosphereTabNavigator}
+      />
+      <Tab.Screen name="FeedsTab" getComponent={() => FeedsTabNavigator} />
+      <Tab.Screen name="ListsTab" getComponent={() => ListsTabNavigator} />
+      <Tab.Screen
+        name="BookmarksTab"
+        getComponent={() => BookmarksTabNavigator}
+      />
+      <Tab.Screen
+        name="SettingsTab"
+        getComponent={() => SettingsTabNavigator}
       />
       <Tab.Screen
         name="MessagesTab"
@@ -1144,6 +1173,104 @@ export function RootNavigator() {
   )
 }
 
+function SecondaryTabNavigator({
+  initialRouteName,
+}: {
+  initialRouteName: keyof CommonNavigatorParams
+}) {
+  const t = useTheme()
+  return (
+    <SecondaryTab.Navigator
+      screenOptions={screenOptions(t)}
+      initialRouteName={initialRouteName}>
+      {commonScreens(SecondaryTab as typeof Flat)}
+    </SecondaryTab.Navigator>
+  )
+}
+
+function AtmosphereTabNavigator() {
+  return <SecondaryTabNavigator initialRouteName="Atmosphere" />
+}
+
+function FeedsTabNavigator() {
+  return <SecondaryTabNavigator initialRouteName="Feeds" />
+}
+
+function ListsTabNavigator() {
+  return <SecondaryTabNavigator initialRouteName="Lists" />
+}
+
+function BookmarksTabNavigator() {
+  return <SecondaryTabNavigator initialRouteName="Bookmarks" />
+}
+
+function SettingsTabNavigator() {
+  return <SecondaryTabNavigator initialRouteName="Settings" />
+}
+
+function NativeTabBar(props: BottomTabBarProps) {
+  const {gtMobile} = useBreakpoints()
+  const {hasSession, currentAccount} = useSession()
+  const onboardingState = useOnboardingState()
+  const {showLoggedOut} = useLoggedOutView()
+  const {footerHeight} = useShellLayout()
+  const currentRouteName = getCurrentRoute(props.state).name
+  const {showTabletSidebar, hideTabBar} = getNativeTabBarVisibility({
+    gtMobile,
+    hasSession,
+    signupQueued: !!currentAccount?.signupQueued,
+    showLoggedOut,
+    onboardingActive: onboardingState.isActive,
+    isVideoFeed: currentRouteName === 'VideoFeed',
+  })
+
+  useEffect(() => {
+    if (showTabletSidebar || hideTabBar) {
+      footerHeight.set(0)
+    }
+  }, [showTabletSidebar, hideTabBar, footerHeight])
+
+  const onNavigateTab = (tab: SidebarTab) => {
+    const state = props.navigation.getState()
+    const tabState = getTabState(state, tab)
+    if (tabState === TabState.InsideAtRoot) {
+      emitSoftReset()
+    } else if (tabState === TabState.Inside) {
+      const target = state.routes.find(route => route.name === `${tab}Tab`)
+        ?.state?.key
+      if (target) {
+        props.navigation.dispatch({
+          ...StackActions.popToTop(),
+          target,
+        })
+      } else {
+        props.navigation.reset({
+          index: 0,
+          routes: [{name: `${tab}Tab`}],
+        })
+      }
+    } else {
+      // The tab navigator route names mirror the shared navigation tab names.
+      props.navigation.navigate(`${tab}Tab`)
+    }
+  }
+
+  if (hideTabBar) {
+    return null
+  }
+
+  if (showTabletSidebar) {
+    return (
+      <DesktopLeftNav
+        routeName={currentRouteName}
+        onNavigateTab={onNavigateTab}
+      />
+    )
+  }
+
+  return <BottomBar {...props} />
+}
+
 function screenOptions(t: Theme) {
   return {
     fullScreenGestureEnabled: true,
@@ -1154,17 +1281,20 @@ function screenOptions(t: Theme) {
 
 function HomeTabNavigator() {
   const t = useTheme()
-  const blurredScrollEdgeEffect = IS_LIQUID_GLASS
-    ? ({
-        headerShown: true,
-        headerTransparent: true,
-        headerTitle: '',
-        headerBackVisible: false,
-        scrollEdgeEffects: {
-          top: 'soft',
-        },
-      } as const)
-    : {}
+  const {gtMobile} = useBreakpoints()
+
+  const blurredScrollEdgeEffect =
+    IS_LIQUID_GLASS && !gtMobile
+      ? ({
+          headerShown: true,
+          headerTransparent: true,
+          headerTitle: '',
+          headerBackVisible: false,
+          scrollEdgeEffects: {
+            top: 'soft',
+          },
+        } as const)
+      : {}
 
   return (
     <HomeTab.Navigator screenOptions={screenOptions(t)} initialRouteName="Home">
@@ -1553,6 +1683,15 @@ const LINKING = {
         name === 'CommunityChat'
       ) {
         return buildStateObject('MessagesTab', name, params)
+      }
+      if (
+        name === 'Atmosphere' ||
+        name === 'Feeds' ||
+        name === 'Lists' ||
+        name === 'Bookmarks' ||
+        name === 'Settings'
+      ) {
+        return buildStateObject(`${name}Tab`, name, params)
       }
       // if the path is something else, like a post, profile, or even settings, we need to initialize the home tab as pre-existing state otherwise the back button will not work
       return buildStateObject('HomeTab', name, params, [

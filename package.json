@@ -1,12 +1,12 @@
 {
   "name": "para.app",
-  "version": "1.135.0",
+  "version": "1.136.0",
   "private": true,
   "engines": {
-    "node": ">=24.18.0",
+    "node": ">=24.22.1",
     "runtime": {
       "name": "node",
-      "version": "^24.18.0",
+      "version": "^24.22.1",
       "onFail": "download"
     }
   },
@@ -18,11 +18,11 @@
     },
     "runtime": {
       "name": "node",
-      "version": "^24.18.0",
+      "version": "^24.22.1",
       "onFail": "download"
     }
   },
-  "packageManager": "pnpm@11.21.0",
+  "packageManager": "pnpm@11.28.5",
   "expo": {
     "autolinking": {
       "android": {
@@ -142,7 +142,7 @@
     "@bsky.app/react-native-uitextview": "^2.7.1",
     "@bsky.app/sift": "^0.3.9",
     "@bsky.app/tapper": "^0.6.1",
-    "@bsky.app/video": "0.4.0",
+    "@bsky.app/video": "0.4.2",
     "@bsky.app/video-compressor": "0.2.0",
     "@bsky/sdk": "1.1.5",
     "@emoji-mart/data": "^1.2.1",
@@ -273,7 +273,7 @@
     "react-native-maps": "1.27.2",
     "react-native-mmkv": "^3.3.3",
     "react-native-nano-icons": "1.0.1",
-    "react-native-pager-view": "6.8.0",
+    "react-native-pager-view": "9.0.9",
     "react-native-progress": "^5.0.1",
     "react-native-qrcode-styled": "^0.3.3",
     "react-native-qrcode-svg": "^6.3.21",

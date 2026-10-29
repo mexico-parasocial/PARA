@@ -30,7 +30,7 @@ import {useUpdateAllRead} from '#/state/queries/messages/update-all-read'
 import {useSession} from '#/state/session'
 import {EmptyState} from '#/view/com/util/EmptyState'
 import {List, type ListRef} from '#/view/com/util/List'
-import {ChatListLoadingPlaceholder} from '#/view/com/util/LoadingPlaceholder'
+import {ChatListSkeleton} from '#/screens/Messages/components/ChatListSkeleton'
 import {atoms as a, useBreakpoints, useTheme, web} from '#/alf'
 import {AgeRestrictedScreen} from '#/components/ageAssurance/AgeRestrictedScreen'
 import {useAgeAssuranceCopy} from '#/components/ageAssurance/useAgeAssuranceCopy'
@@ -42,7 +42,6 @@ import {ArrowRotateCounterClockwise_Stroke2_Corner0_Rounded as RetryIcon} from '
 import {BubbleSmile_Stroke2_Corner2_Rounded_Large as BubbleSmileIcon} from '#/components/icons/Bubble'
 import {CircleCheck_Stroke2_Corner0_Rounded as CircleCheckIcon} from '#/components/icons/Circle'
 import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfoIcon} from '#/components/icons/Circle'
-import {Group3_Stroke2_Corner0_Rounded as CommunitiesIcon} from '#/components/icons/Group3'
 import {
   Inbox_Stroke2_Corner2_Rounded as InboxIcon,
   Inbox_Stroke2_Corner2_Rounded_Large as InboxLargeIcon,
@@ -62,7 +61,7 @@ import {Text} from '#/components/Typography'
 import {useAgeAssurance} from '#/ageAssurance'
 import {IS_NATIVE, IS_WEB} from '#/env'
 import {MATRIX_DMS_ENABLED} from '#/env'
-import {chat} from '#/lexicons'
+import {type chat} from '#/lexicons'
 import {AgentSelection} from './components/AgentSelection'
 import {ChatDisabled} from './components/ChatDisabled'
 import {ChatListItem} from './components/ChatListItem'
@@ -99,6 +98,7 @@ type ListItem =
   | {
       type: 'COMMUNITY_STRIP'
       communities: CommunityTile[]
+      unavailable: boolean
     }
   | {
       type: 'MATRIX_UNAVAILABLE'
@@ -115,7 +115,12 @@ function renderItem({item}: {item: ListItem}) {
     case 'MATRIX_ROOM':
       return <ChatListItem type="matrix-room" room={item} />
     case 'COMMUNITY_STRIP':
-      return <CommunityStrip communities={item.communities} />
+      return (
+        <CommunityStrip
+          communities={item.communities}
+          notice={item.unavailable ? <MatrixUnavailableNotice /> : undefined}
+        />
+      )
     case 'MATRIX_UNAVAILABLE':
       return <MatrixUnavailableNotice />
   }
@@ -444,13 +449,10 @@ export function ChatList({
 
     if (matrixUnavailable || communityRows.length) {
       // The strip carries its own collapsible "Comunidades" header.
-      if (matrixUnavailable || !communityRows.length) {
-        items.push({type: 'SECTION', label: l`Comunidades`})
-      }
-      if (matrixUnavailable) items.push({type: 'MATRIX_UNAVAILABLE'})
       if (communityRows.length) {
         items.push({
           type: 'COMMUNITY_STRIP',
+          unavailable: matrixUnavailable,
           communities: communityRows.map(row => ({
             communityUri: row.communityUri,
             roomId: row.roomId,
@@ -458,6 +460,9 @@ export function ChatList({
             unread: row.unread,
           })),
         })
+      } else if (matrixUnavailable) {
+        items.push({type: 'SECTION', label: l`Comunidades`})
+        items.push({type: 'MATRIX_UNAVAILABLE'})
       }
     }
 
@@ -544,7 +549,7 @@ export function ChatList({
     return (
       <Layout.Center style={web({minHeight: '100%'})}>
         {isLoading || isLoadingMatrixRooms || isLoadingBoards ? (
-          <ChatListLoadingPlaceholder />
+          <ChatListSkeleton />
         ) : (
           <ChatListEmptyState
             isError={isError}
@@ -795,14 +800,6 @@ export function Header({
               variant="solid"
               action={action}
             />
-            <Button
-              label={l`Chats de comunidades`}
-              size="small"
-              color="secondary"
-              shape="round"
-              onPress={() => navigation.navigate('CommunityChats')}>
-              <ButtonIcon icon={CommunitiesIcon} />
-            </Button>
             {MATRIX_DMS_ENABLED && (
               <Button
                 label={l`Mensajes cifrados`}
@@ -848,15 +845,6 @@ export function Header({
           </Layout.Header.Content>
           <InboxRequests count={requestCount} variant="ghost" />
           <Layout.Header.Slot>
-            <Button
-              label={l`Chats de comunidades`}
-              size="small"
-              variant="ghost"
-              color="secondary"
-              shape="round"
-              onPress={() => navigation.navigate('CommunityChats')}>
-              <ButtonIcon icon={CommunitiesIcon} size="lg" />
-            </Button>
             {MATRIX_DMS_ENABLED && (
               <Button
                 label={l`Mensajes cifrados`}

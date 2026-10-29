@@ -30,7 +30,6 @@ import {isThreadChildAt, isThreadParentAt} from '#/view/com/posts/PostFeed'
 import {PostFeedItem} from '#/view/com/posts/PostFeedItem'
 import {ViewFullThread} from '#/view/com/posts/ViewFullThread'
 import {List} from '#/view/com/util/List'
-import {FeedFeedLoadingPlaceholder} from '#/view/com/util/LoadingPlaceholder'
 import {LoadMoreRetryBtn} from '#/view/com/util/LoadMoreRetryBtn'
 import {ExploreInterestsCard} from '#/screens/Search/modules/ExploreInterestsCard'
 import {ExploreTrendingTopics} from '#/screens/Search/modules/ExploreTrendingTopics'
@@ -39,6 +38,7 @@ import {atoms as a, native, platform, useTheme} from '#/alf'
 import {Admonition} from '#/components/Admonition'
 import {Button} from '#/components/Button'
 import * as FeedCard from '#/components/FeedCard'
+import {FeedCardListSkeleton} from '#/components/FeedCardSkeleton'
 import {ChevronBottom_Stroke2_Corner0_Rounded as ChevronDownIcon} from '#/components/icons/Chevron'
 import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfo} from '#/components/icons/Circle'
 import {
@@ -757,7 +757,7 @@ export function Explore({
           )
         }
         case 'feedPlaceholder': {
-          return <FeedFeedLoadingPlaceholder />
+          return <FeedCardListSkeleton />
         }
         case 'error':
         case 'preview:error': {

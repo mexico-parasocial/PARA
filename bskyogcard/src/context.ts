@@ -32,7 +32,9 @@ export class AppContext {
   static async fromConfig(cfg: Config, overrides?: Partial<AppContextOptions>) {
     const appviewAgent = new AtpAgent({service: cfg.service.appviewUrl})
     const fontDirectory = path.join(__DIRNAME, 'assets', 'fonts')
-    const fontFiles = readdirSync(fontDirectory)
+    const fontFiles = readdirSync(fontDirectory).filter(file =>
+      file.endsWith('.ttf'),
+    )
     const fonts = fontFiles.map(file => {
       return {
         name: path.basename(file, path.extname(file)),

@@ -259,7 +259,19 @@ export function relatedFromCommunityGraph(
 function identity(item: RelatedItem) {
   if (item.uri) return `uri:${item.uri.replace(/\/+$/, '')}`
   if (item.url) return `url:${normalizeSubjectUrl(item.url) ?? item.url}`
-  return `title:${item.type}:${item.title.toLowerCase()}`
+  return titleKey(item)
+}
+
+/*
+ * The same post is a `post` item in a collection and an `article` card in a
+ * community, so the type cannot tell them apart; the category can.
+ */
+function titleKey(item: RelatedItem) {
+  return `title:${item.category}:${item.title.trim().toLowerCase()}`
+}
+
+function hasReference(item: RelatedItem) {
+  return Boolean(item.uri || item.url)
 }
 
 const CATEGORY_ORDER: RelatedCategory[] = ['policy', 'data', 'other']
@@ -269,14 +281,35 @@ const CATEGORY_ORDER: RelatedCategory[] = ['policy', 'data', 'other']
  * the viewer and a community is listed once with both origins.
  */
 export function mergeRelatedItems(items: readonly RelatedItem[]) {
-  const merged = new Map<string, RelatedItem>()
+  const entries: RelatedItem[] = []
+  const byIdentity = new Map<string, RelatedItem>()
+  /*
+   * A community card may not carry the record's URI while a collection item
+   * does, so an item without a reference joins one with the same title, in
+   * either order. Two referenced items are different records even when their
+   * titles match, and a title several records share is ambiguous (`null`), so
+   * a reference-less item joins none of them.
+   */
+  const byTitle = new Map<string, RelatedItem | null>()
   for (const item of items) {
     const id = identity(item)
-    const existing = merged.get(id)
+    const title = titleKey(item)
+    let existing = byIdentity.get(id)
     if (!existing) {
-      merged.set(id, {...item, origins: [...item.origins]})
+      const candidate = byTitle.get(title)
+      if (candidate && !(hasReference(item) && hasReference(candidate))) {
+        existing = candidate
+      }
+    }
+    if (!existing) {
+      const entry = {...item, origins: [...item.origins]}
+      entries.push(entry)
+      byIdentity.set(id, entry)
+      if (!byTitle.has(title)) byTitle.set(title, entry)
+      else if (hasReference(item)) byTitle.set(title, null)
       continue
     }
+    byIdentity.set(id, existing)
     for (const origin of item.origins) {
       const known = existing.origins.some(
         o => o.kind === origin.kind && o.name === origin.name,
@@ -286,7 +319,7 @@ export function mergeRelatedItems(items: readonly RelatedItem[]) {
     existing.uri ??= item.uri
     existing.url ??= item.url
   }
-  return Array.from(merged.values()).sort(
+  return entries.sort(
     (a, b) =>
       CATEGORY_ORDER.indexOf(a.category) - CATEGORY_ORDER.indexOf(b.category) ||
       b.origins.length - a.origins.length ||

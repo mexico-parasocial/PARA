@@ -35,7 +35,6 @@ import Animated, {
   FadeOut,
   interpolateColor,
   LayoutAnimationConfig,
-  LinearTransition,
   runOnUI,
   scrollTo,
   useAnimatedRef,
@@ -1659,7 +1658,6 @@ export const ComposePost = ({
 
           <Animated.ScrollView
             ref={scrollViewRef}
-            layout={native(LinearTransition)}
             onScroll={scrollHandler}
             contentContainerStyle={a.flex_grow}
             style={[
@@ -2053,9 +2051,7 @@ function ComposerTopBar({
   const t = useTheme()
   const {i18n} = useLingui()
   return (
-    <Animated.View
-      style={topBarAnimatedStyle}
-      layout={native(LinearTransition)}>
+    <Animated.View style={topBarAnimatedStyle}>
       <View
         style={[
           a.flex_row,

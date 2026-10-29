@@ -25,10 +25,10 @@ import {
 } from '#/view/com/util/EmptyState'
 import {List, type ListRef} from '#/view/com/util/List'
 import {findListNativeTag} from '#/view/com/util/listNativeTag'
-import {FeedLoadingPlaceholder} from '#/view/com/util/LoadingPlaceholder'
 import {atoms as a, ios, useTheme} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import {useDialogControl} from '#/components/Dialog'
+import {FeedCardSkeleton} from '#/components/FeedCardSkeleton'
 import {PlusSmall_Stroke2_Corner0_Rounded as Plus} from '#/components/icons/Plus'
 import {LinearGradientBackground} from '#/components/LinearGradientBackground'
 import {Loader} from '#/components/Loader'
@@ -183,7 +183,7 @@ export function ProfileStarterPacks({
         onEndReached={onEndReached}
         onRefresh={onRefresh}
         ListEmptyComponent={
-          data ? (isMe ? EmptyComponent : undefined) : FeedLoadingPlaceholder
+          data ? (isMe ? EmptyComponent : undefined) : FeedCardSkeleton
         }
         ListFooterComponent={
           !!data && items?.length !== 0 && isMe ? CreateAnother : undefined

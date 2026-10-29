@@ -13,3 +13,7 @@ export const DotGrid3x1_Stroke2_Corner0_Rounded = createSinglePathSVG({
   viewBox: '0 0 24 24',
   glyph: 'DotGrid3x1_Stroke2_Corner0_Rounded',
 })
+
+// PARA: kept across icon regeneration, which only knows the upstream set.
+export const DotGrid_Stroke2_Corner0_Rounded =
+  DotGrid2x3_Stroke2_Corner0_Rounded

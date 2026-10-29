@@ -1,7 +1,7 @@
 import {type $Typed} from '@atproto/lex'
 
 import type * as Dialog from '#/components/Dialog'
-import {app, chat} from '#/lexicons'
+import {type app, type chat} from '#/lexicons'
 
 export type ReportSubjectConvoMessage = {
   view: 'convo' | 'message'
@@ -23,6 +23,7 @@ export type ReportSubject =
   | $Typed<app.bsky.feed.defs.GeneratorView>
   | $Typed<app.bsky.graph.defs.StarterPackView>
   | $Typed<app.bsky.feed.defs.PostView>
+  | $Typed<app.bsky.actor.defs.ProfileLinkView>
   | ReportSubjectConvoMessage
   | ReportSubjectConvo
 
@@ -65,6 +66,12 @@ export type ParsedReportSubject =
       nsid: string
     }
   | {
+      type: 'profileLink'
+      uri: string
+      cid: string
+      nsid: string
+    }
+  | {
       type: 'account'
       did: string
       nsid: string
@@ -94,9 +101,4 @@ export type ReportDialogProps = {
    * Called after the dialog finishes closing.
    */
   onClose?: () => void
-  /**
-   * The profile link this report started from. Tags the report so link
-   * reports can be counted separately in Ozone.
-   */
-  profileLinkUrl?: string
 }

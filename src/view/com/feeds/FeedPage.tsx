@@ -46,7 +46,7 @@ import {IS_NATIVE} from '#/env'
 import {
   isFollowingV2Eligible,
   isFollowingV2HomeDotEnabled,
-} from '#/features/followingV2/elegibility'
+} from '#/features/followingV2/eligibility'
 import {app} from '#/lexicons'
 
 const POLL_FREQ = 60e3 // 60sec

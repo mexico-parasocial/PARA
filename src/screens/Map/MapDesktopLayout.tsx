@@ -5,7 +5,10 @@ import {useSafeAreaInsets} from 'react-native-safe-area-context'
 import {useIsFocused} from '@react-navigation/native'
 
 import {useSession} from '#/state/session'
-import {LEFT_NAV_MINIMAL_WIDTH} from '#/view/shell/desktop/LeftNav'
+import {
+  LEFT_NAV_MINIMAL_WIDTH,
+  LEFT_NAV_PWI_WIDTH,
+} from '#/view/shell/desktop/LeftNav'
 import {SplitViewProvider} from '#/screens/Messages/components/splitView/context'
 import {
   atoms as a,
@@ -40,17 +43,22 @@ export function MapSplitPaneLayout({
 }) {
   const t = useTheme()
   const insets = useSafeAreaInsets()
-  const {rightNavVisible, centerColumnOffset} = useLayoutBreakpoints()
+  const {rightNavVisible, centerColumnOffset, leftNavMinimal} =
+    useLayoutBreakpoints()
   const setDrawerOpen = (open: boolean) => onDrawerOpenChange?.(open)
   const isFocused = useIsFocused()
   const {hasSession} = useSession()
   const {gtMobile} = useBreakpoints()
+  // The fixed left nav floats over the page. Signed-out viewers get the wide
+  // "Join the conversation" nav unless the screen is narrow.
+  const leftNavWidth =
+    hasSession || leftNavMinimal ? LEFT_NAV_MINIMAL_WIDTH : LEFT_NAV_PWI_WIDTH
 
   if (rightNavVisible) {
     const sidebarWidth = centerColumnOffset
       ? SIDEBAR_COMPACT_WIDTH
       : SIDEBAR_WIDTH
-    const leftOffset = hasSession ? DESKTOP_LEFT_RAIL_WIDTH : 0
+    const leftOffset = hasSession ? DESKTOP_LEFT_RAIL_WIDTH : leftNavWidth
 
     return (
       <Animated.View
@@ -113,7 +121,7 @@ export function MapSplitPaneLayout({
         // keep the drawer and map clear of it.
         {
           paddingBottom: insets.bottom,
-          marginLeft: hasSession && gtMobile ? LEFT_NAV_MINIMAL_WIDTH : 0,
+          marginLeft: gtMobile ? leftNavWidth : 0,
         },
       ]}>
       {/* Drawer */}

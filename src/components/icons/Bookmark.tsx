@@ -21,3 +21,10 @@ export const BookmarkDelete_Stroke2_Corner0_Rounded_Large = createSinglePathSVG(
     glyph: 'BookmarkDelete_Stroke2_Corner0_Rounded_Large',
   },
 )
+
+// PARA: kept across icon regeneration, which only knows the upstream set.
+export const Bookmark = Bookmark_Stroke2_Corner0_Rounded
+export const BookmarkFilled = Bookmark_Filled_Corner0_Rounded
+export const BookmarkDeleteLarge = BookmarkDelete_Stroke2_Corner0_Rounded_Large
+export const BookmarkDeleteLarge_Stroke2_Corner0_Rounded =
+  BookmarkDelete_Stroke2_Corner0_Rounded_Large

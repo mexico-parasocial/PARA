@@ -21,6 +21,7 @@ import {useDialogControl} from '#/components/Dialog'
 import {UserAddRemoveListsDialog} from '#/components/dialogs/lists/UserAddRemoveListsDialog'
 import {StarterPackDialog} from '#/components/dialogs/StarterPackDialog'
 import {ArrowOutOfBoxModified_Stroke2_Corner2_Rounded as ArrowOutOfBoxIcon} from '#/components/icons/Arrow'
+import {StarterPack_Stroke2_Corner0_Rounded as StarterPack} from '#/components/icons/brands/StarterPack'
 import {ChainLink_Stroke2_Corner0_Rounded as ChainLinkIcon} from '#/components/icons/ChainLink'
 import {CircleCheck_Stroke2_Corner0_Rounded as CircleCheckIcon} from '#/components/icons/Circle'
 import {CircleX_Stroke2_Corner0_Rounded as CircleXIcon} from '#/components/icons/Circle'
@@ -38,7 +39,6 @@ import {
 } from '#/components/icons/Person'
 import {PlusLarge_Stroke2_Corner0_Rounded as Plus} from '#/components/icons/Plus'
 import {SpeakerVolumeFull_Stroke2_Corner0_Rounded as Unmute} from '#/components/icons/SpeakerVolumeFull'
-import {StarterPack_Stroke2_Corner0_Rounded as StarterPack} from '#/components/icons/brands/StarterPack'
 import * as Menu from '#/components/Menu'
 import {BlockDialog} from '#/components/moderation/BlockDialog'
 import {
@@ -51,11 +51,15 @@ import {useFullVerificationState} from '#/components/verification'
 import {VerificationCreatePrompt} from '#/components/verification/VerificationCreatePrompt'
 import {VerificationRemovePrompt} from '#/components/verification/VerificationRemovePrompt'
 import {useAnalytics} from '#/analytics'
-import {IS_WEB} from '#/env'
+import {IS_ANDROID, IS_WEB} from '#/env'
 import {useActorStatus, useLiveNowConfig} from '#/features/liveNow'
 import {EditLiveDialog} from '#/features/liveNow/components/EditLiveDialog'
 import {GoLiveDialog} from '#/features/liveNow/components/GoLiveDialog'
 import {GoLiveDisabledDialog} from '#/features/liveNow/components/GoLiveDisabledDialog'
+import {
+  ReportLinkDialog,
+  useReportableProfileLinks,
+} from '#/features/profileLinks'
 import {app} from '#/lexicons'
 import {useDevMode} from '#/storage/hooks/dev-mode'
 
@@ -68,6 +72,9 @@ let ProfileMenu = ({
   const {t: l} = useLingui()
   const {currentAccount, hasSession} = useSession()
   const reportDialogControl = useReportDialogControl()
+  const reportLinkDialogControl = useDialogControl()
+  const menuControl = Menu.useMenuControl()
+  const reportableLinks = useReportableProfileLinks(profile)
   const queryClient = useQueryClient()
   const navigation = useNavigation<NavigationProp>()
   const isSelf = currentAccount?.did === profile.did
@@ -235,7 +242,7 @@ let ProfileMenu = ({
 
   return (
     <EventStopper onKeyDown={false}>
-      <Menu.Root>
+      <Menu.Root control={menuControl}>
         <Menu.Trigger label={l`More options`}>
           {({props}) => {
             return (
@@ -446,6 +453,23 @@ let ProfileMenu = ({
                       </Menu.ItemText>
                       <Menu.ItemIcon icon={Flag} />
                     </Menu.Item>
+                    {reportableLinks.length > 0 && (
+                      <Menu.Item
+                        testID="profileHeaderDropdownReportLinkBtn"
+                        label={l`Report a link`}
+                        onPress={() => {
+                          if (IS_ANDROID)
+                            menuControl.close(() =>
+                              reportLinkDialogControl.open(),
+                            )
+                          else reportLinkDialogControl.open()
+                        }}>
+                        <Menu.ItemText>
+                          <Trans>Report a link</Trans>
+                        </Menu.ItemText>
+                        <Menu.ItemIcon icon={Flag} />
+                      </Menu.Item>
+                    )}
                   </>
                 )}
               </Menu.Group>
@@ -495,6 +519,12 @@ let ProfileMenu = ({
           $type: 'app.bsky.actor.defs#profileViewDetailed',
         }}
       />
+      {reportableLinks.length > 0 && (
+        <ReportLinkDialog
+          control={reportLinkDialogControl}
+          links={reportableLinks}
+        />
+      )}
       <BlockDialog
         control={blockPromptControl}
         profile={profile}

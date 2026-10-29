@@ -3,6 +3,7 @@ import {Linking, View} from 'react-native'
 import {LABELS} from '@bsky/sdk/moderation'
 import {Trans, useLingui} from '@lingui/react/macro'
 
+import {UNREAD_NOTIFICATION_CAP} from '#/lib/constants'
 import {getLabelingServiceTitle, isAppLabeler} from '#/lib/moderation'
 import {
   type CommonNavigatorParams,
@@ -11,6 +12,7 @@ import {
 import {logger} from '#/logger'
 import {useIsBirthdateUpdateAllowed} from '#/state/birthdate'
 import {useRemoveLabelersMutation} from '#/state/queries/labeler'
+import {useModerationInboxUnreadCountQuery} from '#/state/queries/moderation-inbox'
 import {
   useMyLabelersQuery,
   usePreferencesQuery,
@@ -46,8 +48,6 @@ import {Text} from '#/components/Typography'
 import {useAgeAssurance} from '#/ageAssurance'
 import {useAnalytics} from '#/analytics'
 import {IS_IOS} from '#/env'
-
-const UNREAD_NOTIFICATION_CAP = 100
 
 function ErrorState({error}: {error: string}) {
   const t = useTheme()
@@ -198,6 +198,9 @@ export function ModerationScreenInner({
   const isModerationInboxEnabled = ax.features.enabled(
     ax.features.ModerationInboxEnable,
   )
+  const unreadCountQuery = useModerationInboxUnreadCountQuery(
+    isModerationInboxEnabled,
+  )
   const {
     isLoading: isLabelersLoading,
     data: labelers,
@@ -291,7 +294,7 @@ export function ModerationScreenInner({
             <SubItem
               title={l`Moderation inbox`}
               icon={Inbox}
-              badge={3} // TODO This is a placeholder value. -dsb
+              badge={unreadCountQuery.data?.unreadCounts.total}
               style={[
                 t.atoms.bg_contrast_25,
                 (state.hovered || state.pressed) && [t.atoms.bg_contrast_50],

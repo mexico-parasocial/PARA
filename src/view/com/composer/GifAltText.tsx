@@ -1,4 +1,4 @@
-import {useState} from 'react'
+import {useRef, useState} from 'react'
 import {TouchableOpacity, View} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -10,6 +10,7 @@ import {
   type EmbedPlayerParams,
   parseEmbedPlayerFromUrl,
 } from '#/lib/strings/embed-player'
+import {enforceLen} from '#/lib/strings/helpers'
 import {useResolveGifQuery} from '#/state/queries/resolve-link'
 import {AltTextCounterWrapper} from '#/view/com/composer/AltTextCounterWrapper'
 import {atoms as a, useTheme} from '#/alf'
@@ -19,7 +20,7 @@ import * as Dialog from '#/components/Dialog'
 import {type DialogControlProps} from '#/components/Dialog'
 import * as TextField from '#/components/forms/TextField'
 import {Check_Stroke2_Corner0_Rounded as Check} from '#/components/icons/Check'
-import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfo} from '#/components/icons/Circle'
+import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfo} from '#/components/icons/CircleInfo'
 import {PlusSmall_Stroke2_Corner0_Rounded as Plus} from '#/components/icons/Plus'
 import {GifEmbed} from '#/components/Post/Embed/ExternalEmbed/Gif'
 import {Text} from '#/components/Typography'
@@ -67,7 +68,14 @@ export function GifAltTextDialogLoaded({
   const control = Dialog.useDialogControl()
   const {_} = useLingui()
   const t = useTheme()
-  const [altTextDraft, setAltTextDraft] = useState(altText || vendorAltText)
+  /*
+   * The text being edited lives in AltTextInner, not here. The sheet's portal
+   * forwards its children from an effect, so state held above it reaches the
+   * controlled input a commit late and makes typing jumpy. This only tracks the
+   * latest edit so it can be saved on close, however the dialog is closed.
+   */
+  const editedAltText = useRef<string | null>(null)
+  const initialAltText = altText || vendorAltText
   return (
     <>
       <TouchableOpacity
@@ -101,7 +109,7 @@ export function GifAltTextDialogLoaded({
         </Text>
       </TouchableOpacity>
 
-      <Admonition type="tip" style={[a.mt_sm]}>
+      <Admonition type="info" style={[a.mt_sm]}>
         <Trans>
           Alt text describes images for blind and low-vision users, and helps
           give context to everyone.
@@ -111,14 +119,22 @@ export function GifAltTextDialogLoaded({
       <Dialog.Outer
         control={control}
         onClose={() => {
-          onSubmit(altTextDraft)
+          /*
+           * Closing without editing accepts the vendor alt text, which counts
+           * towards the alt text requirement.
+           */
+          const next = editedAltText.current ?? initialAltText
+          editedAltText.current = null
+          onSubmit(enforceLen(next, MAX_ALT_TEXT, true))
         }}
         nativeOptions={{fullHeight: true}}>
         <Dialog.Handle />
         <AltTextInner
           vendorAltText={vendorAltText}
-          altText={altTextDraft}
-          onChange={setAltTextDraft}
+          initialAltText={initialAltText}
+          onChange={text => {
+            editedAltText.current = text
+          }}
           thumb={thumb}
           control={control}
           params={params}
@@ -130,19 +146,20 @@ export function GifAltTextDialogLoaded({
 
 function AltTextInner({
   vendorAltText,
-  altText,
+  initialAltText,
   onChange,
   control,
   params,
   thumb,
 }: {
   vendorAltText: string
-  altText: string
+  initialAltText: string
   onChange: (text: string) => void
   control: DialogControlProps
   params: EmbedPlayerParams
   thumb: string | undefined
 }) {
+  const [altText, setAltText] = useState(initialAltText)
   const t = useTheme()
   const {_, i18n} = useLingui()
 
@@ -159,11 +176,14 @@ function AltTextInner({
                 <Dialog.Input
                   label={_(msg`Alt text`)}
                   placeholder={vendorAltText}
-                  onChangeText={onChange}
-                  defaultValue={altText}
+                  onChangeText={text => {
+                    setAltText(text)
+                    onChange(text)
+                  }}
+                  value={altText}
                   multiline
-                  numberOfLines={3}
                   autoFocus
+                  scrollEnabled={false}
                   onKeyPress={({nativeEvent}) => {
                     if (nativeEvent.key === 'Escape') {
                       control.close()

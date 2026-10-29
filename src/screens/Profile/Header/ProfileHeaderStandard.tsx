@@ -59,6 +59,7 @@ import {useAnalytics} from '#/analytics'
 import {IS_IOS, IS_NATIVE} from '#/env'
 import {InviteFriendsDialog} from '#/features/inviteFriends'
 import {useActorStatus} from '#/features/liveNow'
+import {ProfileHeaderLinks} from '#/features/profileLinks'
 import {type app} from '#/lexicons'
 import type * as bsky from '#/types/bsky'
 import {EditProfileDialog} from './EditProfileDialog'
@@ -217,10 +218,13 @@ let ProfileHeaderStandard = ({
                 </View>
               ) : undefined}
 
+              <ProfileHeaderLinks
+                profile={profile}
+                hidden={!!moderation.ui('profileView').blur}
+              />
+
               {!isMe &&
                 !isBlockedUser &&
-                // Social proof is only useful when deciding whether to follow
-                !profile.viewer?.following &&
                 shouldShowKnownFollowers(profile.viewer?.knownFollowers) && (
                   <View style={[a.flex_row, a.align_center, a.gap_sm]}>
                     <KnownFollowers

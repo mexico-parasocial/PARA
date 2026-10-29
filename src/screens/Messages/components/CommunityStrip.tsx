@@ -30,7 +30,13 @@ const AVATAR = 48
  * the list stays the same height whether they have five communities or fifty.
  * Each community's individual rooms live on the community chats screen.
  */
-export function CommunityStrip({communities}: {communities: CommunityTile[]}) {
+export function CommunityStrip({
+  communities,
+  notice,
+}: {
+  communities: CommunityTile[]
+  notice?: React.ReactNode
+}) {
   const t = useTheme()
   const {t: l} = useLingui()
   const navigation = useNavigation<NavigationProp>()
@@ -93,6 +99,7 @@ export function CommunityStrip({communities}: {communities: CommunityTile[]}) {
           )}
         </View>
       </TouchableOpacity>
+      {notice}
       {!isMinimized && (
         <ScrollView
           horizontal

@@ -38,7 +38,6 @@ import {FAB} from '#/view/com/util/fab/FAB'
 import {Button} from '#/view/com/util/forms/Button'
 import {type ListRef} from '#/view/com/util/List'
 import {LoadLatestBtn} from '#/view/com/util/load-latest/LoadLatestBtn'
-import {PostFeedLoadingPlaceholder} from '#/view/com/util/LoadingPlaceholder'
 import {Text} from '#/view/com/util/text/Text'
 import {
   ProfileFeedHeader,
@@ -48,6 +47,7 @@ import {useTheme} from '#/alf'
 import {EditBig_Stroke2_Corner2_Rounded as EditBigIcon} from '#/components/icons/EditBig'
 import {HashtagWide_Stroke1_Corner0_Rounded as HashtagWideIcon} from '#/components/icons/Hashtag'
 import * as Layout from '#/components/Layout'
+import {PostFeedSkeleton} from '#/components/PostFeedSkeleton'
 import {IS_NATIVE} from '#/env'
 import {app} from '#/lexicons'
 
@@ -119,7 +119,7 @@ export function ProfileFeedScreen(props: Props) {
     <Layout.Screen testID="profileFeedScreen">
       <ProfileFeedHeaderSkeleton />
       <Layout.Content>
-        <PostFeedLoadingPlaceholder />
+        <PostFeedSkeleton />
       </Layout.Content>
     </Layout.Screen>
   )
@@ -139,7 +139,7 @@ function ProfileFeedScreenIntermediate({
     return (
       <Layout.Content>
         <ProfileFeedHeaderSkeleton />
-        <PostFeedLoadingPlaceholder />
+        <PostFeedSkeleton />
       </Layout.Content>
     )
   }

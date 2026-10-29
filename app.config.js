@@ -76,14 +76,6 @@ module.exports = function (_config) {
   // OTA updates disabled — self-hosted server is post-launch P0
   const _UPDATES_ENABLED = false
 
-  /*
-   * EXPO_PUBLIC_ENV is also an EAS environment secret, which wins over a build
-   * profile's env, so profiles opt out of OTA updates with their own flag. A
-   * dev client with updates on rejects unsigned manifests from a local Metro.
-   */
-  const UPDATES_ENABLED =
-    (IS_TESTFLIGHT || IS_PRODUCTION) && !process.env.DISABLE_UPDATES
-
   const USE_SENTRY = Boolean(process.env.SENTRY_AUTH_TOKEN)
 
   return {
@@ -101,7 +93,7 @@ module.exports = function (_config) {
       primaryColor: '#006AFF',
       newArchEnabled: true,
       ios: {
-        supportsTablet: false,
+        supportsTablet: true,
         bundleIdentifier: 'com.para.app',
         appleTeamId: process.env.EXPO_APPLE_TEAM_ID,
         config: {
@@ -113,6 +105,13 @@ module.exports = function (_config) {
             ? './assets/app-icons/ios_icon_default_next.png'
             : './assets/app-icons/ios_icon_default.icon',
         infoPlist: {
+          UISupportedInterfaceOrientations: ['UIInterfaceOrientationPortrait'],
+          'UISupportedInterfaceOrientations~ipad': [
+            'UIInterfaceOrientationPortrait',
+            'UIInterfaceOrientationPortraitUpsideDown',
+            'UIInterfaceOrientationLandscapeLeft',
+            'UIInterfaceOrientationLandscapeRight',
+          ],
           CADisableMinimumFrameDurationOnPhone: true,
           UIBackgroundModes: ['remote-notification'],
           NSCameraUsageDescription:
@@ -364,7 +363,7 @@ module.exports = function (_config) {
               compileSdkVersion: 36,
               targetSdkVersion: 36,
               buildToolsVersion: '36.0.0',
-              buildReactNativeFromSource: IS_PRODUCTION,
+              buildReactNativeFromSource: true,
             },
           },
         ],
@@ -387,28 +386,45 @@ module.exports = function (_config) {
         './plugins/withAndroidManifestLargeHeapPlugin.js',
         './plugins/withAndroidManifestFCMIconPlugin.js',
         './plugins/withAndroidManifestIntentQueriesPlugin.js',
+        './plugins/withAndroidManifestOptionalCameraPlugin.js',
         './plugins/withAndroidStylesAccentColorPlugin.js',
         './plugins/withAndroidNoJitpackPlugin.js',
+        './plugins/withAndroidPreparedTextLayoutPlugin.js',
+        './plugins/withAndroidComposeVersion.js',
         './plugins/shareExtension/withShareExtensions.js',
         './plugins/notificationsExtension/withNotificationsExtension.js',
         [
           'expo-font',
           {
-            fonts: [
-              './assets/fonts/inter/InterVariable.woff2',
-              './assets/fonts/inter/InterVariable-Italic.woff2',
-              './assets/fonts/Cinzel/Cinzel-VariableFont_wght.ttf',
-              './assets/fonts/Cinzel/static/Cinzel-SemiBold.ttf',
-              // Android only
-              './assets/fonts/inter/Inter-Regular.otf',
-              './assets/fonts/inter/Inter-Italic.otf',
-              './assets/fonts/inter/Inter-Medium.otf',
-              './assets/fonts/inter/Inter-MediumItalic.otf',
-              './assets/fonts/inter/Inter-SemiBold.otf',
-              './assets/fonts/inter/Inter-SemiBoldItalic.otf',
-              './assets/fonts/inter/Inter-Bold.otf',
-              './assets/fonts/inter/Inter-BoldItalic.otf',
-            ],
+            ios: {
+              buildReactNativeFromSource: IS_PRODUCTION,
+              /*
+               * Use the uncompressed Inter 4.001 fonts on iOS to avoid
+               * decompressing WOFF2 on each launch. Web keeps the WOFF2 files.
+               */
+              fonts: [
+                './assets/fonts/inter/InterVariable.ttf',
+                './assets/fonts/inter/InterVariable-Italic.ttf',
+                './assets/fonts/Cinzel/Cinzel-VariableFont_wght.ttf',
+                './assets/fonts/Cinzel/static/Cinzel-SemiBold.ttf',
+              ],
+            },
+            android: {
+              fonts: [
+                './assets/fonts/inter/InterVariable.woff2',
+                './assets/fonts/inter/InterVariable-Italic.woff2',
+                './assets/fonts/Cinzel/Cinzel-VariableFont_wght.ttf',
+                './assets/fonts/Cinzel/static/Cinzel-SemiBold.ttf',
+                './assets/fonts/inter/Inter-Regular.otf',
+                './assets/fonts/inter/Inter-Italic.otf',
+                './assets/fonts/inter/Inter-Medium.otf',
+                './assets/fonts/inter/Inter-MediumItalic.otf',
+                './assets/fonts/inter/Inter-SemiBold.otf',
+                './assets/fonts/inter/Inter-SemiBoldItalic.otf',
+                './assets/fonts/inter/Inter-Bold.otf',
+                './assets/fonts/inter/Inter-BoldItalic.otf',
+              ],
+            },
           },
         ],
         [
@@ -507,7 +523,7 @@ module.exports = function (_config) {
             },
           },
         ],
-        ['expo-screen-orientation', {initialOrientation: 'PORTRAIT_UP'}],
+        ['expo-screen-orientation'],
         ['expo-location'],
       ].filter(Boolean),
       extra: {

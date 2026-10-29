@@ -1,68 +1,84 @@
-appId: xyz.blueskyweb.app
----
-# Following v2 restores Home Following across a restart, from the snapshot
-# its query persister wrote, then puts posts made meanwhile above the restored
-# top and offers them with the restore pill. The Following v2 gate is always
-# on in e2e builds.
-- runScript:
-    file: ../setupServer.js
-    env:
-      SERVER_PATH: ?users&follows
-# More than a page of posts: a Following that runs out on its first page
-# carries on into Discover, and Discover pages aren't snapshotted.
-- runScript:
-    file: ../setupServer.js
-    env:
-      SERVER_PATH: ?newposts=40&text=Older%20post
-- runFlow:
-    file: ../setupApp.yml
-- tapOn:
-    id: "e2eSignInAlice"
+import Animated, {useAnimatedStyle} from 'react-native-reanimated'
+import {useSafeAreaInsets} from 'react-native-safe-area-context'
+import {plural} from '@lingui/core/macro'
 
-# Alice pins only Following, so it's the Home feed on screen.
-- extendedWaitUntil:
-    visible:
-      id: "followingFeedPage"
-    timeout: 60000
-- extendedWaitUntil:
-    visible: "Older post 40"
-    timeout: 60000
+import {HITSLOP_20} from '#/lib/constants'
+import {useShellLayout} from '#/state/shell/shell-layout'
+import {useHomeHeaderMode} from '#/view/com/util/MainScrollProvider'
+import {atoms as a} from '#/alf'
+import {NewPostsPill, type NewPostsPillAuthor} from '#/components/NewPostsPill'
+import {IS_LIQUID_GLASS} from '#/env'
 
-# The query persister writes at most once a second, and nothing on screen
-# says when it has, so give it a few seconds before the app is stopped. The
-# wait is on an element that never shows, so it always runs out.
-- extendedWaitUntil:
-    visible: "Wait for the query persister"
-    timeout: 5000
-    optional: true
+/** Space between the bottom edge of the Home header and the pill. */
+const HEADER_GAP = 16
 
-# Restart the app, keeping its storage. Meanwhile, bob posts.
-- stopApp
-- runScript:
-    file: ../setupServer.js
-    env:
-      SERVER_PATH: ?newposts=5&text=Newer%20post
-- launchApp:
-    appId: "xyz.blueskyweb.app"
+/*
+ * A full-width strip whose top edge sits on the header's bottom edge. It
+ * clips, so the pill slides out from behind that edge, and back behind it,
+ * even under liquid glass, where the collapsed header leaves only a
+ * transparent strip under the status bar. The bottom padding keeps the pill's
+ * hit slop inside the clip. The strip itself takes no touches.
+ */
+const strip = [
+  a.absolute,
+  a.overflow_hidden,
+  a.z_10,
+  {
+    top: 0,
+    left: 0,
+    right: 0,
+    paddingTop: HEADER_GAP,
+    paddingBottom: HITSLOP_20.bottom,
+  },
+]
 
-# The feed comes back as it was, and the posts bob made go above it once the
-# list is at rest, out of view. Only a restore prepend shows the pill.
-- extendedWaitUntil:
-    visible: "Older post 40"
-    timeout: 180000
-- extendedWaitUntil:
-    visible:
-      id: "followingPrependPill"
-    timeout: 60000
-- assertNotVisible: "Newer post 5"
+/**
+ * The new posts pill for the posts anchored Following puts on top on Home (see
+ * `usePrependPill`), beneath the Home header. It follows the header as it
+ * collapses, as `useHomeHeaderTransform` moves it, and comes to rest under the
+ * part of the header that stays on screen rather than hiding with it. Render
+ * it in a Home feed page, after its list.
+ *
+ * @platform ios, android
+ */
+export function PrependPill({
+  visible,
+  count,
+  authors,
+  onPress,
+}: {
+  visible: boolean
+  count: number
+  authors: NewPostsPillAuthor[]
+  onPress: () => void
+}) {
+  const mode = useHomeHeaderMode()
+  const {headerHeight} = useShellLayout()
+  const {top: topInset} = useSafeAreaInsets()
+  // As `useHomeHeaderTransform` has it.
+  const pinnedHeight = IS_LIQUID_GLASS ? topInset : 0
+  // Translate only: a transform moves it without a layout pass every frame.
+  const follow = useAnimatedStyle(() => {
+    const height = headerHeight.get()
+    return {
+      transform: [{translateY: height + mode.get() * (pinnedHeight - height)}],
+    }
+  })
 
-# Pressing the pill scrolls to the top, where the new posts are, and hides it.
-- tapOn:
-    id: "followingPrependPill"
-- extendedWaitUntil:
-    visible: "Newer post 5"
-    timeout: 30000
-- extendedWaitUntil:
-    notVisible:
-      id: "followingPrependPill"
-    timeout: 30000
+  return (
+    <Animated.View pointerEvents="box-none" style={[strip, follow]}>
+      <NewPostsPill
+        testID="followingPrependPill"
+        visible={visible}
+        count={count}
+        authors={authors}
+        // Its posts are loaded already, so pressing it shows them.
+        label={plural(count, {
+          one: 'Show # new post',
+          other: 'Show # new posts',
+        })}
+        onPress={onPress}
+      />
+    </Animated.View>
+  )
+}

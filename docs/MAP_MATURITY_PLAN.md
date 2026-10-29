@@ -256,8 +256,12 @@ supported iOS/Android devices and a Google web build with a valid configured
 key. Browser checks currently cover MapLibre at desktop and phone widths;
 native checks are component/query tests, not device results.
 
-Next implementation: M0.2 covers provider/selection regression checks and camera behavior.
-M1.1 begins with the official dataset manifest and one-state boundary import.
+M0.2 is implemented locally for the MapLibre web adapter (regression harness, panel-aware
+camera framing, click tolerance, camera memory); see
+[its execution record](./MAP_M0_2_EXECUTION_2026-10-23.md). Browser, keyboard and
+selection-preservation checks remain open.
+
+Next implementation: finish the M0.2 browser pass. M1.1 begins with the official dataset manifest and one-state boundary import.
 Do not generate replacement demo polygons as an intermediate geography milestone.
 
 ## Acceptance budgets and privacy contract

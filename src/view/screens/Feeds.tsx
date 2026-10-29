@@ -42,13 +42,13 @@ import {
 import {ErrorMessage} from '#/view/com/util/error/ErrorMessage'
 import {FAB} from '#/view/com/util/fab/FAB'
 import {List, type ListMethods} from '#/view/com/util/List'
-import {FeedFeedLoadingPlaceholder} from '#/view/com/util/LoadingPlaceholder'
 import {Text} from '#/view/com/util/text/Text'
 import {NoFollowingFeed} from '#/screens/Feeds/NoFollowingFeed'
 import {NoSavedFeedsOfAnyType} from '#/screens/Feeds/NoSavedFeedsOfAnyType'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonIcon, ButtonText} from '#/components/Button'
 import * as FeedCard from '#/components/FeedCard'
+import {FeedCardListSkeleton} from '#/components/FeedCardSkeleton'
 import {SearchInput} from '#/components/forms/SearchInput'
 import {IconCircle} from '#/components/IconCircle'
 import {ChainLink_Stroke2_Corner0_Rounded as ChainLinkIcon} from '#/components/icons/ChainLink'
@@ -574,7 +574,7 @@ export function FeedsScreen(_props: Props) {
       } else if (item.type === 'followedElements') {
         return <FollowedElementsSection />
       } else if (item.type === 'popularFeedsLoading') {
-        return <FeedFeedLoadingPlaceholder />
+        return <FeedCardListSkeleton />
       } else if (item.type === 'popularFeed') {
         return (
           <View style={styles.feedCardShell}>
@@ -671,6 +671,22 @@ export function FeedsScreen(_props: Props) {
           sideBorders={false}
         />
       </Layout.Center>
+
+      <List
+        ref={listRef}
+        data={items}
+        keyExtractor={item => item.key}
+        contentContainerStyle={styles.contentContainer}
+        renderItem={renderItem}
+        refreshing={isPTR}
+        onRefresh={isUserSearching ? undefined : onPullToRefresh}
+        initialNumToRender={10}
+        onEndReached={onEndReached}
+        desktopFixedHeight
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        sideBorders={false}
+      />
 
       {hasSession && (
         <FAB

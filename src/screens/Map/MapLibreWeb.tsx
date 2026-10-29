@@ -11,6 +11,14 @@ import {StyleSheet, View} from 'react-native'
 import maplibregl from 'maplibre-gl'
 
 import {type MapViewMode} from '#/lib/hooks/useMapProvider'
+import {
+  getHitBox,
+  getRememberedCamera,
+  type Insets,
+  mergePadding,
+  rememberCamera,
+  ZERO_INSETS,
+} from './mapLibreCamera'
 
 const DARK_MAP_BG = '#1a1a1a'
 const LIGHT_MAP_BG = '#f5f4ef'
@@ -131,10 +139,11 @@ export type MapLibreWebRef = {
     center?: Coordinate
     zoom?: number
     altitude?: number
+    padding?: Insets
   }) => void
   fitToCoordinates: (
     coordinates: Coordinate[],
-    options?: {edgePadding?: unknown; animated?: boolean},
+    options?: {edgePadding?: unknown; animated?: boolean; padding?: Insets},
   ) => void
   getCamera: () => Promise<{zoom?: number; altitude?: number}>
 }
@@ -181,6 +190,8 @@ type Props = {
   onCivicPointPress?: (uri: string) => void
   polygons?: Array<{
     key: string
+    /** Text shown on the map. Several polygons may share one label. */
+    label?: string
     coordinates: Coordinate[]
     fillColor?: string
     strokeColor?: string
@@ -195,6 +206,20 @@ type Props = {
 
 function deltaToZoom(latDelta: number): number {
   return Math.max(1, Math.min(20, Math.log2(360 / latDelta)))
+}
+
+function boundsArea(coordinates: Coordinate[]): number {
+  let minLat = Infinity
+  let maxLat = -Infinity
+  let minLng = Infinity
+  let maxLng = -Infinity
+  for (const c of coordinates) {
+    minLat = Math.min(minLat, c.latitude)
+    maxLat = Math.max(maxLat, c.latitude)
+    minLng = Math.min(minLng, c.longitude)
+    maxLng = Math.max(maxLng, c.longitude)
+  }
+  return (maxLat - minLat) * (maxLng - minLng)
 }
 
 function computeCentroid(coordinates: Coordinate[]): [number, number] | null {
@@ -303,20 +328,29 @@ function addPolygonsToMap(
         coordinates: [coordinates],
       },
     })
+  }
 
+  // A state can be several polygons (islands, exclaves). Label each name once,
+  // on its largest piece, with the display name rather than the polygon key.
+  const largestByLabel = new Map<
+    string,
+    {poly: (typeof polys)[number]; area: number}
+  >()
+  for (const poly of polys) {
+    if (!poly.label) continue
+    const area = boundsArea(poly.coordinates)
+    const best = largestByLabel.get(poly.label)
+    if (!best || area > best.area) largestByLabel.set(poly.label, {poly, area})
+  }
+  for (const [label, {poly}] of largestByLabel) {
     const centroid = computeCentroid(poly.coordinates)
-    if (centroid) {
-      labelFeatures.push({
-        type: 'Feature',
-        properties: {
-          name: poly.key,
-        },
-        geometry: {
-          type: 'Point',
-          coordinates: centroid,
-        },
-      })
-    }
+    if (!centroid) continue
+    labelFeatures.push({
+      type: 'Feature',
+      // `name` is the click lookup key; `label` is what is drawn.
+      properties: {name: poly.key, label},
+      geometry: {type: 'Point', coordinates: centroid},
+    })
   }
 
   map.addSource('state-polygons', {
@@ -370,7 +404,7 @@ function addPolygonsToMap(
     source: 'state-labels',
     minzoom: 4.5,
     layout: {
-      'text-field': ['get', 'name'],
+      'text-field': ['get', 'label'],
       'text-font': ['Noto Sans Regular'],
       'text-size': 13,
       'text-anchor': 'center',
@@ -772,11 +806,14 @@ export const MapLibreWeb = forwardRef<MapLibreWebRef, Props>(
     useEffect(() => {
       if (!containerRef.current || mapRef.current) return
 
+      const remembered = getRememberedCamera()
       const map = new maplibregl.Map({
         container: containerRef.current,
         style: buildStyle(viewMode, themeName),
-        center: [initialRegion.longitude, initialRegion.latitude],
-        zoom: deltaToZoom(initialRegion.latitudeDelta),
+        center: remembered
+          ? [remembered.lng, remembered.lat]
+          : [initialRegion.longitude, initialRegion.latitude],
+        zoom: remembered?.zoom ?? deltaToZoom(initialRegion.latitudeDelta),
         attributionControl: false,
       })
 
@@ -795,6 +832,7 @@ export const MapLibreWeb = forwardRef<MapLibreWebRef, Props>(
       map.on('moveend', () => {
         const center = map.getCenter()
         const zoom = map.getZoom()
+        rememberCamera({lng: center.lng, lat: center.lat, zoom})
         const delta = zoomToDelta(zoom)
         latest.current.onRegionChangeComplete?.({
           latitude: center.lat,
@@ -808,8 +846,11 @@ export const MapLibreWeb = forwardRef<MapLibreWebRef, Props>(
         // queryRenderedFeatures returns nothing at all if any requested layer
         // is missing from the style, so only ask for the ones that exist.
         const layers = CLICKABLE_LAYERS.filter(id => map.getLayer(id))
+        const coarse =
+          typeof window.matchMedia === 'function' &&
+          window.matchMedia('(pointer: coarse)').matches
         const features = layers.length
-          ? map.queryRenderedFeatures(e.point, {layers})
+          ? map.queryRenderedFeatures(getHitBox(e.point, coarse), {layers})
           : []
         const cur = latest.current
 
@@ -952,9 +993,11 @@ export const MapLibreWeb = forwardRef<MapLibreWebRef, Props>(
 
     useImperativeHandle(ref, () => ({
       animateToRegion(region: MapRegion, duration = 500) {
+        // Used to reset to a region with no panel open.
         mapRef.current?.flyTo({
           center: [region.longitude, region.latitude],
           zoom: deltaToZoom(region.latitudeDelta),
+          padding: ZERO_INSETS,
           duration,
         })
       },
@@ -966,6 +1009,10 @@ export const MapLibreWeb = forwardRef<MapLibreWebRef, Props>(
         if (camera.zoom != null) {
           opts.zoom = camera.zoom
         }
+        // Without padding the map keeps its current framing.
+        if (camera.padding) {
+          opts.padding = camera.padding
+        }
         mapRef.current?.flyTo(opts)
       },
       fitToCoordinates(coordinates, options) {
@@ -975,7 +1022,7 @@ export const MapLibreWeb = forwardRef<MapLibreWebRef, Props>(
           bounds.extend([c.longitude, c.latitude])
         }
         mapRef.current?.fitBounds(bounds, {
-          padding: 48,
+          padding: mergePadding(48, options?.padding),
           animate: options?.animated !== false,
           duration: 500,
         })
