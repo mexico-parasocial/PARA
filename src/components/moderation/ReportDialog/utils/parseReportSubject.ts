@@ -1,3 +1,5 @@
+import {AtUri, isAtUriString, isValidDid} from '@atproto/syntax'
+
 import {
   type ParsedReportSubject,
   type ReportSubject,
@@ -64,6 +66,21 @@ export function parseReportSubject(
       uri: subject.uri,
       cid: subject.cid,
       nsid: 'app.bsky.graph.starterPack',
+    }
+  } else if (bsky.isType(app.bsky.actor.defs.profileLinkView, subject)) {
+    if (!subject.cid || !isAtUriString(subject.uri, {strict: false})) return
+    const uri = new AtUri(subject.uri)
+    if (
+      !isValidDid(uri.host) ||
+      uri.collection !== 'app.bsky.actor.link' ||
+      !uri.rkey
+    )
+      return
+    return {
+      type: 'profileLink',
+      uri: subject.uri,
+      cid: subject.cid,
+      nsid: 'app.bsky.actor.link',
     }
   } else if (bsky.isType(app.bsky.feed.defs.postView, subject)) {
     const record = subject.record

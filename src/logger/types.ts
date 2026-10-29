@@ -15,8 +15,8 @@ export enum LogContext {
   AgeAssurance = 'age-assurance',
   PolicyUpdate = 'policy-update',
   Geolocation = 'geolocation',
-  GrowthBook = 'growthbook',
   Drafts = 'drafts',
+  Growthbook = 'growthbook',
 
   /**
    * METRIC IS FOR INTERNAL USE ONLY, don't create any other loggers using this
@@ -83,10 +83,8 @@ export type Metadata = {
   }
 
   /**
-   * Passed through to Sentry as the event `fingerprint`, which controls how
-   * events are grouped into issues.
-   *
-   * @see https://docs.sentry.io/platforms/javascript/usage/sdk-fingerprinting/
+   * Passed through to Sentry as a custom fingerprint. Include
+   * `{{ default }}` to preserve Sentry's default grouping and add dimensions.
    */
   fingerprint?: string[]
 

@@ -8,7 +8,7 @@ import {EventStopper} from '#/view/com/util/EventStopper'
 import {DotGrid3x1_Stroke2_Corner0_Rounded as DotsHorizontal} from '#/components/icons/DotGrid'
 import * as Menu from '#/components/Menu'
 import {useMenuControl} from '#/components/Menu'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import {PostControlButton, PostControlButtonIcon} from '../PostControlButton'
 import {PostMenuItems} from './PostMenuItems'
 
@@ -54,11 +54,11 @@ let PostMenuButton = ({
   const lazyMenuControl = useMemo(
     () => ({
       ...menuControl,
-      open() {
+      open(options?: Parameters<typeof menuControl.open>[0]) {
         setHasBeenOpen(true)
         // HACK. We need the state update to be flushed by the time
         // menuControl.open() fires but RN doesn't expose flushSync.
-        setTimeout(menuControl.open)
+        setTimeout(() => menuControl.open(options))
       },
     }),
     [menuControl, setHasBeenOpen],

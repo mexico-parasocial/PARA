@@ -1,144 +1,167 @@
-import {memo} from 'react'
-import {type Insets} from 'react-native'
-import {Trans, useLingui} from '@lingui/react/macro'
-
-import {useCleanError} from '#/lib/hooks/useCleanError'
-import {type Shadow} from '#/state/cache/post-shadow'
-import {useFeedFeedbackContext} from '#/state/feed-feedback'
-import {useBookmarkMutation} from '#/state/queries/bookmarks/useBookmarkMutation'
-import {useRequireAuth} from '#/state/session'
-import {useTheme} from '#/alf'
 import {
-  Bookmark_Filled_Corner0_Rounded as BookmarkFilled,
-  Bookmark_Stroke2_Corner0_Rounded as Bookmark,
-} from '#/components/icons/Bookmark'
-import {Trash_Stroke2_Corner0_Rounded as TrashIcon} from '#/components/icons/Trash'
-import * as toast from '#/components/Toast'
-import {useAnalytics} from '#/analytics'
-import {type app} from '#/lexicons'
-import {PostControlButton, PostControlButtonIcon} from './PostControlButton'
+  type AndroidHaptics,
+  impactAsync,
+  ImpactFeedbackStyle,
+  notificationAsync,
+  NotificationFeedbackType,
+  performAndroidHapticsAsync,
+  selectionAsync,
+} from 'expo-haptics'
 
-export const BookmarkButton = memo(function BookmarkButton({
-  post,
-  big,
-  logContext,
-  hitSlop,
-}: {
-  post: Shadow<app.bsky.feed.defs.PostView>
-  big?: boolean
-  logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
-  hitSlop?: Insets
-}): React.ReactNode {
-  const t = useTheme()
-  const {t: l} = useLingui()
-  const requireAuth = useRequireAuth()
-  const {isBookmarked, toggleBookmark} = usePostBookmark({post, logContext})
+import {type AndroidHaptic, resolveAndroidHaptic} from '#/lib/haptics/android'
+import {useHapticsDisabled} from '#/state/preferences/disable-haptics'
+import {IS_ANDROID, IS_IOS, IS_WEB} from '#/env'
 
-  return (
-    <PostControlButton
-      testID="postBookmarkBtn"
-      big={big}
-      active={isBookmarked}
-      activeColor={t.palette.primary_500}
-      label={isBookmarked ? l`Remove from saved posts` : l`Add to saved posts`}
-      onPress={() => requireAuth(toggleBookmark)}
-      hitSlop={hitSlop}>
-      <PostControlButtonIcon icon={isBookmarked ? BookmarkFilled : Bookmark} />
-    </PostControlButton>
-  )
-})
+export {type AndroidHaptic, resolveAndroidHaptic} from '#/lib/haptics/android'
 
 /**
- * Saves a post to the viewer's saved posts, or removes it, with the bookmark
- * button's metrics and toasts. Removing offers an undo.
+ * A `UIImpactFeedbackGenerator` style, a `UINotificationFeedbackGenerator`
+ * type, or `selection` for `UISelectionFeedbackGenerator`.
  */
-export function usePostBookmark({
-  post,
-  logContext,
-}: {
-  post: Shadow<app.bsky.feed.defs.PostView>
-  logContext: 'FeedItem' | 'PostThreadItem' | 'Post' | 'ImmersiveVideo'
-}) {
-  const ax = useAnalytics()
-  const {t: l} = useLingui()
-  const {mutateAsync: bookmark} = useBookmarkMutation()
-  const cleanError = useCleanError()
-  const {feedDescriptor} = useFeedFeedbackContext()
+export type IOSHaptic =
+  `${ImpactFeedbackStyle}` | `${NotificationFeedbackType}` | 'selection'
 
-  const isBookmarked = !!post.viewer?.bookmarked
+const IOS_IMPACT: Record<`${ImpactFeedbackStyle}`, ImpactFeedbackStyle> = {
+  light: ImpactFeedbackStyle.Light,
+  medium: ImpactFeedbackStyle.Medium,
+  heavy: ImpactFeedbackStyle.Heavy,
+  soft: ImpactFeedbackStyle.Soft,
+  rigid: ImpactFeedbackStyle.Rigid,
+}
 
-  const undoLabel = l({
-    message: `Undo`,
-    context: `Button label to undo saving/removing a post from saved posts.`,
-  })
+const IOS_NOTIFICATION: Record<
+  `${NotificationFeedbackType}`,
+  NotificationFeedbackType
+> = {
+  success: NotificationFeedbackType.Success,
+  warning: NotificationFeedbackType.Warning,
+  error: NotificationFeedbackType.Error,
+}
 
-  const save = async () => {
-    try {
-      await bookmark({
-        action: 'create',
-        post,
-      })
+function playIOS(haptic: IOSHaptic) {
+  if (haptic === 'selection') return selectionAsync()
+  if (haptic in IOS_NOTIFICATION) {
+    return notificationAsync(
+      IOS_NOTIFICATION[haptic as `${NotificationFeedbackType}`],
+    )
+  }
+  return impactAsync(IOS_IMPACT[haptic as `${ImpactFeedbackStyle}`])
+}
 
-      ax.metric('post:bookmark', {
-        uri: post.uri,
-        authorDid: post.author.did,
-        logContext,
-        feedDescriptor,
-      })
-      return true
-    } catch (e: any) {
-      const {raw, clean} = cleanError(e)
-      toast.show(clean || raw || e, {
-        type: 'error',
-      })
-      return false
+function playAndroid(haptic: AndroidHaptic) {
+  const resolved = resolveAndroidHaptic(haptic)
+  if (!resolved) return Promise.resolve()
+  return performAndroidHapticsAsync(resolved as AndroidHaptics)
+}
+
+function noop() {}
+
+type Haptic = {ios?: IOSHaptic; android?: AndroidHaptic}
+
+/**
+ * What each intent plays on each platform. Exported for the Storybook; use
+ * `useHaptics` to actually play them.
+ */
+export const HAPTIC_INTENTS = {
+  tap: {ios: 'light', android: 'context-click'},
+  confirm: {ios: 'medium', android: 'confirm'},
+  longPress: {ios: 'heavy', android: 'long-press'},
+  toggleOn: {ios: 'light', android: 'toggle-on'},
+  toggleOff: {ios: 'light', android: 'toggle-off'},
+  selection: {ios: 'light', android: 'segment-tick'},
+  // TODO: use `gesture-threshold-activate` on Android once expo-haptics exposes it
+  threshold: {ios: 'medium', android: 'context-click'},
+  dragStart: {ios: 'medium', android: 'drag-start'},
+  success: {ios: 'success', android: 'confirm'},
+  error: {ios: 'error', android: 'reject'},
+} satisfies Record<string, Required<Haptic>>
+
+/**
+ * Haptic feedback, described by what just happened rather than how it should
+ * feel. Each method maps to the idiomatic haptic on each platform. Does nothing
+ * on web, or when the user has disabled haptics.
+ *
+ * The methods are safe to destructure and to pass to `scheduleOnRN`.
+ */
+function useIntentHaptics() {
+  const disabled = useHapticsDisabled() || IS_WEB
+
+  function play({ios, android}: Haptic) {
+    if (disabled) return
+    // Fire and forget - a haptic that fails to play isn't worth surfacing
+    if (IS_IOS && ios) {
+      playIOS(ios).catch(noop)
+    } else if (IS_ANDROID && android) {
+      playAndroid(android).catch(noop)
     }
   }
 
-  const remove = async () => {
-    try {
-      await bookmark({
-        action: 'delete',
-        uri: post.uri,
-      })
-
-      ax.metric('post:unbookmark', {
-        uri: post.uri,
-        authorDid: post.author.did,
-        logContext,
-        feedDescriptor,
-      })
-
-      toast.show(
-        <toast.Outer>
-          <toast.Icon icon={TrashIcon} />
-          <toast.Text>
-            <Trans>Removed from saved posts</Trans>
-          </toast.Text>
-          <toast.Action label={undoLabel} onPress={() => save()}>
-            {undoLabel}
-          </toast.Action>
-        </toast.Outer>,
-      )
-    } catch (e: any) {
-      const {raw, clean} = cleanError(e)
-      toast.show(clean || raw || e, {
-        type: 'error',
-      })
-    }
+  return {
+    /**
+     * A light acknowledgement of a tap, e.g. like, reply, or opening a card.
+     */
+    tap: () => play(HAPTIC_INTENTS.tap),
+    /**
+     * The user committed a change, e.g. follow, pin a feed, or send a message.
+     */
+    confirm: () => play(HAPTIC_INTENTS.confirm),
+    /**
+     * A long-press did something, e.g. opened a menu or the share sheet.
+     */
+    longPress: () => play(HAPTIC_INTENTS.longPress),
+    /**
+     * A switch, checkbox or radio button changed. Pass the new value.
+     */
+    toggle: (on: boolean) =>
+      play(on ? HAPTIC_INTENTS.toggleOn : HAPTIC_INTENTS.toggleOff),
+    /**
+     * The highlighted option changed, e.g. a segmented control, the menu item
+     * under the user's finger, or the slot a dragged item is over.
+     */
+    selection: () => play(HAPTIC_INTENTS.selection),
+    /**
+     * A gesture crossed the point where releasing will trigger its action, e.g.
+     * swipe-to-reply.
+     */
+    threshold: () => play(HAPTIC_INTENTS.threshold),
+    /**
+     * An item was picked up to be dragged.
+     */
+    dragStart: () => play(HAPTIC_INTENTS.dragStart),
+    /**
+     * Something the user was waiting on finished successfully.
+     */
+    success: () => play(HAPTIC_INTENTS.success),
+    /**
+     * Something the user was waiting on failed.
+     */
+    error: () => play(HAPTIC_INTENTS.error),
+    /**
+     * Escape hatch for when none of the above fit. Omit a platform to play
+     * nothing there. Android constants fall back like the methods above.
+     */
+    platform: (haptic: Haptic) => play(haptic),
   }
+}
 
-  /**
-   * Resolves with `'saved'` once a save succeeds, for callers that confirm it
-   * themselves. Removing confirms with its own toast.
-   */
-  const toggleBookmark = async (): Promise<'saved' | undefined> => {
-    if (isBookmarked) {
-      await remove()
-    } else if (await save()) {
-      return 'saved'
-    }
-  }
+const IOS_STRENGTH = {Light: 'light', Medium: 'medium', Heavy: 'heavy'} as const
 
-  return {isBookmarked, toggleBookmark}
+/**
+ * What `#/lib/haptics` exports. PARA's own call sites use `haptics('Light')`
+ * while code synced from upstream uses the intent API (`haptics.tap()`), so the
+ * intent object comes back with a callable on top. Migrate the legacy sites
+ * together, as AGENTS.md asks, then return the intent object alone.
+ */
+export function useHaptics() {
+  const intents = useIntentHaptics()
+
+  // Android always plays the lightest tick: users found medium too strong
+  // there (APP-537).
+  const legacy = (strength: keyof typeof IOS_STRENGTH = 'Medium') =>
+    intents.platform({
+      ios: IOS_STRENGTH[strength],
+      android: 'context-click',
+    })
+
+  return Object.assign(legacy, intents)
 }

@@ -16,11 +16,7 @@ import {useHomeHeaderTransform} from '#/view/com/util/MainScrollProvider'
 import {Logomark} from '#/view/icons/Logomark'
 import {Logotype} from '#/view/icons/Logotype'
 import {atoms as a, useTheme} from '#/alf'
-import {ButtonIcon} from '#/components/Button'
-import {Hashtag_Stroke2_Corner0_Rounded as FeedsIcon} from '#/components/icons/Hashtag'
 import * as Layout from '#/components/Layout'
-import {Link} from '#/components/Link'
-import {useAnalytics} from '#/analytics'
 import {IS_DEV, IS_LIQUID_GLASS} from '#/env'
 
 export function HomeHeaderLayoutMobile({
@@ -31,7 +27,6 @@ export function HomeHeaderLayoutMobile({
 }) {
   const t = useTheme()
   const {t: l} = useLingui()
-  const ax = useAnalytics()
   const playHaptic = useHaptics()
   const {navigate} = useNavigation<NavigationProp>()
   const {onLayout} = useShellHeaderLayout()
@@ -183,26 +178,7 @@ export function HomeHeaderLayoutMobile({
         </View>
 
         <Layout.Header.Slot fitContent>
-          {hasSession && (
-            <View style={[a.flex_row, a.align_center, a.gap_xs]}>
-              <Link
-                testID="viewHeaderHomeFeedPrefsBtn"
-                to={{screen: 'Feeds'}}
-                hitSlop={HITSLOP_10}
-                label={l`View your feeds and explore more`}
-                size="small"
-                variant="ghost"
-                color="secondary"
-                shape="square"
-                onPress={() => {
-                  ax.metric('nav:click', {item: 'feeds', surface: 'topBar'})
-                }}
-                style={[a.justify_center, a.bg_transparent]}>
-                <ButtonIcon icon={FeedsIcon} size="lg" />
-              </Link>
-              <HomeHeaderChatButton alignToEdge />
-            </View>
-          )}
+          {hasSession && <HomeHeaderChatButton alignToEdge />}
         </Layout.Header.Slot>
       </Layout.Header.Outer>
       {children}

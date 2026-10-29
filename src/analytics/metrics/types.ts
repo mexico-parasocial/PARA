@@ -333,6 +333,12 @@ export type Events = {
     feedType: string
     itemCount: number
   }
+  'moderation:inbox:view': {tab: 'reports' | 'account'}
+  'moderation:inbox:markAllAsRead': {tab: 'reports' | 'account'}
+  'moderation:inbox:viewReport': {}
+  'moderation:inbox:viewNotice': {}
+  'moderation:inbox:startAppeal': {type?: string}
+  'moderation:inbox:submitAppeal': {type?: string}
   'moderation:inbox:filter': {
     tab: 'reports' | 'account'
     filter: 'all' | 'pending' | 'resolved' | 'unread'
@@ -1048,6 +1054,7 @@ export type Events = {
   }
   'reportDialog:close': {}
   'reportDialog:success': {
+    subjectType: string
     reason: string
     labeler: string
     details: boolean
@@ -1515,17 +1522,28 @@ export type Events = {
     supportLinkCount: number
     isOwnProfile: boolean
   }
+  /**
+   * Edit Profile was opened, from any profile header.
+   */
+  'profile:edit:open': {}
   /** Edit Profile was opened with the Links section available. */
   'profile:links:editorOpen': {linkCount: number}
   /** Logged once for every link actually added or removed. */
   'profile:links:add': {domain: string; supportProvider: string | undefined}
   'profile:links:remove': {domain: string; supportProvider: string | undefined}
   /** A visitor continued past the leaving-app notice. */
-  'profile:links:continue': {
+  'profile:links:preview': {
     domain: string
     supportProvider: string | undefined
   }
-  'profile:links:rejected': {reason: 'blocked'; domain: string}
+  'profile:links:rejected': {
+    reason: 'blocked' | 'safelink' | 'shortener' | 'insecure'
+    /**
+     * Left out for Safelink blocks, which can be sensitive sites. The other
+     * reasons come from public lists in the app.
+     */
+    domain?: string
+  }
 
   // Post photo embed events
   'post:photoEmbed:impression': {
@@ -1638,6 +1656,28 @@ export type Events = {
     context: 'embed' | 'immersiveFeed'
     presentation: 'video' | 'gif'
     autoplay: boolean
+  }
+  /**
+   * Incremental, non-overlapping wall-clock watch time. Segments are uniquely
+   * identified by playbackSessionId + segmentIndex for downstream deduping.
+   */
+  'video:playback:duration': {
+    playbackSessionId: string
+    segmentIndex: number
+    durationMs: number
+    postUri?: string
+    postAuthorDid?: string
+    context: 'embed' | 'immersiveFeed'
+    presentation: 'video' | 'gif'
+    endReason:
+      | 'paused'
+      | 'deactivated'
+      | 'backgrounded'
+      | 'buffering'
+      | 'checkpoint'
+      | 'ended'
+      | 'error'
+      | 'unmounted'
   }
   /**
    * The user activated a third-party media player. Cross-origin players do

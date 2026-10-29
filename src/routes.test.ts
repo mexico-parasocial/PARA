@@ -35,6 +35,18 @@ describe('moderation and upstream navigation routes', () => {
     ])
   })
 
+  it('round-trips a notice subject including an AT URI', () => {
+    const params = {
+      moderationService: 'did:plc:labeler',
+      subject: 'at://did:plc:alice/app.bsky.feed.post/abc',
+    }
+    const path = router.matchName('ModerationInboxNoticeDetails')?.build(params)
+    expect(router.matchPath(path!)).toEqual([
+      'ModerationInboxNoticeDetails',
+      params,
+    ])
+  })
+
   it('keeps the existing report-detail links working', () => {
     expect(router.matchPath('/moderation/inbox/report/details')).toEqual([
       'ModerationInboxReportDetails',

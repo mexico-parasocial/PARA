@@ -1,4 +1,4 @@
-import {createContext, useContext, useState} from 'react'
+import {createContext, useContext} from 'react'
 import {
   type AccessibilityActionEvent,
   type AccessibilityProps,
@@ -10,9 +10,10 @@ import {
 } from 'react-native'
 
 import {WebAuxClickWrapper} from '#/view/com/util/WebAuxClickWrapper'
-import {atoms as a, useTheme} from '#/alf'
+import {atoms as a, select, useTheme} from '#/alf'
 import {useLink} from '#/components/Link'
 import {SubtleHover} from '#/components/SubtleHover'
+import {SuppressHoverContext, useRowHover} from './hover'
 
 type ItemContextValue = {
   isRead: boolean
@@ -29,11 +30,18 @@ export function useItemContext() {
 }
 
 /**
- * The background colour of a row, tinted while unread.
+ * The background colour of a row, tinted while unread. The dark themes use
+ * design's own tints, which aren't in the palette: `primary_25` barely shows
+ * against their backgrounds.
  */
 export function useRowBackgroundColor(isRead: boolean) {
   const t = useTheme()
-  return isRead ? t.atoms.bg.backgroundColor : t.palette.primary_25
+  if (isRead) return t.atoms.bg.backgroundColor
+  return select(t.name, {
+    light: t.palette.primary_25,
+    dim: '#071F40',
+    dark: '#202F43',
+  })
 }
 
 /**
@@ -107,49 +115,50 @@ export function Root({
   children: React.ReactNode
 }) {
   const backgroundColor = useRowBackgroundColor(isRead)
-  const [hover, setHover] = useState(false)
+  const {hover, hoverProps, setSuppressed} = useRowHover()
   const {onPress: followLink} = useLink({to: href, displayText: ''})
 
   return (
     <ItemContext.Provider value={{isRead}}>
-      <WebAuxClickWrapper>
-        <Pressable
-          testID={testID}
-          accessible={accessible}
-          accessibilityRole={accessibilityRole}
-          accessibilityLabel={label}
-          accessibilityHint={hint}
-          aria-expanded={expanded}
-          accessibilityActions={accessibilityActions}
-          onAccessibilityAction={onAccessibilityAction}
-          onPress={event => {
-            if (onPressProp) {
-              onPressProp(event)
-              return
-            }
-            onBeforePress?.()
-            followLink(event)
-          }}
-          onPointerEnter={() => setHover(true)}
-          onPointerLeave={() => setHover(false)}
-          style={[
-            a.flex_row,
-            a.align_start,
-            a.gap_lg,
-            /*
-             * As a button it's a `<button>` on web, which a block parent
-             * shrinks to fit its content rather than stretching
-             */
-            a.w_full,
-            a.px_lg,
-            a.py_md,
-            {backgroundColor},
-            style,
-          ]}>
-          <SubtleHover hover={hover} />
-          {children}
-        </Pressable>
-      </WebAuxClickWrapper>
+      <SuppressHoverContext.Provider value={setSuppressed}>
+        <WebAuxClickWrapper>
+          <Pressable
+            testID={testID}
+            accessible={accessible}
+            accessibilityRole={accessibilityRole}
+            accessibilityLabel={label}
+            accessibilityHint={hint}
+            aria-expanded={expanded}
+            accessibilityActions={accessibilityActions}
+            onAccessibilityAction={onAccessibilityAction}
+            onPress={event => {
+              if (onPressProp) {
+                onPressProp(event)
+                return
+              }
+              onBeforePress?.()
+              followLink(event)
+            }}
+            {...hoverProps}
+            style={[
+              a.flex_row,
+              a.align_start,
+              a.gap_lg,
+              /*
+               * As a button it's a `<button>` on web, which a block parent
+               * shrinks to fit its content rather than stretching
+               */
+              a.w_full,
+              a.px_lg,
+              a.py_md,
+              {backgroundColor},
+              style,
+            ]}>
+            <SubtleHover hover={hover} />
+            {children}
+          </Pressable>
+        </WebAuxClickWrapper>
+      </SuppressHoverContext.Provider>
     </ItemContext.Provider>
   )
 }

@@ -91,14 +91,34 @@ export function withNanoGlyph(
 
   const iconSet = (Object.keys(glyphMaps) as IconSet[]).find(
     set => name in glyphMaps[set].i,
-  )!
+  )
+  // Generated components can be newer than the bundled fonts. Keep their SVG
+  // artwork usable instead of throwing while the icon module is imported.
+  if (!iconSet) {
+    return SvgIcon
+  }
+
   const NanoIconSet = iconSets[iconSet]
   const glyphMap = glyphMaps[iconSet].i as unknown as Record<string, GlyphEntry>
   const layers = glyphMap[name][1].map(([, color]) => color)
 
   const Icon = forwardRef<Svg, Props>(function NanoIcon(props, ref) {
     const t = useTheme()
-    const {fill, size, style, width, height, testID, gradient, ...rest} = props
+    const {
+      fill,
+      size,
+      style,
+      width,
+      height,
+      testID,
+      gradient,
+      /*
+       * Only the SVG needs this, on web. The glyph is always hidden from
+       * screen readers, see its accessibilityLabel below.
+       */
+      'aria-hidden': _ariaHidden,
+      ...rest
+    } = props
 
     /*
      * Mirrors useCommonSVGProps: an explicit `size` token wins, then a raw

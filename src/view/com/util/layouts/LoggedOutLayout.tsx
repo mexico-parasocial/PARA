@@ -1,11 +1,12 @@
-import {ScrollView, StyleSheet, View} from 'react-native'
+import {ScrollView, StyleSheet, useWindowDimensions, View} from 'react-native'
 
 import {useColorSchemeStyle} from '#/lib/hooks/useColorSchemeStyle'
 import {useIsKeyboardVisible} from '#/lib/hooks/useIsKeyboardVisible'
 import {usePalette} from '#/lib/hooks/usePalette'
 import {useWebMediaQueries} from '#/lib/hooks/useWebMediaQueries'
-import {atoms as a} from '#/alf'
-import {IS_WEB} from '#/env'
+import {atoms as a, BreakpointWidthContext} from '#/alf'
+import {CENTER_COLUMN_WIDTH} from '#/components/Layout'
+import {IS_NATIVE, IS_WEB} from '#/env'
 import {Text} from '../text/Text'
 
 export const LoggedOutLayout = ({
@@ -14,12 +15,15 @@ export const LoggedOutLayout = ({
   description,
   children,
   scrollable,
+  nativeHeader,
 }: React.PropsWithChildren<{
   leadin: string
   title: string
   description: string
   scrollable?: boolean
+  nativeHeader?: React.ReactNode
 }>) => {
+  const {width} = useWindowDimensions()
   const {isMobile, isTabletOrMobile} = useWebMediaQueries()
   const pal = usePalette('default')
   const sideBg = useColorSchemeStyle(pal.viewLight, pal.view)
@@ -30,6 +34,31 @@ export const LoggedOutLayout = ({
   })
 
   const [isKeyboardVisible] = useIsKeyboardVisible()
+
+  if (IS_NATIVE && nativeHeader) {
+    return (
+      <BreakpointWidthContext value={Math.min(width, CENTER_COLUMN_WIDTH)}>
+        <View
+          style={[
+            a.flex_1,
+            a.w_full,
+            a.self_center,
+            {maxWidth: CENTER_COLUMN_WIDTH},
+          ]}>
+          {nativeHeader}
+          <ScrollView
+            style={a.flex_1}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="none"
+            contentContainerStyle={{
+              paddingBottom: isKeyboardVisible ? 300 : 0,
+            }}>
+            <View style={a.pt_md}>{children}</View>
+          </ScrollView>
+        </View>
+      </BreakpointWidthContext>
+    )
+  }
 
   if (isMobile) {
     if (scrollable) {

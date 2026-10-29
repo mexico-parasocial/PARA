@@ -1,6 +1,6 @@
 import {init} from '@sentry/browser'
 
-import {Sentry} from '#/logger/sentry/lib'
+import {featureFlagsIntegration} from '#/logger/sentry/featureFlags'
 import {dropExpectedNetworkErrors} from '#/logger/sentry/network-errors'
 import * as env from '#/env'
 
@@ -49,6 +49,6 @@ init({
    */
   integrations: defaults => [
     ...defaults.filter(i => i.name !== 'BrowserSession'),
-    Sentry.featureFlagsIntegration(),
+    featureFlagsIntegration,
   ],
 })

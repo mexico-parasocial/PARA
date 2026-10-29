@@ -3,7 +3,7 @@
  * which breaks the structuredClone Metro performs on the AST when
  * EXPO_UNSTABLE_TREE_SHAKING is enabled. Strip them after all other
  * transforms have run.
- * 
+ *
  * @returns {import('@babel/core').PluginObj}
  */
 const stripSymbolLocs = () => ({
@@ -66,16 +66,24 @@ const stripSentryDebug = ({types}) => ({
   },
 })
 
-const workletsPluginOptions = {
-  bundleMode: true,
+/**
+ * Bundle mode emits `require` calls for Metro's module system. The web build
+ * here is webpack, where they throw "require is not defined", so it only
+ * applies to native bundles.
+ *
+ * @param {boolean} isWeb
+ */
+const workletsPluginOptions = isWeb => ({
+  bundleMode: !isWeb,
   strictGlobal: true, // optional, but recommended
-}
+})
 
 /**
  * @param {import("@babel/core").ConfigAPI} api
  * @returns {import("@babel/core").InputOptions}
  */
 module.exports = function (api) {
+  const isWeb = api.caller(caller => caller?.platform === 'web')
   return {
     presets: [
       [
@@ -120,7 +128,7 @@ module.exports = function (api) {
         : []),
 
       stripSymbolLocs,
-      ['react-native-worklets/plugin', workletsPluginOptions], // NOTE: this plugin MUST be last
+      ['react-native-worklets/plugin', workletsPluginOptions(isWeb)], // NOTE: this plugin MUST be last
     ],
   }
 }

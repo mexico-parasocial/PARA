@@ -6,8 +6,8 @@ This file serves as a high-fidelity "Brain" for future AI agents and human devel
 
 ## Current development guide: upstream integration (2026-10-19)
 
-Adapted from [Bluesky Social App's AGENTS.md](https://github.com/bluesky-social/social-app/blob/4ba2e7a4134b5a362172549856b8bbdde8b4b480/AGENTS.md),
-upstream revision `4ba2e7a4134b5a362172549856b8bbdde8b4b480`.
+Adapted from [Bluesky Social App's AGENTS.md](https://github.com/bluesky-social/social-app/blob/e9efdc41bd10511e002f716a93b2311344927456/AGENTS.md),
+reviewed through upstream PR #12070 at revision `e9efdc41bd10511e002f716a93b2311344927456`.
 The original PARA knowledge base is retained below in full.
 
 ### Scope, precedence, and historical notes
@@ -46,11 +46,12 @@ Checked in this checkout on 2026-10-19:
 | Lingui | `^5.9.2` |
 
 Read `package.json`, `.nvmrc`, and `pnpm-workspace.yaml` before changing tooling.
-PARA's `.nvmrc` is `24.18.0`; WatZappa's separate Node 22 pin still applies.
-There is a local package-manager declaration mismatch: `packageManager` names
-`pnpm@11.21.0`, while `devEngines.packageManager` requires `11.28.5` with
-`onFail: error`. Do not silently edit either declaration or bypass the check to
-make a command run; report the mismatch if it blocks the requested work.
+PARA's `.nvmrc` is `24.22.1`; WatZappa's separate Node 22 pin still applies.
+As checked in the current working tree on 2026-10-27, `packageManager` and
+`devEngines.packageManager` both specify `pnpm@11.28.5`; the latter uses
+`onFail: error`. The `packageManager` declaration is a local uncommitted change,
+so recheck both fields in the checkout being used. If they disagree, do not
+silently edit either declaration or bypass the check; report a blocking mismatch.
 
 ### Development and validation commands
 
@@ -85,8 +86,11 @@ pnpm build-web
 - Do not run translation extraction or compilation as a routine consequence of
   editing strings. Upstream delegates this to CI; PARA has
   `.github/workflows/nightly-update-source-languages.yaml` for source extraction.
-  Use the localization scripts only for an explicitly requested localization
-  build or a demonstrated runtime compilation prerequisite. The older Search
+  `pnpm intl:extract` extracts source messages, `pnpm intl:extract:all` covers
+  all locales, and `pnpm intl:compile` builds runtime messages. `postinstall`
+  runs `intl:compile-if-needed` when the generated English runtime file is absent.
+  Use these scripts only for an explicitly requested localization build or a
+  demonstrated runtime compilation prerequisite. The older Search
   Filters recipe below is historical, not a mandatory extraction step.
 
 ### Project structure and naming
@@ -104,7 +108,8 @@ pnpm build-web
   `Feature/index.tsx` with sibling components/hooks/utilities. Keep a small
   standalone component in one file instead of adding an unnecessary directory.
 - Colocate optional feature documentation in `README.md` and tests in
-  `*.test.ts(x)` or `__tests__/`.
+  `*.test.ts(x)` or `__tests__/`. Shared components should be platform-agnostic
+  where practical; route screens coordinate their own layout and data needs.
 - Use `#/` for imports rooted at `src/`. Reuse existing components before
   introducing another implementation.
 
@@ -121,7 +126,8 @@ pnpm build-web
 - React Compiler is enabled in `babel.config.js`. Do not add `useMemo` or
   `useCallback` by default. Keep manual memoization when there is a concrete
   dependency, external-library identity requirement, or worklet requirement;
-  do not strip existing hooks as unrelated cleanup.
+  do not strip existing hooks as unrelated cleanup. A callback used immediately
+  in an effect's dependency array is one concrete reason to retain `useCallback`.
 
 ### ALF, layout, typography, and shared controls
 
@@ -139,11 +145,25 @@ const t = useTheme()
 - Use ALF's `web`, `native`, `ios`, `android`, and `platform` helpers for conditional
   styles and `useBreakpoints()` for responsive layouts. Existing PARA center-column
   geometry and the canonical compass palette below still apply.
-- Use shared typography from `#/components/Typography`. Add `emoji` to text that
-  may include emoji, especially user-authored display names and content.
-- `Button`, `ButtonText`, and `ButtonIcon` form the shared button API. Prefer
-  semantic `color`; `variant` is deprecated upstream. Check the local `ButtonProps`
-  before choosing values: PARA currently also supports `size="medium"`.
+  Breakpoints include `gtPhone`, `gtMobile`, and `gtTablet`. Common static atom
+  families include spacing (`p_md`, `px_lg`, `gap_sm`), typography (`text_sm`,
+  `text_md`), flex (`flex_row`, `flex_1`, `align_center`), and borders (`border`,
+  `rounded_md`, `rounded_full`). Use theme atoms for colors and borders.
+
+  ```tsx
+  const {gtPhone, gtMobile} = useBreakpoints()
+  <View style={[a.flex_row, web({cursor: 'pointer'}), gtMobile && a.p_lg]} />
+  ```
+- Use shared typography from `#/components/Typography` (`Text`, `H1`, `H2`,
+  `P`, and other headings). `Text` defaults to small, snug, theme-colored text.
+  Add `emoji` to text that may include emoji, especially user-authored display
+  names and content; omit it for static strings that cannot contain emoji.
+- `Button`, `ButtonText`, and `ButtonIcon` form the shared button API. Local
+  `color` values are `primary`, `secondary`, `secondary_inverted`, `negative`,
+  `primary_subtle`, and `negative_subtle`. Sizes are `tiny`, `small`, `medium`,
+  and `large`; shapes are `default` (pill), `round`, `square`, and `rectangular`.
+  The `solid`/`outline`/`ghost` `variant` is deprecated; prefer semantic `color`.
+  Check the current `ButtonProps` before importing newer upstream values.
 - `TextField` is a compound control at `#/components/forms/TextField` with
   `Root`, `LabelText`, `Icon`, and `Input`. Controlled `value`/`onChangeText` inputs
   are supported. The old New Architecture advice to default to uncontrolled
@@ -173,23 +193,31 @@ Platform-specific parts need care: upstream documents `Dialog.Handle` and
 `Menu.ContainerItem` for native, and `Dialog.Close` and `Menu.Divider` for web.
 Check the local component exports and verify affected native/web behavior.
 
-### Haptics: upstream intent API versus PARA's active API
+### Haptics: PARA's active compatibility API
 
 Use `#/lib/haptics` and honor the user's disabled-haptics preference; application
-components should not call `expo-haptics` directly. Verify actual module
-resolution before adopting a newer API.
+components should not call `expo-haptics` directly. As checked in this working
+tree on 2026-10-27, the old `src/lib/haptics.ts` is locally deleted and module
+resolution reaches `src/lib/haptics/index.ts`. Its `useHaptics()` returns both
+an intent API and a callable compatibility wrapper. This is uncommitted local
+state, not proof that the change was merged, deployed, or device-tested. Recheck
+module resolution in another checkout before using the API.
 
-- Upstream's intent API has `tap`, `confirm`, `longPress`, `toggle(on)`,
-  `selection`, `threshold`, `dragStart`, `success`, and `error`. Use an explicit
-  platform override only when no intent fits. When that API is available,
-  destructure the method passed to `scheduleOnRN` rather than capturing its
-  entire object in a worklet. Test physical feedback on a device.
-- PARA currently resolves `#/lib/haptics` to `src/lib/haptics.ts`, whose hook
-  returns a callable accepting `Light`, `Medium`, or `Heavy`. Use the exported
-  shape that actually exists; do not call `.tap()` on that function.
-- The presence of `src/lib/haptics/index.ts` is not proof that the upstream
-  intent API is active. Migrate the helper and its consumers together in a
-  separate, verified change before documenting that migration as complete.
+Choose the intent that describes the action:
+
+- `tap()` for a light acknowledgement; `confirm()` for committing a change.
+- `longPress()` for a long-press action; `toggle(on)` for a changed switch,
+  checkbox, or radio; `selection()` for a changed selection or drag slot.
+- `threshold()` when a gesture crosses its activation point; `dragStart()`
+  when an item is picked up; `success()`/`error()` for an awaited result.
+- Use `platform({ios, android})` only when no intent fits. Haptics do nothing
+  on web or when disabled; their Android effects have version fallbacks.
+- Existing PARA consumers may call `haptics('Light' | 'Medium' | 'Heavy')`;
+  the wrapper preserves that behavior. Migrate those call sites together before
+  removing it. Do not assume either API is present in a different checkout.
+- In a worklet, destructure the method passed to `scheduleOnRN` rather than
+  capturing the entire haptics object. Test physical feedback on a device;
+  simulator or emulator feedback is not evidence of device acceptance.
 
 ### Internationalization
 
@@ -204,12 +232,21 @@ import {Trans, useLingui} from '@lingui/react/macro'
 
 const {t: l, i18n} = useLingui()
 const title = l`Settings`
+const greeting = l`Hello, ${name}!`
+const errorMessage = l({
+  message: 'Something went wrong',
+  comment: 'Generic error message for an unknown error.',
+  context: 'Toast',
+})
 const countLabel = plural(count, {one: '# item', other: '# items'})
 const createdAtLabel = i18n.date(createdAt, {dateStyle: 'medium'})
 ```
 
-- Debug menus, developer-only screens, logs, and Storybook-only text should use
-  plain strings rather than adding translation messages.
+- Do not mark debug-only strings for translation. Debug menus, developer-only
+  screens, logs, and all Storybook-only text (including internal-tester text in
+  `src/view/screens/Storybook`) use plain string literals, not Lingui macros.
+  The same applies to Storybook examples colocated with components. User-facing
+  product strings remain translatable.
 - Prefer typographic punctuation in product copy, including curly quotes and
   a non-breaking space before an en dash. This differs from code-comment style.
 - Prefer `i18n.date` to a separately constructed `Intl.DateTimeFormat` so locale
@@ -220,18 +257,22 @@ const createdAtLabel = i18n.date(createdAt, {dateStyle: 'medium'})
 ### Queries, persistence, preferences, and session clients
 
 Use TanStack Query for server state and existing paired preference hooks/React
-Context for UI preferences. `src/state/queries/feed.ts` illustrates the current
-structured query pattern.
+Context for UI preferences (for example, `useAutoplayDisabled()` and
+`useSetAutoplayDisabled()` from `#/state/preferences`).
+`src/state/queries/feed.ts` illustrates the current structured query pattern.
 
 - Build new structured keys with `createQueryKey(root, args)`, using an object
   for arguments and a root matching the query family. Include every input that
   changes a response, and the viewer DID for account-dependent data. Preserve
   the full existing key shape when maintaining a legacy query.
 - Name hooks `useNameQuery`, `useNameMutation`, and `useNameCacheMutation`.
-  Reuse `STALE` constants from `src/state/queries/index.ts`.
+  Reuse `STALE` constants from `src/state/queries/index.ts`: `SECONDS.FIFTEEN`
+  or `THIRTY`; `MINUTES.ONE`, `THREE`, `FIVE`, or `THIRTY`; `HOURS.ONE`; and
+  `INFINITY`.
 - Cursor APIs belong in `useInfiniteQuery` with the returned cursor supplying
-  `getNextPageParam`. Flatten page items for display without discarding query
-  metadata or genuine errors.
+  `getNextPageParam: page => page.cursor`. Flatten page items for display, for
+  example `data?.pages.flatMap(page => page.items) ?? []`, without discarding
+  query metadata or genuine errors.
 - **Current persistence correction:** `src/lib/react-query.tsx` now dehydrates
   successful queries accepted by `isQueryPersisted()` or the dedicated Following
   snapshot predicate. Structured persisted keys use
@@ -267,8 +308,10 @@ structured query pattern.
   completed moderation data integration, or deployed service. Keep feature gates
   and distinguish placeholders, local test evidence, and device acceptance.
 - Import a platform module by its base path; let `.web`, `.native`, `.ios`, and
-  `.android` file resolution select the implementation. Avoid conditional
-  `require()` calls for platform variants. Directory variants such as
+  `.android` file resolution select the implementation. For example, import
+  `#/lib/storage` and let the bundler choose `storage.web.ts` on web.
+  Avoid conditional `require()` calls for platform variants. Directory variants
+  such as
   `Component/index.tsx` and `Component/index.web.tsx` are preferred for substantial
   new modules; maintain existing sibling-file patterns where appropriate.
 - Use `IS_WEB`, `IS_NATIVE`, `IS_IOS`, and `IS_ANDROID` from `#/env` for runtime
@@ -1375,3 +1418,20 @@ pnpm test src/screens/Search/__tests__/searchParams.test.ts
   (`t-hidrica`, `t-emisiones`) with connected policies and data. The seed's
   edge de-duplication must read `source_card_id`/`target_card_id`, which is the
   AppView's shape; reading `source`/`target` re-created every edge on re-runs.
+
+## 2026-10-19: 1.135 merge repairs needed for `pnpm web`
+
+- Web is webpack, so `react-native-worklets/plugin` `bundleMode` (Metro-only,
+  emits `require`) is applied to native only in `babel.config.js`; on web it
+  threw "require is not defined" from Reanimated's logger.
+- `#/lib/haptics` is the directory `lib/haptics/index.ts` (the old
+  `lib/haptics.ts` that shadowed it is gone). Its `useHaptics()` returns the
+  upstream intent API (`haptics.tap()`) with a callable on top for PARA's
+  `haptics('Light')` sites. Migrate those sites, then drop the callable.
+- The icon files are generated from upstream's set and lost PARA's extra
+  exports; they are re-appended at the end of `Bookmark`, `Megaphone`, `Atom`
+  and `DotGrid`. `pnpm icons:generate` will drop them again.
+- Local dev sign-in on web: the default service is a Bonjour name the PDS does
+  not answer on; choose hosting provider `http://localhost:2583`.
+- The Matters list is mock data in `__DEV__` (`USE_MOCK_DATA`); open a seeded
+  matter by `/matter-details?cabildeoUri=<encoded at-uri>`.

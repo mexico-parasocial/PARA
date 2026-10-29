@@ -12,13 +12,10 @@ import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {useBottomBarOffset} from '#/lib/hooks/useBottomBarOffset'
-import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
 import {type NavigationProp} from '#/lib/routes/types'
-import {s} from '#/lib/styles'
 import {useProfileQuery} from '#/state/queries/profile'
 import {useSession} from '#/state/session'
 import {useCompassFilter} from '#/state/shell/compass-filter'
-import {FAB} from '#/view/com/util/fab/FAB'
 import {Text} from '#/view/com/util/text/Text'
 import {UserAvatar} from '#/view/com/util/UserAvatar'
 import {Logomark} from '#/view/icons/Logomark'
@@ -36,10 +33,7 @@ import {Image_Stroke2_Corner2_Rounded as ImageIcon} from '#/components/icons/Ima
 import {Map_Stroke2_Corner0_Rounded as MapIcon} from '#/components/icons/Map'
 import {Message_Stroke2_Corner0_Rounded as MessageIcon} from '#/components/icons/Message'
 import {PageText_Stroke2_Corner0_Rounded as PageTextIcon} from '#/components/icons/Page'
-import {
-  Pencil_Stroke2_Corner0_Rounded as PencilIcon,
-  PencilLine_Stroke2_Corner2_Rounded as ComposeIcon,
-} from '#/components/icons/Pencil'
+import {Pencil_Stroke2_Corner0_Rounded as PencilIcon} from '#/components/icons/Pencil'
 import {Person_Stroke2_Corner0_Rounded as PersonIcon} from '#/components/icons/Person'
 import {RaisingHand4Finger_Stroke2_Corner0_Rounded as RaisingHandIcon} from '#/components/icons/RaisingHand4Finger'
 import {Verified_Stroke2_Corner2_Rounded as VerifiedIcon} from '#/components/icons/Verified'
@@ -96,7 +90,7 @@ export function DataScreen() {
   const {gtMobile} = useBreakpoints()
   const gutters = useGutters([0, 'base'])
   const bottomBarOffset = useBottomBarOffset(24)
-  const {hasSession, currentAccount} = useSession()
+  const {currentAccount} = useSession()
   const navigation = useNavigation<NavigationProp>()
   const currentDid = currentAccount?.did
   const {data: currentProfile} = useProfileQuery({did: currentDid || ''})
@@ -124,8 +118,6 @@ export function DataScreen() {
 
   const handleMyBase = () => navigation.navigate('MyBase')
   const handleCommunities = () => navigation.navigate('Communities')
-  const {openComposer} = useOpenComposer()
-  const handleCreatePost = () => openComposer({logContext: 'Fab'})
 
   // Card background — shared across all Data cards
   const cardBgColor = {
@@ -619,18 +611,6 @@ export function DataScreen() {
             <Trans>Apply ({selectedFilters.length})</Trans>
           </Text>
         </TouchableOpacity>
-      )}
-
-      {/* Floating Action Button */}
-      {hasSession && (
-        <FAB
-          testID="composeFAB"
-          onPress={handleCreatePost}
-          icon={<ComposeIcon strokeWidth={1.5} size={29} style={s.white} />}
-          accessibilityRole="button"
-          accessibilityLabel={_(msg({message: `New post`, context: 'action'}))}
-          accessibilityHint=""
-        />
       )}
     </Layout.Screen>
   )

@@ -2,6 +2,7 @@
  * Render tests for the map overlay components: the state summary bottom
  * sheet and the VIEW layers panel.
  */
+import {GestureHandlerRootView} from 'react-native-gesture-handler'
 import {fireEvent, render} from '@testing-library/react-native'
 
 import {getDistrictsByState} from '#/lib/constants/electoralDistrictsData'
@@ -149,6 +150,9 @@ jest.mock('@lingui/react', () => ({
 
 const insets = {bottom: 0}
 
+// react-native-gesture-handler 3 requires a root view above any detector.
+const gestureRoot = {wrapper: GestureHandlerRootView}
+
 describe('SelectedStateOverlay', () => {
   const baseProps = {
     insets,
@@ -171,6 +175,7 @@ describe('SelectedStateOverlay', () => {
         selectedState={{name: 'Sinaloa'}}
         visible
       />,
+      gestureRoot,
     )
 
     expect(getByText('STATE SUMMARY')).toBeTruthy()
@@ -190,6 +195,7 @@ describe('SelectedStateOverlay', () => {
         selectedState={{name: 'Sinaloa'}}
         visible
       />,
+      gestureRoot,
     )
 
     fireEvent.press(getByText(/Explore \d+ districts/))
@@ -328,6 +334,7 @@ it('hides seeded statewide indicators in release mode', () => {
       onShowCities={jest.fn()}
       onShowDistricts={jest.fn()}
     />,
+    gestureRoot,
   )
   expect(getByText(/Verified statistics and officeholder/)).toBeTruthy()
   expect(queryByText('Morena')).toBeNull()

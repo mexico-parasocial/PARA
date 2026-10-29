@@ -6,7 +6,7 @@ compilador fijado por ese workspace. No accede a sesiones, PDS, AppView, base de
 datos ni credenciales. El estado está en memoria del navegador y se pierde al
 recargar. No proporciona anonimato ni almacenamiento transaccional.
 
-Desde PARA, con Node 24.18.0:
+Desde PARA, con Node 24.22.1:
 
 ```sh
 node scripts/governance-lab/serve.mjs

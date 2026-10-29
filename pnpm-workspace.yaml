@@ -38,6 +38,7 @@ allowBuilds:
 patchedDependencies:
   '@sentry/expo-upload-sourcemaps@8.18.0': patches/@sentry__expo-upload-sourcemaps@8.18.0.patch
   'expo-age-range@57.0.2': patches/expo-age-range@57.0.2.patch
+  'expo-image@57.0.5': patches/expo-image@57.0.5.patch
   'expo-media-library@57.0.5': patches/expo-media-library@57.0.5.patch
   'expo-modules-core@57.0.20': patches/expo-modules-core@57.0.20.patch
   'expo-notifications@57.0.21': patches/expo-notifications@57.0.21.patch
@@ -46,7 +47,7 @@ patchedDependencies:
   'metro-runtime@0.84.5': patches/metro-runtime@0.84.5.patch
   'metro@0.84.5': patches/metro@0.84.5.patch
   'react-native-dotenv@3.4.11': patches/react-native-dotenv@3.4.11.patch
-  'react-native-pager-view@6.8.0': patches/react-native-pager-view@6.8.0.patch
+  react-native-pager-view@9.0.9: patches/react-native-pager-view@9.0.9.patch
   react-native-reanimated@4.7.1: patches/react-native-reanimated@4.7.1.patch
   react-native-screens@4.30.0: patches/react-native-screens@4.30.0.patch
   'react-native-svg@15.15.4': patches/react-native-svg@15.15.4.patch

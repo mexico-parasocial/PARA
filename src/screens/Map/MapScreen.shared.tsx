@@ -76,6 +76,7 @@ import {
 import {SHOW_MAP_PREVIEW_FACTS} from './mapData'
 import {MapCivicDataNotice, MapReferenceNotice} from './MapDataNotice'
 import {MapDiscourseLensContent} from './MapDiscourseLensContent'
+import {getPanelInsets, type Insets} from './mapLibreCamera'
 import {
   MapSidebarLayers,
   MapSidebarSearch,
@@ -98,6 +99,8 @@ type Coordinate = {
 
 export type PolygonData = {
   key: string
+  /** Display name for map labels; several polygons can share one. */
+  label?: string
   coordinates: Coordinate[]
   fillColor?: string
   strokeColor?: string
@@ -179,13 +182,15 @@ export type PolygonProps = {
 export type MapViewRef = {
   fitToCoordinates?: (
     coordinates: Coordinate[],
-    options?: {edgePadding?: unknown; animated?: boolean},
+    options?: {edgePadding?: unknown; animated?: boolean; padding?: Insets},
   ) => void
   animateToRegion?: (region: MapRegion, duration?: number) => void
   animateCamera?: (camera: {
     center?: Coordinate
     zoom?: number
     altitude?: number
+    /** Area covered by overlay panels (web); the target is framed outside it. */
+    padding?: Insets
   }) => void
   getCamera?: () => Promise<{zoom?: number; altitude?: number}>
 }
@@ -483,6 +488,8 @@ export function MapScreenImpl({
   const {_: translate} = useLingui()
   const t = useTheme()
   const {gtMobile} = useBreakpoints()
+  // Web opens the place panel over the map; frame camera moves around it.
+  const panelInsets = IS_WEB ? getPanelInsets(gtMobile) : undefined
   const {rightNavVisible} = useLayoutBreakpoints()
   const insets = useSafeAreaInsets()
   const mapRef = useRef<MapViewRef | null>(null)
@@ -689,6 +696,7 @@ export function MapScreenImpl({
           mapRef.current?.fitToCoordinates?.(preparedState.coordinates, {
             edgePadding: {top: 48, right: 48, bottom: 48, left: 48},
             animated: true,
+            padding: panelInsets,
           })
         }
         return
@@ -705,9 +713,10 @@ export function MapScreenImpl({
       mapRef.current?.animateCamera?.({
         center: city.coordinate,
         zoom: 9.5,
+        padding: panelInsets,
       })
     },
-    [setMapRouteParams, stateFeaturesByName],
+    [panelInsets, setMapRouteParams, stateFeaturesByName],
   )
 
   const focusState = useCallback(
@@ -750,15 +759,17 @@ export function MapScreenImpl({
         mapRef.current?.fitToCoordinates?.(feature.coordinates, {
           edgePadding: {top: 48, right: 48, bottom: 48, left: 48},
           animated: true,
+          padding: panelInsets,
         })
       }
 
       mapRef.current?.animateCamera?.({
         center: feature.centroid,
         zoom: nextLayer === 'cities' ? 8 : 6.5,
+        padding: panelInsets,
       })
     },
-    [activeLayer, setMapRouteParams, stateFeaturesByName],
+    [activeLayer, panelInsets, setMapRouteParams, stateFeaturesByName],
   )
 
   useEffect(() => {
@@ -791,6 +802,11 @@ export function MapScreenImpl({
           ? 'states'
           : routeLayer
 
+    // On web the state geometry loads after first render. Applying a deep link
+    // before then would select the place but never frame it, and the link
+    // would count as handled. Wait; this effect re-runs once geometry exists.
+    if (stateFeaturesByName.size === 0) return
+
     if (lastAppliedRouteSelection.current === routeSelectionKey) return
     lastAppliedRouteSelection.current = routeSelectionKey
 
@@ -811,7 +827,7 @@ export function MapScreenImpl({
         syncRoute: false,
       })
     }
-  }, [focusCity, focusState, route.params])
+  }, [focusCity, focusState, route.params, stateFeaturesByName])
 
   const handleZoom = useCallback((direction: 'in' | 'out') => {
     if (!mapRef.current?.getCamera) return
@@ -950,6 +966,7 @@ export function MapScreenImpl({
 
       return feature.polygons.map(polygon => ({
         key: polygon.key,
+        label: feature.name,
         coordinates: polygon.coordinates,
         fillColor,
         strokeColor,
@@ -1031,6 +1048,7 @@ export function MapScreenImpl({
                 mapRef.current?.fitToCoordinates?.(d.boundary, {
                   edgePadding: {top: 60, right: 60, bottom: 60, left: 60},
                   animated: true,
+                  padding: panelInsets,
                 })
               }
             }}
@@ -1041,6 +1059,7 @@ export function MapScreenImpl({
     PolygonComponent,
     activeLayer,
     mapRegion,
+    panelInsets,
     selectedDistrictId,
     selectedState,
     showDistricts,

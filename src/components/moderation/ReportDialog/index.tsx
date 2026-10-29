@@ -15,6 +15,7 @@ import {formatTime} from '#/lib/media/video/formatTime'
 import {getLabelingServiceTitle} from '#/lib/moderation'
 import {useCallOnce} from '#/lib/once'
 import {sanitizeHandle} from '#/lib/strings/handles'
+import {useLabelersDetailedInfoQuery} from '#/state/queries/labeler'
 import {useMyLabelersQuery} from '#/state/queries/preferences'
 import {CharProgress} from '#/view/com/composer/char-progress/CharProgress'
 import {UserAvatar} from '#/view/com/util/UserAvatar'
@@ -37,7 +38,7 @@ import {createStaticClick, InlineLinkText, Link} from '#/components/Link'
 import {Loader} from '#/components/Loader'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
-import {IS_NATIVE} from '#/env'
+import {IS_NATIVE, MOD_PROXY_DID} from '#/env'
 import {type app} from '#/lexicons'
 import {useSubmitReportMutation} from './action'
 import {
@@ -166,10 +167,18 @@ function Inner(
     error: labelersLoadError,
     refetch: refetchLabelers,
   } = useMyLabelersQuery({excludeNonConfigurableLabelers: true})
-  const isLoading = useDelayedLoading(500, isLabelerLoading)
-  const copy = useCopyForSubject(props.subject, {
-    isProfileLink: !!props.profileLinkUrl,
+  const configuredLabeler = useLabelersDetailedInfoQuery({
+    dids:
+      props.subject.type === 'profileLink' && MOD_PROXY_DID
+        ? [MOD_PROXY_DID]
+        : [],
   })
+  const isLoading = useDelayedLoading(
+    500,
+    isLabelerLoading ||
+      (configuredLabeler.isLoading && configuredLabeler.fetchStatus !== 'idle'),
+  )
+  const copy = useCopyForSubject(props.subject)
   const {categories, getCategory} = useReportOptions()
   const [state, dispatch] = useReducer(reducer, initialState)
 
@@ -196,7 +205,12 @@ function Inner(
    */
   const supportedLabelers = useMemo(() => {
     if (!allLabelers) return []
-    return allLabelers
+    const labelers = [...allLabelers]
+    for (const labeler of configuredLabeler.data ?? []) {
+      if (!labelers.some(item => item.creator.did === labeler.creator.did))
+        labelers.push(labeler)
+    }
+    return labelers
       .filter(l => {
         const subjectTypes: string[] | undefined = l.subjectTypes
         if (subjectTypes === undefined) return true
@@ -225,7 +239,12 @@ function Inner(
       .filter(l => {
         if (!state.selectedOption) return false
         if (isBskyOnlyReason || isBskyOnlySubject) {
-          return l.creator.did === api.moderation.did
+          return (
+            l.creator.did ===
+            (props.subject.type === 'profileLink'
+              ? MOD_PROXY_DID || api.moderation.did
+              : api.moderation.did)
+          )
         }
         const supportedReasonTypes: string[] | undefined = l.reasonTypes
         if (supportedReasonTypes === undefined) return true
@@ -241,6 +260,7 @@ function Inner(
   }, [
     props.subject,
     allLabelers,
+    configuredLabeler.data,
     state.selectedOption,
     isBskyOnlyReason,
     isBskyOnlySubject,
@@ -271,11 +291,11 @@ function Inner(
           subject: props.subject,
           state,
           videoTimestampSeconds,
-          profileLinkUrl: props.profileLinkUrl,
         }),
       )
       setIsSuccess(true)
       ax.metric('reportDialog:success', {
+        subjectType: props.subject.type,
         reason: state.selectedOption?.reason ?? '',
         labeler: state.selectedLabeler?.creator.handle ?? '',
         details: !!state.details,
@@ -355,7 +375,7 @@ function Inner(
               {/* Here to capture focus for a hot sec to prevent flash */}
               <Pressable accessible={false} />
             </View>
-          ) : labelersLoadError || !allLabelers ? (
+          ) : labelersLoadError || configuredLabeler.error || !allLabelers ? (
             <Admonition.Outer type="error">
               <Admonition.Row>
                 <Admonition.Icon />
@@ -367,7 +387,12 @@ function Inner(
                 <Admonition.Button
                   color="negative_subtle"
                   label={l`Retry loading report options`}
-                  onPress={() => void refetchLabelers()}>
+                  onPress={() => {
+                    void refetchLabelers()
+                    if (props.subject.type === 'profileLink' && MOD_PROXY_DID) {
+                      void configuredLabeler.refetch()
+                    }
+                  }}>
                   <ButtonText>
                     <Trans>Retry</Trans>
                   </ButtonText>

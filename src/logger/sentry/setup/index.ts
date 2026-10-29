@@ -1,6 +1,8 @@
+// Native SDK initialization must use the React Native entry point.
+// oxlint-disable-next-line no-restricted-imports
 import {getGlobalScope, init} from '@sentry/react-native'
 
-import {Sentry} from '#/logger/sentry/lib'
+import {featureFlagsIntegration} from '#/logger/sentry/featureFlags'
 import {dropExpectedNetworkErrors} from '#/logger/sentry/network-errors'
 import * as env from '#/env'
 
@@ -15,7 +17,7 @@ init({
   dist: env.BUNDLE_IDENTIFIER,
   release: env.SENTRY_RELEASE,
   beforeSend: dropExpectedNetworkErrors,
-  integrations: [Sentry.featureFlagsIntegration()],
+  integrations: [featureFlagsIntegration],
   ignoreErrors: [
     /*
      * Unknown internals errors

@@ -7,7 +7,7 @@ import {
 
 import {Logger} from '#/logger'
 
-const logger = Logger.create(Logger.Context.GrowthBook)
+const logger = Logger.create(Logger.Context.Growthbook)
 const lastLoggedPayload = new WeakMap<GrowthBook, string>()
 
 function logPayload(client: GrowthBook, source: 'html-fallback' | 'sdk'): void {

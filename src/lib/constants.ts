@@ -3,7 +3,7 @@ import * as Device from 'expo-device'
 import {type Service} from '@atproto/lex'
 import {api} from '@bsky/sdk'
 
-import {BLUESKY_PROXY_DID, CHAT_PROXY_DID, IS_DEV} from '#/env'
+import {BLUESKY_PROXY_DID, CHAT_PROXY_DID, IS_DEV, MOD_PROXY_DID} from '#/env'
 import {type app} from '#/lexicons'
 
 // Physical devices must set EXPO_PUBLIC_LOCAL_DEV_IP in .env.local to reach
@@ -114,6 +114,9 @@ export const MAX_ALT_TEXT = 2000
 
 export const MAX_REPORT_REASON_GRAPHEME_LENGTH = 2000
 
+/** Moderation inbox badges display 99+ at or above this unread count. */
+export const UNREAD_NOTIFICATION_CAP = 100
+
 export function IS_TEST_USER(handle?: string) {
   return handle && handle?.endsWith('.test')
 }
@@ -165,6 +168,11 @@ export function LINK_META_PROXY(_serviceUrl: string) {
   }
 
   return PROD_LINK_META_PROXY
+}
+
+/** Favicon extraction follows the existing link metadata service. */
+export function LINK_FAVICON_PROXY() {
+  return LINK_META_PROXY('').replace('/v1/extract?url=', '/v1/favicon?url=')
 }
 
 export const STATUS_PAGE_URL = 'https://status.bsky.app/'
@@ -483,16 +491,16 @@ export const BLUESKY_MOD_SERVICE_HEADERS = {
 }
 
 /**
- * Bluesky's own moderation service, in the `did#service_id` form a lex client's
- * per-call `service` option takes. Passing it emits `atproto-proxy: <this
- * value>` on that one request, routing a `com.atproto.moderation.*` call to
- * Bluesky's labeler.
+ * Moderation service, in the `did#service_id` form a lex client's per-call
+ * `service` option takes. Passing it emits `atproto-proxy: <this value>` on that
+ * one request. The DID defaults to Bluesky's labeler but can be overridden for
+ * local Ozone development.
  *
  * Reports and appeals aimed at a DIFFERENT labeler build their own value from
  * that labeler's creator did instead, so this is a per-call option rather than a
  * client-level one like {@link CHAT_PROXY_SERVICE}.
  */
-export const MOD_PROXY_SERVICE: Service = api.moderation.service
+export const MOD_PROXY_SERVICE: Service = `${MOD_PROXY_DID || api.moderation.did}#atproto_labeler`
 
 /**
  * The notification service's proxy target, in the `did#service_id` form a lex

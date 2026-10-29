@@ -241,4 +241,73 @@ describe('mergeRelatedItems', () => {
     // Policies first, then data.
     expect(merged.map(i => i.category)).toEqual(['policy', 'data'])
   })
+  it('joins a card without a record reference to the same-titled item that has one', () => {
+    const merged = mergeRelatedItems([
+      {
+        key: 'a',
+        title: 'Captación de lluvia',
+        category: 'policy',
+        type: 'policy',
+        uri: POST,
+        origins: [{kind: 'personal', name: 'Agua'}],
+      },
+      {
+        key: 'b',
+        title: 'captación de lluvia ',
+        category: 'policy',
+        type: 'article',
+        origins: [{kind: 'community', name: 'Medio Ambiente'}],
+      },
+      {
+        key: 'c',
+        title: 'Captación de lluvia',
+        category: 'other',
+        type: 'note',
+        origins: [{kind: 'personal', name: 'Agua'}],
+      },
+    ])
+    expect(merged).toHaveLength(2)
+    expect(merged[0].origins).toHaveLength(2)
+    expect(merged[1].category).toBe('other')
+  })
+  it('keeps same-titled records with different references apart', () => {
+    const OTHER_POST = 'at://did:plc:b/com.para.post/3k2'
+    const card = (key: string, uri?: string) => ({
+      key,
+      title: 'Captación de lluvia',
+      category: 'policy' as const,
+      type: 'policy',
+      uri,
+      origins: [{kind: 'community' as const, name: key}],
+    })
+    // The reference-less card comes first, so the first record adopts it.
+    const merged = mergeRelatedItems([
+      card('a'),
+      card('b', POST),
+      card('c', OTHER_POST),
+      card('d', POST),
+    ])
+    expect(merged.map(i => i.uri).sort()).toEqual([POST, OTHER_POST].sort())
+    const first = merged.find(i => i.uri === POST)!
+    expect(first.origins.map(o => o.name)).toEqual(['a', 'b', 'd'])
+    const second = merged.find(i => i.uri === OTHER_POST)!
+    expect(second.origins.map(o => o.name)).toEqual(['c'])
+  })
+  it('does not guess which of several same-titled records a card means', () => {
+    const OTHER_POST = 'at://did:plc:b/com.para.post/3k2'
+    const card = (key: string, uri?: string) => ({
+      key,
+      title: 'Captación de lluvia',
+      category: 'policy' as const,
+      type: 'policy',
+      uri,
+      origins: [{kind: 'community' as const, name: key}],
+    })
+    const merged = mergeRelatedItems([
+      card('a', POST),
+      card('b', OTHER_POST),
+      card('c'),
+    ])
+    expect(merged).toHaveLength(3)
+  })
 })

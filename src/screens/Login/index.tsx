@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from 'react'
-import {KeyboardAvoidingView} from 'react-native'
+import {KeyboardAvoidingView, View} from 'react-native'
 import Animated, {FadeIn, LayoutAnimationConfig} from 'react-native-reanimated'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
@@ -15,12 +15,16 @@ import {useServiceQuery} from '#/state/queries/service'
 import {type SessionAccount, useSession} from '#/state/session'
 import {useLoggedOutView} from '#/state/shell/logged-out'
 import {LoggedOutLayout} from '#/view/com/util/layouts/LoggedOutLayout'
+import {Logomark} from '#/view/icons/Logomark'
 import {ForgotPasswordForm} from '#/screens/Login/ForgotPasswordForm'
 import {LoginForm} from '#/screens/Login/LoginForm'
 import {PasswordUpdatedForm} from '#/screens/Login/PasswordUpdatedForm'
 import {SetNewPasswordForm} from '#/screens/Login/SetNewPasswordForm'
 import {atoms as a, native} from '#/alf'
+import {Button, ButtonIcon} from '#/components/Button'
+import {ArrowLeft_Stroke2_Corner0_Rounded as ArrowLeft} from '#/components/icons/Arrow'
 import {ScreenTransition} from '#/components/ScreenTransition'
+import {IS_NATIVE} from '#/env'
 import {ChooseAccountForm} from './ChooseAccountForm'
 
 enum Forms {
@@ -140,9 +144,12 @@ export const Login = ({onPressBack}: {onPressBack: () => void}) => {
   let content = null
   let title = ''
   let description = ''
+  let onHeaderBack = handlePressBack
 
   switch (currentForm) {
     case Forms.Login:
+      onHeaderBack = () =>
+        accounts.length ? gotoForm(Forms.ChooseAccount) : handlePressBack()
       title = _(msg`Sign in`)
       description = _(msg`Enter your username and password`)
       content = (
@@ -176,6 +183,7 @@ export const Login = ({onPressBack}: {onPressBack: () => void}) => {
       )
       break
     case Forms.ForgotPassword:
+      onHeaderBack = () => gotoForm(Forms.Login)
       title = _(msg`Forgot Password`)
       description = _(msg`Let's get your password reset!`)
       content = (
@@ -193,6 +201,7 @@ export const Login = ({onPressBack}: {onPressBack: () => void}) => {
       )
       break
     case Forms.SetNewPassword:
+      onHeaderBack = () => gotoForm(Forms.ForgotPassword)
       title = _(msg`Forgot Password`)
       description = _(msg`Let's get your password reset!`)
       content = (
@@ -206,6 +215,7 @@ export const Login = ({onPressBack}: {onPressBack: () => void}) => {
       )
       break
     case Forms.PasswordUpdated:
+      onHeaderBack = () => gotoForm(Forms.Login)
       title = _(msg`Password updated`)
       description = _(msg`You can now sign in with your new password.`)
       content = (
@@ -221,6 +231,27 @@ export const Login = ({onPressBack}: {onPressBack: () => void}) => {
           leadin=""
           title={title}
           description={description}
+          nativeHeader={
+            IS_NATIVE ? (
+              <View style={[a.flex_row, a.align_center, a.px_lg]}>
+                <View style={{width: 40}}>
+                  <Button
+                    testID="signInHeaderBack"
+                    label={_(msg`Back`)}
+                    color="secondary"
+                    size="small"
+                    shape="round"
+                    onPress={onHeaderBack}>
+                    <ButtonIcon icon={ArrowLeft} />
+                  </Button>
+                </View>
+                <View style={[a.flex_1, a.align_center]}>
+                  <Logomark width={32} />
+                </View>
+                <View style={{width: 40}} />
+              </View>
+            ) : undefined
+          }
           scrollable>
           <LayoutAnimationConfig skipEntering>
             <ScreenTransition
