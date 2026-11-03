@@ -16,7 +16,7 @@ import chunk from 'lodash.chunk'
 
 import {until} from '#/lib/async/until'
 import {wait} from '#/lib/async/wait'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {logger} from '#/logger'
 import {getAllListMembers} from '#/state/queries/list-members'
 import {useAppviewClient, usePdsClient, useSession} from '#/state/session'
@@ -99,7 +99,7 @@ export function CreateListFromStarterPackDialog({
             const chunks = chunk(listitemWrites, 50)
             for (const c of chunks) {
               await pdsClient.call(com.atproto.repo.applyWrites, {
-                repo: currentAccount.did as AtIdentifierString,
+                repo: currentAccount.did,
                 writes: c,
               })
             }

@@ -3,7 +3,7 @@ import {plural} from '@lingui/core/macro'
 import {Trans, useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {atoms as a, useTheme} from '#/alf'
 import {type ConvoWithDetails} from '#/components/dms/util'
 import {createStaticClick, InlineLinkText} from '#/components/Link'

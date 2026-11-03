@@ -4,7 +4,7 @@ import {useNavigation} from '@react-navigation/native'
 import {useQueryClient} from '@tanstack/react-query'
 
 import {makeProfileLink} from '#/lib/routes/links'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {shareUrl, simpleShareText} from '#/lib/sharing'
 import {toShareUrl} from '#/lib/strings/url-helpers'
 import {type Shadow} from '#/state/cache/types'
@@ -60,7 +60,7 @@ import {
   ReportLinkDialog,
   useReportableProfileLinks,
 } from '#/features/profileLinks'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import {useDevMode} from '#/storage/hooks/dev-mode'
 
 let ProfileMenu = ({

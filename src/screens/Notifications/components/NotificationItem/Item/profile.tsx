@@ -15,7 +15,7 @@ import {HITSLOP_10} from '#/lib/constants'
 import {useRequireEmailVerification} from '#/lib/hooks/useRequireEmailVerification'
 import {isBlockedOrBlocking} from '#/lib/moderation/blocked-and-muted'
 import {makeProfileLink} from '#/lib/routes/links'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {sanitizeHandle} from '#/lib/strings/handles'
 import {useProfileShadow} from '#/state/cache/profile-shadow'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
@@ -113,6 +113,42 @@ function PillButton({
         {label}
       </Text>
     </Button>
+  )
+}
+
+/**
+ * How far a pill reaches above and below the line of `Item.PrimaryText`
+ * beside it, at the default font size. The pill is the taller of the two, so
+ * this centres it on the line without making the line any taller.
+ */
+const PILL_OVERHANG =
+  (PILL_HEIGHT - Math.round(tokens.fontSize.md * tokens.lineHeight.snug)) / 2
+
+/**
+ * A row's headline with a pill, e.g. `Item.FollowButton`, beside its first
+ * line. Whatever comes after it in `Item.Content` runs the full width of the
+ * row beneath the pill, rather than being cut short beside it. The pill is as
+ * far from the headline as `Item.Trailing` would put it, and centred on the
+ * headline's first line.
+ */
+export function HeadlineWithButton({
+  button,
+  children,
+}: {
+  /**
+   * The pill, e.g. `Item.FollowButton`.
+   */
+  button: React.ReactNode
+  /**
+   * The headline, as an `Item.PrimaryText`.
+   */
+  children: React.ReactNode
+}) {
+  return (
+    <View style={[a.flex_row, a.align_start, a.gap_lg]}>
+      <View style={[a.flex_1]}>{children}</View>
+      <View style={{marginVertical: -PILL_OVERHANG}}>{button}</View>
+    </View>
   )
 }
 

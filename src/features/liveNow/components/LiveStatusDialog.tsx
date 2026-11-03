@@ -7,7 +7,7 @@ import {useQueryClient} from '@tanstack/react-query'
 
 import {useOpenLink} from '#/lib/hooks/useOpenLink'
 import {moderateStatus} from '#/lib/moderation/subjects'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {sanitizeHandle} from '#/lib/strings/handles'
 import {toNiceDomain} from '#/lib/strings/url-helpers'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
@@ -26,7 +26,7 @@ import * as ProfileCard from '#/components/ProfileCard'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
 import {LiveIndicator} from '#/features/liveNow/components/LiveIndicator'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import type * as bsky from '#/types/bsky'
 
 export function LiveStatusDialog({

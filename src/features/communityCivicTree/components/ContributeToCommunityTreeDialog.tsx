@@ -3,7 +3,7 @@ import {StyleSheet, TextInput, TouchableOpacity, View} from 'react-native'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {useCommunityBoardsQuery} from '#/state/queries/community-boards'
 import {useCreateCommunityTreeContributionMutation} from '#/state/queries/community-civic-tree'
 import {useSession} from '#/state/session'

@@ -3,6 +3,7 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 import {
   BridgeResponseError,
   isBridgeAuthError,
+  isChatDisabledError,
   matrixBridgeFetch,
 } from '#/lib/matrix/bridge'
 import {
@@ -12,6 +13,7 @@ import {
 } from '#/lib/matrix/proofs'
 import {logger} from '#/logger'
 import {useSession} from '#/state/session'
+import {CHAT_ENABLED} from '#/env'
 
 interface CommunitySpaceResponse {
   spaceId: string
@@ -129,7 +131,7 @@ export function useCommunitySpaceQuery(communityUri: string | undefined) {
       }
       return res.json()
     },
-    enabled: !!communityUri && !!currentAccount,
+    enabled: CHAT_ENABLED && !!communityUri && !!currentAccount,
     staleTime: 1000 * 60 * 5, // 5 minutes
   })
 }
@@ -148,10 +150,12 @@ export function useMatrixIdentityQuery({
     queryKey: ['matrix-identity', currentAccount?.did],
     queryFn: () =>
       bridgeCallWithProof(BRIDGE_AUDIENCES.identity, '/api/matrix-identity'),
-    enabled: enabled && !!currentAccount,
+    enabled: CHAT_ENABLED && enabled && !!currentAccount,
     staleTime: Infinity,
     retry: (failureCount, error) =>
-      !(error instanceof MatrixProofUnavailableError) && failureCount < 2,
+      !(error instanceof MatrixProofUnavailableError) &&
+      !isChatDisabledError(error) &&
+      failureCount < 2,
   })
 }
 
@@ -219,10 +223,12 @@ export function useMatrixTokenQuery({
         deviceId,
         friendlyName,
       }),
-    enabled: enabled && !!currentAccount,
+    enabled: CHAT_ENABLED && enabled && !!currentAccount,
     staleTime: 1000 * 60 * 60, // 1 hour — tokens are long-lived in Synapse
     retry: (failureCount, error) =>
-      !(error instanceof MatrixProofUnavailableError) && failureCount < 2,
+      !(error instanceof MatrixProofUnavailableError) &&
+      !isChatDisabledError(error) &&
+      failureCount < 2,
   })
 }
 
@@ -246,6 +252,10 @@ export function useUnreadCountQuery({
         const data = (await res.json()) as UnreadResponse
         return {...data, unavailable: false}
       } catch (err) {
+        // Chat is off on this server: nothing is unread, and nothing is down.
+        if (isChatDisabledError(err)) {
+          return {unread: 0, communities: [], unavailable: false}
+        }
         logger.warn('matrix: bridge unavailable, defaulting unread to 0', {
           safeMessage: isBridgeAuthError(err)
             ? 'Chat authentication required'
@@ -254,7 +264,7 @@ export function useUnreadCountQuery({
         return {unread: 0, communities: [], unavailable: true}
       }
     },
-    enabled: enabled && !!currentAccount,
+    enabled: CHAT_ENABLED && enabled && !!currentAccount,
     refetchInterval: 1000 * 60 * 2, // Poll every 2 minutes
   })
 }
@@ -272,8 +282,9 @@ export function useMatrixRoomsQuery({
       }
       return res.json()
     },
-    enabled: enabled && !!currentAccount,
-    retry: (count, error) => !isBridgeAuthError(error) && count < 1,
+    enabled: CHAT_ENABLED && enabled && !!currentAccount,
+    retry: (count, error) =>
+      !isBridgeAuthError(error) && !isChatDisabledError(error) && count < 1,
     staleTime: 1000 * 60,
   })
 }

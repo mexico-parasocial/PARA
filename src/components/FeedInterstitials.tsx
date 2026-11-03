@@ -10,7 +10,8 @@ import Animated, {
 import {Trans, useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
-import {type NavigationProp} from '#/lib/routes/types'
+import {getTabNavigationAction} from '#/lib/routes/navigation'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {useModerationOpts} from '#/state/preferences/moderation-opts'
 import {useGetPopularFeedsQuery} from '#/state/queries/feed'
 import {type FeedDescriptor} from '#/state/queries/post-feed'
@@ -38,7 +39,7 @@ import {ProgressGuideList} from '#/components/ProgressGuide/List'
 import {Text} from '#/components/Typography'
 import {type Metrics, useAnalytics} from '#/analytics'
 import {IS_IOS} from '#/env'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import type * as bsky from '#/types/bsky'
 import {FollowDialogWithoutGuide} from './ProgressGuide/FollowDialog'
 
@@ -664,7 +665,7 @@ export function SuggestedFeeds() {
               <Button
                 label={l`Browse more feeds on the Explore page`}
                 onPress={() => {
-                  navigation.navigate('SearchTab')
+                  navigation.dispatch(getTabNavigationAction('Search'))
                 }}
                 style={[a.flex_col]}>
                 <CardOuter>

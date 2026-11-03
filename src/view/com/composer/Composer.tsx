@@ -92,7 +92,7 @@ import {
   derivePostTypeId,
   normalizeComposerFlairs,
 } from '#/lib/post-flairs'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {logEvent} from '#/lib/statsig/statsig'
 import {cleanError} from '#/lib/strings/errors'
 import {colors} from '#/lib/styles'

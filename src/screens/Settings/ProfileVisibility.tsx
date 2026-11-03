@@ -6,7 +6,7 @@ import {Trans} from '@lingui/react/macro'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import {useFocusEffect} from '@react-navigation/native'
 
-import {fetchParaIdentity, putParaIdentity} from '#/lib/api/para-identity'
+import {fetchParaIdentity, updateParaIdentity} from '#/lib/api/para-identity'
 import {type ParaIdentityRecord} from '#/lib/api/para-lexicons'
 import {
   type CommonNavigatorParams,
@@ -106,19 +106,7 @@ export function ProfileVisibilityScreen({}: Props) {
   ) => {
     try {
       if (!currentAccount) return
-      const identity = await fetchParaIdentity(pdsClient, currentAccount.did)
-      await putParaIdentity(pdsClient, currentAccount.did, {
-        isVerifiedPublicFigure: identity?.isVerifiedPublicFigure ?? false,
-        proofBlob: identity?.proofBlob,
-        verifiedAt: identity?.verifiedAt,
-        publicVotes: identity?.publicVotes ?? false,
-        publicRaq: identity?.publicRaq ?? false,
-        publicHighlights: identity?.publicHighlights ?? false,
-        state: identity?.state,
-        compassPosition: identity?.compassPosition,
-        party: identity?.party,
-        ...updates,
-      })
+      await updateParaIdentity(pdsClient, currentAccount.did, updates)
     } catch (e) {
       console.error('Failed to sync visibility to server', e)
     }
@@ -130,7 +118,7 @@ export function ProfileVisibilityScreen({}: Props) {
         throw new Error('No active account')
       }
 
-      await putParaIdentity(pdsClient, currentAccount.did, {
+      await updateParaIdentity(pdsClient, currentAccount.did, {
         isVerifiedPublicFigure: value,
       })
 

@@ -10,6 +10,7 @@ import {Logomark} from '#/view/icons/Logomark'
 import {Logotype} from '#/view/icons/Logotype'
 import {atoms as a, useBreakpoints, useGutters, useTheme} from '#/alf'
 import * as Layout from '#/components/Layout'
+import {CHAT_ENABLED} from '#/env'
 
 export function HomeHeaderLayout(props: {
   children: ReactNode
@@ -128,7 +129,7 @@ function HomeHeaderLayoutDesktopAndTablet({
                 </View>
               </View>
             </View>
-            <HomeHeaderChatButton />
+            {CHAT_ENABLED && <HomeHeaderChatButton />}
           </View>
         </Layout.Center>
       )}

@@ -11,7 +11,7 @@ import {usePalette} from '#/lib/hooks/usePalette'
 import {COMMUNITY_AGENT_PROFILE} from '#/lib/mock-data/community-agent'
 import {getPartyFeedProfile, PARTY_FEED_PROFILES} from '#/lib/party-feeds'
 import {getPostBadges} from '#/lib/post-flairs'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {
   formatCommunityName,
   formatGeographicGroupName,
@@ -36,6 +36,7 @@ import {useAgent} from '#/state/session'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
 import * as Layout from '#/components/Layout'
+import {CHAT_ENABLED} from '#/env'
 import {CommunityAbout} from './CommunityAbout'
 import {CommunityFeed} from './CommunityFeed'
 import {CommunityHero} from './CommunityHero'
@@ -486,7 +487,9 @@ export function CommunityProfileScreen() {
             onPressRAQ={onPressRAQ}
             onPressRoles={onPressRoles}
             onPressVoters={onPressVoters}
-            onPressCommunityChat={onPressCommunityChat}
+            onPressCommunityChat={
+              CHAT_ENABLED ? onPressCommunityChat : undefined
+            }
             unreadCount={unreadCount}
             governance={governance}
             pal={pal}

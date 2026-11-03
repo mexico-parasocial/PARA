@@ -4,7 +4,7 @@ import {Trans, useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {useRequireEmailVerification} from '#/lib/hooks/useRequireEmailVerification'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {logger} from '#/logger'
 import {type Shadow} from '#/state/cache/types'
 import {useGetConvoAvailabilityQuery} from '#/state/queries/messages/get-convo-availability'

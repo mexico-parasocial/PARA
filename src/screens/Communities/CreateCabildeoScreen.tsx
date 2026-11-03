@@ -25,7 +25,7 @@ import {
 import {
   type CommonNavigatorParams,
   type NativeStackScreenProps,
-  type NavigationProp,
+  type PlatformNavigationProp as NavigationProp,
 } from '#/lib/routes/types'
 import {cabildeosQueryKey} from '#/state/queries/cabildeo'
 import {useAgent} from '#/state/session'

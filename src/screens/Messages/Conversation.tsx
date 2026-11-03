@@ -20,7 +20,7 @@ import {useViewportZoomLock} from '#/lib/hooks/useViewportZoomLock'
 import {moderateProfile} from '#/lib/moderation/subjects'
 import {
   type CommonNavigatorParams,
-  type NavigationProp,
+  type PlatformNavigationProp as NavigationProp,
 } from '#/lib/routes/types'
 import {useMaybeProfileShadow} from '#/state/cache/profile-shadow'
 import {useEmail} from '#/state/email-verification'

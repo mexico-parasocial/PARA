@@ -10,7 +10,7 @@ import {type CabildeoPhase} from '#/lib/api/para-lexicons'
 import {type CabildeoView} from '#/lib/cabildeo-client'
 import {
   type CommonNavigatorParams,
-  type NavigationProp,
+  type PlatformNavigationProp as NavigationProp,
 } from '#/lib/routes/types'
 import {useCabildeosQuery} from '#/state/queries/cabildeo'
 import {useProfileQuery} from '#/state/queries/profile'

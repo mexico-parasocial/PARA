@@ -91,7 +91,7 @@ import {OTAChannelNotice} from '#/components/OTAChannelNotice'
 import {ProfileBadges} from '#/components/ProfileBadges'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
-import {IS_NATIVE, IS_WEB} from '#/env'
+import {CHAT_ENABLED, IS_NATIVE, IS_WEB} from '#/env'
 import {InviteFriendsDialog} from '#/features/inviteFriends'
 
 const iconWidth = 26
@@ -536,7 +536,9 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
           <>
             <SearchMenuItem isActive={isAtSearch} onPress={onPressSearch} />
             <HomeMenuItem isActive={isAtHome} onPress={onPressHome} />
-            <ChatMenuItem isActive={isAtMessages} onPress={onPressMessages} />
+            {CHAT_ENABLED && (
+              <ChatMenuItem isActive={isAtMessages} onPress={onPressMessages} />
+            )}
             <NotificationsMenuItem
               isActive={isAtNotifications}
               onPress={onPressNotifications}

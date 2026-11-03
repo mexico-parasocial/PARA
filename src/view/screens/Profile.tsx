@@ -113,7 +113,7 @@ function ProfileScreenInner({route}: Props) {
   useEffect(() => {
     if (resolveError) {
       if (name === 'lulaoficial.bsky.social') {
-        navigate('Profile', {name: 'lula.com.br'})
+        navigate({name: 'Profile', params: {name: 'lula.com.br'}})
       }
     }
   }, [name, resolveError])

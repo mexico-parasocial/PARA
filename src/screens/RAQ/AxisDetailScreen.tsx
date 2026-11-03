@@ -7,7 +7,7 @@ import {type RouteProp, useNavigation, useRoute} from '@react-navigation/native'
 import {RAQ_AXES_BY_ID} from '#/lib/mock-data'
 import {
   type CommonNavigatorParams,
-  type NavigationProp,
+  type PlatformNavigationProp as NavigationProp,
 } from '#/lib/routes/types'
 import {useProposedQuestions} from '#/state/queries/useProposedQuestions'
 import {atoms as a, useTheme} from '#/alf'

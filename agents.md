@@ -33,13 +33,13 @@ PARA uses React Native and Expo for iOS, Android, and web, with React Navigation
 TanStack Query, Lingui, TypeScript, and ALF. Prefer supported modern APIs when
 editing a feature, without copying upstream version requirements blindly.
 
-Checked in this checkout on 2026-10-19:
+Updated in this checkout on 2026-10-29; SDK 58 native device acceptance remains pending:
 
 | Dependency | PARA declaration |
 | --- | --- |
-| React | `19.2.3` |
-| React Native | `0.86.3` |
-| Expo | `57.0.26` |
+| React | `19.3.0` |
+| React Native | `0.88.0` |
+| Expo | `58.0.19` |
 | TypeScript | `~6.0.3` (upstream's guide describes TypeScript 7) |
 | React Navigation | `^7.1.33` |
 | TanStack Query | `^5.96.2` |
@@ -52,6 +52,19 @@ As checked in the current working tree on 2026-10-27, `packageManager` and
 `onFail: error`. The `packageManager` declaration is a local uncommitted change,
 so recheck both fields in the checkout being used. If they disagree, do not
 silently edit either declaration or bypass the check; report a blocking mismatch.
+
+SDK 58 migration status: the lockfile and patches have been installed locally,
+including PARA's age-range patch. Native builds and device acceptance remain
+pending. Expo's local compatibility check flags the retained
+`react-native-maps`, `react-native-view-shot`, and `react-native-webview`
+versions. Do not treat the SDK upgrade as validated on native devices.
+
+### React Native patches
+
+`patches/react-native@<version>.patch` is generated from the individual patches
+in `patches/react-native/`. Edit the individual patches and their explanations,
+then run `pnpm patch:react-native` to rebuild the combined patch. See the
+[patch guide](patches/react-native/README.md) for the editing workflow.
 
 ### Development and validation commands
 
@@ -712,19 +725,6 @@ decision is made.
 
 ---
 
-## 2026-10-14: Policies are posts voted from -3 to +3
-
-- Data → Policies lists `com.para.post` records with `postType: 'policy'`
-  (`com.para.feed.searchPosts`, a blank `q` of `' '` because the AppView refuses
-  an empty one). Policies are not cabildeos; Lobbying owns phases and options.
-- The vote is `PolicyBallotControl` (the feed's `VotingButton`). Policy screens
-  pass `showNotice={false}`, so a vote is cast after a short pause with no
-  public-ballot notice; the feed keeps the notice. `castPolicyVote` writes a
-  public `com.para.civic.vote` authorized by m8 (`m8:policy:v1`, binds the
-  signal). The viewer's own ballots come from their repo, never the AppView.
-- The matter filter is the composer's six groups (`FLAIR_GROUPS.MATTER`), one
-  pill each, plus a verified toggle meaning "official" (in the catalog). A
-  policy's matter is its single-pipe flair; a flair outside the six groups is
 ## 2026-11-02: Seguimiento (AppView and read-only client built locally)
 
 - Follow-through of a resolved cabildeo is `com.para.civic.followThrough` and
@@ -760,6 +760,19 @@ decision is made.
   `src/lexicons` (gitignored) was regenerated with `pnpm lexicons:generate` and
   includes it.
 
+## 2026-10-14: Policies are posts voted from -3 to +3
+
+- Data → Policies lists `com.para.post` records with `postType: 'policy'`
+  (`com.para.feed.searchPosts`, a blank `q` of `' '` because the AppView refuses
+  an empty one). Policies are not cabildeos; Lobbying owns phases and options.
+- The vote is `PolicyBallotControl` (the feed's `VotingButton`). Policy screens
+  pass `showNotice={false}`, so a vote is cast after a short pause with no
+  public-ballot notice; the feed keeps the notice. `castPolicyVote` writes a
+  public `com.para.civic.vote` authorized by m8 (`m8:policy:v1`, binds the
+  signal). The viewer's own ballots come from their repo, never the AppView.
+- The matter filter is the composer's six groups (`FLAIR_GROUPS.MATTER`), one
+  pill each, plus a verified toggle meaning "official" (in the catalog). A
+  policy's matter is its single-pipe flair; a flair outside the six groups is
   not shown as a matter (`lib/matter-filter.ts`).
 - "En tu comunidad" uses `com.para.civic.getPolicyCommunityVotes`: how many of a
   community's active members voted, the mean, and each member's vote. The

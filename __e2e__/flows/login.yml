@@ -9,6 +9,8 @@ appId: xyz.blueskyweb.app
 - tapOn:
     id: 'e2eOpenLoggedOutView'
 - tapOn: 'Sign in'
+# Wait for the autofocus keyboard before tapping the hosting provider.
+- waitForAnimationToEnd
 - tapOn:
     id: 'selectServiceButton'
 - tapOn: 'Custom'

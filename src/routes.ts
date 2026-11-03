@@ -136,6 +136,8 @@ export const router = new Router({
   PoliticalAffiliation: '/settings/political-affiliation',
   SeeVotes: '/my-base/votes',
   SeeInfluence: '/my-base/influence',
+  PassportShare: '/my-base/passport',
+  PublicPassport: '/passport/:did',
   SeePosts: '/my-base/posts',
   // starter packs
   Start: '/start/:name/:rkey',

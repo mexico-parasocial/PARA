@@ -143,6 +143,10 @@ export interface ParaIdentityRecord {
   publicVotes?: boolean
   publicRaq?: boolean
   publicHighlights?: boolean
+  publicDelegations?: boolean
+  publicPolicies?: boolean
+  publicQuestions?: boolean
+  publicActivities?: boolean
   /**
    * Civic metadata displayed on the profile header.
    */

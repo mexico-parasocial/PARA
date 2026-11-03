@@ -12,7 +12,10 @@ import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {useBottomBarOffset} from '#/lib/hooks/useBottomBarOffset'
-import {type NavigationProp} from '#/lib/routes/types'
+import {
+  type DataTabNavigatorParams,
+  type PlatformNavigationProp as NavigationProp,
+} from '#/lib/routes/types'
 import {useProfileQuery} from '#/state/queries/profile'
 import {useSession} from '#/state/session'
 import {useCompassFilter} from '#/state/shell/compass-filter'
@@ -91,7 +94,7 @@ export function DataScreen() {
   const gutters = useGutters([0, 'base'])
   const bottomBarOffset = useBottomBarOffset(24)
   const {currentAccount} = useSession()
-  const navigation = useNavigation<NavigationProp>()
+  const navigation = useNavigation<NavigationProp<DataTabNavigatorParams>>()
   const currentDid = currentAccount?.did
   const {data: currentProfile} = useProfileQuery({did: currentDid || ''})
 

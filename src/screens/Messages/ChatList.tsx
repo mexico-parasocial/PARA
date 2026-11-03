@@ -14,7 +14,7 @@ import {useNonReactiveCallback} from '#/lib/hooks/useNonReactiveCallback'
 import {useRequireEmailVerification} from '#/lib/hooks/useRequireEmailVerification'
 import {
   type MessagesTabNavigatorParams,
-  type NavigationProp,
+  type PlatformNavigationProp as NavigationProp,
 } from '#/lib/routes/types'
 import {cleanError} from '#/lib/strings/errors'
 import {logger} from '#/logger'

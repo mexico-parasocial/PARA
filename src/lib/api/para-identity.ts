@@ -16,7 +16,7 @@ export async function fetchParaIdentity(
   const res = await client
     .call(com.atproto.repo.getRecord, {
       repo: repo as AtIdentifierString,
-      collection: PARA_IDENTITY_COLLECTION as NsidString,
+      collection: PARA_IDENTITY_COLLECTION,
       rkey: PARA_IDENTITY_RKEY,
     })
     .catch(() => null)
@@ -41,6 +41,10 @@ export async function putParaIdentity(
     publicVotes: record.publicVotes,
     publicRaq: record.publicRaq,
     publicHighlights: record.publicHighlights,
+    publicDelegations: record.publicDelegations,
+    publicPolicies: record.publicPolicies,
+    publicQuestions: record.publicQuestions,
+    publicActivities: record.publicActivities,
     state: record.state,
     compassPosition: record.compassPosition,
     party: record.party,
@@ -48,9 +52,26 @@ export async function putParaIdentity(
 
   return await client.call(com.atproto.repo.putRecord, {
     repo: repo as AtIdentifierString,
-    collection: PARA_IDENTITY_COLLECTION as NsidString,
+    collection: PARA_IDENTITY_COLLECTION,
     rkey: PARA_IDENTITY_RKEY,
     record: fullRecord as unknown as LexMap,
+  })
+}
+
+/**
+ * Merges `patch` into the stored identity instead of replacing it, so a writer
+ * that only knows some fields cannot erase the others.
+ */
+export async function updateParaIdentity(
+  client: Client,
+  repo: string,
+  patch: Partial<Omit<ParaIdentityRecord, 'createdAt'>>,
+) {
+  const existing = await fetchParaIdentity(client, repo)
+  return putParaIdentity(client, repo, {
+    ...existing,
+    isVerifiedPublicFigure: existing?.isVerifiedPublicFigure ?? false,
+    ...patch,
   })
 }
 
@@ -75,6 +96,22 @@ function parseParaIdentityRecord(value: unknown): ParaIdentityRecord | null {
     publicHighlights:
       typeof record.publicHighlights === 'boolean'
         ? record.publicHighlights
+        : undefined,
+    publicDelegations:
+      typeof record.publicDelegations === 'boolean'
+        ? record.publicDelegations
+        : undefined,
+    publicPolicies:
+      typeof record.publicPolicies === 'boolean'
+        ? record.publicPolicies
+        : undefined,
+    publicQuestions:
+      typeof record.publicQuestions === 'boolean'
+        ? record.publicQuestions
+        : undefined,
+    publicActivities:
+      typeof record.publicActivities === 'boolean'
+        ? record.publicActivities
         : undefined,
     state: typeof record.state === 'string' ? record.state : undefined,
     compassPosition:

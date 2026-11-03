@@ -7,7 +7,8 @@ import {useQueryClient} from '@tanstack/react-query'
 
 import {useAccountSwitcher} from '#/lib/hooks/useAccountSwitcher'
 import {logger as notyLogger} from '#/lib/notifications/util'
-import {type NavigationProp} from '#/lib/routes/types'
+import {getNavigationActionFromPath} from '#/lib/routes/linking'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {emitPushNotificationOpened} from '#/state/events'
 import {useCurrentConvoId} from '#/state/messages/current-convo-id'
 import {RQKEY as RQKEY_NOTIFS} from '#/state/queries/notifications/feed'
@@ -19,7 +20,6 @@ import {useCloseAllActiveElements} from '#/state/util'
 import {useAnalytics} from '#/analytics'
 import {IS_ANDROID, IS_IOS} from '#/env'
 import {resetToTab} from '#/Navigation'
-import {router} from '#/routes'
 
 export type NotificationReason =
   | 'like'
@@ -28,6 +28,7 @@ export type NotificationReason =
   | 'mention'
   | 'reply'
   | 'quote'
+  | 'matrix-message'
   | 'chat-message'
   | 'chat-reaction'
   | 'chat-added-to-group'
@@ -50,10 +51,20 @@ type ChatNotificationReason = Extract<NotificationReason, `chat-${string}`>
 export type NotificationPayload =
   | undefined
   | {
-      reason: Exclude<NotificationReason, ChatNotificationReason>
+      reason: Exclude<
+        NotificationReason,
+        ChatNotificationReason | 'matrix-message'
+      >
       uri: string
       subject: string
       recipientDid: string
+    }
+  | {
+      reason: 'matrix-message'
+      recipientDid: string
+      communityUri: string
+      communityName: string
+      roomId?: string
     }
   | {
       reason: 'chat-message'
@@ -290,15 +301,11 @@ export function useNotificationsHandler() {
         const url = notificationToURL(payload)
 
         if (url === '/notifications') {
-          resetToTab('NotificationsTab')
+          resetToTab('Notifications')
         } else if (url) {
-          const [screen, params] = router.matchPath(url)
-          // @ts-expect-error router is not typed :/ -sfn
-          navigation.navigate('HomeTab', {screen, params})
-          logger.debug(`useNotificationsHandler: navigate`, {
-            screen,
-            params,
-          })
+          const action = getNavigationActionFromPath(url)
+          if (action) navigation.dispatch(action)
+          logger.debug(`useNotificationsHandler: navigate`, {url})
         }
       }
     }

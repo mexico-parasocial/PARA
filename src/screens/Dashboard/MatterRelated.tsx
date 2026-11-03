@@ -7,7 +7,7 @@ import {useNavigation} from '@react-navigation/native'
 
 import {toCabildeoRouteParams} from '#/lib/cabildeo-client'
 import {useOpenLink} from '#/lib/hooks/useOpenLink'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {useMatterRelatedItems} from '#/state/queries/matter-related'
 import {atoms as a, useTheme} from '#/alf'
 import {Tree_Stroke2_Corner0_Rounded as TreeIcon} from '#/components/icons/Tree'

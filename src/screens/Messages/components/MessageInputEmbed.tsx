@@ -10,7 +10,7 @@ import {moderatePost} from '#/lib/moderation/subjects'
 import {makeProfileLink} from '#/lib/routes/links'
 import {
   type CommonNavigatorParams,
-  type NavigationProp,
+  type PlatformNavigationProp,
 } from '#/lib/routes/types'
 import {asSdkFacets} from '#/lib/strings/rich-text-helpers'
 import {
@@ -46,7 +46,10 @@ export type MessageEmbedState =
 export function useMessageEmbed() {
   const route =
     useRoute<RouteProp<CommonNavigatorParams, 'MessagesConversation'>>()
-  const navigation = useNavigation<NavigationProp>()
+  const navigation =
+    useNavigation<
+      PlatformNavigationProp<CommonNavigatorParams, 'MessagesConversation'>
+    >()
   const embedFromParams = route.params.embed
 
   const [embed, setEmbed] = useState<MessageEmbedState | undefined>(

@@ -8,6 +8,7 @@ import {usePolicyTallyQuery} from '#/state/queries/policy-tally'
 import {atoms as a, useTheme} from '#/alf'
 import {PolicyBallotControl} from '#/components/civic/PolicyBallotControl'
 import {PolicyConsensusMeter} from '#/components/civic/PolicyConsensus'
+import {PostFlairStrip} from '#/components/Post/PostFlairStrip'
 import {Text} from '#/components/Typography'
 import {type app} from '#/lexicons'
 
@@ -89,22 +90,10 @@ export function PolicyCard({
           onPress={onPress}
           style={[a.gap_xs]}>
           <View style={[a.flex_row, a.align_center, a.gap_sm, a.flex_wrap]}>
-            {badges.slice(0, 2).map(badge => (
-              <View
-                key={badge.key}
-                style={[
-                  a.rounded_xs,
-                  {
-                    backgroundColor: badge.bgColor,
-                    paddingHorizontal: 8,
-                    paddingVertical: 3,
-                  },
-                ]}>
-                <Text style={[a.text_xs, a.font_bold, {color: badge.color}]}>
-                  {badge.label}
-                </Text>
-              </View>
-            ))}
+            <PostFlairStrip
+              badges={badges.filter(badge => badge.kind === 'matter')}
+              compact
+            />
             {tally?.official ? (
               <Text
                 style={[

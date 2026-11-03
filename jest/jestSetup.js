@@ -96,6 +96,7 @@ jest.mock('expo-application', () => ({
 }))
 
 jest.mock('expo-modules-core', () => ({
+  requireOptionalNativeModule: jest.fn(() => null),
   requireNativeModule: jest.fn().mockImplementation(
     /** @param {string} moduleName */
     moduleName => {

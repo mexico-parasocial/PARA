@@ -141,7 +141,7 @@ function BottomSheetNativeComponentInner({
 }) {
   const insets = useSafeAreaInsets()
   const cornerRadius = rest.cornerRadius ?? 0
-  const {height: screenHeight} = useWindowDimensions()
+  const {width: screenWidth, height: screenHeight} = useWindowDimensions()
   const isHeightConstrained = maxHeight != null || rest.fullHeight === true
 
   return (
@@ -163,13 +163,18 @@ function BottomSheetNativeComponentInner({
        * iOS still sizes the canvas from JS. Moving it onto the same state channel
        * needs on-device iteration on iOS 26 sheet geometry (large-detent and
        * floating-card metrics), so it is deferred.
+       *
+       * The iOS width must be in points, not '100%'. SheetView also reports a
+       * native size, and `ExpoViewComponentDescriptor::adopt()` copies a defined
+       * style width's raw value over it without checking the unit, so '100%'
+       * becomes 100pt and the sheet content collapses into a narrow column.
        */
       style={
         Platform.OS === 'ios'
           ? {
               position: 'absolute',
               height: screenHeight - insets.top,
-              width: '100%',
+              width: screenWidth,
             }
           : {position: 'absolute'}
       }

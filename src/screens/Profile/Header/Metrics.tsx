@@ -5,7 +5,7 @@ import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {makeProfileLink} from '#/lib/routes/links'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {type Shadow} from '#/state/cache/types'
 import {useInfluenceQuery} from '#/state/queries/influence'
 import {useSession} from '#/state/session'

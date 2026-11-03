@@ -12,7 +12,7 @@ import {Trans} from '@lingui/react/macro'
 import {useNavigation, useRoute} from '@react-navigation/native'
 
 import {useGetTimeAgo} from '#/lib/hooks/useTimeAgo'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {
   type MemberListItem,
   type ModerationReportGroup,
@@ -29,6 +29,7 @@ import {useMessageReportReasonLabels} from '#/components/chat/ReportMessageDialo
 import * as Layout from '#/components/Layout'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
+import {CHAT_ENABLED} from '#/env'
 import {SANCTION_PRESETS, useModeratorActions} from './useModeratorActions'
 
 interface ModeratorDashboardParams {
@@ -445,27 +446,29 @@ function ReportQueue({
                   .join(' · ')}
               </Text>
               <View style={[a.flex_row, a.gap_sm, a.mt_xs]}>
-                {report.matrixEventId && report.matrixRoomId && (
-                  <Button
-                    label={_(msg`Ver el mensaje reportado`)}
-                    accessibilityHint={_(
-                      msg`Abre el chat en ese mensaje, leído con tu propia cuenta`,
-                    )}
-                    size="tiny"
-                    color="secondary"
-                    onPress={() =>
-                      navigation.navigate('CommunityChat', {
-                        communityUri,
-                        communityName,
-                        roomId: report.matrixRoomId ?? undefined,
-                        focusEventId: report.matrixEventId ?? undefined,
-                      })
-                    }>
-                    <ButtonText>
-                      <Trans>Ver mensaje</Trans>
-                    </ButtonText>
-                  </Button>
-                )}
+                {CHAT_ENABLED &&
+                  report.matrixEventId &&
+                  report.matrixRoomId && (
+                    <Button
+                      label={_(msg`Ver el mensaje reportado`)}
+                      accessibilityHint={_(
+                        msg`Abre el chat en ese mensaje, leído con tu propia cuenta`,
+                      )}
+                      size="tiny"
+                      color="secondary"
+                      onPress={() =>
+                        navigation.navigate('CommunityChat', {
+                          communityUri,
+                          communityName,
+                          roomId: report.matrixRoomId ?? undefined,
+                          focusEventId: report.matrixEventId ?? undefined,
+                        })
+                      }>
+                      <ButtonText>
+                        <Trans>Ver mensaje</Trans>
+                      </ButtonText>
+                    </Button>
+                  )}
                 <Button
                   label={_(msg`Descartar este reporte`)}
                   accessibilityHint={_(

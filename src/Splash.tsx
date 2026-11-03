@@ -13,7 +13,7 @@ import {Image} from 'expo-image'
 import * as SplashScreen from 'expo-splash-screen'
 
 import {Logomark} from '#/view/icons/Logomark'
-import {atoms as a, useTheme} from '#/alf'
+import {atoms as a, useBreakpoints, useTheme} from '#/alf'
 // @ts-expect-error
 import splashImagePointer from '../assets/illustrations/illustration-mobile.png'
 // @ts-expect-error
@@ -34,6 +34,7 @@ export function Splash(props: PropsWithChildren<Props>) {
   'use no memo'
   const t = useTheme()
   const insets = useSafeAreaInsets()
+  const {gtMobile} = useBreakpoints()
   const intro = useSharedValue(0)
   const outroLogo = useSharedValue(0)
   const outroApp = useSharedValue(0)
@@ -96,7 +97,9 @@ export function Splash(props: PropsWithChildren<Props>) {
     return {
       transform: [
         {
-          scale: interpolate(outroApp.get(), [0, 1], [1.1, 1], 'clamp'),
+          scale: gtMobile
+            ? 1
+            : interpolate(outroApp.get(), [0, 1], [1.1, 1], 'clamp'),
         },
       ],
       opacity: interpolate(

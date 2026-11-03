@@ -31,7 +31,7 @@ import {RichText} from '#/components/RichText'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {useAnalytics} from '#/analytics'
-import {IS_IOS} from '#/env'
+import {CHAT_ENABLED, IS_IOS} from '#/env'
 import {type app} from '#/lexicons'
 import {ProfileHeaderDisplayName} from './DisplayName'
 import {EditProfileDialog} from './EditProfileDialog'
@@ -282,7 +282,8 @@ export function HeaderLabelerButtons({
     })
   return (
     <>
-      {hasSession &&
+      {CHAT_ENABLED &&
+        hasSession &&
         !isMe &&
         !profile.viewer?.blockedBy &&
         !profile.viewer?.blocking && <MessageProfileButton profile={profile} />}

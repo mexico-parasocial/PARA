@@ -7,7 +7,7 @@ import {useNavigation} from '@react-navigation/native'
 
 import {useDebouncedValue} from '#/lib/hooks/useDebouncedValue'
 import {countByGroup, countMatters, tagsForGroups} from '#/lib/matter-filter'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {useParaSearchPostsQuery} from '#/state/queries/search-posts'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'

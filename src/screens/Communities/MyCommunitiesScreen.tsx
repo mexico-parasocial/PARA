@@ -16,7 +16,10 @@ import {
 } from '#/lib/compass/compassColors'
 import {PARTY_FEED_PROFILES} from '#/lib/party-feeds'
 import {NINTH_NAME_TO_COMPASS_ID} from '#/lib/political-affiliations'
-import {type NavigationProp} from '#/lib/routes/types'
+import {
+  type DataTabNavigatorParams,
+  type PlatformNavigationProp as NavigationProp,
+} from '#/lib/routes/types'
 import {
   type CommunityBoardView,
   useCommunityTreeDirectoryQuery,
@@ -61,7 +64,7 @@ type Tab = (typeof TABS)[number]
 
 export function MyCommunitiesScreen() {
   const t = useTheme()
-  const navigation = useNavigation<NavigationProp>()
+  const navigation = useNavigation<NavigationProp<DataTabNavigatorParams>>()
   const [activeTab, setActiveTab] = useState<Tab>('All')
   const [searchQuery, setSearchQuery] = useState('')
 

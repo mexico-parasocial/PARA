@@ -55,6 +55,8 @@ export type Device = {
    */
   mergedGeolocation?: Geolocation
 
+  /** Last observed installation state of the trending widget. */
+  trendingWidgetInstalled?: boolean
   trendingBetaEnabled: boolean
   devMode: boolean
   demoMode: boolean

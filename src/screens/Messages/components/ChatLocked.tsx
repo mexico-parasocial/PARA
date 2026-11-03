@@ -3,7 +3,8 @@ import {Trans, useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {HITSLOP_10} from '#/lib/constants'
-import {type NavigationProp} from '#/lib/routes/types'
+import {getMessagesNavigationAction} from '#/lib/routes/navigation'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {matchXrpcError} from '#/lib/xrpc-error'
 import {logger} from '#/logger'
 import {useLeaveConvo} from '#/state/queries/messages/leave-conversation'
@@ -56,7 +57,13 @@ export function ChatLocked({
 
   const {mutate: leaveConvo} = useLeaveConvo(convo.view.id, {
     onSuccess: () => {
-      navigation.replace('Messages', {animation: 'pop'})
+      navigation.dispatch(
+        getMessagesNavigationAction(
+          {animation: 'pop'},
+          navigation.getState(),
+          'replace',
+        ),
+      )
     },
     onError: e => {
       logger.error('Failed to leave group chat', {message: e})

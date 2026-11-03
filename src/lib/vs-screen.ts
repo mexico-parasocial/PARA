@@ -183,16 +183,16 @@ export type VsStance = {for: number; against: number; amendment: number}
 
 export type VsIssueComparison = VsIssue & {
   entityVotes: [number, number]
-  entityDebateCounts: [number, number]
+  entityCabildeoCounts: [number, number]
   totalVotes: number
   /**
-   * Position stances per side. A debate listing both entities has one shared
+   * Position stances per side. A cabildeo listing both entities has one shared
    * tally, so its positions can't be attributed to either side and are kept
-   * apart in `jointStance`; `entityStance` only counts each side's own debates.
+   * apart in `jointStance`; `entityStance` only counts each side's own cabildeos.
    */
   entityStance: [VsStance, VsStance]
   jointStance: VsStance
-  jointDebateCount: number
+  jointCabildeoCount: number
   /** Share of positions "a favor" among for+against, or null with no data. */
   entityForShare: [number | null, number | null]
 }
@@ -237,7 +237,7 @@ export type VsEntitySummary = {
   accent: string
   subtitle: string
   description: string
-  debateCount: number
+  cabildeoCount: number
   activeCount: number
   resolvedCount: number
   sharedCount: number
@@ -250,7 +250,7 @@ export type VsEntitySummary = {
   participationShare: number
 }
 
-export type VsDebateCard = {
+export type VsCabildeoCard = {
   uri: string
   title: string
   description: string
@@ -286,8 +286,8 @@ export type VsPolicyAxisComparison = {
   entityValues: [number, number]
   entityVoteTotals: [number, number]
   entityPositionTotals: [number, number]
-  entityDebateCounts: [number, number]
-  sharedDebateCount: number
+  entityCabildeoCounts: [number, number]
+  sharedCabildeoCount: number
   delta: number
   maxValue: number
 }
@@ -317,9 +317,9 @@ export type VsScreenViewModel = {
   selectedAxis: VsAxisFilter
   selectedStatus: VsStatusFilter
   selectedTime: VsTimeFilter
-  recent: VsDebateCard[]
-  popular: VsDebateCard[]
-  tableRows: VsDebateCard[]
+  recent: VsCabildeoCard[]
+  popular: VsCabildeoCard[]
+  tableRows: VsCabildeoCard[]
   policyAxisComparisons: VsPolicyAxisComparison[]
   issueComparisons: VsIssueComparison[]
   partyVoteComparisons: VsPartyVoteComparison[]
@@ -482,13 +482,13 @@ export function buildVsScreenViewModel({
     ParaRaqAxisResult[] | undefined,
   ]
 }): VsScreenViewModel {
-  const relevantDebates = cabildeos
+  const relevantCabildeos = cabildeos
     .filter(cabildeo =>
       entities.some(entity => matchesEntity(cabildeo, entity)),
     )
-    .map(cabildeo => mapVsDebateCard(cabildeo, entities))
+    .map(cabildeo => mapVsCabildeoCard(cabildeo, entities))
 
-  const topics = buildTopicFilters(relevantDebates)
+  const topics = buildTopicFilters(relevantCabildeos)
   const effectiveTopic =
     topics.some(topic => topic.key === selectedTopic) ||
     FLAIR_ISSUES.byId.has(selectedTopic)
@@ -508,7 +508,7 @@ export function buildVsScreenViewModel({
     ? selectedTime
     : 'all'
 
-  const filteredDebates = relevantDebates.filter(card => {
+  const filteredCabildeos = relevantCabildeos.filter(card => {
     if (effectiveTopic !== 'all' && !card.topics.includes(effectiveTopic)) {
       return false
     }
@@ -524,12 +524,12 @@ export function buildVsScreenViewModel({
     return true
   })
 
-  const recent = [...filteredDebates]
+  const recent = [...filteredCabildeos]
     .sort((a, b) => compareDatesDesc(a.createdAt, b.createdAt))
     .slice(0, 6)
 
   const recentUris = new Set(recent.map(item => item.uri))
-  const popular = [...filteredDebates]
+  const popular = [...filteredCabildeos]
     .sort((a, b) => {
       if (b.participationTotal !== a.participationTotal) {
         return b.participationTotal - a.participationTotal
@@ -543,7 +543,7 @@ export function buildVsScreenViewModel({
     summarizeEntity({
       entity,
       entities,
-      debates: filteredDebates,
+      cabildeos: filteredCabildeos,
     }),
   ) as [VsEntitySummary, VsEntitySummary]
 
@@ -559,15 +559,15 @@ export function buildVsScreenViewModel({
     entitySummaries[1].participationTotal / maxParticipation
 
   const policyAxisComparisons = buildPolicyAxisComparisons({
-    debates: filteredDebates,
+    cabildeos: filteredCabildeos,
     entities,
   })
   const issueComparisons = buildIssueComparisons({
-    debates: filteredDebates,
+    cabildeos: filteredCabildeos,
     entities,
   })
   const partyVoteComparisons = buildPartyVoteComparisons({
-    debates: filteredDebates,
+    cabildeos: filteredCabildeos,
     entities,
   })
   const raqAxisComparisons = buildRaqAxisComparisons(raqAlignments)
@@ -588,7 +588,7 @@ export function buildVsScreenViewModel({
     selectedTime: effectiveTime,
     recent,
     popular,
-    tableRows: [...filteredDebates]
+    tableRows: [...filteredCabildeos]
       .sort((a, b) => b.participationTotal - a.participationTotal)
       .slice(0, 16),
     policyAxisComparisons,
@@ -597,9 +597,12 @@ export function buildVsScreenViewModel({
       policyAxisComparisons,
       raqAxisComparisons,
     ),
-    totalRelevant: filteredDebates.length,
-    totalVotes: filteredDebates.reduce((sum, card) => sum + card.totalVotes, 0),
-    totalPositions: filteredDebates.reduce(
+    totalRelevant: filteredCabildeos.length,
+    totalVotes: filteredCabildeos.reduce(
+      (sum, card) => sum + card.totalVotes,
+      0,
+    ),
+    totalPositions: filteredCabildeos.reduce(
       (sum, card) => sum + card.totalPositions,
       0,
     ),
@@ -609,45 +612,45 @@ export function buildVsScreenViewModel({
 function summarizeEntity({
   entity,
   entities,
-  debates,
+  cabildeos,
 }: {
   entity: string
   entities: [string, string]
-  debates: VsDebateCard[]
+  cabildeos: VsCabildeoCard[]
 }): VsEntitySummary {
   const entitySlug = normalizeCommunitySlug(entity)
-  const relatedDebates = debates.filter(card =>
+  const relatedCabildeos = cabildeos.filter(card =>
     card.relevantEntities.some(
       name => normalizeCommunitySlug(name) === entitySlug,
     ),
   )
-  const activeCount = relatedDebates.filter(card =>
+  const activeCount = relatedCabildeos.filter(card =>
     ACTIVE_PHASES.has(card.phase),
   ).length
-  const resolvedCount = relatedDebates.filter(card =>
+  const resolvedCount = relatedCabildeos.filter(card =>
     RESOLVED_PHASES.has(card.phase),
   ).length
-  const sharedCount = relatedDebates.filter(
+  const sharedCount = relatedCabildeos.filter(
     card => card.relevantEntities.length > 1,
   ).length
-  const voteTotal = relatedDebates.reduce(
+  const voteTotal = relatedCabildeos.reduce(
     (sum, card) => sum + card.totalVotes,
     0,
   )
-  const directVoteTotal = relatedDebates.reduce(
+  const directVoteTotal = relatedCabildeos.reduce(
     (sum, card) => sum + card.directVotes,
     0,
   )
-  const delegatedVoteTotal = relatedDebates.reduce(
+  const delegatedVoteTotal = relatedCabildeos.reduce(
     (sum, card) => sum + card.delegatedVotes,
     0,
   )
-  const positionTotal = relatedDebates.reduce(
+  const positionTotal = relatedCabildeos.reduce(
     (sum, card) => sum + card.totalPositions,
     0,
   )
   const participationTotal = voteTotal + positionTotal
-  const consensusSamples = relatedDebates
+  const consensusSamples = relatedCabildeos
     .map(card => card.consensusRate)
     .filter(value => value > 0)
   const consensusRate = consensusSamples.length
@@ -667,12 +670,12 @@ function summarizeEntity({
     accent: meta.accent,
     subtitle: meta.subtitle,
     description:
-      relatedDebates.length > 0
-        ? `${sharedCount} debates compartidos con ${
+      relatedCabildeos.length > 0
+        ? `${sharedCount} cabildeos compartidos con ${
             normalizeCommunityPlainName(counterpart) || 'la red'
           }.`
-        : 'Sin debates para esta entidad con el filtro actual.',
-    debateCount: relatedDebates.length,
+        : 'Sin cabildeos para esta entidad con el filtro actual.',
+    cabildeoCount: relatedCabildeos.length,
     activeCount,
     resolvedCount,
     sharedCount,
@@ -686,10 +689,10 @@ function summarizeEntity({
   }
 }
 
-function mapVsDebateCard(
+function mapVsCabildeoCard(
   cabildeo: CabildeoReadView,
   entities: [string, string],
-): VsDebateCard {
+): VsCabildeoCard {
   const topics = dedupe(
     (cabildeo.flairs || []).map(flair => classifyTopicKey(flair)),
   ).filter(Boolean)
@@ -749,17 +752,17 @@ function mapVsDebateCard(
 }
 
 function buildPolicyAxisComparisons({
-  debates,
+  cabildeos,
   entities,
 }: {
-  debates: VsDebateCard[]
+  cabildeos: VsCabildeoCard[]
   entities: [string, string]
 }): VsPolicyAxisComparison[] {
   return VS_POLICY_AXES.map(axis => {
-    const axisDebates = debates.filter(card => card.policyAxis === axis.key)
+    const axisCabildeos = cabildeos.filter(card => card.policyAxis === axis.key)
     const entityStats = entities.map(entity => {
       const entitySlug = normalizeCommunitySlug(entity)
-      const related = axisDebates.filter(card =>
+      const related = axisCabildeos.filter(card =>
         card.relevantEntities.some(
           name => normalizeCommunitySlug(name) === entitySlug,
         ),
@@ -768,10 +771,10 @@ function buildPolicyAxisComparisons({
         value: related.reduce((sum, card) => sum + card.participationTotal, 0),
         votes: related.reduce((sum, card) => sum + card.totalVotes, 0),
         positions: related.reduce((sum, card) => sum + card.totalPositions, 0),
-        debates: related.length,
+        cabildeos: related.length,
       }
     })
-    const sharedDebateCount = axisDebates.filter(
+    const sharedCabildeoCount = axisCabildeos.filter(
       card => card.relevantEntities.length > 1,
     ).length
     const entityValues: [number, number] = [
@@ -791,11 +794,11 @@ function buildPolicyAxisComparisons({
         entityStats[0]?.positions || 0,
         entityStats[1]?.positions || 0,
       ],
-      entityDebateCounts: [
-        entityStats[0]?.debates || 0,
-        entityStats[1]?.debates || 0,
+      entityCabildeoCounts: [
+        entityStats[0]?.cabildeos || 0,
+        entityStats[1]?.cabildeos || 0,
       ],
-      sharedDebateCount,
+      sharedCabildeoCount,
       delta: Math.abs(entityValues[0] - entityValues[1]),
       maxValue: Math.max(entityValues[0], entityValues[1], 1),
     }
@@ -876,7 +879,7 @@ function classifyPolicyAxis(
   cabildeo: CabildeoReadView,
   issues: VsIssue[],
 ): VsCardAxisKey {
-  // The flairs are the source of truth; keywords only catch untagged debates.
+  // The flairs are the source of truth; keywords only catch untagged cabildeos.
   if (issues.length > 0) return issues[0].fieldKey
 
   const text = [
@@ -924,15 +927,15 @@ function forShare(stance: VsStance) {
 }
 
 function buildIssueComparisons({
-  debates,
+  cabildeos,
   entities,
 }: {
-  debates: VsDebateCard[]
+  cabildeos: VsCabildeoCard[]
   entities: [string, string]
 }): VsIssueComparison[] {
   const slugs = entities.map(entity => normalizeCommunitySlug(entity))
   const rows = new Map<string, VsIssueComparison>()
-  for (const card of debates) {
+  for (const card of cabildeos) {
     const relevant = slugs.map(slug =>
       card.relevantEntities.some(name => normalizeCommunitySlug(name) === slug),
     )
@@ -941,21 +944,21 @@ function buildIssueComparisons({
       const row = rows.get(issue.id) || {
         ...issue,
         entityVotes: [0, 0] as [number, number],
-        entityDebateCounts: [0, 0] as [number, number],
+        entityCabildeoCounts: [0, 0] as [number, number],
         totalVotes: 0,
         entityStance: [emptyStance(), emptyStance()] as [VsStance, VsStance],
         jointStance: emptyStance(),
-        jointDebateCount: 0,
+        jointCabildeoCount: 0,
         entityForShare: [null, null] as [number | null, number | null],
       }
       relevant.forEach((isRelevant, index) => {
         if (!isRelevant) return
         row.entityVotes[index] += card.totalVotes
-        row.entityDebateCounts[index] += 1
+        row.entityCabildeoCounts[index] += 1
         if (!isJoint) addStance(row.entityStance[index], card.positionStance)
       })
       if (isJoint) {
-        row.jointDebateCount += 1
+        row.jointCabildeoCount += 1
         addStance(row.jointStance, card.positionStance)
       }
       row.totalVotes = row.entityVotes[0] + row.entityVotes[1]
@@ -971,9 +974,9 @@ function buildIssueComparisons({
       (a, b) =>
         b.totalVotes - a.totalVotes ||
         stanceTotal(b) - stanceTotal(a) ||
-        b.entityDebateCounts[0] +
-          b.entityDebateCounts[1] -
-          (a.entityDebateCounts[0] + a.entityDebateCounts[1]),
+        b.entityCabildeoCounts[0] +
+          b.entityCabildeoCounts[1] -
+          (a.entityCabildeoCounts[0] + a.entityCabildeoCounts[1]),
     )
     .slice(0, 12)
 }
@@ -991,15 +994,15 @@ function stanceTotal(row: VsIssueComparison) {
  * where the API reports a party breakdown that covers both compared entities.
  */
 function buildPartyVoteComparisons({
-  debates,
+  cabildeos,
   entities,
 }: {
-  debates: VsDebateCard[]
+  cabildeos: VsCabildeoCard[]
   entities: [string, string]
 }): VsPartyVoteComparison[] {
   const slugs = entities.map(entity => normalizeCommunitySlug(entity))
   const rows: VsPartyVoteComparison[] = []
-  for (const card of debates) {
+  for (const card of cabildeos) {
     const summaries = slugs.map(slug =>
       card.partyVotes.find(
         entry => normalizeCommunitySlug(entry.party) === slug,
@@ -1072,7 +1075,7 @@ function pickLeadingOption(cabildeo: CabildeoReadView) {
   }
 }
 
-function buildTopicFilters(cards: VsDebateCard[]): VsTopicFilter[] {
+function buildTopicFilters(cards: VsCabildeoCard[]): VsTopicFilter[] {
   const counts = new Map<string, {label: string; count: number}>()
   for (const card of cards) {
     for (const key of card.topics) {

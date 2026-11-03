@@ -7,7 +7,7 @@ import {type NativeStackScreenProps} from '@react-navigation/native-stack'
 
 import {
   type CommonNavigatorParams,
-  type NavigationProp,
+  type PlatformNavigationProp as NavigationProp,
 } from '#/lib/routes/types'
 import {useProfileQuery} from '#/state/queries/profile'
 import {useSession} from '#/state/session'

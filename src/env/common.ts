@@ -78,6 +78,15 @@ export const CHAT_PROXY_DID: Did =
   (process.env.EXPO_PUBLIC_CHAT_PROXY_DID as Did) || 'did:web:api.bsky.chat'
 
 /**
+ * Whether this deployment runs Matrix chat (community chat, encrypted DMs).
+ * Off (`EXPO_PUBLIC_CHAT_ENABLED=false`), the app hides every chat surface and
+ * keeps the governance screens that use the same bridge. Defaults to on.
+ */
+export const CHAT_ENABLED: boolean = !['false', '0'].includes(
+  (process.env.EXPO_PUBLIC_CHAT_ENABLED ?? '').trim().toLowerCase(),
+)
+
+/**
  * The DID of the moderation service to proxy requests to.
  */
 export const MOD_PROXY_DID: DidString | undefined =
@@ -168,10 +177,11 @@ export const LIVE_EVENTS_URL = IS_DEV
 /**
  * Matrix direct messages by consent (bridge `/api/dm-requests`): ask a profile
  * for a DM, review requests, and open an encrypted direct room on accept.
- * Off unless the build sets `EXPO_PUBLIC_MATRIX_DMS=1`; Messages keeps using
- * chat.bsky meanwhile.
+ * Off unless the build sets `EXPO_PUBLIC_MATRIX_DMS=1` (and chat is on);
+ * Messages keeps using chat.bsky meanwhile.
  */
-export const MATRIX_DMS_ENABLED = process.env.EXPO_PUBLIC_MATRIX_DMS === '1'
+export const MATRIX_DMS_ENABLED =
+  CHAT_ENABLED && process.env.EXPO_PUBLIC_MATRIX_DMS === '1'
 
 export const CHAT_ENGINE: 'native' | 'webview' =
   process.env.EXPO_PUBLIC_CHAT_ENGINE === 'native' ? 'native' : 'webview'

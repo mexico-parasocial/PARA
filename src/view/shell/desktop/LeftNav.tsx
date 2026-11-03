@@ -12,6 +12,7 @@ import {Trans, useLingui} from '@lingui/react/macro'
 import {useNavigation, useNavigationState} from '@react-navigation/native'
 
 import {useActorStatus} from '#/lib/actor-status'
+import {UNREAD_NOTIFICATION_CAP} from '#/lib/constants'
 import {useAccountSwitcher} from '#/lib/hooks/useAccountSwitcher'
 import {useOpenComposer} from '#/lib/hooks/useOpenComposer'
 import {
@@ -25,7 +26,7 @@ import {makeProfileLink} from '#/lib/routes/links'
 import {type SidebarTab} from '#/lib/routes/tab-to-nav-item'
 import {
   type CommonNavigatorParams,
-  type NavigationProp,
+  type PlatformNavigationProp as NavigationProp,
 } from '#/lib/routes/types'
 import {sanitizeDisplayName} from '#/lib/strings/display-names'
 import {isInvalidHandle, sanitizeHandle} from '#/lib/strings/handles'
@@ -33,6 +34,7 @@ import {emitSoftReset} from '#/state/events'
 import {useHomeBadge} from '#/state/home-badge'
 import {useFetchHandle} from '#/state/queries/handle'
 import {useUnreadMessageCount} from '#/state/queries/messages/list-conversations'
+import {useModerationInboxUnreadCountQuery} from '#/state/queries/moderation-inbox'
 import {useUnreadNotifications} from '#/state/queries/notifications/unread'
 import {useProfilesQuery} from '#/state/queries/profile'
 import {type SessionAccount, useSession, useSessionApi} from '#/state/session'
@@ -121,7 +123,7 @@ import {Text} from '#/components/Typography'
 import {useAgeAssurance} from '#/ageAssurance'
 import {useAnalytics} from '#/analytics'
 import {type Events} from '#/analytics/metrics/types'
-import {IS_IOS, IS_NATIVE, IS_WEB} from '#/env'
+import {CHAT_ENABLED, IS_IOS, IS_NATIVE, IS_WEB} from '#/env'
 import {isFollowingV2HomeDotEnabled} from '#/features/followingV2/eligibility'
 import {type app} from '#/lexicons'
 import {router} from '#/routes'
@@ -767,7 +769,7 @@ export function DesktopLeftNav({
   onNavigateTab?: (tab: SidebarTab) => void
 }) {
   const {hasSession, currentAccount} = useSession()
-  const {t: l} = useLingui()
+  const {t: l, i18n} = useLingui()
   const ax = useAnalytics()
   const {gtMobile} = useBreakpoints()
 
@@ -782,6 +784,19 @@ export function DesktopLeftNav({
     ((isMapRoute || isVSRoute) && hasSession)
   const {leftNavMinimal: leftNavMinimalBreakpoint, centerColumnOffset} =
     useLayoutBreakpoints()
+  const isModerationInboxEnabled = ax.features.enabled(
+    ax.features.ModerationInboxEnable,
+  )
+  const moderationUnreadQuery = useModerationInboxUnreadCountQuery(
+    hasSession && isModerationInboxEnabled,
+  )
+  const moderationUnread = moderationUnreadQuery.data?.unreadCounts.total ?? 0
+  const moderationCount =
+    hasSession && isModerationInboxEnabled && moderationUnread > 0
+      ? moderationUnread >= UNREAD_NOTIFICATION_CAP
+        ? `${i18n.number(UNREAD_NOTIFICATION_CAP - 1)}+`
+        : i18n.number(moderationUnread)
+      : undefined
   const numUnreadNotifications = useUnreadNotifications()
   const numUnreadMessages = useUnreadMessageCount()
   const hasHomeBadge = useHomeBadge()
@@ -853,18 +868,20 @@ export function DesktopLeftNav({
               }}
             />
           )}
-          <NavItem
-            label={l`Chat`}
-            href="/messages"
-            navItem="chat"
-            onNavigateTab={onNavigateTab}
-            minimal={leftNavMinimal}
-            count={
-              aa.flags.chatDisabled ? undefined : numUnreadMessages.numUnread
-            }
-            hasNew={!aa.flags.chatDisabled && numUnreadMessages.hasNew}
-            icons={{inactive: MessageIcon, active: MessageFilledIcon}}
-          />
+          {CHAT_ENABLED && (
+            <NavItem
+              label={l`Chat`}
+              href="/messages"
+              navItem="chat"
+              onNavigateTab={onNavigateTab}
+              minimal={leftNavMinimal}
+              count={
+                aa.flags.chatDisabled ? undefined : numUnreadMessages.numUnread
+              }
+              hasNew={!aa.flags.chatDisabled && numUnreadMessages.hasNew}
+              icons={{inactive: MessageIcon, active: MessageFilledIcon}}
+            />
+          )}
           <BaseNavItem minimal={leftNavMinimal} onNavigateTab={onNavigateTab} />
           <MyBaseNavItem minimal={leftNavMinimal} />
           <CommunitiesNavItem minimal={leftNavMinimal} />
@@ -905,6 +922,7 @@ export function DesktopLeftNav({
             label={l`Settings`}
             href="/settings"
             navItem="settings"
+            count={moderationCount}
             onNavigateTab={onNavigateTab}
             minimal={leftNavMinimal}
             icons={{inactive: SettingsIcon, active: SettingsFilledIcon}}

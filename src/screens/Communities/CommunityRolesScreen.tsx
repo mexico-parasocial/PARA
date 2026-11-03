@@ -21,7 +21,7 @@ import {
   getModeratorCapabilities,
   isCommunityModerator,
 } from '#/lib/community-governance'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {formatCommunityName} from '#/lib/strings/community-names'
 import {useCommunityMembersQuery} from '#/state/queries/community-boards'
 import {

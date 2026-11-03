@@ -3,6 +3,7 @@ module github.com/bluesky-social/social-app/bskyweb
 go 1.26.10
 
 require (
+	github.com/bluesky-social/gttp v0.1.0
 	github.com/bluesky-social/indigo v0.0.0-20260529183052-5368f55344e0
 	github.com/flosch/pongo2/v6 v6.0.0
 	github.com/google/uuid v1.6.0

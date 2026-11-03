@@ -81,9 +81,31 @@ describe('moderation and upstream navigation routes', () => {
     const action = getActionFromState(state, NATIVE_LINK_ACTION_CONFIG)
 
     expect(action?.type).toBe('NAVIGATE')
-    expect(action?.payload).toMatchObject({
+    expect(
+      action && 'payload' in action ? action.payload : undefined,
+    ).toMatchObject({
       name: 'HomeTab',
       params: {screen: 'ModerationInboxSettings', initial: false},
+    })
+  })
+
+  it('opens a community destination within the Data tab', () => {
+    const state = buildStateObject(
+      'DataTab',
+      'CommunityMembers',
+      {
+        communityUri: 'at://did:plc:alice/com.para.community.board/test',
+        communityName: 'PARA Test',
+      },
+      [{name: 'Data', params: {}}],
+    )
+    const action = getActionFromState(state, NATIVE_LINK_ACTION_CONFIG)
+    expect(action?.type).toBe('NAVIGATE')
+    expect(
+      action && 'payload' in action ? action.payload : undefined,
+    ).toMatchObject({
+      name: 'DataTab',
+      params: {screen: 'CommunityMembers', initial: false},
     })
   })
 

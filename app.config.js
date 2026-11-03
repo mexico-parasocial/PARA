@@ -116,8 +116,6 @@ module.exports = function (_config) {
           UIBackgroundModes: ['remote-notification'],
           NSCameraUsageDescription:
             'Used for profile pictures, posts, and other kinds of content.',
-          NSMicrophoneUsageDescription:
-            'Used for posts and other kinds of content.',
           NSPhotoLibraryAddUsageDescription:
             'Used to save images to your library.',
           NSPhotoLibraryUsageDescription:
@@ -293,8 +291,48 @@ module.exports = function (_config) {
       plugins: [
         'expo-secure-store',
         'expo-video',
-        'expo-localization',
+        [
+          'expo-camera',
+          {microphonePermission: false, recordAudioAndroid: false},
+        ],
+        ['expo-image-picker', {microphonePermission: false}],
+        ['expo-localization', {supportsRTL: false}],
         'expo-web-browser',
+        'expo-background-task',
+        './plugins/withTrendingWidget',
+        [
+          'expo-widgets',
+          {
+            bundleIdentifier: 'com.para.app.ParaWidgets',
+            groupIdentifier: 'group.com.para.app',
+            enableAndroid: true,
+            widgets: [
+              {
+                name: 'TrendingTopicsWidget',
+                displayName: 'Trending Topics',
+                description: 'See what people are talking about on PARA.',
+                ios: {
+                  contentMarginsDisabled: true,
+                  supportedFamilies: [
+                    'systemSmall',
+                    'systemMedium',
+                    'systemLarge',
+                  ],
+                  initialLayout:
+                    'src/features/trendingWidget/TrendingTopicsWidget.ios.tsx',
+                },
+                android: {
+                  minWidth: 250,
+                  minHeight: 180,
+                  targetCellWidth: 4,
+                  targetCellHeight: 3,
+                  initialLayout:
+                    'src/features/trendingWidget/TrendingTopicsWidget.android.tsx',
+                },
+              },
+            ],
+          },
+        ],
         [
           'react-native-nano-icons',
           {
@@ -357,12 +395,11 @@ module.exports = function (_config) {
                   branch: 'main',
                 },
               ],
-              enableSceneSupport: true,
             },
             android: {
-              compileSdkVersion: 36,
+              compileSdkVersion: 37,
               targetSdkVersion: 36,
-              buildToolsVersion: '36.0.0',
+              buildToolsVersion: '37.0.0',
               buildReactNativeFromSource: true,
             },
           },
@@ -391,6 +428,7 @@ module.exports = function (_config) {
         './plugins/withAndroidNoJitpackPlugin.js',
         './plugins/withAndroidPreparedTextLayoutPlugin.js',
         './plugins/withAndroidComposeVersion.js',
+        './plugins/withIOSWindowingControlStyle.js',
         './plugins/shareExtension/withShareExtensions.js',
         './plugins/notificationsExtension/withNotificationsExtension.js',
         [

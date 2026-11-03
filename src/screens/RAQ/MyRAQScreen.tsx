@@ -5,7 +5,7 @@ import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {RAQ_AXES} from '#/lib/mock-data'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {useUserAlignment} from '#/state/queries/raq'
 import {useLocalRaq} from '#/state/queries/useLocalRaq'
 import {useSession} from '#/state/session'

@@ -9,7 +9,7 @@ import {
 import {useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {shareUrl as nativeShareUrl} from '#/lib/sharing'
 import {logger} from '#/logger'
 import {useProfileQuery} from '#/state/queries/profile'

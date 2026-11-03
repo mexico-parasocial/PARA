@@ -1,14 +1,14 @@
 import {useLingui} from '@lingui/react/macro'
-import {StackActions, useNavigation} from '@react-navigation/native'
+import {useNavigation} from '@react-navigation/native'
 
-import {type NavigationProp} from '#/lib/routes/types'
+import {getMessagesNavigationAction} from '#/lib/routes/navigation'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {isNetworkError} from '#/lib/strings/errors'
 import {matchXrpcError} from '#/lib/xrpc-error'
 import {useLeaveConvo} from '#/state/queries/messages/leave-conversation'
 import {type DialogOuterProps} from '#/components/Dialog'
 import * as Prompt from '#/components/Prompt'
 import * as Toast from '#/components/Toast'
-import {IS_NATIVE} from '#/env'
 import {chat} from '#/lexicons'
 
 export function LeaveConvoPrompt({
@@ -29,7 +29,11 @@ export function LeaveConvoPrompt({
     onMutate: () => {
       if (currentScreen === 'conversation') {
         navigation.dispatch(
-          StackActions.replace('Messages', IS_NATIVE ? {animation: 'pop'} : {}),
+          getMessagesNavigationAction(
+            {animation: 'pop'},
+            navigation.getState(),
+            'replace',
+          ),
         )
       }
     },

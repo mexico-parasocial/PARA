@@ -6,6 +6,7 @@ import {
   useContext,
   useImperativeHandle,
   useMemo,
+  useRef,
   useState,
 } from 'react'
 import {
@@ -13,9 +14,9 @@ import {
   type FlatListProps,
   type GestureResponderEvent,
   type LayoutChangeEvent,
+  Pressable,
   type ScrollView,
   type StyleProp,
-  TouchableWithoutFeedback,
   View,
   type ViewStyle,
 } from 'react-native'
@@ -57,6 +58,7 @@ export function Outer({
   control,
   onOpen,
   onClose,
+  preventDismiss = false,
   webOptions,
 }: PropsWithChildren<DialogOuterProps>) {
   const {_} = useLingui()
@@ -94,12 +96,19 @@ export function Outer({
     [control.id, onClose, setDialogIsOpen],
   )
 
+  // Ignore selection drags that begin in the dialog and end on its backdrop.
+  const pressStartTarget = useRef<unknown>(null)
+
   const handleBackgroundPress = useCallback(
     // eslint-disable-next-line @typescript-eslint/require-await
     async (e: GestureResponderEvent) => {
+      const startTarget = pressStartTarget.current
+      pressStartTarget.current = null
+      if (startTarget && startTarget !== e.target) return
+      if (preventDismiss) return
       webOptions?.onBackgroundPress ? webOptions.onBackgroundPress(e) : close()
     },
-    [webOptions, close],
+    [webOptions, close, preventDismiss],
   )
 
   useImperativeHandle(
@@ -119,13 +128,14 @@ export function Outer({
       isNativePopover: false,
       nativeSnapPoint: 0,
       disableDrag: false,
+      preventDismiss,
       setDisableDrag: () => {},
       isWithinDialog: true,
       isHeightConstrained: false,
       shouldMeasureContentHeight: false,
       setDesiredContentHeight: () => {},
     }),
-    [close],
+    [close, preventDismiss],
   )
 
   return (
@@ -134,9 +144,12 @@ export function Outer({
         <Portal>
           <Context.Provider value={context}>
             <RemoveScrollBar />
-            <TouchableWithoutFeedback
+            <Pressable
               accessibilityHint={undefined}
               accessibilityLabel={_(msg`Close active dialog`)}
+              onPointerDown={e => {
+                pressStartTarget.current = e.target
+              }}
               // eslint-disable-next-line @typescript-eslint/no-misused-promises
               onPress={handleBackgroundPress}>
               <View
@@ -173,7 +186,7 @@ export function Outer({
                   {children}
                 </View>
               </View>
-            </TouchableWithoutFeedback>
+            </Pressable>
           </Context.Provider>
         </Portal>
       )}
@@ -195,7 +208,7 @@ export function Inner({
   contentContainerStyle,
 }: DialogInnerProps) {
   const t = useTheme()
-  const {close} = useContext(Context)
+  const {close, preventDismiss} = useContext(Context)
   const {gtMobile} = useBreakpoints()
   const {reduceMotionEnabled} = useA11y()
   FocusGuards.useFocusGuards()
@@ -231,7 +244,9 @@ export function Inner({
         <DismissableLayer.DismissableLayer
           onInteractOutside={preventDefault}
           onFocusOutside={preventDefault}
-          onDismiss={close}
+          onDismiss={() => {
+            if (!preventDismiss) close()
+          }}
           style={{height: '100%', display: 'flex', flexDirection: 'column'}}>
           {header}
           <View style={[gtMobile ? a.p_2xl : a.p_xl, contentContainerStyle]}>
@@ -339,7 +354,7 @@ export function FlatListFooter({
 
 export function Close() {
   const {_} = useLingui()
-  const {close} = useContext(Context)
+  const {close, preventDismiss} = useContext(Context)
   return (
     <View
       style={[
@@ -356,6 +371,7 @@ export function Close() {
         color="secondary"
         shape="round"
         onPress={() => close()}
+        disabled={preventDismiss}
         label={_(msg`Close active dialog`)}>
         <ButtonIcon icon={X} size="md" />
       </Button>

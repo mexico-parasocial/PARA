@@ -15,7 +15,7 @@ import {useGenerateStarterPackMutation} from '#/lib/generate-starterpack'
 import {useBottomBarOffset} from '#/lib/hooks/useBottomBarOffset'
 import {useRequireEmailVerification} from '#/lib/hooks/useRequireEmailVerification'
 import {useWebMediaQueries} from '#/lib/hooks/useWebMediaQueries'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {parseStarterPackUri} from '#/lib/strings/starter-pack'
 import {logger} from '#/logger'
 import {useActorStarterPacksQuery} from '#/state/queries/actor-starter-packs'
@@ -36,7 +36,7 @@ import * as Prompt from '#/components/Prompt'
 import {Default as StarterPackCard} from '#/components/StarterPack/StarterPackCard'
 import {Text} from '#/components/Typography'
 import {IS_IOS} from '#/env'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 interface SectionRef {
   scrollToTop: () => void
