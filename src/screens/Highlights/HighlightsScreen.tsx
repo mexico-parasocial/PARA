@@ -29,12 +29,11 @@ import {EmptyStateNoData} from '#/components/EmptyStates'
 import {SearchInput} from '#/components/forms/SearchInput'
 import {ArrowShareRight_Stroke2_Corner2_Rounded as ShareIcon} from '#/components/icons/Arrow'
 import {
-  Bookmark_Stroke2_Corner0_Rounded as Bookmark,
   Bookmark_Filled_Corner0_Rounded as BookmarkFilled,
+  Bookmark_Stroke2_Corner0_Rounded as Bookmark,
 } from '#/components/icons/Bookmark'
 import {CommunityIcon_Stroke as CommunityIcon} from '#/components/icons/Community'
 import {Compass_Stroke2_Corner0_Rounded as CompassIcon} from '#/components/icons/Compass'
-import {Flame_Stroke2_Corner1_Rounded as FlameIcon} from '#/components/icons/Flame'
 import {Globe_Stroke2_Corner0_Rounded as GlobeIcon} from '#/components/icons/Globe'
 import {UserCircle_Stroke2_Corner0_Rounded as UserIcon} from '#/components/icons/UserCircle'
 import {Verified_Stroke2_Corner2_Rounded as VerifiedIcon} from '#/components/icons/Verified'
@@ -223,30 +222,9 @@ export function HighlightsScreen({route, navigation}: Props) {
 
   const header = (
     <View style={styles.header}>
-      <View style={styles.kickerRow}>
-        <View
-          style={[
-            styles.kickerIcon,
-            {backgroundColor: t.palette.primary_500 + '18'},
-          ]}>
-          <FlameIcon
-            width={18}
-            height={18}
-            style={{color: t.palette.primary_500}}
-          />
-        </View>
-        <View style={a.flex_1}>
-          <Text style={[styles.kicker, t.atoms.text_contrast_medium]}>
-            CIVIC INTEL
-          </Text>
-          <Text style={[styles.title, t.atoms.text]}>Highlights</Text>
-        </View>
+      <View style={styles.filtersRow}>
         <ActiveFiltersStackButton />
       </View>
-
-      <Text style={[styles.subtitle, t.atoms.text_contrast_medium]}>
-        What people are noticing across communities, places, and debates.
-      </Text>
 
       <View style={styles.scopeTabs}>
         {SCOPES.map(item => {
@@ -672,29 +650,9 @@ const styles = StyleSheet.create({
     paddingBottom: 12,
     gap: 14,
   },
-  kickerRow: {
+  filtersRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  kickerIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  kicker: {
-    fontSize: 11,
-    fontWeight: '800',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-  },
-  subtitle: {
-    fontSize: 14,
-    lineHeight: 20,
+    justifyContent: 'flex-end',
   },
   scopeTabs: {
     gap: 8,

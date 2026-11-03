@@ -4,6 +4,8 @@ import Animated, {
   runOnJS,
   useAnimatedReaction,
   useAnimatedStyle,
+  useDerivedValue,
+  useSharedValue,
   withTiming,
 } from 'react-native-reanimated'
 import {useSafeAreaInsets} from 'react-native-safe-area-context'
@@ -124,26 +126,17 @@ const MinimalHeader = memo(function MinimalHeader({
   if (!ctx) throw new Error('MinimalHeader cannot be used on web')
   const {scrollY, headerHeight} = ctx
 
+  const opacity = useSharedValue(0)
+  const translateY = useDerivedValue(() =>
+    Math.min(scrollY.get(), headerHeight - minimalHeaderHeight),
+  )
   const animatedStyle = useAnimatedStyle(() => {
-    // if we don't yet have the min header height in JS, hide
     if (!_WORKLET || minimalHeaderHeight === 0) {
-      return {
-        opacity: 0,
-      }
+      return {opacity: 0}
     }
-    const pastThreshold = scrollY.get() > 100
     return {
-      opacity: pastThreshold
-        ? withTiming(1, {duration: 75})
-        : withTiming(0, {duration: 75}),
-      transform: [
-        {
-          translateY: Math.min(
-            scrollY.get(),
-            headerHeight - minimalHeaderHeight,
-          ),
-        },
-      ],
+      opacity: opacity.get(),
+      transform: [{translateY: translateY.get()}],
     }
   })
 
@@ -151,6 +144,7 @@ const MinimalHeader = memo(function MinimalHeader({
     () => scrollY.get() > 100,
     (value, prev) => {
       if (prev !== value) {
+        opacity.set(withTiming(value ? 1 : 0, {duration: 75}))
         runOnJS(setVisible)(value)
       }
     },

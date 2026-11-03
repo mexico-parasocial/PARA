@@ -8,7 +8,7 @@ import {type RouteProp, useNavigation, useRoute} from '@react-navigation/native'
 import {RAQ_AXES} from '#/lib/mock-data'
 import {
   type CommonNavigatorParams,
-  type NavigationProp,
+  type PlatformNavigationProp as NavigationProp,
 } from '#/lib/routes/types'
 import {useCommunityAxes} from '#/state/queries/useCommunityAxes'
 import {atoms as a, useTheme} from '#/alf'

@@ -15,7 +15,7 @@ import {useNavigation} from '@react-navigation/native'
 import {usePalette} from '#/lib/hooks/usePalette'
 import {useWebMediaQueries} from '#/lib/hooks/useWebMediaQueries'
 import {makeProfileLink} from '#/lib/routes/links'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {sanitizeHandle} from '#/lib/strings/handles'
 import {emitSoftReset} from '#/state/events'
 import {TextLink} from '#/view/com/util/Link'
@@ -25,7 +25,7 @@ import {UserAvatar, type UserAvatarType} from '#/view/com/util/UserAvatar'
 import {StarterPackMultiPathLarge as StarterPackIcon} from '#/components/icons/brands/StarterPack'
 import * as Layout from '#/components/Layout'
 import {useLightboxControls} from '#/components/Lightbox/state'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 
 export function ProfileSubpageHeader({
   isLoading,

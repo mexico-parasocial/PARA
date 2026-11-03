@@ -1,6 +1,11 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-import {BridgeAuthError, M8_SESSION_REQUIRED, matrixBridgeFetch} from './bridge'
+import {
+  BridgeAuthError,
+  ChatDisabledError,
+  M8_SESSION_REQUIRED,
+  matrixBridgeFetch,
+} from './bridge'
 
 describe('matrixBridgeFetch', () => {
   const originalFetch = global.fetch
@@ -12,6 +17,30 @@ describe('matrixBridgeFetch', () => {
 
   afterEach(() => {
     global.fetch = originalFetch
+  })
+
+  it('turns 503 CHAT_DISABLED into a ChatDisabledError', async () => {
+    await AsyncStorage.setItem('m8_access_token', 'access-1')
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce(
+      new Response(JSON.stringify({error: 'CHAT_DISABLED'}), {status: 503}),
+    )
+
+    await expect(matrixBridgeFetch('/api/rooms')).rejects.toBeInstanceOf(
+      ChatDisabledError,
+    )
+  })
+
+  it('leaves other 503s for the caller to read', async () => {
+    await AsyncStorage.setItem('m8_access_token', 'access-1')
+    ;(global.fetch as jest.Mock).mockResolvedValueOnce(
+      new Response(JSON.stringify({error: 'MATRIX_CLIENT_LOGIN_REQUIRED'}), {
+        status: 503,
+      }),
+    )
+
+    const res = await matrixBridgeFetch('/api/matrix-token')
+    expect(res.status).toBe(503)
+    expect(await res.json()).toEqual({error: 'MATRIX_CLIENT_LOGIN_REQUIRED'})
   })
 
   it('sends the current M8 bearer token to the Matrix bridge', async () => {

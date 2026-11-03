@@ -62,7 +62,7 @@ export function BotAccountAlert({
               label={l`Open settings`}
               onPress={() => {
                 control.close(() => {
-                  navigate('Settings')
+                  navigate({name: 'Settings', params: undefined})
                 })
               }}
               color="secondary"

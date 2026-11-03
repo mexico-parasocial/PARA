@@ -7,6 +7,7 @@ export enum Nux {
   ExploreInterestsCard = 'ExploreInterestsCard',
   InitialVerificationAnnouncement = 'InitialVerificationAnnouncement',
   ActivitySubscriptions = 'ActivitySubscriptions',
+  AtmosphereNux = 'AtmosphereNux',
   AgeAssuranceDismissibleNotice = 'AgeAssuranceDismissibleNotice',
   AgeAssuranceDismissibleFeedBanner = 'AgeAssuranceDismissibleFeedBanner',
   BookmarksAnnouncement = 'BookmarksAnnouncement',
@@ -38,6 +39,10 @@ export type AppNux = BaseNux<
     }
   | {
       id: Nux.ActivitySubscriptions
+      data: undefined
+    }
+  | {
+      id: Nux.AtmosphereNux
       data: undefined
     }
   | {
@@ -86,6 +91,7 @@ export const NuxSchemas: Record<
   [Nux.ExploreInterestsCard]: undefined,
   [Nux.InitialVerificationAnnouncement]: undefined,
   [Nux.ActivitySubscriptions]: undefined,
+  [Nux.AtmosphereNux]: undefined,
   [Nux.AgeAssuranceDismissibleNotice]: undefined,
   [Nux.AgeAssuranceDismissibleFeedBanner]: undefined,
   [Nux.PolicyUpdate202508]: undefined,

@@ -4,7 +4,7 @@ import {type RouteProp, useNavigation, useRoute} from '@react-navigation/native'
 
 import {
   type CommonNavigatorParams,
-  type NavigationProp,
+  type PlatformNavigationProp as NavigationProp,
 } from '#/lib/routes/types'
 import {useProfileQuery} from '#/state/queries/profile'
 import {useTheme} from '#/alf'

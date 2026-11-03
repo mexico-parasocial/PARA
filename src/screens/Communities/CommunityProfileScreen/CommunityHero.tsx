@@ -72,7 +72,8 @@ export function CommunityHero({
   onPressRAQ: () => void
   onPressRoles: () => void
   onPressVoters: () => void
-  onPressCommunityChat: () => void
+  /** Absent when chat is off: no chat pill. */
+  onPressCommunityChat?: () => void
   unreadCount: number
   governance: {
     moderators: unknown[]
@@ -373,7 +374,7 @@ export function CommunityHero({
               Voters
             </Text>
           </TouchableOpacity>
-          {isJoined ? (
+          {isJoined && onPressCommunityChat ? (
             <TouchableOpacity
               accessibilityRole="button"
               onPress={onPressCommunityChat}

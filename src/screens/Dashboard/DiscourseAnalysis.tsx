@@ -17,7 +17,7 @@ import {
   MOCK_CABILDEOS,
   MOCK_DISCOURSE_TOPOLOGY,
 } from '#/lib/constants/mockData'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {useAgent} from '#/state/session'
 import {useCompassFilter} from '#/state/shell/compass-filter'
 import {Text} from '#/view/com/util/text/Text'

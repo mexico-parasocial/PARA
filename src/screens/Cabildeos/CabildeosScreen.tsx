@@ -32,7 +32,7 @@ import {
   getVoteBreakdownByParty,
 } from '#/lib/cabildeo-party-alignment'
 import {PressableScale} from '#/lib/custom-animations/PressableScale'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {useCabildeosQuery} from '#/state/queries/cabildeo'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'

@@ -12,7 +12,8 @@ import {useNavigation} from '@react-navigation/native'
 
 import {BACK_HITSLOP} from '#/lib/constants'
 import {useHaptics} from '#/lib/haptics'
-import {type NavigationProp} from '#/lib/routes/types'
+import {getHomeNavigationAction} from '#/lib/routes/navigation'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {type Shadow} from '#/state/cache/types'
 import {useSession} from '#/state/session'
 import {LoadingPlaceholder} from '#/view/com/util/LoadingPlaceholder'
@@ -69,7 +70,9 @@ let ProfileHeaderShell = ({
     if (navigation.canGoBack()) {
       navigation.goBack()
     } else {
-      navigation.navigate('Home')
+      navigation.dispatch(
+        getHomeNavigationAction(navigation.getState(), 'navigate'),
+      )
     }
   }, [navigation])
 

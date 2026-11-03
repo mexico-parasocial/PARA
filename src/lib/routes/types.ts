@@ -1,4 +1,10 @@
-import {type NavigationState, type PartialState} from '@react-navigation/native'
+import {
+  type NavigationProp as BaseNavigationProp,
+  type NavigationState,
+  type NavigatorScreenParams,
+  type ParamListBase,
+  type PartialState,
+} from '@react-navigation/native'
 import {type NativeStackNavigationProp} from '@react-navigation/native-stack'
 
 import {type AxisResult} from '#/screens/RAQ/logic/scoring'
@@ -6,6 +12,7 @@ import {type SearchFilters} from '#/screens/Search/searchParams'
 import {type VideoFeedSourceContext} from '#/screens/VideoFeed/types'
 
 export type {NativeStackScreenProps} from '@react-navigation/native-stack'
+export type {NavigationProp as PlatformNavigationProp} from '#/lib/routes/navigation'
 
 /**
  * The advanced-search filter params are owned by searchParams.ts (the param
@@ -116,6 +123,8 @@ export type CommonNavigatorParams = {
   PoliticalAffiliation: undefined
   SeeVotes: {did?: string}
   SeeInfluence: {did?: string}
+  PassportShare: undefined
+  PublicPassport: {did: string}
   SeePosts: {did?: string}
   PrivacyAndSecuritySettings: undefined
   ActivityPrivacySettings: undefined
@@ -267,18 +276,19 @@ export type CommonNavigatorParams = {
   }
 }
 
-export type BottomTabNavigatorParams = CommonNavigatorParams & {
-  HomeTab: undefined
-  SearchTab: undefined
-  NotificationsTab: {screen?: string; params?: object} | undefined
-  MyProfileTab: undefined
-  DataTab: undefined
-  MessagesTab: {screen?: string; params?: object} | undefined
-  AtmosphereTab: undefined
-  FeedsTab: undefined
-  ListsTab: undefined
-  BookmarksTab: undefined
-  SettingsTab: undefined
+export type BottomTabNavigatorParams = {
+  HomeTab: NavigatorScreenParams<HomeTabNavigatorParams> | undefined
+  SearchTab: NavigatorScreenParams<SearchTabNavigatorParams> | undefined
+  NotificationsTab:
+    NavigatorScreenParams<NotificationsTabNavigatorParams> | undefined
+  MyProfileTab: NavigatorScreenParams<MyProfileTabNavigatorParams> | undefined
+  DataTab: NavigatorScreenParams<DataTabNavigatorParams> | undefined
+  MessagesTab: NavigatorScreenParams<MessagesTabNavigatorParams> | undefined
+  AtmosphereTab: NavigatorScreenParams<CommonNavigatorParams> | undefined
+  FeedsTab: NavigatorScreenParams<CommonNavigatorParams> | undefined
+  ListsTab: NavigatorScreenParams<CommonNavigatorParams> | undefined
+  BookmarksTab: NavigatorScreenParams<CommonNavigatorParams> | undefined
+  SettingsTab: NavigatorScreenParams<CommonNavigatorParams> | undefined
 }
 
 export type HomeTabNavigatorParams = CommonNavigatorParams & {
@@ -382,7 +392,7 @@ export type FlatNavigatorParams = CommonNavigatorParams & {
 }
 
 export type AllNavigatorParams = CommonNavigatorParams & {
-  HomeTab: undefined
+  HomeTab: BottomTabNavigatorParams['HomeTab']
   Home: undefined
   PoliciesDashboard: {
     filter?: 'Communities' | 'Parties' | 'Both'
@@ -395,16 +405,16 @@ export type AllNavigatorParams = CommonNavigatorParams & {
   }
   MatterDetails: {item?: Record<string, unknown>; cabildeoUri?: string}
   Representatives: {category?: string; q?: string}
-  SearchTab: undefined
+  SearchTab: BottomTabNavigatorParams['SearchTab']
   Search: SearchParams
   Feeds: undefined
   PartyFeed: {partyId: string}
-  NotificationsTab: {screen?: string; params?: object} | undefined
+  NotificationsTab: BottomTabNavigatorParams['NotificationsTab']
   Notifications: undefined
-  MyProfileTab: undefined
+  MyProfileTab: BottomTabNavigatorParams['MyProfileTab']
   MessagesTab: BottomTabNavigatorParams['MessagesTab']
-  AtmosphereTab: undefined
-  DataTab: undefined
+  AtmosphereTab: BottomTabNavigatorParams['AtmosphereTab']
+  DataTab: BottomTabNavigatorParams['DataTab']
   Data: undefined
   MyBase: undefined
   MyWallet: undefined
@@ -423,10 +433,10 @@ export type AllNavigatorParams = CommonNavigatorParams & {
     /** A reported message a moderator opened from the report queue. */
     focusEventId?: string
   }
-  FeedsTab: undefined
-  ListsTab: undefined
-  BookmarksTab: undefined
-  SettingsTab: undefined
+  FeedsTab: BottomTabNavigatorParams['FeedsTab']
+  ListsTab: BottomTabNavigatorParams['ListsTab']
+  BookmarksTab: BottomTabNavigatorParams['BookmarksTab']
+  SettingsTab: BottomTabNavigatorParams['SettingsTab']
   CommunityMembers: {communityUri: string; communityName: string}
   ModeratorDashboard: {communityUri: string; communityName: string}
   CommunityRoles: {communityId: string; communityName: string}
@@ -449,11 +459,21 @@ export type RootStackParams = {
   CreatePost: undefined
 }
 
-// NOTE
-// this isn't strictly correct but it should be close enough
-// a TS wizard might be able to get this 100%
-// -prf
-export type NavigationProp = NativeStackNavigationProp<AllNavigatorParams>
+/** Root navigation shared by the flat web stack and native tab navigator. */
+export type RootNavigationProp = BaseNavigationProp<AllNavigatorParams>
+
+export type NavigationProp<
+  ParamList extends ParamListBase = AllNavigatorParams,
+  RouteName extends keyof ParamList & string = keyof ParamList & string,
+> = NativeStackNavigationProp<ParamList, RouteName>
+
+/** A checked destination shared by native stacks and the web navigator. */
+export type CommonNavigationDestination = {
+  [Name in keyof CommonNavigatorParams]: {
+    name: Name
+    params: CommonNavigatorParams[Name]
+  }
+}[keyof CommonNavigatorParams]
 
 export type State =
   NavigationState | Omit<PartialState<NavigationState>, 'stale'>

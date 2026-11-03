@@ -7,9 +7,7 @@ import Animated, {
   LinearTransition,
 } from 'react-native-reanimated'
 import {useSift} from '@bsky.app/sift'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
-import {Plural, Trans} from '@lingui/react/macro'
+import {Plural, Trans, useLingui} from '@lingui/react/macro'
 
 import {
   createFullHandle,
@@ -34,7 +32,7 @@ import {BackNextButtons} from '../BackNextButtons'
 import {HandleSuggestions} from './HandleSuggestions'
 
 export function StepHandle() {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const ax = useAnalytics()
   const t = useTheme()
   const {state, dispatch} = useSignupContext()
@@ -88,7 +86,7 @@ export function StepHandle() {
         ax.metric('signup:handleTaken', {typeahead: false})
         dispatch({
           type: 'setError',
-          value: _(msg`That username is already taken`),
+          value: l`That username is already taken`,
           field: 'handle',
         })
         dispatch({type: 'setIsLoading', value: false})
@@ -190,10 +188,18 @@ export function StepHandle() {
               </TextField.GhostText>
             )}
             {isHandleAvailable?.available && (
-              <CheckIcon
+              /*
+               * Nano glyph icons are hidden from the accessibility tree, so
+               * the testID has to live on a wrapper for e2e flows to find it.
+               */
+              <View
                 testID="handleAvailableCheck"
-                style={[{color: t.palette.positive_500}, a.z_20]}
-              />
+                accessible
+                accessibilityLabel={l`Username is available`}
+                accessibilityHint=""
+                style={a.z_20}>
+                <CheckIcon style={{color: t.palette.positive_500}} />
+              </View>
             )}
           </TextField.Root>
         </View>

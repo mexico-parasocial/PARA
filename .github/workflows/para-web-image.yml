@@ -75,5 +75,6 @@ jobs:
             EXPO_PUBLIC_MATRIX_IDP_URL=${{ vars.EXPO_PUBLIC_MATRIX_IDP_URL }}
             EXPO_PUBLIC_MATRIX_PUSH_GATEWAY_URL=${{ vars.EXPO_PUBLIC_MATRIX_PUSH_GATEWAY_URL }}
             EXPO_PUBLIC_MATRIX_DMS=${{ vars.EXPO_PUBLIC_MATRIX_DMS }}
+            EXPO_PUBLIC_CHAT_ENABLED=${{ vars.EXPO_PUBLIC_CHAT_ENABLED }}
           cache-from: type=gha,scope=para-web
           cache-to: type=gha,mode=max,scope=para-web

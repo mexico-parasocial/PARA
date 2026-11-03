@@ -48,8 +48,9 @@ export function useMenuControl(): Dialog.DialogControlProps {
       open() {
         setIsOpen(true)
       },
-      close() {
+      close(cb) {
         setIsOpen(false)
+        if (cb) setTimeout(cb)
       },
     }),
     [id, isOpen, setIsOpen],

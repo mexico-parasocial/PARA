@@ -8,7 +8,7 @@ import {createSanitizedDisplayName} from '#/lib/moderation/create-sanitized-disp
 import {moderateProfile} from '#/lib/moderation/subjects'
 import {useCallOnce} from '#/lib/once'
 import {makeProfileLink} from '#/lib/routes/links'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {isNetworkError} from '#/lib/strings/errors'
 import {sanitizeHandle} from '#/lib/strings/handles'
 import {matchXrpcError} from '#/lib/xrpc-error'

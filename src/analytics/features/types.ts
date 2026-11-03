@@ -23,8 +23,7 @@ export enum Features {
   ModerationInboxEnable = 'moderation_inbox:enable',
   AtmosphereExploreEnable = 'atmosphere_explore:enable',
   NotificationsV2Enable = 'notifications_v2:enable',
-  ProfileLinksEnable = 'profile_links:enable',
-  
+
   // values
   TrendingDiscoverValues = 'trending_discover:values',
   TrendingExploreTopicsCountValue = 'trending_explore_topics_count:value',

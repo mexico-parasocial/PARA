@@ -6,10 +6,11 @@ import {type InfiniteData, useQueryClient} from '@tanstack/react-query'
 
 import {useBottomBarOffset} from '#/lib/hooks/useBottomBarOffset'
 import {isNetworkError} from '#/lib/network-error'
+import {getMessagesNavigationAction} from '#/lib/routes/navigation'
 import {
   type CommonNavigatorParams,
   type NativeStackScreenProps,
-  type NavigationProp,
+  type PlatformNavigationProp as NavigationProp,
 } from '#/lib/routes/types'
 import {matchXrpcError} from '#/lib/xrpc-error'
 import {logger} from '#/logger'
@@ -109,7 +110,13 @@ function JoinRequestsInner() {
           if (navigation.canGoBack()) {
             navigation.goBack()
           } else {
-            navigation.replace('Messages', {animation: 'pop'})
+            navigation.dispatch(
+              getMessagesNavigationAction(
+                {animation: 'pop'},
+                navigation.getState(),
+                'replace',
+              ),
+            )
           }
         }}
       />

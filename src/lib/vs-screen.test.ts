@@ -73,8 +73,8 @@ describe('buildVsScreenViewModel', () => {
     })
 
     expect(view.totalRelevant).toBe(1)
-    expect(view.entities[0].debateCount).toBe(1)
-    expect(view.entities[1].debateCount).toBe(1)
+    expect(view.entities[0].cabildeoCount).toBe(1)
+    expect(view.entities[1].cabildeoCount).toBe(1)
     expect(view.entities[0].sharedCount).toBe(1)
   })
 
@@ -111,8 +111,8 @@ describe('buildVsScreenViewModel', () => {
       row => row.key === 'servicios-publicos',
     )
 
-    expect(economy?.entityDebateCounts).toEqual([1, 0])
-    expect(services?.entityDebateCounts).toEqual([0, 1])
+    expect(economy?.entityCabildeoCounts).toEqual([1, 0])
+    expect(services?.entityCabildeoCounts).toEqual([0, 1])
   })
 
   it('classifies by flair field and compares votes per policy', () => {
@@ -148,10 +148,10 @@ describe('buildVsScreenViewModel', () => {
     )
     expect(water?.fieldKey).toBe('servicios-publicos')
     expect(water?.entityVotes).toEqual([30, 10])
-    expect(water?.entityDebateCounts).toEqual([1, 1])
+    expect(water?.entityCabildeoCounts).toEqual([1, 1])
   })
 
-  it("compares stance on each side's own debates, keeping joint ones apart", () => {
+  it("compares stance on each side's own cabildeos, keeping joint ones apart", () => {
     const positions = (
       forCount: number,
       against: number,
@@ -205,7 +205,7 @@ describe('buildVsScreenViewModel', () => {
     expect(water?.entityStance[0].for).toBe(5)
     expect(water?.entityStance[1].against).toBe(3)
     expect(water?.jointStance.for).toBe(10)
-    expect(water?.jointDebateCount).toBe(1)
+    expect(water?.jointCabildeoCount).toBe(1)
     expect(water?.entityForShare).toEqual([5 / 6, 1 / 4])
 
     const housing = view.issueComparisons.find(
@@ -253,7 +253,7 @@ describe('buildVsScreenViewModel', () => {
     ])
   })
 
-  it('keeps a selected policy even when the pair has no debates for it', () => {
+  it('keeps a selected policy even when the pair has no cabildeos for it', () => {
     const view = buildVsScreenViewModel({
       cabildeos: [],
       entities: ['p/Jalisco', 'p/CDMX'],
@@ -380,7 +380,7 @@ describe('buildVsScreenViewModel', () => {
 
     expect(view.entities[0].id).toBe('p/CDMX')
     expect(view.entities[1].id).toBe('p/Jalisco')
-    expect(view.policyAxisComparisons[0].entityDebateCounts).toHaveLength(2)
+    expect(view.policyAxisComparisons[0].entityCabildeoCounts).toHaveLength(2)
   })
 })
 

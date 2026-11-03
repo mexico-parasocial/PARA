@@ -19,7 +19,7 @@ import {type CabildeoReadView, fetchCabildeos} from '#/lib/api/cabildeo'
 import {type ParaRaqAxisResult} from '#/lib/api/para-lexicons'
 import {
   type CommonNavigatorParams,
-  type NavigationProp,
+  type PlatformNavigationProp as NavigationProp,
 } from '#/lib/routes/types'
 import {fetchCommunityAlignment} from '#/lib/services/raq'
 import {POST_FLAIRS} from '#/lib/tags'
@@ -33,7 +33,7 @@ import {
   VS_STATUS_FILTERS,
   VS_TIME_FILTERS,
   type VsAxisFilter,
-  type VsDebateCard,
+  type VsCabildeoCard,
   type VsDivergenceRow,
   type VsEntityOption,
   type VsEntitySummary,
@@ -500,7 +500,7 @@ function MatchupCard({
         })}
       </View>
       <Text style={[styles.matchupFoot, t.atoms.text_contrast_medium]}>
-        {totalRelevant} {totalRelevant === 1 ? 'debate' : 'debates'} en esta
+        {totalRelevant} {totalRelevant === 1 ? 'cabildeo' : 'cabildeos'} en esta
         comparativa
       </Text>
     </View>
@@ -1050,7 +1050,7 @@ function HeadToHead({viewModel}: {viewModel: VsScreenViewModel}) {
   const t = useTheme()
   const [first, second] = viewModel.entities
   const rows: Array<{label: string; a: number; b: number; pct?: boolean}> = [
-    {label: 'Debates', a: first.debateCount, b: second.debateCount},
+    {label: 'Cabildeos', a: first.cabildeoCount, b: second.cabildeoCount},
     {label: 'Votos', a: first.voteTotal, b: second.voteTotal},
     {
       label: 'Votos directos',
@@ -1106,8 +1106,9 @@ function HeadToHead({viewModel}: {viewModel: VsScreenViewModel}) {
         </View>
       ))}
       <Text style={[styles.h2hNote, t.atoms.text_contrast_medium]}>
-        Los debates conjuntos ({Math.min(first.sharedCount, second.sharedCount)}
-        ) tienen una sola votacion y cuentan para ambos lados.
+        Los cabildeos conjuntos (
+        {Math.min(first.sharedCount, second.sharedCount)}) tienen una sola
+        votacion y cuentan para ambos lados.
       </Text>
     </View>
   )
@@ -1139,7 +1140,7 @@ function PolicyAxisBars({
               <Text
                 style={[styles.comparisonMeta, t.atoms.text_contrast_medium]}>
                 {hasData
-                  ? `${row.sharedDebateCount} compartidos`
+                  ? `${row.sharedCabildeoCount} compartidos`
                   : 'Sin actividad'}
               </Text>
             </View>
@@ -1351,7 +1352,7 @@ function IssueComparisonList({
   const t = useTheme()
   if (rows.length === 0) {
     return (
-      <InlineState label="Ningun debate de esta comparativa tiene una politica o asunto etiquetado." />
+      <InlineState label="Ningun cabildeo de esta comparativa tiene una politica o asunto etiquetado." />
     )
   }
   return (
@@ -1442,8 +1443,8 @@ function IssueComparisonList({
                 <Text
                   style={[styles.stanceText, t.atoms.text_contrast_medium]}
                   numberOfLines={2}>
-                  Debate conjunto ({row.jointDebateCount}, una sola votacion) ·{' '}
-                  {stanceLabel(row.jointStance)}
+                  Cabildeo conjunto ({row.jointCabildeoCount}, una sola
+                  votacion) · {stanceLabel(row.jointStance)}
                 </Text>
                 <StanceBar stance={row.jointStance} />
               </View>
@@ -1563,7 +1564,7 @@ function Dashboard({
     <View style={styles.dashboard}>
       {viewModel.totalRelevant === 0 ? (
         <InlineState
-          label={`Todavia no hay debates entre ${viewModel.entities[0].plainName} y ${viewModel.entities[1].plainName} para este filtro.`}
+          label={`Todavia no hay cabildeos entre ${viewModel.entities[0].plainName} y ${viewModel.entities[1].plainName} para este filtro.`}
         />
       ) : null}
       <View style={styles.panelGrid}>
@@ -1614,13 +1615,13 @@ function Dashboard({
 
       <View style={[styles.panelGrid, styles.bottomPanelGrid]}>
         <Panel title="Recientes" columns={panelColumns}>
-          <DebateList
+          <CabildeoList
             cards={viewModel.recent}
-            emptyTitle="Sin debates recientes en este filtro."
+            emptyTitle="Sin cabildeos recientes en este filtro."
           />
         </Panel>
         <Panel title="Populares" columns={panelColumns}>
-          <DebateList
+          <CabildeoList
             cards={viewModel.popular}
             emptyTitle="Sin actividad suficiente para destacar popularidad."
           />
@@ -1681,7 +1682,7 @@ function DivergenceList({
   )
 }
 
-function PolicyTable({rows}: {rows: VsDebateCard[]}) {
+function PolicyTable({rows}: {rows: VsCabildeoCard[]}) {
   const t = useTheme()
   return (
     <View
@@ -1751,30 +1752,30 @@ function TableCellText({
   )
 }
 
-function DebateList({
+function CabildeoList({
   cards,
   emptyTitle,
 }: {
-  cards: VsDebateCard[]
+  cards: VsCabildeoCard[]
   emptyTitle: string
 }) {
   if (cards.length === 0) {
     return <InlineState label={emptyTitle} />
   }
   return (
-    <View style={styles.debateList}>
+    <View style={styles.cabildeoList}>
       {cards.map(card => (
-        <DebateCard key={card.uri} card={card} />
+        <CabildeoCard key={card.uri} card={card} />
       ))}
     </View>
   )
 }
 
-function DebateCard({card}: {card: VsDebateCard}) {
+function CabildeoCard({card}: {card: VsCabildeoCard}) {
   const t = useTheme()
 
   return (
-    <View style={[styles.debateCard, {borderColor: t.palette.contrast_100}]}>
+    <View style={[styles.cabildeoCard, {borderColor: t.palette.contrast_100}]}>
       <View style={styles.cardHeader}>
         <View style={styles.cardCommunity}>
           <View
@@ -2484,10 +2485,10 @@ const styles = StyleSheet.create({
   tableEmpty: {
     paddingVertical: 18,
   },
-  debateList: {
+  cabildeoList: {
     gap: 10,
   },
-  debateCard: {
+  cabildeoCard: {
     borderWidth: 1,
     borderRadius: 8,
     padding: 12,

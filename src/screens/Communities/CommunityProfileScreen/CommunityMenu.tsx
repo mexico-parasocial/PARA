@@ -11,7 +11,7 @@ import {
   getActivityKindMeta,
 } from '#/lib/community-activities'
 import {type CommunityGovernanceView} from '#/lib/community-governance'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {
   type CommunityActivityView,
   type CommunityWikiPageView,

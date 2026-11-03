@@ -3,7 +3,7 @@ import {View} from 'react-native'
 import {useSift} from '@bsky.app/sift'
 import {StackActions, useNavigation} from '@react-navigation/native'
 
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {AdvancedSearchDialog} from '#/screens/Search/components/AdvancedSearchDialog'
 import {
   countActiveFilters,

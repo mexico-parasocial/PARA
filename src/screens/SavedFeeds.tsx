@@ -19,7 +19,7 @@ import {RECOMMENDED_SAVED_FEEDS, TIMELINE_SAVED_FEED} from '#/lib/constants'
 import {useHaptics} from '#/lib/haptics'
 import {
   type CommonNavigatorParams,
-  type NavigationProp,
+  type PlatformNavigationProp as NavigationProp,
 } from '#/lib/routes/types'
 import {logger} from '#/logger'
 import {useA11y} from '#/state/a11y'
@@ -149,9 +149,7 @@ function SavedFeedsInner({
         </Button>
       </Layout.Header.Outer>
 
-      <Layout.Content
-        ref={scrollRef as unknown as Ref<Animated.ScrollView>}
-        scrollEnabled={!isDragging}>
+      <Layout.Content ref={scrollRef} scrollEnabled={!isDragging}>
         {noSavedFeedsOfAnyType && (
           <View style={[t.atoms.border_contrast_low, a.border_b]}>
             <NoSavedFeedsOfAnyType

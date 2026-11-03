@@ -12,7 +12,7 @@ import {isQvlUnavailable} from '#/lib/qvl-status'
 import {
   type CommonNavigatorParams,
   type NativeStackScreenProps,
-  type NavigationProp,
+  type PlatformNavigationProp as NavigationProp,
 } from '#/lib/routes/types'
 import {useCabildeoQuery} from '#/state/queries/cabildeo'
 import {

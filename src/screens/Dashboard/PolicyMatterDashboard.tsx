@@ -11,7 +11,7 @@ import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {countByGroup, countMatters, tagsForGroups} from '#/lib/matter-filter'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {
   useCommunityPoliciesQuery,
   useFeaturedPoliciesQuery,

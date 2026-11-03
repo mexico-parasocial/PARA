@@ -3,7 +3,10 @@ import {StyleSheet} from 'react-native'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
-import {type NavigationProp} from '#/lib/routes/types'
+import {
+  type DataTabNavigatorParams,
+  type PlatformNavigationProp as NavigationProp,
+} from '#/lib/routes/types'
 import {useCabildeosQuery} from '#/state/queries/cabildeo'
 import {useProfileQuery} from '#/state/queries/profile'
 import {useSession} from '#/state/session'
@@ -25,7 +28,7 @@ import {deriveCivicWeight} from './mybase-metrics'
 
 export function MyBaseScreen() {
   const {currentAccount} = useSession()
-  const navigation = useNavigation<NavigationProp>()
+  const navigation = useNavigation<NavigationProp<DataTabNavigatorParams>>()
   const {gtMobile} = useBreakpoints()
   const t = useTheme()
   const currentDid = currentAccount?.did
@@ -90,11 +93,7 @@ export function MyBaseScreen() {
         onPressSpatialDeliberation={() =>
           navigation.navigate('CommunityCivicTree')
         }
-        onPressViewProfile={() =>
-          navigation.navigate('Profile', {
-            name: currentProfile?.handle || '',
-          })
-        }
+        onPressViewProfile={() => navigation.navigate('PassportShare')}
         gtMobile={gtMobile}
       />
     </Layout.Screen>

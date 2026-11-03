@@ -33,13 +33,13 @@ PARA uses React Native and Expo for iOS, Android, and web, with React Navigation
 TanStack Query, Lingui, TypeScript, and ALF. Prefer supported modern APIs when
 editing a feature, without copying upstream version requirements blindly.
 
-Checked in this checkout on 2026-10-19:
+Updated in this checkout on 2026-10-29; SDK 58 native device acceptance remains pending:
 
 | Dependency | PARA declaration |
 | --- | --- |
-| React | `19.2.3` |
-| React Native | `0.86.3` |
-| Expo | `57.0.26` |
+| React | `19.3.0` |
+| React Native | `0.88.0` |
+| Expo | `58.0.19` |
 | TypeScript | `~6.0.3` (upstream's guide describes TypeScript 7) |
 | React Navigation | `^7.1.33` |
 | TanStack Query | `^5.96.2` |
@@ -52,6 +52,19 @@ As checked in the current working tree on 2026-10-27, `packageManager` and
 `onFail: error`. The `packageManager` declaration is a local uncommitted change,
 so recheck both fields in the checkout being used. If they disagree, do not
 silently edit either declaration or bypass the check; report a blocking mismatch.
+
+SDK 58 migration status: the lockfile and patches have been installed locally,
+including PARA's age-range patch. Native builds and device acceptance remain
+pending. Expo's local compatibility check flags the retained
+`react-native-maps`, `react-native-view-shot`, and `react-native-webview`
+versions. Do not treat the SDK upgrade as validated on native devices.
+
+### React Native patches
+
+`patches/react-native@<version>.patch` is generated from the individual patches
+in `patches/react-native/`. Edit the individual patches and their explanations,
+then run `pnpm patch:react-native` to rebuild the combined patch. See the
+[patch guide](patches/react-native/README.md) for the editing workflow.
 
 ### Development and validation commands
 
@@ -711,6 +724,41 @@ when working in this codebase. Update it whenever a significant architectural
 decision is made.
 
 ---
+
+## 2026-11-02: Seguimiento (AppView and read-only client built locally)
+
+- Follow-through of a resolved cabildeo is `com.para.civic.followThrough` and
+  `followThroughUpdate`, written by community stewards; design in
+  `docs/seguimiento-spec.md`. The AppView serves them through
+  `com.para.civic.listFollowThrough` and `getFollowThrough` only when the
+  cabildeo is `kind: activity`, resolved, has one winner, met `minQuorum` and is
+  public, and the record names the cabildeo's board and winning option. Its
+  author must be a current steward; the cabildeo's own author is not enough.
+- The server routes register the generated schemas with `server.add`
+  (`pnpm lex:install` in `packages/bsky`), as WatZappa's AGENTS.md requires; the
+  earlier hand-registered `LexiconDoc` is gone. It is committed in WatZappa as
+  `dceb675d1` on `chore/upstream-sync-2026-10` (not pushed, not deployed).
+- `createdAt` of a compromiso and of an update is committed with the first
+  version and served no later than its first-indexed time. The community list
+  orders by it, so an edit or a future date must not be able to move a
+  cabildeo up.
+- The client is a read-only section on `CabildeoDetailScreen`
+  (`src/features/followThrough/`). It treats an empty answer as "nothing to
+  show", never as "nobody followed up", because the AppView also returns
+  nothing for a cabildeo it refuses to follow. Overdue and progress come from
+  the AppView; do not compute either from the clock or from child rows.
+  Development builds show mock seguimiento for one demo cabildeo
+  (`src/lib/mock-data/follow-through.ts`).
+- `minQuorum` is checked at read (`voteCount >= minQuorum`) because resolution
+  never enforced it. Holding an under-quorum cabildeo unresolved is decided but
+  not built.
+- Never show a score for a community's follow-through, only counts. A parent's
+  status and progress come from its children; do not let the UI type them.
+- `kind` (`activity`, `persuasion`, `forum`; missing means `activity`) is in
+  `lexicons/com/para/civic/cabildeo.json` in both repositories (identical
+  copies) and indexed by the AppView. No screen writes it. PARA's generated
+  `src/lexicons` (gitignored) was regenerated with `pnpm lexicons:generate` and
+  includes it.
 
 ## 2026-10-14: Policies are posts voted from -3 to +3
 

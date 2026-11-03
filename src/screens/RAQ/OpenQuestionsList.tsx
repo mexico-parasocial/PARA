@@ -6,7 +6,7 @@ import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {useOpenQuestions} from '#/state/queries/useOpenQuestions'
 import {Text} from '#/view/com/util/text/Text'
 import {TimeElapsed} from '#/view/com/util/TimeElapsed'

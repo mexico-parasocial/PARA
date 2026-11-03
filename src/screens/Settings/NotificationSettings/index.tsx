@@ -6,7 +6,7 @@ import {useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {useAppState} from '#/lib/appState'
 import {
-  type AllNavigatorParams,
+  type CommonNavigatorParams,
   type NativeStackScreenProps,
 } from '#/lib/routes/types'
 import {
@@ -20,12 +20,12 @@ import {NotificationSettingsDialog} from '#/components/dialogs/NotificationSetti
 import {At_Stroke2_Corner2_Rounded as AtIcon} from '#/components/icons/At'
 import {BellRinging_Stroke2_Corner0_Rounded as BellRingingIcon} from '#/components/icons/Bell'
 import {Bubble_Stroke2_Corner2_Rounded as BubbleIcon} from '#/components/icons/Bubble'
+import {CloseQuote_Stroke2_Corner0_Rounded as CloseQuoteIcon} from '#/components/icons/CloseQuote'
 import {Envelope_Stroke2_Corner2_Rounded as EnvelopeIcon} from '#/components/icons/Envelope'
 import {Haptic_Stroke2_Corner2_Rounded as HapticIcon} from '#/components/icons/Haptic'
 import {Heart2_Stroke2_Corner0_Rounded as HeartIcon} from '#/components/icons/Heart2'
 import {Message_Stroke2_Corner0_Rounded as MessageIcon} from '#/components/icons/Message'
 import {PersonPlus_Stroke2_Corner2_Rounded as PersonPlusIcon} from '#/components/icons/Person'
-import {CloseQuote_Stroke2_Corner0_Rounded as CloseQuoteIcon} from '#/components/icons/CloseQuote'
 import {Shapes_Stroke2_Corner0_Rounded as ShapesIcon} from '#/components/icons/Shapes'
 import * as Layout from '#/components/Layout'
 import {IS_ANDROID, IS_IOS, IS_WEB} from '#/env'
@@ -36,7 +36,10 @@ import {SettingPreview} from './components/SettingPreview'
 
 const RQKEY = ['notification-permissions']
 
-type Props = NativeStackScreenProps<AllNavigatorParams, 'NotificationSettings'>
+type Props = NativeStackScreenProps<
+  CommonNavigatorParams,
+  'NotificationSettings'
+>
 export function NotificationSettingsScreen({}: Props) {
   const {t: l} = useLingui()
   const queryClient = useQueryClient()

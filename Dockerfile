@@ -57,6 +57,7 @@ ARG EXPO_PUBLIC_MATRIX_BRIDGE_URL
 ARG EXPO_PUBLIC_MATRIX_IDP_URL
 ARG EXPO_PUBLIC_MATRIX_PUSH_GATEWAY_URL
 ARG EXPO_PUBLIC_MATRIX_DMS
+ARG EXPO_PUBLIC_CHAT_ENABLED
 
 #
 # Copy everything into the container
@@ -78,7 +79,8 @@ RUN echo "Using bundle identifier: $EXPO_PUBLIC_BUNDLE_IDENTIFIER" && \
     echo "EXPO_PUBLIC_MATRIX_PUSH_GATEWAY_URL=${EXPO_PUBLIC_MATRIX_PUSH_GATEWAY_URL:-https://bridge.$PARA_DOMAIN/_matrix/push/v1/notify}" >> .env; \
   fi && \
   if [ -n "$EXPO_PUBLIC_CHAT_PROXY_DID" ]; then echo "EXPO_PUBLIC_CHAT_PROXY_DID=$EXPO_PUBLIC_CHAT_PROXY_DID" >> .env; fi && \
-  if [ -n "$EXPO_PUBLIC_MATRIX_DMS" ]; then echo "EXPO_PUBLIC_MATRIX_DMS=$EXPO_PUBLIC_MATRIX_DMS" >> .env; fi
+  if [ -n "$EXPO_PUBLIC_MATRIX_DMS" ]; then echo "EXPO_PUBLIC_MATRIX_DMS=$EXPO_PUBLIC_MATRIX_DMS" >> .env; fi && \
+  if [ -n "$EXPO_PUBLIC_CHAT_ENABLED" ]; then echo "EXPO_PUBLIC_CHAT_ENABLED=$EXPO_PUBLIC_CHAT_ENABLED" >> .env; fi
 
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store pnpm install --frozen-lockfile
 

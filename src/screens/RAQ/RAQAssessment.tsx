@@ -11,7 +11,7 @@ import {
   RAQ_AXES as RAQ_DATA,
   type RAQAxisSection as AxisSection,
 } from '#/lib/mock-data'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import * as persisted from '#/state/persisted'
 import {Text} from '#/view/com/util/text/Text'
 import {calculateRAQResults} from '#/screens/RAQ/logic/scoring'

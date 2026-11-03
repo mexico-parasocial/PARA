@@ -6,7 +6,7 @@ import {Trans} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {RAQ_AXES} from '#/lib/mock-data'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {useOpenQuestions} from '#/state/queries/useOpenQuestions'
 import {useProposedQuestions} from '#/state/queries/useProposedQuestions'
 import {atoms as a, useTheme} from '#/alf'

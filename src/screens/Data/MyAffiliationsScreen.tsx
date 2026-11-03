@@ -17,7 +17,7 @@ import {
   type PoliticalAffiliation,
   upsertPoliticalAffiliation,
 } from '#/lib/political-affiliations'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {useCabildeosQuery} from '#/state/queries/cabildeo'
 import {usePoliticalAffiliation} from '#/state/shell/political-affiliation'
 import {atoms as a, useTheme} from '#/alf'

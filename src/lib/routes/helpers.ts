@@ -1,5 +1,6 @@
 import {type NavigationProp} from '@react-navigation/native'
 
+import {router} from '#/routes'
 import {type RouteParams, type State} from './types'
 
 export function getRootNavigation<T extends {}>(
@@ -159,4 +160,32 @@ export function buildStateObject(
       },
     ],
   }
+}
+
+/** Describe native tab stacks when converting link state into an action. */
+const nativeLinkScreens = Object.fromEntries(
+  router.routes.map(([name]) => [name, name]),
+)
+export const NATIVE_LINK_ACTION_CONFIG = {
+  screens: Object.fromEntries(
+    Object.entries({
+      HomeTab: 'Home',
+      SearchTab: 'Search',
+      NotificationsTab: 'Notifications',
+      MessagesTab: 'Messages',
+      MyProfileTab: 'MyProfile',
+      DataTab: 'Data',
+      AtmosphereTab: 'Atmosphere',
+      FeedsTab: 'Feeds',
+      ListsTab: 'Lists',
+      BookmarksTab: 'Bookmarks',
+      SettingsTab: 'Settings',
+    }).map(([tab, initialRouteName]) => [
+      tab,
+      {
+        initialRouteName,
+        screens: {...nativeLinkScreens, [initialRouteName]: initialRouteName},
+      },
+    ]),
+  ),
 }

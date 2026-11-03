@@ -18,7 +18,10 @@ import {
 } from '#/lib/compass/compassColors'
 import {MEXICAN_STATES} from '#/lib/constants/mexico'
 import {useHorizontalGovernanceEnabled} from '#/lib/hooks/useHorizontalGovernance'
-import {type NavigationProp} from '#/lib/routes/types'
+import {
+  type DataTabNavigatorParams,
+  type PlatformNavigationProp as NavigationProp,
+} from '#/lib/routes/types'
 import {normalizeCommunitySearchName} from '#/lib/strings/community-names'
 import {cleanError} from '#/lib/strings/errors'
 import {useActorAutocompleteQuery} from '#/state/queries/actor-autocomplete'
@@ -39,7 +42,7 @@ import {type app} from '#/lexicons'
 
 export function CreateCommunityScreen() {
   const t = useTheme()
-  const navigation = useNavigation<NavigationProp>()
+  const navigation = useNavigation<NavigationProp<DataTabNavigatorParams>>()
   const analytics = useAnalytics()
   const trackedEligibilityRef = useRef(false)
   const trackedSuccessRef = useRef(false)

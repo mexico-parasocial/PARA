@@ -28,7 +28,7 @@ import {
   type IneVerificationResult,
 } from '#/lib/im8/types'
 import {requestWalletHolderBinding} from '#/lib/im8/wallet'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import * as Storage from '#/lib/storage'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'

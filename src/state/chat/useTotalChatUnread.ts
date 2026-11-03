@@ -1,6 +1,7 @@
 import {useUnreadCountQuery} from '#/state/queries/matrix'
 import {useUnreadMessageCount} from '#/state/queries/messages/list-conversations'
 import {useSession} from '#/state/session'
+import {CHAT_ENABLED} from '#/env'
 
 /**
  * Returns the total unread count across ALL chat backends:
@@ -12,6 +13,9 @@ import {useSession} from '#/state/session'
  * `hasNew` carries the DM query's meaning: something is unread but there is no
  * number to show (a pending request), so the surface draws a dot. Matrix unread
  * always has a count, so it never produces `hasNew`.
+ *
+ * With chat off (`EXPO_PUBLIC_CHAT_ENABLED=false`) there is no chat surface to
+ * badge, so this is always zero.
  */
 export function useTotalChatUnread(): {
   count: number
@@ -21,6 +25,8 @@ export function useTotalChatUnread(): {
   const {currentAccount} = useSession()
   const dmUnread = useUnreadMessageCount()
   const matrixUnread = useUnreadCountQuery({enabled: !!currentAccount?.did})
+
+  if (!CHAT_ENABLED) return {count: 0, hasNew: false}
 
   const matrixCount = matrixUnread.data?.unread ?? 0
 

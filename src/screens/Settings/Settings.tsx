@@ -11,9 +11,10 @@ import {type NativeStackScreenProps} from '@react-navigation/native-stack'
 import {HELP_DESK_URL, HITSLOP_10} from '#/lib/constants'
 import {useAccountSwitcher} from '#/lib/hooks/useAccountSwitcher'
 import {useApplyPullRequestOTAUpdate} from '#/lib/hooks/useOTAUpdates'
+import {getHomeNavigationAction} from '#/lib/routes/navigation'
 import {
   type CommonNavigatorParams,
-  type NavigationProp,
+  type PlatformNavigationProp as NavigationProp,
 } from '#/lib/routes/types'
 import {sanitizeDisplayName} from '#/lib/strings/display-names'
 import {sanitizeHandle} from '#/lib/strings/handles'
@@ -24,8 +25,12 @@ import {useModerationOpts} from '#/state/preferences/moderation-opts'
 import {useDeleteActorDeclaration} from '#/state/queries/messages/actor-declaration'
 import {useModerationInboxUnreadCountQuery} from '#/state/queries/moderation-inbox'
 import {useProfileQuery, useProfilesQuery} from '#/state/queries/profile'
-import {usePdsClient} from '#/state/session'
-import {type SessionAccount, useSession, useSessionApi} from '#/state/session'
+import {
+  type SessionAccount,
+  usePdsClient,
+  useSession,
+  useSessionApi,
+} from '#/state/session'
 import {useOnboardingDispatch} from '#/state/shell'
 import {useLoggedOutViewControls} from '#/state/shell/logged-out'
 import {useCloseAllActiveElements} from '#/state/util'
@@ -424,7 +429,9 @@ function DevOptions() {
   const growthbookControl = useDialogControl()
 
   const resetOnboarding = () => {
-    navigation.navigate('Home')
+    navigation.dispatch(
+      getHomeNavigationAction(navigation.getState(), 'navigate'),
+    )
     onboardingDispatch({type: 'start'})
     Toast.show(l`Onboarding reset`)
   }

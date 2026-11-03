@@ -32,7 +32,10 @@ import {findMexicanState} from '#/lib/constants/mexico'
 import {useDebouncedValue} from '#/lib/hooks/useDebouncedValue'
 import {PARTY_FEED_PROFILES} from '#/lib/party-feeds'
 import {type ComposerFlair} from '#/lib/post-flairs'
-import {type NavigationProp} from '#/lib/routes/types'
+import {
+  type DataTabNavigatorParams,
+  type PlatformNavigationProp as NavigationProp,
+} from '#/lib/routes/types'
 import {POST_FLAIRS} from '#/lib/tags'
 import {
   clearRecentCommunities,
@@ -85,7 +88,7 @@ const FEATURED_STATE_NAMES = ['CDMX', 'Jalisco', 'Nuevo León']
 export function CommunitiesScreen() {
   const t = useTheme()
   const analytics = useAnalytics()
-  const navigation = useNavigation<NavigationProp>()
+  const navigation = useNavigation<NavigationProp<DataTabNavigatorParams>>()
   const trackedCreatorEntryMetric = useRef(false)
 
   const [showModal, setShowModal] = useState(false)

@@ -29,6 +29,8 @@ type FeedMutationMetric = {feedUrl: string} & (
 )
 
 export type Events = {
+  'trendingWidget:installed': {}
+  'trendingWidget:uninstalled': {}
   // App events
   init: {
     initMs: number
@@ -1394,6 +1396,9 @@ export type Events = {
    */
   'blockedGeoOverlay:shown': {}
 
+  // user dismisses the Atmosphere introduction banner
+  'atmosphere:nux:bannerDismissed': {}
+
   'geo:debug': {}
 
   /*
@@ -1537,7 +1542,7 @@ export type Events = {
     supportProvider: string | undefined
   }
   'profile:links:rejected': {
-    reason: 'blocked' | 'safelink' | 'shortener' | 'insecure'
+    reason: 'safelink' | 'shortener' | 'insecure'
     /**
      * Left out for Safelink blocks, which can be sensitive sites. The other
      * reasons come from public lists in the app.

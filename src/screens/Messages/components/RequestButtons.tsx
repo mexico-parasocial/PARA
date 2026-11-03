@@ -3,7 +3,7 @@ import {Trans, useLingui} from '@lingui/react/macro'
 import {StackActions, useNavigation} from '@react-navigation/native'
 import {useQueryClient} from '@tanstack/react-query'
 
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {useProfileShadow} from '#/state/cache/profile-shadow'
 import {useEmail} from '#/state/email-verification'
 import {useAcceptConversation} from '#/state/queries/messages/accept-conversation'
@@ -40,7 +40,7 @@ import {Loader} from '#/components/Loader'
 import * as Menu from '#/components/Menu'
 import {ReportDialog} from '#/components/moderation/ReportDialog'
 import * as Toast from '#/components/Toast'
-import {chat} from '#/lexicons'
+import {type chat} from '#/lexicons'
 
 export function RejectMenu({
   convo,

@@ -10,7 +10,7 @@ import {
 
 import {
   type CommonNavigatorParams,
-  type NavigationProp,
+  type PlatformNavigationProp,
 } from '#/lib/routes/types'
 import {cleanError} from '#/lib/strings/errors'
 import {logger} from '#/logger'
@@ -48,7 +48,10 @@ type InboxReport = tools.ozone.inbox.listReports.$OutputBody['reports'][number]
 export function ModerationInboxScreen() {
   const {t: l} = useLingui()
   const ax = useAnalytics()
-  const navigation = useNavigation<NavigationProp>()
+  const navigation =
+    useNavigation<
+      PlatformNavigationProp<CommonNavigatorParams, 'ModerationInbox'>
+    >()
   const route = useRoute<RouteProp<CommonNavigatorParams, 'ModerationInbox'>>()
   const routeTab = route.params?.tab ?? 'reports'
   const initialPage = routeTab === 'account' ? 1 : 0
@@ -69,6 +72,8 @@ export function ModerationInboxScreen() {
   }
 
   const isEnabled = ax.features.enabled(ax.features.ModerationInboxEnable)
+  const unreadCountQuery = useModerationInboxUnreadCountQuery(isEnabled)
+  const unreadCounts = unreadCountQuery.data?.unreadCounts
 
   useFocusEffect(
     useCallback(() => {
@@ -115,6 +120,12 @@ export function ModerationInboxScreen() {
             <TabBar
               testID="moderationInboxTabs"
               items={[l`Your reports`, l`Your account`]}
+              unread={[
+                (unreadCounts?.reports ?? 0) > 0,
+                (unreadCounts?.subjects ?? 0) +
+                  (unreadCounts?.accountStatus ?? 0) >
+                  0,
+              ]}
               align="left"
               {...props}
             />

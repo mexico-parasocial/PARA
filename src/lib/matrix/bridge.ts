@@ -43,6 +43,26 @@ export function isBridgeAuthError(error: unknown): error is BridgeAuthError {
   return error instanceof BridgeAuthError
 }
 
+/** The bridge's stable code for "this server runs without Matrix chat". */
+export const CHAT_DISABLED = 'CHAT_DISABLED'
+
+/**
+ * The bridge answered 503 CHAT_DISABLED: chat is off on this server. Not an
+ * outage and not worth retrying; chat surfaces should simply not show.
+ */
+export class ChatDisabledError extends Error {
+  constructor() {
+    super('Chat is not enabled on this server')
+    this.name = 'ChatDisabledError'
+  }
+}
+
+export function isChatDisabledError(
+  error: unknown,
+): error is ChatDisabledError {
+  return error instanceof ChatDisabledError
+}
+
 /*
  * Bridge calls run from background polls (unread counts, sortition runs), so
  * an auth failure here must never navigate: a poll that yanks the user to
@@ -112,6 +132,16 @@ export async function matrixBridgeFetch(
       403,
       body.error || 'No tienes permiso para realizar esta acción',
     )
+  }
+
+  if (res.status === 503) {
+    // Read a copy: other 503s (e.g. MATRIX_CLIENT_LOGIN_REQUIRED) are the
+    // caller's to interpret.
+    const body = (await res
+      .clone()
+      .json()
+      .catch(() => ({}))) as {error?: string}
+    if (body.error === CHAT_DISABLED) throw new ChatDisabledError()
   }
 
   return res

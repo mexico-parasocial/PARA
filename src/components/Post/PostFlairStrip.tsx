@@ -3,7 +3,7 @@ import {Pressable, StyleSheet, View} from 'react-native'
 import {useNavigation} from '@react-navigation/native'
 
 import {type PostBadge} from '#/lib/post-flairs'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {atoms as a, useTheme} from '#/alf'
 import {Text} from '#/components/Typography'
 

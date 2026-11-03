@@ -3,6 +3,7 @@ import {useLingui} from '@lingui/react/macro'
 
 import * as TextField from '#/components/forms/TextField'
 import {Shield_Stroke2_Corner0_Rounded as Shield} from '#/components/icons/Shield'
+import {IS_ANDROID} from '#/env'
 
 /**
  * Codes are base32 (A-Z and 2-7), so the digits 0 and 1 never appear in one.
@@ -72,8 +73,11 @@ export function TokenField({
         <TextField.Input
           testID={testID}
           accessibilityHint={accessibilityHint}
+          autoCapitalize="characters"
           autoComplete={autoComplete}
           autoCorrect={false}
+          spellCheck={false}
+          keyboardType={IS_ANDROID ? 'visible-password' : 'ascii-capable'}
           autoFocus={autoFocus}
           blurOnSubmit={blurOnSubmit}
           editable={editable}

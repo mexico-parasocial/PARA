@@ -16,7 +16,7 @@ import {PARTY_FEED_PROFILES, type PartyFeedProfile} from '#/lib/party-feeds'
 import {
   type CommonNavigatorParams,
   type NativeStackScreenProps,
-  type NavigationProp,
+  type PlatformNavigationProp as NavigationProp,
 } from '#/lib/routes/types'
 import {cleanError} from '#/lib/strings/errors'
 import {s} from '#/lib/styles'

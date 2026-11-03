@@ -18,7 +18,7 @@ import {fromCabildeoRouteParam} from '#/lib/cabildeo-client'
 import {
   type CommonNavigatorParams,
   type NativeStackScreenProps,
-  type NavigationProp,
+  type PlatformNavigationProp as NavigationProp,
 } from '#/lib/routes/types'
 import {
   cabildeoDetailQueryKey,

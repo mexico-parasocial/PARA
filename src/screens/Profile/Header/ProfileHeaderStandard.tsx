@@ -56,7 +56,7 @@ import {Text} from '#/components/Typography'
 import {useSimpleVerificationState} from '#/components/verification'
 import {VerificationCheckButton} from '#/components/verification/VerificationCheckButton'
 import {useAnalytics} from '#/analytics'
-import {IS_IOS, IS_NATIVE} from '#/env'
+import {CHAT_ENABLED, IS_IOS, IS_NATIVE} from '#/env'
 import {InviteFriendsDialog} from '#/features/inviteFriends'
 import {useActorStatus} from '#/features/liveNow'
 import {ProfileHeaderLinks} from '#/features/profileLinks'
@@ -613,7 +613,7 @@ export function HeaderStandardButtons({
                 />
               )}
 
-              <MessageProfileButton profile={profile} />
+              {CHAT_ENABLED && <MessageProfileButton profile={profile} />}
               <RequestMatrixDmButton
                 did={profile.did}
                 handle={profile.handle}

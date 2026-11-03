@@ -93,7 +93,8 @@ export function SignalHistogram({
 
 /**
  * Compact consensus line for a list card: the vote distribution, the mean
- * and the participation. `undefined` while loading, `null` when no ballots
+ * and the participation. No outcome label: that lives in the details panel.
+ * `undefined` while loading, `null` when no ballots
  * have been counted yet.
  */
 export function PolicyConsensusMeter({
@@ -136,7 +137,6 @@ export function PolicyConsensusMeter({
             {tally.voteCount} {tally.voteCount === 1 ? 'voto' : 'votos'}
           </Trans>
         </Text>
-        <PolicyOutcomePill outcome={tally.outcome} />
       </View>
     </View>
   )

@@ -3,7 +3,8 @@ import {useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {useInitialNumToRender} from '#/lib/hooks/useInitialNumToRender'
-import {type NavigationProp} from '#/lib/routes/types'
+import {getTabNavigationAction} from '#/lib/routes/navigation'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {cleanError} from '#/lib/strings/errors'
 import {logger} from '#/logger'
 import {useProfileFollowsQuery} from '#/state/queries/profile-follows'
@@ -14,7 +15,7 @@ import {PeopleRemove2_Stroke1_Corner0_Rounded as PeopleRemoveIcon} from '#/compo
 import {ListFooter, ListMaybePlaceholder} from '#/components/Lists'
 import {useAnalytics} from '#/analytics'
 import {IS_WEB} from '#/env'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import {List} from '../util/List'
 import {ProfileCardWithFollowBtn} from './ProfileCard'
 
@@ -55,7 +56,7 @@ export function ProfileFollows({name}: {name: string}) {
     if (IS_WEB) {
       navigation.navigate('Search', {})
     } else {
-      navigation.navigate('SearchTab')
+      navigation.dispatch(getTabNavigationAction('Search'))
       navigation.popToTop()
     }
   }, [navigation])

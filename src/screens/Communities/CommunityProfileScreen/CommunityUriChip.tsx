@@ -1,7 +1,10 @@
 import {TouchableOpacity} from 'react-native'
 import {useNavigation} from '@react-navigation/native'
 
-import {type NavigationProp} from '#/lib/routes/types'
+import {
+  type DataTabNavigatorParams,
+  type PlatformNavigationProp as NavigationProp,
+} from '#/lib/routes/types'
 import {useCommunityBoardQuery} from '#/state/queries/community-boards'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
@@ -14,7 +17,7 @@ export function CommunityUriChip({
   onPress?: () => void
 }) {
   const t = useTheme()
-  const navigation = useNavigation<NavigationProp>()
+  const navigation = useNavigation<NavigationProp<DataTabNavigatorParams>>()
   const {data, isLoading} = useCommunityBoardQuery({uri: communityUri})
   const board = data?.board
 

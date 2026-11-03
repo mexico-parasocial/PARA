@@ -7,7 +7,7 @@ import {useNavigation} from '@react-navigation/native'
 import {HITSLOP_10} from '#/lib/constants'
 import {PressableScale} from '#/lib/custom-animations/PressableScale'
 import {useHaptics} from '#/lib/haptics'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {emitSoftReset} from '#/state/events'
 import {useSession} from '#/state/session'
 import {useShellHeaderLayout} from '#/state/shell/shell-layout'
@@ -15,9 +15,9 @@ import {HomeHeaderChatButton} from '#/view/com/home/HomeHeaderChatButton'
 import {useHomeHeaderTransform} from '#/view/com/util/MainScrollProvider'
 import {Logomark} from '#/view/icons/Logomark'
 import {Logotype} from '#/view/icons/Logotype'
-import {atoms as a, useTheme} from '#/alf'
+import {atoms as a, useBreakpoints, useTheme} from '#/alf'
 import * as Layout from '#/components/Layout'
-import {IS_DEV, IS_LIQUID_GLASS} from '#/env'
+import {CHAT_ENABLED, IS_DEV, IS_LIQUID_GLASS} from '#/env'
 
 export function HomeHeaderLayoutMobile({
   children,
@@ -33,6 +33,7 @@ export function HomeHeaderLayoutMobile({
   const insets = useSafeAreaInsets()
   const headerMinimalShellTransform = useHomeHeaderTransform()
   const {hasSession} = useSession()
+  const {gtMobile} = useBreakpoints()
 
   return (
     <Animated.View
@@ -40,11 +41,10 @@ export function HomeHeaderLayoutMobile({
         a.fixed,
         a.z_10,
         t.atoms.bg,
-        {
-          top: 0,
-          left: 0,
-          right: 0,
-        },
+        {top: 0},
+        gtMobile
+          ? [a.w_full, a.self_center, {maxWidth: Layout.CENTER_COLUMN_WIDTH}]
+          : {left: 0, right: 0},
         IS_LIQUID_GLASS && {paddingTop: insets.top},
         headerMinimalShellTransform,
       ]}
@@ -178,7 +178,7 @@ export function HomeHeaderLayoutMobile({
         </View>
 
         <Layout.Header.Slot fitContent>
-          {hasSession && <HomeHeaderChatButton alignToEdge />}
+          {hasSession && CHAT_ENABLED && <HomeHeaderChatButton alignToEdge />}
         </Layout.Header.Slot>
       </Layout.Header.Outer>
       {children}

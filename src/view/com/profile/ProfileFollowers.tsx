@@ -3,7 +3,7 @@ import {useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {useInitialNumToRender} from '#/lib/hooks/useInitialNumToRender'
-import {type NavigationProp} from '#/lib/routes/types'
+import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {cleanError} from '#/lib/strings/errors'
 import {logger} from '#/logger'
 import {useProfileFollowersQuery} from '#/state/queries/profile-followers'
@@ -18,7 +18,7 @@ import {
   FollowersPromoBanner,
   useFollowersPromoDismissed,
 } from '#/features/inviteFriends'
-import {app} from '#/lexicons'
+import {type app} from '#/lexicons'
 import {List} from '../util/List'
 import {ProfileCardWithFollowBtn} from './ProfileCard'
 

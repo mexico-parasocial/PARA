@@ -14,7 +14,7 @@ import {type NativeStackScreenProps} from '@react-navigation/native-stack'
 
 import {
   type CommonNavigatorParams,
-  type NavigationProp,
+  type PlatformNavigationProp as NavigationProp,
 } from '#/lib/routes/types'
 import {
   type RepresentativeItem,
