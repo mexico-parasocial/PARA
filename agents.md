@@ -725,6 +725,41 @@ decision is made.
 - The matter filter is the composer's six groups (`FLAIR_GROUPS.MATTER`), one
   pill each, plus a verified toggle meaning "official" (in the catalog). A
   policy's matter is its single-pipe flair; a flair outside the six groups is
+## 2026-11-02: Seguimiento (AppView and read-only client built locally)
+
+- Follow-through of a resolved cabildeo is `com.para.civic.followThrough` and
+  `followThroughUpdate`, written by community stewards; design in
+  `docs/seguimiento-spec.md`. The AppView serves them through
+  `com.para.civic.listFollowThrough` and `getFollowThrough` only when the
+  cabildeo is `kind: activity`, resolved, has one winner, met `minQuorum` and is
+  public, and the record names the cabildeo's board and winning option. Its
+  author must be a current steward; the cabildeo's own author is not enough.
+- The server routes register the generated schemas with `server.add`
+  (`pnpm lex:install` in `packages/bsky`), as WatZappa's AGENTS.md requires; the
+  earlier hand-registered `LexiconDoc` is gone. It is committed in WatZappa as
+  `dceb675d1` on `chore/upstream-sync-2026-10` (not pushed, not deployed).
+- `createdAt` of a compromiso and of an update is committed with the first
+  version and served no later than its first-indexed time. The community list
+  orders by it, so an edit or a future date must not be able to move a
+  cabildeo up.
+- The client is a read-only section on `CabildeoDetailScreen`
+  (`src/features/followThrough/`). It treats an empty answer as "nothing to
+  show", never as "nobody followed up", because the AppView also returns
+  nothing for a cabildeo it refuses to follow. Overdue and progress come from
+  the AppView; do not compute either from the clock or from child rows.
+  Development builds show mock seguimiento for one demo cabildeo
+  (`src/lib/mock-data/follow-through.ts`).
+- `minQuorum` is checked at read (`voteCount >= minQuorum`) because resolution
+  never enforced it. Holding an under-quorum cabildeo unresolved is decided but
+  not built.
+- Never show a score for a community's follow-through, only counts. A parent's
+  status and progress come from its children; do not let the UI type them.
+- `kind` (`activity`, `persuasion`, `forum`; missing means `activity`) is in
+  `lexicons/com/para/civic/cabildeo.json` in both repositories (identical
+  copies) and indexed by the AppView. No screen writes it. PARA's generated
+  `src/lexicons` (gitignored) was regenerated with `pnpm lexicons:generate` and
+  includes it.
+
   not shown as a matter (`lib/matter-filter.ts`).
 - "En tu comunidad" uses `com.para.civic.getPolicyCommunityVotes`: how many of a
   community's active members voted, the mean, and each member's vote. The

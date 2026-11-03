@@ -64,6 +64,7 @@ import {ListMaybePlaceholder} from '#/components/Lists'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {WebScrollControls} from '#/components/WebScrollControls'
+import {FollowThroughSection} from '#/features/followThrough/components/FollowThroughSection'
 
 type Props = NativeStackScreenProps<CommonNavigatorParams, 'CabildeoDetail'>
 
@@ -1575,6 +1576,11 @@ export function CabildeoDetailScreen({route}: Props) {
               )}
             </View>
           )}
+
+          <FollowThroughSection
+            cabildeoUri={cabildeo.uri}
+            resolved={cabildeo.phase === 'resolved'}
+          />
 
           {cabildeo.phase === 'resolved' && (
             <CabildeoNominationSection cabildeoUri={cabildeo.uri} />
