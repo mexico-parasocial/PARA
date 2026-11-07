@@ -34,7 +34,6 @@ export type CommunityBoardView = {
   status?: 'draft' | 'active'
   visibility?: 'open' | 'closed' | 'secret'
   chamberMode?: 'unicameral' | 'bicameral'
-  governanceMode?: 'hierarchical' | 'horizontal'
   founderStarterPackUri?: string
   parentCommunityUris?: string[]
   childCommunityCount?: number
@@ -65,7 +64,6 @@ type CreateCommunityInput = {
   region?: string
   description?: string
   founderStarterPackName?: string
-  governanceMode?: 'hierarchical' | 'horizontal'
   parentCommunityUri?: string
 }
 

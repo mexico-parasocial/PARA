@@ -104,7 +104,8 @@
             "active",
             "left",
             "removed",
-            "blocked"
+            "blocked",
+            "suspended"
           ]
         },
         "viewerRoles": {
@@ -123,9 +124,9 @@
           "type": "string",
           "format": "at-uri"
         },
-        "governanceMode": {
+        "admissionMode": {
           "type": "string",
-          "knownValues": ["hierarchical", "horizontal"]
+          "knownValues": ["open", "assembly_approval"]
         },
         "createdAt": { "type": "string", "format": "datetime" },
         "governanceSummary": {
@@ -149,6 +150,10 @@
             "maxGraphemes": 64,
             "maxLength": 128
           }
+        },
+        "availableActions": {
+          "type": "array",
+          "items": { "type": "ref", "ref": "com.para.community.defs#availableAction" }
         }
       }
     }

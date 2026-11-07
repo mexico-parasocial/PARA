@@ -19,7 +19,7 @@ import {
   communityGovernanceHandleLabel,
   type CommunityGovernanceView,
   getModeratorCapabilities,
-  isCommunityModerator,
+  holdsVerifiedRole,
 } from '#/lib/community-governance'
 import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {formatCommunityName} from '#/lib/strings/community-names'
@@ -43,6 +43,8 @@ import * as Layout from '#/components/Layout'
 import {ListMaybePlaceholder} from '#/components/Lists'
 import {Text} from '#/components/Typography'
 import {type AnyProfileView} from '#/types/bsky/profile'
+import {ModeratorAppointmentSection} from './ModeratorAppointmentSection'
+import {VerifiedRolesSection} from './VerifiedRolesSection'
 
 type CommunityRolesParams = {
   communityId: string
@@ -183,9 +185,14 @@ export function CommunityRolesScreen() {
     : formattedCommunity.displayName
   const viewerDid = currentAccount?.did
   const viewerHandle = currentAccount?.handle
-  const isModerator = isCommunityModerator(governance, viewerDid)
+  const isModerator = holdsVerifiedRole(governance, viewerDid, [
+    'owner',
+    'moderator',
+  ])
   const canEditGovernance = canManageGovernance(governance, viewerDid)
-  const moderatorCapabilities = getModeratorCapabilities(governance, viewerDid)
+  const moderatorCapabilities = isModerator
+    ? getModeratorCapabilities(governance, viewerDid)
+    : []
 
   const governanceStats = {
     moderators: governance.moderators.length,
@@ -568,6 +575,19 @@ export function CommunityRolesScreen() {
                   deputies driving this community forward.
                 </Text>
               </View>
+            </View>
+
+            <View style={[a.mt_md]}>
+              <VerifiedRolesSection governance={governance} />
+              <ModeratorAppointmentSection
+                governance={governance}
+                communityName={communityName}
+                communityId={communityId}
+              />
+              <Text style={[a.text_sm, a.mb_md, t.atoms.text_contrast_medium]}>
+                Lo siguiente lo publica la propia comunidad en su registro.
+                Sirve como carta de presentación y no concede autoridad.
+              </Text>
             </View>
 
             <View style={[a.mt_md]}>

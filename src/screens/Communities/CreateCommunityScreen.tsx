@@ -17,7 +17,6 @@ import {
   type CompassPositionId,
 } from '#/lib/compass/compassColors'
 import {MEXICAN_STATES} from '#/lib/constants/mexico'
-import {useHorizontalGovernanceEnabled} from '#/lib/hooks/useHorizontalGovernance'
 import {
   type DataTabNavigatorParams,
   type PlatformNavigationProp as NavigationProp,
@@ -32,7 +31,6 @@ import {
 } from '#/state/queries/community-boards'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
-import * as SegmentedControl from '#/components/forms/SegmentedControl'
 import {ChevronBottom_Stroke2_Corner0_Rounded as ChevronDownIcon} from '#/components/icons/Chevron'
 import * as Layout from '#/components/Layout'
 import {useDebouncedValue} from '#/components/live/utils'
@@ -46,16 +44,12 @@ export function CreateCommunityScreen() {
   const analytics = useAnalytics()
   const trackedEligibilityRef = useRef(false)
   const trackedSuccessRef = useRef(false)
-  const isHorizontalGovernanceEnabled = useHorizontalGovernanceEnabled()
 
   const [name, setName] = useState('')
   const [quadrant, setQuadrant] = useState('')
   const [region, setRegion] = useState('')
   const [description, setDescription] = useState('')
   const [founderStarterPackName, setFounderStarterPackName] = useState('')
-  const [governanceMode, setGovernanceMode] = useState<
-    'hierarchical' | 'horizontal'
-  >('hierarchical')
   const [foundingMembersQuery, setFoundingMembersQuery] = useState('')
   const [selectedFoundingMembers, setSelectedFoundingMembers] = useState<
     app.bsky.actor.defs.ProfileViewBasic[]
@@ -150,9 +144,6 @@ export function CreateCommunityScreen() {
         region: region || undefined,
         description: description.trim() || undefined,
         founderStarterPackName: founderStarterPackName.trim() || undefined,
-        governanceMode: isHorizontalGovernanceEnabled
-          ? governanceMode
-          : undefined,
         parentCommunityUri: parentCommunityUri || undefined,
       })
       setCreatedUri(result.uri)
@@ -254,11 +245,7 @@ export function CreateCommunityScreen() {
                   />
                   <ChecklistItem
                     theme={t}
-                    label={
-                      createdBoard.governanceMode === 'horizontal'
-                        ? `Horizontal setup seeded with ${createdBoard.governanceSummary?.moderatorCount ?? 1} temporary facilitator${(createdBoard.governanceSummary?.moderatorCount ?? 1) === 1 ? '' : 's'}`
-                        : `Governance seeded with ${createdBoard.governanceSummary?.moderatorCount ?? 1} moderator${(createdBoard.governanceSummary?.moderatorCount ?? 1) === 1 ? '' : 's'}`
-                    }
+                    label={`Governance seeded with ${createdBoard.governanceSummary?.moderatorCount ?? 1} moderator${(createdBoard.governanceSummary?.moderatorCount ?? 1) === 1 ? '' : 's'}`}
                   />
                 </View>
 
@@ -379,53 +366,6 @@ export function CreateCommunityScreen() {
                   placeholder="Founding Members: Nuevo León Water Table"
                   description="This remains internal and is only used to track the founding quorum."
                 />
-
-                {isHorizontalGovernanceEnabled ? (
-                  <View style={styles.field}>
-                    <Text style={[styles.fieldLabel, t.atoms.text]}>
-                      Governance model
-                    </Text>
-                    <Text
-                      style={[
-                        styles.fieldDescription,
-                        t.atoms.text_contrast_medium,
-                      ]}>
-                      Hierarchical communities have an owner/moderator
-                      structure. Horizontal communities use rotating
-                      facilitators and assembly votes.
-                    </Text>
-                    <Text
-                      style={[
-                        styles.fieldDescription,
-                        t.atoms.text_contrast_medium,
-                      ]}>
-                      Horizontal role eligibility can be backed by private m8
-                      proofs, including joined during founding period and
-                      continuous party membership for at least 30 days, without
-                      exposing the raw join date.
-                    </Text>
-                    <SegmentedControl.Root
-                      type="radio"
-                      label="Governance model"
-                      value={governanceMode}
-                      onChange={v => setGovernanceMode(v)}>
-                      <SegmentedControl.Item
-                        label="Hierarchical"
-                        value="hierarchical">
-                        <SegmentedControl.ItemText>
-                          Hierarchical
-                        </SegmentedControl.ItemText>
-                      </SegmentedControl.Item>
-                      <SegmentedControl.Item
-                        label="Horizontal"
-                        value="horizontal">
-                        <SegmentedControl.ItemText>
-                          Horizontal
-                        </SegmentedControl.ItemText>
-                      </SegmentedControl.Item>
-                    </SegmentedControl.Root>
-                  </View>
-                ) : null}
 
                 {/* Parent Community Picker (feature-flagged) */}
                 {enableParentCommunityPicker ? (

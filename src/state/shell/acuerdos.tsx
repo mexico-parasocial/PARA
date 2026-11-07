@@ -48,8 +48,7 @@ export type DelegationChain = {
 
 /*
  * Hops a vote may travel up the parent chain: an acuerdo may defer to its
- * parent, but not to its grandparent. docs/horizontal-governance-spec.md
- * ("Max delegation depth: 1 hop").
+ * parent, but not to its grandparent (R3 in docs/revocable-mandates-spec.md).
  */
 const MAX_DELEGATION_DEPTH = 1
 

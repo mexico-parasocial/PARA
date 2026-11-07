@@ -10,8 +10,8 @@
 
 ## 1. Why
 
-`horizontal-governance-spec.md` says delegation is opt-in per proposal, one
-hop, expires after each proposal, and has no permanent delegates. It comes from
+Delegation is opt-in per proposal, one hop, expires after each proposal, and
+has no permanent delegates. It comes from
 _revocación en cualquier momento_ and _rotatividad de cargos_: nobody should
 hold power that the people who lent it cannot take back.
 
@@ -53,7 +53,7 @@ There are no credits, budgets or prices. We avoid "weight", "effective power",
 | #   | Rule                                                                                                                                                                                                                                       | Implemented                                                                                                             |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
 | R1  | **Only the owner grants.** Joining a child acuerdo shows its parent, and consent covers both by name.                                                                                                                                      | Partly: one hop (R3) limits the chain; the join sheet does not name the parent yet.                                     |
-| R2  | **Scoped.** A mandate covers one proposal, one topic in one community, or one community. It never covers the non-delegable actions in `horizontal-governance-spec.md` (elections, rotations, config and constitution changes).             | `mandateSpecificity`                                                                                                    |
+| R2  | **Scoped.** A mandate covers one proposal, one topic in one community, or one community. It never covers the non-delegable actions (elections, rotations, config and constitution changes).             | `mandateSpecificity`                                                                                                    |
 | R3  | **One hop.** A delegate cannot pass a lent vote on.                                                                                                                                                                                        | `MAX_DELEGATION_DEPTH = 1`; `delegateReach`                                                                             |
 | R4  | **Revocable at any moment,** effective for every vote not yet closed. The 48 h cooldown only delays _joining the same acuerdo again_ (anti flash-mob); it never delays leaving.                                                            | acuerdo `requestExit`                                                                                                   |
 | R5  | **Your own ballot wins.** If a lender votes, their ballot counts and the mandate does not, for that subject.                                                                                                                              | `delegateReach.overridden`                                                                                              |
