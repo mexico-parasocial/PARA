@@ -3,7 +3,7 @@ import {useEffect} from 'react'
 import {IS_LOCAL_DEV_MODE} from '#/lib/constants'
 import {logger} from '#/logger'
 import {useSession} from '#/state/session'
-import {M8_BROKER_URL, postDevIneEnroll} from '../api'
+import {M8_BROKER_URL, postDevIneEnroll, resumeM8WebSession} from '../api'
 import {setM8ActiveAccount} from '../credentials'
 import {ensureM8SessionFor} from '../ensureSession'
 
@@ -27,6 +27,11 @@ export function useEnsureM8Session() {
       // SessionStore owns logout and initial persisted-account restoration.
       if (!did) return
       await setM8ActiveAccount(did)
+      // A reloaded web page resumes its cookie session; this needs no person.
+      if (!cancelled)
+        await resumeM8WebSession(did).catch(() =>
+          logger.warn('m8: could not resume the web session'),
+        )
       if (cancelled || !AUTO_START_M8_SESSION) return
       await ensureM8SessionFor(did).then(
         async result => {

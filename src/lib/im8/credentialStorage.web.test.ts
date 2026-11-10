@@ -4,9 +4,19 @@ const originalWindow = global.window
 beforeEach(async () => {
   await AsyncStorage.clear()
   const values = new Map<string, string>()
+  const persisted = new Map<string, string>()
   Object.defineProperty(global, 'window', {
     configurable: true,
     value: {
+      localStorage: {
+        getItem: jest.fn((key: string) => persisted.get(key) ?? null),
+        setItem: jest.fn((key: string, value: string) => {
+          persisted.set(key, value)
+        }),
+        removeItem: jest.fn((key: string) => {
+          persisted.delete(key)
+        }),
+      },
       sessionStorage: {
         getItem: jest.fn((key: string) => values.get(key) ?? null),
         setItem: jest.fn((key: string, value: string) => {
@@ -34,6 +44,11 @@ it('retires old persisted credentials and keeps new bearer tokens out of browser
   await storage.setItemAsync('m8_refresh_token', 'refresh')
   expect(await storage.getItemAsync('m8_access_token')).toBe('access')
   expect(window.sessionStorage.setItem).not.toHaveBeenCalled()
+  // A real (development) refresh token never reaches browser storage.
+  expect(window.localStorage.setItem).not.toHaveBeenCalledWith(
+    expect.anything(),
+    'refresh',
+  )
   expect(await AsyncStorage.getItem('m8_access_token')).toBeNull()
   await storage.deleteItemAsync('m8_access_token')
   expect(await storage.getItemAsync('m8_access_token')).toBeNull()
