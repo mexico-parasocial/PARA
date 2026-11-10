@@ -3,13 +3,14 @@ import {ActivityIndicator, View} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
+import {useQueryClient} from '@tanstack/react-query'
 
 import {getM8AccessToken, getMe, logoutM8} from '#/lib/im8'
 import {M8_GRANT_ERROR_KEY, setM8ActiveAccount} from '#/lib/im8/credentials'
 import * as Storage from '#/lib/im8/credentialStorage'
 import {connectM8SessionFor} from '#/lib/im8/grant'
 import {useSession} from '#/state/session'
-import {atoms as a, useTheme} from '#/alf'
+import {atoms as a, useBreakpoints, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import {Text} from '#/components/Typography'
 import {Card} from './IdentityPrimitives'
@@ -96,6 +97,17 @@ export function useM8Connection() {
     }
   }, [did, describeError])
 
+  // Chat queries that ran before this account had an m8 session cached a
+  // "connect your identity" error. Refetch them once it is connected, so
+  // returning to chat does not keep showing that error.
+  const queryClient = useQueryClient()
+  const connected = state.status === 'connected'
+  useEffect(() => {
+    if (!connected) return
+    void queryClient.invalidateQueries({queryKey: ['matrix-rooms']})
+    void queryClient.invalidateQueries({queryKey: ['matrix-unread']})
+  }, [connected, queryClient])
+
   const connect = useCallback(async () => {
     if (!did || busy) return
     setBusy(true)
@@ -173,11 +185,12 @@ export function M8ConnectCard({
   error: string | null
   onConnect: () => void
 }) {
+  const {gtMobile} = useBreakpoints()
   const t = useTheme()
   const {_} = useLingui()
 
   return (
-    <View style={[a.p_lg]}>
+    <View style={[gtMobile ? a.p_xl : a.p_lg]}>
       <Card style={[a.gap_md]}>
         <View style={[a.gap_xs]}>
           <Text style={[a.text_md, a.font_semi_bold, t.atoms.text]}>

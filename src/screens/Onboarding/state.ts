@@ -1,5 +1,6 @@
 import {createContext, useContext, useMemo} from 'react'
 
+import {type CompassPositionId} from '#/lib/compass/compassColors'
 import {logger} from '#/logger'
 import {
   type AvatarColor,
@@ -26,7 +27,12 @@ export type OnboardingState = {
     selectedCommunity: string | null
   }
   compassStepResults: {
-    answers: Record<string, 'agree' | 'disagree'> // questionId → answer
+    /** The compass ninth the user picked, if any. */
+    ninthId: CompassPositionId | null
+    /** Whether the user is a party member; null until answered. */
+    isPartyMember: boolean | null
+    /** Party affiliation id, only meaningful when isPartyMember is true. */
+    partyId: string | null
   }
   profileStepResults: {
     isCreatedAvatar: boolean
@@ -66,7 +72,9 @@ export type OnboardingAction =
     }
   | {
       type: 'setCompassStepResults'
-      answers: Record<string, 'agree' | 'disagree'>
+      ninthId: CompassPositionId | null
+      isPartyMember: boolean | null
+      partyId: string | null
     }
   | {
       type: 'setProfileStepResults'
@@ -103,7 +111,9 @@ export function createInitialOnboardingState(): OnboardingState {
       selectedCommunity: null,
     },
     compassStepResults: {
-      answers: {},
+      ninthId: null,
+      isPartyMember: null,
+      partyId: null,
     },
     profileStepResults: {
       isCreatedAvatar: false,
@@ -165,7 +175,9 @@ export function reducer(
     }
     case 'setCompassStepResults': {
       next.compassStepResults = {
-        answers: a.answers,
+        ninthId: a.ninthId,
+        isPartyMember: a.isPartyMember,
+        partyId: a.partyId,
       }
       break
     }

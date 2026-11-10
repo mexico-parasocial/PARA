@@ -3,7 +3,7 @@ import {useQuery} from '@tanstack/react-query'
 import {type CivicCategoryKey} from '#/lib/interests'
 import {STALE} from '#/state/queries'
 import {useAgent} from '#/state/session'
-import {app, com} from '#/lexicons'
+import {type app, com} from '#/lexicons'
 
 const RQKEY_ROOT = 'para-suggested-users'
 
@@ -16,6 +16,7 @@ export type ParaSuggestedUsersParams = {
   category?: CivicCategoryKey
   interests?: string[]
   limit?: number
+  enabled?: boolean
 }
 
 const queryKey = (params: ParaSuggestedUsersParams) => [
@@ -28,6 +29,7 @@ const queryKey = (params: ParaSuggestedUsersParams) => [
 export function useParaSuggestedUsersQuery(params: ParaSuggestedUsersParams) {
   const agent = useAgent()
   return useQuery<ParaSuggestedUsersResponse>({
+    enabled: params.enabled ?? true,
     staleTime: STALE.MINUTES.FIVE,
     placeholderData: previous => previous,
     queryKey: queryKey(params),

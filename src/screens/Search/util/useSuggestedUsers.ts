@@ -3,6 +3,7 @@ import {useMemo} from 'react'
 import {
   type CivicCategoryKey,
   PARA_INTEREST_KEYS,
+  useCivicCategories,
   useInterestsDisplayNames,
 } from '#/lib/interests'
 import {useActorSearch} from '#/state/queries/actor-search'
@@ -52,11 +53,24 @@ export function useSuggestedUsers({
   overrideInterests?: string[]
 }): SuggestedResult {
   const interestsDisplayNames = useInterestsDisplayNames()
-  const useParaEndpoint = !search && !!category && PARA_KEY_SET.has(category)
+  const civicCategories = useCivicCategories()
+  const isPillar = !!category && PARA_KEY_SET.has(category)
+  // A matter's flair tag, e.g. `|#DemandaPorSalud`.
+  const isMatter = !!category && category.startsWith('|#')
+  // The "for you" tab: rank by what the person picked.
+  const isForYou = !category && !!overrideInterests?.length
+  const useParaEndpoint = !search && (isPillar || isMatter || isForYou)
+
+  // The AppView ranks authors by recent posts carrying any of these matters.
+  const paraInterests = isPillar
+    ? civicCategories[category as CivicCategoryKey].interests
+    : isMatter
+      ? [category]
+      : overrideInterests
 
   const para = useParaSuggestedUsersQuery({
-    category: useParaEndpoint ? (category as CivicCategoryKey) : undefined,
-    interests: overrideInterests,
+    interests: useParaEndpoint ? paraInterests : undefined,
+    enabled: useParaEndpoint,
   })
   const curated = useGetSuggestedUsersQuery({
     enabled: !search && !useParaEndpoint,

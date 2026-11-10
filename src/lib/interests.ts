@@ -2,6 +2,8 @@ import {useMemo} from 'react'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 
+import {MATTER_GROUPS} from '#/lib/matter-filter'
+
 // ─── Civic Categories ────────────────────────────────────────────────────────
 // Organized by the 6 pillars of civic governance that PARA tracks.
 
@@ -20,6 +22,32 @@ export interface CivicCategory {
   interestLabels: Record<string, string>
 }
 
+/**
+ * The catalog's six parts (`FLAIR_GROUPS.MATTER`, the composer's own list) mapped
+ * to the six pillars. Interests are the matters' flair tags as written on posts
+ * (`|#DemandaPorSalud`), so what someone picks here is what the AppView matches
+ * when it ranks the accounts that post about it.
+ */
+const PILLAR_BY_MATTER_GROUP: Record<string, CivicCategoryKey> = {
+  '1. SERVICIOS PÚBLICOS': 'public-services',
+  '2. HACIENDA': 'internal-revenue',
+  '3. ECONOMÍA': 'economy',
+  '4. ASUNTOS SOCIALES': 'social-issues',
+  '5. ASUNTOS EXTERIORES': 'external-affairs',
+  '6. INTERIOR': 'internal-affairs',
+}
+
+function mattersOf(pillar: CivicCategoryKey) {
+  const group = MATTER_GROUPS.find(
+    g => PILLAR_BY_MATTER_GROUP[g.key] === pillar,
+  )
+  const matters = group?.matters ?? []
+  return {
+    interests: matters.map(m => m.tag),
+    interestLabels: Object.fromEntries(matters.map(m => [m.tag, m.label])),
+  }
+}
+
 export function useCivicCategories(): Record<CivicCategoryKey, CivicCategory> {
   const {_} = useLingui()
 
@@ -28,110 +56,32 @@ export function useCivicCategories(): Record<CivicCategoryKey, CivicCategory> {
       'internal-revenue': {
         label: _(msg`Internal Revenue`),
         emoji: '🏛️',
-        interests: [
-          'tax-reform',
-          'fiscal-transparency',
-          'public-debt',
-          'audit-accountability',
-          'tax-evasion',
-        ],
-        interestLabels: {
-          'tax-reform': _(msg`Tax Reform`),
-          'fiscal-transparency': _(msg`Fiscal Transparency`),
-          'public-debt': _(msg`Public Debt`),
-          'audit-accountability': _(msg`Audit & Accountability`),
-          'tax-evasion': _(msg`Tax Evasion`),
-        },
+        ...mattersOf('internal-revenue'),
       },
       'public-services': {
         label: _(msg`Public Services`),
         emoji: '🏥',
-        interests: [
-          'healthcare',
-          'education',
-          'infrastructure',
-          'public-transport',
-          'water-sanitation',
-        ],
-        interestLabels: {
-          healthcare: _(msg`Healthcare`),
-          education: _(msg`Education`),
-          infrastructure: _(msg`Infrastructure`),
-          'public-transport': _(msg`Public Transport`),
-          'water-sanitation': _(msg`Water & Sanitation`),
-        },
+        ...mattersOf('public-services'),
       },
       economy: {
         label: _(msg`Economy`),
         emoji: '📊',
-        interests: [
-          'employment',
-          'inflation',
-          'trade-policy',
-          'minimum-wage',
-          'small-business',
-        ],
-        interestLabels: {
-          employment: _(msg`Employment`),
-          inflation: _(msg`Inflation`),
-          'trade-policy': _(msg`Trade Policy`),
-          'minimum-wage': _(msg`Minimum Wage`),
-          'small-business': _(msg`Small Business`),
-        },
+        ...mattersOf('economy'),
       },
       'internal-affairs': {
         label: _(msg`Internal Affairs`),
         emoji: '⚖️',
-        interests: [
-          'security',
-          'justice-reform',
-          'corruption',
-          'civil-rights',
-          'indigenous-rights',
-        ],
-        interestLabels: {
-          security: _(msg`Security`),
-          'justice-reform': _(msg`Justice Reform`),
-          corruption: _(msg`Corruption`),
-          'civil-rights': _(msg`Civil Rights`),
-          'indigenous-rights': _(msg`Indigenous Rights`),
-        },
+        ...mattersOf('internal-affairs'),
       },
       'external-affairs': {
         label: _(msg`External Affairs`),
         emoji: '🌎',
-        interests: [
-          'diplomacy',
-          'migration',
-          'trade-agreements',
-          'border-policy',
-          'international-aid',
-        ],
-        interestLabels: {
-          diplomacy: _(msg`Diplomacy`),
-          migration: _(msg`Migration`),
-          'trade-agreements': _(msg`Trade Agreements`),
-          'border-policy': _(msg`Border Policy`),
-          'international-aid': _(msg`International Aid`),
-        },
+        ...mattersOf('external-affairs'),
       },
       'social-issues': {
         label: _(msg`Social Issues`),
         emoji: '🤝',
-        interests: [
-          'gender-equality',
-          'lgbtq-rights',
-          'disability-rights',
-          'housing',
-          'environmental-justice',
-        ],
-        interestLabels: {
-          'gender-equality': _(msg`Gender Equality`),
-          'lgbtq-rights': _(msg`LGBTQ+ Rights`),
-          'disability-rights': _(msg`Disability Rights`),
-          housing: _(msg`Housing`),
-          'environmental-justice': _(msg`Environmental Justice`),
-        },
+        ...mattersOf('social-issues'),
       },
     }),
     [_],

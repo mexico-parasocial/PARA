@@ -138,11 +138,7 @@ export function ModeratorDashboardScreen() {
             value={dashboard?.totalMembers ?? 0}
             color={t.palette.contrast_500}
           />
-          <SummaryCard
-            label="Activos hoy"
-            value={dashboard?.activeToday ?? 0}
-            color="#34C759"
-          />
+
           <SummaryCard
             label="Reportes 7d"
             value={dashboard?.reportedThisWeek ?? 0}

@@ -35,7 +35,7 @@ import {
 } from '#/lib/constants/mapHelpers'
 import {normalizeMexicoStateName} from '#/lib/constants/mexico'
 import {getCitiesWithCoordinatesForState} from '#/lib/constants/mexicoCityCoordinates'
-import {type CityData, MEXICO_CITY_DATA} from '#/lib/constants/mexicoCityData'
+import {type CityData, getCitiesForState} from '#/lib/constants/mexicoCityData'
 import {IS_WEB} from '#/platform/detection'
 
 // Lazy-load GeoJSON on web to reduce initial bundle size.
@@ -43,6 +43,7 @@ import {IS_WEB} from '#/platform/detection'
 const MexicoGeoJSONNative = !IS_WEB
   ? require('#/lib/constants/mexicoGeoJSON.json')
   : null
+import {partyColor} from '#/lib/parties/partyColors'
 import {type CommonNavigatorParams} from '#/lib/routes/types'
 import {POST_FLAIRS} from '#/lib/tags'
 import {
@@ -275,39 +276,9 @@ function getFeatureCoordinates(feature: GeoFeature): Coordinate[][] {
   return []
 }
 
-function getCitiesForState(stateName: string) {
-  const match = Object.entries(MEXICO_CITY_DATA).find(
-    ([candidate]) =>
-      normalizeMexicoStateName(candidate) ===
-      normalizeMexicoStateName(stateName),
-  )
-  return match?.[1] || []
-}
-
 function getDiscourseFlairId(label: string): string | null {
   const flair = Object.values(POST_FLAIRS).find(f => f.label === label)
   return flair?.id ?? null
-}
-
-function getPartyColor(party: string) {
-  switch (party) {
-    case 'Morena':
-      return '#8B1538'
-    case 'PAN':
-      return '#003087'
-    case 'PRI':
-      return '#00923F'
-    case 'MC':
-      return '#FF6B00'
-    case 'PVEM':
-      return '#228B22'
-    case 'PT':
-      return '#FF0000'
-    case 'PRD':
-      return '#FFD700'
-    default:
-      return '#666666'
-  }
 }
 
 function isMapLayer(value: unknown): value is MapLayer {
@@ -1070,8 +1041,8 @@ export function MapScreenImpl({
     if (!MarkerComponent || !showCities || !selectedState) return []
 
     return visibleCityMarkers.map(city => {
-      const partyColor = SHOW_MAP_PREVIEW_FACTS
-        ? getPartyColor(city.dominantParty)
+      const accent = SHOW_MAP_PREVIEW_FACTS
+        ? partyColor(city.dominantParty)
         : t.palette.primary_500
       const isSelected = selectedCityName === city.name
 
@@ -1099,7 +1070,7 @@ export function MapScreenImpl({
               style={[
                 styles.cityMarkerDot,
                 {
-                  backgroundColor: partyColor,
+                  backgroundColor: accent,
                   transform: [{scale: isSelected ? 1.18 : 1}],
                 },
               ]}
@@ -1296,7 +1267,7 @@ export function MapScreenImpl({
       stateName: city.stateName,
       coordinate: city.coordinate,
       color: SHOW_MAP_PREVIEW_FACTS
-        ? getPartyColor(city.dominantParty)
+        ? partyColor(city.dominantParty)
         : t.palette.primary_500,
       selected: selectedCityName === city.name,
       onPress: () => {

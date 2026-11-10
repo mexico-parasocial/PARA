@@ -1,6 +1,8 @@
 import {useState} from 'react'
 import {StyleSheet, TouchableOpacity, View} from 'react-native'
+import {Trans} from '@lingui/react/macro'
 
+import {canSanctionChatMember} from '#/lib/chat/roles'
 import {useChatBadgesQuery, useReportUserMutation} from '#/state/queries/matrix'
 import {useProfileQuery} from '#/state/queries/profile'
 import {useSession} from '#/state/session'
@@ -48,21 +50,15 @@ export function MemberProfileModal({
   const isMe = did === myDid
   const name =
     profile?.displayName || (profile ? `@${profile.handle}` : did.slice(-8))
-  // Whether the *viewer* moderates, and the member is neither a moderator nor
-  // an owner: the bridge refuses to sanction those, so do not offer it. This
-  // used to test the viewed member, which showed the controls on moderators'
-  // profiles and hid them on everyone else's.
+  // Use verified roles; an owner may sanction a moderator, never another owner.
   const canSanction =
-    !!viewerBadges?.participation?.isModerator &&
-    !isMe &&
-    !data?.participation?.isModerator
+    !isMe && canSanctionChatMember(viewerBadges?.roles, data?.roles)
   const isSanctioned = (data?.visibleBadges ?? []).some(
     b => b.type === 'sanctioned',
   )
 
   const visibleBadges = data?.visibleBadges ?? []
   const hiddenBadges = data?.hiddenBadges ?? []
-  const participation = data?.participation
 
   const handleReport = () => {
     if (!reportReason || !myDid) return
@@ -84,12 +80,6 @@ export function MemberProfileModal({
         <View style={[a.align_center, a.gap_sm, a.py_md]}>
           <UserAvatar size={64} type="user" avatar={null} />
           <Text style={[a.text_lg, a.font_bold, t.atoms.text]}>{name}</Text>
-          {participation && (
-            <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
-              {participation.messageCount} msgs · {participation.votesCast}{' '}
-              votos · {participation.daysInCommunity} días
-            </Text>
-          )}
         </View>
 
         {/* Risk badges (visible in chat) */}
@@ -123,7 +113,7 @@ export function MemberProfileModal({
           </View>
         )}
 
-        {/* Participation badges */}
+        {/* Verified role context */}
         {hiddenBadges.length > 0 && (
           <View style={[a.py_md]}>
             <Text
@@ -133,7 +123,7 @@ export function MemberProfileModal({
                 t.atoms.text_contrast_medium,
                 a.mb_sm,
               ]}>
-              PARTICIPACIÓN
+              <Trans>Rol en la comunidad</Trans>
             </Text>
             <View style={[a.flex_row, a.flex_wrap, a.gap_sm]}>
               {hiddenBadges.map(badge => (

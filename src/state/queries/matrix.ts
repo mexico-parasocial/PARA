@@ -1,5 +1,6 @@
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
+import {type ChatCommunityRole} from '#/lib/chat/roles'
 import {
   BridgeResponseError,
   isBridgeAuthError,
@@ -76,45 +77,6 @@ async function getBridgeError(
 ): Promise<BridgeResponseError> {
   const err = (await res.json().catch(() => ({}))) as {error?: string}
   return new BridgeResponseError(res.status, err.error || fallback)
-}
-
-export type SortitionEligibilityFilter = 'all' | 'verified' | 'senior'
-
-export type SortitionRun = {
-  id: string
-  cabildeoUri: string
-  communityUri: string
-  createdByDid: string
-  assemblySize: number
-  eligibilityFilter: SortitionEligibilityFilter
-  drandRound: number
-  drandRandomness: string | null
-  threshold: number | null
-  eligibleCount: number
-  selectedCount: number
-  status: 'scheduled' | 'active' | 'failed'
-  configRecord: Record<string, unknown> | null
-  createdAt: string
-  processedAt: string | null
-}
-
-export type SortitionCandidate = {
-  runId: string
-  did: string
-  communityUri: string
-  cabildeoUri: string
-  hashInput: string
-  hashOutput: string
-  hashValue: number
-  threshold: number
-  selected: boolean
-  createdAt: string
-}
-
-type SortitionRunResponse = {
-  run: SortitionRun
-  selected: SortitionCandidate[]
-  viewerCandidate: SortitionCandidate | null
 }
 
 export function useCommunitySpaceQuery(communityUri: string | undefined) {
@@ -333,146 +295,6 @@ export function useRegisterMatrixPushTokenMutation() {
   })
 }
 
-// ─── Constitution as Code: Proposals & Decisions ───
-
-export function useCommunityProposalsQuery(
-  communityUri: string | undefined,
-  state?: string,
-) {
-  const viewerDid = useSession().currentAccount?.did
-  return useQuery({
-    queryKey: ['proposals', communityUri, state, viewerDid],
-    queryFn: async () => {
-      if (!communityUri) throw new Error('No community URI')
-      const params = new URLSearchParams({community: communityUri})
-      if (state) params.set('state', state)
-      const res = await matrixBridgeFetch(`/api/proposals?${params.toString()}`)
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `Failed to fetch proposals: ${res.status}`)
-      }
-      return res.json() as Promise<{proposals: unknown[]}>
-    },
-    enabled: !!viewerDid && !!communityUri,
-    staleTime: 1000 * 30,
-  })
-}
-
-export function useCommunityDecisionsQuery(communityUri: string | undefined) {
-  const viewerDid = useSession().currentAccount?.did
-  return useQuery({
-    queryKey: ['decisions', communityUri, viewerDid],
-    queryFn: async () => {
-      if (!communityUri) throw new Error('No community URI')
-      const res = await matrixBridgeFetch(
-        `/api/decisions?community=${encodeURIComponent(communityUri)}`,
-      )
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `Failed to fetch decisions: ${res.status}`)
-      }
-      return res.json() as Promise<{decisions: unknown[]}>
-    },
-    enabled: !!viewerDid && !!communityUri,
-    staleTime: 1000 * 60,
-  })
-}
-
-export function useSortitionProofQuery(
-  did: string | undefined,
-  communityUri: string | undefined,
-) {
-  const viewerDid = useSession().currentAccount?.did
-  return useQuery({
-    queryKey: ['sortition-proof', did, communityUri, viewerDid],
-    queryFn: async () => {
-      if (!did || !communityUri) throw new Error('Missing did or communityUri')
-      const res = await matrixBridgeFetch(
-        `/api/sortition-proof?did=${encodeURIComponent(did)}&community=${encodeURIComponent(communityUri)}`,
-      )
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `Failed to fetch proof: ${res.status}`)
-      }
-      return res.json() as Promise<{
-        did: string
-        communityUri: string
-        chamber: string
-        drandRound: number
-        drandRandomness: string
-        hashInput: string
-        hashOutput: string
-        timestamp: string
-        verified: boolean
-      }>
-    },
-    enabled: !!viewerDid && !!did && !!communityUri,
-    staleTime: 1000 * 60 * 60, // proofs never change
-  })
-}
-
-export function useSortitionRunQuery(
-  cabildeoUri: string | undefined,
-  viewerDid?: string,
-) {
-  const accountDid = useSession().currentAccount?.did
-  return useQuery({
-    queryKey: ['sortition-run', cabildeoUri, viewerDid, accountDid],
-    queryFn: async () => {
-      if (!cabildeoUri) throw new Error('No Cabildeo URI')
-      const params = new URLSearchParams({cabildeo: cabildeoUri})
-      if (viewerDid) params.set('viewerDid', viewerDid)
-      const res = await matrixBridgeFetch(
-        `/api/sortition/runs?${params.toString()}`,
-      )
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(
-          err.error || `Failed to fetch sortition run: ${res.status}`,
-        )
-      }
-      return res.json() as Promise<SortitionRunResponse>
-    },
-    enabled: !!accountDid && !!cabildeoUri,
-    // Keep polling for a live draw, but not against an auth wall: without an
-    // M8 session every tick is the same 401.
-    refetchInterval: query =>
-      isBridgeAuthError(query.state.error) ? false : 10_000,
-    retry: false,
-  })
-}
-
-export function useCreateSortitionRunMutation() {
-  const queryClient = useQueryClient()
-  return useMutation({
-    mutationFn: async (input: {
-      cabildeoUri: string
-      communityUri: string
-      createdByDid: string
-      assemblySize: number
-      eligibilityFilter: SortitionEligibilityFilter
-      roundOffset: number
-    }) => {
-      const res = await matrixBridgeFetch('/api/sortition/runs', {
-        method: 'POST',
-        body: JSON.stringify(input),
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(
-          err.error || `Failed to create sortition run: ${res.status}`,
-        )
-      }
-      return res.json() as Promise<{run: SortitionRun}>
-    },
-    onSuccess: (_, variables) => {
-      void queryClient.invalidateQueries({
-        queryKey: ['sortition-run', variables.cabildeoUri],
-      })
-    },
-  })
-}
-
 export function useCommunityConstitutionQuery(
   communityUri: string | undefined,
 ) {
@@ -514,25 +336,12 @@ export interface ChatBadge {
   expiresAt?: string | null
 }
 
-interface ParticipationSummary {
-  did: string
-  communityUri: string
-  tier: string
-  messageCount: number
-  votesCast: number
-  proposalsCreated: number
-  daysInCommunity: number
-  chamber?: string | null
-  isDelegate: boolean
-  isModerator: boolean
-}
-
 interface ChatBadgesResponse {
   did: string
   communityUri: string
   visibleBadges: ChatBadge[]
   hiddenBadges: ChatBadge[]
-  participation: ParticipationSummary | null
+  roles: ChatCommunityRole[]
 }
 
 export function useChatBadgesQuery(
@@ -541,7 +350,13 @@ export function useChatBadgesQuery(
 ) {
   const viewerDid = useSession().currentAccount?.did
   return useQuery<ChatBadgesResponse>({
-    queryKey: ['chat-badges', did, communityUri, viewerDid],
+    queryKey: [
+      'chat-badges',
+      did,
+      communityUri,
+      viewerDid,
+      'verified-roles-v1',
+    ],
     queryFn: async () => {
       if (!did || !communityUri) throw new Error('Missing did or communityUri')
       const res = await matrixBridgeFetch(
@@ -562,10 +377,8 @@ export function useChatBadgesQuery(
 
 export interface MemberListItem {
   did: string
-  matrixUserId?: string
   badges: ChatBadge[]
-  participation: ParticipationSummary | null
-  lastActiveAt?: string
+  roles: ChatCommunityRole[]
   /** What restricts this member now. The bridge sends it to moderators only. */
   sanction?: {type: SanctionKind; until: string | null}
 }
@@ -582,7 +395,14 @@ export function useChatMemberListQuery(
 ) {
   const viewerDid = useSession().currentAccount?.did
   return useQuery<ChatMemberListResponse>({
-    queryKey: ['chat-member-list', communityUri, limit, offset, viewerDid],
+    queryKey: [
+      'chat-member-list',
+      communityUri,
+      limit,
+      offset,
+      viewerDid,
+      'verified-roles-v1',
+    ],
     queryFn: async () => {
       if (!communityUri) throw new Error('No community URI')
       const params = new URLSearchParams({
@@ -608,7 +428,6 @@ export function useChatMemberListQuery(
 
 interface ModerationDashboardResponse {
   totalMembers: number
-  activeToday: number
   reportedThisWeek: number
   sanctionedNow: number
   riskDistribution: {low: number; warning: number; critical: number}
@@ -620,7 +439,13 @@ export function useModerationDashboardQuery(
 ) {
   const viewerDid = useSession().currentAccount?.did
   return useQuery<ModerationDashboardResponse>({
-    queryKey: ['moderation-dashboard', communityUri, modDid, viewerDid],
+    queryKey: [
+      'moderation-dashboard',
+      communityUri,
+      modDid,
+      viewerDid,
+      'chat-only-v1',
+    ],
     queryFn: async () => {
       if (!communityUri || !modDid)
         throw new Error('Missing communityUri or modDid')
@@ -934,37 +759,6 @@ export function useUpdateUserChatPreferencesMutation() {
   })
 }
 
-// ─── Extract (link/URL metadata extraction) ───
-
-interface ExtractInput {
-  url: string
-  communityUri?: string
-}
-
-interface ExtractResult {
-  title: string | null
-  description: string | null
-  imageUrl: string | null
-  favicon: string | null
-  domain: string | null
-}
-
-export function useExtractMutation() {
-  return useMutation<ExtractResult, Error, ExtractInput>({
-    mutationFn: async input => {
-      const res = await matrixBridgeFetch('/api/extract', {
-        method: 'POST',
-        body: JSON.stringify(input),
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(err.error || `Failed to extract: ${res.status}`)
-      }
-      return res.json()
-    },
-  })
-}
-
 // ─── Moderation Recompute ───
 
 interface RecomputeInput {
@@ -972,9 +766,7 @@ interface RecomputeInput {
 }
 
 interface RecomputeResult {
-  recomputed: boolean
-  membersUpdated: number
-  timestamp: string
+  recomputed: number
 }
 
 export function useModerationRecomputeMutation() {
@@ -987,70 +779,6 @@ export function useModerationRecomputeMutation() {
       if (!res.ok) {
         const err = await res.json().catch(() => ({}))
         throw new Error(err.error || `Failed to recompute: ${res.status}`)
-      }
-      return res.json()
-    },
-  })
-}
-
-// ─── Sortition Run Processing ───
-
-interface ProcessSortitionInput {
-  runId: string
-}
-
-export function useProcessSortitionRunMutation() {
-  const queryClient = useQueryClient()
-  return useMutation<void, Error, ProcessSortitionInput>({
-    mutationFn: async input => {
-      const res = await matrixBridgeFetch('/api/sortition/runs/process', {
-        method: 'POST',
-        body: JSON.stringify(input),
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(
-          err.error || `Failed to process sortition: ${res.status}`,
-        )
-      }
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({queryKey: ['sortition-run']})
-    },
-  })
-}
-
-// ─── Verify Sortition ───
-
-interface VerifySortitionInput {
-  runId: string
-  did: string
-}
-
-interface VerifySortitionResult {
-  verified: boolean
-  selected: boolean
-  chamber: string | null
-  hashOutput: string
-  proof: {
-    drandRound: number
-    drandRandomness: string
-    hashInput: string
-  }
-}
-
-export function useVerifySortitionMutation() {
-  return useMutation<VerifySortitionResult, Error, VerifySortitionInput>({
-    mutationFn: async input => {
-      const res = await matrixBridgeFetch('/api/verify-sortition', {
-        method: 'POST',
-        body: JSON.stringify(input),
-      })
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}))
-        throw new Error(
-          err.error || `Failed to verify sortition: ${res.status}`,
-        )
       }
       return res.json()
     },

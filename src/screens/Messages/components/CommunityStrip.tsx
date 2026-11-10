@@ -5,6 +5,7 @@ import {useNavigation} from '@react-navigation/native'
 
 import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {atoms as a, platform, useTheme} from '#/alf'
+import {DARK_SCHEME_LINK_COLOR} from '#/alf/themes'
 import {
   ChevronBottom_Stroke2_Corner0_Rounded as ChevronBottom,
   ChevronTop_Stroke2_Corner0_Rounded as ChevronTop,
@@ -12,6 +13,7 @@ import {
 import {Group3_Stroke2_Corner0_Rounded as GroupIcon} from '#/components/icons/Group3'
 import {Link} from '#/components/Link'
 import {Text} from '#/components/Typography'
+import {type CommunityIdentity} from '../communityChatOrder'
 import {useIsWithinSplitView} from './splitView/context'
 
 export type CommunityTile = {
@@ -20,6 +22,8 @@ export type CommunityTile = {
   roomId: string
   name: string
   unread: number
+  /** Party or ninth colors; absent when the board is unknown or has none. */
+  identity?: CommunityIdentity
 }
 
 const TILE_WIDTH = 76
@@ -139,16 +143,27 @@ export function CommunityStrip({
                           width: AVATAR,
                           height: AVATAR,
                           borderRadius: 14,
-                          backgroundColor: t.palette.primary_500 + '20',
+                          backgroundColor:
+                            community.identity?.background ??
+                            (t.scheme === 'dark'
+                              ? DARK_SCHEME_LINK_COLOR + '29'
+                              : t.palette.primary_500 + '20'),
                         },
                       ]}>
                       <Text
                         style={[
                           a.text_xl,
                           a.font_bold,
-                          {color: t.palette.primary_600},
+                          {
+                            color:
+                              community.identity?.foreground ??
+                              (t.scheme === 'dark'
+                                ? DARK_SCHEME_LINK_COLOR
+                                : t.palette.primary_600),
+                          },
                         ]}>
-                        {community.name.trim().charAt(0).toUpperCase()}
+                        {community.identity?.monogram ??
+                          community.name.trim().charAt(0).toUpperCase()}
                       </Text>
                     </View>
                     {community.unread > 0 && (

@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useState} from 'react'
-import {ActivityIndicator, Alert, RefreshControl, View} from 'react-native'
+import {ActivityIndicator, RefreshControl, View} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
@@ -11,10 +11,12 @@ import {
   type ProofBrokerProofArtifact,
 } from '#/lib/im8'
 import {INE_INTEGRATION_APPROVED} from '#/lib/im8/ine'
-import {atoms as a, useTheme} from '#/alf'
+import {atoms as a, useBreakpoints, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'
+import {IS_WEB} from '#/env'
+import {confirmAction, showNotice} from './components/alerts'
 import {
   Card,
   claimLabel,
@@ -34,6 +36,7 @@ import {
  * which is also where grants are requested and approved.
  */
 export default function WalletScreen() {
+  const {gtMobile} = useBreakpoints()
   const t = useTheme()
   const {_} = useLingui()
   const [grants, setGrants] = useState<ProofBrokerGrant[]>([])
@@ -73,36 +76,31 @@ export default function WalletScreen() {
 
   const revoke = useCallback(
     (grant: ProofBrokerGrant) => {
-      Alert.alert(
-        _(msg`Revoke access?`),
-        _(
+      confirmAction({
+        title: _(msg`Revoke access?`),
+        message: _(
           msg`${grant.appName} will lose access, and m8 marks the proofs issued for it as revoked. This cannot be undone.`,
         ),
-        [
-          {text: _(msg`Cancel`), style: 'cancel'},
-          {
-            text: _(msg`Revoke`),
-            style: 'destructive',
-            onPress: () => {
-              void (async () => {
-                setRevokingId(grant.id)
-                try {
-                  await postGrantRevoke(grant.id, 'Revoked from PARA wallet')
-                  await load()
-                } catch (err) {
-                  console.warn('[m8] Failed to revoke grant:', err)
-                  Alert.alert(
-                    _(msg`Could not revoke access`),
-                    _(msg`Nothing was changed. Please try again.`),
-                  )
-                } finally {
-                  setRevokingId(null)
-                }
-              })()
-            },
-          },
-        ],
-      )
+        cancelLabel: _(msg`Cancel`),
+        confirmLabel: _(msg`Revoke`),
+        onConfirm: () => {
+          void (async () => {
+            setRevokingId(grant.id)
+            try {
+              await postGrantRevoke(grant.id, 'Revoked from PARA wallet')
+              await load()
+            } catch (err) {
+              console.warn('[m8] Failed to revoke grant:', err)
+              showNotice(
+                _(msg`Could not revoke access`),
+                _(msg`Nothing was changed. Please try again.`),
+              )
+            } finally {
+              setRevokingId(null)
+            }
+          })()
+        },
+      })
     },
     [_, load],
   )
@@ -125,7 +123,7 @@ export default function WalletScreen() {
           }}
         />
       }
-      contentContainerStyle={[a.p_lg, a.gap_md]}>
+      contentContainerStyle={[gtMobile ? a.p_xl : a.p_lg, a.gap_md]}>
       <Card>
         <Text style={[a.text_md, a.font_semi_bold, t.atoms.text]}>
           <Trans>Your credentials live in iM8</Trans>
@@ -167,6 +165,23 @@ export default function WalletScreen() {
             </ButtonText>
           </Button>
         </Card>
+      ) : null}
+
+      {/* web has no pull-to-refresh */}
+      {IS_WEB && !loadError ? (
+        <Button
+          label={_(msg`Refresh grants and receipts`)}
+          size="small"
+          color="secondary"
+          disabled={refreshing}
+          style={[a.self_start]}
+          onPress={() => {
+            void onRefresh()
+          }}>
+          <ButtonText>
+            {refreshing ? <Trans>Refreshing…</Trans> : <Trans>Refresh</Trans>}
+          </ButtonText>
+        </Button>
       ) : null}
 
       <SectionHeading

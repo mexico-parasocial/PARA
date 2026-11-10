@@ -221,8 +221,7 @@ function MemberRow({
           <Text
             style={[a.text_md, a.font_bold, t.atoms.text]}
             numberOfLines={1}>
-            {member.matrixUserId?.split(':')[0]?.replace('@', '') ??
-              member.did.slice(-8)}
+            {member.did.slice(-8)}
           </Text>
 
           {contextBadge && (
@@ -231,28 +230,7 @@ function MemberRow({
             </Text>
           )}
         </View>
-
-        <View style={[a.flex_row, a.align_center, a.gap_sm]}>
-          <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-            {member.participation?.messageCount ?? 0} msgs ·{' '}
-            {member.participation?.votesCast ?? 0} votos
-          </Text>
-          {member.lastActiveAt && (
-            <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-              · Activo recientemente
-            </Text>
-          )}
-        </View>
       </View>
-
-      {/* Positive badges count */}
-      {member.badges.filter(b => !b.visibleInChat).length > 0 && (
-        <View style={styles.badgePill}>
-          <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
-            {member.badges.filter(b => !b.visibleInChat).length} 🏅
-          </Text>
-        </View>
-      )}
     </TouchableOpacity>
   )
 }

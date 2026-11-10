@@ -1,7 +1,7 @@
 import {type CabildeoServiceAgent} from '#/lib/api/cabildeo'
-import {fetchQvlProposal, getProposalKind} from './proposal-detail-data'
+import {fetchLegacyProposal, getProposalKind} from './proposal-detail-data'
 
-const qvlUri = 'at://did:plc:alice/com.para.community.proposal/abc'
+const legacyUri = 'at://did:plc:alice/com.para.community.proposal/abc'
 const civicUri = 'at://did:plc:alice/com.para.civic.cabildeo/abc'
 
 function agentWithRecord(call: jest.Mock): CabildeoServiceAgent {
@@ -10,7 +10,7 @@ function agentWithRecord(call: jest.Mock): CabildeoServiceAgent {
 
 describe('proposal detail data', () => {
   it('distinguishes supported records from malformed routes', () => {
-    expect(getProposalKind(qvlUri)).toBe('qvl')
+    expect(getProposalKind(legacyUri)).toBe('legacy')
     expect(getProposalKind(civicUri)).toBe('cabildeo')
     expect(getProposalKind('not an at-uri')).toBe('unsupported')
   })
@@ -24,7 +24,7 @@ describe('proposal detail data', () => {
       },
     })
     await expect(
-      fetchQvlProposal(agentWithRecord(call), qvlUri),
+      fetchLegacyProposal(agentWithRecord(call), legacyUri),
     ).resolves.toEqual({
       title: 'Local parks',
       body: 'Fund new trees',
@@ -40,17 +40,17 @@ describe('proposal detail data', () => {
   it('does not fetch unsupported records and treats absent or invalid records as missing', async () => {
     const call = jest.fn().mockResolvedValue({value: {title: 'Incomplete'}})
     const agent = agentWithRecord(call)
-    await expect(fetchQvlProposal(agent, civicUri)).resolves.toBeNull()
+    await expect(fetchLegacyProposal(agent, civicUri)).resolves.toBeNull()
     expect(call).not.toHaveBeenCalled()
-    await expect(fetchQvlProposal(agent, qvlUri)).resolves.toBeNull()
+    await expect(fetchLegacyProposal(agent, legacyUri)).resolves.toBeNull()
     call.mockRejectedValueOnce(new Error('Could not locate record: abc'))
-    await expect(fetchQvlProposal(agent, qvlUri)).resolves.toBeNull()
+    await expect(fetchLegacyProposal(agent, legacyUri)).resolves.toBeNull()
   })
 
   it('propagates network failures so the screen can offer retry', async () => {
     const call = jest.fn().mockRejectedValue(new Error('Network unavailable'))
     await expect(
-      fetchQvlProposal(agentWithRecord(call), qvlUri),
+      fetchLegacyProposal(agentWithRecord(call), legacyUri),
     ).rejects.toThrow('Network unavailable')
   })
 })

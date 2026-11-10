@@ -13,7 +13,9 @@ const withExtensionEntitlements = (config, {extensionName}) => {
     )
 
     const shareExtensionEntitlements = {
-      'com.apple.security.application-groups': [`group.com.para.app`],
+      'com.apple.security.application-groups': [
+        `group.${process.env.PARA_BUNDLE_ID || 'com.para.app'}`,
+      ],
     }
 
     fs.mkdirSync(path.dirname(extensionEntitlementsPath), {

@@ -725,6 +725,37 @@ decision is made.
 
 ---
 
+## 2026-11-07: Web builds read `.env`; the bridge needs CORS for web
+
+- Expo's webpack config passes no `EXPO_PUBLIC_*` values (SDK 41+) and only
+  Metro inlines them, so web silently used production fallbacks
+  (`bridge.para.social`, a `127.0.0.1` broker). `webpack.config.js` now loads
+  `.env.local`/`.env` with `@expo/env` and defines each public key. Restart the
+  web server after editing them. With the env applied, web's default sign-in
+  service is the Bonjour PDS URL; choose `http://localhost:2583` if it hangs.
+- The matrix bridge answers browsers only for origins in
+  `BRIDGE_CORS_ORIGINS` (WatZappa `services/matrix-bridge/src/cors.ts`; the
+  local launcher allows `:19006` and `:8100`). A deployed web origin must be
+  added there.
+- Connecting m8 invalidates `matrix-rooms`/`matrix-unread`, so chat no longer
+  shows a stale "connect your identity" error. Web keeps the m8 token in
+  memory: a full page load needs Identity & Wallet to reconnect.
+
+## 2026-11-03: Conclusiones (forum and persuasion cabildeos)
+
+- A steward's written summary of a cabildeo that has no vote to end it;
+  design in `docs/conclusion-spec.md`. Only `forum` and `persuasion`, never an
+  `activity` and never an open question. It is the steward's reading, not a
+  result: say so in the UI, close nothing, show earlier ones as history.
+- The AppView returns the board URI (`communityUri`) from `getConclusion` even
+  when there is no conclusion, because a client cannot reliably turn a
+  community slug into the board a record must name. Write that value verbatim.
+- `getCabildeo` and `listCabildeos` now carry `kind`. The client's
+  `mapCabildeoPositionsFromRead` keeps `uri` and `author` so a conclusion can
+  cite positions; before this it dropped them.
+- Creation offers Actividad and Foro only. A forum is created with no options
+  and requires a place.
+
 ## 2026-11-02: Seguimiento (AppView and read-only client built locally)
 
 - Follow-through of a resolved cabildeo is `com.para.civic.followThrough` and

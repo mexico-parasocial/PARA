@@ -20,6 +20,7 @@ import {useNavigation, useRoute} from '@react-navigation/native'
 import {useQueryClient} from '@tanstack/react-query'
 
 import {getDefaultChatIdentityMode} from '#/lib/chat/identity'
+import {canModerateChat} from '#/lib/chat/roles'
 import {chatFailureMessage} from '#/lib/matrix/failure'
 import {useChatBootstrap} from '#/lib/matrix/useChatBootstrap'
 import {useMatrixWebSession} from '#/lib/matrix/useMatrixWebSession'
@@ -50,7 +51,6 @@ import {Shield_Stroke2_Corner0_Rounded as ShieldIcon} from '#/components/icons/S
 import {Sparkle_Stroke2_Corner0_Rounded as SummarizeIcon} from '#/components/icons/Sparkle'
 import {Warning_Stroke2_Corner0_Rounded as WarningIcon} from '#/components/icons/Warning'
 import * as Layout from '#/components/Layout'
-import {SorteoBadge} from '#/components/SorteoBadge'
 import {Text} from '#/components/Typography'
 import {storeRefreshedMatrixWebSession} from '#/features/encryptedChat/webOidc'
 import {ChatCivicContext} from './ChatCivicContext'
@@ -245,14 +245,10 @@ export function CommunityChatScreen() {
           (b.severity === 'warning' || b.severity === 'critical'),
       ),
     ).length ?? 0
-  const isModerator = myBadges?.participation?.isModerator ?? false
+  const isModerator = canModerateChat(myBadges?.roles)
   const identityMode = getDefaultChatIdentityMode('matrix_community')
   const civicBadges = [
-    myBadges?.participation?.isModerator ? _(msg`Moderador`) : undefined,
-    myBadges?.participation?.isDelegate ? _(msg`Delegado`) : undefined,
-    myBadges?.participation?.chamber
-      ? _(msg`Cámara ${myBadges.participation.chamber}`)
-      : undefined,
+    isModerator ? _(msg`Moderador`) : undefined,
     ...(myBadges?.visibleBadges.map(badge => badge.label) ?? []),
   ].filter(Boolean) as string[]
 
@@ -535,7 +531,7 @@ export function CommunityChatScreen() {
                   <ButtonText>{riskCount}</ButtonText>
                 </Button>
               )}
-              <SorteoBadge communityUri={communityUri} />
+
               <Button
                 label={_(msg`Miembros`)}
                 accessibilityHint={_(
@@ -654,7 +650,6 @@ export function CommunityChatScreen() {
               members={memberList?.members ?? []}
               total={memberList?.total ?? 0}
               isModerator={isModerator}
-              presence={live.presence}
               onOpenMember={openMember}
               onOpenAll={openMembers}
             />

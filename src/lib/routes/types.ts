@@ -273,6 +273,8 @@ export type CommonNavigatorParams = {
     /** Omitted to start a new page. */
     slug?: string
     kind?: 'page' | 'megathread'
+    officialThread?: boolean
+    agoraThread?: boolean
   }
 }
 

@@ -1,10 +1,10 @@
 import {useCallback, useState} from 'react'
-import {Alert, Pressable, View} from 'react-native'
+import {Pressable, View} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
-import {atoms as a, useTheme} from '#/alf'
+import {atoms as a, useBreakpoints, useTheme, web} from '#/alf'
 import {Button, ButtonIcon} from '#/components/Button'
 import {ArrowBoxRight_Stroke2_Corner3_Rounded as DisconnectIcon} from '#/components/icons/Arrow'
 import {Clock_Stroke2_Corner0_Rounded as ClockIcon} from '#/components/icons/Clock'
@@ -14,6 +14,7 @@ import {ShieldCheck_Stroke2_Corner0_Rounded as ShieldCheckIcon} from '#/componen
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'
 import AnonymousIdentitiesScreen from './AnonymousIdentitiesScreen'
+import {confirmAction} from './components/alerts'
 import {
   ConnectingIndicator,
   M8ConnectCard,
@@ -29,27 +30,23 @@ type TabKey = 'wallet' | 'anon' | 'audit' | 'issuers'
 export default function IdentityHubScreen() {
   const t = useTheme()
   const {_} = useLingui()
+  const {gtMobile} = useBreakpoints()
   const {connection, account, busy, error, connect, disconnect} =
     useM8Connection()
   const [activeTab, setActiveTab] = useState<TabKey>('wallet')
 
   const confirmDisconnect = useCallback(() => {
-    Alert.alert(
-      _(msg`Disconnect from m8?`),
-      _(
+    confirmAction({
+      title: _(msg`Disconnect from m8?`),
+      message: _(
         msg`This signs you out of m8 on this device. Your grants and proofs stay in m8, and you can connect again at any time.`,
       ),
-      [
-        {text: _(msg`Cancel`), style: 'cancel'},
-        {
-          text: _(msg`Disconnect`),
-          style: 'destructive',
-          onPress: () => {
-            void disconnect()
-          },
-        },
-      ],
-    )
+      cancelLabel: _(msg`Cancel`),
+      confirmLabel: _(msg`Disconnect`),
+      onConfirm: () => {
+        void disconnect()
+      },
+    })
   }, [_, disconnect])
 
   const tabs: {
@@ -112,59 +109,64 @@ export default function IdentityHubScreen() {
         </Layout.Content>
       ) : (
         <>
-          <View
-            accessibilityRole="tablist"
-            style={[
-              a.flex_row,
-              a.border_b,
-              a.px_sm,
-              t.atoms.border_contrast_low,
-            ]}>
-            {tabs.map(tab => {
-              const isActive = activeTab === tab.key
-              return (
-                <Pressable
-                  key={tab.key}
-                  accessibilityRole="tab"
-                  accessibilityLabel={tab.label}
-                  accessibilityHint=""
-                  accessibilityState={{selected: isActive}}
-                  onPress={() => setActiveTab(tab.key)}
-                  style={[
-                    a.flex_1,
-                    a.align_center,
-                    a.justify_center,
-                    a.gap_2xs,
-                    a.py_sm,
-                    {
-                      borderBottomWidth: 2,
-                      borderBottomColor: isActive
-                        ? t.palette.primary_500
-                        : 'transparent',
-                    },
-                  ]}>
-                  <tab.icon
-                    size="sm"
-                    fill={
-                      isActive
-                        ? t.palette.primary_500
-                        : t.atoms.text_contrast_medium.color
-                    }
-                  />
-                  <Text
+          {/* inside Center so the tabs line up with the content column */}
+          <Layout.Center>
+            <View
+              accessibilityRole="tablist"
+              style={[
+                a.flex_row,
+                a.border_b,
+                a.px_sm,
+                t.atoms.border_contrast_low,
+              ]}>
+              {tabs.map(tab => {
+                const isActive = activeTab === tab.key
+                return (
+                  <Pressable
+                    key={tab.key}
+                    accessibilityRole="tab"
+                    accessibilityLabel={tab.label}
+                    accessibilityHint=""
+                    accessibilityState={{selected: isActive}}
+                    onPress={() => setActiveTab(tab.key)}
                     style={[
-                      a.text_xs,
-                      isActive
-                        ? [a.font_bold, t.atoms.text]
-                        : [a.font_medium, t.atoms.text_contrast_medium],
-                    ]}
-                    numberOfLines={1}>
-                    {tab.label}
-                  </Text>
-                </Pressable>
-              )
-            })}
-          </View>
+                      a.flex_1,
+                      a.align_center,
+                      a.justify_center,
+                      gtMobile
+                        ? [a.flex_row, a.gap_sm, a.py_md]
+                        : [a.gap_2xs, a.py_sm],
+                      web({cursor: 'pointer'}),
+                      {
+                        borderBottomWidth: 2,
+                        borderBottomColor: isActive
+                          ? t.palette.primary_500
+                          : 'transparent',
+                      },
+                    ]}>
+                    <tab.icon
+                      size="sm"
+                      fill={
+                        isActive
+                          ? t.palette.primary_500
+                          : t.atoms.text_contrast_medium.color
+                      }
+                    />
+                    <Text
+                      style={[
+                        gtMobile ? a.text_sm : a.text_xs,
+                        isActive
+                          ? [a.font_bold, t.atoms.text]
+                          : [a.font_medium, t.atoms.text_contrast_medium],
+                      ]}
+                      numberOfLines={1}>
+                      {tab.label}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+          </Layout.Center>
 
           <View style={[a.flex_1]}>
             {activeTab === 'wallet' ? (

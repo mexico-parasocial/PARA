@@ -8,6 +8,7 @@ import {
   type CabildeoRecord,
 } from '#/lib/api/para-lexicons'
 import {districtKeyFor} from '#/lib/constants/electoralDistrictsData'
+import {PARTY_COLORS} from '#/lib/parties/partyColors'
 
 export type PolicyItem = {
   id: string
@@ -209,7 +210,7 @@ export const COMMUNITY_DATA: CommunityData[] = [
     name: 'PAN',
     members: '1.2M',
     desc: 'Centro-derecha con red territorial y agenda institucional.',
-    color: '#003087',
+    color: PARTY_COLORS.PAN,
     directoryGroup: 'political',
     subtitle: 'Democracia cristiana y agenda institucional',
     eyebrow: 'Party',
@@ -221,7 +222,7 @@ export const COMMUNITY_DATA: CommunityData[] = [
     name: 'Morena',
     members: '2.8M',
     desc: 'Mayoría nacional con conversación soberanista y social.',
-    color: '#8B1538',
+    color: PARTY_COLORS.Morena,
     directoryGroup: 'political',
     subtitle: 'Movimiento gobernante y soberanía social',
     eyebrow: 'Party',
@@ -233,7 +234,7 @@ export const COMMUNITY_DATA: CommunityData[] = [
     name: 'MC',
     members: '456k',
     desc: 'Liberal progresista, ciudadanía y política urbana.',
-    color: '#FF6B00',
+    color: PARTY_COLORS.MC,
     directoryGroup: 'political',
     subtitle: 'Ciudadanía, innovación y política urbana',
     eyebrow: 'Party',
@@ -245,7 +246,7 @@ export const COMMUNITY_DATA: CommunityData[] = [
     name: 'PRI',
     members: '890k',
     desc: 'Centro institucional con estructura histórica nacional.',
-    color: '#00923F',
+    color: PARTY_COLORS.PRI,
     directoryGroup: 'political',
     subtitle: 'Estructura histórica e institucional',
     eyebrow: 'Party',
@@ -257,7 +258,7 @@ export const COMMUNITY_DATA: CommunityData[] = [
     name: 'PVEM',
     members: '178k',
     desc: 'Organización ecologista enfocada en agenda ambiental.',
-    color: '#228B22',
+    color: PARTY_COLORS.PVEM,
     directoryGroup: 'political',
     subtitle: 'Agenda verde y sustentabilidad',
     eyebrow: 'Party',

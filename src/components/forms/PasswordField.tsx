@@ -7,7 +7,7 @@ import {atoms as a, tokens, useTheme} from '#/alf'
 import {Button} from '#/components/Button'
 import * as TextField from '#/components/forms/TextField'
 import {Eye_Stroke2_Corner0_Rounded as EyeIcon} from '#/components/icons/Eye'
-import {EyeSlash_Stroke2_Corner0_Rounded as EyeSlashIcon} from '#/components/icons/Eye'
+import {EyeSlash_Stroke2_Corner0_Rounded as EyeSlashIcon} from '#/components/icons/EyeSlash'
 import {Lock_Stroke2_Corner0_Rounded as LockIcon} from '#/components/icons/Lock'
 
 /**

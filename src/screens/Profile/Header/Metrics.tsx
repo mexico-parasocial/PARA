@@ -12,6 +12,7 @@ import {useSession} from '#/state/session'
 import {formatCount} from '#/view/com/util/numeric/format'
 import {atoms as a, useTheme} from '#/alf'
 import {Influence_Stroke_Icon as InfluenceIcon} from '#/components/icons/Influence'
+import {PageText_Stroke2_Corner0_Rounded as PassportIcon} from '#/components/icons/Page'
 import {RaisingHand4Finger_Stroke2_Corner2_Rounded as VoteIcon} from '#/components/icons/RaisingHand4Finger'
 import {InlineLinkText} from '#/components/Link'
 import {Text} from '#/components/Typography'
@@ -82,7 +83,7 @@ export function ProfileHeaderMetrics({
       </View>
 
       <View
-        style={[a.flex_row, a.gap_md, a.align_center]}
+        style={[a.flex_row, a.flex_wrap, a.gap_md, a.align_center]}
         pointerEvents="box-none">
         <TouchableOpacity
           accessibilityRole="button"
@@ -124,6 +125,22 @@ export function ProfileHeaderMetrics({
               style={[t.atoms.text_contrast_medium, a.font_normal, a.text_md]}>
               votes
             </Text>
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={_(msg`View public passport`)}
+          accessibilityHint={_(
+            msg`Opens the civic activity this person chose to share`,
+          )}
+          style={[a.flex_row, a.align_center, a.gap_xs]}
+          onPress={() =>
+            navigation.navigate('PublicPassport', {did: profile.did})
+          }>
+          <PassportIcon size="md" style={[t.atoms.text]} />
+          <Text style={[a.font_semi_bold, t.atoms.text, a.text_md]}>
+            <Trans>Passport</Trans>
           </Text>
         </TouchableOpacity>
       </View>

@@ -33,12 +33,9 @@ import {
   useCabildeoQuery,
   useCabildeosQuery,
   useDelegationCandidatesQuery,
+  useReactToPositionMutation,
   useVoteMutation,
 } from '#/state/queries/cabildeo'
-import {
-  useCreateSortitionRunMutation,
-  useSortitionRunQuery,
-} from '#/state/queries/matrix'
 import {
   useOfficialCabildeoSignaturesQuery,
   useSignOfficialCabildeoMutation,
@@ -49,22 +46,20 @@ import {
   useRepresentativeNominationsQuery,
 } from '#/state/queries/representative-participation'
 import {useSession} from '#/state/session'
-import {SortitionAssemblyView} from '#/screens/Data/components/SortitionAssemblyView'
-import {SortitionProofList} from '#/screens/Data/components/SortitionProofList'
-import {
-  type SortitionStatus,
-  SortitionStatusCard,
-} from '#/screens/Data/components/SortitionStatusCard'
 import {useTheme} from '#/alf'
 import {PublicBallotNotice} from '#/components/civic/PublicRecordNotice'
 import {useDialogControl} from '#/components/Dialog'
-import {SortitionConfigDialog} from '#/components/dialogs/SortitionConfigDialog'
 import * as Layout from '#/components/Layout'
 import {ListMaybePlaceholder} from '#/components/Lists'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {WebScrollControls} from '#/components/WebScrollControls'
+import {ConclusionSection} from '#/features/conclusion/components/ConclusionSection'
 import {FollowThroughSection} from '#/features/followThrough/components/FollowThroughSection'
+import {
+  AssemblyDecisionSection,
+  useCabildeoCommunity,
+} from './AssemblyDecisionSection'
 
 type Props = NativeStackScreenProps<CommonNavigatorParams, 'CabildeoDetail'>
 
@@ -245,6 +240,11 @@ function getStanceColors(
       bg: t.palette.yellow + '20',
       fg: t.palette.yellow,
       label: 'Enmienda',
+    },
+    question: {
+      bg: t.palette.primary_500 + '20',
+      fg: t.palette.primary_500,
+      label: 'Pregunta',
     },
   }
 }
@@ -452,20 +452,15 @@ export function CabildeoDetailScreen({route}: Props) {
   // Use cabildeo.options directly; no local duplication needed.
   // Consensus synthesizer state removed — pending real backend implementation
   const [hasDismissedGracePeriod, setHasDismissedGracePeriod] = useState(false)
-  const sortitionControl = useDialogControl()
   const ballotNoticeControl = useDialogControl()
   const [mountedAt] = useState(() => Date.now())
   const [nowMs, setNowMs] = useState(() => Date.now())
   const [positionFilter, setPositionFilter] = useState<
-    'all' | 'for' | 'against' | 'amendment'
+    'all' | 'for' | 'against' | 'amendment' | 'question'
   >('all')
+  const reactToPosition = useReactToPositionMutation()
   const delegateEvent = cabildeo?.userContext?.delegateVoteEvent
   const {mutate: vote, isPending: isVoting} = useVoteMutation()
-  const sortitionRunQuery = useSortitionRunQuery(
-    cabildeo?.uri,
-    currentAccount?.did,
-  )
-  const createSortitionRun = useCreateSortitionRunMutation()
   const {data: viewerOfficialAccounts = []} = useViewerOfficialAccountsQuery(
     REPRESENTATIVES,
     currentAccount?.did,
@@ -529,6 +524,9 @@ export function CabildeoDetailScreen({route}: Props) {
     if (positionFilter === 'all') return all
     return all.filter(p => p.stance === positionFilter)
   }, [allPositions, positionFilter])
+
+  // A decision cabildeo names its community by board URI.
+  const cabildeoCommunity = useCabildeoCommunity(cabildeo?.community ?? '')
 
   if (
     !cabildeo &&
@@ -625,14 +623,6 @@ export function CabildeoDetailScreen({route}: Props) {
 
   const isMultiCommunity =
     Boolean(cabildeo.communities?.length) && cabildeo.communities!.length > 0
-  const sortitionRun = sortitionRunQuery.data?.run ?? null
-  const sortitionStatus: SortitionStatus = sortitionRun
-    ? sortitionRun.status === 'active'
-      ? 'active'
-      : sortitionRun.status === 'scheduled'
-        ? 'pending'
-        : 'none'
-    : 'none'
 
   const phaseIndex = PHASE_ORDER.indexOf(cabildeo.phase)
 
@@ -669,37 +659,6 @@ export function CabildeoDetailScreen({route}: Props) {
                   msg`Could not register vote. ${err instanceof Error ? err.message : 'Try again.'}`,
                 )
           Toast.show(message)
-        },
-      },
-    )
-  }
-
-  const handleConfigureSortition = (config: {
-    size: number
-    filter: 'all' | 'verified' | 'senior'
-    roundOffset: number
-  }) => {
-    if (!cabildeo?.uri || !currentAccount?.did) return
-    createSortitionRun.mutate(
-      {
-        cabildeoUri: cabildeo.uri,
-        communityUri: cabildeo.community,
-        createdByDid: currentAccount.did,
-        assemblySize: config.size,
-        eligibilityFilter: config.filter,
-        roundOffset: config.roundOffset,
-      },
-      {
-        onSuccess: () => {
-          void sortitionRunQuery.refetch()
-          Toast.show(i18n._(msg`Sorteo programado con Drand`))
-        },
-        onError: err => {
-          Toast.show(
-            err instanceof Error
-              ? err.message
-              : i18n._(msg`No se pudo programar el sorteo.`),
-          )
         },
       },
     )
@@ -893,8 +852,8 @@ export function CabildeoDetailScreen({route}: Props) {
               activeOpacity={0.8}
               onPress={() =>
                 navigation.navigate('CommunityProfile', {
-                  communityId: cabildeo.community,
-                  communityName: cabildeo.community,
+                  communityId: cabildeoCommunity.profileId,
+                  communityName: cabildeoCommunity.label,
                 })
               }
               style={[
@@ -906,7 +865,7 @@ export function CabildeoDetailScreen({route}: Props) {
                   styles.communityPillText,
                   {color: t.palette.primary_500},
                 ]}>
-                {cabildeo.community} →
+                {cabildeoCommunity.label} →
               </Text>
             </TouchableOpacity>
             {cabildeo.communities?.map((c, i) => (
@@ -953,15 +912,6 @@ export function CabildeoDetailScreen({route}: Props) {
               </View>
             )}
           </View>
-
-          <SortitionStatusCard
-            status={sortitionStatus}
-            run={sortitionRun}
-            selected={sortitionRunQuery.data?.selected ?? []}
-            viewerCandidate={sortitionRunQuery.data?.viewerCandidate ?? null}
-            canConfigure={Boolean(currentAccount?.did) && !sortitionRun}
-            onConfigure={() => sortitionControl.open()}
-          />
 
           {/* ─── Deadline ─── */}
           {cabildeo.phaseDeadline && (
@@ -1152,20 +1102,6 @@ export function CabildeoDetailScreen({route}: Props) {
                 options={cabildeo.options}
               />
             )}
-
-          {sortitionRun && (
-            <>
-              <SortitionAssemblyView
-                run={sortitionRun}
-                viewerCandidate={sortitionRunQuery.data?.viewerCandidate}
-              />
-              <SortitionProofList
-                run={sortitionRun}
-                selected={sortitionRunQuery.data?.selected ?? []}
-                viewerCandidate={sortitionRunQuery.data?.viewerCandidate}
-              />
-            </>
-          )}
 
           <View
             style={[
@@ -1577,10 +1513,28 @@ export function CabildeoDetailScreen({route}: Props) {
             </View>
           )}
 
+          <ConclusionSection
+            cabildeoUri={cabildeo.uri}
+            community={cabildeo.community}
+            kind={cabildeo.kind}
+            phase={cabildeo.phase}
+            positions={allPositions}
+          />
+
           <FollowThroughSection
             cabildeoUri={cabildeo.uri}
             resolved={cabildeo.phase === 'resolved'}
           />
+
+          {cabildeo.protectedAction && (
+            <AssemblyDecisionSection
+              cabildeoUri={cabildeo.uri}
+              community={cabildeo.community}
+              phase={cabildeo.phase}
+              protectedAction={cabildeo.protectedAction}
+              decision={cabildeo.assemblyDecision}
+            />
+          )}
 
           {cabildeo.phase === 'resolved' && (
             <CabildeoNominationSection cabildeoUri={cabildeo.uri} />
@@ -1624,6 +1578,7 @@ export function CabildeoDetailScreen({route}: Props) {
                 {key: 'for', label: '✅ A favor'},
                 {key: 'against', label: '❌ En contra'},
                 {key: 'amendment', label: '📝 Enmiendas'},
+                {key: 'question', label: '❓ Preguntas'},
               ] as const
             ).map(f => (
               <TouchableOpacity
@@ -1752,6 +1707,79 @@ export function CabildeoDetailScreen({route}: Props) {
                       </Text>
                     )}
 
+                    {pos.uri ? (
+                      <View style={styles.reactionRow}>
+                        {(['agree', 'disagree', 'pass'] as const).map(
+                          direction => {
+                            const count =
+                              direction === 'agree'
+                                ? pos.agreeCount
+                                : direction === 'disagree'
+                                  ? pos.disagreeCount
+                                  : pos.passCount
+                            const label =
+                              direction === 'agree'
+                                ? i18n._(msg`De acuerdo`)
+                                : direction === 'disagree'
+                                  ? i18n._(msg`En desacuerdo`)
+                                  : i18n._(msg`Paso`)
+                            const selected = pos.viewerDirection === direction
+                            return (
+                              <TouchableOpacity
+                                key={direction}
+                                accessibilityRole="button"
+                                accessibilityState={{
+                                  selected,
+                                  disabled:
+                                    !currentAccount ||
+                                    reactToPosition.isPending,
+                                }}
+                                accessibilityLabel={label}
+                                accessibilityHint={i18n._(
+                                  msg`Registra tu reacción a esta postura`,
+                                )}
+                                disabled={
+                                  !currentAccount || reactToPosition.isPending
+                                }
+                                onPress={() =>
+                                  reactToPosition.mutate(
+                                    {
+                                      cabildeoUri: pos.cabildeo,
+                                      position: pos.uri!,
+                                      direction,
+                                    },
+                                    {
+                                      onError: () =>
+                                        Toast.show(
+                                          i18n._(
+                                            msg`No se pudo registrar tu reacción.`,
+                                          ),
+                                        ),
+                                    },
+                                  )
+                                }
+                                style={[
+                                  styles.reactionPill,
+                                  selected
+                                    ? {backgroundColor: t.palette.primary_500}
+                                    : t.atoms.bg_contrast_50,
+                                ]}>
+                                <Text
+                                  style={[
+                                    styles.reactionPillText,
+                                    selected
+                                      ? {color: t.palette.contrast_100}
+                                      : t.atoms.text_contrast_medium,
+                                  ]}>
+                                  {label} · {count ?? 0}
+                                </Text>
+                              </TouchableOpacity>
+                            )
+                          },
+                        )}
+                      </View>
+                    ) : null}
+
                     <View style={styles.positionFooter}>
                       {pos.compassQuadrant && (
                         <View
@@ -1795,12 +1823,7 @@ export function CabildeoDetailScreen({route}: Props) {
           <RelatedBriefingPacks cabildeoUri={cabildeo.uri} />
         </Layout.Center>
       </ScrollView>
-      <SortitionConfigDialog
-        control={sortitionControl}
-        communityUri={cabildeo.community}
-        onConfirm={handleConfigureSortition}
-        isSubmitting={createSortitionRun.isPending}
-      />
+
       <PublicBallotNotice control={ballotNoticeControl} onConfirm={castVote} />
     </Layout.Screen>
   )
@@ -2399,6 +2422,18 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   positionTime: {fontSize: 11},
+  reactionRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  reactionPill: {
+    borderRadius: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+  },
+  reactionPillText: {fontSize: 12, fontWeight: '600'},
 
   // Geo restriction
   geoRestrictionBanner: {
