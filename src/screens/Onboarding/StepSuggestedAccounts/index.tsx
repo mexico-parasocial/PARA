@@ -342,8 +342,12 @@ function TabBar({
 }) {
   const {_} = useLingui()
   const interestsDisplayNames = useParaInterestsDisplayNames()
+  const pillars = PARA_INTEREST_KEYS as readonly string[]
+  // The six pillars plus the matters the person picked; the other ~70 matters
+  // would bury the tab bar.
   const interests = Object.keys(interestsDisplayNames)
-    .sort(boostInterests(PARA_INTEREST_KEYS as unknown as string[]))
+    .filter(key => pillars.includes(key) || selectedInterests.includes(key))
+    .sort(boostInterests(pillars as unknown as string[]))
     .sort(boostInterests(selectedInterests))
 
   return (

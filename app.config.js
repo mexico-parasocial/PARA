@@ -66,6 +66,11 @@ module.exports = function (_config) {
   // FIXED: was `!IS_TESTFLIGHT || !IS_PRODUCTION` which always evaluated to true.
   const IS_DEV = !IS_TESTFLIGHT && !IS_PRODUCTION
 
+  // iOS bundle id. Override with PARA_BUNDLE_ID to sign dev builds with your
+  // own Apple team; the extensions and the app group derive from it.
+  const BUNDLE_ID = process.env.PARA_BUNDLE_ID || 'com.para.app'
+  const IS_CUSTOM_BUNDLE_ID = BUNDLE_ID !== 'com.para.app'
+
   const ASSOCIATED_DOMAINS = [
     'applinks:para.social',
     'appclips:para.social', // Allows App Clip to work when scanning QR codes
@@ -94,7 +99,7 @@ module.exports = function (_config) {
       newArchEnabled: true,
       ios: {
         supportsTablet: true,
-        bundleIdentifier: 'com.para.app',
+        bundleIdentifier: BUNDLE_ID,
         appleTeamId: process.env.EXPO_APPLE_TEAM_ID,
         config: {
           usesNonExemptEncryption: false,
@@ -174,12 +179,19 @@ module.exports = function (_config) {
             'zh-Hant',
           ],
         },
-        associatedDomains: ASSOCIATED_DOMAINS,
+        // A custom PARA_BUNDLE_ID means a dev build signed with your own team:
+        // it cannot own para.social's domains or PARA's push setup, so those
+        // capabilities (which a personal team cannot provision) are left out.
+        associatedDomains: IS_CUSTOM_BUNDLE_ID ? undefined : ASSOCIATED_DOMAINS,
         entitlements: {
-          'com.apple.developer.kernel.increased-memory-limit': true,
-          'com.apple.developer.kernel.extended-virtual-addressing': true,
-          'com.apple.security.application-groups': 'group.com.para.app',
-          'com.apple.developer.usernotifications.communication': true,
+          ...(IS_CUSTOM_BUNDLE_ID
+            ? {}
+            : {
+                'com.apple.developer.kernel.increased-memory-limit': true,
+                'com.apple.developer.kernel.extended-virtual-addressing': true,
+                'com.apple.developer.usernotifications.communication': true,
+              }),
+          'com.apple.security.application-groups': `group.${BUNDLE_ID}`,
           //          'com.apple.developer.device-information.user-assigned-device-name': true,
         },
         privacyManifests: {
@@ -303,8 +315,8 @@ module.exports = function (_config) {
         [
           'expo-widgets',
           {
-            bundleIdentifier: 'com.para.app.ParaWidgets',
-            groupIdentifier: 'group.com.para.app',
+            bundleIdentifier: `${BUNDLE_ID}.ParaWidgets`,
+            groupIdentifier: `group.${BUNDLE_ID}`,
             enableAndroid: true,
             widgets: [
               {
@@ -574,19 +586,19 @@ module.exports = function (_config) {
                   // extension plugins and checked into the Xcode project.
                   {
                     targetName: 'Share-with-Bluesky',
-                    bundleIdentifier: 'com.para.app.Share-with-Bluesky',
+                    bundleIdentifier: `${BUNDLE_ID}.Share-with-Bluesky`,
                     entitlements: {
                       'com.apple.security.application-groups': [
-                        'group.com.para.app',
+                        `group.${BUNDLE_ID}`,
                       ],
                     },
                   },
                   {
                     targetName: 'BlueskyNSE',
-                    bundleIdentifier: 'com.para.app.BlueskyNSE',
+                    bundleIdentifier: `${BUNDLE_ID}.BlueskyNSE`,
                     entitlements: {
                       'com.apple.security.application-groups': [
-                        'group.com.para.app',
+                        `group.${BUNDLE_ID}`,
                       ],
                     },
                   },

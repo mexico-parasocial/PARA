@@ -187,6 +187,8 @@ export function reducer(s: SignupState, a: SignupAction): SignupState {
     }
     case 'setError': {
       next.error = a.value
+      // An error ends any in-flight check or submit; keep the button usable.
+      if (a.value) next.isLoading = false
       next.errorField = a.field
 
       // Track field errors
