@@ -1,3 +1,5 @@
+import {normalizeMexicoStateName} from '#/lib/constants/mexico'
+
 export interface CityData {
   name: string
   population: string
@@ -502,4 +504,14 @@ export const MEXICO_CITY_DATA: Record<string, CityData[]> = {
       governing_mayor: 'Saúl Monreal',
     },
   ],
+}
+
+/** The major cities of a state, matched by normalized state name. */
+export function getCitiesForState(stateName: string): CityData[] {
+  const match = Object.entries(MEXICO_CITY_DATA).find(
+    ([candidate]) =>
+      normalizeMexicoStateName(candidate) ===
+      normalizeMexicoStateName(stateName),
+  )
+  return match?.[1] || []
 }

@@ -10,12 +10,7 @@ import {Trans} from '@lingui/react/macro'
 import {useQueryClient} from '@tanstack/react-query'
 
 import {uploadBlob} from '#/lib/api'
-import {
-  BSKY_APP_ACCOUNT_DID,
-  DISCOVER_SAVED_FEED,
-  TIMELINE_SAVED_FEED,
-  VIDEO_SAVED_FEED,
-} from '#/lib/constants'
+import {DEFAULT_ONBOARDING_SAVED_FEEDS} from '#/lib/constants'
 import {useRequestNotificationsPermission} from '#/lib/notifications/notifications'
 import {logger} from '#/logger'
 import {useSetHasCheckedForStarterPack} from '#/state/preferences/used-starter-packs'
@@ -98,33 +93,30 @@ export function StepFinished() {
       const {selectedInterests} = interestsStepResults
 
       await Promise.all([
-        bulkWriteFollows(
-          pdsClient,
-          appviewClient,
-          [BSKY_APP_ACCOUNT_DID, ...(listItems?.map(i => i.subject.did) ?? [])],
-          starterPack
-            ? {uri: starterPack.uri, cid: starterPack.cid}
-            : undefined,
-        ),
+        // PARA does not auto-follow Bluesky's official account: it is not
+        // part of PARA and does not exist on a local network. Only a starter
+        // pack the user arrived through adds follows.
+        listItems?.length
+          ? bulkWriteFollows(
+              pdsClient,
+              appviewClient,
+              listItems.map(i => i.subject.did),
+              starterPack
+                ? {uri: starterPack.uri, cid: starterPack.cid}
+                : undefined,
+            )
+          : undefined,
         (async () => {
           // Interests need to get saved first, then we can write the feeds to prefs
           await pdsClient.call(setInterestsPref, {tags: selectedInterests})
 
-          // Default feeds that every user should have pinned when landing in the app
-          const feedsToSave: app.bsky.actor.defs.SavedFeed[] = [
-            {
-              ...DISCOVER_SAVED_FEED,
+          // PARA's defaults, not Bluesky's Discover and Video feed generators.
+          // An upstream SDK sync swapped these back once; keep PARA's list.
+          const feedsToSave: app.bsky.actor.defs.SavedFeed[] =
+            DEFAULT_ONBOARDING_SAVED_FEEDS.map(feed => ({
+              ...feed,
               id: TID.nextStr(),
-            },
-            {
-              ...TIMELINE_SAVED_FEED,
-              id: TID.nextStr(),
-            },
-            {
-              ...VIDEO_SAVED_FEED,
-              id: TID.nextStr(),
-            },
-          ]
+            }))
 
           // Any starter pack feeds will be pinned _after_ the defaults
           if (starterPack && starterPack.feeds?.length) {

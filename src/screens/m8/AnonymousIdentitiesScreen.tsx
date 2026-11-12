@@ -19,7 +19,7 @@ import {
 import {useAnonymousMode} from '#/lib/im8/hooks/useAnonymousMode'
 import {type AnonymousIdentityCard} from '#/lib/im8/types'
 import {type NavigationProp} from '#/lib/routes/types'
-import {atoms as a, useTheme} from '#/alf'
+import {atoms as a, useBreakpoints, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import {ChatIdentityPill} from '#/components/chat/ChatIdentityPill'
 import * as TextField from '#/components/forms/TextField'
@@ -39,6 +39,7 @@ import {
  * every other card is a burner.
  */
 export default function AnonymousIdentitiesScreen() {
+  const {gtMobile} = useBreakpoints()
   const t = useTheme()
   const {_} = useLingui()
   const navigation = useNavigation<NavigationProp>()
@@ -186,7 +187,7 @@ export default function AnonymousIdentitiesScreen() {
           }}
         />
       }
-      contentContainerStyle={[a.p_lg, a.gap_md]}>
+      contentContainerStyle={[gtMobile ? a.p_xl : a.p_lg, a.gap_md]}>
       <View style={[a.flex_row, a.align_center, a.justify_between, a.gap_sm]}>
         <Text style={[a.flex_1, a.text_sm, t.atoms.text_contrast_medium]}>
           {_(

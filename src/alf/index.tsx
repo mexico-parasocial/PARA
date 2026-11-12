@@ -9,8 +9,14 @@ import {
   setFontScale as persistFontScale,
 } from '#/alf/fonts'
 import {themes} from '#/alf/themes'
-import {darken, lighten, rgbToHex} from '#/alf/util/colorGeneration'
+import {
+  contrastRatio,
+  darken,
+  lighten,
+  rgbToHex,
+} from '#/alf/util/colorGeneration'
 import {type Device} from '#/storage'
+
 export {type TextStyleProp, type Theme, type ViewStyleProp} from '@bsky.app/alf'
 export {atoms} from '#/alf/atoms'
 export * from '#/alf/breakpoints'
@@ -25,6 +31,7 @@ export const utils = {
   rgbToHex,
   lighten,
   darken,
+  contrastRatio,
 }
 
 export type Alf = {

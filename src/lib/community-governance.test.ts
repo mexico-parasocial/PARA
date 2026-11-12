@@ -13,10 +13,9 @@ const NOW = new Date('2026-11-07T00:00:00Z')
 function view(
   overrides: Partial<CommunityGovernanceView> = {},
 ): CommunityGovernanceView {
-  return {
-    ...normalizeCommunityGovernance({}, 'mx-test'),
-    ...overrides,
-  }
+  const governance = normalizeCommunityGovernance({}, 'mx-test')
+  if (!governance) throw new Error('Expected a governance view')
+  return {...governance, ...overrides}
 }
 
 describe('holdsVerifiedRole', () => {
@@ -97,8 +96,8 @@ describe('normalizeCommunityGovernance', () => {
       },
       'mx-test',
     )
-    expect(closed.admissionMode).toBe('assembly_approval')
-    expect(closed.roleDefinitions).toEqual([
+    expect(closed?.admissionMode).toBe('assembly_approval')
+    expect(closed?.roleDefinitions).toEqual([
       {
         role: 'moderator',
         howToObtain: 'Receive an appointment.',
@@ -107,7 +106,7 @@ describe('normalizeCommunityGovernance', () => {
         permissions: ['moderate'],
       },
     ])
-    expect(normalizeCommunityGovernance({}, 'mx-test').admissionMode).toBe(
+    expect(normalizeCommunityGovernance({}, 'mx-test')?.admissionMode).toBe(
       'open',
     )
   })

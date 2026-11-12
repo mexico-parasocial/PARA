@@ -1,6 +1,7 @@
 import {Alert} from 'react-native'
 import {i18n} from '@lingui/core'
 import {I18nProvider} from '@lingui/react'
+import {QueryClient, QueryClientProvider} from '@tanstack/react-query'
 import {
   act,
   fireEvent,
@@ -25,6 +26,7 @@ jest.mock('#/components/Layout', () => {
     ...jest.requireActual('#/components/Layout/const'),
     Screen: ({children}: any) => <View>{children}</View>,
     Content: ({children}: any) => <ScrollView>{children}</ScrollView>,
+    Center: ({children}: any) => <View>{children}</View>,
     Header: {
       Outer: ({children}: any) => <View>{children}</View>,
       Content: ({children}: any) => <View>{children}</View>,
@@ -104,13 +106,15 @@ i18n.loadAndActivate({locale: 'en', messages: {}})
 
 const ALICE = {did: 'did:plc:alice', handle: 'alice.test'}
 
-function renderHub() {
+function renderHub(queryClient = new QueryClient()) {
   return render(
-    <I18nProvider i18n={i18n}>
-      <ThemeProvider theme="light">
-        <IdentityHubScreen />
-      </ThemeProvider>
-    </I18nProvider>,
+    <QueryClientProvider client={queryClient}>
+      <I18nProvider i18n={i18n}>
+        <ThemeProvider theme="light">
+          <IdentityHubScreen />
+        </ThemeProvider>
+      </I18nProvider>
+    </QueryClientProvider>,
   )
 }
 
@@ -161,6 +165,22 @@ describe('Identity & Wallet hub', () => {
       expect(mockConnect).toHaveBeenCalledWith(ALICE.did, expect.any(Function)),
     )
     expect(await screen.findByLabelText('Wallet')).toBeTruthy()
+  })
+
+  it('refetches chat queries that failed before the account was connected', async () => {
+    mockGetToken.mockResolvedValue(null)
+    mockConnect.mockResolvedValue({tokens: true, session: ALICE})
+    const queryClient = new QueryClient()
+    const invalidate = jest.spyOn(queryClient, 'invalidateQueries')
+    renderHub(queryClient)
+
+    await screen.findByLabelText('Connect')
+    expect(invalidate).not.toHaveBeenCalled()
+    fireEvent.press(screen.getByLabelText('Connect'))
+    await waitFor(() =>
+      expect(invalidate).toHaveBeenCalledWith({queryKey: ['matrix-rooms']}),
+    )
+    expect(invalidate).toHaveBeenCalledWith({queryKey: ['matrix-unread']})
   })
 
   it("explains a failed connect in the app's words, not the raw code", async () => {

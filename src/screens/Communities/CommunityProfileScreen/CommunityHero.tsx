@@ -1,17 +1,30 @@
-import {ScrollView, TouchableOpacity, View} from 'react-native'
+import {Pressable, View} from 'react-native'
+import {useSafeAreaInsets} from 'react-native-safe-area-context'
+import {Image} from 'expo-image'
 import {LinearGradient} from 'expo-linear-gradient'
+import {plural} from '@lingui/core/macro'
+import {useLingui} from '@lingui/react/macro'
+import {useNavigation} from '@react-navigation/native'
 
-import {type UsePaletteValue} from '#/lib/hooks/usePalette'
 import {type PartyFeedProfile} from '#/lib/party-feeds'
+import {type NavigationProp} from '#/lib/routes/types'
 import {cleanError} from '#/lib/strings/errors'
-import {Text} from '#/view/com/util/text/Text'
-import {useTheme} from '#/alf'
-import {PageText_Stroke2_Corner0_Rounded as PageTextIcon} from '#/components/icons/Page'
-import {styles} from './styles'
+import {atoms as a, useTheme} from '#/alf'
+import {Button, ButtonIcon, ButtonText} from '#/components/Button'
+import {ArrowLeft_Stroke2_Corner0_Rounded as ArrowLeftIcon} from '#/components/icons/Arrow'
+import {Camera_Stroke2_Corner0_Rounded as CameraIcon} from '#/components/icons/Camera'
+import {Message_Stroke2_Corner0_Rounded as ChatIcon} from '#/components/icons/Message'
+import {PageText_Stroke2_Corner0_Rounded as DocsIcon} from '#/components/icons/Page'
+import {Text} from '#/components/Typography'
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+/** Banner height below the status bar; the banner also fills the inset. */
+const BANNER_HEIGHT = 132
+/** How far the content sheet's rounded top rides up over the banner. */
+const SHEET_OVERLAP = 24
+const AVATAR_SIZE = 80
+/** The ring that separates the avatar from the banner it overlaps. */
+const AVATAR_RING = 4
+
 function hexToRgba(hex: string, alpha: number) {
   const r = parseInt(hex.slice(1, 3), 16)
   const g = parseInt(hex.slice(3, 5), 16)
@@ -19,9 +32,6 @@ function hexToRgba(hex: string, alpha: number) {
   return `rgba(${r},${g},${b},${alpha})`
 }
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
 type CommunityStats = {
   policyPosts: number
   matterPosts: number
@@ -29,13 +39,13 @@ type CommunityStats = {
   visiblePosters: number
 }
 
-// ---------------------------------------------------------------------------
-// CommunityHero
-// ---------------------------------------------------------------------------
 export function CommunityHero({
   displayCommunityName,
   plainCommunityName,
   brandColor,
+  bannerUri,
+  onPressEditBanner,
+  isBannerPending,
   partyProfile,
   boardDescription,
   memberCount,
@@ -47,17 +57,21 @@ export function CommunityHero({
   joinLeaveError,
   onPressJoin,
   onPressDocuments,
+  onPressPolicies,
+  onPressMatters,
   onPressRAQ,
-  onPressRoles,
   onPressVoters,
   onPressCommunityChat,
   unreadCount,
-  governance,
-  pal,
 }: {
   displayCommunityName: string
   plainCommunityName: string
   brandColor: string
+  /** Cover image. Without one the banner is the community's brand color. */
+  bannerUri?: string
+  /** Present for owners: lets them pick a new banner. */
+  onPressEditBanner?: () => void
+  isBannerPending?: boolean
   partyProfile: PartyFeedProfile | null
   boardDescription: string | undefined
   memberCount: number
@@ -69,372 +83,336 @@ export function CommunityHero({
   joinLeaveError: Error | null
   onPressJoin: () => void
   onPressDocuments: () => void
+  onPressPolicies: () => void
+  onPressMatters: () => void
   onPressRAQ: () => void
-  onPressRoles: () => void
   onPressVoters: () => void
-  /** Absent when chat is off: no chat pill. */
+  /** Absent when chat is off: no chat button. */
   onPressCommunityChat?: () => void
   unreadCount: number
-  governance: {
-    moderators: unknown[]
-    officials: unknown[]
-    deputies: unknown[]
-  }
-  pal: UsePaletteValue
 }) {
   const t = useTheme()
+  const {t: l, i18n} = useLingui()
+  const {top: topInset} = useSafeAreaInsets()
+  const navigation = useNavigation<NavigationProp>()
 
-  // Resolve the subtitle: party description > board description > generic
-  const heroSubtitle =
-    partyProfile?.description ||
-    boardDescription ||
-    'Community governance, representation, and civic activity.'
+  const onPressBack = () => {
+    if (navigation.canGoBack()) {
+      navigation.goBack()
+    } else {
+      navigation.navigate('Home')
+    }
+  }
 
-  // Use the party logo (e.g. "MI", "MC") when available, else first letter
-  const avatarLetter =
+  const description = partyProfile?.description || boardDescription
+  // The party logo (e.g. "MC") when there is one, else the first letter.
+  const avatarLabel =
     partyProfile?.logo || plainCommunityName.charAt(0).toUpperCase()
+  const accentColor = partyProfile?.accentColor || brandColor
 
-  // Use accent color for gradient richness when available
-  const gradientAccent = partyProfile?.accentColor || brandColor
+  const joinLabel = isDraft
+    ? isJoined
+      ? l`Founding member`
+      : l`Draft quorum`
+    : isJoinPending
+      ? isJoined
+        ? l`Leaving…`
+        : l`Joining…`
+      : isJoined
+        ? l`Joined`
+        : l`Join`
 
-  return (
-    <LinearGradient
-      colors={
-        t.scheme === 'dark'
-          ? [
-              hexToRgba(brandColor, 0.22),
-              hexToRgba(gradientAccent, 0.06),
-              'transparent',
-            ]
-          : [
-              hexToRgba(brandColor, 0.14),
-              hexToRgba(gradientAccent, 0.04),
-              'transparent',
-            ]
-      }
-      start={{x: 0, y: 0}}
-      end={{x: 0, y: 1}}
-      style={styles.heroBanner}>
-      <View style={styles.heroContent}>
-        {/* Community Avatar and Name Row */}
-        <View style={styles.heroTopRow}>
+  const stats = [
+    {
+      key: 'policies',
+      label: l`Policies`,
+      value: communityStats.policyPosts,
+      onPress: onPressPolicies,
+    },
+    {
+      key: 'matters',
+      label: l`Matters`,
+      value: communityStats.matterPosts,
+      onPress: onPressMatters,
+    },
+    {
+      key: 'raq',
+      label: l`RAQ`,
+      value: communityStats.raqPosts,
+      onPress: onPressRAQ,
+    },
+    {
+      key: 'voters',
+      label: l`Voters`,
+      value: communityStats.visiblePosters,
+      onPress: onPressVoters,
+    },
+  ]
+
+  const docsButton = (
+    <Button
+      label={l`Community documents`}
+      size="small"
+      color="secondary"
+      shape="round"
+      onPress={onPressDocuments}>
+      <ButtonIcon icon={DocsIcon} />
+    </Button>
+  )
+
+  const chatButton =
+    isJoined && onPressCommunityChat ? (
+      <View>
+        <Button
+          label={
+            unreadCount > 0
+              ? plural(unreadCount, {
+                  one: 'Community chat, # unread message',
+                  other: 'Community chat, # unread messages',
+                })
+              : l`Community chat`
+          }
+          size="small"
+          color="secondary"
+          shape="round"
+          onPress={onPressCommunityChat}>
+          <ButtonIcon icon={ChatIcon} />
+        </Button>
+        {unreadCount > 0 ? (
           <View
+            pointerEvents="none"
             style={[
-              styles.communityAvatar,
+              a.absolute,
+              a.rounded_full,
+              a.align_center,
+              a.justify_center,
+              a.px_xs,
               {
-                backgroundColor:
-                  t.scheme === 'dark'
-                    ? hexToRgba(brandColor, 0.3)
-                    : hexToRgba(brandColor, 0.12),
-                borderColor:
-                  t.scheme === 'dark'
-                    ? hexToRgba(brandColor, 0.6)
-                    : hexToRgba(brandColor, 0.35),
-                borderWidth: 2.5,
+                top: -4,
+                right: -6,
+                minWidth: 18,
+                height: 18,
+                backgroundColor: t.palette.negative_500,
               },
             ]}>
-            <Text
-              style={[
-                styles.avatarText,
-                {color: brandColor},
-                avatarLetter.length > 1 && {fontSize: 22},
-              ]}>
-              {avatarLetter}
+            <Text style={[a.font_bold, {fontSize: 10, color: '#fff'}]}>
+              {unreadCount > 99 ? '99+' : unreadCount}
             </Text>
           </View>
+        ) : null}
+      </View>
+    ) : null
 
-          <View style={styles.heroTopInfo}>
-            {/* Community Name */}
-            <Text style={[styles.communityNameCompact, pal.text]}>
-              {displayCommunityName}
-            </Text>
-            <Text
-              numberOfLines={2}
-              style={[styles.communitySubtitle, pal.textLight]}>
-              {heroSubtitle}
-            </Text>
-          </View>
-
-          <TouchableOpacity
+  return (
+    <View>
+      {/* The banner runs under the status bar, to the top of the screen. */}
+      <View style={{height: topInset + BANNER_HEIGHT}}>
+        <LinearGradient
+          colors={[hexToRgba(brandColor, 0.9), hexToRgba(accentColor, 0.5)]}
+          start={{x: 0, y: 0}}
+          end={{x: 1, y: 1}}
+          style={[a.absolute, a.inset_0]}
+        />
+        {bannerUri ? (
+          <Image
+            accessibilityIgnoresInvertColors
+            source={{uri: bannerUri}}
+            contentFit="cover"
+            style={[a.absolute, a.inset_0]}
+          />
+        ) : null}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={l`Go back`}
+          accessibilityHint={l`Returns to the previous screen`}
+          onPress={onPressBack}
+          hitSlop={8}
+          style={[
+            a.absolute,
+            a.rounded_full,
+            a.align_center,
+            a.justify_center,
+            {
+              top: topInset + 8,
+              left: 12,
+              width: 36,
+              height: 36,
+              // Dark on any banner, image or color, so the arrow stays legible.
+              backgroundColor: 'rgba(0,0,0,0.45)',
+            },
+          ]}>
+          <ArrowLeftIcon size="md" fill="#fff" />
+        </Pressable>
+        {onPressEditBanner ? (
+          <Pressable
             accessibilityRole="button"
-            disabled={isDraft || isJoinPending}
+            accessibilityLabel={l`Change banner`}
+            accessibilityHint={l`Opens your photos to pick a new banner`}
+            disabled={isBannerPending}
+            onPress={onPressEditBanner}
+            hitSlop={8}
             style={[
-              styles.followButton,
+              a.absolute,
+              a.rounded_full,
+              a.align_center,
+              a.justify_center,
               {
-                backgroundColor: isJoined
-                  ? t.scheme === 'dark'
-                    ? t.palette.primary_100
-                    : t.palette.primary_100
-                  : t.palette.primary_500,
-                borderWidth: isJoined ? 1 : 0,
-                borderColor: isJoined ? t.palette.primary_200 : 'transparent',
-                opacity: isJoinPending ? 0.6 : 1,
+                top: topInset + 8,
+                right: 12,
+                width: 36,
+                height: 36,
+                backgroundColor: 'rgba(0,0,0,0.45)',
+                opacity: isBannerPending ? 0.5 : 1,
               },
-            ]}
-            onPress={isDraft ? undefined : () => void onPressJoin()}>
-            <Text
+            ]}>
+            <CameraIcon size="md" fill="#fff" />
+          </Pressable>
+        ) : null}
+      </View>
+
+      <View
+        style={[
+          a.px_lg,
+          a.pb_md,
+          t.atoms.bg,
+          {
+            marginTop: -SHEET_OVERLAP,
+            borderTopLeftRadius: SHEET_OVERLAP,
+            borderTopRightRadius: SHEET_OVERLAP,
+          },
+        ]}>
+        {/* Actions either side of an avatar that straddles the banner edge. */}
+        <View style={[a.flex_row, a.align_center, {minHeight: 56}]}>
+          <View style={[a.flex_1, a.flex_row, a.align_center, a.gap_sm]}>
+            {docsButton}
+            {chatButton}
+          </View>
+          <View
+            style={[
+              a.rounded_full,
+              t.atoms.bg,
+              {
+                marginTop: -(AVATAR_SIZE / 2 + AVATAR_RING),
+                padding: AVATAR_RING,
+              },
+            ]}>
+            <View
               style={[
-                styles.followButtonText,
+                a.rounded_full,
+                a.align_center,
+                a.justify_center,
                 {
-                  color: isJoined ? t.palette.primary_700 : '#fff',
+                  width: AVATAR_SIZE,
+                  height: AVATAR_SIZE,
+                  backgroundColor: hexToRgba(
+                    brandColor,
+                    t.scheme === 'dark' ? 0.28 : 0.14,
+                  ),
                 },
               ]}>
-              {isDraft
-                ? isJoined
-                  ? 'Founding member'
-                  : 'Draft quorum'
-                : isJoinPending
-                  ? isJoined
-                    ? 'Leaving...'
-                    : 'Joining...'
-                  : isJoined
-                    ? 'Joined'
-                    : 'Join'}
-            </Text>
-          </TouchableOpacity>
+              <Text
+                style={[
+                  a.font_bold,
+                  {
+                    color: brandColor,
+                    fontSize: avatarLabel.length > 1 ? 22 : 32,
+                  },
+                ]}>
+                {avatarLabel}
+              </Text>
+            </View>
+          </View>
+          <View style={[a.flex_1, a.flex_row, a.justify_end]}>
+            <Button
+              label={joinLabel}
+              size="small"
+              color={isJoined ? 'secondary' : 'primary'}
+              disabled={isDraft || isJoinPending}
+              onPress={onPressJoin}>
+              <ButtonText>{joinLabel}</ButtonText>
+            </Button>
+          </View>
         </View>
+
+        <Text
+          emoji
+          accessibilityRole="header"
+          style={[
+            a.text_2xl,
+            a.font_bold,
+            a.leading_tight,
+            a.text_center,
+            a.mt_xs,
+          ]}>
+          {displayCommunityName}
+        </Text>
+        <Text
+          style={[
+            a.text_sm,
+            a.text_center,
+            a.mt_2xs,
+            t.atoms.text_contrast_medium,
+          ]}>
+          {plural(memberCount, {one: '# member', other: '# members'})}
+          {' · '}
+          {plural(postsCount, {one: '# post', other: '# posts'})}
+        </Text>
+
+        {description ? (
+          <Text
+            emoji
+            numberOfLines={3}
+            style={[a.text_md, a.leading_snug, a.text_center, a.mt_sm]}>
+            {description}
+          </Text>
+        ) : null}
+
         {joinLeaveError ? (
           <Text
-            style={{
-              color: t.palette.negative_500,
-              fontSize: 13,
-              marginTop: 4,
-            }}>
+            style={[
+              a.text_sm,
+              a.text_center,
+              a.mt_sm,
+              {color: t.palette.negative_500},
+            ]}>
             {cleanError(joinLeaveError)}
           </Text>
         ) : null}
 
-        {/* Pill-Chip Stats Grid */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.statsPillScroll}
-          contentContainerStyle={styles.statsPillContainer}>
-          {[
-            {
-              label: 'Members',
-              value: memberCount.toLocaleString(),
-            },
-            {label: 'Posts', value: postsCount.toLocaleString()},
-            {
-              label: 'Policy',
-              value: communityStats.policyPosts.toLocaleString(),
-            },
-            {
-              label: 'Matter',
-              value: communityStats.matterPosts.toLocaleString(),
-            },
-          ].map(stat => (
-            <View
-              key={stat.label}
-              style={[
-                styles.statPill,
-                {
-                  backgroundColor:
-                    t.scheme === 'dark'
-                      ? hexToRgba(brandColor, 0.12)
-                      : hexToRgba(brandColor, 0.1),
-                },
+        {/* One strip of counts; each opens its section. */}
+        <View
+          style={[
+            a.flex_row,
+            a.mt_md,
+            a.border,
+            a.rounded_md,
+            a.overflow_hidden,
+            t.atoms.border_contrast_low,
+          ]}>
+          {stats.map((stat, index) => (
+            <Pressable
+              key={stat.key}
+              accessibilityRole="button"
+              accessibilityLabel={`${stat.label}: ${i18n.number(stat.value)}`}
+              accessibilityHint={l`Opens this section`}
+              onPress={stat.onPress}
+              style={({pressed}) => [
+                a.flex_1,
+                a.align_center,
+                a.py_sm,
+                index > 0 && [a.border_l, t.atoms.border_contrast_low],
+                pressed && t.atoms.bg_contrast_25,
               ]}>
-              <Text
-                style={[
-                  styles.statPillValue,
-                  {color: t.scheme === 'dark' ? '#e0e7ff' : brandColor},
-                ]}>
-                {stat.value}
+              <Text style={[a.text_md, a.font_bold]}>
+                {i18n.number(stat.value)}
               </Text>
-              <Text
-                style={[
-                  styles.statPillLabel,
-                  {
-                    color:
-                      t.scheme === 'dark'
-                        ? 'rgba(255,255,255,0.5)'
-                        : hexToRgba(brandColor, 0.6),
-                  },
-                ]}>
+              <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
                 {stat.label}
               </Text>
-            </View>
+            </Pressable>
           ))}
-          {/* Docs Button */}
-          <TouchableOpacity
-            accessibilityRole="button"
-            onPress={onPressDocuments}
-            style={[
-              styles.statPill,
-              styles.docsPill,
-              {
-                backgroundColor:
-                  t.scheme === 'dark'
-                    ? hexToRgba(brandColor, 0.18)
-                    : hexToRgba(brandColor, 0.12),
-                borderColor:
-                  t.scheme === 'dark'
-                    ? hexToRgba(brandColor, 0.4)
-                    : hexToRgba(brandColor, 0.25),
-              },
-            ]}>
-            <PageTextIcon
-              style={{
-                color: t.scheme === 'dark' ? '#e0e7ff' : brandColor,
-              }}
-              size="sm"
-            />
-            <Text
-              style={[
-                styles.statPillLabel,
-                {
-                  color: t.scheme === 'dark' ? '#e0e7ff' : brandColor,
-                  marginTop: 2,
-                },
-              ]}>
-              Docs
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
-
-        {/* Activity Stats Row — Interactive pills */}
-        <View style={styles.voterStatsRow}>
-          <TouchableOpacity
-            accessibilityRole="button"
-            onPress={onPressRAQ}
-            style={[
-              styles.activityPill,
-              {
-                backgroundColor:
-                  t.scheme === 'dark'
-                    ? 'rgba(255,255,255,0.06)'
-                    : t.palette.primary_25,
-              },
-            ]}>
-            <Text
-              style={[
-                styles.activityPillValue,
-                {
-                  color:
-                    t.scheme === 'dark' ? '#c7d2fe' : t.palette.primary_600,
-                },
-              ]}>
-              {communityStats.raqPosts.toLocaleString()}
-            </Text>
-            <Text style={[styles.activityPillLabel, pal.textLight]}>RAQ</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            accessibilityRole="button"
-            onPress={onPressRoles}
-            style={[
-              styles.activityPill,
-              {
-                backgroundColor:
-                  t.scheme === 'dark'
-                    ? 'rgba(255,255,255,0.06)'
-                    : t.palette.primary_25,
-              },
-            ]}>
-            <Text
-              style={[
-                styles.activityPillValue,
-                {
-                  color:
-                    t.scheme === 'dark' ? '#c7d2fe' : t.palette.primary_600,
-                },
-              ]}>
-              {(
-                governance.moderators.length +
-                governance.officials.length +
-                governance.deputies.length
-              ).toLocaleString()}
-            </Text>
-            <Text style={[styles.activityPillLabel, pal.textLight]}>Roles</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            accessibilityRole="button"
-            onPress={onPressVoters}
-            style={[
-              styles.activityPill,
-              {
-                backgroundColor:
-                  t.scheme === 'dark'
-                    ? 'rgba(255,255,255,0.06)'
-                    : t.palette.primary_25,
-              },
-            ]}>
-            <Text
-              style={[
-                styles.activityPillValue,
-                {
-                  color:
-                    t.scheme === 'dark' ? '#c7d2fe' : t.palette.primary_600,
-                },
-              ]}>
-              {communityStats.visiblePosters.toLocaleString()}
-            </Text>
-            <Text style={[styles.activityPillLabel, pal.textLight]}>
-              Voters
-            </Text>
-          </TouchableOpacity>
-          {isJoined && onPressCommunityChat ? (
-            <TouchableOpacity
-              accessibilityRole="button"
-              onPress={onPressCommunityChat}
-              style={[
-                styles.activityPill,
-                {
-                  backgroundColor:
-                    t.scheme === 'dark'
-                      ? hexToRgba(brandColor, 0.2)
-                      : hexToRgba(brandColor, 0.15),
-                },
-              ]}>
-              <View style={{position: 'relative'}}>
-                <Text
-                  style={[
-                    styles.activityPillValue,
-                    {
-                      color: t.scheme === 'dark' ? '#e0e7ff' : brandColor,
-                    },
-                  ]}>
-                  💬
-                </Text>
-                {unreadCount > 0 ? (
-                  <View
-                    style={{
-                      position: 'absolute',
-                      top: -6,
-                      right: -10,
-                      backgroundColor: t.palette.negative_500,
-                      borderRadius: 10,
-                      minWidth: 18,
-                      height: 18,
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      paddingHorizontal: 4,
-                    }}>
-                    <Text
-                      style={{
-                        color: '#fff',
-                        fontSize: 10,
-                        fontWeight: '700',
-                      }}>
-                      {unreadCount > 99 ? '99+' : unreadCount}
-                    </Text>
-                  </View>
-                ) : null}
-              </View>
-              <Text
-                style={[
-                  styles.activityPillLabel,
-                  {
-                    color: t.scheme === 'dark' ? '#e0e7ff' : brandColor,
-                  },
-                ]}>
-                Chat
-              </Text>
-            </TouchableOpacity>
-          ) : null}
         </View>
       </View>
-    </LinearGradient>
+    </View>
   )
 }

@@ -6,9 +6,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
-import {Trans} from '@lingui/react/macro'
+import {Trans, useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 
 import {useBottomBarOffset} from '#/lib/hooks/useBottomBarOffset'
@@ -33,12 +31,14 @@ import {CircleQuestion_Stroke2_Corner2_Rounded as QuestionIcon} from '#/componen
 import {CommunityIcon_Stroke as CommunityIcon} from '#/components/icons/Community'
 import {Compass_Stroke2_Corner0_Rounded as CompassIcon} from '#/components/icons/Compass'
 import {Image_Stroke2_Corner2_Rounded as ImageIcon} from '#/components/icons/Image'
+import {Library_Stroke2_Corner0_Rounded as LibraryIcon} from '#/components/icons/Library'
 import {Map_Stroke2_Corner0_Rounded as MapIcon} from '#/components/icons/Map'
-import {Message_Stroke2_Corner0_Rounded as MessageIcon} from '#/components/icons/Message'
 import {PageText_Stroke2_Corner0_Rounded as PageTextIcon} from '#/components/icons/Page'
 import {Pencil_Stroke2_Corner0_Rounded as PencilIcon} from '#/components/icons/Pencil'
 import {Person_Stroke2_Corner0_Rounded as PersonIcon} from '#/components/icons/Person'
 import {RaisingHand4Finger_Stroke2_Corner0_Rounded as RaisingHandIcon} from '#/components/icons/RaisingHand4Finger'
+import {Shapes_Stroke2_Corner0_Rounded as ShapesIcon} from '#/components/icons/Shapes'
+import {Tree_Stroke2_Corner0_Rounded as TreeIcon} from '#/components/icons/Tree'
 import {Verified_Stroke2_Corner2_Rounded as VerifiedIcon} from '#/components/icons/Verified'
 import * as Layout from '#/components/Layout'
 import {IS_WEB} from '#/env'
@@ -88,7 +88,7 @@ function DataCard({
 // DataScreen
 // ---------------------------------------------------------------------------
 export function DataScreen() {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const t = useTheme()
   const {gtMobile} = useBreakpoints()
   const gutters = useGutters([0, 'base'])
@@ -559,10 +559,10 @@ export function DataScreen() {
                   cardBgColor={cardBgColor}
                 />
                 <DataCard
-                  title="Discourse Analysis"
-                  onPress={() => navigation.navigate('DiscourseAnalysis')}
+                  title={l`Agora`}
+                  onPress={() => navigation.navigate('Agora')}
                   icon={
-                    <MessageIcon
+                    <LibraryIcon
                       width={48}
                       style={{color: t.palette.primary_500}}
                     />
@@ -591,6 +591,28 @@ export function DataScreen() {
                   }
                   cardBgColor={cardBgColor}
                 />
+                <DataCard
+                  title={l`Community Civic Tree`}
+                  onPress={() => navigation.navigate('CommunityCivicTree')}
+                  icon={
+                    <ShapesIcon
+                      width={48}
+                      style={{color: t.palette.primary_500}}
+                    />
+                  }
+                  cardBgColor={cardBgColor}
+                />
+                <DataCard
+                  title={l`Personal Civic Tree`}
+                  onPress={() => navigation.navigate('CivicTree')}
+                  icon={
+                    <TreeIcon
+                      width={48}
+                      style={{color: t.palette.primary_500}}
+                    />
+                  }
+                  cardBgColor={cardBgColor}
+                />
               </View>
             </View>
           </ScrollView>
@@ -606,10 +628,8 @@ export function DataScreen() {
           ]}
           onPress={handleApplyFilters}
           accessibilityRole="button"
-          accessibilityLabel={_(msg`Apply filters`)}
-          accessibilityHint={_(
-            msg`Applies the selected filters to the results`,
-          )}>
+          accessibilityLabel={l`Apply filters`}
+          accessibilityHint={l`Applies the selected filters to the results`}>
           <Text style={styles.floatingApplyText}>
             <Trans>Apply ({selectedFilters.length})</Trans>
           </Text>

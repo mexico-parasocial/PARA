@@ -616,6 +616,7 @@ export interface CommunityWikiPageRecord {
   title: string
   body: string
   threadUri?: string
+  pollUri?: string
   pinned?: boolean
   sortOrder?: number
   createdBy: string
@@ -696,6 +697,23 @@ export interface GeoPointE7 {
   lngE7: number // longitude × 10⁷
 }
 
+/**
+ * activity: the community decides to do something (can be followed).
+ * persuasion: make the case to change positions on a policy.
+ * forum: a public conversation for a place, with no decision to follow.
+ * A record without one is an activity.
+ */
+export type CabildeoKind = 'activity' | 'persuasion' | 'forum'
+
+/**
+ * The community decision a cabildeo asks its assembly to vote on. A claim
+ * only; see `assembly-decision.ts` for what can come of it.
+ */
+export interface ProtectedAction {
+  action: string
+  subject: string
+}
+
 export interface CabildeoRecord {
   title: string
   description: string
@@ -717,6 +735,9 @@ export interface CabildeoRecord {
   city?: string // City or municipality name
   neighborhood?: string // Colonia / neighborhood name
 
+  kind?: CabildeoKind
+  protectedAction?: ProtectedAction
+
   // Voting configuration
   options: CabildeoOption[]
   minQuorum?: number // Minimum number of participants required for outcome to be valid
@@ -736,14 +757,25 @@ export interface CabildeoRecord {
 }
 
 export interface CabildeoPositionRecord {
+  /** Set on positions read from the AppView; absent on one being written. */
+  uri?: string
+  author?: string
   cabildeo: string // at-uri
-  stance: 'for' | 'against' | 'amendment'
+  stance: 'for' | 'against' | 'amendment' | 'question'
   optionIndex?: number
   text: string
   createdAt: string
   compassQuadrant?: string // e.g., 'lib-left', 'auth-center'
   constructivenessScore?: number // 0.0 to 1.0 score evaluated by WorldTensor
+  /** Unweighted reactions to this position; set on positions read from the AppView. */
+  agreeCount?: number
+  disagreeCount?: number
+  passCount?: number
+  /** The viewer's own reaction, never anyone else's. */
+  viewerDirection?: PositionReaction
 }
+
+export type PositionReaction = 'agree' | 'disagree' | 'pass'
 
 export interface CabildeoVoteRecord {
   subject?: string // at-uri for the voted record; defaults to cabildeo for cabildeo option votes

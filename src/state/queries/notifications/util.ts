@@ -5,9 +5,9 @@ import {type QueryClient} from '@tanstack/react-query'
 import chunk from 'lodash.chunk'
 
 import {labelIsHideableOffense} from '#/lib/moderation'
+import {hasMutedWord, moderateNotification} from '#/lib/moderation/subjects'
 import {isInGroupedFeed} from '#/state/queries/notifications/grouped/membership'
 import {type GroupedNotificationsFeed} from '#/state/queries/notifications/grouped/types'
-import {hasMutedWord, moderateNotification} from '#/lib/moderation/subjects'
 import {app} from '#/lexicons'
 import * as bsky from '#/types/bsky'
 import {precacheProfile} from '../profile'
@@ -201,6 +201,9 @@ export function groupNotifications(
           Math.abs(ts2 - ts) < MS_2DAY &&
           notif.reason === groupedNotif.notification.reason &&
           notif.reasonSubject === groupedNotif.notification.reasonSubject &&
+          (notif.reason !== 'follow' ||
+            notif.starterPack?.uri ===
+              groupedNotif.notification.starterPack?.uri) &&
           (notif.author.did !== groupedNotif.notification.author.did ||
             notif.reason === 'subscribed-post')
         ) {

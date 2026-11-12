@@ -356,6 +356,15 @@ export async function postIdentityRequest(payload: {
   return (await res.json()) as M8IdentityRequest
 }
 
+export async function getCivicVoteEligibility(viewerDid: string) {
+  const res = await m8Fetch('/identity/civic-vote-eligibility')
+  if (!res.ok) throw new Error('Could not check civic voting eligibility.')
+  const result = (await res.json()) as {did?: string; eligible?: boolean}
+  return result.did === viewerDid && typeof result.eligible === 'boolean'
+    ? result.eligible
+    : null
+}
+
 export async function postCivicVoteProof(payload: {
   subjectUri: string
   subjectType: M8CivicVoteProof['subjectType']

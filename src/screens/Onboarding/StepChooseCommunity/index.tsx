@@ -4,7 +4,9 @@ import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
+import {findMexicanState} from '#/lib/constants/mexico'
 import {logEvent} from '#/lib/statsig/statsig'
+import {useCivicHomeState, useSetCivicHomeState} from '#/state/preferences'
 import {
   OnboardingControls,
   OnboardingDescriptionText,
@@ -58,12 +60,29 @@ export function StepChooseCommunity() {
   const t = useTheme()
   const {gtMobile} = useBreakpoints()
   const {state, dispatch} = useOnboardingInternalState()
+  const civicHomeState = useCivicHomeState()
+  const setCivicHomeState = useSetCivicHomeState()
 
   const [selected, setSelected] = useState<string | null>(
-    state.communityStepResults.selectedCommunity,
+    () =>
+      state.communityStepResults.selectedCommunity ??
+      (civicHomeState
+        ? (COMMUNITIES.find(c => findMexicanState(c.label) === civicHomeState)
+            ?.key ?? null)
+        : null),
   )
 
   const onContinue = useCallback(() => {
+    // Saved as a device preference that pre-selects state filters elsewhere.
+    // "Nacional" clears it; continuing with nothing selected keeps any
+    // earlier choice.
+    if (selected === 'nacional') {
+      setCivicHomeState(undefined)
+    } else if (selected) {
+      const label = COMMUNITIES.find(c => c.key === selected)?.label
+      const homeState = label ? findMexicanState(label) : undefined
+      if (homeState) setCivicHomeState(homeState)
+    }
     dispatch({
       type: 'setCommunityStepResults',
       selectedCommunity: selected,
@@ -72,7 +91,7 @@ export function StepChooseCommunity() {
     logEvent('onboarding:community:nextPressed', {
       community: selected ?? 'none',
     })
-  }, [dispatch, selected])
+  }, [dispatch, selected, setCivicHomeState])
 
   return (
     <View style={[a.align_start, a.gap_sm]} testID="onboardingCommunity">

@@ -15,9 +15,24 @@ import {useQueryClient} from '@tanstack/react-query'
 import {publishCabildeo} from '#/lib/api/cabildeo'
 import {
   type CabildeoAccessTier,
+  type CabildeoKind,
   type CabildeoOption,
   type CabildeoVoteVisibility,
 } from '#/lib/api/para-lexicons'
+import {
+  ASSEMBLY_ACTIONS,
+  ASSEMBLY_MIN_VOTING_HOURS,
+  ASSEMBLY_OPTIONS,
+  type AssemblyActionId,
+  assemblyDraftProblem,
+  assemblyDraftProblemText,
+  protectedActionFor,
+} from '#/lib/assembly-decision'
+import {
+  CREATABLE_KINDS,
+  kindNeedsOptions,
+  kindProblem,
+} from '#/lib/cabildeo-kind'
 import {
   CABILDEO_ACCESS_TIERS,
   getAccessTierLabel,
@@ -28,6 +43,10 @@ import {
   type PlatformNavigationProp as NavigationProp,
 } from '#/lib/routes/types'
 import {cabildeosQueryKey} from '#/state/queries/cabildeo'
+import {
+  type CommunityBoardView,
+  useCommunityBoardsQuery,
+} from '#/state/queries/community-boards'
 import {useAgent} from '#/state/session'
 import {useTheme} from '#/alf'
 import {
@@ -46,6 +65,7 @@ export function CreateCabildeoScreen(_props: Props) {
   const agent = useAgent()
   const queryClient = useQueryClient()
 
+  const [kind, setKind] = useState<CabildeoKind>('activity')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [community, setCommunity] = useState('')
@@ -64,6 +84,13 @@ export function CreateCabildeoScreen(_props: Props) {
     {label: '', description: ''},
     {label: '', description: ''},
   ])
+
+  // A decision of the community's assembly, rather than a free-form proposal.
+  const [assemblyAction, setAssemblyAction] = useState<AssemblyActionId | null>(
+    null,
+  )
+  const [assemblySubject, setAssemblySubject] = useState('')
+  const isAssembly = kind === 'activity' && assemblyAction !== null
 
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -92,9 +119,31 @@ export function CreateCabildeoScreen(_props: Props) {
       return
     }
 
-    const validOptions = options.filter(o => o.label.trim() !== '')
-    if (validOptions.length < 2) {
+    if (isAssembly) {
+      const draftProblem = assemblyDraftProblem({
+        community,
+        subject: assemblySubject,
+      })
+      if (draftProblem) {
+        Toast.show(assemblyDraftProblemText(draftProblem))
+        return
+      }
+    }
+
+    // A decision has exactly two options: approve and reject.
+    const validOptions = isAssembly
+      ? [...ASSEMBLY_OPTIONS]
+      : options.filter(o => o.label.trim() !== '')
+    const problem = kindProblem(kind, {
+      filledOptions: validOptions.length,
+      hasPlace: Boolean(geoScope?.region),
+    })
+    if (problem === 'options') {
       Toast.show('Debes proveer al menos 2 opciones')
+      return
+    }
+    if (problem === 'place') {
+      Toast.show('Un foro necesita un lugar: elige el alcance geográfico')
       return
     }
 
@@ -105,7 +154,17 @@ export function CreateCabildeoScreen(_props: Props) {
         title: title.trim(),
         description: description.trim(),
         community: community.trim(),
-        options: validOptions,
+        kind,
+        // A forum has nothing to vote on.
+        options: kindNeedsOptions(kind) ? validOptions : [],
+        ...(isAssembly && assemblyAction
+          ? {
+              protectedAction: protectedActionFor(
+                assemblyAction,
+                assemblySubject,
+              ),
+            }
+          : {}),
         phase: 'draft' as const,
         minimumViewTier,
         minimumParticipationTier,
@@ -153,6 +212,10 @@ export function CreateCabildeoScreen(_props: Props) {
     minimumViewTier,
     voteVisibility,
     options,
+    kind,
+    isAssembly,
+    assemblyAction,
+    assemblySubject,
     navigation,
     queryClient,
   ])
@@ -178,6 +241,8 @@ export function CreateCabildeoScreen(_props: Props) {
           style={styles.container}
           contentContainerStyle={styles.content}>
           <Layout.Center style={styles.center}>
+            <KindSection value={kind} onChange={setKind} />
+
             {/* Title */}
             <View style={styles.inputGroup}>
               <Text style={[styles.label, t.atoms.text]}>Título *</Text>
@@ -218,20 +283,33 @@ export function CreateCabildeoScreen(_props: Props) {
               />
             </View>
 
-            {/* Community */}
-            <View style={styles.inputGroup}>
-              <Text style={[styles.label, t.atoms.text]}>Comunidad *</Text>
-              <TextInput
-                accessibilityLabel="Text input field"
-                accessibilityHint="Enter the primary community identifier"
-                style={[styles.input, t.atoms.bg_contrast_25, t.atoms.text]}
-                placeholder="p/Jalisco"
-                placeholderTextColor={t.palette.contrast_500}
-                value={community}
-                onChangeText={setCommunity}
-                autoCapitalize="none"
+            {kind === 'activity' && (
+              <AssemblySection
+                action={assemblyAction}
+                onActionChange={setAssemblyAction}
+                subject={assemblySubject}
+                onSubjectChange={setAssemblySubject}
+                community={community}
+                onCommunityChange={setCommunity}
               />
-            </View>
+            )}
+
+            {/* Community: a decision names its board, anything else a label */}
+            {!isAssembly && (
+              <View style={styles.inputGroup}>
+                <Text style={[styles.label, t.atoms.text]}>Comunidad *</Text>
+                <TextInput
+                  accessibilityLabel="Text input field"
+                  accessibilityHint="Enter the primary community identifier"
+                  style={[styles.input, t.atoms.bg_contrast_25, t.atoms.text]}
+                  placeholder="p/Jalisco"
+                  placeholderTextColor={t.palette.contrast_500}
+                  value={community}
+                  onChangeText={setCommunity}
+                  autoCapitalize="none"
+                />
+              </View>
+            )}
 
             {/* Geo Scope Selector */}
             <GeoScopeSelector value={geoScope} onChange={setGeoScope} />
@@ -312,89 +390,91 @@ export function CreateCabildeoScreen(_props: Props) {
               onChange={setVoteVisibility}
             />
 
-            {/* Options */}
-            <View style={styles.optionsSection}>
-              <Text style={[styles.sectionTitle, t.atoms.text]}>
-                Opciones a Votar
-              </Text>
-
-              {options.map((opt, index) => (
-                <View
-                  key={index}
-                  style={[
-                    styles.optionCard,
-                    t.atoms.bg_contrast_25,
-                    {borderColor: t.palette.contrast_100},
-                  ]}>
-                  <View style={styles.optionHeader}>
-                    <Text style={[styles.optionIndex, t.atoms.text]}>
-                      Opción {index + 1}
-                    </Text>
-                    {options.length > 2 && (
-                      <TouchableOpacity
-                        accessibilityRole="button"
-                        onPress={() => handleRemoveOption(index)}>
-                        <Text
-                          style={{
-                            color: t.palette.negative_500,
-                            fontSize: 13,
-                            fontWeight: '700',
-                          }}>
-                          Eliminar
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                  <TextInput
-                    accessibilityRole="text"
-                    style={[
-                      styles.input,
-                      t.atoms.bg,
-                      t.atoms.text,
-                      {marginBottom: 8, fontWeight: '700'},
-                    ]}
-                    placeholder="Resumen corto..."
-                    placeholderTextColor={t.palette.contrast_500}
-                    value={opt.label}
-                    onChangeText={val =>
-                      handleUpdateOption(index, 'label', val)
-                    }
-                  />
-                  <TextInput
-                    accessibilityRole="text"
-                    style={[
-                      styles.input,
-                      t.atoms.bg,
-                      t.atoms.text,
-                      {minHeight: 60},
-                    ]}
-                    placeholder="Detalles de la implementación..."
-                    placeholderTextColor={t.palette.contrast_500}
-                    value={opt.description}
-                    onChangeText={val =>
-                      handleUpdateOption(index, 'description', val)
-                    }
-                    multiline
-                  />
-                </View>
-              ))}
-
-              <TouchableOpacity
-                accessibilityRole="button"
-                onPress={handleAddOption}
-                style={[
-                  styles.addOptionBtn,
-                  {borderColor: t.palette.primary_500},
-                ]}>
-                <Text
-                  style={[
-                    styles.addOptionText,
-                    {color: t.palette.primary_500},
-                  ]}>
-                  + Añadir Opción
+            {/* Options: a forum has nothing to vote on */}
+            {kindNeedsOptions(kind) && !isAssembly && (
+              <View style={styles.optionsSection}>
+                <Text style={[styles.sectionTitle, t.atoms.text]}>
+                  Opciones a Votar
                 </Text>
-              </TouchableOpacity>
-            </View>
+
+                {options.map((opt, index) => (
+                  <View
+                    key={index}
+                    style={[
+                      styles.optionCard,
+                      t.atoms.bg_contrast_25,
+                      {borderColor: t.palette.contrast_100},
+                    ]}>
+                    <View style={styles.optionHeader}>
+                      <Text style={[styles.optionIndex, t.atoms.text]}>
+                        Opción {index + 1}
+                      </Text>
+                      {options.length > 2 && (
+                        <TouchableOpacity
+                          accessibilityRole="button"
+                          onPress={() => handleRemoveOption(index)}>
+                          <Text
+                            style={{
+                              color: t.palette.negative_500,
+                              fontSize: 13,
+                              fontWeight: '700',
+                            }}>
+                            Eliminar
+                          </Text>
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                    <TextInput
+                      accessibilityRole="text"
+                      style={[
+                        styles.input,
+                        t.atoms.bg,
+                        t.atoms.text,
+                        {marginBottom: 8, fontWeight: '700'},
+                      ]}
+                      placeholder="Resumen corto..."
+                      placeholderTextColor={t.palette.contrast_500}
+                      value={opt.label}
+                      onChangeText={val =>
+                        handleUpdateOption(index, 'label', val)
+                      }
+                    />
+                    <TextInput
+                      accessibilityRole="text"
+                      style={[
+                        styles.input,
+                        t.atoms.bg,
+                        t.atoms.text,
+                        {minHeight: 60},
+                      ]}
+                      placeholder="Detalles de la implementación..."
+                      placeholderTextColor={t.palette.contrast_500}
+                      value={opt.description}
+                      onChangeText={val =>
+                        handleUpdateOption(index, 'description', val)
+                      }
+                      multiline
+                    />
+                  </View>
+                ))}
+
+                <TouchableOpacity
+                  accessibilityRole="button"
+                  onPress={handleAddOption}
+                  style={[
+                    styles.addOptionBtn,
+                    {borderColor: t.palette.primary_500},
+                  ]}>
+                  <Text
+                    style={[
+                      styles.addOptionText,
+                      {color: t.palette.primary_500},
+                    ]}>
+                    + Añadir Opción
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
 
             <TouchableOpacity
               accessibilityRole="button"
@@ -421,6 +501,199 @@ export function CreateCabildeoScreen(_props: Props) {
         </ScrollView>
       </KeyboardAvoidingView>
     </Layout.Screen>
+  )
+}
+
+const KIND_COPY: Record<CabildeoKind, {title: string; description: string}> = {
+  activity: {
+    title: 'Propuesta de actividad',
+    description:
+      'La comunidad decide hacer algo y vota entre opciones. El resultado puede tener seguimiento.',
+  },
+  forum: {
+    title: 'Foro',
+    description:
+      'Una conversación pública sobre un lugar. No hay opciones que votar; quienes organizan pueden escribir una conclusión.',
+  },
+  persuasion: {title: 'Convencer', description: ''},
+}
+
+function KindSection({
+  value,
+  onChange,
+}: {
+  value: CabildeoKind
+  onChange: (value: CabildeoKind) => void
+}) {
+  const t = useTheme()
+  return (
+    <View style={styles.inputGroup}>
+      <Text style={[styles.label, t.atoms.text]}>Tipo de cabildeo</Text>
+      {CREATABLE_KINDS.map(kind => {
+        const selected = kind === value
+        return (
+          <TouchableOpacity
+            key={kind}
+            accessibilityRole="radio"
+            accessibilityState={{selected}}
+            accessibilityLabel={KIND_COPY[kind].title}
+            accessibilityHint={KIND_COPY[kind].description}
+            activeOpacity={0.8}
+            onPress={() => onChange(kind)}
+            style={[
+              styles.toggleCard,
+              {marginBottom: 8},
+              selected
+                ? {
+                    backgroundColor: t.palette.primary_500 + '15',
+                    borderColor: t.palette.primary_500,
+                  }
+                : t.atoms.bg_contrast_25,
+            ]}>
+            <Text style={[styles.toggleLabel, t.atoms.text]}>
+              {KIND_COPY[kind].title}
+            </Text>
+            <Text style={[styles.toggleSub, t.atoms.text_contrast_medium]}>
+              {KIND_COPY[kind].description}
+            </Text>
+          </TouchableOpacity>
+        )
+      })}
+    </View>
+  )
+}
+
+function AssemblySection({
+  action,
+  onActionChange,
+  subject,
+  onSubjectChange,
+  community,
+  onCommunityChange,
+}: {
+  action: AssemblyActionId | null
+  onActionChange: (value: AssemblyActionId | null) => void
+  subject: string
+  onSubjectChange: (value: string) => void
+  community: string
+  onCommunityChange: (value: string) => void
+}) {
+  const t = useTheme()
+  const boards = useCommunityBoardsQuery({limit: 50}, action !== null)
+  const mine: CommunityBoardView[] = (boards.data?.boards ?? []).filter(
+    board => board.viewerMembershipState === 'active',
+  )
+  const selected = ASSEMBLY_ACTIONS.find(item => item.id === action)
+
+  return (
+    <View style={styles.inputGroup}>
+      <Text style={[styles.label, t.atoms.text]}>Decisión de asamblea</Text>
+      <Text style={[styles.accessDescription, t.atoms.text_contrast_medium]}>
+        La asamblea de una comunidad vota y, si aprueba, la decisión se aplica
+        sola. La votación debe durar al menos {ASSEMBLY_MIN_VOTING_HOURS} horas.
+        Sin esto, el cabildeo es una propuesta que no cambia a nadie.
+      </Text>
+      {[
+        {id: null, title: 'Propuesta libre', description: ''},
+        ...ASSEMBLY_ACTIONS,
+      ].map(item => {
+        const isSelected = item.id === action
+        return (
+          <TouchableOpacity
+            key={item.id ?? 'none'}
+            accessibilityRole="radio"
+            accessibilityState={{selected: isSelected}}
+            accessibilityLabel={item.title}
+            accessibilityHint={item.description}
+            activeOpacity={0.8}
+            onPress={() => onActionChange(item.id)}
+            style={[
+              styles.toggleCard,
+              {marginBottom: 8},
+              isSelected
+                ? {
+                    backgroundColor: t.palette.primary_500 + '15',
+                    borderColor: t.palette.primary_500,
+                  }
+                : t.atoms.bg_contrast_25,
+            ]}>
+            <Text style={[styles.toggleLabel, t.atoms.text]}>{item.title}</Text>
+            {item.description ? (
+              <Text style={[styles.toggleSub, t.atoms.text_contrast_medium]}>
+                {item.description}
+              </Text>
+            ) : null}
+          </TouchableOpacity>
+        )
+      })}
+
+      {selected && (
+        <>
+          <Text style={[styles.label, t.atoms.text, {marginTop: 8}]}>
+            Comunidad *
+          </Text>
+          {mine.length === 0 ? (
+            <Text
+              style={[styles.accessDescription, t.atoms.text_contrast_medium]}>
+              {boards.isLoading
+                ? 'Cargando tus comunidades...'
+                : 'Solo puedes pedir una decisión en una comunidad de la que eres miembro.'}
+            </Text>
+          ) : (
+            <View style={styles.accessTierGrid}>
+              {mine.map(board => {
+                const isSelected = board.uri === community
+                return (
+                  <TouchableOpacity
+                    key={board.uri}
+                    accessibilityRole="button"
+                    accessibilityState={{selected: isSelected}}
+                    onPress={() => onCommunityChange(board.uri)}
+                    style={[
+                      styles.accessTierPill,
+                      isSelected
+                        ? {backgroundColor: t.palette.primary_500}
+                        : t.atoms.bg_contrast_25,
+                    ]}>
+                    <Text
+                      style={[
+                        styles.accessTierText,
+                        isSelected ? {color: 'white'} : t.atoms.text,
+                      ]}>
+                      {board.name}
+                    </Text>
+                  </TouchableOpacity>
+                )
+              })}
+            </View>
+          )}
+
+          <Text style={[styles.label, t.atoms.text, {marginTop: 12}]}>
+            {selected.subjectLabel} *
+          </Text>
+          <TextInput
+            accessibilityLabel={selected.subjectLabel}
+            accessibilityHint="Escribe el identificador DID de la persona"
+            style={[styles.input, t.atoms.bg_contrast_25, t.atoms.text]}
+            placeholder="did:plc:..."
+            placeholderTextColor={t.palette.contrast_500}
+            value={subject}
+            onChangeText={onSubjectChange}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <Text
+            style={[
+              styles.accessDescription,
+              t.atoms.text_contrast_medium,
+              {marginTop: 8},
+            ]}>
+            Las opciones son fijas: Aprobar y Rechazar. No edites el cabildeo
+            una vez abierta la votación: si cambia, su resultado deja de valer.
+          </Text>
+        </>
+      )}
+    </View>
   )
 }
 

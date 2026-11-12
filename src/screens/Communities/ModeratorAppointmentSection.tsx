@@ -17,7 +17,10 @@ import {
   useCommunityBoardQuery,
   useCommunityMembersQuery,
 } from '#/state/queries/community-boards'
-import {useCommunityRoleActions} from '#/state/queries/community-roles'
+import {
+  useCommunityOpenOffersQuery,
+  useCommunityRoleActions,
+} from '#/state/queries/community-roles'
 import {useTheme} from '#/alf'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
@@ -25,9 +28,10 @@ import {Text} from '#/components/Typography'
 const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e))
 
 /**
- * Appointing a moderator takes consent: the owner offers, the person accepts,
- * the owner publishes the appointment. This shows each person the step that is
- * theirs. The AppView checks every record, so a button here only writes one.
+ * Appointing a moderator takes consent: the owner offers and the person
+ * accepts, which makes them a moderator. This shows each person the step that
+ * is theirs. The community's host decides every action, so a button here only
+ * asks.
  */
 export function ModeratorAppointmentSection({
   governance,
@@ -47,7 +51,7 @@ export function ModeratorAppointmentSection({
   })
   const {viewerDid} = actions
   const holders = governance.roleHolders ?? []
-  const offers = governance.roleOffers ?? []
+  const {data: offers = []} = useCommunityOpenOffersQuery(board.data?.board.uri)
   const isOwner = holdsVerifiedRole(governance, viewerDid, ['owner'])
   const myModeratorRole = holders.find(
     holder => holder.did === viewerDid && holder.role === 'moderator',
@@ -71,7 +75,7 @@ export function ModeratorAppointmentSection({
     !isOwner &&
     !myModeratorRole &&
     incoming.length === 0 &&
-    outgoing.waiting.length + outgoing.accepted.length === 0
+    outgoing.length === 0
   ) {
     return null
   }
@@ -83,15 +87,15 @@ export function ModeratorAppointmentSection({
       </Text>
 
       {incoming.map(offer => (
-        <View key={offer.uri} style={styles.block}>
+        <View key={offer.seq} style={styles.block}>
           <Text style={[styles.body, t.atoms.text]}>
-            El titular te ofreció ser moderador. Si aceptas, podrá publicar tu
-            nombramiento; puedes renunciar cuando quieras.
+            El titular te ofreció ser moderador. Si aceptas, el cargo es tuyo de
+            inmediato; puedes renunciar cuando quieras.
           </Text>
           <Action
             label="Aceptar el cargo"
             busy={actions.accept.isPending}
-            onPress={() => run(actions.accept, offer, 'Aceptaste la oferta')}
+            onPress={() => run(actions.accept, offer, 'Ahora eres moderador')}
           />
         </View>
       ))}
@@ -100,26 +104,15 @@ export function ModeratorAppointmentSection({
         <ResignRow
           busy={actions.resign.isPending}
           onConfirm={() =>
-            run(actions.resign, myModeratorRole, 'Renunciaste al cargo')
+            run(actions.resign, undefined, 'Renunciaste al cargo')
           }
         />
       )}
 
       {isOwner && (
         <>
-          {outgoing.accepted.map(offer => (
-            <OfferRow
-              key={offer.uri}
-              offer={offer}
-              state="accepted"
-              busy={actions.appoint.isPending}
-              onPublish={() =>
-                run(actions.appoint, offer, 'Nombramiento publicado')
-              }
-            />
-          ))}
-          {outgoing.waiting.map(offer => (
-            <OfferRow key={offer.uri} offer={offer} state="waiting" />
+          {outgoing.map(offer => (
+            <OfferRow key={offer.seq} offer={offer} />
           ))}
           {moderators.map(holder => (
             <ModeratorRow
@@ -254,39 +247,16 @@ function ModeratorRow({
   )
 }
 
-function OfferRow({
-  offer,
-  state,
-  busy,
-  onPublish,
-}: {
-  offer: CommunityRoleOffer
-  state: 'waiting' | 'accepted'
-  busy?: boolean
-  onPublish?: () => void
-}) {
+function OfferRow({offer}: {offer: CommunityRoleOffer}) {
   const t = useTheme()
   return (
     <View style={styles.block}>
       <Text style={[styles.mono, t.atoms.text_contrast_medium]} selectable>
         {offer.subject}
       </Text>
-      {state === 'waiting' ? (
-        <Text style={[styles.hint, t.atoms.text_contrast_medium]}>
-          Esperando respuesta.
-        </Text>
-      ) : (
-        <>
-          <Text style={[styles.hint, t.atoms.text_contrast_medium]}>
-            Aceptó. Falta publicar el nombramiento.
-          </Text>
-          <Action
-            label="Publicar nombramiento"
-            busy={busy}
-            onPress={onPublish ?? (() => undefined)}
-          />
-        </>
-      )}
+      <Text style={[styles.hint, t.atoms.text_contrast_medium]}>
+        Esperando respuesta.
+      </Text>
     </View>
   )
 }

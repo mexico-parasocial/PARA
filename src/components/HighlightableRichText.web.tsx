@@ -113,7 +113,7 @@ let HighlightableRichText = ({
     [persistSelectedHighlight],
   )
 
-  const {sendToAgent, saveToCivicTree} = useHighlightQuickActions({
+  const {saveToCivicTree} = useHighlightQuickActions({
     postUri,
     persistHighlight: persistHighlightAction,
     onDone: finishHighlightAction,
@@ -326,9 +326,6 @@ let HighlightableRichText = ({
         onClose={handleClose}
         onSave={(color, isPublic, tag) => {
           void handleSave(color, isPublic, tag)
-        }}
-        onSendToAgent={payload => {
-          void sendToAgent(payload)
         }}
         onSaveToCivicTree={payload => {
           void saveToCivicTree(payload)

@@ -12,6 +12,7 @@ import {
 } from '#/lib/constants/electoralDistrictsData'
 import {normalizeMexicoStateName} from '#/lib/constants/mexico'
 import {STATE_DEMOGRAPHICS} from '#/lib/constants/mockData'
+import {partyTextColor, partyTint} from '#/lib/parties/partyColors'
 import {
   type CommonNavigatorParams,
   type NativeStackScreenProps,
@@ -31,18 +32,8 @@ import {MapCivicDataNotice, MapReferenceNotice} from './MapDataNotice'
 type Props = NativeStackScreenProps<CommonNavigatorParams, 'DistrictProfile'>
 type DistrictTab = 'overview' | 'activity'
 
-const PARTY_COLORS: Record<string, {bg: string; fg: string}> = {
-  Morena: {bg: '#8B153820', fg: '#8B1538'},
-  PAN: {bg: '#00308720', fg: '#003087'},
-  PRI: {bg: '#00923F20', fg: '#00923F'},
-  MC: {bg: '#FF6B0020', fg: '#FF6B00'},
-  PVEM: {bg: '#228B2220', fg: '#228B22'},
-  PT: {bg: '#FF000020', fg: '#FF0000'},
-  PRD: {bg: '#FFD70030', fg: '#B8860B'},
-}
-
 function getPartyColors(party: string) {
-  return PARTY_COLORS[party] || {bg: '#6B728020', fg: '#6B7280'}
+  return {bg: partyTint(party), fg: partyTextColor(party)}
 }
 
 function seededRandom(seed: number) {

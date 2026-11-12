@@ -36,6 +36,7 @@ import {
 import * as Layout from '#/components/Layout'
 import {LinearGradientBackground} from '#/components/LinearGradientBackground'
 import {ListMaybePlaceholder} from '#/components/Lists'
+import {PostFlairStrip} from '#/components/Post/PostFlairStrip'
 import {Text} from '#/components/Typography'
 import {formatPolicyDate, getPolicyPostParts} from './PolicyCard'
 import {PolicyCommunityVotes} from './PolicyCommunityVotes'
@@ -230,39 +231,10 @@ export function PolicyDetailsScreen({route, navigation}: Props) {
             />
             <View style={[a.p_xl, a.gap_md]}>
               <View style={[a.flex_row, a.align_center, a.gap_sm, a.flex_wrap]}>
-                {badges.slice(0, 2).map(badge => (
-                  <View
-                    key={badge.key}
-                    style={[
-                      a.rounded_xs,
-                      {
-                        backgroundColor: badge.bgColor,
-                        paddingHorizontal: 10,
-                        paddingVertical: 4,
-                      },
-                    ]}>
-                    <Text
-                      style={[a.text_xs, a.font_bold, {color: badge.color}]}>
-                      {badge.label}
-                    </Text>
-                  </View>
-                ))}
-                {matter ? (
-                  <View
-                    style={[
-                      a.rounded_xs,
-                      {
-                        backgroundColor: matter.color + '22',
-                        paddingHorizontal: 10,
-                        paddingVertical: 4,
-                      },
-                    ]}>
-                    <Text
-                      style={[a.text_xs, a.font_bold, {color: matter.color}]}>
-                      {matter.label}
-                    </Text>
-                  </View>
-                ) : null}
+                <PostFlairStrip
+                  badges={badges.filter(badge => badge.kind !== 'postType')}
+                  compact
+                />
                 {tally?.official ? (
                   <Text
                     style={[

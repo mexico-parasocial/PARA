@@ -77,8 +77,6 @@ export const LINKING = {
         name === 'MessagesSettings' ||
         name === 'MessagesInbox' ||
         name === 'MessagesJoinRequests' ||
-        name === 'AgentChat' ||
-        name === 'CommunityAgentProfile' ||
         name === 'CommunityChat'
       ) {
         return buildStateObject('MessagesTab', name, params)

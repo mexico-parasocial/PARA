@@ -8,6 +8,7 @@ import {
   type PlatformNavigationProp as NavigationProp,
 } from '#/lib/routes/types'
 import {useCabildeosQuery} from '#/state/queries/cabildeo'
+import {usePolicyBallotsQuery} from '#/state/queries/policy-ledger'
 import {useProfileQuery} from '#/state/queries/profile'
 import {useSession} from '#/state/session'
 import {usePoliticalAffiliation} from '#/state/shell/political-affiliation'
@@ -37,10 +38,9 @@ export function MyBaseScreen() {
   const {data: cabildeos = []} = useCabildeosQuery()
   const {affiliations} = usePoliticalAffiliation()
 
-  const votedCount = useMemo(() => {
-    return cabildeos.filter(c => c.userContext?.viewerVoteOption !== undefined)
-      .length
-  }, [cabildeos])
+  // The same ballots the vote ledger lists, so the count matches it.
+  const {data: policyBallots} = usePolicyBallotsQuery(currentDid)
+  const votedCount = policyBallots?.ballots.length ?? 0
   const civicWeight = useMemo(() => deriveCivicWeight(cabildeos), [cabildeos])
 
   if (!currentAccount) {

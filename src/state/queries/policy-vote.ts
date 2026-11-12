@@ -2,8 +2,10 @@ import {type AtIdentifierString} from '@atproto/syntax'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
 import {castPolicyVote} from '#/lib/api/policy-vote'
+import {selectCurrentPolicyBallots} from '#/lib/policy-ledger'
 import {STALE} from '#/state/queries'
 import {policyCommunityVotesQueryRoot} from '#/state/queries/policy-community-votes'
+import {policyBallotsQueryKey} from '#/state/queries/policy-ledger'
 import {policyTallyQueryKey} from '#/state/queries/policy-tally'
 import {useAgent, useSession} from '#/state/session'
 import {com} from '#/lexicons'
@@ -33,24 +35,10 @@ export function useViewerPolicySignalsQuery() {
         repo: did as AtIdentifierString,
         collection: 'com.para.civic.vote',
         limit: 100,
-        reverse: true,
       })
       const signals: PolicySignals = {}
-      for (const record of res.records) {
-        const value = record.value as {
-          subject?: unknown
-          subjectType?: unknown
-          signal?: unknown
-        }
-        if (
-          value.subjectType !== 'policy' ||
-          typeof value.subject !== 'string' ||
-          typeof value.signal !== 'number'
-        ) {
-          continue
-        }
-        // Newest first: keep only the latest ballot per policy.
-        if (!(value.subject in signals)) signals[value.subject] = value.signal
+      for (const ballot of selectCurrentPolicyBallots(res.records)) {
+        signals[ballot.policyUri] = ballot.signal
       }
       return signals
     },
@@ -79,6 +67,9 @@ export function usePolicyVoteMutation() {
       })
       void queryClient.invalidateQueries({
         queryKey: [policyCommunityVotesQueryRoot, did, policyUri],
+      })
+      void queryClient.invalidateQueries({
+        queryKey: policyBallotsQueryKey(did),
       })
     },
   })

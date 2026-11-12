@@ -1,8 +1,10 @@
-import {StyleSheet, TouchableOpacity, View} from 'react-native'
-import {useLingui} from '@lingui/react'
+import {Pressable, StyleSheet, View} from 'react-native'
+import {Image} from 'expo-image'
+import {LinearGradient} from 'expo-linear-gradient'
+import {useLingui} from '@lingui/react/macro'
 
+import {toDeviceReachableUri} from '#/lib/media/localDevUri'
 import {type PoliticalAffiliation} from '#/lib/political-affiliations'
-import {Text} from '#/view/com/util/text/Text'
 import {UserAvatar} from '#/view/com/util/UserAvatar'
 import {atoms as a, useTheme} from '#/alf'
 import {CompassMini} from '#/components/CompassMini'
@@ -12,8 +14,11 @@ import {ChainLink_Stroke2_Corner0_Rounded as ChainLinkIcon} from '#/components/i
 import {CommunityIcon_Stroke as CommunityIcon} from '#/components/icons/Community'
 import {SettingsGear2_Stroke2_Corner0_Rounded as SettingsIcon} from '#/components/icons/Settings'
 import * as Layout from '#/components/Layout'
+import {Text} from '#/components/Typography'
 import {type app} from '#/lexicons'
 import {type CivicWeight} from '../mybase-metrics'
+
+const RING = 4
 
 export function MyBaseHero({
   profile,
@@ -35,122 +40,153 @@ export function MyBaseHero({
   gtMobile?: boolean
 }) {
   const t = useTheme()
-  const {i18n} = useLingui()
-  const formatCount = (v: number | undefined | null) => i18n.number(v ?? 0)
+  const {t: l, i18n} = useLingui()
 
-  const profileHandle = profile?.handle
-  const profileHandleText = profileHandle ? `@${profileHandle}` : '@para'
-  const profileDisplayName = profile?.displayName || profile?.handle || 'User'
+  const avatarSize = gtMobile ? 104 : 88
+  const bannerHeight = gtMobile ? 168 : 132
+  const displayName = profile.displayName || profile.handle
+  const banner = toDeviceReachableUri(profile.banner)
+
+  // The banner fallback fades from the brand color into the viewer's own
+  // affiliation color (ninth first, then party), so the header reflects
+  // their position without hardcoding any compass color here.
+  const accent =
+    affiliations.find(af => af.type === 'ninth')?.color ??
+    affiliations.find(af => af.type === 'party')?.color ??
+    t.palette.primary_300
 
   return (
     <Layout.Center>
       <View style={t.atoms.bg}>
-        {/* Banner / top bar */}
-        <View
-          style={[
-            styles.headerTopBar,
-            {backgroundColor: t.palette.primary_500}, // Brand color for banner
-          ]}>
-          <View style={[a.flex_row, {width: '100%', alignItems: 'center'}]}>
-            <TouchableOpacity
-              accessibilityRole="button"
-              onPress={onPressBack}
-              hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
-              <BackIcon size="md" style={{color: 'white'}} />
-            </TouchableOpacity>
-            <View style={{flex: 1}} />
-            <TouchableOpacity
-              accessibilityRole="button"
-              onPress={onPressCommunities}
-              hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}
-              style={{marginRight: 12}}>
-              <CommunityIcon size="md" style={{color: 'white'}} />
-            </TouchableOpacity>
-            <TouchableOpacity
-              accessibilityRole="button"
-              onPress={onPressSettings}
-              hitSlop={{top: 8, bottom: 8, left: 8, right: 8}}>
-              <SettingsIcon size="md" style={{color: 'white'}} />
-            </TouchableOpacity>
+        {/* Banner */}
+        <View style={[{height: bannerHeight}, styles.banner]}>
+          {banner ? (
+            <Image
+              source={{uri: banner}}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              accessibilityIgnoresInvertColors
+            />
+          ) : (
+            <LinearGradient
+              colors={[t.palette.primary_700, t.palette.primary_500, accent]}
+              locations={[0, 0.55, 1]}
+              start={{x: 0, y: 0}}
+              end={{x: 1, y: 1}}
+              style={StyleSheet.absoluteFill}
+            />
+          )}
+          {/* Keeps the top buttons legible over any banner image. */}
+          <LinearGradient
+            colors={['rgba(0,0,0,0.35)', 'rgba(0,0,0,0)']}
+            style={styles.bannerScrim}
+            pointerEvents="none"
+          />
+          <View style={[a.flex_row, a.align_center, a.gap_sm, styles.topBar]}>
+            <BannerButton label={l`Go back`} onPress={onPressBack}>
+              <BackIcon size="md" style={styles.bannerIcon} />
+            </BannerButton>
+            <View style={a.flex_1} />
+            <BannerButton
+              label={l`My communities`}
+              onPress={onPressCommunities}>
+              <CommunityIcon size="md" style={styles.bannerIcon} />
+            </BannerButton>
+            <BannerButton label={l`Account settings`} onPress={onPressSettings}>
+              <SettingsIcon size="md" style={styles.bannerIcon} />
+            </BannerButton>
           </View>
         </View>
 
-        {/* Profile block */}
-        <View
-          style={[
-            styles.headerProfileBlock,
-            gtMobile && styles.headerProfileBlockWeb,
-          ]}>
-          {/* Top row: Avatar + Identity + Compass */}
-          <View style={[styles.headerTopRow, gtMobile && a.align_center]}>
+        <View style={[gtMobile ? a.px_xl : a.px_lg, a.pb_lg]}>
+          {/* Avatar (across the banner's lower edge), identity, compass. */}
+          <View style={[a.flex_row, a.align_start, a.gap_md]}>
             <View
               style={[
-                styles.headerAvatarWrap,
-                {borderColor: t.atoms.bg.backgroundColor},
+                {
+                  marginTop: -(avatarSize / 2 + RING),
+                  padding: RING,
+                  borderRadius: avatarSize / 2 + RING,
+                },
+                t.atoms.bg,
               ]}>
               <UserAvatar
-                avatar={profile?.avatar}
-                size={84}
-                type={profile?.associated?.labeler ? 'labeler' : 'user'}
+                avatar={profile.avatar}
+                size={avatarSize}
+                type={profile.associated?.labeler ? 'labeler' : 'user'}
               />
             </View>
 
-            <View style={styles.headerIdentityColumn}>
-              <View
+            <View style={[a.flex_1, a.gap_2xs, a.pt_sm, {minWidth: 0}]}>
+              <Text
+                emoji
+                numberOfLines={1}
                 style={[
-                  a.flex_row,
-                  a.align_center,
-                  {flexWrap: 'wrap', gap: 6},
+                  a.text_2xl,
+                  a.font_bold,
+                  a.leading_tight,
+                  t.atoms.text,
                 ]}>
-                <Text style={[styles.headerName, t.atoms.text]}>
-                  {profileDisplayName}
-                </Text>
-              </View>
-
-              <Text style={[styles.headerHandle, t.atoms.text_contrast_medium]}>
-                {profileHandleText}
+                {displayName}
               </Text>
-
-              <View style={[styles.affiliationBadge, t.atoms.bg_contrast_25]}>
-                <Text
-                  style={[
-                    styles.affiliationText,
-                    {color: t.palette.primary_500},
-                  ]}>
-                  {getAffiliationSummary(affiliations)}
-                </Text>
-              </View>
+              <Text
+                numberOfLines={1}
+                style={[a.text_md, t.atoms.text_contrast_medium]}>
+                @{profile.handle}
+              </Text>
             </View>
 
-            <CompassMini
-              affiliations={affiliations}
-              onPress={onPressCompass}
-              size={gtMobile ? 84 : 72}
-              compact
-            />
+            <View style={a.pt_sm}>
+              <CompassMini
+                affiliations={affiliations}
+                onPress={onPressCompass}
+                size={gtMobile ? 84 : 72}
+                compact
+              />
+            </View>
           </View>
 
-          {/* Civic Weight Breakdown (Replaces Social Metrics) */}
-          <View
-            style={[
-              styles.civicWeightRow,
-              {borderTopColor: t.atoms.border_contrast_low.borderColor},
-            ]}>
-            <CivicMetricItem
-              label="Direct Power"
-              value={formatCount(civicWeight.directPower)}
+          <View style={[a.flex_row, a.flex_wrap, a.gap_xs, a.mt_md]}>
+            {affiliations.length > 0 ? (
+              affiliations.map(affiliation => (
+                <AffiliationChip
+                  key={affiliation.id}
+                  affiliation={affiliation}
+                  onPress={onPressCompass}
+                />
+              ))
+            ) : (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={l`Choose your affiliations`}
+                accessibilityHint=""
+                onPress={onPressCompass}
+                style={[
+                  a.px_md,
+                  a.py_xs,
+                  a.rounded_full,
+                  a.border,
+                  t.atoms.border_contrast_medium,
+                  {borderStyle: 'dashed'},
+                ]}>
+                <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
+                  {l`Choose your affiliations`}
+                </Text>
+              </Pressable>
+            )}
+          </View>
+
+          {/* Civic weight */}
+          <View style={[a.flex_row, a.gap_sm, a.mt_lg]}>
+            <CivicMetric
               icon="direct"
+              value={i18n.number(civicWeight.directPower)}
+              label={l`Direct power`}
             />
-            <View
-              style={[
-                styles.metricDivider,
-                {backgroundColor: t.atoms.border_contrast_low.borderColor},
-              ]}
-            />
-            <CivicMetricItem
-              label="Delegated Power"
-              value={formatCount(civicWeight.delegatedPower)}
+            <CivicMetric
               icon="delegated"
+              value={i18n.number(civicWeight.delegatedPower)}
+              label={l`Delegated power`}
             />
           </View>
         </View>
@@ -159,29 +195,113 @@ export function MyBaseHero({
   )
 }
 
-function CivicMetricItem({
+function BannerButton({
   label,
-  value,
-  icon,
+  onPress,
+  children,
 }: {
   label: string
-  value: string
-  icon: 'direct' | 'delegated'
+  onPress: () => void
+  children: React.ReactNode
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityHint=""
+      onPress={onPress}
+      hitSlop={6}
+      style={({pressed}) => [
+        a.align_center,
+        a.justify_center,
+        a.rounded_full,
+        styles.bannerButton,
+        pressed && styles.bannerButtonPressed,
+      ]}>
+      {children}
+    </Pressable>
+  )
+}
+
+function AffiliationChip({
+  affiliation,
+  onPress,
+}: {
+  affiliation: PoliticalAffiliation
+  onPress: () => void
 }) {
   const t = useTheme()
-  const iconColor = t.atoms.text.color
+  const {t: l} = useLingui()
+  const kind = affiliation.type === 'party' ? l`Party` : l`Compass position`
   return (
-    <View style={styles.civicMetricItem}>
-      <View style={styles.civicMetricIconWrap}>
-        {icon === 'direct' ? (
-          <ListIcon size="sm" style={{color: iconColor}} />
-        ) : (
-          <ChainLinkIcon size="sm" style={{color: iconColor}} />
-        )}
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${affiliation.name}, ${kind}`}
+      accessibilityHint={l`Opens your affiliations`}
+      onPress={onPress}
+      style={[
+        a.flex_row,
+        a.align_center,
+        a.gap_xs,
+        a.pl_sm,
+        a.pr_md,
+        a.py_xs,
+        a.rounded_full,
+        t.atoms.bg_contrast_25,
+      ]}>
+      <View
+        style={[
+          a.rounded_full,
+          styles.chipDot,
+          {backgroundColor: affiliation.color},
+        ]}
+      />
+      <Text style={[a.text_sm, a.font_bold, t.atoms.text]}>
+        {affiliation.name}
+      </Text>
+    </Pressable>
+  )
+}
+
+function CivicMetric({
+  icon,
+  value,
+  label,
+}: {
+  icon: 'direct' | 'delegated'
+  value: string
+  label: string
+}) {
+  const t = useTheme()
+  const Icon = icon === 'direct' ? ListIcon : ChainLinkIcon
+  return (
+    <View
+      style={[
+        a.flex_1,
+        a.flex_row,
+        a.align_center,
+        a.gap_md,
+        a.p_md,
+        a.rounded_md,
+        t.atoms.bg_contrast_25,
+      ]}>
+      <View
+        style={[
+          a.align_center,
+          a.justify_center,
+          a.rounded_full,
+          styles.metricIcon,
+          {backgroundColor: t.palette.primary_50},
+        ]}>
+        <Icon size="sm" style={{color: t.palette.primary_500}} />
       </View>
-      <View style={styles.civicMetricTextWrap}>
-        <Text style={[styles.civicMetricValue, t.atoms.text]}>{value}</Text>
-        <Text style={[styles.civicMetricLabel, t.atoms.text_contrast_medium]}>
+      <View style={[a.flex_1]}>
+        <Text style={[a.text_xl, a.font_bold, a.leading_tight, t.atoms.text]}>
+          {value}
+        </Text>
+        <Text
+          numberOfLines={1}
+          style={[a.text_xs, a.font_semi_bold, t.atoms.text_contrast_medium]}>
           {label}
         </Text>
       </View>
@@ -189,104 +309,38 @@ function CivicMetricItem({
   )
 }
 
-function getAffiliationSummary(affiliations: PoliticalAffiliation[]) {
-  if (affiliations.length === 0) {
-    return 'No affiliations selected'
-  }
-  return affiliations
-    .slice(0, 2)
-    .map(affiliation => affiliation.name)
-    .join(' · ')
-}
-
 const styles = StyleSheet.create({
-  headerTopBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 14,
-    paddingBottom: 64,
+  banner: {
+    overflow: 'hidden',
   },
-  headerProfileBlock: {
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 16,
+  bannerScrim: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 72,
   },
-  headerProfileBlockWeb: {
-    paddingHorizontal: 24,
-    paddingBottom: 20,
-  },
-  headerAvatarWrap: {
-    marginTop: -48,
-    borderWidth: 4,
-    borderRadius: 44,
-  },
-  headerTopRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 14,
-  },
-  headerIdentityColumn: {
-    flex: 1,
-    paddingTop: 4,
-    minWidth: 0,
-  },
-  headerName: {
-    fontSize: 22,
-    fontWeight: '800',
-    lineHeight: 27,
-  },
-  headerHandle: {
-    fontSize: 15,
-    marginTop: 2,
-  },
-  affiliationBadge: {
-    marginTop: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-  },
-  affiliationText: {
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  civicWeightRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-    paddingTop: 16,
-    borderTopWidth: 1,
-  },
-  metricDivider: {
-    width: 1,
-    height: '100%',
-  },
-  civicMetricItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    flex: 1,
-    justifyContent: 'center',
+  topBar: {
     paddingHorizontal: 12,
+    paddingTop: 12,
   },
-  civicMetricIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
+  bannerButton: {
+    width: 38,
+    height: 38,
+    backgroundColor: 'rgba(0,0,0,0.32)',
   },
-  civicMetricTextWrap: {
-    flex: 1,
+  bannerButtonPressed: {
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
-  civicMetricValue: {
-    fontSize: 16,
-    fontWeight: '800',
+  bannerIcon: {
+    color: 'white',
   },
-  civicMetricLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    marginTop: 2,
+  chipDot: {
+    width: 10,
+    height: 10,
+  },
+  metricIcon: {
+    width: 36,
+    height: 36,
   },
 })

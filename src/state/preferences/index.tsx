@@ -2,6 +2,7 @@ import {type PropsWithChildren} from 'react'
 
 import {Provider as AltTextRequiredProvider} from './alt-text-required'
 import {Provider as AutoplayProvider} from './autoplay'
+import {Provider as CivicHomeProvider} from './civic-home'
 import {Provider as DisableHapticsProvider} from './disable-haptics'
 import {Provider as ExternalEmbedsProvider} from './external-embeds-prefs'
 import {Provider as HiddenPostsProvider} from './hidden-posts'
@@ -20,6 +21,7 @@ export {
   useSetRequireAltTextEnabled,
 } from './alt-text-required'
 export {useAutoplayDisabled, useSetAutoplayDisabled} from './autoplay'
+export {useCivicHomeState, useSetCivicHomeState} from './civic-home'
 export {useHapticsDisabled, useSetHapticsDisabled} from './disable-haptics'
 export {
   useExternalEmbedsPrefs,
@@ -50,7 +52,11 @@ export function Provider({children}: PropsWithChildren<{}>) {
                         <TrendingSettingsProvider>
                           <ShowPartyShieldsProvider>
                             <ShowAuthorInsigniasProvider>
-                              <KawaiiProvider>{children}</KawaiiProvider>
+                              <KawaiiProvider>
+                                <CivicHomeProvider>
+                                  {children}
+                                </CivicHomeProvider>
+                              </KawaiiProvider>
                             </ShowAuthorInsigniasProvider>
                           </ShowPartyShieldsProvider>
                         </TrendingSettingsProvider>

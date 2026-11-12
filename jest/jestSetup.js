@@ -5,6 +5,14 @@ import {configure} from '@testing-library/react-native'
 
 configure({asyncUtilTimeout: 20000})
 
+/*
+ * Expo SDK 58's runtime replaces `globalThis.fetch` with `expo/fetch` when it
+ * loads, and that needs a native module Jest does not have. It also overwrites
+ * any fetch a suite installed before requiring app code. Keep React Native's
+ * fetch in tests; the app itself still uses expo/fetch.
+ */
+process.env.EXPO_PUBLIC_USE_RN_FETCH = '1'
+
 jest.mock('@react-native-async-storage/async-storage', () =>
   require('@react-native-async-storage/async-storage/jest/async-storage-mock'),
 )
@@ -126,3 +134,24 @@ jest.mock('expo-modules-core', () => ({
 jest.mock('expo-localization', () => ({
   getLocales: () => [],
 }))
+
+/*
+ * sonner-native ships only ES modules and builds its animations from
+ * Reanimated's Easing as it loads, which breaks any suite that stubs
+ * Reanimated. Toasts are reached through the session import chain, so stub the
+ * library here; a suite that checks toasts mocks `#/components/Toast` itself.
+ */
+jest.mock('sonner-native', () => {
+  const toast = Object.assign(jest.fn(), {
+    success: jest.fn(),
+    error: jest.fn(),
+    warning: jest.fn(),
+    info: jest.fn(),
+    custom: jest.fn(),
+    promise: jest.fn(),
+    loading: jest.fn(),
+    dismiss: jest.fn(),
+    wiggle: jest.fn(),
+  })
+  return {toast, Toaster: () => null}
+})

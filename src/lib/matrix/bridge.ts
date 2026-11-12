@@ -64,7 +64,7 @@ export function isChatDisabledError(
 }
 
 /*
- * Bridge calls run from background polls (unread counts, sortition runs), so
+ * Bridge calls run from background polls (unread counts and room state), so
  * an auth failure here must never navigate: a poll that yanks the user to
  * Home every few seconds is indistinguishable from a broken app. Callers get
  * a BridgeAuthError and decide what, if anything, to show.

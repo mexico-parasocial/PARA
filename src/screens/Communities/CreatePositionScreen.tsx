@@ -92,6 +92,7 @@ export function CreatePositionScreen(_props: Props) {
     {value: 'for', label: 'A Favor', icon: '✅', color: '#34C759'},
     {value: 'against', label: 'En Contra', icon: '❌', color: '#FF3B30'},
     {value: 'amendment', label: 'Enmienda', icon: '✍️', color: '#FF9500'},
+    {value: 'question', label: 'Pregunta', icon: '❓', color: '#5856D6'},
   ]
 
   return (

@@ -211,10 +211,7 @@ export type CommonNavigatorParams = {
     communityUri?: string
     communityName?: string
   }
-  DiscourseAnalysis: undefined
   VSScreenV2: {entities?: string[]; matter?: string}
-  AgentChat: {agentId: string}
-  CommunityAgentProfile: {agentId: string; communityName?: string}
   RAQ: undefined
   MyRAQ: undefined
   RAQAssessment: undefined
@@ -273,6 +270,8 @@ export type CommonNavigatorParams = {
     /** Omitted to start a new page. */
     slug?: string
     kind?: 'page' | 'megathread'
+    officialThread?: boolean
+    agoraThread?: boolean
   }
 }
 

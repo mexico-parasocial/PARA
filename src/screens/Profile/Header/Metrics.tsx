@@ -8,10 +8,12 @@ import {makeProfileLink} from '#/lib/routes/links'
 import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {type Shadow} from '#/state/cache/types'
 import {useInfluenceQuery} from '#/state/queries/influence'
+import {usePolicyBallotsQuery} from '#/state/queries/policy-ledger'
 import {useSession} from '#/state/session'
 import {formatCount} from '#/view/com/util/numeric/format'
 import {atoms as a, useTheme} from '#/alf'
 import {Influence_Stroke_Icon as InfluenceIcon} from '#/components/icons/Influence'
+import {PageText_Stroke2_Corner0_Rounded as PassportIcon} from '#/components/icons/Page'
 import {RaisingHand4Finger_Stroke2_Corner2_Rounded as VoteIcon} from '#/components/icons/RaisingHand4Finger'
 import {InlineLinkText} from '#/components/Link'
 import {Text} from '#/components/Typography'
@@ -26,6 +28,10 @@ export function ProfileHeaderMetrics({
   const {_, i18n} = useLingui()
   const {currentAccount} = useSession()
   const influence = useInfluenceQuery(profile.did)
+  // Profile views carry no vote count; these are the ballots the vote ledger
+  // lists, read from the account's public repo.
+  const policyBallots = usePolicyBallotsQuery(profile.did)
+  const policyVoteCount = policyBallots.data?.ballots.length ?? 0
   const canSeeInfluence =
     influence.data?.influenceVisible === true ||
     currentAccount?.did === profile.did
@@ -82,7 +88,7 @@ export function ProfileHeaderMetrics({
       </View>
 
       <View
-        style={[a.flex_row, a.gap_md, a.align_center]}
+        style={[a.flex_row, a.flex_wrap, a.gap_md, a.align_center]}
         pointerEvents="box-none">
         <TouchableOpacity
           accessibilityRole="button"
@@ -116,14 +122,31 @@ export function ProfileHeaderMetrics({
           onPress={() => navigation.navigate('SeeVotes', {did: profile.did})}>
           <VoteIcon size="md" style={[t.atoms.text]} />
           <Text style={[a.font_semi_bold, t.atoms.text, a.text_md]}>
-            {formatCount(
-              i18n,
-              (profile as {votesCount?: number}).votesCount || 0,
-            )}{' '}
+            {policyBallots.isError
+              ? '—'
+              : !policyBallots.data
+                ? '…'
+                : formatCount(i18n, policyVoteCount)}{' '}
             <Text
               style={[t.atoms.text_contrast_medium, a.font_normal, a.text_md]}>
-              votes
+              {plural(policyVoteCount, {one: 'vote', other: 'votes'})}
             </Text>
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityLabel={_(msg`View public passport`)}
+          accessibilityHint={_(
+            msg`Opens the civic activity this person chose to share`,
+          )}
+          style={[a.flex_row, a.align_center, a.gap_xs]}
+          onPress={() =>
+            navigation.navigate('PublicPassport', {did: profile.did})
+          }>
+          <PassportIcon size="md" style={[t.atoms.text]} />
+          <Text style={[a.font_semi_bold, t.atoms.text, a.text_md]}>
+            <Trans>Passport</Trans>
           </Text>
         </TouchableOpacity>
       </View>

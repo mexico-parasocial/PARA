@@ -17,6 +17,7 @@ import {Tree_Stroke2_Corner0_Rounded as TreeIcon} from '#/components/icons/Tree'
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'
 import {HowItWorksSheet} from './components'
+import {OfficialThreads} from './components/OfficialThreads'
 
 /** Community activity explorer entry */
 function CommunityActivitiesCard({onPress}: {onPress: () => void}) {
@@ -182,6 +183,7 @@ export function AgoraScreen() {
           style={a.flex_1}
           contentContainerStyle={styles.scrollContent}>
           <View style={styles.sectionWrap}>
+            <OfficialThreads />
             <View style={styles.featureGrid}>
               <YourCommunitiesCard onPress={handlePressCommunities} />
               <CommunityActivitiesCard

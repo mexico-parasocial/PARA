@@ -11,8 +11,13 @@ import {
   fetchCabildeos,
   fetchDelegationCandidates,
   listMyCabildeoDelegations,
+  reactToCabildeoPosition,
   revokeCabildeoDelegation,
 } from '#/lib/api/cabildeo'
+import {
+  type CabildeoPositionRecord,
+  type PositionReaction,
+} from '#/lib/api/para-lexicons'
 import {
   type CabildeoView,
   mapCabildeoPositionsFromRead,
@@ -35,11 +40,10 @@ export const myDelegationsQueryKey = (cabildeoUri?: string) => [
   'my-delegations',
   cabildeoUri ?? 'all',
 ]
-export const cabildeoDetailQueryKey = (cabildeoUri: string) => [
-  RQKEY_ROOT,
-  'detail',
-  cabildeoUri,
-]
+export const cabildeoDetailQueryKey = (
+  cabildeoUri: string,
+  viewerDid?: string,
+) => [RQKEY_ROOT, 'detail', cabildeoUri, viewerDid]
 export const cabildeoPositionsQueryKey = (cabildeoUri: string) => [
   RQKEY_ROOT,
   'positions',
@@ -95,13 +99,19 @@ export function useCabildeosQuery() {
   })
 }
 
-export function useCabildeoQuery(cabildeoUri: string | undefined) {
+export function useCabildeoQuery(
+  cabildeoUri: string | undefined,
+  {trackVoting = false}: {trackVoting?: boolean} = {},
+) {
   const agent = useAgent()
   return useQuery<CabildeoView | null>({
     staleTime: STALE.SECONDS.THIRTY,
-    queryKey: cabildeoDetailQueryKey(cabildeoUri || ''),
+    queryKey: cabildeoDetailQueryKey(cabildeoUri || '', agent.session?.did),
+    refetchInterval: query =>
+      trackVoting && query.state.data?.phase === 'voting'
+        ? STALE.SECONDS.THIRTY
+        : false,
     enabled: Boolean(cabildeoUri),
-    placeholderData: previous => previous,
     queryFn: async () => {
       if (!cabildeoUri) return null
       const mock = USE_MOCK_DATA
@@ -227,7 +237,10 @@ export function useDelegateCabildeoVoteMutation() {
     onSuccess: (_data, variables) => {
       if (variables.cabildeoUri) {
         void queryClient.invalidateQueries({
-          queryKey: cabildeoDetailQueryKey(variables.cabildeoUri),
+          queryKey: cabildeoDetailQueryKey(
+            variables.cabildeoUri,
+            agent.session?.did,
+          ),
         })
         void queryClient.invalidateQueries({
           queryKey: [
@@ -240,7 +253,7 @@ export function useDelegateCabildeoVoteMutation() {
       void queryClient.invalidateQueries({queryKey: cabildeosQueryKey})
       if (variables.cabildeoUri) {
         queryClient.setQueryData<CabildeoView | null>(
-          cabildeoDetailQueryKey(variables.cabildeoUri),
+          cabildeoDetailQueryKey(variables.cabildeoUri, agent.session?.did),
           previous =>
             previous && variables.delegateTo
               ? {
@@ -280,7 +293,7 @@ export function useVoteMutation() {
       })
     },
     onMutate: async ({cabildeoUri, selectedOption, isDirect}) => {
-      const queryKey = cabildeoDetailQueryKey(cabildeoUri)
+      const queryKey = cabildeoDetailQueryKey(cabildeoUri, agent.session?.did)
       await queryClient.cancelQueries({queryKey})
       const previous = queryClient.getQueryData<CabildeoView>(queryKey)
 
@@ -342,7 +355,7 @@ export function useVoteMutation() {
     onError: (_err, {cabildeoUri}, context) => {
       if (context?.previous) {
         queryClient.setQueryData(
-          cabildeoDetailQueryKey(cabildeoUri),
+          cabildeoDetailQueryKey(cabildeoUri, agent.session?.did),
           context.previous,
         )
       }
@@ -350,12 +363,48 @@ export function useVoteMutation() {
     onSettled: (_data, _err, {cabildeoUri}) => {
       // Revalidate detail, positions list, and master list
       void queryClient.invalidateQueries({
-        queryKey: cabildeoDetailQueryKey(cabildeoUri),
+        queryKey: cabildeoDetailQueryKey(cabildeoUri, agent.session?.did),
       })
       void queryClient.invalidateQueries({
         queryKey: cabildeoPositionsQueryKey(cabildeoUri),
       })
       void queryClient.invalidateQueries({queryKey: cabildeosQueryKey})
+    },
+  })
+}
+
+/**
+ * Agree, disagree or pass on a position. The reaction is shown at once and the
+ * positions are refetched, so the counts come back from the index.
+ */
+export function useReactToPositionMutation() {
+  const agent = useAgent()
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: ({
+      position,
+      direction,
+    }: {
+      cabildeoUri: string
+      position: string
+      direction: PositionReaction
+    }) => reactToCabildeoPosition(agent, {position, direction}),
+    onSuccess: (_data, {cabildeoUri, position, direction}) => {
+      queryClient.setQueryData<CabildeoPositionRecord[]>(
+        cabildeoPositionsQueryKey(cabildeoUri),
+        positions =>
+          positions?.map(item =>
+            item.uri === position
+              ? {...item, viewerDirection: direction}
+              : item,
+          ),
+      )
+    },
+    onSettled: (_data, _err, {cabildeoUri}) => {
+      void queryClient.invalidateQueries({
+        queryKey: cabildeoPositionsQueryKey(cabildeoUri),
+      })
     },
   })
 }
@@ -383,7 +432,7 @@ export function useRevokeCabildeoDelegationMutation(cabildeoUri?: string) {
       void queryClient.invalidateQueries({queryKey: cabildeosQueryKey})
       if (cabildeoUri) {
         void queryClient.invalidateQueries({
-          queryKey: cabildeoDetailQueryKey(cabildeoUri),
+          queryKey: cabildeoDetailQueryKey(cabildeoUri, agent.session?.did),
         })
         void queryClient.invalidateQueries({
           queryKey: [RQKEY_ROOT, 'delegation-candidates', cabildeoUri],

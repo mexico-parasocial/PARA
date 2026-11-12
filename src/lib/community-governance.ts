@@ -31,7 +31,6 @@ export type CommunityGovernanceView = CommunityGovernanceRecord & {
    */
   roleHolders?: CommunityRoleHolder[]
   /** Offers still waiting for an answer or for the owner's appointment. */
-  roleOffers?: CommunityRoleOffer[]
   /** How people join: `open`, or `assembly_approval` (the assembly admits them). */
   admissionMode?: 'open' | 'assembly_approval'
   /** What each role is, how it is obtained and what it may do, from the AppView. */
@@ -51,25 +50,18 @@ export type CommunityRoleHolder = {
   role: string
   effectiveAt?: string
   expiresAt?: string
-  /** What the role rests on; a revocation names it. */
+  /** What the role rests on. */
   evidence?: string
-  /** The holder's latest authority event: the next one chains to it. */
-  eventUri?: string
-  eventVersion?: number
 }
 
-/** An offer of the moderator role that the appointment has not yet carried out. */
+/** An office offered to a member that they have not answered yet. */
 export type CommunityRoleOffer = {
-  uri: string
+  /** The event that opened the offer; accepting names it. */
+  seq: number
   role: string
   subject: string
   offeredBy: string
-  createdAt: string
-  /** Present once the member accepted; the appointment cites it. */
-  acceptanceUri?: string
-  acceptedAt?: string
-  subjectEventUri: string
-  subjectEventVersion: number
+  expiresAt: string
 }
 
 export type CommunityGovernanceCounters = {
@@ -323,7 +315,6 @@ export function normalizeCommunityGovernance(
     editHistory,
     counters,
     roleHolders: normalizeRoleHolders(data.roleHolders),
-    roleOffers: normalizeRoleOffers(data.roleOffers),
     admissionMode:
       data.admissionMode === 'assembly_approval' ? 'assembly_approval' : 'open',
     roleDefinitions: normalizeRoleDefinitions(data.roleDefinitions),
@@ -349,47 +340,6 @@ function normalizeRoleHolders(raw: unknown): CommunityRoleHolder[] {
         effectiveAt: stringOr(holder.effectiveAt),
         expiresAt: stringOr(holder.expiresAt),
         evidence: stringOr(holder.evidence),
-        eventUri: stringOr(holder.eventUri),
-        eventVersion:
-          typeof holder.eventVersion === 'number' && holder.eventVersion >= 1
-            ? holder.eventVersion
-            : undefined,
-      },
-    ]
-  })
-}
-
-function normalizeRoleOffers(raw: unknown): CommunityRoleOffer[] {
-  if (!Array.isArray(raw)) return []
-  return raw.flatMap(item => {
-    if (!item || typeof item !== 'object') return []
-    const offer = item as Record<string, unknown>
-    const uri = stringOr(offer.uri)
-    const subject = stringOr(offer.subject)
-    const offeredBy = stringOr(offer.offeredBy)
-    const subjectEventUri = stringOr(offer.subjectEventUri)
-    const version = offer.subjectEventVersion
-    if (
-      !uri ||
-      !subject?.startsWith('did:') ||
-      !offeredBy?.startsWith('did:') ||
-      !subjectEventUri ||
-      typeof version !== 'number' ||
-      version < 1
-    ) {
-      return []
-    }
-    return [
-      {
-        uri,
-        role: stringOr(offer.role) ?? 'moderator',
-        subject,
-        offeredBy,
-        createdAt: stringOr(offer.createdAt) ?? '',
-        acceptanceUri: stringOr(offer.acceptanceUri),
-        acceptedAt: stringOr(offer.acceptedAt),
-        subjectEventUri,
-        subjectEventVersion: version,
       },
     ]
   })

@@ -29,7 +29,6 @@ import {
 } from '#/state/highlights/highlightTypes'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
-import {Macintosh_Stroke2_Corner2_Rounded as MacintoshIcon} from '#/components/icons/Macintosh'
 import {Tree_Stroke2_Corner0_Rounded as TreeIcon} from '#/components/icons/Tree'
 import {Text} from '#/components/Typography'
 
@@ -95,7 +94,6 @@ interface HighlightOptionsModalProps {
   visible: boolean
   onClose: () => void
   onSave: (color: HighlightColor, isPublic: boolean, tag?: string) => void
-  onSendToAgent?: (payload: HighlightActionPayload) => void
   onSaveToCivicTree?: (payload: HighlightActionPayload) => void
   onHighlightMore: () => void
   onDelete?: () => void
@@ -118,7 +116,6 @@ let HighlightOptionsModal = ({
   visible,
   onClose,
   onSave,
-  onSendToAgent,
   onSaveToCivicTree,
   onHighlightMore,
   onDelete,
@@ -159,10 +156,6 @@ let HighlightOptionsModal = ({
     }),
     [actionText, isPublic, selectedColor, selectedKey, tag],
   )
-
-  const handleSendToAgent = useCallback(() => {
-    onSendToAgent?.(actionPayload())
-  }, [actionPayload, onSendToAgent])
 
   const handleSaveToCivicTree = useCallback(() => {
     onSaveToCivicTree?.(actionPayload())
@@ -334,50 +327,25 @@ let HighlightOptionsModal = ({
             />
           </View>
 
-          {(onSendToAgent || onSaveToCivicTree) && (
+          {onSaveToCivicTree && (
             <View style={[styles.actionCluster, a.mb_md]}>
-              {onSendToAgent && (
-                <Pressable
-                  accessibilityLabel={_(msg`Send highlight to agent`)}
-                  accessibilityHint={_(
-                    msg`Sends the highlighted text, color, and note to your civic agent`,
-                  )}
-                  accessibilityRole="button"
-                  onPress={handleSendToAgent}
-                  style={({pressed}) => [
-                    styles.quickActionButton,
-                    {
-                      backgroundColor: t.atoms.bg_contrast_25.backgroundColor,
-                      borderColor: t.atoms.border_contrast_low.borderColor,
-                      opacity: pressed ? 0.72 : 1,
-                    },
-                  ]}>
-                  <MacintoshIcon
-                    size="md"
-                    fill={t.atoms.text_contrast_medium.color}
-                  />
-                </Pressable>
-              )}
-
-              {onSaveToCivicTree && (
-                <Pressable
-                  accessibilityLabel={_(msg`Save highlight as Civic Tree note`)}
-                  accessibilityHint={_(
-                    msg`Saves the highlighted text, color, and note to your Civic Tree`,
-                  )}
-                  accessibilityRole="button"
-                  onPress={handleSaveToCivicTree}
-                  style={({pressed}) => [
-                    styles.quickActionButton,
-                    {
-                      backgroundColor: selectedColor,
-                      borderColor: t.atoms.border_contrast_low.borderColor,
-                      opacity: pressed ? 0.72 : 1,
-                    },
-                  ]}>
-                  <TreeIcon size="md" fill="#111111" />
-                </Pressable>
-              )}
+              <Pressable
+                accessibilityLabel={_(msg`Save highlight as Civic Tree note`)}
+                accessibilityHint={_(
+                  msg`Saves the highlighted text, color, and note to your Civic Tree`,
+                )}
+                accessibilityRole="button"
+                onPress={handleSaveToCivicTree}
+                style={({pressed}) => [
+                  styles.quickActionButton,
+                  {
+                    backgroundColor: selectedColor,
+                    borderColor: t.atoms.border_contrast_low.borderColor,
+                    opacity: pressed ? 0.72 : 1,
+                  },
+                ]}>
+                <TreeIcon size="md" fill="#111111" />
+              </Pressable>
             </View>
           )}
 

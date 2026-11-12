@@ -28,6 +28,7 @@ import {useUnreadCountsQuery} from '#/state/queries/messages/get-unread-counts'
 import {useListConvosQuery} from '#/state/queries/messages/list-conversations'
 import {useUpdateAllRead} from '#/state/queries/messages/update-all-read'
 import {useSession} from '#/state/session'
+import {usePoliticalAffiliation} from '#/state/shell/political-affiliation'
 import {EmptyState} from '#/view/com/util/EmptyState'
 import {List, type ListRef} from '#/view/com/util/List'
 import {ChatListSkeleton} from '#/screens/Messages/components/ChatListSkeleton'
@@ -62,7 +63,11 @@ import {useAgeAssurance} from '#/ageAssurance'
 import {IS_NATIVE, IS_WEB} from '#/env'
 import {MATRIX_DMS_ENABLED} from '#/env'
 import {type chat} from '#/lexicons'
-import {AgentSelection} from './components/AgentSelection'
+import {
+  communityIdentity,
+  compareCommunityChats,
+  pinnedAffiliationUris,
+} from './communityChatOrder'
 import {ChatDisabled} from './components/ChatDisabled'
 import {ChatListItem} from './components/ChatListItem'
 import {CommunityStrip, type CommunityTile} from './components/CommunityStrip'
@@ -75,9 +80,6 @@ type ListItem =
   | {
       type: 'SECTION'
       label: string
-    }
-  | {
-      type: 'AGENT_SELECTION'
     }
   | {
       type: 'CONVERSATION'
@@ -108,8 +110,6 @@ function renderItem({item}: {item: ListItem}) {
   switch (item.type) {
     case 'SECTION':
       return <SectionHeader label={item.label} />
-    case 'AGENT_SELECTION':
-      return <AgentSelection />
     case 'CONVERSATION':
       return <ChatListItem convo={item.conversation} selected={item.selected} />
     case 'MATRIX_ROOM':
@@ -130,8 +130,6 @@ function keyExtractor(item: ListItem) {
   switch (item.type) {
     case 'SECTION':
       return `SECTION:${item.label}`
-    case 'AGENT_SELECTION':
-      return 'AGENT_SELECTION'
     case 'CONVERSATION':
       return item.conversation.id
     case 'MATRIX_ROOM':
@@ -380,6 +378,7 @@ export function ChatList({
 
   // A community's Matrix room only exists for the bridge once the member has
   // opened its chat, so list every joined community, not just bridged rooms.
+  const {affiliations} = usePoliticalAffiliation()
   const {data: boardsData, isLoading: isLoadingBoards} =
     useCommunityBoardsQuery({limit: 100}, !!currentAccount?.did)
 
@@ -441,10 +440,16 @@ export function ChatList({
           memberCount: board.memberCount,
           region: board.region || undefined,
         })),
-    ].sort(
-      (x, y) =>
-        y.unread - x.unread ||
-        (x.name ?? x.slug).localeCompare(y.name ?? y.slug),
+    ]
+    // Same order as the Community Chats screen: the viewer's own party and
+    // ninth first, then unread, then name.
+    const pinned = pinnedAffiliationUris([...boards.values()], affiliations)
+    communityRows.sort((x, y) =>
+      compareCommunityChats(
+        {uri: x.communityUri, name: x.name ?? x.slug, unread: x.unread},
+        {uri: y.communityUri, name: y.name ?? y.slug, unread: y.unread},
+        pinned,
+      ),
     )
 
     if (matrixUnavailable || communityRows.length) {
@@ -458,6 +463,9 @@ export function ChatList({
             roomId: row.roomId,
             name: row.name ?? row.slug,
             unread: row.unread,
+            identity: boards.has(row.communityUri)
+              ? communityIdentity(boards.get(row.communityUri)!)
+              : undefined,
           })),
         })
       } else if (matrixUnavailable) {
@@ -465,8 +473,6 @@ export function ChatList({
         items.push({type: 'MATRIX_UNAVAILABLE'})
       }
     }
-
-    items.push({type: 'AGENT_SELECTION'})
 
     if (data?.pages) {
       const convos = data.pages.flatMap(page => page.convos)
@@ -484,7 +490,15 @@ export function ChatList({
     }
 
     return items
-  }, [data, l, matrixRoomsData, matrixUnavailable, selectedChat, boardsData])
+  }, [
+    data,
+    l,
+    matrixRoomsData,
+    matrixUnavailable,
+    selectedChat,
+    boardsData,
+    affiliations,
+  ])
 
   const hasListContent = listItems.some(
     item => item.type === 'CONVERSATION' || item.type === 'COMMUNITY_STRIP',

@@ -1,519 +1,475 @@
-import {useCallback, useMemo, useState} from 'react'
-import {ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
-import {Trans} from '@lingui/react/macro'
+import {useState} from 'react'
+import {ActivityIndicator, Pressable, ScrollView, View} from 'react-native'
+import {Trans, useLingui} from '@lingui/react/macro'
 import {useNavigation} from '@react-navigation/native'
 import {type NativeStackScreenProps} from '@react-navigation/native-stack'
 
-import {type CabildeoPhase} from '#/lib/api/para-lexicons'
-import {type CabildeoView} from '#/lib/cabildeo-client'
+import {
+  formatSignal,
+  getSignalColor,
+  getSignalLabel,
+  parseSignalAverage,
+} from '#/lib/policy-display'
+import {
+  getPolicyStance,
+  type PolicyStance,
+  summarizePolicyBallots,
+} from '#/lib/policy-ledger'
 import {
   type CommonNavigatorParams,
   type PlatformNavigationProp as NavigationProp,
 } from '#/lib/routes/types'
-import {useCabildeosQuery} from '#/state/queries/cabildeo'
+import {useCommunityBoardQuery} from '#/state/queries/community-boards'
+import {
+  type PolicyLedgerEntry,
+  usePolicyLedgerQuery,
+} from '#/state/queries/policy-ledger'
+import {usePolicyTallyQuery} from '#/state/queries/policy-tally'
 import {useProfileQuery} from '#/state/queries/profile'
 import {useSession} from '#/state/session'
-import {EmptyState} from '#/view/com/util/EmptyState'
-import {useBreakpoints, useTheme} from '#/alf'
-import {CircleInfo_Stroke2_Corner0_Rounded as CircleInfo} from '#/components/icons/Circle'
+import {getPolicyPostParts} from '#/screens/Policies/PolicyCard'
+import {atoms as a, useTheme} from '#/alf'
+import {Button, ButtonText} from '#/components/Button'
+import {
+  formatAverage,
+  PolicyOutcomePill,
+  SignalHistogram,
+} from '#/components/civic/PolicyConsensus'
 import * as Layout from '#/components/Layout'
+import {ListMaybePlaceholder} from '#/components/Lists'
+import {PostFlairStrip} from '#/components/Post/PostFlairStrip'
 import {Text} from '#/components/Typography'
 
 type Props = NativeStackScreenProps<CommonNavigatorParams, 'SeeVotes'>
 
-function getPhaseConfig(
-  t: ReturnType<typeof useTheme>,
-): Record<CabildeoPhase, {label: string; color: string}> {
-  return {
-    draft: {label: 'Draft', color: t.palette.contrast_400},
-    open: {label: 'Open', color: t.palette.primary_500},
-    deliberating: {label: 'Deliberating', color: t.palette.yellow},
-    voting: {label: 'Voting', color: t.palette.positive_500},
-    resolved: {label: 'Resolved', color: t.palette.primary_500},
-  }
-}
+type StanceFilter = PolicyStance | 'all'
 
-function formatFlair(flair: string): string {
-  // Strip || and | prefixes from flairs
-  return flair.replace(/^\|+/, '').replace(/^#/, '#')
-}
-
-function getPrimaryFlair(flairs: string[] | undefined): string | null {
-  if (!flairs || flairs.length === 0) return null
-  const policy = flairs.find(f => f.startsWith('||'))
-  if (policy) return formatFlair(policy)
-  const matter = flairs.find(f => f.startsWith('|'))
-  if (matter) return formatFlair(matter)
-  return formatFlair(flairs[0])
-}
-
-function VoteSummaryCard({
-  label,
-  value,
-  color,
-}: {
-  label: string
-  value: string | number
-  color: string
-}) {
-  const t = useTheme()
-  return (
-    <View
-      style={[
-        styles.summaryCard,
-        t.atoms.border_contrast_low,
-        t.atoms.bg_contrast_25,
-      ]}>
-      <Text style={[styles.summaryValue, {color}]}>{value}</Text>
-      <Text style={[styles.summaryLabel, t.atoms.text_contrast_medium]}>
-        {label}
-      </Text>
-    </View>
-  )
-}
-
-function VoteCard({
-  cabildeo,
-  onPress,
-}: {
-  cabildeo: CabildeoView
-  onPress: () => void
-}) {
-  const t = useTheme()
-  const {i18n} = useLingui()
-  const phaseConfig = getPhaseConfig(t)[cabildeo.phase]
-  const votedOptionIndex = cabildeo.userContext?.viewerVoteOption
-  const votedOption =
-    typeof votedOptionIndex === 'number'
-      ? cabildeo.options[votedOptionIndex]?.label
-      : undefined
-  const isDirect = cabildeo.userContext?.viewerVoteIsDirect ?? false
-  const primaryFlair = getPrimaryFlair(cabildeo.flairs)
-
-  return (
-    <TouchableOpacity
-      accessibilityRole="button"
-      onPress={onPress}
-      activeOpacity={0.8}
-      style={[
-        styles.voteCard,
-        t.atoms.border_contrast_low,
-        t.atoms.bg_contrast_25,
-        {borderLeftWidth: 3, borderLeftColor: phaseConfig.color},
-      ]}>
-      {/* Header: phase + flair + date */}
-      <View style={styles.cardHeader}>
-        <View style={styles.cardMeta}>
-          <View
-            style={[
-              styles.phasePill,
-              {backgroundColor: phaseConfig.color + '18'},
-            ]}>
-            <Text style={[styles.phaseText, {color: phaseConfig.color}]}>
-              {phaseConfig.label}
-            </Text>
-          </View>
-          {primaryFlair && (
-            <Text style={[styles.flairText, t.atoms.text_contrast_medium]}>
-              {primaryFlair}
-            </Text>
-          )}
-        </View>
-        <Text style={[styles.dateText, t.atoms.text_contrast_medium]}>
-          {i18n.date(new Date(cabildeo.createdAt), {
-            year: 'numeric',
-            month: 'short',
-            day: 'numeric',
-          })}
-        </Text>
-      </View>
-
-      {/* Title */}
-      <Text style={[styles.cardTitle, t.atoms.text]} numberOfLines={2}>
-        {cabildeo.title}
-      </Text>
-
-      {/* Community */}
-      <Text style={[styles.communityText, t.atoms.text_contrast_medium]}>
-        {cabildeo.community}
-        {cabildeo.region ? ` · ${cabildeo.region}` : ''}
-      </Text>
-
-      {/* Vote detail */}
-      <View style={styles.voteDetailRow}>
-        {votedOption ? (
-          <View style={styles.voteOptionRow}>
-            <View
-              style={[
-                styles.voteDot,
-                {
-                  backgroundColor: isDirect
-                    ? t.palette.positive_500
-                    : t.palette.primary_500,
-                },
-              ]}
-            />
-            <Text style={[styles.voteOptionText, t.atoms.text]}>
-              {isDirect ? (
-                <Trans>You voted: {votedOption}</Trans>
-              ) : (
-                <Trans>Delegate voted: {votedOption}</Trans>
-              )}
-            </Text>
-          </View>
-        ) : null}
-        <View
-          style={[
-            styles.directPill,
-            {
-              backgroundColor: isDirect
-                ? t.palette.positive_500 + '15'
-                : t.palette.primary_500 + '15',
-            },
-          ]}>
-          <Text
-            style={[
-              styles.directPillText,
-              {
-                color: isDirect
-                  ? t.palette.positive_500
-                  : t.palette.primary_500,
-              },
-            ]}>
-            {isDirect ? <Trans>Direct</Trans> : <Trans>Delegated</Trans>}
-          </Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  )
-}
-
+/**
+ * A person's policy ballots: the -3..+3 vote they cast on each policy, beside
+ * where everyone who voted stands. Policies have no phases, options or
+ * delegation; those belong to debates in Lobbying.
+ */
 export function SeeVotesScreen({route}: Props) {
   const t = useTheme()
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const navigation = useNavigation<NavigationProp>()
-  const {gtMobile} = useBreakpoints()
-  const [filter, setFilter] = useState<CabildeoPhase | 'all'>('all')
-  const {data: cabildeos = [], isLoading} = useCabildeosQuery()
   const {currentAccount} = useSession()
   const did = route.params?.did ?? currentAccount?.did
+  const isSelf = Boolean(did) && did === currentAccount?.did
   const {data: profile} = useProfileQuery({did})
-  const profileName = profile?.displayName || profile?.handle
+  const name = profile?.displayName || profile?.handle
+  const [filter, setFilter] = useState<StanceFilter>('all')
 
-  // Filter to only voted cabildeos
-  const votedCabildeos = useMemo(() => {
-    return cabildeos.filter(
-      c => typeof c.userContext?.viewerVoteOption === 'number',
-    )
-  }, [cabildeos])
+  const {data, isLoading, isError, refetch} = usePolicyLedgerQuery(did)
+  const entries = data?.entries ?? []
+  const summary = summarizePolicyBallots(entries)
+  const visible =
+    filter === 'all'
+      ? entries
+      : entries.filter(entry => getPolicyStance(entry.signal) === filter)
 
-  const filtered = useMemo(() => {
-    if (filter === 'all') return votedCabildeos
-    return votedCabildeos.filter(c => c.phase === filter)
-  }, [votedCabildeos, filter])
-
-  const stats = useMemo(() => {
-    const total = votedCabildeos.length
-    const direct = votedCabildeos.filter(
-      c => c.userContext?.viewerVoteIsDirect,
-    ).length
-    const delegated = total - direct
-    return {total, direct, delegated}
-  }, [votedCabildeos])
-
-  const phaseFilters: Array<{key: CabildeoPhase | 'all'; label: string}> = [
-    {key: 'all', label: _(msg`All`)},
-    {key: 'voting', label: _(msg`Voting`)},
-    {key: 'resolved', label: _(msg`Resolved`)},
-    {key: 'deliberating', label: _(msg`Deliberating`)},
+  const filters: {key: StanceFilter; label: string; count: number}[] = [
+    {key: 'all', label: l`Todos`, count: summary.total},
+    {key: 'support', label: l`Apoyo`, count: summary.stances.support},
+    {key: 'neutral', label: l`Neutral`, count: summary.stances.neutral},
+    {key: 'oppose', label: l`Rechazo`, count: summary.stances.oppose},
   ]
 
-  const onPressCabildeo = useCallback(
-    (uri: string) => {
-      navigation.navigate('PolicyDetails', {cabildeoUri: uri})
-    },
-    [navigation],
-  )
-
   return (
-    <Layout.Screen>
+    <Layout.Screen testID="policyLedgerScreen">
       <Layout.Header.Outer>
         <Layout.Header.BackButton />
         <Layout.Header.Content>
           <Layout.Header.TitleText>
-            <Trans>Votes</Trans>
+            <Trans>Votos</Trans>
           </Layout.Header.TitleText>
         </Layout.Header.Content>
         <Layout.Header.Slot />
       </Layout.Header.Outer>
 
-      <Layout.Content>
+      <Layout.Center style={{flex: 1}}>
         <ScrollView
-          style={styles.container}
-          contentContainerStyle={[
-            styles.content,
-            gtMobile && {paddingHorizontal: 32},
-          ]}>
-          {/* Intro */}
-          <View style={styles.intro}>
-            <Text style={[styles.title, t.atoms.text]}>
-              <Trans>Your vote ledger</Trans>
+          style={{flex: 1}}
+          contentContainerStyle={{padding: 16, paddingBottom: 100}}>
+          <View style={[a.gap_xs, a.mb_lg]}>
+            <Text style={[a.text_2xl, a.font_bold, t.atoms.text]}>
+              {isSelf ? (
+                <Trans>Tus votos en policies</Trans>
+              ) : (
+                <Trans>Votos en policies</Trans>
+              )}
             </Text>
-            <Text style={[styles.subtitle, t.atoms.text_contrast_medium]}>
-              {profileName ? (
+            <Text
+              emoji
+              style={[a.text_sm, a.leading_snug, t.atoms.text_contrast_medium]}>
+              {isSelf ? (
                 <Trans>
-                  Policy votes for {profileName}. Tap a card to review or change
-                  your stance.
+                  Cada voto va de -3 a +3 y es público. Toca una policy para
+                  revisarla o cambiar tu voto.
+                </Trans>
+              ) : name ? (
+                <Trans>
+                  Los votos públicos de {name}, de -3 a +3, junto a la postura
+                  de quienes votaron.
                 </Trans>
               ) : (
                 <Trans>
-                  All your policy votes in one place. Tap a card to review or
-                  change your stance.
+                  Votos públicos de -3 a +3, junto a la postura de quienes
+                  votaron.
                 </Trans>
               )}
             </Text>
           </View>
 
-          {/* Summary */}
-          <View style={styles.summaryRow}>
-            <VoteSummaryCard
-              label={_(msg`Total`)}
-              value={stats.total}
-              color={t.palette.primary_500}
-            />
-            <VoteSummaryCard
-              label={_(msg`Direct`)}
-              value={stats.direct}
-              color={t.palette.positive_500}
-            />
-            <VoteSummaryCard
-              label={_(msg`Delegated`)}
-              value={stats.delegated}
-              color={t.palette.primary_500}
-            />
-          </View>
-
-          {/* Filters */}
-          {votedCabildeos.length > 0 && (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.filtersScroll}
-              contentContainerStyle={styles.filtersContent}>
-              {phaseFilters.map(f => (
-                <TouchableOpacity
-                  key={f.key}
-                  accessibilityRole="button"
-                  accessibilityLabel={_(msg`Filter by ${f.label}`)}
-                  accessibilityHint={_(msg`Filters vote history by phase`)}
-                  style={[
-                    styles.filterChip,
-                    t.atoms.border_contrast_low,
-                    t.atoms.bg_contrast_25,
-                    filter === f.key && {
-                      backgroundColor: t.palette.primary_500,
-                      borderColor: t.palette.primary_500,
-                    },
-                  ]}
-                  onPress={() => setFilter(f.key)}>
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      t.atoms.text,
-                      filter === f.key && {color: '#fff'},
-                    ]}>
-                    {f.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          )}
-
-          {/* Empty states */}
           {isLoading ? (
-            <View style={styles.emptyWrap}>
-              <Text style={[styles.emptyText, t.atoms.text_contrast_medium]}>
-                <Trans>Loading your votes…</Trans>
-              </Text>
+            <View style={[a.align_center, a.justify_center, {minHeight: 200}]}>
+              <ActivityIndicator size="large" color={t.palette.primary_500} />
             </View>
-          ) : votedCabildeos.length === 0 ? (
-            <View style={styles.emptyWrap}>
-              <EmptyState
-                icon={CircleInfo}
-                message={_(
-                  msg`You haven't voted on any proposals yet. Browse the Agora to find policies to vote on.`,
+          ) : isError ? (
+            <ListMaybePlaceholder
+              isLoading={false}
+              isError
+              onRetry={refetch}
+              emptyType="results"
+              errorTitle={l`No se pudieron cargar los votos`}
+              errorMessage={l`Revisa tu conexión e inténtalo de nuevo.`}
+            />
+          ) : entries.length === 0 ? (
+            <View style={[a.align_center, a.gap_md, {padding: 40}]}>
+              <Text
+                style={[a.text_md, a.font_bold, a.text_center, t.atoms.text]}>
+                {isSelf ? (
+                  <Trans>Todavía no has votado ninguna policy</Trans>
+                ) : (
+                  <Trans>Todavía no hay votos en policies</Trans>
                 )}
-                button={{
-                  label: _(msg`Browse Agora`),
-                  text: _(msg`Browse Agora`),
-                  onPress: () => navigation.navigate('PoliciesDashboard', {}),
-                }}
-              />
-            </View>
-          ) : filtered.length === 0 ? (
-            <View style={styles.emptyWrap}>
-              <Text style={[styles.emptyText, t.atoms.text_contrast_medium]}>
-                <Trans>No votes match this filter.</Trans>
               </Text>
+              {isSelf ? (
+                <Button
+                  label={l`Ver policies`}
+                  size="small"
+                  color="primary"
+                  onPress={() => navigation.navigate('PoliciesDashboard', {})}>
+                  <ButtonText>
+                    <Trans>Ver policies</Trans>
+                  </ButtonText>
+                </Button>
+              ) : null}
             </View>
           ) : (
-            <View style={{gap: 10}}>
-              {filtered.map(c => (
-                <VoteCard
-                  key={c.uri}
-                  cabildeo={c}
-                  onPress={() => onPressCabildeo(c.uri)}
-                />
-              ))}
+            <View style={[a.gap_lg]}>
+              <LedgerSummary summary={summary} />
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={[a.gap_sm]}>
+                {filters.map(f => {
+                  const active = filter === f.key
+                  return (
+                    <Pressable
+                      key={f.key}
+                      accessibilityRole="button"
+                      accessibilityState={{selected: active}}
+                      accessibilityLabel={l`${f.label}: ${f.count}`}
+                      accessibilityHint={l`Muestra solo estos votos`}
+                      onPress={() => setFilter(f.key)}
+                      style={[
+                        a.flex_row,
+                        a.align_center,
+                        a.gap_xs,
+                        a.px_md,
+                        a.py_sm,
+                        a.rounded_full,
+                        a.border,
+                        t.atoms.border_contrast_low,
+                        active
+                          ? {
+                              backgroundColor: t.palette.primary_500,
+                              borderColor: t.palette.primary_500,
+                            }
+                          : t.atoms.bg_contrast_25,
+                      ]}>
+                      <Text
+                        style={[
+                          a.text_sm,
+                          a.font_bold,
+                          active ? {color: t.palette.white} : t.atoms.text,
+                        ]}>
+                        {f.label}
+                      </Text>
+                      <Text
+                        style={[
+                          a.text_sm,
+                          active
+                            ? {color: t.palette.white}
+                            : t.atoms.text_contrast_medium,
+                        ]}>
+                        {f.count}
+                      </Text>
+                    </Pressable>
+                  )
+                })}
+              </ScrollView>
+
+              {visible.length === 0 ? (
+                <Text
+                  style={[
+                    a.text_sm,
+                    a.text_center,
+                    a.py_lg,
+                    t.atoms.text_contrast_medium,
+                  ]}>
+                  <Trans>Ningún voto con esta postura.</Trans>
+                </Text>
+              ) : (
+                <View style={[a.gap_md]}>
+                  {visible.map(entry => (
+                    <LedgerRow
+                      key={entry.policyUri}
+                      entry={entry}
+                      onPress={() =>
+                        navigation.navigate('PolicyDetails', {
+                          policyUri: entry.policyUri,
+                        })
+                      }
+                    />
+                  ))}
+                </View>
+              )}
+
+              {data?.truncated ? (
+                <Text
+                  style={[
+                    a.text_xs,
+                    a.text_center,
+                    t.atoms.text_contrast_medium,
+                  ]}>
+                  <Trans>Se muestran los votos más recientes.</Trans>
+                </Text>
+              ) : null}
             </View>
           )}
         </ScrollView>
-      </Layout.Content>
+      </Layout.Center>
     </Layout.Screen>
   )
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
-    paddingBottom: 40,
-  },
-  intro: {
-    marginBottom: 16,
-    gap: 4,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-  },
-  subtitle: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 16,
-  },
-  summaryCard: {
-    flex: 1,
-    borderRadius: 8,
-    borderWidth: 1,
-    minHeight: 80,
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  summaryValue: {
-    fontSize: 24,
-    fontWeight: '800',
-  },
-  summaryLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  filtersScroll: {
-    marginBottom: 16,
-  },
-  filtersContent: {
-    gap: 8,
-  },
-  filterChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  filterChipText: {
-    fontSize: 13,
-    fontWeight: '600',
-  },
-  voteCard: {
-    borderWidth: 1,
-    borderRadius: 8,
-    padding: 14,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  cardMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexShrink: 1,
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  phasePill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  phaseText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  flairText: {
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  dateText: {
-    fontSize: 12,
-  },
-  cardTitle: {
-    fontSize: 15,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  communityText: {
-    fontSize: 12,
-    marginBottom: 10,
-  },
-  voteDetailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 8,
-  },
-  voteOptionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    flex: 1,
-    flexShrink: 1,
-  },
-  voteDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-  },
-  voteOptionText: {
-    fontSize: 13,
-    fontWeight: '500',
-  },
-  directPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-  },
-  directPillText: {
-    fontSize: 11,
-    fontWeight: '700',
-  },
-  emptyWrap: {
-    marginTop: 24,
-  },
-  emptyText: {
-    fontSize: 14,
-    textAlign: 'center',
-  },
-})
+/** Totals by side, and how the ballots spread from -3 to +3. */
+function LedgerSummary({
+  summary,
+}: {
+  summary: ReturnType<typeof summarizePolicyBallots>
+}) {
+  const t = useTheme()
+  const tiles = [
+    {label: <Trans>Policies</Trans>, value: summary.total, color: undefined},
+    {
+      label: <Trans>Apoyo</Trans>,
+      value: summary.stances.support,
+      color: getSignalColor(2),
+    },
+    {
+      label: <Trans>Neutral</Trans>,
+      value: summary.stances.neutral,
+      color: getSignalColor(0),
+    },
+    {
+      label: <Trans>Rechazo</Trans>,
+      value: summary.stances.oppose,
+      color: getSignalColor(-2),
+    },
+  ]
+  return (
+    <View
+      style={[
+        a.rounded_md,
+        a.border,
+        a.p_lg,
+        a.gap_lg,
+        t.atoms.bg_contrast_25,
+        t.atoms.border_contrast_low,
+      ]}>
+      <View style={[a.flex_row, a.justify_between]}>
+        {tiles.map((tile, index) => (
+          <View key={index} style={[a.flex_1, a.align_center, a.gap_2xs]}>
+            <Text
+              style={[
+                a.text_2xl,
+                a.font_bold,
+                tile.color ? {color: tile.color} : t.atoms.text,
+              ]}>
+              {tile.value}
+            </Text>
+            <Text
+              style={[a.text_xs, a.font_bold, t.atoms.text_contrast_medium]}>
+              {tile.label}
+            </Text>
+          </View>
+        ))}
+      </View>
+      <SignalHistogram counts={summary.counts} height={36} showCounts />
+    </View>
+  )
+}
+
+/** The ballot as a weight, so a row reads at a glance. */
+function SignalBadge({signal}: {signal: number}) {
+  const color = getSignalColor(signal)
+  return (
+    <View
+      style={[
+        a.align_center,
+        a.justify_center,
+        a.rounded_md,
+        a.gap_2xs,
+        {width: 72, paddingVertical: 10, backgroundColor: color + '1F'},
+      ]}>
+      <Text style={[a.text_2xl, a.font_bold, {color}]}>
+        {formatSignal(signal)}
+      </Text>
+      <Text
+        numberOfLines={1}
+        style={[a.text_2xs, a.font_bold, a.text_center, {color}]}>
+        {getSignalLabel(signal)}
+      </Text>
+    </View>
+  )
+}
+
+function LedgerRow({
+  entry,
+  onPress,
+}: {
+  entry: PolicyLedgerEntry
+  onPress: () => void
+}) {
+  const t = useTheme()
+  const {t: l, i18n} = useLingui()
+  const {data: tally, isLoading: isTallyLoading} = usePolicyTallyQuery(
+    entry.post ? entry.policyUri : undefined,
+  )
+  const {data: board} = useCommunityBoardQuery({
+    communityId: tally?.community || undefined,
+  })
+  const castAt = new Date(entry.createdAt)
+  const castLabel = Number.isNaN(castAt.getTime())
+    ? ''
+    : i18n.date(castAt, {day: 'numeric', month: 'short', year: 'numeric'})
+
+  if (!entry.post) {
+    return (
+      <View
+        style={[
+          a.flex_row,
+          a.align_center,
+          a.gap_md,
+          a.p_md,
+          a.rounded_md,
+          a.border,
+          t.atoms.border_contrast_low,
+          {opacity: 0.7},
+        ]}>
+        <SignalBadge signal={entry.signal} />
+        <View style={[a.flex_1, a.gap_2xs]}>
+          <Text style={[a.text_md, a.font_bold, t.atoms.text]}>
+            <Trans>Policy no disponible</Trans>
+          </Text>
+          <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
+            {castLabel ? (
+              <Trans>Votada el {castLabel}. Puede que se haya borrado.</Trans>
+            ) : (
+              <Trans>Puede que se haya borrado.</Trans>
+            )}
+          </Text>
+        </View>
+      </View>
+    )
+  }
+
+  const {title, badges} = getPolicyPostParts(entry.post)
+  const meta = [board?.board.name, castLabel ? l`votada el ${castLabel}` : '']
+    .filter(Boolean)
+    .join(' · ')
+  const average = tally ? parseSignalAverage(tally.signalAverage) : 0
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={l`${title}. Tu voto: ${formatSignal(entry.signal)}`}
+      accessibilityHint={l`Abre los detalles de la policy`}
+      onPress={onPress}
+      style={({pressed}) => [
+        a.flex_row,
+        a.gap_md,
+        a.p_md,
+        a.rounded_md,
+        a.border,
+        t.atoms.bg_contrast_25,
+        t.atoms.border_contrast_low,
+        pressed && {opacity: 0.85},
+      ]}>
+      <SignalBadge signal={entry.signal} />
+      <View style={[a.flex_1, a.gap_xs]}>
+        <View style={[a.flex_row, a.align_center, a.gap_sm, a.flex_wrap]}>
+          <PostFlairStrip
+            badges={badges.filter(badge => badge.kind !== 'postType')}
+            compact
+          />
+          {tally?.official ? (
+            <Text
+              style={[a.text_xs, a.font_bold, {color: t.palette.primary_500}]}>
+              <Trans>OFICIAL</Trans>
+            </Text>
+          ) : null}
+        </View>
+        <Text
+          emoji
+          numberOfLines={2}
+          style={[a.text_md, a.font_bold, a.leading_snug, t.atoms.text]}>
+          {title}
+        </Text>
+        {meta ? (
+          <Text emoji style={[a.text_xs, t.atoms.text_contrast_medium]}>
+            {meta}
+          </Text>
+        ) : null}
+        <View
+          style={[a.flex_row, a.align_center, a.gap_sm, a.flex_wrap, a.pt_2xs]}>
+          {isTallyLoading ? (
+            <View
+              style={[
+                a.rounded_xs,
+                t.atoms.bg_contrast_50,
+                {height: 16, width: 140},
+              ]}
+            />
+          ) : !tally || tally.voteCount === 0 ? (
+            <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
+              <Trans>Aún no hay un conteo</Trans>
+            </Text>
+          ) : (
+            <>
+              <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
+                <Trans>
+                  Promedio{' '}
+                  <Text
+                    style={[
+                      a.text_xs,
+                      a.font_bold,
+                      {color: getSignalColor(average)},
+                    ]}>
+                    {formatAverage(average)}
+                  </Text>{' '}
+                  · {tally.voteCount} {tally.voteCount === 1 ? 'voto' : 'votos'}
+                </Trans>
+              </Text>
+              <PolicyOutcomePill outcome={tally.outcome} />
+            </>
+          )}
+        </View>
+      </View>
+    </Pressable>
+  )
+}

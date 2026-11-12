@@ -91,7 +91,7 @@ export function PolicyCard({
           style={[a.gap_xs]}>
           <View style={[a.flex_row, a.align_center, a.gap_sm, a.flex_wrap]}>
             <PostFlairStrip
-              badges={badges.filter(badge => badge.kind === 'matter')}
+              badges={badges.filter(badge => badge.kind !== 'postType')}
               compact
             />
             {tally?.official ? (

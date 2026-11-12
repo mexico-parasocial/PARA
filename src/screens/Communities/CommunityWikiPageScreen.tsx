@@ -32,13 +32,22 @@ import * as Toast from '#/components/Toast'
 import {H1, Text} from '#/components/Typography'
 import {ChoiceChips} from '#/features/communityActivities/components/ChoiceChips'
 import {WikiBody} from '#/features/communityActivities/components/WikiBody'
+import {OfficialThreadTimeline} from '../Agora/components/OfficialThreadTimeline'
 
 type Props = NativeStackScreenProps<CommonNavigatorParams, 'CommunityWikiPage'>
 
 export function CommunityWikiPageScreen({route, navigation}: Props) {
   const {_} = useLingui()
   const t = useTheme()
-  const {communityUri, communityName, communityId, slug, kind} = route.params
+  const {
+    communityUri,
+    communityName,
+    communityId,
+    slug,
+    kind,
+    officialThread,
+    agoraThread,
+  } = route.params
   const {canOrganize} = useCommunityOrganizers({
     communityUri,
     communityName,
@@ -58,7 +67,13 @@ export function CommunityWikiPageScreen({route, navigation}: Props) {
         <Layout.Header.BackButton />
         <Layout.Header.Content>
           <Layout.Header.TitleText>
-            <Trans>Wiki</Trans>
+            {agoraThread ? (
+              <Trans>Official thread</Trans>
+            ) : officialThread ? (
+              <Trans>Pin a discussion</Trans>
+            ) : (
+              <Trans>Wiki</Trans>
+            )}
           </Layout.Header.TitleText>
           <Layout.Header.SubtitleText>
             {communityName}
@@ -91,13 +106,14 @@ export function CommunityWikiPageScreen({route, navigation}: Props) {
             <Text style={[a.text_md, t.atoms.text_contrast_medium]}>
               <Trans>Could not load the wiki.</Trans>
             </Text>
-          ) : isEditing || (isMissing && canOrganize) ? (
+          ) : canOrganize && (isEditing || (isMissing && !agoraThread)) ? (
             <WikiEditor
               key={page?.uri ?? slug ?? 'new'}
               communityUri={communityUri}
               existing={page}
               initialSlug={slug}
-              initialKind={kind}
+              initialKind={officialThread ? 'megathread' : kind}
+              officialThread={officialThread}
               takenSlugs={(pagesQuery.data ?? [])
                 .map(p => p.record.slug)
                 .filter(s => s !== page?.record.slug)}
@@ -105,6 +121,10 @@ export function CommunityWikiPageScreen({route, navigation}: Props) {
                 page ? setIsEditing(false) : navigation.goBack()
               }
               onSaved={savedSlug => {
+                if (officialThread) {
+                  navigation.goBack()
+                  return
+                }
                 setIsEditing(false)
                 navigation.setParams({slug: savedSlug})
               }}
@@ -113,6 +133,16 @@ export function CommunityWikiPageScreen({route, navigation}: Props) {
             <Text style={[a.text_md, t.atoms.text_contrast_medium]}>
               <Trans>This page does not exist yet.</Trans>
             </Text>
+          ) : agoraThread ? (
+            page.record.kind === 'megathread' &&
+            page.record.pinned &&
+            page.record.threadUri ? (
+              <OfficialThreadTimeline page={page} canOrganize={canOrganize} />
+            ) : (
+              <Text>
+                <Trans>This discussion is no longer pinned.</Trans>
+              </Text>
+            )
           ) : (
             <WikiPageView
               page={page}
@@ -189,6 +219,7 @@ function WikiEditor({
   existing,
   initialSlug,
   initialKind,
+  officialThread,
   takenSlugs,
   onCancel,
   onSaved,
@@ -197,6 +228,7 @@ function WikiEditor({
   existing?: CommunityWikiPageView
   initialSlug?: string
   initialKind?: CommunityWikiPageKind
+  officialThread?: boolean
   takenSlugs: string[]
   onCancel: () => void
   onSaved: (slug: string) => void
@@ -237,7 +269,10 @@ function WikiEditor({
       kind === 'megathread' && threadInput.trim()
         ? parseThreadReference(threadInput)
         : undefined
-    if (kind === 'megathread' && threadInput.trim() && !threadUri) {
+    if (
+      !threadUri &&
+      (officialThread || (kind === 'megathread' && threadInput.trim()))
+    ) {
       setError(_(msg`Paste a post link or an at:// post URI.`))
       return
     }
@@ -251,6 +286,10 @@ function WikiEditor({
           title: title.trim(),
           body,
           threadUri,
+          pollUri:
+            threadUri === existing?.record.threadUri
+              ? existing?.record.pollUri
+              : undefined,
           pinned,
           sortOrder: existing?.record.sortOrder,
         },
@@ -286,20 +325,22 @@ function WikiEditor({
         ) : null}
       </View>
 
-      <View style={[a.gap_sm]}>
-        <TextField.LabelText>
-          <Trans>Type</Trans>
-        </TextField.LabelText>
-        <ChoiceChips
-          label={_(msg`Page type`)}
-          value={kind}
-          onChange={setKind}
-          options={[
-            {value: 'page', label: _(msg`Wiki page`)},
-            {value: 'megathread', label: _(msg`Megathread`)},
-          ]}
-        />
-      </View>
+      {!officialThread ? (
+        <View style={[a.gap_sm]}>
+          <TextField.LabelText>
+            <Trans>Type</Trans>
+          </TextField.LabelText>
+          <ChoiceChips
+            label={_(msg`Page type`)}
+            value={kind}
+            onChange={setKind}
+            options={[
+              {value: 'page', label: _(msg`Wiki page`)},
+              {value: 'megathread', label: _(msg`Megathread`)},
+            ]}
+          />
+        </View>
+      ) : null}
 
       {kind === 'megathread' ? (
         <View>
@@ -319,16 +360,18 @@ function WikiEditor({
         </View>
       ) : null}
 
-      <Toggle.Item
-        name="pinned"
-        label={_(msg`Pin to the top of the menu`)}
-        value={pinned}
-        onChange={setPinned}>
-        <Toggle.Checkbox />
-        <Toggle.LabelText>
-          <Trans>Pin to the top of the menu</Trans>
-        </Toggle.LabelText>
-      </Toggle.Item>
+      {!officialThread ? (
+        <Toggle.Item
+          name="pinned"
+          label={_(msg`Pin to the top of the menu`)}
+          value={pinned}
+          onChange={setPinned}>
+          <Toggle.Checkbox />
+          <Toggle.LabelText>
+            <Trans>Pin to the top of the menu</Trans>
+          </Toggle.LabelText>
+        </Toggle.Item>
+      ) : null}
 
       <View>
         <TextField.LabelText>
