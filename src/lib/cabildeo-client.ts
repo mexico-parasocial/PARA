@@ -1,4 +1,5 @@
 import {
+  type AssemblyDecisionReadView,
   type CabildeoOptionSummary,
   type CabildeoPartyVoteSummary,
   type CabildeoPositionCounts,
@@ -16,6 +17,9 @@ const CABILDEO_COLLECTION = 'com.para.civic.cabildeo'
 
 export type CabildeoView = CabildeoRecord & {
   uri: string
+  votingOpenedAt?: string
+  votingClosedAt?: string
+  assemblyDecision?: AssemblyDecisionReadView
   optionSummary: CabildeoOptionSummary[]
   partyVoteSummary?: CabildeoPartyVoteSummary[]
   positionCounts: CabildeoPositionCounts
@@ -115,11 +119,16 @@ export function mapCabildeoReadViewToView(
     geo: view.geo,
     options: view.options,
     minQuorum: view.minQuorum,
+    kind: view.kind,
+    protectedAction: view.protectedAction,
+    assemblyDecision: view.assemblyDecision,
     minimumViewTier: view.minimumViewTier ?? 'public',
     minimumParticipationTier: view.minimumParticipationTier ?? 'signed_in',
     voteVisibility: view.voteVisibility ?? 'public',
     phase: toKnownPhase(view.phase),
     phaseDeadline: view.phaseDeadline,
+    votingOpenedAt: view.votingOpenedAt,
+    votingClosedAt: view.votingClosedAt,
     optionSummary: view.optionSummary,
     partyVoteSummary: view.partyVoteSummary,
     positionCounts,
@@ -144,6 +153,8 @@ export function mapCabildeoPositionsFromRead(
   positions: CabildeoPositionReadView[],
 ): CabildeoPositionRecord[] {
   return positions.map(position => ({
+    uri: position.uri,
+    author: position.creator,
     cabildeo: position.cabildeo,
     stance: position.stance,
     optionIndex:
@@ -153,6 +164,10 @@ export function mapCabildeoPositionsFromRead(
     text: position.text,
     createdAt: position.createdAt,
     compassQuadrant: position.compassQuadrant,
+    agreeCount: position.agreeCount ?? 0,
+    disagreeCount: position.disagreeCount ?? 0,
+    passCount: position.passCount ?? 0,
+    viewerDirection: position.viewerDirection,
   }))
 }
 

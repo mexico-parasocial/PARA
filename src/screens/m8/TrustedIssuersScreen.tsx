@@ -7,7 +7,7 @@ import {Trans} from '@lingui/react/macro'
 
 import {m8Fetch} from '#/lib/im8/api'
 import {INE_INTEGRATION_APPROVED} from '#/lib/im8/ine'
-import {atoms as a, useTheme} from '#/alf'
+import {atoms as a, useBreakpoints, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'
@@ -37,6 +37,7 @@ interface M8Issuer {
  * decided by m8, not by this device.
  */
 export default function TrustedIssuersScreen() {
+  const {gtMobile} = useBreakpoints()
   const {_} = useLingui()
   const [issuers, setIssuers] = useState<M8Issuer[]>([])
   const [loading, setLoading] = useState(true)
@@ -89,7 +90,7 @@ export default function TrustedIssuersScreen() {
           }}
         />
       }
-      contentContainerStyle={[a.p_lg, a.gap_md]}>
+      contentContainerStyle={[gtMobile ? a.p_xl : a.p_lg, a.gap_md]}>
       <SectionHeading
         title={_(msg`Issuer keys`)}
         detail={_(

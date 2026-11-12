@@ -11,7 +11,6 @@ import {getCommunityInsignia} from '#/lib/civic-insignias'
 import {type CommunityGovernanceView} from '#/lib/community-governance'
 import {type UsePaletteValue} from '#/lib/hooks/usePalette'
 import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
-import {cleanError} from '#/lib/strings/errors'
 import {useCommunityRelationsQuery} from '#/state/queries/community-shared-content'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
@@ -47,13 +46,10 @@ export function CommunityAbout({
   isGovernanceError,
   refetchGovernance,
   isDraft,
-  isJoined,
   quorumCount,
   plainCommunityName,
   resolvedCommunityName,
   createdAt,
-  acceptInviteMutation,
-  onPressAcceptFounderInvite,
   onPressPolicies,
   onPressMatters,
   onPressRAQ,
@@ -70,17 +66,10 @@ export function CommunityAbout({
   isGovernanceError: boolean
   refetchGovernance: () => Promise<unknown>
   isDraft: boolean
-  isJoined: boolean
   quorumCount: number
   plainCommunityName: string
   resolvedCommunityName: string
   createdAt: string | undefined
-  acceptInviteMutation: {
-    error: Error | null
-    isSuccess: boolean
-    isPending: boolean
-  }
-  onPressAcceptFounderInvite: () => void
   onPressPolicies: () => void
   onPressMatters: () => void
   onPressRAQ: () => void
@@ -122,91 +111,6 @@ export function CommunityAbout({
 
   return (
     <View style={styles.aboutContainer}>
-      {/* Accept Founder Invite Card (Draft only, non-members) */}
-      {isDraft && !isJoined ? (
-        <View
-          style={[
-            styles.sectionCard,
-            pal.border,
-            {backgroundColor: t.palette.primary_50},
-          ]}>
-          <Text
-            style={[styles.sectionCardTitle, {color: t.palette.primary_700}]}>
-            🤝 Join as a Founding Member
-          </Text>
-          <Text
-            style={[
-              styles.civicActionsSubtitle,
-              {color: t.palette.primary_600},
-            ]}>
-            This community is gathering its founding members. Accept the invite
-            to become one of the first 9 and help bring this community to life.
-          </Text>
-          <View style={{gap: 8, marginTop: 4}}>
-            <Text
-              style={[styles.aboutHelperText, {color: t.palette.primary_600}]}>
-              Current founding members: {quorumCount} / 9
-            </Text>
-            <View
-              style={[
-                styles.quorumBar,
-                {backgroundColor: t.palette.contrast_100},
-              ]}>
-              <View
-                style={[
-                  styles.quorumBarFill,
-                  {
-                    backgroundColor: t.palette.primary_500,
-                    width: `${Math.min(100, (quorumCount / 9) * 100)}%`,
-                  },
-                ]}
-              />
-            </View>
-          </View>
-          {acceptInviteMutation.error ? (
-            <Text
-              style={{
-                color: t.palette.negative_500,
-                fontSize: 13,
-                marginTop: 4,
-              }}>
-              {cleanError(acceptInviteMutation.error)}
-            </Text>
-          ) : null}
-          {acceptInviteMutation.isSuccess ? (
-            <Text
-              style={{
-                color: t.palette.positive_500,
-                fontSize: 14,
-                fontWeight: '700',
-                marginTop: 4,
-              }}>
-              ✅ You've joined as a founding member!
-            </Text>
-          ) : (
-            <TouchableOpacity
-              accessibilityRole="button"
-              disabled={acceptInviteMutation.isPending}
-              onPress={() => void onPressAcceptFounderInvite()}
-              style={[
-                styles.primaryButton,
-                {
-                  backgroundColor: acceptInviteMutation.isPending
-                    ? t.palette.contrast_200
-                    : t.palette.primary_500,
-                  marginTop: 8,
-                },
-              ]}>
-              <Text style={styles.primaryButtonText}>
-                {acceptInviteMutation.isPending
-                  ? 'Joining...'
-                  : 'Accept Founder Invite'}
-              </Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      ) : null}
-
       {board?.founderStarterPackUri ? (
         <View
           style={[

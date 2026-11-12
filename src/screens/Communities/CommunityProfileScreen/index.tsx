@@ -2,13 +2,14 @@ import {useCallback, useEffect, useMemo, useState} from 'react'
 import {RefreshControl, ScrollView, TouchableOpacity, View} from 'react-native'
 import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
-import {Trans} from '@lingui/react/macro'
 import {useNavigation, useRoute} from '@react-navigation/native'
 
 import {getCommunityInsignia} from '#/lib/civic-insignias'
 import {type CommunityGovernanceView} from '#/lib/community-governance'
 import {usePalette} from '#/lib/hooks/usePalette'
-import {COMMUNITY_AGENT_PROFILE} from '#/lib/mock-data/community-agent'
+import {usePhotoLibraryPermission} from '#/lib/hooks/usePermissions'
+import {toDeviceReachableUri} from '#/lib/media/localDevUri'
+import {openCropper, openPicker} from '#/lib/media/picker'
 import {getPartyFeedProfile, PARTY_FEED_PROFILES} from '#/lib/party-feeds'
 import {getPostBadges} from '#/lib/post-flairs'
 import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
@@ -17,17 +18,18 @@ import {
   formatGeographicGroupName,
   isGeographicGroupCommunity,
 } from '#/lib/strings/community-names'
+import {cleanError, isCancelledError} from '#/lib/strings/errors'
 import {
   createLocalRecentCommunity,
   useAddRecentCommunity,
 } from '#/state/persisted/recent-communities'
 import {
   type CommunityBoardView,
-  useAcceptDraftInviteMutation,
   useCommunityBoardQuery,
   useCommunityBoardsQuery,
   useJoinCommunityMutation,
   useLeaveCommunityMutation,
+  useSetCommunityBannerMutation,
 } from '#/state/queries/community-boards'
 import {useCommunityGovernanceQuery} from '#/state/queries/community-governance'
 import {useCommunityPostsQuery} from '#/state/queries/community-posts'
@@ -35,13 +37,14 @@ import {useUnreadCountQuery} from '#/state/queries/matrix'
 import {useAgent} from '#/state/session'
 import {Text} from '#/view/com/util/text/Text'
 import {useTheme} from '#/alf'
+import {useSheetWrapper} from '#/components/Dialog/sheet-wrapper'
 import * as Layout from '#/components/Layout'
-import {CHAT_ENABLED} from '#/env'
+import * as Toast from '#/components/Toast'
+import {CHAT_ENABLED, IS_NATIVE} from '#/env'
 import {CommunityAbout} from './CommunityAbout'
 import {CommunityFeed} from './CommunityFeed'
 import {CommunityHero} from './CommunityHero'
 import {CommunityMenu} from './CommunityMenu'
-import {RepresentativeCard} from './RepresentativeCard'
 import {styles} from './styles'
 
 type CommunityProfileParams = {
@@ -234,28 +237,6 @@ export function CommunityProfileScreen() {
     return null
   }, [resolvedCommunityName])
 
-  const featuredRepresentative = useMemo(() => {
-    return (
-      governance.officials[0] || governance.deputies[0]?.activeHolder || null
-    )
-  }, [governance.deputies, governance.officials])
-  const agentDisplayName =
-    featuredRepresentative?.displayName ||
-    featuredRepresentative?.handle ||
-    featuredRepresentative?.did ||
-    COMMUNITY_AGENT_PROFILE.displayName
-  const agentRoleLabel = 'AI Agent'
-  const agentGovernanceRole =
-    featuredRepresentative?.office ||
-    (governance.deputies[0] ? governance.deputies[0].role : '')
-  const agentMandate =
-    featuredRepresentative?.mandate ||
-    (governance.deputies[0] ? governance.deputies[0].description : '') ||
-    COMMUNITY_AGENT_PROFILE.bio
-  const agentActorId =
-    featuredRepresentative?.did ||
-    featuredRepresentative?.handle ||
-    COMMUNITY_AGENT_PROFILE.id
   const isDraft = board?.status === 'draft'
 
   const {
@@ -304,7 +285,6 @@ export function CommunityProfileScreen() {
     enabled: !!agent.session?.did,
   })
   const unreadCount = unreadData?.unread ?? 0
-  const acceptInviteMutation = useAcceptDraftInviteMutation()
   const joinMutation = useJoinCommunityMutation()
   const leaveMutation = useLeaveCommunityMutation()
   const isJoinPending = joinMutation.isPending || leaveMutation.isPending
@@ -327,12 +307,28 @@ export function CommunityProfileScreen() {
     }
   }
 
-  const onPressAcceptFounderInvite = async () => {
-    if (!board?.uri) return
+  const bannerMutation = useSetCommunityBannerMutation()
+  const {requestPhotoAccessIfNeeded} = usePhotoLibraryPermission()
+  const sheetWrapper = useSheetWrapper()
+  const isOwner = board?.viewerRoles?.includes('owner') ?? false
+
+  const onPressEditBanner = async () => {
+    if (!board?.uri || !isOwner) return
     try {
-      await acceptInviteMutation.mutateAsync({communityUri: board.uri})
-      setJoinOverride(true)
-    } catch {}
+      if (IS_NATIVE && !(await requestPhotoAccessIfNeeded())) return
+      const [picked] = await sheetWrapper(openPicker())
+      if (!picked) return
+      // The header shows a wide strip, so crop to it where the OS can.
+      const image = IS_NATIVE
+        ? await openCropper({imageUri: picked.path, aspectRatio: 3 / 1})
+        : picked
+      await bannerMutation.mutateAsync({board, image})
+      Toast.show(_(msg`Banner updated`))
+    } catch (e) {
+      if (!isCancelledError(e)) {
+        Toast.show(cleanError(e), {type: 'error'})
+      }
+    }
   }
 
   const onRefresh = useCallback(async () => {
@@ -428,11 +424,6 @@ export function CommunityProfileScreen() {
     })
   }
 
-  const onPressChat = () => {
-    if (!agentActorId) return
-    navigation.navigate('AgentChat', {agentId: agentActorId})
-  }
-
   const onPressCommunityChat = () => {
     if (!board?.uri) return
     navigation.navigate('CommunityChat', {
@@ -441,26 +432,9 @@ export function CommunityProfileScreen() {
     })
   }
 
-  const onPressAgentProfile = () => {
-    if (!agentActorId) return
-    navigation.navigate('CommunityAgentProfile', {
-      agentId: agentActorId,
-      communityName: board?.name || communityName,
-    })
-  }
-
   return (
-    <Layout.Screen>
-      <Layout.Header.Outer noBottomBorder>
-        <Layout.Header.BackButton />
-        <Layout.Header.Content>
-          <Layout.Header.TitleText>
-            <Trans>Community</Trans>
-          </Layout.Header.TitleText>
-        </Layout.Header.Content>
-        <Layout.Header.Slot />
-      </Layout.Header.Outer>
-
+    // The hero's banner fills the status-bar inset and carries the back button.
+    <Layout.Screen noInsetTop>
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
@@ -468,11 +442,15 @@ export function CommunityProfileScreen() {
           <RefreshControl refreshing={isPTR} onRefresh={onRefresh} />
         }>
         <Layout.Center>
-          {/* Hero Banner Section */}
           <CommunityHero
             displayCommunityName={displayCommunityName}
             plainCommunityName={plainCommunityName}
             brandColor={brandColor}
+            bannerUri={toDeviceReachableUri(board?.banner)}
+            onPressEditBanner={
+              isOwner ? () => void onPressEditBanner() : undefined
+            }
+            isBannerPending={bannerMutation.isPending}
             partyProfile={partyProfile}
             boardDescription={board?.description}
             memberCount={board?.memberCount ?? 0}
@@ -484,29 +462,14 @@ export function CommunityProfileScreen() {
             joinLeaveError={joinLeaveError}
             onPressJoin={onPressJoin}
             onPressDocuments={onPressDocuments}
+            onPressPolicies={onPressPolicies}
+            onPressMatters={onPressMatters}
             onPressRAQ={onPressRAQ}
-            onPressRoles={onPressRoles}
             onPressVoters={onPressVoters}
             onPressCommunityChat={
               CHAT_ENABLED ? onPressCommunityChat : undefined
             }
             unreadCount={unreadCount}
-            governance={governance}
-            pal={pal}
-          />
-
-          {/* Representative Card */}
-          <RepresentativeCard
-            featuredRepresentative={featuredRepresentative}
-            agentDisplayName={agentDisplayName}
-            agentRoleLabel={agentRoleLabel}
-            agentGovernanceRole={agentGovernanceRole}
-            agentMandate={agentMandate}
-            agentActorId={agentActorId}
-            isGeographicGroup={isGeographicGroup}
-            onPressAgentProfile={onPressAgentProfile}
-            onPressChat={onPressChat}
-            pal={pal}
           />
 
           {/* Draft Banner */}
@@ -669,13 +632,10 @@ export function CommunityProfileScreen() {
                 isGovernanceError={isGovernanceError}
                 refetchGovernance={refetchGovernance}
                 isDraft={isDraft}
-                isJoined={isJoined}
                 quorumCount={quorumCount}
                 plainCommunityName={plainCommunityName}
                 resolvedCommunityName={resolvedCommunityName}
                 createdAt={createdAt}
-                acceptInviteMutation={acceptInviteMutation}
-                onPressAcceptFounderInvite={onPressAcceptFounderInvite}
                 onPressPolicies={onPressPolicies}
                 onPressMatters={onPressMatters}
                 onPressRAQ={onPressRAQ}

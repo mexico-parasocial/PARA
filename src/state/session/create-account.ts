@@ -5,11 +5,7 @@ import {toDatetimeString} from '@atproto/syntax'
 import {overwriteSavedFeeds, setPersonalDetails, upsertProfile} from '@bsky/sdk'
 
 import {networkRetry} from '#/lib/async/retry'
-import {
-  DISCOVER_SAVED_FEED,
-  IS_PROD_SERVICE,
-  TIMELINE_SAVED_FEED,
-} from '#/lib/constants'
+import {DEFAULT_ONBOARDING_SAVED_FEEDS, IS_PROD_SERVICE} from '#/lib/constants'
 import {logger} from '#/logger'
 import {snoozeBirthdateUpdateAllowedForDid} from '#/state/birthdate'
 import {restrictChatSettings} from '#/state/queries/messages/restrictChatSettings'
@@ -202,10 +198,13 @@ function initializeProfile(
 
 function initializeSavedFeeds(client: Client) {
   return retryPostSignupTask('set initial feeds', 1, () =>
-    client.call(overwriteSavedFeeds, [
-      {...DISCOVER_SAVED_FEED, id: TID.nextStr()},
-      {...TIMELINE_SAVED_FEED, id: TID.nextStr()},
-    ]),
+    client.call(
+      overwriteSavedFeeds,
+      DEFAULT_ONBOARDING_SAVED_FEEDS.map(feed => ({
+        ...feed,
+        id: TID.nextStr(),
+      })),
+    ),
   )
 }
 

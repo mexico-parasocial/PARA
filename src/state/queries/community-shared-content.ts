@@ -1,6 +1,7 @@
-import {type AtUriString} from '@atproto/syntax'
+import {AtUri, type AtUriString, type DidString} from '@atproto/syntax'
 import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
 
+import {communityAct} from '#/lib/api/community-act'
 import {STALE} from '#/state/queries'
 import {useAgent} from '#/state/session'
 import {com} from '#/lexicons'
@@ -212,11 +213,12 @@ export function useRemoveSharedContentMutation() {
 
   return useMutation({
     mutationFn: async (input: ModerateSharedContentInput) => {
-      const res = await agent.appviewClient.call(
-        com.para.community.removeSharedContent,
-        input as com.para.community.removeSharedContent.$InputBody,
-      )
-      return normalizeSharedContentActionResponse(res)
+      // The item's own repo is the subject of the event that moderates it.
+      return communityAct(agent, input.communityUri, {
+        action: 'content.hide',
+        subject: new AtUri(input.sharedContent.uri).host as DidString,
+        target: input.sharedContent.uri as AtUriString,
+      })
     },
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({queryKey: [RQKEY_ROOT]})
@@ -233,11 +235,12 @@ export function useRestoreSharedContentMutation() {
 
   return useMutation({
     mutationFn: async (input: ModerateSharedContentInput) => {
-      const res = await agent.appviewClient.call(
-        com.para.community.restoreSharedContent,
-        input as com.para.community.restoreSharedContent.$InputBody,
-      )
-      return normalizeSharedContentActionResponse(res)
+      // The item's own repo is the subject of the event that moderates it.
+      return communityAct(agent, input.communityUri, {
+        action: 'content.restore',
+        subject: new AtUri(input.sharedContent.uri).host as DidString,
+        target: input.sharedContent.uri as AtUriString,
+      })
     },
     onSuccess: (_data, variables) => {
       void queryClient.invalidateQueries({queryKey: [RQKEY_ROOT]})
@@ -282,19 +285,6 @@ function normalizeShareContentResponse(json: unknown): {
     uri: readString(data.uri) ?? '',
     cid: readString(data.cid) ?? '',
     sharedContent: normalizeSharedContentView(data.sharedContent),
-  }
-}
-
-function normalizeSharedContentActionResponse(json: unknown): {
-  uri: string
-  cid: string
-  action: CommunitySharedContentActionView
-} {
-  const data = asRecord(json) ?? {}
-  return {
-    uri: readString(data.uri) ?? '',
-    cid: readString(data.cid) ?? '',
-    action: normalizeActionView(data.action),
   }
 }
 

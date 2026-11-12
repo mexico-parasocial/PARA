@@ -3,12 +3,11 @@ import {useQuery} from '@tanstack/react-query'
 
 import {
   PARA_CIVIC_DELEGATION_COLLECTION,
-  PARA_CIVIC_VOTE_COLLECTION,
   PARA_OPEN_QUESTION_COLLECTION,
   PARA_RAQ_PROPOSAL_COLLECTION,
 } from '#/lib/api/para-lexicons'
 import {STALE} from '#/state/queries'
-import {useProfileVotesQuery} from '#/state/queries/profile-votes'
+import {usePolicyBallotsQuery} from '#/state/queries/policy-ledger'
 import {useUserAlignment} from '#/state/queries/raq'
 import {useAgent} from '#/state/session'
 import {normalizeRaqResults} from '#/screens/RAQ/raq-utils'
@@ -62,8 +61,9 @@ export type PassportData = {
  * Activities are absent: no attendance or participation record exists yet.
  */
 export function usePassportData(did: string | undefined): PassportData {
-  const votes = useProfileVotesQuery(did ?? '')
-  const civic = useRepoRecords(did, PARA_CIVIC_VOTE_COLLECTION)
+  // Policy ballots, as the vote ledger lists them: one current ballot per
+  // policy, newest wins, so a policy later downvoted does not count as backed.
+  const ballots = usePolicyBallotsQuery(did)
   const delegations = useRepoRecords(did, PARA_CIVIC_DELEGATION_COLLECTION)
   const alignment = useUserAlignment(did)
   const proposed = useRepoRecords(did, PARA_RAQ_PROPOSAL_COLLECTION)
@@ -71,9 +71,9 @@ export function usePassportData(did: string | undefined): PassportData {
 
   return {
     votes: {
-      count: votes.data?.length,
-      isLoading: votes.isLoading,
-      isError: votes.isError,
+      count: ballots.data?.ballots.length,
+      isLoading: ballots.isLoading,
+      isError: ballots.isError,
     },
     delegations: {
       count: delegations.data?.length,
@@ -84,10 +84,9 @@ export function usePassportData(did: string | undefined): PassportData {
       isError: delegations.isError,
     },
     policies: {
-      // Newest ballot wins, so a policy later downvoted must not count.
-      count: civic.data ? latestSupportedPolicies(civic.data) : undefined,
-      isLoading: civic.isLoading,
-      isError: civic.isError,
+      count: ballots.data?.ballots.filter(ballot => ballot.signal > 0).length,
+      isLoading: ballots.isLoading,
+      isError: ballots.isError,
     },
     raq: {
       axes: normalizeRaqResults(alignment.data?.results).map(r =>
@@ -102,21 +101,4 @@ export function usePassportData(did: string | undefined): PassportData {
       isError: proposed.isError || open.isError,
     },
   }
-}
-
-/** Records arrive newest first; only each policy's latest ballot counts. */
-function latestSupportedPolicies(records: RepoRecord[]) {
-  const latest = new Map<string, number>()
-  for (const record of records) {
-    if (
-      record.subjectType !== 'policy' ||
-      typeof record.subject !== 'string' ||
-      typeof record.signal !== 'number' ||
-      latest.has(record.subject)
-    ) {
-      continue
-    }
-    latest.set(record.subject, record.signal)
-  }
-  return [...latest.values()].filter(signal => signal > 0).length
 }

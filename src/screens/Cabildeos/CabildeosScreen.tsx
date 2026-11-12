@@ -31,8 +31,10 @@ import {
   getCabildeoAlignedParty,
   getVoteBreakdownByParty,
 } from '#/lib/cabildeo-party-alignment'
+import {findMexicanState} from '#/lib/constants/mexico'
 import {PressableScale} from '#/lib/custom-animations/PressableScale'
 import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
+import {useCivicHomeState} from '#/state/preferences'
 import {useCabildeosQuery} from '#/state/queries/cabildeo'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
@@ -532,6 +534,7 @@ function LobbyingSection({
   const [selectedPartyId, setSelectedPartyId] = useState<string | undefined>()
 
   const {data: cabildeos = []} = useCabildeosQuery()
+  const civicHomeState = useCivicHomeState()
 
   const resolutionOptions: Array<{key: ResolutionFilter; label: string}> = [
     {key: 'all', label: _(msg`All stages`)},
@@ -595,8 +598,16 @@ function LobbyingSection({
     [publicRegionScoped],
   )
 
+  // With no region picked, "In your region" follows the civic home chosen in
+  // onboarding (even when it has no cabildeos yet), else the busiest region.
+  const civicHomeRegion = civicHomeState
+    ? (regionOptions.find(o => findMexicanState(o.region) === civicHomeState)
+        ?.region ?? civicHomeState)
+    : undefined
   const regionalFocus =
-    selectedRegion === ALL_REGIONS ? regionOptions[0]?.region : selectedRegion
+    selectedRegion === ALL_REGIONS
+      ? (civicHomeRegion ?? regionOptions[0]?.region)
+      : selectedRegion
 
   const regionalItems = useMemo(() => {
     if (!regionalFocus) return []

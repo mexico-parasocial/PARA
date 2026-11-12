@@ -147,6 +147,8 @@ const schema = z.object({
   showPartyShields: z.boolean().optional(),
   showAuthorInsignias: z.boolean().optional(),
   recentCommunities: z.array(z.any()).optional(),
+  /** Civic home state from onboarding, `MEXICAN_STATES` spelling. */
+  civicHomeState: z.string().optional(),
   mapProvider: z.enum(['google', 'maplibre']).optional(),
   mapViewMode: z
     .enum(['standard', 'satellite', 'terrain', 'hybrid'])
@@ -203,6 +205,7 @@ export const defaults: Schema = {
   showPartyShields: true,
   showAuthorInsignias: true,
   recentCommunities: [],
+  civicHomeState: undefined,
   mapProvider: undefined,
   mapViewMode: 'standard',
 }

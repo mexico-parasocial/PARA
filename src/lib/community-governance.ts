@@ -30,6 +30,19 @@ export type CommunityGovernanceView = CommunityGovernanceRecord & {
    * publish for any community, these are what the server trusts.
    */
   roleHolders?: CommunityRoleHolder[]
+  /** Offers still waiting for an answer or for the owner's appointment. */
+  /** How people join: `open`, or `assembly_approval` (the assembly admits them). */
+  admissionMode?: 'open' | 'assembly_approval'
+  /** What each role is, how it is obtained and what it may do, from the AppView. */
+  roleDefinitions?: CommunityRoleDefinition[]
+}
+
+export type CommunityRoleDefinition = {
+  role: string
+  howToObtain: string
+  responsibilities: string[]
+  actions: string[]
+  permissions: string[]
 }
 
 export type CommunityRoleHolder = {
@@ -37,6 +50,18 @@ export type CommunityRoleHolder = {
   role: string
   effectiveAt?: string
   expiresAt?: string
+  /** What the role rests on. */
+  evidence?: string
+}
+
+/** An office offered to a member that they have not answered yet. */
+export type CommunityRoleOffer = {
+  /** The event that opened the offer; accepting names it. */
+  seq: number
+  role: string
+  subject: string
+  offeredBy: string
+  expiresAt: string
 }
 
 export type CommunityGovernanceCounters = {
@@ -290,6 +315,9 @@ export function normalizeCommunityGovernance(
     editHistory,
     counters,
     roleHolders: normalizeRoleHolders(data.roleHolders),
+    admissionMode:
+      data.admissionMode === 'assembly_approval' ? 'assembly_approval' : 'open',
+    roleDefinitions: normalizeRoleDefinitions(data.roleDefinitions),
     uri: stringOr(data.uri),
     repoDid:
       stringOr(data.repoDid) ||
@@ -311,6 +339,30 @@ function normalizeRoleHolders(raw: unknown): CommunityRoleHolder[] {
         role,
         effectiveAt: stringOr(holder.effectiveAt),
         expiresAt: stringOr(holder.expiresAt),
+        evidence: stringOr(holder.evidence),
+      },
+    ]
+  })
+}
+
+function normalizeRoleDefinitions(raw: unknown): CommunityRoleDefinition[] {
+  if (!Array.isArray(raw)) return []
+  const strings = (value: unknown) =>
+    Array.isArray(value)
+      ? value.filter((item): item is string => typeof item === 'string')
+      : []
+  return raw.flatMap(item => {
+    if (!item || typeof item !== 'object') return []
+    const definition = item as Record<string, unknown>
+    const role = stringOr(definition.role)
+    if (!role) return []
+    return [
+      {
+        role,
+        howToObtain: stringOr(definition.howToObtain) ?? '',
+        responsibilities: strings(definition.responsibilities),
+        actions: strings(definition.actions),
+        permissions: strings(definition.permissions),
       },
     ]
   })
@@ -351,6 +403,30 @@ export function getModeratorCapabilities(
   return moderator?.capabilities || []
 }
 
+/**
+ * Whether `did` holds `role` by verified authority events. The governance
+ * record's own moderator list never counts: any account can publish one under
+ * any community's name.
+ */
+export function holdsVerifiedRole(
+  governance: CommunityGovernanceView | null | undefined,
+  did: string | undefined,
+  roles: ReadonlyArray<string>,
+  now: Date = new Date(),
+) {
+  if (!governance || !did) return false
+  return (governance.roleHolders ?? []).some(
+    holder =>
+      holder.did === did &&
+      roles.includes(holder.role) &&
+      (!holder.expiresAt || new Date(holder.expiresAt) > now),
+  )
+}
+
+/**
+ * Editing the governance record needs both: the record is the viewer's own,
+ * and the AppView holds them as owner or moderator.
+ */
 export function canManageGovernance(
   governance: CommunityGovernanceView | null | undefined,
   did: string | undefined,
@@ -359,7 +435,7 @@ export function canManageGovernance(
   if (governance.repoDid && governance.repoDid !== did) {
     return false
   }
-  return isCommunityModerator(governance, did)
+  return holdsVerifiedRole(governance, did, ['owner', 'moderator'])
 }
 
 export function appendGovernanceHistoryEntry(

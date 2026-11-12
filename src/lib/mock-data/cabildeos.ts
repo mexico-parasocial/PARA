@@ -433,6 +433,29 @@ export const MOCK_CABILDEO_VIEWS: CabildeoView[] = [
   },
 ]
 
+/*
+ * A forum: a conversation for a place, with no options and no vote. It is the
+ * only demo cabildeo that can carry a conclusion (./conclusions.ts).
+ */
+MOCK_CABILDEO_VIEWS.push({
+  uri: 'at://did:plc:alice/com.para.civic.cabildeo/sombra-centro',
+  title: 'Sombra y árboles en el Centro Histórico',
+  description:
+    'Foro abierto sobre cómo dar sombra a las calles del Centro Histórico durante la temporada de calor.',
+  createdAt: new Date(Date.now() - 12 * 864e5).toISOString(),
+  author: 'did:plc:alice',
+  community: 'Medio Ambiente y Clima',
+  flairs: ['||#MedioAmbiente'],
+  region: 'Jalisco',
+  geo: {latE7: 206767000, lngE7: -1033475000},
+  kind: 'forum',
+  options: [],
+  phase: 'deliberating',
+  optionSummary: [],
+  positionCounts: {total: 3, for: 1, against: 1, amendment: 1, byOption: []},
+  voteTotals: {total: 0, direct: 0, delegated: 0},
+})
+
 export const MOCK_CABILDEO_POSITIONS_BY_URI: Record<
   string,
   CabildeoPositionRecord[]

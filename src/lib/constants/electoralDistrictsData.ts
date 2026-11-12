@@ -7,6 +7,7 @@
  */
 
 import {normalizeMexicoStateName} from '#/lib/constants/mexico'
+import {partyColor} from '#/lib/parties/partyColors'
 
 // ─── Types ───────────────────────────────────────────────────────
 
@@ -43,22 +44,6 @@ export interface ElectoralDistrict {
 
 export function districtKeyFor(stateName: string, districtNumber: number) {
   return `${normalizeMexicoStateName(stateName)}:${districtNumber}`
-}
-
-// ─── Party helpers ───────────────────────────────────────────────
-
-const PARTY_PALETTE: Record<string, string> = {
-  Morena: '#8B1538',
-  PAN: '#003087',
-  PRI: '#00923F',
-  MC: '#FF6B00',
-  PVEM: '#228B22',
-  PT: '#FF0000',
-  PRD: '#FFD700',
-}
-
-function partyAccent(party: string): string {
-  return PARTY_PALETTE[party] || '#6B7280'
 }
 
 // Simple seeded pseudo-random for consistent data across renders
@@ -400,7 +385,7 @@ function generateDistricts(): ElectoralDistrict[] {
         dominantParty,
         currentDeputy: deputyName,
         deputyParty,
-        accent: partyAccent(dominantParty),
+        accent: partyColor(dominantParty),
         centroid: boundaryData?.centroid
           ? {
               latitude: boundaryData.centroid.lat,

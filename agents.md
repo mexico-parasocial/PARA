@@ -725,6 +725,92 @@ decision is made.
 
 ---
 
+## 2026-11-11: Communities are accounts (OD-9 client migration)
+
+- A community is named by its profile record,
+  `at://<community did>/com.para.community.profile/self`. Board URIs, and the
+  `createBoard` / `join` / `leave` / role-offer / authority-event records, are
+  gone from the backend; do not bring them back in an upstream or lexicon sync.
+- Every community write is one action through `communityAct`
+  (`lib/api/community-act.ts`): join, leave, moderator offer / accept / resign /
+  revoke, hiding and restoring shared content, and profile updates. The host
+  PDS accepts or refuses on the spot. Creation is `com.para.community.create`,
+  which needs a slug (`communitySlug`).
+- Open moderator offers come from `com.para.community.listOpenOffers`, not from
+  `getGovernance`. Accepting an offer makes the member a moderator; there is no
+  separate appointment step.
+- A profile update replaces every field. Resend the current name, description,
+  quadrant and region with any change, or they are cleared. The banner is
+  uploaded first with `com.para.community.uploadBanner`, then named by CID.
+- Not migrated, and refused by the backend: publishing a governance record
+  (`useCommunityGovernanceMutation`) and assembly decision events
+  (`publishAssemblyDecision`). Accounts on another PDS cannot act yet.
+- Local evidence only: the lexicons were copied from the WatZappa branch
+  `feat/community-spaces` (unmerged). Not run against a live backend.
+
+## 2026-11-10: Onboarding defaults and the civic home
+
+- Onboarding and signup pin `DEFAULT_ONBOARDING_SAVED_FEEDS` (the Following
+  timeline), not Bluesky's Discover/Video feed generators, and follow no one
+  but the members of a starter pack the user arrived through. Bluesky's
+  `BSKY_APP_ACCOUNT_DID` is not followed: it is not part of PARA and does not
+  exist on a local network. The SDK sync `1f4655bfe` restored upstream's
+  defaults once; re-apply PARA's when a sync touches `StepFinished` or
+  `create-account.ts`.
+- The onboarding "civic home" state is a device preference,
+  `useCivicHomeState` (`state/preferences/civic-home.tsx`, persisted
+  `civicHomeState`, `MEXICAN_STATES` spelling, undefined for Nacional). It
+  pre-selects Communities "Find by state" and the Cabildeos "In your region"
+  shelf. It is never published: not evidence of residency, never a gate.
+- The onboarding compass step only picks a ninth and asks for party
+  membership; both save through `usePoliticalAffiliation`, each touching only
+  its own type.
+
+## 2026-11-07: Web builds read `.env`; the bridge needs CORS for web
+
+- Expo's webpack config passes no `EXPO_PUBLIC_*` values (SDK 41+) and only
+  Metro inlines them, so web silently used production fallbacks
+  (`bridge.para.social`, a `127.0.0.1` broker). `webpack.config.js` now loads
+  `.env.local`/`.env` with `@expo/env` and defines each public key. Restart the
+  web server after editing them. With the env applied, web's default sign-in
+  service is the Bonjour PDS URL; choose `http://localhost:2583` if it hangs.
+- The matrix bridge answers browsers only for origins in
+  `BRIDGE_CORS_ORIGINS` (WatZappa `services/matrix-bridge/src/cors.ts`; the
+  local launcher allows `:19006` and `:8100`). A deployed web origin must be
+  added there.
+- Connecting m8 invalidates `matrix-rooms`/`matrix-unread`, so chat no longer
+  shows a stale "connect your identity" error. Web keeps the m8 token in
+  memory: a full page load needs Identity & Wallet to reconnect.
+
+## 2026-11-10: The vote ledger lists policy ballots
+
+- `SeeVotes` (`/my-base/votes`) reads the person's public policy ballots from
+  their repo (`usePolicyLedgerQuery`), not `useCabildeosQuery`. Policies have no
+  phases, options or delegation, so the ledger shows the -3..+3 weight beside
+  the policy's tally. It honors the route `did`.
+- A repo can hold several ballots for one policy (deleting the old one is best
+  effort) and `listRecords` order is not trusted: `selectCurrentPolicyBallots`
+  keeps the newest by `createdAt`, then record key. The viewer's signals use it.
+- Every count that opens the ledger (My Base "N policy decisions", the profile
+  header, the passport's votes and supported policies) uses
+  `usePolicyBallotsQuery`, which reads only the repo. Profile views have no
+  `votesCount`; do not read one. `CivicDashboard` is unused.
+
+## 2026-11-03: Conclusiones (forum and persuasion cabildeos)
+
+- A steward's written summary of a cabildeo that has no vote to end it;
+  design in `docs/conclusion-spec.md`. Only `forum` and `persuasion`, never an
+  `activity` and never an open question. It is the steward's reading, not a
+  result: say so in the UI, close nothing, show earlier ones as history.
+- The AppView returns the board URI (`communityUri`) from `getConclusion` even
+  when there is no conclusion, because a client cannot reliably turn a
+  community slug into the board a record must name. Write that value verbatim.
+- `getCabildeo` and `listCabildeos` now carry `kind`. The client's
+  `mapCabildeoPositionsFromRead` keeps `uri` and `author` so a conclusion can
+  cite positions; before this it dropped them.
+- Creation offers Actividad and Foro only. A forum is created with no options
+  and requires a place.
+
 ## 2026-11-02: Seguimiento (AppView and read-only client built locally)
 
 - Follow-through of a resolved cabildeo is `com.para.civic.followThrough` and

@@ -10,6 +10,7 @@ import {
   useCameraPermission,
   usePhotoLibraryPermission,
 } from '#/lib/hooks/usePermissions'
+import {toDeviceReachableUri} from '#/lib/media/localDevUri'
 import {compressIfNeeded} from '#/lib/media/manip'
 import {openCamera, openCropper, openPicker} from '#/lib/media/picker'
 import {type PickerImage} from '#/lib/media/picker.shared'
@@ -127,7 +128,7 @@ export function UserBanner({
                   <Image
                     testID="userBannerImage"
                     style={styles.bannerImage}
-                    source={{uri: banner}}
+                    source={{uri: toDeviceReachableUri(banner)}}
                     accessible={true}
                     accessibilityIgnoresInvertColors
                     useAppleWebpCodec
@@ -214,7 +215,7 @@ export function UserBanner({
     <Image
       style={[styles.bannerImage, t.atoms.bg_contrast_25]}
       contentFit="cover"
-      source={{uri: banner}}
+      source={{uri: toDeviceReachableUri(banner)}}
       blurRadius={moderation?.blur ? 100 : 0}
       accessible={true}
       accessibilityIgnoresInvertColors

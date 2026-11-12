@@ -5,7 +5,7 @@ import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
 import {m8Fetch} from '#/lib/im8'
-import {atoms as a, useTheme} from '#/alf'
+import {atoms as a, useBreakpoints, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import * as Layout from '#/components/Layout'
 import {Text} from '#/components/Typography'
@@ -54,6 +54,7 @@ const EMPTY_SUMMARY: AuditSummary = {
  * from the Wallet tab.
  */
 export default function ConsentAuditScreen() {
+  const {gtMobile} = useBreakpoints()
   const {_} = useLingui()
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -120,7 +121,7 @@ export default function ConsentAuditScreen() {
           }}
         />
       }
-      contentContainerStyle={[a.p_lg, a.gap_md]}>
+      contentContainerStyle={[gtMobile ? a.p_xl : a.p_lg, a.gap_md]}>
       {loadError ? (
         <Card>
           <Text style={[a.text_sm]}>

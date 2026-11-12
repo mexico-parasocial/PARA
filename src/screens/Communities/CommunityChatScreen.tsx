@@ -21,6 +21,7 @@ import {Trans} from '@lingui/react/macro'
 import {useNavigation, useRoute} from '@react-navigation/native'
 
 import {getDefaultChatIdentityMode} from '#/lib/chat/identity'
+import {canModerateChat} from '#/lib/chat/roles'
 import {chatFailureMessage} from '#/lib/matrix/failure'
 import {shareMatrixMedia} from '#/lib/matrix/media.native'
 import {useChatBootstrap} from '#/lib/matrix/useChatBootstrap'
@@ -45,12 +46,9 @@ import * as Dialog from '#/components/Dialog'
 import {type Props as SVGIconProps} from '#/components/icons/common'
 import {Group3_Stroke2_Corner0_Rounded as MembersIcon} from '#/components/icons/Group3'
 import {Megaphone_Stroke2_Corner0_Rounded as ProposalIcon} from '#/components/icons/Megaphone'
-import {Newspaper_Stroke2_Corner2_Rounded as EvidenceIcon} from '#/components/icons/Newspaper'
 import {Shield_Stroke2_Corner0_Rounded as ShieldIcon} from '#/components/icons/Shield'
-import {Sparkle_Stroke2_Corner0_Rounded as SummarizeIcon} from '#/components/icons/Sparkle'
 import {Warning_Stroke2_Corner0_Rounded as WarningIcon} from '#/components/icons/Warning'
 import * as Layout from '#/components/Layout'
-import {SorteoBadge} from '#/components/SorteoBadge'
 import {Text} from '#/components/Typography'
 import {CHAT_ENGINE} from '#/env'
 import {ChatCivicContext} from './ChatCivicContext'
@@ -136,14 +134,10 @@ export function CommunityChatScreen() {
           (b.severity === 'warning' || b.severity === 'critical'),
       ),
     ).length ?? 0
-  const isModerator = myBadges?.participation?.isModerator ?? false
+  const isModerator = canModerateChat(myBadges?.roles)
   const identityMode = getDefaultChatIdentityMode('matrix_community')
   const civicBadges = [
-    myBadges?.participation?.isModerator ? _(msg`Moderador`) : undefined,
-    myBadges?.participation?.isDelegate ? _(msg`Delegado`) : undefined,
-    myBadges?.participation?.chamber
-      ? _(msg`Cámara ${myBadges.participation.chamber}`)
-      : undefined,
+    isModerator ? _(msg`Moderador`) : undefined,
     ...(myBadges?.visibleBadges.map(badge => badge.label) ?? []),
   ].filter(Boolean) as string[]
 
@@ -200,10 +194,6 @@ export function CommunityChatScreen() {
       strings: matrixStrings,
     })
   }, [tokenData, activeRoomId, communityName, matrixStrings, sdkBundle])
-
-  const openAgentAssistant = useCallback(() => {
-    navigation.navigate('AgentChat', {agentId: 'Xavier Exul'})
-  }, [navigation])
 
   const openCreateCabildeo = useCallback(() => {
     navigation.navigate('CreateCabildeo')
@@ -318,7 +308,7 @@ export function CommunityChatScreen() {
                 <ButtonText>{riskCount}</ButtonText>
               </Button>
             )}
-            <SorteoBadge communityUri={communityUri} />
+
             <Button
               label={_(msg`Miembros`)}
               accessibilityHint={_(
@@ -384,22 +374,10 @@ export function CommunityChatScreen() {
           },
         ]}>
         <ChatActionButton
-          label={_(msg`Resumir`)}
-          hint={_(msg`Abre el agente para resumir el debate`)}
-          icon={SummarizeIcon}
-          onPress={openAgentAssistant}
-        />
-        <ChatActionButton
           label={_(msg`Propuesta`)}
           hint={_(msg`Crea un cabildeo desde esta conversación`)}
           icon={ProposalIcon}
           onPress={openCreateCabildeo}
-        />
-        <ChatActionButton
-          label={_(msg`Evidencia`)}
-          hint={_(msg`Abre el agente para extraer evidencia`)}
-          icon={EvidenceIcon}
-          onPress={openAgentAssistant}
         />
         <ChatActionButton
           label={_(msg`Miembros`)}

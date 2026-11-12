@@ -8,6 +8,7 @@ import {
   type CabildeoRecord,
 } from '#/lib/api/para-lexicons'
 import {districtKeyFor} from '#/lib/constants/electoralDistrictsData'
+import {PARTY_COLORS} from '#/lib/parties/partyColors'
 
 export type PolicyItem = {
   id: string
@@ -209,7 +210,7 @@ export const COMMUNITY_DATA: CommunityData[] = [
     name: 'PAN',
     members: '1.2M',
     desc: 'Centro-derecha con red territorial y agenda institucional.',
-    color: '#003087',
+    color: PARTY_COLORS.PAN,
     directoryGroup: 'political',
     subtitle: 'Democracia cristiana y agenda institucional',
     eyebrow: 'Party',
@@ -221,7 +222,7 @@ export const COMMUNITY_DATA: CommunityData[] = [
     name: 'Morena',
     members: '2.8M',
     desc: 'Mayoría nacional con conversación soberanista y social.',
-    color: '#8B1538',
+    color: PARTY_COLORS.Morena,
     directoryGroup: 'political',
     subtitle: 'Movimiento gobernante y soberanía social',
     eyebrow: 'Party',
@@ -233,7 +234,7 @@ export const COMMUNITY_DATA: CommunityData[] = [
     name: 'MC',
     members: '456k',
     desc: 'Liberal progresista, ciudadanía y política urbana.',
-    color: '#FF6B00',
+    color: PARTY_COLORS.MC,
     directoryGroup: 'political',
     subtitle: 'Ciudadanía, innovación y política urbana',
     eyebrow: 'Party',
@@ -245,7 +246,7 @@ export const COMMUNITY_DATA: CommunityData[] = [
     name: 'PRI',
     members: '890k',
     desc: 'Centro institucional con estructura histórica nacional.',
-    color: '#00923F',
+    color: PARTY_COLORS.PRI,
     directoryGroup: 'political',
     subtitle: 'Estructura histórica e institucional',
     eyebrow: 'Party',
@@ -257,7 +258,7 @@ export const COMMUNITY_DATA: CommunityData[] = [
     name: 'PVEM',
     members: '178k',
     desc: 'Organización ecologista enfocada en agenda ambiental.',
-    color: '#228B22',
+    color: PARTY_COLORS.PVEM,
     directoryGroup: 'political',
     subtitle: 'Agenda verde y sustentabilidad',
     eyebrow: 'Party',
@@ -357,93 +358,6 @@ export const VS_MOCK_COMPARISONS = [
     trendApproveColor: '#34C759',
     trendVoter: '-0.15%',
   },
-]
-
-import {type DiscourseTopology} from '#/lib/api/para-lexicons'
-
-export const MOCK_DISCOURSE_TOPOLOGY: DiscourseTopology = {
-  ideologicalCentroid: {x: -120, y: 340},
-  ideologicalSpread: 62,
-  crossCompassEngagement: 38,
-  positionDensity: {
-    'auth-left': 12,
-    'auth-center': 18,
-    'auth-right': 8,
-    'center-left': 22,
-    center: 15,
-    'center-right': 10,
-    'lib-left': 8,
-    'lib-center': 4,
-    'lib-right': 3,
-  },
-  contestedAxes: [
-    {
-      axisId: 'env_pol',
-      axisTitle: 'Environmental Policy',
-      labelLow: 'Anthropocentric',
-      labelHigh: 'Ecocentric',
-      discourseScore: 72,
-      engagementCount: 156,
-    },
-    {
-      axisId: 'state_auth',
-      axisTitle: 'State Authority',
-      labelLow: 'Limited',
-      labelHigh: 'Strong',
-      discourseScore: 58,
-      engagementCount: 134,
-    },
-    {
-      axisId: 'eco_coord',
-      axisTitle: 'Economic Coordination',
-      labelLow: 'Market',
-      labelHigh: 'Planning',
-      discourseScore: 41,
-      engagementCount: 112,
-    },
-    {
-      axisId: 'dem_struc',
-      axisTitle: 'Democratic Structure',
-      labelLow: 'Representative',
-      labelHigh: 'Direct',
-      discourseScore: 65,
-      engagementCount: 98,
-    },
-  ],
-  argumentBalance: {
-    claims: 45,
-    evidence: 23,
-    questions: 18,
-    rebuttals: 14,
-  },
-  bridgeOpportunities: [
-    {
-      description:
-        'Both center-left and center-right participants are discussing water infrastructure, but not engaging with each other. A shared proposal on desalination pilot programs could bridge this gap.',
-      topicOverlap: ['Water', 'Infrastructure', 'Pilot Programs'],
-      positionsInvolved: ['center-left', 'center-right'],
-    },
-    {
-      description:
-        'Lib-left and auth-center voices both reference the same INE transparency report but draw opposite conclusions. A moderated deliberation thread could surface shared premises.',
-      topicOverlap: ['INE', 'Transparency', 'Electoral Reform'],
-      positionsInvolved: ['lib-left', 'auth-center'],
-    },
-  ],
-  proposalVelocity: {
-    proposed: 3,
-    deliberating: 7,
-    voting: 2,
-    resolved: 4,
-  },
-}
-
-export const DISCOURSE_FLUX_TAGS = [
-  'Fiscal Prudence',
-  'Digital Sovereignty',
-  'Urban Resilience',
-  'Recursive Equity',
-  'Heuristic Governance',
 ]
 
 export const CATEGORIES = [

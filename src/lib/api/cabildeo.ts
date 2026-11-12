@@ -4,14 +4,21 @@ import {type AtUriString} from '@atproto/syntax'
 import {
   type CabildeoAccessTier,
   type CabildeoDelegationRecord,
+  type CabildeoKind,
   type CabildeoOption,
   type CabildeoPhase,
   type CabildeoPositionRecord,
   type CabildeoRecord,
   type CabildeoVoteRecord,
   type CabildeoVoteVisibility,
+  type PositionReaction,
+  type ProtectedAction,
 } from '#/lib/api/para-lexicons'
 import {issueParaVoteProof} from '#/lib/api/vote-proof'
+import {
+  AUTHORITY_EVENT_COLLECTION,
+  buildAssemblyDecisionEvent,
+} from '#/lib/assembly-decision'
 import {
   type PublicSessionBundle,
   type SessionBundle,
@@ -47,6 +54,27 @@ export async function publishCabildeo(
   })
 }
 
+/**
+ * Publish the authority event an approved decision cabildeo calls for. Anyone
+ * may: the vote is the authority, and the AppView recounts it before indexing.
+ */
+export async function publishAssemblyDecision(
+  agent: CabildeoServiceAgent,
+  opts: {community: string; decision: AssemblyDecisionReadView},
+) {
+  if (!agent.session) throw new Error('Not logged in')
+
+  return await agent.pdsClient.call(com.atproto.repo.createRecord, {
+    repo: agent.session.did,
+    collection: AUTHORITY_EVENT_COLLECTION,
+    record: buildAssemblyDecisionEvent({
+      community: opts.community,
+      issuer: agent.session.did,
+      decision: opts.decision,
+    }),
+  })
+}
+
 export async function publishCabildeoPosition(
   agent: CabildeoServiceAgent,
   record: Omit<CabildeoPositionRecord, 'createdAt'>,
@@ -58,6 +86,31 @@ export async function publishCabildeoPosition(
     collection: 'com.para.civic.position',
     record: {
       ...record,
+      createdAt: new Date().toISOString(),
+    },
+  })
+}
+
+/**
+ * Agree, disagree or pass on one position. A public, unweighted reaction that
+ * decides nothing, so it carries no m8 proof (OD-7 §5h): asking m8 would only
+ * make it store which position this person reacted to. A later reaction by the
+ * same account replaces the earlier one in the index.
+ */
+export async function reactToCabildeoPosition(
+  agent: CabildeoServiceAgent,
+  opts: {position: string; direction: PositionReaction},
+) {
+  if (!agent.session) throw new Error('Not logged in')
+
+  return await agent.pdsClient.call(com.atproto.repo.createRecord, {
+    repo: agent.session.did,
+    collection: 'com.para.community.deliberationVote',
+    record: {
+      $type: 'com.para.community.deliberationVote',
+      deliberation: opts.position,
+      voter: agent.session.did,
+      direction: opts.direction,
       createdAt: new Date().toISOString(),
     },
   })
@@ -221,6 +274,7 @@ export type CabildeoOutcomeSummary = {
 }
 
 export type CabildeoViewerContext = {
+  canCastCabildeoVote?: boolean
   currentVoteOption?: number
   currentVoteIsDirect?: boolean
   currentVoteCreatedAt?: string
@@ -243,7 +297,34 @@ export type GeoPointE7 = {
   lngE7: number
 }
 
+/** How a resolved decision cabildeo was counted, and the event it may ground. */
+export type AssemblyDecisionReadView = {
+  problem?: string
+  action?: string
+  subject?: string
+  policy?: 'assembly_majority' | 'assembly_supermajority'
+  outcome?: {
+    approved: boolean
+    reason: string
+    electorate: number
+    quorumTarget: number
+    participants: number
+    approvals: number
+    rejections: number
+  }
+  event?: {
+    action: string
+    subject: string
+    version: number
+    predecessor?: string
+    evidence: string
+  }
+  appliedEvent?: string
+}
+
 export type CabildeoReadView = {
+  votingOpenedAt?: string
+  votingClosedAt?: string
   uri: string
   cid: string
   creator: string
@@ -258,9 +339,12 @@ export type CabildeoReadView = {
   geo?: GeoPointE7
   options: CabildeoOption[]
   minQuorum?: number
+  kind?: CabildeoKind
   minimumViewTier?: CabildeoAccessTier
   minimumParticipationTier?: CabildeoAccessTier
   voteVisibility?: CabildeoVoteVisibility
+  protectedAction?: ProtectedAction
+  assemblyDecision?: AssemblyDecisionReadView
   partyVoteSummary?: CabildeoPartyVoteSummary[]
   phase: CabildeoPhase | (string & {})
   phaseDeadline?: string
@@ -283,6 +367,10 @@ export type CabildeoPositionReadView = {
   text: string
   compassQuadrant?: string
   createdAt: string
+  agreeCount?: number
+  disagreeCount?: number
+  passCount?: number
+  viewerDirection?: PositionReaction
 }
 
 export type DelegationCandidateReadView = {

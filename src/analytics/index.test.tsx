@@ -361,7 +361,7 @@ it('resolves device identity for events emitted without a provider', () => {
   expect(previousLog.metadata.__metadata__).toMatchObject({deviceId: 'unknown'})
 })
 
-it('flushes queued metrics with emission-time sessions and a stable device ID', () => {
+it('flushes queued metrics with emission-time sessions and a stable device ID', async () => {
   const client = new MetricsClient<Metrics>()
   jest
     .mocked(metrics.track)
@@ -379,11 +379,18 @@ it('flushes queued metrics with emission-time sessions and a stable device ID', 
   act(() => rotateSession())
   expect(fetchMock).not.toHaveBeenCalled()
   client.flush()
+  await settleRequests()
 
-  const body = JSON.parse(fetchMock.mock.calls[0][1]!.body as string) as {
-    events: {metadata: MetricMetadata}[]
-  }
-  expect(body.events.map(event => event.metadata.base)).toEqual([
+  // PARA's client sends each event on its own to the local Umami collector.
+  const bases = fetchMock.mock.calls.map(
+    call =>
+      (
+        JSON.parse(call[1]!.body as string) as {
+          payload: {data: MetricMetadata}
+        }
+      ).payload.data.base,
+  )
+  expect(bases).toEqual([
     expect.objectContaining({deviceId: 'device-a', sessionId: 'session-a'}),
     expect.objectContaining({deviceId: 'device-a', sessionId: secondSessionId}),
   ])
@@ -409,12 +416,13 @@ it('keeps passive metrics, logs, evaluations, flushes and retries separate from 
   ax.features.enabled(feature)
   const previousMetric = lastMetricMetadata()
   client.flush()
-  await Promise.resolve()
-  // Only the metrics client's lifecycle callback retries the failed batch.
+  await settleRequests()
+  const sent = fetchMock.mock.calls.length
+  // Only the metrics client's lifecycle callback retries the failed event.
   const retry = jest.mocked(onAppStateChange).mock.calls.at(-1)![0]
   retry('active')
-  await Promise.resolve()
-  expect(fetchMock).toHaveBeenCalledTimes(2)
+  await settleRequests()
+  expect(fetchMock).toHaveBeenCalledTimes(sent + 1)
   expect(device.get(['analyticsSession'])).toEqual({
     id: 'session-a',
     lastEventAt,
@@ -428,9 +436,14 @@ it('keeps passive metrics, logs, evaluations, flushes and retries separate from 
     sessionId: 'session-a',
   })
   expect(fetchMock.mock.calls[0][1]!.body).toBe(
-    fetchMock.mock.calls[1][1]!.body,
+    fetchMock.mock.calls.at(-1)![1]!.body,
   )
 })
+
+/** Lets the metrics client finish its one-request-per-event loop. */
+async function settleRequests() {
+  for (let i = 0; i < 20; i++) await Promise.resolve()
+}
 
 describe.each(['did', 'deviceId'] as const)(
   'features bucketed on %s',

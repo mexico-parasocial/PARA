@@ -2,8 +2,7 @@
  * Security audit tests for acuerdo system — pre-launch hardening
  * These cover the 6 vectors identified in the pre-ship review.
  */
-import {renderHook, act, waitFor} from '@testing-library/react-native'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import {act, renderHook, waitFor} from '@testing-library/react-native'
 
 import {
   AcuerdoProvider,
@@ -242,7 +241,7 @@ describe('Acuerdo Security — Vector 3: Recursive delegation depth bomb', () =>
     return uris
   }
 
-  // docs/horizontal-governance-spec.md: max delegation depth 1 hop.
+  // docs/revocable-mandates-spec.md R3: max delegation depth 1 hop.
   it('resolves one hop to the parent', async () => {
     const {result} = renderHook(() => useAcuerdos(), {wrapper})
     const uris = await buildChain(result, 2)

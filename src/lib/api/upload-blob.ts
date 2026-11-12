@@ -19,42 +19,31 @@ export async function uploadBlob(
   input: string | Blob,
   encoding?: string,
 ): Promise<UploadBlobResult> {
-  if (typeof input === 'string' && input.startsWith('file:')) {
-    const blob = await asBlob(input)
-    return uploadBlobResult(client, blob, encoding)
-  }
-
-  if (typeof input === 'string' && input.startsWith('/')) {
-    const blob = await asBlob(`file://${input}`)
-    return uploadBlobResult(client, blob, encoding)
-  }
-
-  if (typeof input === 'string' && input.startsWith('data:')) {
-    const blob = await fetch(input).then(r => r.blob())
-    return uploadBlobResult(client, blob, encoding)
-  }
-
-  if (input instanceof Blob) {
-    return uploadBlobResult(client, input, encoding)
-  }
-
-  throw new TypeError(`Invalid uploadBlob input: ${typeof input}`)
-}
-
-async function uploadBlobResult(
-  client: Client,
-  blob: Blob,
-  encoding?: string,
-): Promise<UploadBlobResult> {
+  const blob = await readUploadBlob(input)
   const res = await client.uploadBlob(blob, {
-    /*
-     * The lex encoding option is a branded mime string
-     * (`${string}/${string}`); callers pass a plain mime string, so assert the
-     * brand here.
-     */
     encoding: encoding as EncodingString | undefined,
   })
   return {blob: res.body.blob}
+}
+
+export async function readUploadBlob(input: string | Blob): Promise<Blob> {
+  if (typeof input === 'string' && input.startsWith('file:')) {
+    return asBlob(input)
+  }
+
+  if (typeof input === 'string' && input.startsWith('/')) {
+    return asBlob(`file://${input}`)
+  }
+
+  if (typeof input === 'string' && input.startsWith('data:')) {
+    return fetch(input).then(r => r.blob())
+  }
+
+  if (input instanceof Blob) {
+    return input
+  }
+
+  throw new TypeError(`Invalid uploadBlob input: ${typeof input}`)
 }
 
 async function asBlob(uri: string): Promise<Blob> {

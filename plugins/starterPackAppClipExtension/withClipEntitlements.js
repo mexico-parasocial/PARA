@@ -13,7 +13,9 @@ const withClipEntitlements = (config, {targetName}) => {
     )
 
     const appClipEntitlements = {
-      'com.apple.security.application-groups': [`group.com.para.app`],
+      'com.apple.security.application-groups': [
+        `group.${process.env.PARA_BUNDLE_ID || 'com.para.app'}`,
+      ],
       'com.apple.developer.parent-application-identifiers': [
         `$(AppIdentifierPrefix)${config.ios.bundleIdentifier}`,
       ],

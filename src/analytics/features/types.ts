@@ -31,6 +31,5 @@ export enum Features {
   AATest = 'aa-test',
 
   // PARA governance flags
-  HorizontalGovernanceEnable = 'para:horizontal_governance:enable',
   PajareoEnable = 'para:pajareo:enable',
 }

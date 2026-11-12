@@ -93,6 +93,11 @@
           "maxGraphemes": 64,
           "maxLength": 128
         },
+        "banner": {
+          "type": "string",
+          "format": "uri",
+          "description": "URL of the community's banner image, if it has one."
+        },
         "delegatesChatId": { "type": "string" },
         "subdelegatesChatId": { "type": "string" },
         "memberCount": { "type": "integer" },
@@ -104,7 +109,8 @@
             "active",
             "left",
             "removed",
-            "blocked"
+            "blocked",
+            "suspended"
           ]
         },
         "viewerRoles": {
@@ -123,9 +129,9 @@
           "type": "string",
           "format": "at-uri"
         },
-        "governanceMode": {
+        "admissionMode": {
           "type": "string",
-          "knownValues": ["hierarchical", "horizontal"]
+          "knownValues": ["open", "assembly_approval"]
         },
         "createdAt": { "type": "string", "format": "datetime" },
         "governanceSummary": {
@@ -148,6 +154,13 @@
             "type": "string",
             "maxGraphemes": 64,
             "maxLength": 128
+          }
+        },
+        "availableActions": {
+          "type": "array",
+          "items": {
+            "type": "ref",
+            "ref": "com.para.community.defs#availableAction"
           }
         }
       }

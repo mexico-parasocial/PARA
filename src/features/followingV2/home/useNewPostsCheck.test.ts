@@ -8,7 +8,7 @@ import {
   type NewPostsCheckTrigger,
   RETURN_STALE_AFTER,
   useNewPostsCheck,
-} from './useNewPostsCheck.test'
+} from './useNewPostsCheck'
 
 /*
  * Returns and app state are driven directly rather than through a mocked

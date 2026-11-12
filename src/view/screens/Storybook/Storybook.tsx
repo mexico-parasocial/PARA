@@ -28,7 +28,6 @@ import {Notifications} from './Notifications'
 import {Settings} from './Settings'
 import {Shadows} from './Shadows'
 import {Spacing} from './Spacing'
-import {Splash} from './Splash'
 import {Theming} from './Theming'
 import {Toasts} from './Toasts'
 import {Tooltips} from './Tooltips'
@@ -125,7 +124,6 @@ export default function Storybook() {
               <Theming />
             </ThemeProvider>
 
-            <Splash />
             <Haptics />
             <Toasts />
             <Buttons />

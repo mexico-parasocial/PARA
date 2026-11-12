@@ -1,4 +1,5 @@
 import {type AtUriString} from '@atproto/syntax'
+import {t} from '@lingui/core/macro'
 import {
   useInfiniteQuery,
   useMutation,
@@ -6,6 +7,14 @@ import {
   useQueryClient,
 } from '@tanstack/react-query'
 
+import {
+  communityAct,
+  communityDid,
+  communitySlug,
+} from '#/lib/api/community-act'
+import {readUploadBlob} from '#/lib/api/upload-blob'
+import {compressIfNeeded} from '#/lib/media/manip'
+import {type PickerImage} from '#/lib/media/picker.shared'
 import {STALE} from '#/state/queries'
 import {useAgent, useSession} from '#/state/session'
 import {com} from '#/lexicons'
@@ -22,6 +31,8 @@ export type CommunityBoardView = {
   slug: string
   name: string
   description?: string
+  /** Cover image URL for the profile header; absent until the AppView serves one. */
+  banner?: string
   quadrant: string
   /** Mexican state the community belongs to; empty when it has none. */
   region?: string
@@ -34,7 +45,6 @@ export type CommunityBoardView = {
   status?: 'draft' | 'active'
   visibility?: 'open' | 'closed' | 'secret'
   chamberMode?: 'unicameral' | 'bicameral'
-  governanceMode?: 'hierarchical' | 'horizontal'
   founderStarterPackUri?: string
   parentCommunityUris?: string[]
   childCommunityCount?: number
@@ -64,25 +74,14 @@ type CreateCommunityInput = {
   quadrant: string
   region?: string
   description?: string
-  founderStarterPackName?: string
-  governanceMode?: 'hierarchical' | 'horizontal'
-  parentCommunityUri?: string
-}
-
-type AcceptDraftInviteInput = {
-  communityUri: string
-}
-
-type AcceptDraftInviteResponse = {
-  status: 'draft' | 'active'
-  memberCount: number
 }
 
 type CreateCommunityResponse = {
+  /** The community's profile record: how the community is named everywhere. */
   uri: string
   cid: string
-  delegatesChatId: string
-  subdelegatesChatId: string
+  did: string
+  handle: string
 }
 
 export type CommunityMemberView = {
@@ -127,7 +126,10 @@ export type CommunityMembersQueryOptions = {
   cursor?: string
 }
 
-export const communityBoardsQueryKey = (opts: CommunityBoardsQueryOptions) => [
+export const communityBoardsQueryKey = (
+  opts: CommunityBoardsQueryOptions,
+  viewerDid?: string,
+) => [
   RQKEY_ROOT,
   'list',
   opts.limit ?? 12,
@@ -139,6 +141,7 @@ export const communityBoardsQueryKey = (opts: CommunityBoardsQueryOptions) => [
   opts.flairId ?? '',
   opts.sort ?? '',
   opts.cursor ?? '',
+  viewerDid,
 ]
 
 export const communityMembersQueryKey = (
@@ -157,10 +160,12 @@ export const communityMembersQueryKey = (
 export const communityBoardQueryKey = ({
   communityId,
   uri,
+  viewerDid,
 }: {
   communityId?: string
   uri?: string
-}) => [RQKEY_ROOT, 'detail', communityId || '', uri || '']
+  viewerDid?: string
+}) => [RQKEY_ROOT, 'detail', communityId || '', uri || '', viewerDid]
 
 export function useCommunityBoardsQuery(
   opts: CommunityBoardsQueryOptions = {},
@@ -172,7 +177,7 @@ export function useCommunityBoardsQuery(
   return useQuery<CommunityBoardsResponse>({
     staleTime: STALE.SECONDS.THIRTY,
     enabled,
-    queryKey: communityBoardsQueryKey(options),
+    queryKey: communityBoardsQueryKey(options, agent.session?.did),
     queryFn: async () => fetchCommunityBoards({agent, opts: options}),
   })
 }
@@ -205,7 +210,11 @@ export function useCommunityBoardQuery({
   return useQuery<CommunityBoardResponse>({
     staleTime: STALE.SECONDS.THIRTY,
     enabled: enabled && Boolean(communityId || uri),
-    queryKey: communityBoardQueryKey({communityId, uri}),
+    queryKey: communityBoardQueryKey({
+      communityId,
+      uri,
+      viewerDid: agent.session?.did,
+    }),
     queryFn: async () => fetchCommunityBoard({agent, communityId, uri}),
   })
 }
@@ -234,14 +243,63 @@ export function useCreateCommunityMutation() {
   })
 }
 
-export function useAcceptDraftInviteMutation() {
+/** The host accepts PNG or JPEG banners up to this size. */
+const BANNER_MAX_BYTES = 1_000_000
+
+/**
+ * Sets a community's banner: stores the image in the community's own repo,
+ * then names it in a profile update. Only an owner may.
+ */
+export function useSetCommunityBannerMutation() {
   const agent = useAgent()
   const queryClient = useQueryClient()
 
-  return useMutation<AcceptDraftInviteResponse, Error, AcceptDraftInviteInput>({
-    mutationFn: async input => acceptDraftInvite({agent, input}),
+  return useMutation({
+    mutationFn: async ({
+      board,
+      image,
+    }: {
+      board: CommunityBoardView
+      image: PickerImage
+    }) => {
+      const community = communityDid(board.uri)
+      const compressed = await compressIfNeeded(image, BANNER_MAX_BYTES)
+      const {mime} = compressed
+      if (mime !== 'image/png' && mime !== 'image/jpeg') {
+        throw new Error(t`Choose a PNG or JPEG image for the banner.`)
+      }
+      const body = await readUploadBlob(compressed.path)
+      const uploaded = await agent.pdsClient.xrpc(
+        com.para.community.uploadBanner,
+        {params: {community}, body, encoding: mime},
+      )
+      // A profile update replaces every field. Read the latest values from
+      // the host because the AppView may still be indexing an earlier edit.
+      const current = await agent.pdsClient.call(com.atproto.repo.getRecord, {
+        repo: community,
+        collection: com.para.community.profile.$type,
+        rkey: 'self',
+      })
+      const {name, description, quadrant, region} =
+        com.para.community.profile.$parse(current.value)
+      return communityAct(agent, board.uri, {
+        action: 'profile.update',
+        profile: {
+          name,
+          description,
+          quadrant,
+          region,
+          banner: uploaded.body.cid,
+        },
+      })
+    },
     onSuccess: () => {
       void queryClient.invalidateQueries({queryKey: [RQKEY_ROOT]})
+      // The AppView indexes the new profile a moment after the write.
+      setTimeout(
+        () => void queryClient.invalidateQueries({queryKey: [RQKEY_ROOT]}),
+        2500,
+      )
     },
   })
 }
@@ -252,24 +310,15 @@ type JoinCommunityInput = {
 }
 
 type JoinCommunityResponse = {
-  uri: string
-  cid: string
   communityUri: string
   membershipState: CommunityBoardView['viewerMembershipState']
-  viewerCapabilities: string[]
 }
 
 type LeaveCommunityInput = {
   communityUri: string
 }
 
-type LeaveCommunityResponse = {
-  uri: string
-  cid: string
-  communityUri: string
-  membershipState: CommunityBoardView['viewerMembershipState']
-  viewerCapabilities: string[]
-}
+type LeaveCommunityResponse = JoinCommunityResponse
 
 export function useJoinCommunityMutation() {
   const agent = useAgent()
@@ -277,11 +326,8 @@ export function useJoinCommunityMutation() {
 
   return useMutation<JoinCommunityResponse, Error, JoinCommunityInput>({
     mutationFn: async input => joinCommunity({agent, input}),
-    onSuccess: (_data, variables) => {
+    onSuccess: () => {
       void queryClient.invalidateQueries({queryKey: [RQKEY_ROOT]})
-      void queryClient.invalidateQueries({
-        queryKey: communityBoardQueryKey({uri: variables.communityUri}),
-      })
     },
   })
 }
@@ -292,11 +338,8 @@ export function useLeaveCommunityMutation() {
 
   return useMutation<LeaveCommunityResponse, Error, LeaveCommunityInput>({
     mutationFn: async input => leaveCommunity({agent, input}),
-    onSuccess: (_data, variables) => {
+    onSuccess: () => {
       void queryClient.invalidateQueries({queryKey: [RQKEY_ROOT]})
-      void queryClient.invalidateQueries({
-        queryKey: communityBoardQueryKey({uri: variables.communityUri}),
-      })
     },
   })
 }
@@ -366,18 +409,19 @@ async function createCommunity({
   agent: ReturnType<typeof useAgent>
   input: CreateCommunityInput
 }): Promise<CreateCommunityResponse> {
-  const res = await agent.appviewClient.call(
-    com.para.community.createBoard,
-    input as com.para.community.createBoard.$InputBody,
-  )
-
-  const json = asRecord(res)
-  return {
-    uri: readString(json?.uri) ?? '',
-    cid: readString(json?.cid) ?? '',
-    delegatesChatId: readString(json?.delegatesChatId) ?? '',
-    subdelegatesChatId: readString(json?.subdelegatesChatId) ?? '',
+  const slug = communitySlug(input.name)
+  if (!slug) {
+    throw new Error('Elige un nombre con al menos tres letras o números.')
   }
+  // The PDS creates the community's own account and its first event.
+  const res = await agent.pdsClient.call(com.para.community.create, {
+    name: input.name,
+    slug,
+    quadrant: input.quadrant,
+    region: input.region,
+    description: input.description,
+  })
+  return {uri: res.uri, cid: res.cid, did: res.did, handle: res.handle}
 }
 
 function normalizeCommunityBoardsResponse(
@@ -454,6 +498,7 @@ function normalizeBoard(json: unknown): CommunityBoardView {
     slug: readString(data.slug) ?? '',
     name: readString(data.name) ?? '',
     description: readString(data.description),
+    banner: readString(data.banner),
     quadrant: readString(data.quadrant) ?? '',
     region: readString(data.region),
     delegatesChatId: readString(data.delegatesChatId) ?? '',
@@ -568,21 +613,8 @@ async function joinCommunity({
   agent: ReturnType<typeof useAgent>
   input: JoinCommunityInput
 }): Promise<JoinCommunityResponse> {
-  const res = await agent.appviewClient.call(
-    com.para.community.join,
-    input as com.para.community.join.$InputBody,
-  )
-
-  const json = asRecord(res)
-  return {
-    uri: readString(json?.uri) ?? '',
-    cid: readString(json?.cid) ?? '',
-    communityUri: readString(json?.communityUri) ?? '',
-    membershipState: normalizeMembershipState(json?.membershipState),
-    viewerCapabilities: Array.isArray(json?.viewerCapabilities)
-      ? json.viewerCapabilities.filter((c: unknown) => typeof c === 'string')
-      : [],
-  }
+  await communityAct(agent, input.communityUri, {action: 'member.join'})
+  return {communityUri: input.communityUri, membershipState: 'active'}
 }
 
 async function leaveCommunity({
@@ -592,38 +624,6 @@ async function leaveCommunity({
   agent: ReturnType<typeof useAgent>
   input: LeaveCommunityInput
 }): Promise<LeaveCommunityResponse> {
-  const res = await agent.appviewClient.call(
-    com.para.community.leave,
-    input as com.para.community.leave.$InputBody,
-  )
-
-  const json = asRecord(res)
-  return {
-    uri: readString(json?.uri) ?? '',
-    cid: readString(json?.cid) ?? '',
-    communityUri: readString(json?.communityUri) ?? '',
-    membershipState: normalizeMembershipState(json?.membershipState),
-    viewerCapabilities: Array.isArray(json?.viewerCapabilities)
-      ? json.viewerCapabilities.filter((c: unknown) => typeof c === 'string')
-      : [],
-  }
-}
-
-async function acceptDraftInvite({
-  agent,
-  input,
-}: {
-  agent: ReturnType<typeof useAgent>
-  input: AcceptDraftInviteInput
-}): Promise<AcceptDraftInviteResponse> {
-  const res = await agent.appviewClient.call(
-    com.para.community.acceptDraftInvite,
-    input as com.para.community.acceptDraftInvite.$InputBody,
-  )
-
-  const json = asRecord(res)
-  return {
-    status: (readString(json?.status) as 'draft' | 'active') ?? 'draft',
-    memberCount: typeof json?.memberCount === 'number' ? json.memberCount : 0,
-  }
+  await communityAct(agent, input.communityUri, {action: 'member.leave'})
+  return {communityUri: input.communityUri, membershipState: 'left'}
 }

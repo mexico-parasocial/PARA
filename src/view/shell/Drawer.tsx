@@ -56,7 +56,6 @@ import {
   CommunityIcon_Filled as CommunityFilled,
   CommunityIcon_Stroke as Community,
 } from '#/components/icons/Community'
-import {Compass_Stroke2_Corner0_Rounded as CompassIcon} from '#/components/icons/Compass'
 import {Earth_Stroke2_Corner0_Rounded as EarthIcon} from '#/components/icons/Earth'
 import {
   Hashtag_Filled_Corner0_Rounded as HashtagFilled,
@@ -80,8 +79,6 @@ import {
   Message_Stroke2_Corner0_Rounded_Filled as MessageFilled,
 } from '#/components/icons/Message'
 import {SettingsGear2_Stroke2_Corner0_Rounded as Settings} from '#/components/icons/Settings'
-import {Shapes_Stroke2_Corner0_Rounded as Shapes} from '#/components/icons/Shapes'
-import {Tree_Stroke2_Corner0_Rounded as Tree} from '#/components/icons/Tree'
 import {
   UserCircle_Filled_Corner0_Rounded as UserCircleFilled,
   UserCircle_Stroke2_Corner0_Rounded as UserCircle,
@@ -239,10 +236,7 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
     currentRoute.name === 'DelegateVote' ||
     currentRoute.name === 'CreateCabildeo' ||
     currentRoute.name === 'CreatePosition'
-  const isAtCivicTree = currentRoute.name === 'CivicTree'
-  const isAtDeliberation = currentRoute.name === 'CommunityCivicTree'
   const isAtMyBase = currentRoute.name === 'MyBase'
-  const isAtCompass = currentRoute.name === 'Compass'
   const isAtIdentityHub =
     currentRoute.name === 'IdentityHub' ||
     currentRoute.name === 'MyWallet' ||
@@ -408,19 +402,8 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
     }
   }, [navigation, setDrawerOpen, ax])
 
-  const onPressCompass = useCallback(() => {
-    ax.metric('nav:click', {item: 'compass', surface: 'drawer'})
-    navigation.navigate('Compass')
-    setDrawerOpen(false)
-  }, [navigation, setDrawerOpen, ax])
-
   const onPressAgora = useCallback(() => {
     navigation.navigate('Agora')
-    setDrawerOpen(false)
-  }, [navigation, setDrawerOpen])
-
-  const onPressDeliberation = useCallback(() => {
-    navigation.navigate('CommunityCivicTree')
     setDrawerOpen(false)
   }, [navigation, setDrawerOpen])
 
@@ -450,10 +433,8 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
         }
       } else {
         /*
-         * The Data tab also hosts drawer destinations that are pushed onto its
-         * stack (Communities, My Base, Civic Tree), so it is often left deep.
-         * Target the Data screen explicitly instead of letting the tab restore
-         * whatever was last open there.
+         * Target the Data screen explicitly because the tab may restore a
+         * screen deeper in its stack.
          */
         navigation.navigate('DataTab', {screen: 'Data'} as never)
       }
@@ -465,11 +446,6 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
     setDrawerOpen(false)
     navigation.navigate('DataTab', {screen: 'MyBase'} as never)
   }, [ax, navigation, setDrawerOpen])
-
-  const onPressCivicTree = useCallback(() => {
-    setDrawerOpen(false)
-    navigation.navigate('DataTab', {screen: 'CivicTree'} as never)
-  }, [navigation, setDrawerOpen])
 
   const onPressIdentityHub = useCallback(() => {
     setDrawerOpen(false)
@@ -550,13 +526,8 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
               />
             )}
             <FeedsMenuItem isActive={isAtFeeds} onPress={onPressMyFeeds} />
-            <CompassMenuItem isActive={isAtCompass} onPress={onPressCompass} />
             <BaseMenuItem isActive={isAtData} onPress={onPressData} />
             <MyBaseMenuItem isActive={isAtMyBase} onPress={onPressMyBase} />
-            <CivicTreeMenuItem
-              isActive={isAtCivicTree}
-              onPress={onPressCivicTree}
-            />
             <IdentityHubMenuItem
               isActive={isAtIdentityHub}
               onPress={onPressIdentityHub}
@@ -566,10 +537,6 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
               onPress={onPressCommunities}
             />
             <AgoraMenuItem isActive={isAtAgora} onPress={onPressAgora} />
-            <DeliberationMenuItem
-              isActive={isAtDeliberation}
-              onPress={onPressDeliberation}
-            />
             <ListsMenuItem onPress={onPressLists} />
             <BookmarksMenuItem
               isActive={isAtBookmarks}
@@ -585,7 +552,6 @@ let DrawerContent = ({}: React.PropsWithoutRef<{}>): React.ReactNode => {
           <>
             <HomeMenuItem isActive={isAtHome} onPress={onPressHome} />
             <FeedsMenuItem isActive={isAtFeeds} onPress={onPressMyFeeds} />
-            <CompassMenuItem isActive={isAtCompass} onPress={onPressCompass} />
             <SearchMenuItem isActive={isAtSearch} onPress={onPressSearch} />
           </>
         )}
@@ -835,26 +801,6 @@ let FeedsMenuItem = ({
 }
 FeedsMenuItem = memo(FeedsMenuItem)
 
-let CompassMenuItem = ({
-  isActive,
-  onPress,
-}: {
-  isActive: boolean
-  onPress: () => void
-}): React.ReactNode => {
-  const {t: l} = useLingui()
-  const t = useTheme()
-  return (
-    <MenuItem
-      icon={<CompassIcon width={iconWidth} style={[t.atoms.text]} />}
-      label={l`Political Compass`}
-      bold={isActive}
-      onPress={onPress}
-    />
-  )
-}
-CompassMenuItem = memo(CompassMenuItem)
-
 let ListsMenuItem = ({onPress}: {onPress: () => void}): React.ReactNode => {
   const {t: l} = useLingui()
   const t = useTheme()
@@ -984,26 +930,6 @@ let AgoraMenuItem = ({
 }
 AgoraMenuItem = memo(AgoraMenuItem)
 
-let DeliberationMenuItem = ({
-  isActive,
-  onPress,
-}: {
-  isActive: boolean
-  onPress: () => void
-}): React.ReactNode => {
-  const t = useTheme()
-  const {t: l} = useLingui()
-  return (
-    <MenuItem
-      icon={<Shapes style={[t.atoms.text]} width={iconWidth} />}
-      label={l`Community Tree`}
-      bold={isActive}
-      onPress={onPress}
-    />
-  )
-}
-DeliberationMenuItem = memo(DeliberationMenuItem)
-
 let BaseMenuItem = ({
   isActive,
   onPress,
@@ -1055,26 +981,6 @@ let MyBaseMenuItem = ({
   )
 }
 MyBaseMenuItem = memo(MyBaseMenuItem)
-
-let CivicTreeMenuItem = ({
-  isActive,
-  onPress,
-}: {
-  isActive: boolean
-  onPress: () => void
-}): React.ReactNode => {
-  const t = useTheme()
-  const {t: l} = useLingui()
-  return (
-    <MenuItem
-      icon={<Tree style={[t.atoms.text]} width={iconWidth} />}
-      label={l`Personal Civic Tree`}
-      bold={isActive}
-      onPress={onPress}
-    />
-  )
-}
-CivicTreeMenuItem = memo(CivicTreeMenuItem)
 
 let IdentityHubMenuItem = ({
   isActive,

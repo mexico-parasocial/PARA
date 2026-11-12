@@ -43,7 +43,6 @@ import {useExpandCivicTreeWorkspace} from '#/state/shell/civic-tree-workspace'
 import {atoms as a, useBreakpoints, useLayoutBreakpoints, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import {useDialogControl} from '#/components/Dialog'
-import {SortitionConfigDialog} from '#/components/dialogs/SortitionConfigDialog'
 import {SearchInput} from '#/components/forms/SearchInput'
 import {Library_Stroke2_Corner0_Rounded as BookIcon} from '#/components/icons/Library'
 import * as Layout from '#/components/Layout'
@@ -76,10 +75,6 @@ import {CommunityTreeSelector} from '#/features/communityCivicTree/components/Co
 import {filterCommunityWorkspace} from '#/features/communityCivicTree/workspace'
 import {ContributionReviewDetail} from './components/ContributionReviewDetail'
 import {NodeDetailSheet} from './components/NodeDetailSheet'
-import {
-  type SortitionStatus,
-  SortitionStatusCard,
-} from './components/SortitionStatusCard'
 import {SummaryModal} from './components/SummaryModal'
 
 export function CommunityCivicTreeScreen() {
@@ -104,7 +99,6 @@ export function CommunityCivicTreeScreen() {
   const {centerColumnOffset} = useLayoutBreakpoints()
   const [viewMode, setViewMode] = useState<CivicTreeViewMode>('map')
   const [treeLayout, setTreeLayout] = useState<'cards' | 'outline'>('cards')
-  const [showGovernance, setShowGovernance] = useState(false)
   const expanded =
     IS_WEB && gtMobile && (viewMode === 'map' || viewMode === 'graph')
   useExpandCivicTreeWorkspace(expanded)
@@ -144,9 +138,6 @@ export function CommunityCivicTreeScreen() {
   const [showContributionNotice, setShowContributionNotice] = useState(
     entryPoint === 'contribution_submitted',
   )
-  const [sortitionStatus, setSortitionStatus] =
-    useState<SortitionStatus>('none')
-  const sortitionControl = useDialogControl()
   const addBookControl = useDialogControl()
   const [showReviewPanel, setShowReviewPanel] = useState(
     entryPoint === 'contribution_submitted',
@@ -210,8 +201,6 @@ export function CommunityCivicTreeScreen() {
       setShowReviewPanel(false)
       setShowSummary(false)
       setShowSuggestions(false)
-      setShowGovernance(false)
-      setSortitionStatus('none')
       setSearchQuery('')
       setActiveCardTypes(new Set())
       setActiveRelTypes(new Set())
@@ -265,7 +254,6 @@ export function CommunityCivicTreeScreen() {
     setShowContributionDetail(false)
     setShowSummary(false)
     setShowSuggestions(false)
-    setSortitionStatus('none')
     setSearchQuery('')
     setActiveCardTypes(new Set())
     setActiveRelTypes(new Set())
@@ -445,25 +433,7 @@ export function CommunityCivicTreeScreen() {
           </View>
           {communityUri && (
             <View style={styles.topControls}>
-              {showGovernance ? (
-                <SortitionStatusCard
-                  status={sortitionStatus}
-                  onConfigure={() => sortitionControl.open()}
-                  canConfigure={true}
-                />
-              ) : null}
               <View style={styles.communityActions}>
-                <Button
-                  label={l`Governance`}
-                  size="small"
-                  variant="ghost"
-                  color="secondary"
-                  accessibilityState={{expanded: showGovernance}}
-                  onPress={() => setShowGovernance(previous => !previous)}>
-                  <ButtonText>
-                    <Trans>Governance</Trans>
-                  </ButtonText>
-                </Button>
                 {viewMode === 'graph' ? (
                   <View style={[a.flex_row, a.gap_xs]}>
                     {(['cards', 'outline'] as const).map(layout => (
@@ -1190,20 +1160,6 @@ export function CommunityCivicTreeScreen() {
           />
         </>
       ) : null}
-      {communityUri && (
-        <SortitionConfigDialog
-          control={sortitionControl}
-          communityUri={communityUri}
-          onConfirm={config => {
-            console.log('Iniciando sorteo:', config)
-            setSortitionStatus('pending')
-            // Simular procesamiento de Drand
-            setTimeout(() => {
-              setSortitionStatus('active')
-            }, 3000)
-          }}
-        />
-      )}
     </Layout.Screen>
   )
 }

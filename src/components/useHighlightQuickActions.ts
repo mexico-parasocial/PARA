@@ -3,7 +3,6 @@ import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {useQueryClient} from '@tanstack/react-query'
 
-import {COMMUNITY_AGENT_PROFILE} from '#/lib/mock-data/community-agent'
 import {rememberCollectionWrite} from '#/state/queries/collection-write-queue'
 import {
   type CivicTreeCollection,
@@ -18,7 +17,6 @@ import {type HighlightActionPayload} from '#/components/HighlightOptionsModal'
 import * as Toast from '#/components/Toast'
 import {com} from '#/lexicons'
 
-const HIGHLIGHT_AGENT_ID = COMMUNITY_AGENT_PROFILE.id
 const HIGHLIGHT_COLLECTION_NAME = 'Highlighted Notes'
 
 type PersistHighlight = (
@@ -37,30 +35,6 @@ export function useHighlightQuickActions({
   const {_} = useLingui()
   const agent = useAgent()
   const queryClient = useQueryClient()
-
-  const sendToAgent = useCallback(
-    async (payload: HighlightActionPayload) => {
-      try {
-        await persistHighlight(payload)
-        await agent.appviewClient.call(
-          com.para.agent.sendMessage,
-          {
-            agentId: HIGHLIGHT_AGENT_ID,
-            text: buildAgentMessage(payload, postUri),
-          },
-          {encoding: 'application/json'},
-        )
-        void queryClient.invalidateQueries({
-          queryKey: ['agent-chat', HIGHLIGHT_AGENT_ID],
-        })
-        onDone()
-        Toast.show(_(msg`Sent to your civic agent`))
-      } catch {
-        Toast.show(_(msg`Failed to send to agent`), {type: 'error'})
-      }
-    },
-    [_, agent, onDone, persistHighlight, postUri, queryClient],
-  )
 
   const saveToCivicTree = useCallback(
     async (payload: HighlightActionPayload) => {
@@ -85,7 +59,7 @@ export function useHighlightQuickActions({
     [_, agent, onDone, persistHighlight, postUri, queryClient],
   )
 
-  return {sendToAgent, saveToCivicTree}
+  return {saveToCivicTree}
 }
 
 /*
@@ -137,20 +111,6 @@ async function findOrCreateHighlightCollection(
   // The read model may not have indexed it yet; base the first write on this.
   rememberCollectionWrite(collection.id, collection)
   return collection
-}
-
-function buildAgentMessage(payload: HighlightActionPayload, postUri: string) {
-  const parts = [
-    'Please analyze this civic highlight and help me decide what to do with it.',
-    payload.text ? `Highlighted text: "${payload.text}"` : undefined,
-    `Compass position: ${payload.label}`,
-    `Highlight color: ${payload.color}`,
-    payload.note ? `Highlighter note: ${payload.note}` : undefined,
-    `Visibility selected: ${payload.isPublic ? 'public' : 'private'}`,
-    `Source post: ${postUri}`,
-  ].filter(Boolean)
-
-  return parts.join('\n')
 }
 
 function buildCivicTreeItem(

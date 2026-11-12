@@ -15,7 +15,7 @@ import {
 import {atoms as a, useTheme} from '#/alf'
 import {Text} from '#/components/Typography'
 
-function formatAverage(average: number) {
+export function formatAverage(average: number) {
   const rounded = Math.round(average * 10) / 10
   return rounded > 0 ? `+${rounded.toFixed(1)}` : rounded.toFixed(1)
 }

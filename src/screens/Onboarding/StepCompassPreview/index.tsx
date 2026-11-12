@@ -1,10 +1,22 @@
-import {useCallback, useMemo, useState} from 'react'
+import {useState} from 'react'
 import {Pressable, View} from 'react-native'
-import {msg} from '@lingui/core/macro'
-import {useLingui} from '@lingui/react'
-import {Trans} from '@lingui/react/macro'
+import {Trans, useLingui} from '@lingui/react/macro'
 
+import {
+  COMPASS_COLORS,
+  COMPASS_GRID_ROWS,
+  COMPASS_LABEL_COLORS,
+  COMPASS_POSITION_NAMES,
+  type CompassPositionId,
+} from '#/lib/compass/compassColors'
+import {
+  COMPASS_ID_TO_NINTH_NAME,
+  POLITICAL_AFFILIATION_OPTIONS,
+  type PoliticalAffiliation,
+  upsertPoliticalAffiliation,
+} from '#/lib/political-affiliations'
 import {logEvent} from '#/lib/statsig/statsig'
+import {usePoliticalAffiliation} from '#/state/shell/political-affiliation'
 import {
   OnboardingControls,
   OnboardingDescriptionText,
@@ -16,94 +28,66 @@ import {atoms as a, useBreakpoints, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import {Text} from '#/components/Typography'
 
-interface CompassQuestion {
-  id: string
-  text: string
-}
-
-function useCompassQuestions(): CompassQuestion[] {
-  const {_} = useLingui()
-  return useMemo(
-    () => [
-      {
-        id: 'q1',
-        text: _(
-          msg`The government should provide universal basic services like healthcare and education to all citizens.`,
-        ),
-      },
-      {
-        id: 'q2',
-        text: _(
-          msg`Individual freedoms should take priority over collective security measures.`,
-        ),
-      },
-      {
-        id: 'q3',
-        text: _(
-          msg`Economic policy should prioritize reducing inequality over maximizing growth.`,
-        ),
-      },
-    ],
-    [_],
-  )
-}
-
+/**
+ * Onboarding asks only for a self-placed ninth and party membership. The
+ * questionnaire that refines a position lives in RAQ; asking a few unweighted
+ * questions here produced a position the user never chose.
+ */
 export function StepCompassPreview() {
-  const {_} = useLingui()
+  const {t: l} = useLingui()
   const t = useTheme()
   const {gtMobile} = useBreakpoints()
-  const {dispatch} = useOnboardingInternalState()
-  const questions = useCompassQuestions()
+  const {state, dispatch} = useOnboardingInternalState()
+  const {affiliations, setAffiliations} = usePoliticalAffiliation()
 
-  const [answers, setAnswers] = useState<Record<string, 'agree' | 'disagree'>>(
-    {},
+  const [ninthId, setNinthId] = useState<CompassPositionId | null>(
+    state.compassStepResults.ninthId,
+  )
+  const [isPartyMember, setIsPartyMember] = useState<boolean | null>(
+    state.compassStepResults.isPartyMember,
+  )
+  const [partyId, setPartyId] = useState<string | null>(
+    state.compassStepResults.partyId,
   )
 
-  const setAnswer = (questionId: string, value: 'agree' | 'disagree') => {
-    setAnswers(prev => ({...prev, [questionId]: value}))
-  }
+  const needsParty = isPartyMember === true && !partyId
+  const hasAnswer = ninthId !== null || isPartyMember !== null
+  const canContinue = hasAnswer && !needsParty
 
-  // Simple compass position derived from answers
-  const compassPosition = useMemo(() => {
-    let x = 0
-    let y = 0
-    if (answers.q1 === 'agree') {
-      x -= 1
-    } else if (answers.q1 === 'disagree') {
-      x += 1
+  const onContinue = () => {
+    // Party and ninth are independent: each answer only touches its own type,
+    // and an unanswered question leaves any saved value alone.
+    let next: PoliticalAffiliation[] = affiliations
+    if (ninthId) {
+      const ninth = POLITICAL_AFFILIATION_OPTIONS.ninth.find(
+        n => n.name === COMPASS_ID_TO_NINTH_NAME[ninthId],
+      )
+      if (ninth) next = upsertPoliticalAffiliation(next, ninth)
     }
-    if (answers.q2 === 'agree') {
-      y -= 1
-    } else if (answers.q2 === 'disagree') {
-      y += 1
+    if (isPartyMember === false) {
+      next = next.filter(item => item.type !== 'party')
+    } else if (isPartyMember === true && partyId) {
+      const party = POLITICAL_AFFILIATION_OPTIONS.party.find(
+        p => p.id === partyId,
+      )
+      if (party) next = upsertPoliticalAffiliation(next, party)
     }
-    if (answers.q3 === 'agree') {
-      x -= 0.5
-      y += 0.5
-    } else if (answers.q3 === 'disagree') {
-      x += 0.5
-      y -= 0.5
+    if (next !== affiliations) {
+      void setAffiliations(next)
     }
-    // Normalize to 0..1 range where 0.5 is center
-    return {
-      x: Math.max(0, Math.min(1, 0.5 + x * 0.2)),
-      y: Math.max(0, Math.min(1, 0.5 + y * 0.2)),
-    }
-  }, [answers])
 
-  const answeredCount = Object.keys(answers).length
-  const hasAnswers = answeredCount > 0
-
-  const onContinue = useCallback(() => {
     dispatch({
       type: 'setCompassStepResults',
-      answers,
+      ninthId,
+      isPartyMember,
+      partyId: isPartyMember ? partyId : null,
     })
     dispatch({type: 'next'})
     logEvent('onboarding:compass:nextPressed', {
-      answeredCount,
+      selectedNinth: ninthId !== null,
+      isPartyMember,
     })
-  }, [dispatch, answers, answeredCount])
+  }
 
   return (
     <View style={[a.align_start, a.gap_md]} testID="onboardingCompass">
@@ -113,200 +97,150 @@ export function StepCompassPreview() {
       </OnboardingTitleText>
       <OnboardingDescriptionText>
         <Trans>
-          Your political compass helps you understand your perspective. Answer a
-          few questions now, or explore it later from your Base.
+          Choose the part of the political compass closest to your views. You
+          can refine it later from your Base.
         </Trans>
       </OnboardingDescriptionText>
 
-      {/* Mini compass preview */}
       <View style={[a.w_full, a.align_center, a.mt_sm]}>
         <View
           style={[
+            a.w_full,
             a.rounded_md,
             a.overflow_hidden,
             a.border,
-            {
-              width: gtMobile ? 160 : 130,
-              height: gtMobile ? 160 : 130,
-              borderColor: t.atoms.border_contrast_low.borderColor,
-              backgroundColor: t.atoms.bg_contrast_25.backgroundColor,
-            },
+            t.atoms.border_contrast_low,
+            {maxWidth: gtMobile ? 360 : 320, aspectRatio: 1},
           ]}>
-          {/* Quadrant grid lines */}
-          <View
-            style={[
-              a.absolute,
-              {
-                left: '50%',
-                top: 0,
-                bottom: 0,
-                width: 1,
-                backgroundColor: t.atoms.border_contrast_low.borderColor,
-              },
-            ]}
-          />
-          <View
-            style={[
-              a.absolute,
-              {
-                top: '50%',
-                left: 0,
-                right: 0,
-                height: 1,
-                backgroundColor: t.atoms.border_contrast_low.borderColor,
-              },
-            ]}
-          />
-          {/* Quadrant labels */}
-          <Text
-            style={[
-              a.absolute,
-              a.text_2xs,
-              t.atoms.text_contrast_low,
-              {top: 4, left: 6, opacity: 0.6},
-            ]}>
-            AL
-          </Text>
-          <Text
-            style={[
-              a.absolute,
-              a.text_2xs,
-              t.atoms.text_contrast_low,
-              {top: 4, right: 6, opacity: 0.6},
-            ]}>
-            AR
-          </Text>
-          <Text
-            style={[
-              a.absolute,
-              a.text_2xs,
-              t.atoms.text_contrast_low,
-              {bottom: 4, left: 6, opacity: 0.6},
-            ]}>
-            LL
-          </Text>
-          <Text
-            style={[
-              a.absolute,
-              a.text_2xs,
-              t.atoms.text_contrast_low,
-              {bottom: 4, right: 6, opacity: 0.6},
-            ]}>
-            LR
-          </Text>
-          {/* Position dot */}
-          {hasAnswers && (
-            <View
-              style={[
-                a.absolute,
-                a.rounded_full,
-                {
-                  width: 14,
-                  height: 14,
-                  backgroundColor: t.palette.primary_500,
-                  left: `${compassPosition.x * 100}%`,
-                  top: `${compassPosition.y * 100}%`,
-                  marginLeft: -7,
-                  marginTop: -7,
-                  shadowColor: t.palette.primary_500,
-                  shadowOffset: {width: 0, height: 0},
-                  shadowOpacity: 0.5,
-                  shadowRadius: 6,
-                },
-              ]}
-            />
-          )}
+          {COMPASS_GRID_ROWS.map(row => (
+            <View key={row.join()} style={[a.flex_row, a.flex_1]}>
+              {row.map(positionId => {
+                const selected = ninthId === positionId
+                const dimmed = ninthId !== null && !selected
+                return (
+                  <Pressable
+                    key={positionId}
+                    testID={`onboardingNinth-${positionId}`}
+                    accessibilityRole="radio"
+                    accessibilityLabel={COMPASS_POSITION_NAMES[positionId]}
+                    accessibilityHint={l`Selects this position on the political compass`}
+                    accessibilityState={{checked: selected}}
+                    onPress={() => setNinthId(positionId)}
+                    style={[
+                      a.flex_1,
+                      a.align_center,
+                      a.justify_center,
+                      a.p_xs,
+                      {
+                        backgroundColor: COMPASS_COLORS[positionId],
+                        opacity: dimmed ? 0.45 : 1,
+                        borderWidth: selected ? 3 : 0.5,
+                        borderColor: selected
+                          ? COMPASS_LABEL_COLORS[positionId]
+                          : 'rgba(0,0,0,0.08)',
+                      },
+                    ]}>
+                    <Text
+                      style={[
+                        a.text_xs,
+                        a.text_center,
+                        selected ? a.font_bold : a.font_semi_bold,
+                        {color: COMPASS_LABEL_COLORS[positionId]},
+                      ]}>
+                      {COMPASS_POSITION_NAMES[positionId]}
+                    </Text>
+                  </Pressable>
+                )
+              })}
+            </View>
+          ))}
         </View>
       </View>
 
-      {/* Questions */}
-      <View style={[a.w_full, a.gap_md, a.mt_sm]}>
-        {questions.map(question => (
-          <View
-            key={question.id}
-            style={[
-              a.w_full,
-              a.rounded_md,
-              a.border,
-              a.p_lg,
-              {
-                backgroundColor: t.atoms.bg_contrast_25.backgroundColor,
-                borderColor: answers[question.id]
-                  ? t.palette.primary_200
-                  : t.atoms.border_contrast_low.borderColor,
-              },
-            ]}>
-            <Text style={[a.text_sm, a.leading_snug, a.mb_md]}>
-              {question.text}
+      <View
+        style={[
+          a.w_full,
+          a.rounded_md,
+          a.border,
+          a.p_lg,
+          a.mt_sm,
+          t.atoms.bg_contrast_25,
+          t.atoms.border_contrast_low,
+        ]}>
+        <Text style={[a.text_md, a.font_semi_bold, a.leading_snug, a.mb_md]}>
+          <Trans>Are you a member of a political party?</Trans>
+        </Text>
+        <View style={[a.flex_row, a.gap_sm]}>
+          <ChoicePill
+            label={l({message: 'Yes', context: 'Answer to a yes/no question'})}
+            hint={l`Shows the list of parties to choose yours`}
+            selected={isPartyMember === true}
+            onPress={() => setIsPartyMember(true)}
+          />
+          <ChoicePill
+            label={l({message: 'No', context: 'Answer to a yes/no question'})}
+            hint={l`Records that you are not a member of a party`}
+            selected={isPartyMember === false}
+            onPress={() => {
+              setIsPartyMember(false)
+              setPartyId(null)
+            }}
+          />
+        </View>
+
+        {isPartyMember === true && (
+          <View style={[a.mt_lg, a.gap_sm]}>
+            <Text style={[a.text_sm, t.atoms.text_contrast_medium]}>
+              <Trans>Which party?</Trans>
             </Text>
-            <View style={[a.flex_row, a.gap_sm]}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={_(msg`Agree`)}
-                accessibilityHint={_(msg`Mark this question as agree`)}
-                onPress={() => setAnswer(question.id, 'agree')}
-                style={[
-                  a.flex_1,
-                  a.py_sm,
-                  a.rounded_full,
-                  a.align_center,
-                  a.border,
-                  answers[question.id] === 'agree'
-                    ? {
-                        backgroundColor: '#059669',
-                        borderColor: '#059669',
-                      }
-                    : {
-                        backgroundColor: 'transparent',
-                        borderColor: t.atoms.border_contrast_low.borderColor,
+            <View style={[a.flex_row, a.flex_wrap, a.gap_sm]}>
+              {POLITICAL_AFFILIATION_OPTIONS.party.map(party => {
+                const selected = partyId === party.id
+                return (
+                  <Pressable
+                    key={party.id}
+                    testID={`onboardingParty-${party.id}`}
+                    accessibilityRole="radio"
+                    accessibilityLabel={party.name}
+                    accessibilityHint={l`Selects this party as yours`}
+                    accessibilityState={{checked: selected}}
+                    onPress={() => setPartyId(party.id)}
+                    style={[
+                      a.flex_row,
+                      a.align_center,
+                      a.gap_xs,
+                      a.px_md,
+                      a.py_sm,
+                      a.rounded_full,
+                      a.border,
+                      {
+                        borderColor: selected
+                          ? party.color
+                          : t.atoms.border_contrast_low.borderColor,
+                        backgroundColor: selected
+                          ? party.color + '25'
+                          : 'transparent',
                       },
-                ]}>
-                <Text
-                  style={[
-                    a.font_semi_bold,
-                    a.text_sm,
-                    answers[question.id] === 'agree'
-                      ? {color: 'white'}
-                      : t.atoms.text,
-                  ]}>
-                  <Trans>Agree</Trans>
-                </Text>
-              </Pressable>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={_(msg`Disagree`)}
-                accessibilityHint={_(msg`Mark this question as disagree`)}
-                onPress={() => setAnswer(question.id, 'disagree')}
-                style={[
-                  a.flex_1,
-                  a.py_sm,
-                  a.rounded_full,
-                  a.align_center,
-                  a.border,
-                  answers[question.id] === 'disagree'
-                    ? {
-                        backgroundColor: '#DC2626',
-                        borderColor: '#DC2626',
-                      }
-                    : {
-                        backgroundColor: 'transparent',
-                        borderColor: t.atoms.border_contrast_low.borderColor,
-                      },
-                ]}>
-                <Text
-                  style={[
-                    a.font_semi_bold,
-                    a.text_sm,
-                    answers[question.id] === 'disagree'
-                      ? {color: 'white'}
-                      : t.atoms.text,
-                  ]}>
-                  <Trans>Disagree</Trans>
-                </Text>
-              </Pressable>
+                    ]}>
+                    <View
+                      style={[
+                        a.rounded_full,
+                        {width: 10, height: 10, backgroundColor: party.color},
+                      ]}
+                    />
+                    <Text
+                      style={[
+                        a.text_sm,
+                        selected ? a.font_bold : a.font_semi_bold,
+                      ]}>
+                      {party.name}
+                    </Text>
+                  </Pressable>
+                )
+              })}
             </View>
           </View>
-        ))}
+        )}
       </View>
 
       <OnboardingControls.Portal>
@@ -314,7 +248,7 @@ export function StepCompassPreview() {
           <Button
             color="secondary"
             size="large"
-            label={_(msg`Skip for now`)}
+            label={l`Skip for now`}
             onPress={() => {
               dispatch({type: 'next'})
               logEvent('onboarding:compass:skipPressed', {})
@@ -327,7 +261,8 @@ export function StepCompassPreview() {
             testID="onboardingContinue"
             color="primary"
             size="large"
-            label={_(msg`Continue to next step`)}
+            label={l`Continue to next step`}
+            disabled={!canContinue}
             onPress={onContinue}>
             <ButtonText>
               <Trans>Continue</Trans>
@@ -336,5 +271,52 @@ export function StepCompassPreview() {
         </View>
       </OnboardingControls.Portal>
     </View>
+  )
+}
+
+function ChoicePill({
+  label,
+  hint,
+  selected,
+  onPress,
+}: {
+  label: string
+  hint: string
+  selected: boolean
+  onPress: () => void
+}) {
+  const t = useTheme()
+  return (
+    <Pressable
+      accessibilityRole="radio"
+      accessibilityLabel={label}
+      accessibilityHint={hint}
+      accessibilityState={{checked: selected}}
+      onPress={onPress}
+      style={[
+        a.flex_1,
+        a.py_sm,
+        a.rounded_full,
+        a.align_center,
+        a.border,
+        selected
+          ? {
+              backgroundColor: t.palette.primary_500,
+              borderColor: t.palette.primary_500,
+            }
+          : {
+              backgroundColor: 'transparent',
+              borderColor: t.atoms.border_contrast_low.borderColor,
+            },
+      ]}>
+      <Text
+        style={[
+          a.font_semi_bold,
+          a.text_sm,
+          selected ? {color: t.palette.white} : t.atoms.text,
+        ]}>
+        {label}
+      </Text>
+    </Pressable>
   )
 }

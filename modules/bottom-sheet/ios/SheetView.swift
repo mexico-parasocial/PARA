@@ -169,6 +169,20 @@ class SheetView: ExpoView {
   }
 
   private func destroy() {
+    /*
+     * React can remove this view while its sheet is still presented, e.g. when
+     * a dropped session resets the tree keyed by account. Without dismissing it
+     * here, UIKit keeps the presented controller alive with its React content
+     * gone, leaving an empty sheet over the next screen. After a normal dismiss
+     * presentingViewController is already nil, so this is a no-op there.
+     */
+    if let presentedVc = self.sheetVc,
+       presentedVc.presentingViewController != nil,
+       !presentedVc.isBeingDismissed {
+      DispatchQueue.main.async {
+        presentedVc.dismiss(animated: true)
+      }
+    }
     let shouldNotifyClosed =
       self.sheetVc != nil || self.isOpen || self.isOpening || self.isClosing
     self.contentHeightObservation?.invalidate()

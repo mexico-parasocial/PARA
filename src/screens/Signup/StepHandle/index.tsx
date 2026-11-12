@@ -1,4 +1,4 @@
-import {useState} from 'react'
+import {useEffect, useRef, useState} from 'react'
 import {View} from 'react-native'
 import Animated, {
   FadeIn,
@@ -61,7 +61,20 @@ export function StepHandle() {
     enabled: validCheck.overall,
   })
 
+  /*
+   * A second press while the first is still creating the account would start
+   * another createAccount, which cancels the first one's session after the
+   * server already made the account. The first then never advances the screen
+   * and the second fails with "handle already taken". Ignore presses until the
+   * whole check-and-create round has finished (isLoading is held through it).
+   */
+  const isSubmittingRef = useRef(false)
+  useEffect(() => {
+    if (!state.isLoading) isSubmittingRef.current = false
+  }, [state.isLoading])
+
   const onNextPress = async () => {
+    if (isSubmittingRef.current) return
     const handle = draftValue.trim()
     dispatch({
       type: 'setHandle',
@@ -72,6 +85,7 @@ export function StepHandle() {
       return
     }
 
+    isSubmittingRef.current = true
     dispatch({type: 'setIsLoading', value: true})
 
     const serviceDid = state.serviceDescription?.did ?? 'UNKNOWN'
@@ -100,7 +114,6 @@ export function StepHandle() {
       })
       // do nothing on error, let them pass
     }
-    dispatch({type: 'setIsLoading', value: false})
 
     ax.metric('signup:nextPressed', {
       activeStep: state.activeStep,
@@ -109,12 +122,14 @@ export function StepHandle() {
     })
     // phoneVerificationRequired is actually whether a captcha is required
     if (!state.serviceDescription?.phoneVerificationRequired) {
+      // Stay loading: the submit handler clears it when createAccount ends.
       dispatch({
         type: 'submit',
         task: {verificationCode: undefined, mutableProcessed: false},
       })
       return
     }
+    dispatch({type: 'setIsLoading', value: false})
     dispatch({type: 'next'})
   }
 

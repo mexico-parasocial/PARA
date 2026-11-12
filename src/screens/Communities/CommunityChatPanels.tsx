@@ -12,6 +12,7 @@ import {msg} from '@lingui/core/macro'
 import {useLingui} from '@lingui/react'
 import {Trans} from '@lingui/react/macro'
 
+import {canModerateChat} from '#/lib/chat/roles'
 import {
   type ChatBadge,
   type MatrixRoomKind,
@@ -25,7 +26,6 @@ import {useInteractionState} from '#/components/hooks/useInteractionState'
 import {Hashtag_Stroke2_Corner0_Rounded as HashtagIcon} from '#/components/icons/Hashtag'
 import {Text} from '#/components/Typography'
 
-const ONLINE_WINDOW_MS = 15 * 60 * 1000
 // `app.bsky.actor.getProfiles` accepts at most 25 actors per call.
 const MAX_PROFILE_LOOKUPS = 25
 
@@ -161,23 +161,19 @@ function badgeColor(
 }
 
 /**
- * Right panel with the community's members: civic role first, then most
- * recently active. Names and avatars come from the public profiles of the
+ * Right panel with the community's members: verified moderation roles first, then DID. Names and avatars come from the public profiles of the
  * first batch of members; the rest fall back to a shortened DID.
  */
 export function ChatMembersPanel({
   members,
   total,
   isModerator,
-  presence,
   onOpenMember,
   onOpenAll,
 }: {
   members: MemberListItem[]
   total: number
   isModerator: boolean
-  /** Live Matrix presence by Matrix user id; falls back to last activity. */
-  presence?: Record<string, string>
   onOpenMember: (did: string) => void
   onOpenAll: () => void
 }) {
@@ -185,15 +181,11 @@ export function ChatMembersPanel({
   const {_} = useLingui()
 
   const sorted = useMemo(() => {
-    const rank = (m: MemberListItem) =>
-      m.participation?.isModerator ? 0 : m.participation?.isDelegate ? 1 : 2
+    const rank = (m: MemberListItem) => (canModerateChat(m.roles) ? 0 : 1)
     return [...members].sort((x, y) => {
       const byRole = rank(x) - rank(y)
       if (byRole !== 0) return byRole
-      return (
-        (Date.parse(y.lastActiveAt ?? '') || 0) -
-        (Date.parse(x.lastActiveAt ?? '') || 0)
-      )
+      return x.did.localeCompare(y.did)
     })
   }, [members])
 
@@ -209,8 +201,6 @@ export function ChatMembersPanel({
       ),
     [profileData],
   )
-
-  const now = Date.now()
 
   return (
     <View
@@ -234,19 +224,9 @@ export function ChatMembersPanel({
           const profile = profiles.get(member.did)
           const name =
             profile?.displayName || profile?.handle || shortDid(member.did)
-          const livePresence = member.matrixUserId
-            ? presence?.[member.matrixUserId]
-            : undefined
-          const online = livePresence
-            ? livePresence === 'online'
-            : !!member.lastActiveAt &&
-              now - Date.parse(member.lastActiveAt) < ONLINE_WINDOW_MS
           const chips = [
-            member.participation?.isModerator
+            canModerateChat(member.roles)
               ? {label: _(msg`Moderador`), color: t.palette.primary_500}
-              : undefined,
-            member.participation?.isDelegate
-              ? {label: _(msg`Delegado`), color: t.palette.primary_500}
               : undefined,
             ...member.badges
               .filter(
@@ -272,17 +252,6 @@ export function ChatMembersPanel({
               ]}>
               <View>
                 <UserAvatar type="user" size={32} avatar={profile?.avatar} />
-                {online && (
-                  <View
-                    style={[
-                      styles.onlineDot,
-                      {
-                        backgroundColor: t.palette.positive_500,
-                        borderColor: t.palette.contrast_0,
-                      },
-                    ]}
-                  />
-                )}
               </View>
               <View style={[a.flex_1, {minWidth: 0}]}>
                 <Text numberOfLines={1} style={[a.text_sm, a.font_medium]}>

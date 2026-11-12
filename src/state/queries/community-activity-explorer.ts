@@ -50,7 +50,10 @@ export function useCommunityActivityExplorerQuery() {
       const boards = await Promise.allSettled(
         communityUris.map(uri =>
           queryClient.fetchQuery({
-            queryKey: communityBoardQueryKey({uri}),
+            queryKey: communityBoardQueryKey({
+              uri,
+              viewerDid: agent.session?.did,
+            }),
             queryFn: () => fetchCommunityBoard({agent, uri}),
             staleTime: STALE_MS,
           }),

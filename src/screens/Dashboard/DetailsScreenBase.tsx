@@ -122,6 +122,11 @@ function getStanceMeta(
       color: t.palette.yellow,
       background: t.palette.yellow + '15',
     },
+    question: {
+      label: 'Question',
+      color: t.palette.primary_500,
+      background: t.palette.primary_500 + '15',
+    },
   }
 }
 

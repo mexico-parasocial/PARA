@@ -42,6 +42,7 @@ import {
   type RecentCommunityView,
   useRecentCommunities,
 } from '#/state/persisted/recent-communities'
+import {useCivicHomeState} from '#/state/preferences'
 import {
   type CommunityBoardView,
   useCommunityBoardsQuery,
@@ -100,7 +101,18 @@ export function CommunitiesScreen() {
   >('Matter')
   const [selectedParticipationFilter, setSelectedParticipationFilter] =
     useState<SelectedParticipationFilter | null>(null)
-  const [selectedStateItem, setSelectedStateItem] = useState<string>('')
+  const civicHomeState = useCivicHomeState()
+  // "Find by state" starts on the civic home chosen in onboarding, using the
+  // picker's own label for it (e.g. "CDMX") when the picker lists it.
+  const [selectedStateItem, setSelectedStateItem] = useState<string>(() =>
+    civicHomeState
+      ? (STATES.find(
+          state =>
+            state !== 'Cualquiera' &&
+            findMexicanState(state) === civicHomeState,
+        ) ?? civicHomeState)
+      : '',
+  )
   const [searchQuery, setSearchQuery] = useState('')
   const debouncedSearchQuery = useDebouncedValue(searchQuery, 300)
   const {data: liveBoardsData, isLoading: isLiveBoardsLoading} =

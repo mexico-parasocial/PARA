@@ -104,7 +104,6 @@ import {CabildeoDetailScreen} from '#/screens/Communities/CabildeoDetailScreen'
 import {CabildeoListScreen} from '#/screens/Communities/CabildeoListScreen'
 import {CommunitiesScreen} from '#/screens/Communities/CommunitiesScreen'
 import {CommunityActivityScreen} from '#/screens/Communities/CommunityActivityScreen'
-import {CommunityAgentProfileScreen} from '#/screens/Communities/CommunityAgentProfileScreen'
 import {CommunityChatScreen} from '#/screens/Communities/CommunityChatScreen'
 import {CommunityMembersScreen} from '#/screens/Communities/CommunityMembersScreen'
 import {CommunityProfileScreen} from '#/screens/Communities/CommunityProfileScreen'
@@ -121,7 +120,6 @@ import {ModeratorDashboardScreen} from '#/screens/Communities/ModeratorDashboard
 import {MyCommunitiesScreen} from '#/screens/Communities/MyCommunitiesScreen'
 import {CustomFeedScreen} from '#/screens/CustomFeed'
 import {CustomFeedLikedByScreen} from '#/screens/CustomFeed/CustomFeedLikedBy'
-import {DiscourseAnalysisScreen} from '#/screens/Dashboard/DiscourseAnalysis'
 import {DocumentsScreen} from '#/screens/Dashboard/DocumentsScreen'
 import {MatterDetailsScreen} from '#/screens/Dashboard/MatterDetails'
 import {MemesScreen} from '#/screens/Dashboard/MemesScreen'
@@ -150,7 +148,6 @@ import IdentityHubScreen from '#/screens/m8/IdentityHubScreen'
 import INEVerificationScreen from '#/screens/m8/INEVerificationScreen'
 import TrustedIssuersScreen from '#/screens/m8/TrustedIssuersScreen'
 import WalletScreen from '#/screens/m8/WalletScreen'
-import {AgentChatScreen} from '#/screens/Messages/AgentChat'
 import {ChatDisabledScreen} from '#/screens/Messages/ChatDisabledScreen'
 import {MessagesScreen} from '#/screens/Messages/ChatList'
 import {CommunityChatsScreen} from '#/screens/Messages/CommunityChatsScreen'
@@ -810,16 +807,6 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
           options={{title: title(msg`Chat settings`), requireAuth: true}}
         />
         <Stack.Screen
-          name="AgentChat"
-          getComponent={() => AgentChatScreen}
-          options={{title: title(msg`Agent Chat`), requireAuth: true}}
-        />
-        <Stack.Screen
-          name="CommunityAgentProfile"
-          getComponent={() => CommunityAgentProfileScreen}
-          options={{title: title(msg`Agent Profile`)}}
-        />
-        <Stack.Screen
           name="MessagesJoinRequests"
           getComponent={() => chatScreen(MessagesJoinRequestsScreen)}
           options={{title: title(msg`Requests to join`), requireAuth: true}}
@@ -890,11 +877,6 @@ function commonScreens(Stack: typeof Flat, unreadCountLabel?: string) {
         name="Documents"
         getComponent={() => DocumentsScreen}
         options={{title: title(msg`Documents`)}}
-      />
-      <Stack.Screen
-        name="DiscourseAnalysis"
-        getComponent={() => DiscourseAnalysisScreen}
-        options={{title: title(msg`Discourse Analysis`)}}
       />
       <Stack.Screen
         name="VSScreenV2"

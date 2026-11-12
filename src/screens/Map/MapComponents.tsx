@@ -30,9 +30,13 @@ import {
 } from '#/lib/constants/electoralDistrictsData'
 import {type SearchResult} from '#/lib/constants/mapHelpers'
 import {normalizeMexicoStateName} from '#/lib/constants/mexico'
-import {MEXICO_CITY_DATA} from '#/lib/constants/mexicoCityData'
+import {
+  getCitiesForState,
+  MEXICO_CITY_DATA,
+} from '#/lib/constants/mexicoCityData'
 import {MOCK_DISTRICT_RAQS, STATE_DEMOGRAPHICS} from '#/lib/constants/mockData'
 import {useBottomBarOffset} from '#/lib/hooks/useBottomBarOffset'
+import {partyColor} from '#/lib/parties/partyColors'
 import {type PlatformNavigationProp as NavigationProp} from '#/lib/routes/types'
 import {IS_WEB} from '#/platform/detection'
 import {useMapCabildeosQuery} from '#/state/queries/map-cabildeos'
@@ -118,15 +122,6 @@ function normalizeSearchLabel(value: string) {
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
-}
-
-function getCitiesForState(stateName: string) {
-  const match = Object.entries(MEXICO_CITY_DATA).find(
-    ([candidate]) =>
-      normalizeMexicoStateName(candidate) ===
-      normalizeMexicoStateName(stateName),
-  )
-  return match?.[1] || []
 }
 
 /**
@@ -346,27 +341,6 @@ function OverlayFrame({
   )
 }
 
-function getPartyColor(party: string) {
-  switch (party) {
-    case 'Morena':
-      return '#8B1538'
-    case 'PAN':
-      return '#003087'
-    case 'PRI':
-      return '#00923F'
-    case 'MC':
-      return '#FF6B00'
-    case 'PVEM':
-      return '#228B22'
-    case 'PT':
-      return '#FF0000'
-    case 'PRD':
-      return '#FFD700'
-    default:
-      return '#666666'
-  }
-}
-
 function CityContextCard({
   city,
   stateName,
@@ -383,8 +357,8 @@ function CityContextCard({
   const navRef = useNavigation<NavigationProp>()
   const civicQuery = useMapCabildeosQuery()
   const allCabildeos = civicQuery.data ?? []
-  const partyColor = SHOW_MAP_PREVIEW_FACTS
-    ? getPartyColor(city.dominantParty)
+  const accent = SHOW_MAP_PREVIEW_FACTS
+    ? partyColor(city.dominantParty)
     : t.palette.primary_500
 
   const cityCabildeos = cabildeosForMapPlace(allCabildeos, {
@@ -399,11 +373,11 @@ function CityContextCard({
         a.mb_md,
         a.p_md,
         a.rounded_lg,
-        {backgroundColor: partyColor + '14'},
+        {backgroundColor: accent + '14'},
         a.border,
-        {borderColor: partyColor + '32'},
+        {borderColor: accent + '32'},
       ]}>
-      <Text style={[a.text_xs, a.font_bold, {color: partyColor}]}>
+      <Text style={[a.text_xs, a.font_bold, {color: accent}]}>
         CIUDAD ACTIVA
       </Text>
       <Text style={[a.text_lg, a.font_bold, t.atoms.text, a.mt_xs]}>
@@ -504,7 +478,7 @@ function CityContextCard({
                 style={[
                   a.text_xs,
                   a.font_bold,
-                  {color: partyColor},
+                  {color: accent},
                   a.text_center,
                   a.mt_xs,
                 ]}>

@@ -1,6 +1,7 @@
 // Webpack config runs in Node.
 // oxlint-disable-next-line import/no-nodejs-modules
 const path = require('path')
+const {load: loadExpoEnv} = require('@expo/env')
 const createExpoWebpackConfigAsync = require('@expo/webpack-config')
 const webpack = require('webpack')
 const {withAlias} = require('@expo/webpack-config/addons')
@@ -82,6 +83,14 @@ module.exports = async function (env, argv) {
       __dirname,
       'src/lib/web-shims/codegenNativeComponent.js',
     ),
+    /*
+     * react-native-svg's web asset resolver imports RN's asset registry, which
+     * RN 0.88 no longer ships (it became @react-native/asset-utils, with no
+     * registry). On web, images are registered with react-native-web's own
+     * registry, which exports the same getAssetByID.
+     */
+    '@react-native/assets-registry/registry$':
+      'react-native-web/dist/modules/AssetRegistry',
     'react-native-webview': 'react-native-web-webview',
     'react-native-gesture-handler': false, // RNGH should not be used on web, so let's cause a build error if it sneaks in
     '@sentry-internal/replay': false, // not used, ~300kb of dead weight
@@ -116,6 +125,25 @@ module.exports = async function (env, argv) {
       'node_modules/react-native-reanimated/lib/module/ReanimatedModule/js-reanimated/webUtils',
     )]: path.join(__dirname, 'web/reanimatedWebUtilsShim.js'),
   })
+
+  /*
+   * Expo's webpack config stopped passing EXPO_PUBLIC_* variables through in
+   * SDK 41, and babel-preset-expo inlines them only under Metro. Without this
+   * the web bundle sees none of .env / .env.local and silently uses each
+   * module's production fallback (the chat bridge, the m8 broker, the sign-in
+   * service). Load the env files the same way Expo does for Metro and define
+   * each public key; values already in the environment win over the files.
+   */
+  loadExpoEnv(__dirname, {silent: true})
+  config.plugins.push(
+    new webpack.DefinePlugin(
+      Object.fromEntries(
+        Object.keys(process.env)
+          .filter(key => key.startsWith('EXPO_PUBLIC_'))
+          .map(key => [`process.env.${key}`, JSON.stringify(process.env[key])]),
+      ),
+    ),
+  )
 
   /*
    * expo-font's serverContext.web.js imports `node:async_hooks` for SSR-only

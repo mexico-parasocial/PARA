@@ -23,6 +23,7 @@ import {
   useCameraPermission,
   usePhotoLibraryPermission,
 } from '#/lib/hooks/usePermissions'
+import {toDeviceReachableUri} from '#/lib/media/localDevUri'
 import {compressIfNeeded} from '#/lib/media/manip'
 import {openCamera, openCropper, openPicker} from '#/lib/media/picker'
 import {type PickerImage} from '#/lib/media/picker.shared'
@@ -465,7 +466,7 @@ let EditableUserAvatar = ({
                 <ExpoImage
                   testID="userAvatarImage"
                   style={aviStyle}
-                  source={{uri: avatar}}
+                  source={{uri: toDeviceReachableUri(avatar)}}
                   accessibilityRole="image"
                 />
               ) : (
@@ -639,7 +640,8 @@ export {PreviewableUserAvatar}
 // manually string-replace to use the smaller ones
 // -prf
 function hackModifyThumbnailPath(uri: string, isEnabled: boolean): string {
-  return isEnabled ? convertCdnPreset(uri, 'avatar_thumbnail') : uri
+  const reachable = toDeviceReachableUri(uri)
+  return isEnabled ? convertCdnPreset(reachable, 'avatar_thumbnail') : reachable
 }
 
 const styles = StyleSheet.create({

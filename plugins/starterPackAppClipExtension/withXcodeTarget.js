@@ -78,14 +78,19 @@ const withXcodeTarget = (config, {targetName}) => {
             IOSConfig.DeviceFamily.formatDeviceFamilies(
               IOSConfig.DeviceFamily.getDeviceFamilies(config),
             )
-          buildSettingsObj.DEVELOPMENT_TEAM = 'B3LX46C5HS'
+          buildSettingsObj.DEVELOPMENT_TEAM =
+            process.env.EXPO_APPLE_TEAM_ID || 'B3LX46C5HS'
           buildSettingsObj.IPHONEOS_DEPLOYMENT_TARGET = '16.4'
           buildSettingsObj.ASSETCATALOG_COMPILER_APPICON_NAME = 'AppIcon'
         }
       }
     }
 
-    pbxProject.addTargetAttribute('DevelopmentTeam', 'B3LX46C5HS', targetName)
+    pbxProject.addTargetAttribute(
+      'DevelopmentTeam',
+      process.env.EXPO_APPLE_TEAM_ID || 'B3LX46C5HS',
+      targetName,
+    )
 
     if (!pbxProject.hash.project.objects.PBXTargetDependency) {
       pbxProject.hash.project.objects.PBXTargetDependency = {}

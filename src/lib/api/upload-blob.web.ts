@@ -20,23 +20,23 @@ export async function uploadBlob(
   input: string | Blob,
   encoding?: string,
 ): Promise<UploadBlobResult> {
-  /*
-   * The lex encoding option is a branded mime string (`${string}/${string}`);
-   * callers pass a plain mime string, so assert the brand here.
-   */
-  const enc = encoding as EncodingString | undefined
+  const blob = await readUploadBlob(input)
+  const res = await client.uploadBlob(blob, {
+    encoding: encoding as EncodingString | undefined,
+  })
+  return {blob: res.body.blob}
+}
+
+export async function readUploadBlob(input: string | Blob): Promise<Blob> {
   if (
     typeof input === 'string' &&
     (input.startsWith('data:') || input.startsWith('blob:'))
   ) {
-    const blob = await fetch(input).then(r => r.blob())
-    const res = await client.uploadBlob(blob, {encoding: enc})
-    return {blob: res.body.blob}
+    return fetch(input).then(r => r.blob())
   }
 
   if (input instanceof Blob) {
-    const res = await client.uploadBlob(input, {encoding: enc})
-    return {blob: res.body.blob}
+    return input
   }
 
   throw new TypeError(`Invalid uploadBlob input: ${typeof input}`)

@@ -42,7 +42,7 @@ export async function openPicker(opts?: ImagePickerOptions) {
       height: image.height,
       width: image.width,
       path: image.uri,
-      size: getDataUriSize(image.uri),
+      size: image.fileSize ?? getDataUriSize(image.uri),
     }))
 }
 
