@@ -1,12 +1,23 @@
 import {useMemo} from 'react'
 import {AtUri, type AtUriString, type NsidString} from '@atproto/syntax'
-import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query'
+import {
+  type QueryClient,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 
 import {
+  type CommunityActivityAcknowledgementRecord,
+  type CommunityActivityAcknowledgementResponse,
+  type CommunityActivityAcknowledgementRole,
   type CommunityActivityLedgerEntryRecord,
+  type CommunityActivityMeasurementRecord,
   type CommunityWikiPageRecord,
   type EconomicActivityRecord,
+  PARA_COMMUNITY_ACTIVITY_ACKNOWLEDGEMENT_COLLECTION,
   PARA_COMMUNITY_ACTIVITY_LEDGER_COLLECTION,
+  PARA_COMMUNITY_ACTIVITY_MEASUREMENT_COLLECTION,
   PARA_COMMUNITY_ECONOMIC_ACTIVITY_COLLECTION,
   PARA_COMMUNITY_SOCIAL_ACTIVITY_COLLECTION,
   PARA_COMMUNITY_WIKI_PAGE_COLLECTION,
@@ -15,6 +26,8 @@ import {
 import {
   type ActivityCategory,
   computeTermsDigest,
+  type ServedAcknowledgement,
+  type ServedMeasurement,
 } from '#/lib/community-activities'
 import {type CommunityGovernanceView} from '#/lib/community-governance'
 import {STALE} from '#/state/queries'
@@ -237,10 +250,32 @@ export type CommunityActivityDetail = {
   activity: CommunityActivityView
   /** Always empty for social activities, which never move money. */
   ledger: CommunityLedgerEntryView[]
+  /**
+   * Oldest first. `official` ones are the organizers' series; the rest are
+   * independent counts by other active members.
+   */
+  measurements: ServedMeasurement[]
+  /** Only answers by the account each claim names, latest per claim. */
+  acknowledgements: ServedAcknowledgement[]
 }
 
 export function communityActivityQueryKey(activityUri: string | undefined) {
   return [RQKEY_ROOT, 'detail', activityUri] as const
+}
+
+/**
+ * The AppView indexes a write from the firehose a moment after the PDS accepts
+ * it, so an immediate refetch can return the old data. Refresh now and again
+ * shortly after.
+ */
+function refreshActivityAfterWrite(queryClient: QueryClient, uri: string) {
+  const refresh = () =>
+    void queryClient.invalidateQueries({
+      queryKey: communityActivityQueryKey(uri),
+    })
+  refresh()
+  setTimeout(refresh, 1500)
+  setTimeout(refresh, 4000)
 }
 
 export function useCommunityActivityQuery(activityUri: string | undefined) {
@@ -252,7 +287,12 @@ export function useCommunityActivityQuery(activityUri: string | undefined) {
       const res = (await agent.appviewClient.call(
         com.para.community.getActivity,
         {uri: activityUri as AtUriString},
-      )) as {activity?: ServedActivity; ledger?: ServedRecord[]}
+      )) as unknown as {
+        activity?: ServedActivity
+        ledger?: ServedRecord[]
+        measurements?: ServedMeasurement[]
+        acknowledgements?: ServedAcknowledgement[]
+      }
       const activity = res.activity ? toActivityView(res.activity) : null
       if (!activity) throw new Error('Not a community activity')
       // The AppView only returns entries an organizer of the activity's own
@@ -268,7 +308,13 @@ export function useCommunityActivityQuery(activityUri: string | undefined) {
       ledger.sort((a, b) =>
         b.record.occurredAt.localeCompare(a.record.occurredAt),
       )
-      return {activity, ledger}
+      // An AppView without evidence support omits both; read that as none.
+      return {
+        activity,
+        ledger,
+        measurements: res.measurements ?? [],
+        acknowledgements: res.acknowledgements ?? [],
+      }
     },
     enabled: Boolean(activityUri),
     staleTime: STALE.SECONDS.THIRTY,
@@ -321,7 +367,7 @@ export type UpdateCommunityActivityInput =
       changes: Partial<
         Pick<
           SocialActivityRecord,
-          'status' | 'description' | 'links' | 'details'
+          'status' | 'description' | 'links' | 'details' | 'contributors'
         >
       >
     }
@@ -330,7 +376,7 @@ export type UpdateCommunityActivityInput =
       changes: Partial<
         Pick<
           EconomicActivityRecord,
-          'status' | 'description' | 'links' | 'details'
+          'status' | 'description' | 'links' | 'details' | 'contributors'
         >
       >
     }
@@ -376,9 +422,7 @@ export function useUpdateCommunityActivityMutation() {
       return {uri: res.uri, cid: res.cid}
     },
     onSuccess: (_data, {activity}) => {
-      void queryClient.invalidateQueries({
-        queryKey: communityActivityQueryKey(activity.uri),
-      })
+      refreshActivityAfterWrite(queryClient, activity.uri)
       void queryClient.invalidateQueries({
         queryKey: [RQKEY_ROOT, 'list', activity.record.communityUri],
       })
@@ -422,9 +466,7 @@ export function useAddLedgerEntryMutation() {
       return {uri: res.uri}
     },
     onSuccess: (_data, {activity}) => {
-      void queryClient.invalidateQueries({
-        queryKey: communityActivityQueryKey(activity.uri),
-      })
+      refreshActivityAfterWrite(queryClient, activity.uri)
     },
   })
 }
@@ -440,29 +482,51 @@ export function communityWikiPagesQueryKey(communityUri: string | undefined) {
  * same slug, the most recently updated wins, so an edit by any organizer
  * supersedes the previous version. Pinned pages come first.
  */
+export async function fetchCommunityWikiPages({
+  agent,
+  communityUri,
+}: {
+  agent: Agent
+  communityUri: string
+}): Promise<CommunityWikiPageView[]> {
+  const res = (await agent.appviewClient.call(
+    com.para.community.listWikiPages,
+    {community: communityUri as AtUriString},
+  )) as {pages?: ServedRecord[]}
+  return (res.pages ?? []).map(page => ({
+    uri: page.uri,
+    cid: page.cid,
+    authorDid: page.author,
+    record: page.record as CommunityWikiPageRecord,
+  }))
+}
+
+/**
+ * Query options shared by `useCommunityWikiPagesQuery` and callers that read
+ * several communities at once, so both use the same cache entry.
+ */
+export function communityWikiPagesQueryOptions(
+  agent: Agent,
+  communityUri: string | undefined,
+) {
+  return {
+    queryKey: communityWikiPagesQueryKey(communityUri),
+    queryFn: () =>
+      fetchCommunityWikiPages({agent, communityUri: communityUri ?? ''}),
+    enabled: Boolean(communityUri),
+    staleTime: STALE.SECONDS.THIRTY,
+  }
+}
+
 export function useCommunityWikiPagesQuery({
   communityUri,
 }: {
   communityUri: string | undefined
 }) {
   const agent = useAgent()
-  return useQuery<CommunityWikiPageView[]>({
-    queryKey: communityWikiPagesQueryKey(communityUri),
-    queryFn: async () => {
-      const res = (await agent.appviewClient.call(
-        com.para.community.listWikiPages,
-        {community: communityUri as AtUriString},
-      )) as {pages?: ServedRecord[]}
-      return (res.pages ?? []).map(page => ({
-        uri: page.uri,
-        cid: page.cid,
-        authorDid: page.author,
-        record: page.record as CommunityWikiPageRecord,
-      }))
-    },
-    enabled: Boolean(communityUri),
-    staleTime: STALE.SECONDS.THIRTY,
-  })
+  return useQuery<CommunityWikiPageView[]>(
+    communityWikiPagesQueryOptions(agent, communityUri),
+  )
 }
 
 export type SaveWikiPageInput = {
@@ -517,6 +581,109 @@ export function useSaveWikiPageMutation() {
       void queryClient.invalidateQueries({
         queryKey: [RQKEY_ROOT, 'wiki', page.communityUri],
       })
+    },
+  })
+}
+
+// ─── Measurements and acknowledgements ─────────────────────────────────────
+
+export type AddActivityMeasurementInput = {
+  activity: CommunityActivityView
+  measurement: Omit<
+    CommunityActivityMeasurementRecord,
+    'activityUri' | 'communityUri' | 'createdAt'
+  >
+}
+
+/**
+ * A dated count in the viewer's own repo. The AppView serves it as official
+ * when the viewer organizes the community, as an independent count when they
+ * are another active member, and not at all otherwise. Counts are
+ * append-only: a correction is a new measurement, never an edit.
+ */
+export function useAddActivityMeasurementMutation() {
+  const agent = useAgent()
+  const {currentAccount} = useSession()
+  const queryClient = useQueryClient()
+  return useMutation<{uri: string}, Error, AddActivityMeasurementInput>({
+    mutationFn: async ({activity, measurement}) => {
+      if (!currentAccount?.did) throw new Error('Not authenticated')
+      const record: CommunityActivityMeasurementRecord = {
+        ...measurement,
+        activityUri: activity.uri,
+        communityUri: activity.record.communityUri,
+        createdAt: new Date().toISOString(),
+      }
+      const res = await agent.pdsClient.call(com.atproto.repo.createRecord, {
+        repo: currentAccount.did,
+        collection: PARA_COMMUNITY_ACTIVITY_MEASUREMENT_COLLECTION,
+        record: {
+          $type: PARA_COMMUNITY_ACTIVITY_MEASUREMENT_COLLECTION,
+          ...record,
+        },
+      })
+      return {uri: res.uri}
+    },
+    onSuccess: (_data, {activity}) => {
+      refreshActivityAfterWrite(queryClient, activity.uri)
+    },
+  })
+}
+
+export type AcknowledgeActivityClaimInput = {
+  activity: CommunityActivityView
+  /** The exact version answered: the ledger entry, or the activity itself. */
+  subject: {uri: string; cid: string}
+  role: CommunityActivityAcknowledgementRole
+  response: CommunityActivityAcknowledgementResponse
+  note?: string
+  amountReceivedMinor?: number
+  currency?: string
+}
+
+/**
+ * Answers a claim the organizer made about the viewer. Changing an answer
+ * publishes a new acknowledgement; the AppView serves the latest by
+ * `occurredAt`, so the earlier one stays on record.
+ */
+export function useAcknowledgeActivityClaimMutation() {
+  const agent = useAgent()
+  const {currentAccount} = useSession()
+  const queryClient = useQueryClient()
+  return useMutation<{uri: string}, Error, AcknowledgeActivityClaimInput>({
+    mutationFn: async ({activity, subject, ...answer}) => {
+      if (!currentAccount?.did) throw new Error('Not authenticated')
+      if (answer.response !== 'accepted' && !answer.note?.trim()) {
+        throw new Error('Say what is wrong')
+      }
+      const now = new Date().toISOString()
+      const record: CommunityActivityAcknowledgementRecord = {
+        subject,
+        activityUri: activity.uri,
+        communityUri: activity.record.communityUri,
+        role: answer.role,
+        response: answer.response,
+        note: answer.note?.trim() || undefined,
+        amountReceivedMinor: answer.amountReceivedMinor,
+        currency:
+          answer.amountReceivedMinor !== undefined
+            ? answer.currency
+            : undefined,
+        occurredAt: now,
+        createdAt: now,
+      }
+      const res = await agent.pdsClient.call(com.atproto.repo.createRecord, {
+        repo: currentAccount.did,
+        collection: PARA_COMMUNITY_ACTIVITY_ACKNOWLEDGEMENT_COLLECTION,
+        record: {
+          $type: PARA_COMMUNITY_ACTIVITY_ACKNOWLEDGEMENT_COLLECTION,
+          ...record,
+        },
+      })
+      return {uri: res.uri}
+    },
+    onSuccess: (_data, {activity}) => {
+      refreshActivityAfterWrite(queryClient, activity.uri)
     },
   })
 }

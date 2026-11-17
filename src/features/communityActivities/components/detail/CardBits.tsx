@@ -1,6 +1,7 @@
 import {View} from 'react-native'
 
 import {atoms as a, useTheme} from '#/alf'
+import * as TextField from '#/components/forms/TextField'
 import {Text} from '#/components/Typography'
 
 export function Card({
@@ -114,6 +115,37 @@ export function Warning({children}: {children: string}) {
       <Text style={[a.text_sm, {color: t.palette.negative_700}]}>
         ⚠️ {children}
       </Text>
+    </View>
+  )
+}
+
+/** A text input with its visible label above it. */
+export function LabeledInput({
+  label,
+  value,
+  onChange,
+  keyboardType,
+  placeholder,
+}: {
+  label: string
+  value: string
+  onChange: (value: string) => void
+  keyboardType?: 'number-pad' | 'decimal-pad' | 'url'
+  placeholder?: string
+}) {
+  return (
+    <View>
+      <TextField.LabelText>{label}</TextField.LabelText>
+      <TextField.Root>
+        <TextField.Input
+          label={label}
+          value={value}
+          onChangeText={onChange}
+          keyboardType={keyboardType}
+          autoCapitalize={keyboardType === 'url' ? 'none' : undefined}
+          placeholder={placeholder ?? null}
+        />
+      </TextField.Root>
     </View>
   )
 }

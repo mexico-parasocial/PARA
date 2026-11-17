@@ -536,3 +536,164 @@ export function parseThreadReference(input: string): string | undefined {
     : 'app.bsky.feed.post'
   return `at://${decodeURIComponent(match[1])}/${collection}/${match[2]}`
 }
+
+// ─── Contributors, measurements and acknowledgements ───────────────────────
+
+/*
+ * Borrowed from the Hypercerts claim model: an activity says who did the work,
+ * dated counts record how it went, and the people a claim names can answer
+ * it. The AppView decides which of these count (WatZappa
+ * data-plane/server/routes/community-activities.ts); the helpers below only
+ * arrange what it served.
+ */
+
+export const CONTRIBUTOR_ROLES: Array<{
+  value: string
+  label: MessageDescriptor
+}> = [
+  {value: 'organizer', label: msg`Organizer`},
+  {value: 'facilitator', label: msg`Facilitator`},
+  {value: 'speaker', label: msg`Speaker`},
+  {value: 'volunteer', label: msg`Volunteer`},
+  {value: 'logistics', label: msg`Logistics`},
+  {value: 'safety', label: msg`Safety`},
+  {value: 'treasurer', label: msg`Treasurer`},
+  {value: 'signature_collector', label: msg`Signature collector`},
+  {value: 'notary', label: msg`Notary`},
+  {value: 'sponsor', label: msg`Sponsor`},
+  {value: 'partner_organization', label: msg`Partner organization`},
+]
+
+export const MEASUREMENT_METRICS: Array<{
+  value: string
+  label: MessageDescriptor
+  /** Counts that only grow over the activity, read as a running total. */
+  cumulative: boolean
+}> = [
+  {
+    value: 'signatures_collected',
+    label: msg`Signatures collected`,
+    cumulative: true,
+  },
+  {
+    value: 'signatures_validated',
+    label: msg`Signatures validated`,
+    cumulative: true,
+  },
+  {value: 'attendance', label: msg`Attendance`, cumulative: false},
+  {value: 'participants', label: msg`Participants`, cumulative: false},
+  {value: 'volunteers', label: msg`Volunteers`, cumulative: false},
+  {value: 'tickets_sold', label: msg`Tickets sold`, cumulative: true},
+  {value: 'items_sold', label: msg`Items sold`, cumulative: true},
+  {value: 'donors', label: msg`Donors`, cumulative: true},
+]
+
+export const MEASUREMENT_METHODS: Array<{
+  value: string
+  label: MessageDescriptor
+}> = [
+  {value: 'headcount', label: msg`Headcount`},
+  {value: 'sign_in_sheet', label: msg`Sign-in sheet`},
+  {value: 'ticket_scan', label: msg`Ticket scan`},
+  {value: 'sheet_tally', label: msg`Sheet tally`},
+  {value: 'official_certification', label: msg`Official certification`},
+  {value: 'photo_estimate', label: msg`Photo estimate`},
+  {value: 'self_reported', label: msg`Self-reported`},
+]
+
+/** Which metric a kind of activity is usually measured by. */
+export function defaultMetricFor(detailsType: string | undefined) {
+  switch (detailsType) {
+    case SOCIAL_ACTIVITY_SIGNATURE_DRIVE:
+      return 'signatures_collected'
+    case ECONOMIC_ACTIVITY_RAFFLE:
+      return 'tickets_sold'
+    case ECONOMIC_ACTIVITY_SALE:
+      return 'items_sold'
+    case ECONOMIC_ACTIVITY_FUNDRAISER:
+      return 'donors'
+    case SOCIAL_ACTIVITY_ASSEMBLY:
+    case SOCIAL_ACTIVITY_CABILDEO:
+      return 'participants'
+    default:
+      return 'attendance'
+  }
+}
+
+/**
+ * Each contributor's share of the declared weights, in basis points, keyed
+ * by position. Undefined when no contributor carries a weight: an unweighted
+ * list credits people without ranking them, and must not read as equal shares.
+ */
+export function contributorShares(
+  contributors: Array<{weight?: number}>,
+): Array<number | undefined> | undefined {
+  const total = contributors.reduce(
+    (sum, c) => sum + (c.weight && c.weight > 0 ? c.weight : 0),
+    0,
+  )
+  if (total === 0) return undefined
+  return contributors.map(c =>
+    c.weight && c.weight > 0
+      ? Math.round((c.weight * BPS_TOTAL) / total)
+      : undefined,
+  )
+}
+
+export type ServedAcknowledgement = {
+  uri: string
+  author: string
+  role: string
+  response: string
+  subjectUri: string
+  /** False when the subject changed after it was answered. */
+  current: boolean
+  record: {note?: string; amountReceivedMinor?: number; currency?: string}
+}
+
+/**
+ * The answer in force from `did` to the claim at `subjectUri`. The AppView
+ * already serves only the latest per author, subject and role.
+ */
+export function findAnswer(
+  acknowledgements: ServedAcknowledgement[],
+  {
+    did,
+    subjectUri,
+    role,
+  }: {did: string | undefined; subjectUri: string; role: string},
+) {
+  if (!did) return undefined
+  return acknowledgements.find(
+    a => a.author === did && a.subjectUri === subjectUri && a.role === role,
+  )
+}
+
+export type ServedMeasurement = {
+  uri: string
+  author: string
+  official: boolean
+  edited: boolean
+  record: {
+    metric: string
+    value: number
+    valueLow?: number
+    valueHigh?: number
+    measuredAt: string
+    method?: string
+    methodNote?: string
+  }
+}
+
+/** The organizers' most recent count of `metric`, by when it was taken. */
+export function latestOfficialCount(
+  measurements: ServedMeasurement[],
+  metric: string,
+) {
+  let latest: ServedMeasurement | undefined
+  for (const m of measurements) {
+    if (!m.official || m.record.metric !== metric) continue
+    if (!latest || m.record.measuredAt >= latest.record.measuredAt) latest = m
+  }
+  return latest
+}

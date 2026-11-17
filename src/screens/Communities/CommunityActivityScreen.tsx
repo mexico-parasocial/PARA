@@ -12,6 +12,7 @@ import {
 import {
   ACTIVITY_STATUSES,
   getActivityKindMeta,
+  type ServedAcknowledgement,
   summarizeLedger,
 } from '#/lib/community-activities'
 import {
@@ -45,6 +46,10 @@ import {
   LedgerCard,
   TransparencyCard,
 } from '#/features/communityActivities/components/detail/EconomicCards'
+import {
+  ContributorsCard,
+  MeasurementsCard,
+} from '#/features/communityActivities/components/detail/EvidenceCards'
 import {SocialDetailsCard} from '#/features/communityActivities/components/detail/SocialDetailsCard'
 import {ContributeToCommunityTreeDialog} from '#/features/communityCivicTree/components/ContributeToCommunityTreeDialog'
 
@@ -58,6 +63,8 @@ export function CommunityActivityScreen({route}: Props) {
   const query = useCommunityActivityQuery(activityUri)
   const activity = query.data?.activity
   const ledger = query.data?.ledger
+  const measurements = query.data?.measurements ?? []
+  const acknowledgements = query.data?.acknowledgements ?? []
   const isOrganizer = Boolean(
     activity && currentAccount?.did === activity.authorDid,
   )
@@ -117,9 +124,20 @@ export function CommunityActivityScreen({route}: Props) {
                 <EconomicSections
                   activity={activity}
                   ledger={ledger}
+                  acknowledgements={acknowledgements}
                   isOrganizer={isOrganizer}
                 />
               )}
+              <ContributorsCard
+                activity={activity}
+                acknowledgements={acknowledgements}
+                isOrganizer={isOrganizer}
+              />
+              <MeasurementsCard
+                activity={activity}
+                measurements={measurements}
+                isOrganizer={isOrganizer}
+              />
               <Button
                 label={_(msg`Add this activity to the community civic tree`)}
                 size="large"
@@ -149,10 +167,12 @@ export function CommunityActivityScreen({route}: Props) {
 function EconomicSections({
   activity,
   ledger,
+  acknowledgements,
   isOrganizer,
 }: {
   activity: EconomicActivityView
   ledger: CommunityLedgerEntryView[]
+  acknowledgements: ServedAcknowledgement[]
   isOrganizer: boolean
 }) {
   const {_} = useLingui()
@@ -180,6 +200,7 @@ function EconomicSections({
       <LedgerCard
         activity={activity}
         ledger={ledger}
+        acknowledgements={acknowledgements}
         isOrganizer={isOrganizer}
       />
     </>

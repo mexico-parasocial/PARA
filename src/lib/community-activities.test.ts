@@ -6,16 +6,23 @@ import {
   type EconomicActivityRaffle,
   type EconomicActivitySale,
   SOCIAL_ACTIVITY_CABILDEO,
+  SOCIAL_ACTIVITY_SIGNATURE_DRIVE,
 } from '#/lib/api/para-lexicons'
 import {
   computeTermsDigest,
+  contributorShares,
+  defaultMetricFor,
   type EconomicTerms,
+  findAnswer,
   formatMinor,
   getActivityKindMeta,
+  latestOfficialCount,
   parseMoneyToMinor,
   parsePercentToBps,
   parseThreadReference,
   parseWikiBody,
+  type ServedAcknowledgement,
+  type ServedMeasurement,
   slugifyWikiTitle,
   SOCIAL_ACTIVITY_KINDS,
   summarizeLedger,
@@ -319,5 +326,97 @@ describe('cabildeo as an activity kind', () => {
 
     expect(meta.value).toBe(SOCIAL_ACTIVITY_CABILDEO)
     expect(meta.emoji).not.toBe(getActivityKindMeta(undefined).emoji)
+  })
+})
+
+describe('contributorShares', () => {
+  it('splits declared weights into basis points', () => {
+    expect(contributorShares([{weight: 3}, {weight: 1}])).toEqual([7500, 2500])
+  })
+
+  it('leaves unweighted contributors out of the split', () => {
+    expect(contributorShares([{weight: 2}, {}])).toEqual([10000, undefined])
+  })
+
+  it('does not invent equal shares when nobody is weighted', () => {
+    expect(contributorShares([{}, {}])).toBeUndefined()
+    expect(contributorShares([])).toBeUndefined()
+  })
+})
+
+describe('findAnswer', () => {
+  const answer = (
+    overrides: Partial<ServedAcknowledgement>,
+  ): ServedAcknowledgement => ({
+    uri: 'at://did:plc:dan/com.para.community.activityAcknowledgement/1',
+    author: 'did:plc:dan',
+    role: 'recipient',
+    response: 'accepted',
+    subjectUri: 'at://did:plc:org/com.para.community.activityLedgerEntry/1',
+    current: true,
+    record: {},
+    ...overrides,
+  })
+
+  it('matches the named account, subject and role only', () => {
+    const served = [
+      answer({}),
+      answer({author: 'did:plc:carol', response: 'rejected'}),
+      answer({role: 'contributor', response: 'rejected'}),
+    ]
+    const found = findAnswer(served, {
+      did: 'did:plc:dan',
+      subjectUri: served[0].subjectUri,
+      role: 'recipient',
+    })
+    expect(found?.response).toBe('accepted')
+  })
+
+  it('finds nothing without a named account', () => {
+    expect(
+      findAnswer([answer({})], {
+        did: undefined,
+        subjectUri: answer({}).subjectUri,
+        role: 'recipient',
+      }),
+    ).toBeUndefined()
+  })
+})
+
+describe('latestOfficialCount', () => {
+  const m = (
+    official: boolean,
+    value: number,
+    measuredAt: string,
+    metric = 'signatures_collected',
+  ): ServedMeasurement => ({
+    uri: `at://x/${value}`,
+    author: 'did:plc:org',
+    official,
+    edited: false,
+    record: {metric, value, measuredAt},
+  })
+
+  it('reads the newest organizer count by when it was taken', () => {
+    const latest = latestOfficialCount(
+      [
+        m(true, 410, '2026-11-10T19:00:00.000Z'),
+        m(true, 1240, '2026-11-13T19:00:00.000Z'),
+        m(false, 5000, '2026-11-14T19:00:00.000Z'),
+        m(true, 9, '2026-11-15T19:00:00.000Z', 'attendance'),
+      ],
+      'signatures_collected',
+    )
+    expect(latest?.record.value).toBe(1240)
+  })
+})
+
+describe('defaultMetricFor', () => {
+  it('counts signatures for a drive and attendance otherwise', () => {
+    expect(defaultMetricFor(SOCIAL_ACTIVITY_SIGNATURE_DRIVE)).toBe(
+      'signatures_collected',
+    )
+    expect(defaultMetricFor(ECONOMIC_ACTIVITY_RAFFLE)).toBe('tickets_sold')
+    expect(defaultMetricFor(undefined)).toBe('attendance')
   })
 })

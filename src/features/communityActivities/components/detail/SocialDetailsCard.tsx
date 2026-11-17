@@ -19,6 +19,7 @@ import {
 import {cleanError} from '#/lib/strings/errors'
 import {
   type SocialActivityView,
+  useAddActivityMeasurementMutation,
   useUpdateCommunityActivityMutation,
 } from '#/state/queries/community-activities'
 import {atoms as a, useTheme} from '#/alf'
@@ -160,6 +161,7 @@ function SignatureDriveCard({
   const {_, i18n} = useLingui()
   const collected = drive.signaturesCollected ?? 0
   const update = useUpdateCommunityActivityMutation()
+  const measure = useAddActivityMeasurementMutation()
   const [draft, setDraft] = useState(String(collected))
   const instrument = INSTRUMENT_TYPES.find(
     i => i.value === drive.instrumentType,
@@ -219,7 +221,7 @@ function SignatureDriveCard({
             label={_(msg`Update signature count`)}
             size="small"
             color="primary"
-            disabled={update.isPending}
+            disabled={update.isPending || measure.isPending}
             onPress={() => {
               const value = Number(draft)
               if (!Number.isInteger(value) || value < 0) return
@@ -228,7 +230,28 @@ function SignatureDriveCard({
                   activity,
                   changes: {details: {...drive, signaturesCollected: value}},
                 },
-                {onError: err => Toast.show(cleanError(err), {type: 'error'})},
+                {
+                  // The record keeps the running total; the dated count is
+                  // what makes it history that cannot be quietly lowered.
+                  onSuccess: () =>
+                    measure.mutate(
+                      {
+                        activity,
+                        measurement: {
+                          metric: 'signatures_collected',
+                          value,
+                          cumulative: true,
+                          method: 'sheet_tally',
+                          measuredAt: new Date().toISOString(),
+                        },
+                      },
+                      {
+                        onError: err =>
+                          Toast.show(cleanError(err), {type: 'error'}),
+                      },
+                    ),
+                  onError: err => Toast.show(cleanError(err), {type: 'error'}),
+                },
               )
             }}>
             <ButtonText>
