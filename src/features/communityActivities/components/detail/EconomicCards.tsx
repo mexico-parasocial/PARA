@@ -22,6 +22,7 @@ import {
   type LedgerSummary,
   parseMoneyToMinor,
   SALE_CHANNELS,
+  type ServedAcknowledgement,
 } from '#/lib/community-activities'
 import {cleanError} from '#/lib/strings/errors'
 import {
@@ -30,6 +31,7 @@ import {
   useAddLedgerEntryMutation,
   useUpdateCommunityActivityMutation,
 } from '#/state/queries/community-activities'
+import {useFetchDid} from '#/state/queries/handle'
 import {atoms as a, useTheme} from '#/alf'
 import {Button, ButtonText} from '#/components/Button'
 import {DateField} from '#/components/forms/DateField'
@@ -38,7 +40,15 @@ import {InlineLinkText} from '#/components/Link'
 import * as Toast from '#/components/Toast'
 import {Text} from '#/components/Typography'
 import {ChoiceChips} from '../ChoiceChips'
-import {BulletList, Card, ProgressBar, Row, Warning} from './CardBits'
+import {
+  BulletList,
+  Card,
+  LabeledInput,
+  ProgressBar,
+  Row,
+  Warning,
+} from './CardBits'
+import {AccountName, ClaimAnswer} from './EvidenceCards'
 
 /** The committed offer: what is sold, at what price, or what is raised for. */
 export function EconomicTermsCard({
@@ -380,10 +390,12 @@ export function TransparencyCard({
 export function LedgerCard({
   activity,
   ledger,
+  acknowledgements,
   isOrganizer,
 }: {
   activity: EconomicActivityView
   ledger: CommunityLedgerEntryView[]
+  acknowledgements: ServedAcknowledgement[]
   isOrganizer: boolean
 }) {
   const t = useTheme()
@@ -424,7 +436,7 @@ export function LedgerCard({
           <Trans>No money has moved yet.</Trans>
         </Text>
       ) : (
-        ledger.map(({uri, record}) => {
+        ledger.map(({uri, cid, record}) => {
           const type = LEDGER_ENTRY_TYPES.find(
             e => e.value === record.entryType,
           )
@@ -478,6 +490,24 @@ export function LedgerCard({
                   {_(msg`Receipt`)}
                 </InlineLinkText>
               ) : null}
+              {record.entryType === 'donation' && record.recipientDid ? (
+                <View style={[a.gap_xs, a.pt_xs]}>
+                  <View style={[a.flex_row, a.gap_xs, a.align_center]}>
+                    <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
+                      <Trans>Received by</Trans>
+                    </Text>
+                    <AccountName did={record.recipientDid} />
+                  </View>
+                  <ClaimAnswer
+                    activity={activity}
+                    subject={{uri, cid}}
+                    namedDid={record.recipientDid}
+                    role="recipient"
+                    acknowledgements={acknowledgements}
+                    currency={record.currency}
+                  />
+                </View>
+              ) : null}
               {record.termsDigest !== digest ? (
                 <Text style={[a.text_xs, {color: t.palette.negative_600}]}>
                   ⚠️ <Trans>Booked under earlier terms</Trans>
@@ -514,6 +544,8 @@ function LedgerEntryForm({
   const [recipient, setRecipient] = useState<string>(
     plan.allocations[0]?.recipient ?? 'community',
   )
+  const [recipientHandle, setRecipientHandle] = useState('')
+  const fetchDid = useFetchDid()
   const [receiptUrl, setReceiptUrl] = useState('')
   const [occurredOn, setOccurredOn] = useState(
     new Date().toISOString().slice(0, 10),
@@ -539,7 +571,7 @@ function LedgerEntryForm({
         ? 'sales'
         : 'other'
 
-  const onSubmit = () => {
+  const onSubmit = async () => {
     const amountMinor = parseMoneyToMinor(amount)
     const units = quantity.trim() ? Number(quantity) : undefined
     if (!amountMinor) {
@@ -553,6 +585,17 @@ function LedgerEntryForm({
     if (!description.trim()) {
       setError(_(msg`Describe the entry.`))
       return
+    }
+    // Naming the account that received a donation lets it confirm receipt.
+    let recipientDid: string | undefined
+    const handle = recipientHandle.trim().replace(/^@/, '')
+    if (entryType === 'donation' && handle) {
+      try {
+        recipientDid = await fetchDid(handle)
+      } catch {
+        setError(_(msg`No account found for ${handle}.`))
+        return
+      }
     }
     const occurredAt = new Date(`${occurredOn}T12:00:00`)
     add.mutate(
@@ -574,6 +617,7 @@ function LedgerEntryForm({
                 ? category
                 : undefined,
           recipient: entryType === 'donation' ? recipient : undefined,
+          recipientDid,
           receiptUrl: receiptUrl.trim() || undefined,
           occurredAt: Number.isNaN(occurredAt.getTime())
             ? new Date().toISOString()
@@ -661,6 +705,18 @@ function LedgerEntryForm({
               label: allocation.label,
             }))}
           />
+          <LabeledInput
+            label={_(msg`Recipient's handle (optional)`)}
+            value={recipientHandle}
+            onChange={setRecipientHandle}
+            placeholder="comedor.test"
+          />
+          <Text style={[a.text_xs, t.atoms.text_contrast_medium]}>
+            <Trans>
+              If the recipient has an account, they can publicly confirm or
+              dispute receiving this donation.
+            </Trans>
+          </Text>
         </View>
       ) : null}
       <View>
@@ -701,42 +757,12 @@ function LedgerEntryForm({
           size="small"
           color="primary"
           disabled={add.isPending}
-          onPress={onSubmit}>
+          onPress={() => void onSubmit()}>
           <ButtonText>
             <Trans>Book entry</Trans>
           </ButtonText>
         </Button>
       </View>
-    </View>
-  )
-}
-
-function LabeledInput({
-  label,
-  value,
-  onChange,
-  keyboardType,
-  placeholder,
-}: {
-  label: string
-  value: string
-  onChange: (value: string) => void
-  keyboardType?: 'number-pad' | 'decimal-pad' | 'url'
-  placeholder?: string
-}) {
-  return (
-    <View>
-      <TextField.LabelText>{label}</TextField.LabelText>
-      <TextField.Root>
-        <TextField.Input
-          label={label}
-          value={value}
-          onChangeText={onChange}
-          keyboardType={keyboardType}
-          autoCapitalize={keyboardType === 'url' ? 'none' : undefined}
-          placeholder={placeholder ?? null}
-        />
-      </TextField.Root>
     </View>
   )
 }

@@ -44,6 +44,10 @@ export const PARA_COMMUNITY_ECONOMIC_ACTIVITY_COLLECTION =
 export const PARA_COMMUNITY_ACTIVITY_LEDGER_COLLECTION =
   'com.para.community.activityLedgerEntry'
 export const PARA_COMMUNITY_WIKI_PAGE_COLLECTION = 'com.para.community.wikiPage'
+export const PARA_COMMUNITY_ACTIVITY_MEASUREMENT_COLLECTION =
+  'com.para.community.activityMeasurement'
+export const PARA_COMMUNITY_ACTIVITY_ACKNOWLEDGEMENT_COLLECTION =
+  'com.para.community.activityAcknowledgement'
 export const PARA_HIGHLIGHT_COLLECTION = 'com.para.highlight.annotation'
 export const PARA_OFFICIAL_CIVIC_ENTITY_COLLECTION = 'com.para.official.entity'
 export const PARA_OFFICIAL_CIVIC_CONTROLLER_COLLECTION =
@@ -419,6 +423,20 @@ export interface CommunityBriefingPackRecord {
 export type CommunityActivityStatus =
   'planned' | 'active' | 'completed' | 'cancelled'
 
+/**
+ * Someone credited with work on an activity: `did` for an account, `name` for
+ * someone without one. Listing is the organizer's claim until the contributor
+ * accepts it with an acknowledgement.
+ */
+export interface CommunityActivityContributor {
+  did?: string
+  name?: string
+  role: string
+  roleDescription?: string
+  /** Relative share, compared only with the activity's other contributors. */
+  weight?: number
+}
+
 /** Fields shared by social and economic activities. */
 interface CommunityActivityBase {
   communityUri: string
@@ -429,6 +447,7 @@ interface CommunityActivityBase {
   location?: string
   status: CommunityActivityStatus
   links?: string[]
+  contributors?: CommunityActivityContributor[]
   createdBy: string
   createdAt: string
   updatedAt: string
@@ -602,8 +621,49 @@ export interface CommunityActivityLedgerEntryRecord {
   category?: string
   itemName?: string
   recipient?: string
+  /** Donations only: the account that received the funds and may confirm it. */
+  recipientDid?: string
   receiptUrl?: string
   occurredAt: string
+  createdAt: string
+}
+
+/** A dated count on an activity. Money is never measured here. */
+export interface CommunityActivityMeasurementRecord {
+  activityUri: string
+  communityUri: string
+  metric: string
+  value: number
+  valueLow?: number
+  valueHigh?: number
+  cumulative?: boolean
+  method?: string
+  methodNote?: string
+  evidenceUris?: string[]
+  measuredAt: string
+  createdAt: string
+}
+
+export type CommunityActivityAcknowledgementRole = 'recipient' | 'contributor'
+export type CommunityActivityAcknowledgementResponse =
+  'accepted' | 'rejected' | 'partial'
+
+/**
+ * A second party's answer to an organizer's claim about them: a donation's
+ * recipient, or a listed contributor. It counts only when its author is the
+ * account the claim names.
+ */
+export interface CommunityActivityAcknowledgementRecord {
+  subject: {uri: string; cid: string}
+  activityUri: string
+  communityUri: string
+  role: CommunityActivityAcknowledgementRole
+  response: CommunityActivityAcknowledgementResponse
+  amountReceivedMinor?: number
+  currency?: string
+  note?: string
+  evidenceUris?: string[]
+  occurredAt?: string
   createdAt: string
 }
 
@@ -617,6 +677,7 @@ export interface CommunityWikiPageRecord {
   body: string
   threadUri?: string
   pollUri?: string
+  previousPollUris?: string[]
   pinned?: boolean
   sortOrder?: number
   createdBy: string
